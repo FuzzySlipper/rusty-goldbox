@@ -4,9 +4,10 @@
 introduce competing state or behavior?
 
 Start with `AGENTS.md` and `docs/architecture.md`, then search the implementation
-and callers. The template's counter domain owns its value; the product entry
-owns lifecycle composition; the DOM only displays facts. Customize those owner
-pointers as the product grows.
+and callers. Core owns module, rules and campaign state; the Game product entry
+owns lifecycle composition and projections; the CLI only parses, calls Core and
+prints; the DOM only displays facts. The `AGENTS.md` ownership table is the
+current owner map.
 
 An actionable finding names the existing type/member, the new duplicate at
 file/line, the overlapping authority, and the callers or invariant that now

@@ -1,101 +1,149 @@
-# Rusty Template agent guidance
+# Rusty Goldbox agent guidance
 
-Rusty Template is a minimal C# counter product and starting point for downstream
-Rusty Engine projects. Keep it small enough to understand and customize.
+Rusty Goldbox is a Gold Box-style RPG engine with authoring, in the spirit of
+Unlimited Adventures / Dungeon Craft. Players run **campaign modules**, which
+are built on **ruleset modules** and dressed by **asset modules**. Every module
+is authored, validated and exported independently. It is a downstream Rusty
+Engine product.
 
 > The product decides. The Engine guarantees.
 
 ## Start here
 
-Read [README.md](README.md) for setup and commands and
-[docs/architecture.md](docs/architecture.md) for the current owners. Before
-changing the Engine boundary, read the Engine's
+Read [docs/design.md](docs/design.md) before changing the module format,
+module identity and references, the expression language or operations, the
+runtime command surface, saves, or the Engine boundary. Planned work, its
+order and status live in the `rusty-goldbox` Den project; keep repository
+docs durable and put plans and status there. [README.md](README.md) covers setup and `rusty` commands. Before
+you change the Engine boundary, read the Engine's
 [C# SDK guide](https://github.com/FuzzySlipper/rusty-engine/blob/main/docs/csharp-sdk.md)
-and architecture. `rusty --help` is the workflow reference. Ordinary builds
-consume the pinned package; verify capabilities against that pin (its release
-notes and API surface) rather than against Engine source at another revision.
+and check what you need against the **pinned** package (its release notes and
+API surface), not Engine source at another revision.
 
-The user request and owning task define scope and acceptance. If work is tied
-to Den, resolve that project's live guidance, task, and dependencies. Report
-failed reads; do not invent task state. Continue independently authorized work
-and pause only decisions that need unavailable authority.
+[docs/architecture.md](docs/architecture.md) records what exists; when you
+add or move an owner, update it and `README.md` in the same change.
 
-## Ownership and source
+## Who the author is
 
-- `src/RustyTemplate.Game/` owns counter state, application policy, semantic
-  input interpretation, and UI facts. Organize additions by product domain;
-  keep the product entry focused on explicit composition and lifecycle.
-- `Rusty.Engine` owns named Engine mechanisms: lifecycle/update admission,
-  input delivery, rendering/resources, spatial queries, content delivery,
-  persistence primitives, and host integration. Search the safe SDK and
-  existing product owners before adding a mechanism.
-- `src/ui/` is a DOM companion. It observes Engine projections and submits
-  semantic intents. Gameplay state, game rendering, canvas, transport, and
-  scheduling stay with their C#/Engine owners.
-- `content/` holds product-authored data. Interpret it in typed C# through
-  Engine content services. Keep authored definitions, live state, and transient
-  presentation distinct.
-- The SDK generates the bind entry point and interop under ignored `obj/` output.
-  Product code stays safe C#: no handwritten ABI/PInvoke, exports, raw native
-  access, downstream Rust, or checked-in composition projects.
+For the near and middle term, the person authoring modules is an **agent
+using the CLI**, not someone working in a visual editor. So:
 
-There is one Engine-admitted update path. Use its time/input facts; do not add
-another loop, clock, scheduler, renderer, or state authority downstream.
+- Every authoring capability ships as a `goldbox` CLI command before anything
+  else. Commands accept `--json`. Errors name the module, file, JSON path and
+  the rule that was broken, and a reader should be able to fix the problem
+  from the error alone.
+- The format must be discoverable from the tool. When you add a definition
+  type, operation or expression function, `goldbox schema` must describe it,
+  with an example.
+- Behavior is checked by scripted headless runs (`goldbox play`,
+  `goldbox sim`) and golden transcripts. Don't build visual or
+  human-interactive UI unless a task explicitly asks for it.
+
+## Ownership
+
+| Path | Owns |
+| --- | --- |
+| `src/RustyGoldbox.Core/` | Module format and loading, expressions, operations, ruleset interpretation, characters, combat, campaign/event runtime and save data. No host or UI code. |
+| `src/RustyGoldbox.Cli/` | `goldbox` commands. Thin: parse arguments, call Core, print results. No rules logic. |
+| `src/RustyGoldbox.Game/` | The Engine product: module bundles, Engine update/input, persistence and projections over Core. |
+| `src/ui/` | DOM companion. Observes projections and submits intents; it owns no game state. |
+| `modules/<id>/` | First-party module sources, each with `module.json` and provenance. |
+| `tests/` | Focused checks and golden transcripts. |
+
+`Rusty.Engine` owns lifecycle and update admission, input, rendering and
+resources, spatial queries, deterministic random, content bundles and
+containers, persistence primitives, UI transport and host integration. Search
+the safe SDK before adding a mechanism. The SDK generates the bind entry point
+and interop under ignored `obj/`, and product code stays safe C#.
+
+There is one Engine-admitted update path. Don't add another loop, clock,
+scheduler, renderer or state authority. All randomness goes through Engine
+`Random` with an explicit seed.
+
+## Module rules
+
+- Modules are data: JSON plus the expression language. No module carries or
+  loads C# code. New primitive behavior (an operation, an expression function,
+  a combat hook) goes into Core, and only when a real module needs it.
+- A module references only the modules listed in its own `requires`, using
+  `module:id`. Changing another module's definition takes an explicit `patch`.
+  Asset references are logical IDs, never file paths.
+- Rules belong in ruleset data, not in C#. If Core code mentions a specific
+  class, spell, stat name or edition, that's a bug unless it's a fixture.
+- Record provenance for any module content adapted from a published game or
+  SRD, and use only open-licensed sources. UA/Dungeon Craft is a reference for
+  features, not a source of code or formats.
+- When a definition type changes, update the first-party modules and the
+  golden transcripts that use it in the same change.
 
 ## Product style
 
-Prefer ordinary readable C#, explicit composition, direct methods, and one
+Write ordinary readable C#: explicit composition, direct methods, and one
 clear mutable owner per domain. Keep operations thin: read, decide, apply,
-publish. Use typed boundaries where they help; do not introduce a framework,
-reflection discovery, generic bus, or service locator for hypothetical needs.
+publish. Use nullable types, file-scoped namespaces, and `internal`/`sealed`
+by default. Method bodies should be normal multi-line code, not dense
+one-liners.
 
-Use nullable types, file-scoped namespaces, and `internal`/`sealed` defaults
-where the public product contract does not require otherwise. Keep structural
-constants beside their algorithm; give meaningful identities names. Put
-adjustable gameplay values and authored definitions in domain-owned content
-when the product needs tuning, rather than hiding them in call sites.
+Avoid ceremony. Don't add any of the following without a concrete,
+task-owned failure it prevents:
 
-Trust first-party runtime state and Engine-admitted data. Preserve concrete
-eligibility rules, current-data errors, and resource lifetime/disposal. Do not
-add repeated hashing, compatibility layers, whole-state rollback, or validation
-ceremony without a task-owned failure it prevents. Save meaningful values at
-explicit save boundaries; native handles and presentation resources are not
-product save state.
+- revision/staleness fences, proposal/acceptance or "admission" layers,
+  repeated hashing, whole-state rollback, or defensive re-validation of
+  first-party state;
+- hard numeric caps or "bounded" limits that aren't game rules;
+- frameworks, generic buses, service locators, reflection discovery, or
+  interfaces with one implementation;
+- compatibility readers for formats that never shipped.
+
+Validate untrusted input once, where it enters: module loading in Core, CLI
+arguments, and save loading. After that, trust it. Prefer plain names (load,
+check, apply) over vocabulary like admit, authority or fence.
 
 ## Engine dependencies and gaps
 
-`Directory.Build.props` owns the exact SDK/runtime pin. Install it with
-`rusty install`; deliberately advance it with `rusty update`, read the release
-notes it lists, then run the focused checks. `rusty status` reports the pin,
-installation and missing prerequisites. Keep exact
-versions in executable configuration and evidence, not duplicated in prose.
-Normal development uses the matched runtime pack through `rusty dev`.
-NativeAOT is an explicit fidelity/release check. Do not make an adjacent
-Engine checkout a build dependency or modify it as part of downstream work.
+`Directory.Build.props` holds the exact SDK/runtime pin. `rusty install`
+installs it, `rusty status` reports it, and `rusty update` moves it
+deliberately: read the release notes it lists, then run the checks below.
+Don't make an adjacent Engine checkout a build dependency, and don't modify
+one as part of work here.
 
-If a required mechanism is missing, verify the safe API, name the blocked
-behavior and upstream owner, and file/link one narrow Engine request when
-that is authorized. Distinguish a missing mechanism or binding from a helper
-or documentation gap. Stop that dependent slice; continue independent work.
-Do not conceal the gap with a local substitute, fake success, or proof-only path.
+If a mechanism is missing, verify the safe API, name the blocked behavior and
+upstream owner, and file or link one narrow Engine request when that's
+authorized. Stop that slice and continue independent work. Known gaps:
 
-## Review and evidence
+- **Independent module packs.** Packing a single module into an Engine
+  container, and opening an installed container at runtime as a bundle
+  (rusty-engine Den task #9040; tracked here as rusty-goldbox #9052). Until
+  the Engine provides these, modules ship as source directories staged as
+  `RustyEngineContentBundle`s. Don't write a local container format.
+- **In-process Engine services for the CLI.** Confirm that
+  `EngineTestHost` is supported for tool use, or request a supported host
+  (rusty-goldbox Den task #9046). Don't substitute a local RNG.
 
-Use [docs/agent-review/README.md](docs/agent-review/README.md). Every change gets
-an Engine-reuse and existing-product-reuse check; trivial changes may record
-that no mechanism is affected. Assign bounded independent lanes when review
-agents are requested or the task's review workflow calls for them. Keep the
-same reviewer for fix rounds and reconcile source-backed findings against the
-original task. Review is not an extra user-approval gate.
+## Verification
 
-`rusty build --project src/RustyTemplate.Game/RustyTemplate.Game.csproj` builds
-and stages the ordinary CoreCLR product; `--aot` additionally publishes NativeAOT. Use focused
-semantic or interaction evidence only when it answers the changed behavior;
-do not add broad test gates to this small template. Distinguish build/staging,
-host launch, and visible interaction claims. Repeat passed checks only after
-material changes or an unresolved failure.
+Run what covers the change. The checks are:
+
+```bash
+dotnet test tests/RustyGoldbox.Tests
+dotnet run --project src/RustyGoldbox.Cli -- module validate modules/<id>
+rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
+```
+
+`rusty dev --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` is the
+edit-run loop for the product. `rusty build … --aot` is an explicit
+NativeAOT fidelity check, not a routine gate. Keep claims separate: a build,
+a validated module, a passing transcript and a visible interaction each prove
+something different. Add a check for a specific new behavior. Don't add broad
+coverage gates.
+
+## Review and work hygiene
+
+Use [docs/agent-review/README.md](docs/agent-review/README.md). Every change
+gets an Engine-reuse and an existing-product-reuse check. The runtime-trust
+lane is the place to push back on ceremony.
 
 Preserve unrelated edits. Keep generated output and installed artifacts
-ignored. Do not reset, force-push, or change adjacent repositories. Report what
-changed, relevant checks, and concrete limitations. Commit/push when requested
-or authorized by the active task; a review packet does not authorize publishing.
+ignored. Don't reset, force-push or change adjacent repositories. Commit or
+push only when asked or when the active task authorizes it. Report what
+changed, the checks you ran and any concrete limitations.

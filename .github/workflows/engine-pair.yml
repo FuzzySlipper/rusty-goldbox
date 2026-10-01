@@ -1,9 +1,9 @@
 name: engine-pair
 
-# Keeps the template on the newest published Engine pair. The pin advances
+# Keeps Rusty Goldbox on the newest published Engine pair. The pin advances
 # only after the product builds and serves on the proposed pair; a pair that
-# breaks the template fails this workflow and opens (or updates) an issue,
-# and the template stays on its working pin.
+# breaks the product fails this workflow and opens (or updates) an issue,
+# and the product stays on its working pin.
 
 on:
   schedule:
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PROJECT: src/RustyTemplate.Game/RustyTemplate.Game.csproj
+  PROJECT: src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
   FAILURE_LABEL: engine-pair-update
 
 jobs:
@@ -71,7 +71,7 @@ jobs:
           done
           kill -TERM "$dev" 2>/dev/null || true
           wait "$dev" || true
-          if [[ "$served" != true ]] || ! grep -q '"id":"rusty-template"' bootstrap.json; then
+          if [[ "$served" != true ]] || ! grep -q '"id":"rusty-goldbox"' bootstrap.json; then
             echo "The product did not serve on the proposed pair." | tee -a dev.log
             cat dev.log
             exit 1
@@ -96,7 +96,7 @@ jobs:
           git commit -q -F message.txt Directory.Build.props
           git push origin "HEAD:$GITHUB_REF_NAME"
           for issue in $(gh issue list --label "$FAILURE_LABEL" --state open --json number --jq '.[].number'); do
-            gh issue close "$issue" --comment "The template adopted Engine pair $TO in $(git rev-parse --short HEAD)."
+            gh issue close "$issue" --comment "Rusty Goldbox adopted Engine pair $TO in $(git rev-parse --short HEAD)."
           done
 
       - name: Report the failed update
@@ -107,7 +107,7 @@ jobs:
           TO: ${{ steps.propose.outputs.to }}
         run: |
           {
-            echo "The engine-pair workflow could not move the template from \`$FROM\` to \`$TO\` on \`$GITHUB_REF_NAME\`. The pin was not changed."
+            echo "The engine-pair workflow could not move the pin from \`$FROM\` to \`$TO\` on \`$GITHUB_REF_NAME\`. The pin was not changed."
             echo
             echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
@@ -124,10 +124,10 @@ jobs:
               echo '```'
             done
           } > report.md
-          gh label create "$FAILURE_LABEL" --color d73a4a --description "The newest Engine pair breaks the template" 2>/dev/null || true
+          gh label create "$FAILURE_LABEL" --color d73a4a --description "The newest Engine pair breaks the product" 2>/dev/null || true
           existing=$(gh issue list --label "$FAILURE_LABEL" --state open --json number --jq '.[0].number')
           if [[ -n "$existing" ]]; then
             gh issue comment "$existing" --body-file report.md
           else
-            gh issue create --label "$FAILURE_LABEL" --title "Engine pair $TO breaks the template" --body-file report.md
+            gh issue create --label "$FAILURE_LABEL" --title "Engine pair $TO breaks the product" --body-file report.md
           fi
