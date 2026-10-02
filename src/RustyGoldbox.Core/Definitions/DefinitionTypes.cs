@@ -8,6 +8,7 @@ public static class DefinitionTypes
     private static readonly ExpressionKind SelfNumber = new(ExprType.Number, Roots.Self);
     private static readonly ExpressionKind CombatNumber = new(ExprType.Number, Roots.Self | Roots.Target);
     private static readonly ExpressionKind PlainNumber = new(ExprType.Number, Roots.None);
+    private static readonly ExpressionKind FightNumber = new(ExprType.Number, Roots.Self | Roots.Combat);
     private static readonly ExpressionKind ClassNumber = new(ExprType.Number, Roots.Self | Roots.Class);
     private static readonly ModifierKind Modifier = new();
     private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
@@ -234,8 +235,8 @@ public static class DefinitionTypes
             new("values", new MapKind(new TextKind(), new NumberKind()), false, "Numbers the condition is applied with, and their defaults, read in its own fields as condition.<name>: { \"amount\": 5 } for \"ongoing 5\". apply_condition may give others."),
             new("modifiers", new ListKind(new ModifierKind(Roots.Self | Roots.Condition)), true, "Stat and check modifiers while the condition lasts."),
             new("prevents_actions", new BooleanKind(), false, "If true, a creature with the condition takes no actions."),
-            new("each_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition)), false, "Operations at the start of each of the creature's turns, for example ongoing damage (\"to\" must be self)."),
-            new("end_of_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition)), false, "Operations at the end of each of the creature's turns, for example a save that ends the condition."),
+            new("each_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition | Roots.Combat)), false, "Operations at the start of each of the creature's turns, for example ongoing damage (\"to\" must be self)."),
+            new("end_of_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition | Roots.Combat)), false, "Operations at the end of each of the creature's turns, for example a save that ends the condition."),
         ],
         """
         {
@@ -323,7 +324,7 @@ public static class DefinitionTypes
             new("surprise", CombatNumber, false, "Rolled at the start: whole rounds lost (0 for none). By side, self is the side's lead and target the other side's; by creature, self is the creature and target each enemy in turn, for example \"if 1d20 + target.stealth > self.perception then 1 else 0\"."),
             new("surprise_by", new EnumKind(["side", "creature"]), false, "Whether a whole side is surprised together (the default) or each creature on its own, so only some may be."),
             new("surprise_lead", SelfNumber, false, "By side: which member the side's surprise reads as self (and the other side as target), the highest, for example \"self.perception\" for the most alert or a scout."),
-            new("initiative", SelfNumber, true, "Initiative roll each round. With initiative_by \"side\" it is rolled once per side and self is the side's first creature still fighting."),
+            new("initiative", FightNumber, true, "Initiative roll each round. With initiative_by \"side\" it is rolled once per side and self is the side's first creature still fighting."),
             new("initiative_by", new EnumKind(["side", "creature"]), true, "Whether each side or each creature rolls initiative."),
             new("initiative_order", new EnumKind(["highest-first", "lowest-first"]), true, "Which result acts first; ties keep side and listing order."),
             new("initiative_each", new EnumKind(["round", "combat"]), true, "Whether initiative is rolled again every round or once for the whole combat."),
@@ -332,7 +333,7 @@ public static class DefinitionTypes
             new("budget", new ListKind(new ObjectKind(
             [
                 new("id", new TextKind(), true, "Budget name that action costs use, for example \"action\", \"standard\" or \"actions\"."),
-                new("per_turn", SelfNumber, true, "How many a creature has at the start of each turn, for example 3 or \"self.actions\" so conditions can change it; rounded down, never below 0."),
+                new("per_turn", FightNumber, true, "How many a creature has at the start of each turn, for example 3, \"self.actions\" so conditions can change it, or \"if combat.surprise_round then 1 else 2\"; rounded down, never below 0."),
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
             new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),
@@ -362,10 +363,10 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
             new("target", new EnumKind(["enemy", "ally", "hurt_ally", "fallen_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (by default the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, an ally out of the fight (to bring back), itself, or everyone on a side."),
-            new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
-            new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),
+            new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
+            new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),
             new("parameters", new ListKind(new TextKind()), false, "Names uses must supply (or get from an item), read as use.<name>, for example [\"damage\"]."),
-            new("available", new ExpressionKind(ExprType.Boolean, Roots.Self), false, "Whether the creature may take it now; without it, always."),
+            new("available", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Combat), false, "Whether the creature may take it now; without it, always."),
             new("check", new ReferenceKind("check"), false, "The check that decides the outcome, made by the actor against the target."),
             new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(OperationTypes.ActionRoots | Roots.Check))), false, "Operations for each outcome tier of the check: success, failure or one of its tiers. Tiers without an entry do nothing."),
             new("always", new ListKind(new OperationKind(OperationTypes.ActionRoots)), false, "Operations that run whatever the outcome, or the whole effect of an action without a check."),

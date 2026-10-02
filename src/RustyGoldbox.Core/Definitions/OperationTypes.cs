@@ -10,7 +10,7 @@ namespace RustyGoldbox.Core.Definitions;
 public static class OperationTypes
 {
     /// <summary>Roots for operation expressions; the containing field adds or removes some.</summary>
-    public const Roots ActionRoots = Roots.Self | Roots.Target | Roots.Use;
+    public const Roots ActionRoots = Roots.Self | Roots.Target | Roots.Use | Roots.Combat;
 
     private static readonly Field To = new("to", new EnumKind(["target", "self"]), false, "Who it happens to: the action's target (the default) or the creature acting.");
 

@@ -225,7 +225,10 @@ A condition may declare **values** with defaults (`{ "amount": 5 }`) that
 modifiers and its start- and end-of-turn operations read them as
 `condition.amount`, so a save that ends the condition is an end-of-turn check.
 A combat budget's `per_turn` is an expression, so a condition that lowers a
-stat it reads takes actions away.
+stat it reads takes actions away. Expressions evaluated during a fight
+(budgets, initiative, actions, operations and condition hooks) read
+`combat.round` and `combat.surprise_round`, so unsurprised creatures can act
+with less in a surprise round (3.5e).
 
 Each definition file holds one definition: `type`, `id` and the type's
 fields. Definition IDs use lowercase letters, digits and underscores, so they

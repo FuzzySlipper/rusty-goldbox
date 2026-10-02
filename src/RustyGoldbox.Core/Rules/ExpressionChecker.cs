@@ -61,11 +61,12 @@ internal sealed class ExpressionChecker(
             "outer" => Roots.Outer,
             "condition" => Roots.Condition,
             "item" => Roots.Item,
+            "combat" => Roots.Combat,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, self.rolled.<check>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name>, class.level, condition.<value> and item.<field>.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, self.rolled.<check>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name>, class.level, condition.<value>, item.<field> and combat.<field>.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -109,6 +110,16 @@ internal sealed class ExpressionChecker(
                 "level" => ExprType.Number,
                 "id" => ExprType.Text,
                 _ => throw new ExpressionException($"'class.{path.Name}' is not something a class can give. Read class.level (the creature's level in that class) or class.id (its ID).", path.Column),
+            };
+        }
+
+        if (root == Roots.Combat)
+        {
+            return path.Name switch
+            {
+                "round" => ExprType.Number,
+                "surprise_round" => ExprType.Boolean,
+                _ => throw new ExpressionException($"'combat.{path.Name}' is not something a fight gives. Read combat.round or combat.surprise_round.", path.Column),
             };
         }
 

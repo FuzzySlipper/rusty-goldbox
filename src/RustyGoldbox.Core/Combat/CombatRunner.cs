@@ -82,6 +82,7 @@ public sealed class CombatRunner
         while (winner is null && StandingSides() > 1 && round < maxRounds)
         {
             round++;
+            _evaluator.Combat = (round, Everyone.Any(member => member.SurprisedRounds > 0));
             Record(new RoundFact(round));
             if (order is null || rollEachRound)
             {

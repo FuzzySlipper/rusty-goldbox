@@ -30,6 +30,9 @@ public enum Roots
 
     /// <summary>item.id, item.kind, item.weight, item.cost: the item a class's equipment rule is asked about.</summary>
     Item = 256,
+
+    /// <summary>combat.round, combat.surprise_round: the fight being resolved.</summary>
+    Combat = 512,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -113,6 +116,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
         if (Roots.HasFlag(Roots.Item))
         {
             roots.Add("item");
+        }
+
+        if (Roots.HasFlag(Roots.Combat))
+        {
+            roots.Add("combat");
         }
 
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);

@@ -12,7 +12,7 @@
   "budget": [
     {
       "id": "action",
-      "per_turn": "self.actions"
+      "per_turn": "if combat.surprise_round then 1 else self.actions"
     }
   ],
   "track": "hit_points",

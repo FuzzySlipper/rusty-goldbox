@@ -42,6 +42,9 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
     private DiceRoller? Dice => dice;
 
+    /// <summary>The fight this evaluator is resolving, read as combat.round and combat.surprise_round; null outside one.</summary>
+    public (int Round, bool SurpriseRound)? Combat { get; set; }
+
     public Value Evaluate(CompiledExpression expression, Creature? self, Creature? target)
     {
         return Evaluate(expression, new Scope(self, target));
@@ -402,6 +405,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 }
 
                 return path.Name == "id" ? Value.Of(current.Id) : Value.Of(classLevel);
+            }
+
+            if (path.Root == "combat")
+            {
+                (int round, bool surpriseRound) = evaluator.Combat ?? throw new ExpressionException($"combat.{path.Name} has no value outside a fight.", path.Column);
+                return path.Name == "round" ? Value.Of(round) : Value.Of(surpriseRound);
             }
 
             if (path.Root == "item")
