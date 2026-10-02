@@ -214,7 +214,8 @@ frames carry their world size (a world-sized sprite's quad is its frame
 size), and the pivot is the anchor pixel's bottom edge. Art faces one way, and
 a negative X scale on the published transform mirrors a figure to face the
 other; the Engine refuses mirrored atlas UVs. Playback advances only during
-an Engine update, so animated sprites need updates while they play. Figures
+an Engine update; in the `demand` lifecycle steps come only on input, so
+animated sprites need the `realtime` lifecycle. Figures
 are unpublished before their atlas and texture are released. Textures are admitted from the module's bundle or
 container once per asset content. The Engine's default lights light the
 scene.
