@@ -73,6 +73,18 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void TheFirstLevelsChoicesAreKnownBeforeARoll()
+    {
+        ModuleSet set = ModuleLoader.Load(Degrees, []);
+        RuleSet rules = set.Rules!;
+        Core.Definitions.Definition creation = CharacterRules.DefaultCreation(rules)!;
+        Core.Definitions.Definition vanguard = rules.Find(Core.Definitions.DefinitionTypes.Class, "vanguard", out _)!;
+
+        Assert.Equal([["heritage"], ["background"]], CharacterRules.CreationChoices(creation).Select(grant => grant.Kinds));
+        Assert.Equal([["ancestry feat"], ["vanguard feat"]], CharacterRules.FirstLevelChoices(rules, vanguard).Select(grant => grant.Kinds));
+    }
+
+    [Fact]
     public void CreationRejectsWhatTheRulesetForbids()
     {
         Assert.Equal(["character.priority"], Problems(Rules.ClassicPath, new CreationRequest("x", "fighter", "human", Priority: ["str", "dex", "con", "int", "wis", "cha"])));

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "degrees-trial",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Degrees trial (test fixture)",
+  "requires": [
+    {
+      "id": "degrees",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "placeholder-art",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original test fixture: a one-room campaign for making degrees characters in the Game."
+}

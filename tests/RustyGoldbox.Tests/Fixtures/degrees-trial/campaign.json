@@ -1,0 +1,13 @@
+{
+  "type": "campaign",
+  "id": "trial",
+  "name": "Degrees trial",
+  "start": {
+    "area": "hall",
+    "entry": "door"
+  },
+  "party": {
+    "min": 1,
+    "max": 4
+  }
+}

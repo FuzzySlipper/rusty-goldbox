@@ -44,6 +44,7 @@ internal static class SessionProjection
             projection["partySize"] = new JsonObject { ["min"] = size.GetProperty("min").GetInt32(), ["max"] = size.GetProperty("max").GetInt32() };
             projection["races"] = Choices(rules, DefinitionTypes.Race);
             projection["classes"] = Choices(rules, DefinitionTypes.Class);
+            Creation(rules, projection);
             projection["items"] = Choices(rules, DefinitionTypes.Item);
             projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
                 .Where(asset => asset.Json.GetProperty("kind").GetString() == "portrait")
@@ -183,7 +184,65 @@ internal static class SessionProjection
         {
             ["id"] = definition.QualifiedId,
             ["name"] = definition.Name,
+            ["boosts"] = Boosts(definition),
         }).ToArray());
+    }
+
+    /// <summary>
+    /// What the party screen needs to ask for at a roll: the default creation's
+    /// method, attributes, grants and boosts, each class's first-level grants,
+    /// and every feature with its kind and boosts. Core checks the roll itself.
+    /// </summary>
+    private static void Creation(RuleSet rules, JsonObject projection)
+    {
+        if (CharacterRules.DefaultCreation(rules) is not Definition creation)
+        {
+            return;
+        }
+
+        projection["creation"] = new JsonObject
+        {
+            ["method"] = creation.Json.TryGetProperty("method", out JsonElement method) ? method.GetString() : "roll",
+            ["attributes"] = new JsonArray(creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()),
+            ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
+            ["boosts"] = Boosts(creation),
+        };
+        foreach (JsonNode? entry in projection["classes"]!.AsArray())
+        {
+            Definition characterClass = rules.Find(DefinitionTypes.Class, entry!["id"]!.GetValue<string>(), out _)!;
+            entry["grants"] = Grants(CharacterRules.FirstLevelChoices(rules, characterClass));
+        }
+
+        projection["features"] = new JsonArray(rules.OfType(DefinitionTypes.Feature).Select(feature => (JsonNode)new JsonObject
+        {
+            ["id"] = feature.QualifiedId,
+            ["name"] = feature.Name,
+            ["kind"] = feature.Json.GetProperty("kind").GetString(),
+            ["boosts"] = Boosts(feature),
+        }).ToArray());
+    }
+
+    private static JsonArray Grants(List<Grant> grants)
+    {
+        return new JsonArray(grants.Select(grant => (JsonNode)new JsonObject
+        {
+            ["kinds"] = new JsonArray(grant.Kinds.Select(kind => (JsonNode)JsonValue.Create(kind)!).ToArray()),
+            ["count"] = grant.Count,
+        }).ToArray());
+    }
+
+    /// <summary>A definition's boosts as lists of the attributes each may raise; an empty list is any attribute.</summary>
+    private static JsonArray Boosts(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("boosts", out JsonElement boosts))
+        {
+            return [];
+        }
+
+        return new JsonArray(boosts.EnumerateArray().Select(boost => (JsonNode)new JsonArray(
+            boost.TryGetProperty("from", out JsonElement from)
+                ? from.EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()
+                : [])).ToArray());
     }
 
     private static JsonObject Member(RuleSet rules, Character character)
@@ -196,6 +255,7 @@ internal static class SessionProjection
             ["level"] = character.Level,
             ["tracks"] = Strings(CharacterSheet.Tracks(rules, character).Select(track => $"{track.Track.Name} {Number(track.Current)}/{Number(track.Max)}")),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
+            ["features"] = Strings(character.Features.Select(feature => feature.Name)),
             ["equipment"] = new JsonArray(character.Equipment.Select(item => (JsonNode)new JsonObject { ["id"] = item.QualifiedId, ["name"] = item.Name }).ToArray()),
             ["gold"] = (double)character.Gold,
             ["portrait"] = character.Portrait?.QualifiedId,

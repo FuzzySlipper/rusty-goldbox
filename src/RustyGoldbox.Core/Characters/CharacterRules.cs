@@ -229,6 +229,45 @@ public static class CharacterRules
         return total;
     }
 
+    /// <summary>The character-creation definition used when none is named, or null when the set has none or several without a default.</summary>
+    public static Definition? DefaultCreation(RuleSet rules) => FindCreation(rules, null, []);
+
+    /// <summary>The choices creation grants every new character.</summary>
+    public static List<Grant> CreationChoices(Definition creation) => CreationGrants(creation);
+
+    /// <summary>
+    /// The choices a new character's first level in <paramref name="characterClass"/>
+    /// grants besides creation's: the advancement's grants whose "when" holds
+    /// for a first-level creature of the class, then the class's first level.
+    /// A "when" that needs more than that (such as an attribute) is left out.
+    /// </summary>
+    public static List<Grant> FirstLevelChoices(RuleSet rules, Definition characterClass)
+    {
+        Creature probe = new("self") { Class = characterClass, Level = 1, AdvancingClasses = 1 };
+        probe.ClassLevels[characterClass] = 1;
+        Evaluator evaluator = new(rules, null);
+        List<Grant> grants = [];
+        if (rules.Advancement is Definition advancement && advancement.Json.TryGetProperty("grants", out JsonElement advancementGrants))
+        {
+            for (int index = 0; index < advancementGrants.GetArrayLength(); index++)
+            {
+                try
+                {
+                    if (evaluator.Evaluate(rules.Expression(advancement, $"$.grants[{index}].when"), probe, null).Boolean)
+                    {
+                        grants.Add(Grant(advancementGrants[index], $"level 1 ({advancement.QualifiedId})"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                }
+            }
+        }
+
+        grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[0], "grants", $"{characterClass.Name} level 1"));
+        return grants;
+    }
+
     /// <summary>Gives a character a portrait asset; problems name the reference.</summary>
     public static bool SetPortrait(RuleSet rules, Character character, string reference, List<ModuleDiagnostic> problems)
     {

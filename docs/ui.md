@@ -11,6 +11,13 @@ the first-person view in a window at the top left
 not cover it. The product project selects this directory and module for SDK
 staging.
 
+The party screen asks for what a roll needs from the projection's `creation`
+(the default creation's method, attributes, grants and boosts), each class's
+first-level `grants`, and every feature's kind and boosts: a select for each
+feature a grant takes and, under creation by boosts, for each boost that
+offers a choice, in the order Core takes them (race, creation features, class,
+creation). Core checks the roll; its notes say what to fix.
+
 Keep only browser assets in `src/ui/`. The host admits every staged file by its
 content type; documentation belongs under `docs/`.
 

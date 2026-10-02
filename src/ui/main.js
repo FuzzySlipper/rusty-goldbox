@@ -25,6 +25,24 @@ export function mountProductUi(root, context) {
   const race = element('select', { 'aria-label': 'Race' });
   const characterClass = element('select', { 'aria-label': 'Class' });
   const portrait = element('select', { 'aria-label': 'Portrait' });
+  // Feature and boost choices, kept by slot so a choice survives re-renders.
+  const choiceSelects = new Map();
+  const choiceSelect = (key, label) => {
+    if (!choiceSelects.has(key)) {
+      const select = element('select', { 'aria-label': label });
+      select.addEventListener('change', () => rerenderParty());
+      choiceSelects.set(key, select);
+    }
+    return choiceSelects.get(key);
+  };
+  let lastView = null;
+  const rerenderParty = () => {
+    if (lastView?.screen === 'party') {
+      body.replaceChildren(renderParty(lastView));
+    }
+  };
+  race.addEventListener('change', () => rerenderParty());
+  characterClass.addEventListener('change', () => rerenderParty());
   const command = element('input', { size: '14', placeholder: 'command', 'aria-label': 'Play command' });
   command.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && command.value.trim().length > 0) {
@@ -37,6 +55,7 @@ export function mountProductUi(root, context) {
   root.append(panel);
 
   const render = (view) => {
+    lastView = view;
     status.textContent = view.status ?? '';
     notes.replaceChildren(...(view.notes ?? []).map((note) => element('li', {}, note)));
     if (view.screen === 'title') {
@@ -78,18 +97,91 @@ export function mountProductUi(root, context) {
         // Pictures need an Engine image path (rusty-engine #9129); until then the portrait is named.
         element('div', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}${member.portrait ? `, portrait ${member.portrait}` : ''}`),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
+        ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
         row(item,
           button('Give/take', () => send({ action: 'equip', member: index, item: item.value })),
           button('Drop', () => send({ action: 'drop', member: index })))));
     });
     const size = view.partySize ?? { min: 1, max: 1 };
+    const choices = renderChoices(view);
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`), members,
-      row(name, race, characterClass,
-        portrait,
-        button('Roll', () => send({ action: 'roll', name: name.value, race: race.value, class: characterClass.value, ...(portrait.value ? { portrait: portrait.value } : {}) }))),
+      row(name, race, characterClass, portrait),
+      choices.rows,
+      row(button('Roll', () => send({
+        action: 'roll',
+        name: name.value,
+        race: race.value,
+        class: characterClass.value,
+        ...(portrait.value ? { portrait: portrait.value } : {}),
+        ...(choices.features().length > 0 ? { features: choices.features() } : {}),
+        ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),
+      }))),
       row(button('Begin', () => send({ action: 'begin' })), button('Back', () => send({ action: 'quit' }))));
+  };
+
+  /**
+   * The choices a roll needs, in the order Core takes them: a feature for each
+   * slot creation and the class's first level grant, then (for creation by
+   * boosts) a boost for each choice the race, the creation features, the class
+   * and the creation offer. Fixed boosts need no choice.
+   */
+  const renderChoices = (view) => {
+    const creation = view.creation;
+    const chosenClass = (view.classes ?? []).find((entry) => entry.id === characterClass.value);
+    const chosenRace = (view.races ?? []).find((entry) => entry.id === race.value);
+    const features = view.features ?? [];
+    const rows = element('div');
+    const featureSlots = [];
+    const creationSlots = [];
+    if (!creation) {
+      return { rows, features: () => [], boosts: () => [] };
+    }
+
+    const grants = [...creation.grants.map((grant) => ({ grant, creation: true })), ...(chosenClass?.grants ?? []).map((grant) => ({ grant, creation: false }))];
+    grants.forEach(({ grant, creation: fromCreation }, index) => {
+      for (let made = 0; made < grant.count; made++) {
+        const kinds = grant.kinds.join(' or ');
+        const select = choiceSelect(`feature-${index}-${made}-${grant.kinds.join('|')}`, `Choose ${kinds}`);
+        fill(select, features.filter((feature) => grant.kinds.includes(feature.kind)));
+        featureSlots.push(select);
+        if (fromCreation) {
+          creationSlots.push(select);
+        }
+
+        rows.append(row(element('span', {}, `${kinds}:`), select));
+      }
+    });
+
+    const boostSlots = [];
+    if (creation.method === 'boosts') {
+      const sources = [
+        ['race', chosenRace],
+        ...creationSlots.map((select, index) => [`feature-${index}`, features.find((feature) => feature.id === select.value)]),
+        ['class', chosenClass],
+        ['creation', { name: 'Free', boosts: creation.boosts }],
+      ];
+      for (const [key, source] of sources) {
+        (source?.boosts ?? []).forEach((options, index) => {
+          if (options.length === 1) {
+            return;
+          }
+
+          const offered = options.length === 0 ? creation.attributes : options;
+          const select = choiceSelect(`boost-${key}-${source.id ?? key}-${index}`, `${source.name} boost ${index + 1}`);
+          fill(select, offered.map((attribute) => ({ id: attribute, name: attribute })));
+          boostSlots.push(select);
+          rows.append(row(element('span', {}, `${source.name} boost ${index + 1}:`), select));
+        });
+      }
+    }
+
+    return {
+      rows,
+      features: () => featureSlots.map((select) => select.value).filter((value) => value),
+      boosts: () => boostSlots.map((select) => select.value),
+    };
   };
 
   const renderPlay = (view) => {
