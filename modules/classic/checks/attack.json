@@ -2,7 +2,8 @@
   "type": "check",
   "id": "attack",
   "name": "Melee attack",
-  "roll": "1d20 + self.str_to_hit",
+  "roll": "1d20",
+  "bonus": "self.str_to_hit",
   "target": "self.thac0 - target.ac - min(max(self.thac0 - target.ac - 20, 0), 5)",
   "succeeds": "at-least"
 }

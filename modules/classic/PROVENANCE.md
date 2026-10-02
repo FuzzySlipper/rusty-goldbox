@@ -22,7 +22,7 @@ artwork, its title and trademarks, or its variable experience point rule.
 | `items/` | Chapter I, equipment and armour (pp. 31–34) |
 | `creation/standard` (rolls, starting gold) | Chapter I (pp. 1, 30) |
 | `spells/` | Chapter II, cleric and magic user level 1 spells; descriptions are reworded |
-| `checks/`, `combat/standard`, `tables/surprise_segments` | Chapter III, combat (pp. 125–128) |
+| `checks/`, `actions/`, `combat/standard` | Chapter III, combat (pp. 125–128) |
 
 Monsters (`monsters/`) are original content written for this module. They use
 the Chapter III rule that monsters attack and save as fighters of an
@@ -48,5 +48,10 @@ small:
 - Hit points gained at a level are at least 1 (`max(1, ...)`), so a low
   constitution penalty can't leave a character with 0 hit points. The source
   doesn't state a minimum.
-- Armour movement limits, thief skills, turning undead and spell effects are
-  not modelled yet.
+- Surprise costs the surprised side its first whole round, rather than one
+  or two segments.
+- Combat has no positions or movement yet, fighters make one attack per round
+  at every level, and spells aren't cast in combat (their effects are defined
+  but spell slots aren't spent yet). Sleep has no effect defined.
+- Monsters' hit points are their hit dice rolled as written, with no minimum.
+- Armour movement limits, thief skills and turning undead are not modelled yet.

@@ -1,0 +1,8 @@
+{
+  "type": "race",
+  "id": "human",
+  "name": "Human",
+  "classes": [
+    "soldier"
+  ]
+}

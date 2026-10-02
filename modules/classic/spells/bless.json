@@ -9,5 +9,8 @@
   "duration": "6 rounds",
   "area": "50 × 50 ft",
   "casting_time": "1 round",
+  "effect": {
+    "action": "bless"
+  },
   "description": "Allies in the area who are not yet in melee gain +1 to attack rolls and morale."
 }

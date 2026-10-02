@@ -96,7 +96,9 @@ public sealed class CliTests
         using JsonDocument json = JsonDocument.Parse(output);
         JsonElement result = json.RootElement;
         Assert.Equal(11, result.GetProperty("target").GetDecimal());
-        Assert.Equal(result.GetProperty("rolls")[0].GetProperty("total").GetDecimal() + 1, result.GetProperty("roll").GetDecimal());
+        Assert.Equal(result.GetProperty("rolls")[0].GetProperty("total").GetDecimal(), result.GetProperty("roll").GetDecimal());
+        Assert.Equal(1, result.GetProperty("bonus").GetDecimal());
+        Assert.Equal(result.GetProperty("roll").GetDecimal() + 1, result.GetProperty("total").GetDecimal());
     }
 
     [Fact]

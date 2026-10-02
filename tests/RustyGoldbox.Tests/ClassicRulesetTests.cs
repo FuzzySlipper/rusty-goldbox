@@ -123,7 +123,7 @@ public sealed class ClassicRulesetTests
         {
             using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "tests"));
             DiceRoller dice = new(engine.Random, stream);
-            new Evaluator(Classic, dice).Evaluate(Classic.Expression(sword, "$.damage"), Character("fighter", 1), target);
+            new Evaluator(Classic, dice).Evaluate(Classic.Expression(sword, "$.parameters.damage"), Character("fighter", 1), target);
             return dice.Rolls.ToList();
         });
 

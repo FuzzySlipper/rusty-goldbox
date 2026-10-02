@@ -29,5 +29,19 @@
       "xp": 10000,
       "hp": "max(1, 1d10 + self.grit_mod)"
     }
+  ],
+  "actions": [
+    {
+      "action": "aim"
+    },
+    {
+      "action": "melee_attack",
+      "from_item": "weapon"
+    },
+    {
+      "action": "melee_attack",
+      "name": "Punch",
+      "damage": "1d3"
+    }
   ]
 }

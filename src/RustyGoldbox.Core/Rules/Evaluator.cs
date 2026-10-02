@@ -4,8 +4,22 @@ using RustyGoldbox.Core.Expressions;
 
 namespace RustyGoldbox.Core.Rules;
 
-/// <summary>The outcome of a check: the roll with its modifiers against the target.</summary>
-public sealed record CheckResult(decimal Roll, decimal Modifier, decimal Total, decimal Target, bool Success);
+/// <summary>
+/// The outcome of a check. <see cref="Total"/> is the roll plus its bonus and
+/// modifiers; <see cref="Margin"/> is how far it beat the target (negative when
+/// it failed); <see cref="Tier"/> is the first matching tier, or success/failure.
+/// </summary>
+public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, decimal Total, decimal Target, decimal Margin, bool Success, string Tier);
+
+/// <summary>
+/// What an expression can read: the creatures, the parameters of the action
+/// being used, and the check being resolved.
+/// </summary>
+public sealed record Scope(
+    Creature? Self,
+    Creature? Target,
+    IReadOnlyDictionary<string, CompiledExpression>? Use = null,
+    CheckResult? Check = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -21,7 +35,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
     public Value Evaluate(CompiledExpression expression, Creature? self, Creature? target)
     {
-        return new Run(this, expression, self, target).Evaluate(expression.Root);
+        return Evaluate(expression, new Scope(self, target));
+    }
+
+    public Value Evaluate(CompiledExpression expression, Scope scope)
+    {
+        return new Run(this, expression, scope).Evaluate(expression.Root);
     }
 
     /// <summary>A stat's value for a creature, including modifiers.</summary>
@@ -73,6 +92,9 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
     public CheckResult Check(Definition check, Creature self, Creature? target)
     {
         decimal roll = Evaluate(rules.Expression(check, "$.roll"), self, target).Number;
+        decimal bonus = rules.TryExpression(check, "$.bonus", out CompiledExpression? bonusExpression)
+            ? Evaluate(bonusExpression!, self, target).Number
+            : 0;
         decimal modifier = 0;
         foreach (Definition source in self.ModifierSources())
         {
@@ -86,9 +108,27 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         }
 
         decimal needed = Evaluate(rules.Expression(check, "$.target"), self, target).Number;
-        decimal total = Add(roll, modifier, 1);
-        bool success = check.Json.GetProperty("succeeds").GetString() == "at-least" ? total >= needed : total <= needed;
-        return new CheckResult(roll, modifier, total, needed, success);
+        decimal total = Add(Add(roll, bonus, 1), modifier, 1);
+        bool atLeast = check.Json.GetProperty("succeeds").GetString() == "at-least";
+        bool success = atLeast ? total >= needed : total <= needed;
+        decimal margin = Arithmetic(() => atLeast ? total - needed : needed - total, 1);
+        CheckResult result = new(roll, bonus, modifier, total, needed, margin, success, success ? "success" : "failure");
+        if (check.Json.TryGetProperty("tiers", out JsonElement tiers))
+        {
+            int index = 0;
+            foreach (JsonElement tier in tiers.EnumerateArray())
+            {
+                CompiledExpression when = rules.Expression(check, $"$.tiers[{index}].when");
+                if (Evaluate(when, new Scope(self, target, null, result)).Boolean)
+                {
+                    return result with { Tier = tier.GetProperty("name").GetString()! };
+                }
+
+                index++;
+            }
+        }
+
+        return result;
     }
 
     private Value BaseStat(Creature creature, string name)
@@ -152,6 +192,14 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return creature.Class is not null
                     ? Value.Of(creature.Class.Id)
                     : throw new ExpressionException($"{creature.Label} has no class. Give {creature.Label} a \"class\" (or a \"monster\").", 1);
+            case "hit_points":
+                return creature.HitPoints is decimal current
+                    ? Value.Of(current)
+                    : throw new ExpressionException($"{creature.Label} has no hit points. Give {creature.Label} \"hit_points\".", 1);
+            case "max_hit_points":
+                return creature.MaxHitPoints is decimal max
+                    ? Value.Of(max)
+                    : throw new ExpressionException($"{creature.Label} has no maximum hit points. Give {creature.Label} \"max_hit_points\".", 1);
             default:
                 return creature.Race is not null
                     ? Value.Of(creature.Race.Id)
@@ -159,7 +207,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         }
     }
 
-    private sealed class Run(Evaluator evaluator, CompiledExpression expression, Creature? self, Creature? target)
+    private sealed class Run(Evaluator evaluator, CompiledExpression expression, Scope scope)
     {
         public Value Evaluate(Expr expr)
         {
@@ -191,7 +239,30 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
         private Value ReadPath(PathExpr path)
         {
-            Creature? creature = path.Root == "self" ? self : target;
+            if (path.Root == "use")
+            {
+                if (scope.Use is null || !scope.Use.TryGetValue(path.Name, out CompiledExpression? parameter))
+                {
+                    throw new ExpressionException($"use.{path.Name} has no value: the action wasn't used with that parameter.", path.Column);
+                }
+
+                // Parameters are evaluated where they're read, against the same creatures.
+                return evaluator.Evaluate(parameter, scope with { Use = null, Check = null });
+            }
+
+            if (path.Root == "check")
+            {
+                CheckResult check = scope.Check ?? throw new ExpressionException($"check.{path.Name} has no value outside a check.", path.Column);
+                return Value.Of(path.Name switch
+                {
+                    "roll" => check.Roll,
+                    "total" => check.Total,
+                    "target" => check.Target,
+                    _ => check.Margin,
+                });
+            }
+
+            Creature? creature = path.Root == "self" ? scope.Self : scope.Target;
             if (creature is null)
             {
                 throw new ExpressionException($"'{path.Root}.{path.Name}' needs a {path.Root} creature, but none was given.", path.Column);
@@ -271,6 +342,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 "ceil" => Value.Of(decimal.Ceiling(arguments[0])),
                 "abs" => Value.Of(Math.Abs(arguments[0])),
                 "roll_keep" => Value.Of(RollKeep(arguments[0], arguments[1], arguments[2], call.Column)),
+                "roll_count" => Value.Of(RollCount(arguments[0], arguments[1], arguments[2], call.Column)),
                 _ => Value.Of(RollDynamic(arguments[0], arguments[1], call.Column)),
             };
         }
@@ -284,6 +356,22 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             }
 
             return count == 0 ? 0 : Roll((int)count, (int)sides, column, keep);
+        }
+
+        private long RollCount(decimal count, decimal sides, decimal atLeast, int column)
+        {
+            if (count != decimal.Truncate(count) || sides != decimal.Truncate(sides) || atLeast != decimal.Truncate(atLeast)
+                || count < 0 || sides < 1 || count > int.MaxValue || sides > int.MaxValue || atLeast < int.MinValue || atLeast > int.MaxValue)
+            {
+                throw new ExpressionException($"roll_count({count}, {sides}, {atLeast}) needs whole numbers: dice 0 or more, sides 1 or more.", column);
+            }
+
+            if (evaluator.Dice is null)
+            {
+                throw new ExpressionException("This expression rolls dice, but no dice roller was given.", column);
+            }
+
+            return count == 0 ? 0 : evaluator.Dice.Count((int)count, (int)sides, (int)atLeast);
         }
 
         private long RollKeep(decimal count, decimal sides, decimal keep, int column)

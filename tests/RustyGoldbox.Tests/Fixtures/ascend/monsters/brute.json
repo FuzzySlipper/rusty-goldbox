@@ -9,11 +9,12 @@
     "ac": "13",
     "might": "16"
   },
-  "attacks": [
+  "xp": 100,
+  "actions": [
     {
-      "name": "club",
-      "damage": "1d8 + self.might_mod"
+      "action": "melee_attack",
+      "name": "Club",
+      "damage": "1d8"
     }
-  ],
-  "xp": 100
+  ]
 }

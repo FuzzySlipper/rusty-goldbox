@@ -37,6 +37,7 @@ public sealed class RuleSetBuilder
         builder.CompileModifiers();
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
+        builder.CheckActions();
         return builder._rules;
     }
 
@@ -212,7 +213,7 @@ public sealed class RuleSetBuilder
             return null;
         }
 
-        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, InferDerived, IsInferring);
+        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), InferDerived, IsInferring);
         ExprType type;
         try
         {
@@ -328,6 +329,175 @@ public sealed class RuleSetBuilder
         }
     }
 
+    private void CheckActions()
+    {
+        HashSet<string> budget = _rules.OfType(DefinitionTypes.Combat)
+            .SelectMany(combat => combat.Json.GetProperty("budget").EnumerateArray().Select(entry => entry.GetProperty("id").GetString()!))
+            .ToHashSet();
+        foreach (Definition action in _rules.OfType(DefinitionTypes.Action))
+        {
+            JsonElement cost = action.Json.GetProperty("cost");
+            foreach (JsonProperty entry in cost.EnumerateObject())
+            {
+                if (!budget.Contains(entry.Name))
+                {
+                    string known = budget.Count == 0 ? "No combat definition declares a budget." : $"Budget IDs: {string.Join(", ", budget.Order(StringComparer.Ordinal))}.";
+                    Error(action, "action.cost", $"$.cost.{entry.Name}", $"'{entry.Name}' is not a budget in any combat definition. {known}");
+                }
+                else if (entry.Value.GetInt32() < 0)
+                {
+                    Error(action, "action.cost", $"$.cost.{entry.Name}", "Costs can't be negative.");
+                }
+            }
+
+            if (!cost.EnumerateObject().Any(entry => entry.Value.GetInt32() > 0))
+            {
+                Error(action, "action.cost", "$.cost", "An action must cost at least 1 of some budget, or a creature could take it forever.");
+            }
+
+            bool hasCheck = action.Json.TryGetProperty("check", out _);
+            if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes))
+            {
+                if (!hasCheck)
+                {
+                    Error(action, "action.outcomes", "$.outcomes", "Outcomes need a check to choose between them. Add \"check\", or put the operations in \"always\".");
+                }
+                else if (_rules.References.TryGetValue((action, "$.check"), out Definition? check))
+                {
+                    CheckOutcomes(action, check, outcomes, "$.outcomes");
+                }
+            }
+
+            if (!hasCheck && !action.Json.TryGetProperty("always", out _))
+            {
+                Error(action, "action.outcomes", "$", "An action needs \"always\" operations, or a \"check\" with \"outcomes\"; otherwise it does nothing.");
+            }
+
+            WalkOperations(action, action.Json, "$");
+        }
+
+        foreach (Definition definition in _rules.Definitions)
+        {
+            foreach (ReferenceSite site in definition.References)
+            {
+                if (site.Kind is ReferenceKind { DefinitionType: "action" } && site.JsonPath.EndsWith(".action", StringComparison.Ordinal)
+                    && _rules.References.TryGetValue((definition, site.JsonPath), out Definition? action))
+                {
+                    string usePath = site.JsonPath[..^".action".Length];
+                    CheckUse(definition, JsonAt(definition.Json, usePath), usePath, action);
+                }
+            }
+
+            if (definition.Type == DefinitionTypes.Condition)
+            {
+                WalkOperations(definition, definition.Json, "$");
+            }
+        }
+    }
+
+    /// <summary>Finds check operations under an element and checks their outcome tiers.</summary>
+    private void WalkOperations(Definition definition, JsonElement element, string path)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            if (element.TryGetProperty("op", out JsonElement op) && op.ValueKind == JsonValueKind.String && op.GetString() == "check"
+                && element.TryGetProperty("outcomes", out JsonElement outcomes)
+                && _rules.References.TryGetValue((definition, $"{path}.check"), out Definition? check))
+            {
+                CheckOutcomes(definition, check, outcomes, $"{path}.outcomes");
+            }
+
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                WalkOperations(definition, property.Value, $"{path}.{property.Name}");
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            int index = 0;
+            foreach (JsonElement item in element.EnumerateArray())
+            {
+                WalkOperations(definition, item, $"{path}[{index}]");
+                index++;
+            }
+        }
+    }
+
+    private void CheckOutcomes(Definition owner, Definition check, JsonElement outcomes, string path)
+    {
+        List<string> tiers = ["success", "failure"];
+        if (check.Json.TryGetProperty("tiers", out JsonElement declared))
+        {
+            tiers.AddRange(declared.EnumerateArray().Select(tier => tier.GetProperty("name").GetString()!));
+        }
+
+        foreach (JsonProperty outcome in outcomes.EnumerateObject())
+        {
+            if (!tiers.Contains(outcome.Name))
+            {
+                Error(owner, "action.outcomes", $"{path}.{outcome.Name}",
+                    $"'{outcome.Name}' is not an outcome of check {check.QualifiedId}. Its outcomes: {string.Join(", ", tiers)}.");
+            }
+        }
+    }
+
+    private void CheckUse(Definition owner, JsonElement use, string path, Definition action)
+    {
+        List<string> parameters = UseParameters(action);
+        bool fromItem = use.TryGetProperty("from_item", out _);
+        foreach (JsonProperty argument in use.EnumerateObject())
+        {
+            if (argument.Name is "action" or "name" or "from_item")
+            {
+                continue;
+            }
+
+            if (!parameters.Contains(argument.Name))
+            {
+                string known = parameters.Count == 0 ? $"{action.QualifiedId} has no parameters." : $"Parameters of {action.QualifiedId}: {string.Join(", ", parameters)}.";
+                Error(owner, "use.parameter", $"{path}.{argument.Name}", $"'{argument.Name}' is not a parameter of the action. {known}");
+            }
+        }
+
+        foreach (string parameter in parameters.Where(parameter => !use.TryGetProperty(parameter, out _)))
+        {
+            if (!fromItem)
+            {
+                Error(owner, "use.parameter", path,
+                    $"This use of {action.QualifiedId} doesn't give its parameter '{parameter}'. Add \"{parameter}\": an expression, or \"from_item\" to take it from an equipped item.");
+            }
+        }
+    }
+
+    /// <summary>The element at a path this builder recorded, such as <c>$.actions[0]</c>.</summary>
+    private static JsonElement JsonAt(JsonElement root, string path)
+    {
+        JsonElement current = root;
+        int i = 1;
+        while (i < path.Length)
+        {
+            if (path[i] == '.')
+            {
+                int end = i + 1;
+                while (end < path.Length && path[end] != '.' && path[end] != '[')
+                {
+                    end++;
+                }
+
+                current = current.GetProperty(path[(i + 1)..end]);
+                i = end;
+            }
+            else
+            {
+                int close = path.IndexOf(']', i);
+                current = current[int.Parse(path[(i + 1)..close], System.Globalization.CultureInfo.InvariantCulture)];
+                i = close + 1;
+            }
+        }
+
+        return current;
+    }
+
     /// <summary>Whether an expression reads self.<paramref name="stat"/> directly.</summary>
     private static bool Reads(Expr expr, string stat)
     {
@@ -345,6 +515,14 @@ public sealed class RuleSetBuilder
     private string StatList(bool attributesOnly) => _rules.StatList(attributesOnly);
 
     private bool IsInferring(Definition derived) => _inferring.Contains(derived);
+
+    /// <summary>The parameters an action's expressions may read as use.&lt;name&gt;.</summary>
+    private static List<string> UseParameters(Definition definition)
+    {
+        return definition.Json.TryGetProperty("parameters", out JsonElement parameters) && parameters.ValueKind == JsonValueKind.Array
+            ? parameters.EnumerateArray().Select(parameter => parameter.GetString()!).ToList()
+            : [];
+    }
 
     private void ExpressionError(Definition definition, ExpressionSite site, string rule, ExpressionException exception)
     {

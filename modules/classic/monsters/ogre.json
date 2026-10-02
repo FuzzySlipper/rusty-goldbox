@@ -10,8 +10,9 @@
     "movement": "90",
     "size": "'large'"
   },
-  "attacks": [
+  "actions": [
     {
+      "action": "melee_attack",
       "name": "club",
       "damage": "1d10"
     }

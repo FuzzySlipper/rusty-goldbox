@@ -1,0 +1,26 @@
+{
+  "type": "class",
+  "id": "soldier",
+  "name": "Soldier",
+  "levels": [
+    {
+      "xp": 0,
+      "hp": "10 + self.body"
+    },
+    {
+      "xp": 1000,
+      "hp": "1d6"
+    }
+  ],
+  "actions": [
+    {
+      "action": "strike",
+      "from_item": "weapon"
+    },
+    {
+      "action": "strike",
+      "name": "Fist",
+      "damage": "1d3"
+    }
+  ]
+}

@@ -106,5 +106,16 @@
       3,
       2
     ]
+  ],
+  "actions": [
+    {
+      "action": "melee_attack",
+      "from_item": "weapon"
+    },
+    {
+      "action": "melee_attack",
+      "name": "Punch",
+      "damage": "1d2"
+    }
   ]
 }

@@ -1,0 +1,21 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Standard",
+  "initiative": "1d20 + self.grace_mod",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "budget": [
+    {
+      "id": "standard",
+      "per_turn": 1
+    },
+    {
+      "id": "move",
+      "per_turn": 1
+    }
+  ],
+  "defeated": "self.hit_points <= 0"
+}

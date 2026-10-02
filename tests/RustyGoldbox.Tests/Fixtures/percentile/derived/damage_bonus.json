@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "damage_bonus",
+  "name": "Damage bonus",
+  "value": "if self.body >= 15 then 2 else 0"
+}

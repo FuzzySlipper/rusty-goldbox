@@ -9,5 +9,9 @@
   "duration": "Instantaneous",
   "area": "Creature touched",
   "casting_time": "5 segments",
+  "effect": {
+    "action": "spell_heal",
+    "amount": "1d8"
+  },
   "description": "Restores 1d8 hit points, never above the creature's normal maximum. No effect on undead."
 }

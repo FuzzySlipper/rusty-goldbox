@@ -54,5 +54,16 @@
       "xp": 500000,
       "hp": "3"
     }
+  ],
+  "actions": [
+    {
+      "action": "melee_attack",
+      "from_item": "weapon"
+    },
+    {
+      "action": "melee_attack",
+      "name": "Punch",
+      "damage": "1d2"
+    }
   ]
 }

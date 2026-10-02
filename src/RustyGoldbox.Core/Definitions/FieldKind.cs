@@ -9,6 +9,12 @@ public enum Roots
     None = 0,
     Self = 1,
     Target = 2,
+
+    /// <summary>use.&lt;parameter&gt;: the parameters an action was used with.</summary>
+    Use = 4,
+
+    /// <summary>check.roll, check.total, check.target, check.margin: the check being resolved.</summary>
+    Check = 8,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -20,6 +26,11 @@ public abstract record FieldKind
 public sealed record TextKind : FieldKind
 {
     public override string Describe() => "text";
+}
+
+public sealed record BooleanKind : FieldKind
+{
+    public override string Describe() => "true or false";
 }
 
 public sealed record IntegerKind : FieldKind
@@ -54,7 +65,17 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
             roots.Add("target");
         }
 
-        string reads = roots.Count == 0 ? "no creature reads" : "may read " + string.Join(" and ", roots);
+        if (Roots.HasFlag(Roots.Use))
+        {
+            roots.Add("use");
+        }
+
+        if (Roots.HasFlag(Roots.Check))
+        {
+            roots.Add("check");
+        }
+
+        string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);
         return $"expression ({type}; {reads})";
     }
 }
@@ -100,6 +121,27 @@ public sealed record ModifierKind : FieldKind
     public override string Describe()
     {
         return "modifier { \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read self) }";
+    }
+}
+
+/// <summary>
+/// An operation: <c>{ "op": name, ...its fields }</c>. Its expressions may read
+/// <see cref="Roots"/>; inside a check's outcomes they may also read check.
+/// </summary>
+public sealed record OperationKind(Roots Roots) : FieldKind
+{
+    public override string Describe() => "operation { \"op\": name, ...fields } (see `goldbox schema operations`)";
+}
+
+/// <summary>
+/// A use of an action: <c>{ "action": ref, "name"?: text, "from_item"?: item kind, ...parameter: expression }</c>.
+/// Parameters the use doesn't give come from an equipped item of the from_item kind.
+/// </summary>
+public sealed record UseKind : FieldKind
+{
+    public override string Describe()
+    {
+        return "use { \"action\": action reference, \"name\"?: text, \"from_item\"?: item kind, <parameter>: number expression (may read self, target), ... }";
     }
 }
 

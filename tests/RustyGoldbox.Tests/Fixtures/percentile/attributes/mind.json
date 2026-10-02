@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "mind",
+  "name": "Mind",
+  "min": 3,
+  "max": 18,
+  "default": 10
+}

@@ -10,8 +10,9 @@
     "movement": "120",
     "size": "'small'"
   },
-  "attacks": [
+  "actions": [
     {
+      "action": "melee_attack",
       "name": "bite",
       "damage": "1d3"
     }

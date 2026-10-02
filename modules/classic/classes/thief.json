@@ -53,5 +53,16 @@
       "xp": 160000,
       "hp": "max(1, 1d6 + self.con_hp)"
     }
+  ],
+  "actions": [
+    {
+      "action": "melee_attack",
+      "from_item": "weapon"
+    },
+    {
+      "action": "melee_attack",
+      "name": "Punch",
+      "damage": "1d2"
+    }
   ]
 }

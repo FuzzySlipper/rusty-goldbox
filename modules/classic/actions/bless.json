@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "bless",
+  "name": "Bless",
+  "cost": {
+    "action": 1
+  },
+  "target": "all_allies",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "blessed",
+      "rounds": "6"
+    }
+  ]
+}

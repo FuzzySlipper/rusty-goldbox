@@ -149,8 +149,9 @@ can appear in expressions. `goldbox schema` lists every type with its fields
 and an example, and the expression functions.
 
 State changes come from a fixed vocabulary of **operations** implemented in
-C#: deal damage, heal, apply or remove a condition, modify a stat for a
-duration, move, grant XP or items, set a variable, and so on. Each operation
+C#: deal damage, heal, apply or remove a condition (conditions carry stat and
+check modifiers, so a timed condition is a timed modifier), make a further
+check, and later move, grant XP or items, set a variable, and so on. Each operation
 takes expression arguments. Rulesets and campaigns choose and combine
 operations; they can't define new ones.
 
@@ -177,6 +178,31 @@ The combat procedure (rounds, initiative, the per-turn action budget and
 movement) is a fixed C# loop with ruleset-supplied formulas and budgets. That
 covers 1e one-action rounds and 3.5e standard/move/swift actions without
 making the loop itself scriptable.
+
+Combat is built so that no die convention is assumed:
+
+- **Actions, not attacks or spells.** An action costs budget (any named
+  budget the combat definition declares: one action, standard + move, three
+  actions), picks a target, may make a check, and runs operations for the
+  check's outcome. Attacks, spells, heals and aimed shots are all actions.
+  Creatures list the actions they can take as *uses* that supply the action's
+  parameters (a monster's bite damage) or take them from equipment (a
+  weapon's damage); a spell names the use its casting performs. Casting in
+  combat (which spells a creature can cast, and what casting costs) isn't
+  wired yet, so today spells are defined and checked but not cast.
+- **Checks give outcome tiers.** A check is a roll, an optional bonus and a
+  target, rolled high or under, with ordered tiers that read the roll and
+  margin. That expresses natural-20 criticals, degrees of success by margin,
+  percentile specials and fumbles, and 3d6 roll-under; `roll_count` gives
+  dice-pool successes. Actions branch on tier names, not on hit or miss.
+  An operation can make another check, such as a defender's parry.
+- **Services resolve, facts record.** The loop and operations change state
+  in one place (the combat runner); each change is recorded as a fact, and
+  the facts in order are the transcript. Reactions will subscribe to facts
+  rather than being special cases in the loop.
+- **Kit and rules.** Core owns the mechanism (turn order, budgets, targeting,
+  durations, when operations run); ruleset data owns every number and word.
+  Core names no class, stat, condition or die size.
 
 ### Campaign content
 

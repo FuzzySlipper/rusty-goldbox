@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "fighting",
+  "name": "Fighting skill %",
+  "value": "25 + self.agility * 2"
+}

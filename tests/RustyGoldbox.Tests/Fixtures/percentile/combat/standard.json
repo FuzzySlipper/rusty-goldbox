@@ -1,0 +1,17 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Standard",
+  "initiative": "self.agility + 1d10",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 12,
+  "budget": [
+    {
+      "id": "turn",
+      "per_turn": 1
+    }
+  ],
+  "defeated": "self.hit_points <= 0"
+}

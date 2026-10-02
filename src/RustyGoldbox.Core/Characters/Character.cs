@@ -41,7 +41,7 @@ public sealed class Character
     /// <summary>The character as a creature expressions can read.</summary>
     public Creature ToCreature(string label = "self")
     {
-        Creature creature = new(label) { Class = Class, Race = Race, Level = Level };
+        Creature creature = new(label) { Class = Class, Race = Race, Level = Level, HitPoints = HitPoints, MaxHitPoints = MaxHitPoints };
         foreach ((string id, decimal score) in Attributes)
         {
             creature.Values[id] = score;

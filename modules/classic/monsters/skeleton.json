@@ -10,8 +10,9 @@
     "movement": "120",
     "size": "'medium'"
   },
-  "attacks": [
+  "actions": [
     {
+      "action": "melee_attack",
       "name": "claw",
       "damage": "1d6"
     }

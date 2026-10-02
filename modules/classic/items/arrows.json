@@ -5,5 +5,7 @@
   "kind": "ammunition",
   "cost": 2,
   "weight": 4,
-  "damage": "1d6"
+  "parameters": {
+    "damage": "1d6"
+  }
 }

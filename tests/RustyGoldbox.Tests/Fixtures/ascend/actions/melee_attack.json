@@ -1,0 +1,27 @@
+{
+  "type": "action",
+  "id": "melee_attack",
+  "name": "Melee attack",
+  "cost": {
+    "standard": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage + self.might_mod"
+      }
+    ],
+    "critical": [
+      {
+        "op": "damage",
+        "amount": "use.damage + use.damage + self.might_mod * 2"
+      }
+    ]
+  }
+}

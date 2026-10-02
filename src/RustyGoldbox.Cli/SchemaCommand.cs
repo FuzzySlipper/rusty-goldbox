@@ -48,11 +48,16 @@ internal static class SchemaCommand
             return Expressions(output);
         }
 
+        if (topic == "operations")
+        {
+            return Operations(output);
+        }
+
         DefinitionType? type = DefinitionTypes.Find(topic);
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations.");
         }
 
         return Type(output, type);
@@ -65,7 +70,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "module", "expressions" },
+                topics = new[] { "module", "expressions", "operations" },
             });
             return GoldboxCli.Ok;
         }
@@ -83,6 +88,7 @@ internal static class SchemaCommand
         output.Line("Other topics:");
         output.Line("  module              The module.json manifest.");
         output.Line("  expressions         The expression language and its functions.");
+        output.Line("  operations          What actions and conditions can do: damage, heal, conditions, checks.");
         return GoldboxCli.Ok;
     }
 
@@ -177,6 +183,38 @@ internal static class SchemaCommand
         output.Line();
         output.Line("Example:");
         output.Line(ManifestExample.Trim());
+        return GoldboxCli.Ok;
+    }
+
+    private static int Operations(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                operations = OperationTypes.All.Select(operation => new
+                {
+                    name = operation.Name,
+                    description = operation.Description,
+                    fields = operation.Fields.Select(FieldJson),
+                    example = System.Text.Json.JsonDocument.Parse(operation.Example).RootElement,
+                }),
+            });
+            return GoldboxCli.Ok;
+        }
+
+        output.Line("Operations are the only way rules data changes combat state. Actions list them in");
+        output.Line("\"outcomes\" (per check tier) and \"always\"; conditions in \"each_turn\". Each is");
+        output.Line("{ \"op\": <name>, ...fields }, and its expressions may read self, target and use");
+        output.Line("(and check, inside outcomes).");
+        foreach (DefinitionType operation in OperationTypes.All)
+        {
+            output.Line();
+            output.Line($"{operation.Name}: {operation.Description}");
+            WriteFields(output, operation.Fields, "  ");
+            output.Line($"  Example: {operation.Example}");
+        }
+
         return GoldboxCli.Ok;
     }
 

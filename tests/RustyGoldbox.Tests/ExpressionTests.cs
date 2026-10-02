@@ -56,7 +56,7 @@ public sealed class ExpressionTests
     [InlineData("if 1 then 2 else 3", "condition after 'if' needs a boolean")]
     [InlineData("if true then 1 else 'a'", "same type")]
     [InlineData("self.nope", "'nope' is not a stat")]
-    [InlineData("target.str", "can read only self")]
+    [InlineData("target.str", "'target.str' isn't available here; this field is an expression (any type; may read self)")]
     [InlineData("table(nope, 1)", "no table 'nope' in module 'rules'")]
     [InlineData("table(bonus)", "has 1 key")]
     [InlineData("table(bonus, 'x')", "needs a number")]

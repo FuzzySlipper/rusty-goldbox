@@ -1,0 +1,11 @@
+{
+  "type": "condition",
+  "id": "focused",
+  "name": "Focused",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "2"
+    }
+  ]
+}

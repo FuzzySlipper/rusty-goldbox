@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "agility",
+  "name": "Agility",
+  "min": 3,
+  "max": 18,
+  "default": 10
+}

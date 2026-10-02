@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "rat_pack",
+  "name": "Rat pack",
+  "monsters": [
+    {
+      "monster": "giant_rat",
+      "count": "1d4 + 2"
+    }
+  ]
+}

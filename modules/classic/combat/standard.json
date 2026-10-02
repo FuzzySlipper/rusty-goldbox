@@ -2,17 +2,17 @@
   "type": "combat",
   "id": "standard",
   "name": "Standard combat",
-  "surprise": "table(surprise_segments, 1d6)",
+  "surprise": "if 1d6 <= 2 then 1 else 0",
   "initiative": "1d6",
   "initiative_by": "side",
+  "initiative_order": "highest-first",
+  "initiative_each": "round",
   "round_seconds": 60,
-  "segments": 10,
-  "attack": "attack",
-  "missile_attack": "missile_attack",
-  "actions": [
+  "budget": [
     {
       "id": "action",
-      "per_round": 1
+      "per_turn": 1
     }
-  ]
+  ],
+  "defeated": "self.hit_points <= 0"
 }

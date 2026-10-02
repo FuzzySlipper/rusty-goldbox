@@ -25,7 +25,12 @@ public sealed class RuleSet
         ["level"] = ExprType.Number,
         ["class"] = ExprType.Text,
         ["race"] = ExprType.Text,
+        ["hit_points"] = ExprType.Number,
+        ["max_hit_points"] = ExprType.Number,
     };
+
+    /// <summary>What <c>check.&lt;name&gt;</c> reads while a check resolves.</summary>
+    public static IReadOnlyList<string> CheckFields { get; } = ["roll", "total", "target", "margin"];
 
     internal Dictionary<(string Type, string Module, string Id), Definition> ByKey { get; } = [];
 
@@ -97,7 +102,7 @@ public sealed class RuleSet
     public CompiledExpression Compile(string text, string module, Roots roots)
     {
         Expr root = Parser.Parse(text);
-        ExpressionChecker checker = new(this, module, roots, derived => Stats[derived.Id].Type, _ => false);
+        ExpressionChecker checker = new(this, module, roots, [], derived => Stats[derived.Id].Type, _ => false);
         ExprType type = checker.Check(root);
         return new CompiledExpression(text, root, type, checker.Tables);
     }

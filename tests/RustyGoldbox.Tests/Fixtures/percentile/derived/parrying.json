@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "parrying",
+  "name": "Parry skill %",
+  "value": "15 + self.agility * 2"
+}

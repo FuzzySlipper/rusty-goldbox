@@ -1,0 +1,18 @@
+{
+  "type": "action",
+  "id": "spell_heal",
+  "name": "Healing spell",
+  "cost": {
+    "action": 1
+  },
+  "target": "hurt_ally",
+  "parameters": [
+    "amount"
+  ],
+  "always": [
+    {
+      "op": "heal",
+      "amount": "use.amount"
+    }
+  ]
+}

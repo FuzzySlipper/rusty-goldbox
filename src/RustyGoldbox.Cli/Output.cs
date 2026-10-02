@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -272,21 +273,24 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 ok = true,
                 check = check.QualifiedId,
                 roll = result.Roll,
+                bonus = result.Bonus,
                 modifier = result.Modifier,
                 total = result.Total,
                 target = result.Target,
+                margin = result.Margin,
                 succeeds = comparison,
-                success = result.Success,
+                tier = result.Tier,
                 seed,
                 rolls = rolls.Select(RollJson),
             });
             return;
         }
 
-        string modifier = result.Modifier == 0 ? "" : $" {(result.Modifier > 0 ? "+" : "-")} modifier {Math.Abs(result.Modifier)} = {result.Total}";
-        string outcome = result.Success ? "succeeds" : "fails";
+        string bonus = result.Bonus == 0 ? "" : $" {(result.Bonus > 0 ? "+" : "-")} {Math.Abs(result.Bonus)}";
+        string modifier = result.Modifier == 0 ? "" : $" {(result.Modifier > 0 ? "+" : "-")} modifier {Math.Abs(result.Modifier)}";
+        string total = bonus.Length + modifier.Length == 0 ? "" : $" = {result.Total}";
         string needs = comparison == "at-least" ? $"{result.Target} or more" : $"{result.Target} or less";
-        writer.WriteLine($"{check.QualifiedId} ({check.Name}): roll {result.Roll}{modifier}, needs {needs}: {outcome}");
+        writer.WriteLine($"{check.QualifiedId} ({check.Name}): roll {result.Roll}{bonus}{modifier}{total}, needs {needs}: {result.Tier} (margin {result.Margin})");
         WriteRolls(seed, rolls);
     }
 
@@ -426,6 +430,96 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             WriteRolls(used, rolls);
         }
+    }
+
+    public void CombatTranscript(CombatResult result, ulong seed)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                seed,
+                winner = result.Winner is int side ? result.Sides[side].Name : null,
+                rounds = result.Rounds,
+                facts = result.Facts.Select(fact => new { kind = fact.Kind, text = fact.Describe(), rolls = fact.Rolls.Select(RollJson) }),
+                combatants = Combatants(result),
+            });
+            return;
+        }
+
+        writer.WriteLine($"seed {seed}");
+        foreach (CombatFact fact in result.Facts)
+        {
+            string indent = fact is RoundFact or EndFact or SurprisedFact ? "" : "  ";
+            string rolls = fact.Rolls.Count == 0 ? "" : $"  [{string.Join("; ", fact.Rolls)}]";
+            writer.WriteLine($"{indent}{fact.Describe()}{rolls}");
+        }
+
+        foreach (CombatSide side in result.Sides)
+        {
+            string members = string.Join(", ", side.Members.Select(member =>
+                $"{member.Name} {N(member.Creature.HitPoints ?? 0)}/{N(member.Creature.MaxHitPoints ?? 0)}{(member.Defeated ? " (out)" : "")}"));
+            writer.WriteLine($"{side.Name}: {members}");
+        }
+    }
+
+    public void CombatSummary(IReadOnlyList<CombatResult> results, ulong seed)
+    {
+        List<string> sideNames = results[0].Sides.Select(side => side.Name).ToList();
+        Dictionary<string, int> wins = sideNames.Select((name, index) => (name, index)).ToDictionary(entry => entry.name, entry => results.Count(result => result.Winner == entry.index));
+        int undecided = results.Count(result => result.Winner is null);
+        List<int> rounds = results.Select(result => result.Rounds).ToList();
+        List<string> partyNames = results[0].Sides[0].Members.Select(member => member.Name).ToList();
+        Dictionary<string, int> survived = partyNames.Select((name, index) => (name, index)).ToDictionary(entry => entry.name, entry => results.Count(result => !result.Sides[0].Members[entry.index].Defeated));
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                seed,
+                runs = results.Count,
+                wins,
+                undecided,
+                rounds = new { min = rounds.Min(), mean = rounds.Average(), max = rounds.Max() },
+                party_survival = survived,
+            });
+            return;
+        }
+
+        int count = results.Count;
+        writer.WriteLine($"{count} runs from seed {seed}");
+        foreach ((string name, int won) in wins)
+        {
+            writer.WriteLine($"  {name} wins {won} ({Percent(won, count)})");
+        }
+
+        if (undecided > 0)
+        {
+            writer.WriteLine($"  undecided {undecided} ({Percent(undecided, count)})");
+        }
+
+        writer.WriteLine($"  rounds: min {rounds.Min()}, mean {rounds.Average().ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}, max {rounds.Max()}");
+        foreach ((string name, int alive) in survived)
+        {
+            writer.WriteLine($"  {name} still fighting at the end: {alive} ({Percent(alive, count)})");
+        }
+    }
+
+    private static string Percent(int part, int whole) => (100.0 * part / whole).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private static string N(decimal value) => value.ToString("0.############", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static IEnumerable<object> Combatants(CombatResult result)
+    {
+        return result.Sides.SelectMany(side => side.Members.Select(member => (object)new
+        {
+            name = member.Name,
+            side = side.Name,
+            hit_points = member.Creature.HitPoints,
+            max_hit_points = member.Creature.MaxHitPoints,
+            defeated = member.Defeated,
+        }));
     }
 
     private void WriteRolls(ulong seed, IReadOnlyList<DiceRoll> rolls)

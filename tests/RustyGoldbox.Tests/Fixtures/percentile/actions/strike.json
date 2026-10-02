@@ -1,0 +1,43 @@
+{
+  "type": "action",
+  "id": "strike",
+  "name": "Strike",
+  "cost": {
+    "turn": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "strike",
+  "outcomes": {
+    "special": [
+      {
+        "op": "damage",
+        "amount": "use.damage * 2 + self.damage_bonus"
+      }
+    ],
+    "success": [
+      {
+        "op": "check",
+        "check": "parry",
+        "outcomes": {
+          "failure": [
+            {
+              "op": "damage",
+              "amount": "use.damage + self.damage_bonus"
+            }
+          ]
+        }
+      }
+    ],
+    "fumble": [
+      {
+        "op": "apply_condition",
+        "condition": "off_balance",
+        "rounds": "1",
+        "to": "self"
+      }
+    ]
+  }
+}

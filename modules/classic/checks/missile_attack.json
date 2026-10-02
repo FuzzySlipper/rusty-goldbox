@@ -2,7 +2,8 @@
   "type": "check",
   "id": "missile_attack",
   "name": "Missile attack",
-  "roll": "1d20 + self.dex_missile",
+  "roll": "1d20",
+  "bonus": "self.dex_missile",
   "target": "self.thac0 - target.ac - min(max(self.thac0 - target.ac - 20, 0), 5)",
   "succeeds": "at-least"
 }

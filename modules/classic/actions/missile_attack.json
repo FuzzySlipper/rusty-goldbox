@@ -1,0 +1,21 @@
+{
+  "type": "action",
+  "id": "missile_attack",
+  "name": "Missile attack",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "missile_attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage"
+      }
+    ]
+  }
+}

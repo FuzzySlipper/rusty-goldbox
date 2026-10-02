@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "percentile",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Percentile (test fixture)",
+  "requires": [],
+  "provenance": "Original test fixture shaped like a percentile roll-under skill system with active defence. Contains no published rules text or tables."
+}

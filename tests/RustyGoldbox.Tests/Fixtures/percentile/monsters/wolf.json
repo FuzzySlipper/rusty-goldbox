@@ -1,0 +1,17 @@
+{
+  "type": "monster",
+  "id": "wolf",
+  "name": "Wolf",
+  "hit_points": "2d6 + 4",
+  "stats": {
+    "agility": "14"
+  },
+  "actions": [
+    {
+      "action": "strike",
+      "name": "Bite",
+      "damage": "1d6"
+    }
+  ],
+  "xp": 20
+}

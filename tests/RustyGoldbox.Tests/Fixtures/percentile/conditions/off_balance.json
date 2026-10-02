@@ -1,0 +1,8 @@
+{
+  "type": "condition",
+  "id": "off_balance",
+  "name": "Off balance",
+  "description": "Loses its next turn.",
+  "modifiers": [],
+  "prevents_actions": true
+}

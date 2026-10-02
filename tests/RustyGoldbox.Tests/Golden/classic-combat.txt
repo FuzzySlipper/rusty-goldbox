@@ -1,0 +1,67 @@
+$ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter crypt_guard --seed 3
+seed 3
+Round 1.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
+  Skeleton 1 uses claw on Ada.
+  Skeleton 1 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 20 against 15: success.  [1d20: 20 = 20]
+  Ada takes 6 damage (-4 hit points left).  [1d6: 6 = 6]
+  Ada is out of the fight.
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+Round 2.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
+  Brom takes 2 damage (4 hit points left).  [1d6: 2 = 2]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 11 against 14: failure.  [1d20: 11 = 11]
+Round 3.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 19 against 14: success.  [1d20: 19 = 19]
+  Brom takes 3 damage (1 hit points left).  [1d6: 3 = 3]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 4 against 14: failure.  [1d20: 4 = 4]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+Round 4.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
+Round 5.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 15 against 13: success.  [1d20: 15 = 15]
+  Skeleton 1 takes 5 damage (-4 hit points left).  [1d6: 4 = 4]
+  Skeleton 1 is out of the fight.
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
+  Brom takes 4 damage (-3 hit points left).  [1d6: 4 = 4]
+  Brom is out of the fight.
+Crypt guard wins after 5 rounds.
+Party: Ada -4/2 (out), Brom -3/6 (out)
+Crypt guard: Skeleton 1 -4/1 (out), Skeleton 2 7/7
+[exit 0]
+
+$ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --seed 1 --runs 200
+200 runs from seed 1
+  Party wins 35 (17.5%)
+  Ogre wins 165 (82.5%)
+  rounds: min 1, mean 5.12, max 14
+  Ada still fighting at the end: 21 (10.5%)
+  Brom still fighting at the end: 35 (17.5%)
+[exit 0]
+

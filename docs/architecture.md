@@ -39,16 +39,20 @@ The Game does not use Core yet.
 | `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, gold) and gaining levels, from character-creation, race and class data |
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
+| `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
+| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise, initiative, turns, budgets, the choice policy, checks and operations, condition durations, defeat |
+| `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
+| `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks and the status projection |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, content/UI roots, projection identity and host defaults |
 | `src/ui/main.js` | DOM status readout and projection subscription |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `content/` | Product-authored data |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC) |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 ## Module loading
@@ -70,6 +74,23 @@ Dice need Engine `Random`, whose calls are confined to a host callback.
 Commands that roll (`eval`, `character new`, `character level`) create the
 Engine tool host (`RustyEngineToolHost`, `EngineTestHost.Create()`), open a
 stream seeded from `--seed` and do their work inside one `Call`.
+
+## Combat
+
+`CombatRunner` runs one fight between sides of `Combatant`s. Each round it
+rolls initiative (by side or by creature, from the combat definition), then
+each creature's turn: start-of-turn condition operations, a skip if a
+condition prevents actions, then actions while the turn's budget lasts. The
+choice is a simple deterministic policy: the first use in the creature's list
+it can afford and that has a target, aimed at the enemy with the fewest hit
+points or the ally missing the most. An action's check gives a tier; the
+action's operations for that tier run, then its `always` operations. Timed
+conditions count down at the end of the round. Every change is a
+`CombatFact`, with the dice that produced it.
+
+`goldbox sim combat` builds the sides from character files and an encounter
+and runs the fight inside the Engine tool host; run k uses random scope
+`goldbox.sim.<k>`, so any run repeats from its seed.
 
 ## Characters
 

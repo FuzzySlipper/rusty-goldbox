@@ -5,5 +5,7 @@
   "kind": "weapon",
   "cost": 10,
   "weight": 10,
-  "damage": "if target.size == 'large' then 1d6 else 1d6 + 1"
+  "parameters": {
+    "damage": "if target.size == 'large' then 1d6 else 1d6 + 1"
+  }
 }

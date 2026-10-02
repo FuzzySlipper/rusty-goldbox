@@ -1,0 +1,18 @@
+{
+  "type": "check",
+  "id": "strike",
+  "name": "Strike",
+  "roll": "1d100",
+  "target": "self.fighting",
+  "succeeds": "at-most",
+  "tiers": [
+    {
+      "name": "special",
+      "when": "check.roll <= floor(check.target / 5)"
+    },
+    {
+      "name": "fumble",
+      "when": "check.roll >= 96"
+    }
+  ]
+}

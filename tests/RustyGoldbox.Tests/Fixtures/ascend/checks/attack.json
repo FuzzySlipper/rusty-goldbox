@@ -2,7 +2,18 @@
   "type": "check",
   "id": "attack",
   "name": "Attack",
-  "roll": "1d20 + self.attack_bonus + self.might_mod",
+  "roll": "1d20",
+  "bonus": "self.attack_bonus + self.might_mod",
   "target": "target.ac",
-  "succeeds": "at-least"
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "critical",
+      "when": "check.roll == 20"
+    },
+    {
+      "name": "miss",
+      "when": "check.roll == 1"
+    }
+  ]
 }

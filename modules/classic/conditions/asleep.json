@@ -1,0 +1,8 @@
+{
+  "type": "condition",
+  "id": "asleep",
+  "name": "Asleep",
+  "description": "Magical sleep: takes no actions.",
+  "modifiers": [],
+  "prevents_actions": true
+}

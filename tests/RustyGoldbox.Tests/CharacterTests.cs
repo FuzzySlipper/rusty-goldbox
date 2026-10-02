@@ -1,4 +1,3 @@
-using System.Text;
 using Rusty.Engine;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Cli;
@@ -15,7 +14,7 @@ public sealed class CharacterTests
     [Fact]
     public void ClassicFighterIsCreatedAndLevelled()
     {
-        Golden.Verify("classic-character.txt", Transcript(
+        Golden.Verify("classic-character.txt", CliTranscript.Run(
             ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "dwarf", "--name", "Brom", "--seed", "11", "--out", "brom.json"],
             ["character", "level", "brom.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3"],
             ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "dwarf", "--seed", "1"]));
@@ -24,7 +23,7 @@ public sealed class CharacterTests
     [Fact]
     public void AscendingArmourClassRulesetUsesTheSameCommands()
     {
-        Golden.Verify("ascend-character.txt", Transcript(
+        Golden.Verify("ascend-character.txt", CliTranscript.Run(
             ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--seed", "5", "--out", "kara.json"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--seed", "8"],
             ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--out", "ilse.json"],
@@ -193,24 +192,5 @@ public sealed class CharacterTests
             using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "tests"));
             return work(new DiceRoller(engine.Random, stream));
         });
-    }
-
-    /// <summary>Runs CLI commands in a scratch directory and records them with their output.</summary>
-    private static string Transcript(params string[][] commands)
-    {
-        using TempModules scratch = new();
-        StringBuilder transcript = new();
-        foreach (string[] command in commands)
-        {
-            using StringWriter output = new();
-            int code = GoldboxCli.Run(command, output, scratch.Root);
-            string shown = string.Join(' ', command).Replace(Rules.RepositoryRoot + Path.DirectorySeparatorChar, "", StringComparison.Ordinal);
-            transcript.AppendLine($"$ goldbox {shown}");
-            transcript.Append(output.ToString().Replace(Rules.RepositoryRoot + Path.DirectorySeparatorChar, "", StringComparison.Ordinal));
-            transcript.AppendLine($"[exit {code}]");
-            transcript.AppendLine();
-        }
-
-        return transcript.ToString();
     }
 }

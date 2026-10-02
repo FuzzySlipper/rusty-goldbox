@@ -1,0 +1,8 @@
+{
+  "type": "check",
+  "id": "parry",
+  "name": "Parry",
+  "roll": "1d100",
+  "target": "self.parrying",
+  "succeeds": "at-most"
+}

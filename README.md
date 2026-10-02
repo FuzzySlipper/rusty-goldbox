@@ -64,6 +64,14 @@ dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module 
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 ```
 
+Fights run headless from a seed; one run prints the transcript, more print
+distributions:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/classic --party ada.json,brom.json --encounter crypt_guard --seed 3
+dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --runs 200
+```
+
 ## Tests
 
 ```bash

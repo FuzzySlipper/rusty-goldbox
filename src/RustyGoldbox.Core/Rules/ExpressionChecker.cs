@@ -12,6 +12,7 @@ internal sealed class ExpressionChecker(
     RuleSet rules,
     string module,
     Roots roots,
+    IReadOnlyList<string> useParameters,
     Func<Definition, ExprType?> derivedType,
     Func<Definition, bool> isInferring)
 {
@@ -52,17 +53,40 @@ internal sealed class ExpressionChecker(
         {
             "self" => Roots.Self,
             "target" => Roots.Target,
+            "use" => Roots.Use,
+            "check" => Roots.Check,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Use self.<stat> or target.<stat>.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter> and check.<result>.", path.Column);
         }
 
         if (!roots.HasFlag(root))
         {
-            string allowed = roots == Roots.None ? "no creature" : roots == Roots.Self ? "only self" : "self and target";
-            throw new ExpressionException($"This field can read {allowed}, so '{path.Root}.{path.Name}' isn't available here.", path.Column);
+            string allowed = new ExpressionKind(null, roots).Describe();
+            throw new ExpressionException($"'{path.Root}.{path.Name}' isn't available here; this field is an {allowed}.", path.Column);
+        }
+
+        if (root == Roots.Use)
+        {
+            if (!useParameters.Contains(path.Name))
+            {
+                string known = useParameters.Count == 0 ? "This action has no parameters." : $"Parameters: {string.Join(", ", useParameters)}.";
+                throw new ExpressionException($"'{path.Name}' is not a parameter of this action. {known} Declare it in the action's \"parameters\".", path.Column);
+            }
+
+            return ExprType.Number;
+        }
+
+        if (root == Roots.Check)
+        {
+            if (!RuleSet.CheckFields.Contains(path.Name))
+            {
+                throw new ExpressionException($"'check.{path.Name}' is not a check result. Results: {string.Join(", ", RuleSet.CheckFields)}.", path.Column);
+            }
+
+            return ExprType.Number;
         }
 
         if (RuleSet.BuiltInStats.TryGetValue(path.Name, out ExprType builtIn))
@@ -72,7 +96,7 @@ internal sealed class ExpressionChecker(
 
         if (!rules.Stats.TryGetValue(path.Name, out Stat? stat))
         {
-            throw new ExpressionException($"'{path.Name}' is not a stat. Built in: level, class, race. {rules.StatList(false)}", path.Column);
+            throw new ExpressionException($"'{path.Name}' is not a stat. Built in: {string.Join(", ", RuleSet.BuiltInStats.Keys)}. {rules.StatList(false)}", path.Column);
         }
 
         if (stat.IsAttribute)

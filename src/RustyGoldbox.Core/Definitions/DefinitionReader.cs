@@ -160,13 +160,115 @@ public static class DefinitionReader
                 case TableRowsKind:
                     ExpectKind(value, JsonValueKind.Array, path, kind);
                     break;
+                case BooleanKind:
+                    if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    {
+                        Error("definition.field-type", path, $"Expected true or false, but this is {Show(value)}.");
+                    }
+
+                    break;
+                case OperationKind operation:
+                    ReadOperation(value, operation.Roots, path);
+                    break;
+                case UseKind:
+                    ReadUse(value, path);
+                    break;
                 default:
                     throw new InvalidOperationException($"Unhandled field kind {kind}.");
             }
         }
 
+        private void ReadOperation(JsonElement value, Roots roots, string path)
+        {
+            if (!ExpectKind(value, JsonValueKind.Object, path, new OperationKind(roots)))
+            {
+                return;
+            }
+
+            string ops = string.Join(", ", OperationTypes.All.Select(operation => operation.Name));
+            if (!value.TryGetProperty("op", out JsonElement name) || name.ValueKind != JsonValueKind.String)
+            {
+                Error("definition.field-required", path, $"An operation needs \"op\" naming what it does: {ops}.");
+                return;
+            }
+
+            DefinitionType? operation = OperationTypes.Find(name.GetString()!);
+            if (operation is null)
+            {
+                Error("definition.operation", $"{path}.op", $"'{name.GetString()}' is not an operation. Operations: {ops}. Run `goldbox schema operations` for their fields.");
+                return;
+            }
+
+            // Operation fields read what their surroundings allow: without a target
+            // (a condition's each_turn) "to" can only be self; outside a check, no check.
+            List<Field> fields = [new("op", new TextKind(), true, "The operation.")];
+            foreach (Field field in operation.Fields)
+            {
+                fields.Add(field.Kind switch
+                {
+                    ExpressionKind expression => field with { Kind = expression with { Roots = roots } },
+                    MapKind { Value: ListKind { Item: OperationKind } } map => field with { Kind = map with { Value = new ListKind(new OperationKind(roots | Roots.Check)) } },
+                    _ => field,
+                });
+            }
+
+            ReadObject(value, fields, path, $"a {operation.Name} operation");
+            foreach (string direction in new[] { "to", "by" })
+            {
+                if (!roots.HasFlag(Roots.Target) && value.TryGetProperty(direction, out JsonElement who) && who.ValueKind == JsonValueKind.String && who.GetString() == "target")
+                {
+                    Error("definition.field-value", $"{path}.{direction}", "There is no target here, so this can only be \"self\".");
+                }
+            }
+
+            if (!roots.HasFlag(Roots.Target) && operation == OperationTypes.Check && !value.TryGetProperty("by", out _))
+            {
+                Error("definition.field-value", path, "There is no target here, so a check operation needs \"by\": \"self\".");
+            }
+        }
+
+        private void ReadUse(JsonElement value, string path)
+        {
+            if (!ExpectKind(value, JsonValueKind.Object, path, new UseKind()))
+            {
+                return;
+            }
+
+            if (!value.TryGetProperty("action", out JsonElement action) || action.ValueKind != JsonValueKind.String)
+            {
+                Error("definition.field-required", path, "A use needs \"action\": the action it takes, for example { \"action\": \"melee_attack\", \"damage\": \"1d6\" }.");
+                return;
+            }
+
+            _references.Add(new ReferenceSite($"{path}.action", action.GetString()!, new ReferenceKind("action")));
+            foreach (JsonProperty property in value.EnumerateObject())
+            {
+                string at = $"{path}.{property.Name}";
+                switch (property.Name)
+                {
+                    case "action":
+                        break;
+                    case "name":
+                        ReadValue(property.Value, new TextKind(), at);
+                        break;
+                    case "from_item":
+                        ReadValue(property.Value, new TextKind(), at);
+                        break;
+                    default:
+                        ReadExpression(property.Value, new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target), at);
+                        break;
+                }
+            }
+        }
+
         private void ReadExpression(JsonElement value, ExpressionKind kind, string path)
         {
+            if (value.ValueKind is JsonValueKind.True or JsonValueKind.False && kind.Expected is null or ExprType.Boolean)
+            {
+                _expressions.Add(new ExpressionSite(path, value.GetBoolean() ? "true" : "false", kind));
+                return;
+            }
+
             // A plain number is a constant expression; it saves quoting "3".
             if (value.ValueKind == JsonValueKind.Number && kind.Expected is null or ExprType.Number)
             {

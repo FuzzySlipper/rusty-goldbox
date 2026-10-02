@@ -1,0 +1,11 @@
+{
+  "type": "item",
+  "id": "longsword",
+  "name": "Longsword",
+  "kind": "weapon",
+  "cost": 15,
+  "weight": 4,
+  "parameters": {
+    "damage": "1d8"
+  }
+}

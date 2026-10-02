@@ -9,5 +9,9 @@
   "duration": "Instantaneous",
   "area": "One or more creatures in a 10 × 10 ft area",
   "casting_time": "1 segment",
+  "effect": {
+    "action": "spell_damage",
+    "damage": "roll(1 + floor((self.level - 1) / 2), 4) + 1 + floor((self.level - 1) / 2)"
+  },
   "description": "Unerring missiles of magical energy, 1d4+1 damage each; one missile, plus one for every two levels beyond first."
 }

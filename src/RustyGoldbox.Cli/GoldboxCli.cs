@@ -40,6 +40,12 @@ internal static class GoldboxCli
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 
+          goldbox sim combat --module <path> --party <file>,... --encounter <id> [--seed <n>]
+                [--runs <k>] [--max-rounds <n>] [--combat <id>]
+              Fights the party against the encounter with the ruleset's combat loop. One run
+              prints the transcript; more print outcomes and distributions. Run k uses the
+              random scope goldbox.sim.<k>, so each run repeats for a seed.
+
         Every command accepts --json for structured output.
 
         Kinds: ruleset, extension, assets, campaign.
@@ -67,6 +73,8 @@ internal static class GoldboxCli
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
             case "character":
                 return CharacterCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
+            case "sim":
+                return SimCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:

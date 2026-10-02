@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "crypt_guard",
+  "name": "Crypt guard",
+  "monsters": [
+    {
+      "monster": "skeleton",
+      "count": "2"
+    }
+  ]
+}
