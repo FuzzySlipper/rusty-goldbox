@@ -98,7 +98,7 @@ internal static class SimCommand
 
             if (runs == 1)
             {
-                output.CombatTranscript(results[0], seed);
+                output.CombatTranscript(rules, results[0], seed);
             }
             else
             {

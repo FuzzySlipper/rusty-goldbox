@@ -477,8 +477,9 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
     }
 
-    public void CombatTranscript(CombatResult result, ulong seed)
+    public void CombatTranscript(RuleSet rules, CombatResult result, ulong seed)
     {
+        Evaluator evaluator = new(rules, null);
         if (json)
         {
             WriteJson(new
@@ -488,7 +489,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 winner = result.Winner is int side ? result.Sides[side].Name : null,
                 rounds = result.Rounds,
                 facts = result.Facts.Select(fact => new { kind = fact.Kind, text = fact.Describe(), rolls = fact.Rolls.Select(RollJson) }),
-                combatants = Combatants(result),
+                combatants = Combatants(rules, result, evaluator),
             });
             return;
         }
@@ -504,7 +505,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         foreach (CombatSide side in result.Sides)
         {
             string members = string.Join(", ", side.Members.Select(member =>
-                $"{member.Name} {TrackText(member, result.Track)}{(member.Defeated ? " (out)" : "")}"));
+                $"{member.Name} {TrackText(member, result.Track, evaluator)}{(member.Defeated ? " (out)" : "")}"));
             writer.WriteLine($"{side.Name}: {members}");
         }
     }
@@ -605,20 +606,21 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
     private static string N(decimal value) => value.ToString("0.############", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static string TrackText(Combatant member, Definition track)
+    private static string TrackText(Combatant member, Definition track, Evaluator evaluator)
     {
-        TrackValue value = member.Creature.Track(track.Id);
-        string max = value.Max is decimal known ? $"/{N(known)}" : "";
-        return $"{N(value.Current ?? 0)}{max}";
+        string max = evaluator.KnownTrackMax(member.Creature, track) is decimal known ? $"/{N(known)}" : "";
+        return $"{N(member.Creature.Track(track.Id).Current ?? 0)}{max}";
     }
 
-    private static IEnumerable<object> Combatants(CombatResult result)
+    private static IEnumerable<object> Combatants(RuleSet rules, CombatResult result, Evaluator evaluator)
     {
         return result.Sides.SelectMany(side => side.Members.Select(member => (object)new
         {
             name = member.Name,
             side = side.Name,
-            tracks = member.Creature.Tracks.ToDictionary(entry => entry.Key, entry => new { current = entry.Value.Current, max = entry.Value.Max }),
+            tracks = member.Creature.Tracks.ToDictionary(
+                entry => entry.Key,
+                entry => new { current = entry.Value.Current, max = evaluator.KnownTrackMax(member.Creature, rules.Tracks[entry.Key]) }),
             defeated = member.Defeated,
         }));
     }

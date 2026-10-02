@@ -67,6 +67,23 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void HitPointBonusesFollowTheStatsTheyRead()
+    {
+        ModuleSet set = ModuleLoader.Load(Ascend, []);
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(14, 10, 14, 10)))!;
+        List<ModuleDiagnostic> problems = [];
+        WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems));
+        Assert.Empty(problems);
+        decimal before = MaxHitPoints(set, character);
+        Assert.Equal(character.Levels.Sum(level => level.Gain) + (3 * 2), before);
+
+        // The charm raises grit from 14 to 16, so every one of the three levels gains one more.
+        character.Equipment.Add(set.Rules!.Find(Core.Definitions.DefinitionTypes.Item, "grit_charm", out _)!);
+
+        Assert.Equal(before + 3, MaxHitPoints(set, character));
+    }
+
+    [Fact]
     public void ANewClassMustAcceptTheCharacter()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
@@ -122,7 +139,7 @@ public sealed class CharacterTests
         using TempModules modules = new();
         string ascend = CopyAscend(modules);
         modules.Write("ascend/creation/standard.json", File.ReadAllText(Path.Combine(Ascend, "creation", "standard.json")).Replace("roll_keep(4, 6, 3)", "roll_keep(4, 6, 5)", StringComparison.Ordinal));
-        modules.Write("ascend/classes/adept.json", File.ReadAllText(Path.Combine(Ascend, "classes", "adept.json")).Replace("6 + self.grit_mod", "6 / (self.grit_mod - self.grit_mod)", StringComparison.Ordinal));
+        modules.Write("ascend/classes/adept.json", File.ReadAllText(Path.Combine(Ascend, "classes", "adept.json")).Replace("then 6 else", "then 6 / (self.grit_mod - self.grit_mod) else", StringComparison.Ordinal));
         ModuleSet set = ModuleLoader.Load(ascend, []);
         Assert.Empty(set.Diagnostics);
 
@@ -191,6 +208,11 @@ public sealed class CharacterTests
         List<ModuleDiagnostic> problems = [];
         Assert.Null(WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), request, dice, problems)));
         return problems;
+    }
+
+    private static decimal MaxHitPoints(ModuleSet set, Character character)
+    {
+        return CharacterSheet.Tracks(set.Rules!, character).Single(track => track.Track.Id == "hit_points").Max!.Value;
     }
 
     private static Dictionary<string, decimal> Scores(decimal might, decimal grace, decimal grit, decimal wit)

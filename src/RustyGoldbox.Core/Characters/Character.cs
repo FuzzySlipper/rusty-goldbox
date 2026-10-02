@@ -7,7 +7,11 @@ namespace RustyGoldbox.Core.Characters;
 /// <summary>A module the character was made under, recorded so it isn't loaded under a different set.</summary>
 public sealed record ModuleStamp(string Id, ModuleVersion Version);
 
-/// <summary>One character level: the class it was taken in, and what the level track gained.</summary>
+/// <summary>
+/// One character level: the class it was taken in, and what the level track
+/// gained then from the level's hp (its hp_bonus, if any, is added as the
+/// character is now).
+/// </summary>
 public sealed record LevelTaken(Definition Class, decimal Gain);
 
 /// <summary>A player character: its choices, scores and progress under a rule set.</summary>
@@ -70,7 +74,14 @@ public sealed class Character
     public Creature ToCreature(string label = "self")
     {
         Creature creature = new(label) { Class = Class, Race = Race, Level = Level };
-        foreach ((Definition characterClass, int level) in ClassLevels())
+        Dictionary<Definition, int> reached = [];
+        foreach (LevelTaken taken in Levels)
+        {
+            reached[taken.Class] = reached.GetValueOrDefault(taken.Class) + 1;
+            creature.LevelsTaken.Add((taken.Class, reached[taken.Class]));
+        }
+
+        foreach ((Definition characterClass, int level) in reached)
         {
             creature.ClassLevels[characterClass] = level;
         }

@@ -188,12 +188,16 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         return creature.Track(track.Id).Current!.Value;
     }
 
-    /// <summary>The creature's own maximum for the track, or the track's maximum expression.</summary>
+    /// <summary>
+    /// The creature's own maximum for the track (for the level track, plus
+    /// each level's hp_bonus as the creature is now), or the track's maximum
+    /// expression.
+    /// </summary>
     public decimal TrackMax(Creature creature, Definition track)
     {
         if (creature.Tracks.TryGetValue(track.Id, out TrackValue? value) && value.Max is decimal own)
         {
-            return own;
+            return track == rules.LevelTrack ? Add(own, LevelBonus(creature), 1) : own;
         }
 
         if (rules.TryExpression(track, "$.max", out CompiledExpression? max))
@@ -205,6 +209,28 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             ? $"Give monster {creature.Monster.QualifiedId} \"tracks\": {{ \"{track.Id}\": <expression> }}"
             : $"Give the track a \"max\", or give {creature.Label} \"max_{track.Id}\"";
         throw new ExpressionException($"{creature.Label} has no maximum {track.Id}, and track '{track.Id}' doesn't compute one. {fix}.", 1);
+    }
+
+    /// <summary>The track's maximum for the creature, or null when neither the creature nor the track gives one.</summary>
+    public decimal? KnownTrackMax(Creature creature, Definition track)
+    {
+        bool known = (creature.Tracks.TryGetValue(track.Id, out TrackValue? value) && value.Max is not null) || rules.TryExpression(track, "$.max", out _);
+        return known ? TrackMax(creature, track) : null;
+    }
+
+    /// <summary>What the hp_bonus of every level the creature has adds to the level track, as it is now.</summary>
+    public decimal LevelBonus(Creature creature)
+    {
+        decimal total = 0;
+        foreach ((Definition characterClass, int classLevel) in creature.LevelsTaken)
+        {
+            if (rules.TryExpression(characterClass, $"$.levels[{classLevel - 1}].hp_bonus", out CompiledExpression? bonus))
+            {
+                total = Add(total, Evaluate(bonus!, creature, null).Number, 1);
+            }
+        }
+
+        return total;
     }
 
     /// <summary>The track's minimum for the creature, or null when it has no floor.</summary>

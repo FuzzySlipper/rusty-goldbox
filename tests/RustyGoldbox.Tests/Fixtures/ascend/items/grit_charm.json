@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "grit_charm",
+  "name": "Charm of grit",
+  "kind": "charm",
+  "cost": 500,
+  "weight": 0,
+  "modifiers": [
+    {
+      "stat": "grit",
+      "value": "2"
+    }
+  ]
+}

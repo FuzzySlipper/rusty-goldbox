@@ -311,8 +311,7 @@ public sealed class CampaignRunner
             {
                 Creature creature = member.Creature;
                 decimal start = evaluator.TrackCurrent(creature, track);
-                decimal? max = creature.Track(track.Id).Max
-                    ?? (_rules.TryExpression(track, "$.max", out CompiledExpression? expression) ? evaluator.Evaluate(expression!, creature, null).Number : null);
+                decimal? max = evaluator.KnownTrackMax(creature, track);
                 members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max));
             }
         }

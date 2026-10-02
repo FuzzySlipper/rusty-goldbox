@@ -51,6 +51,8 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             renamed.ClassLevels[characterClass] = level;
         }
 
+        renamed.LevelsTaken.AddRange(Creature.LevelsTaken);
+
         foreach ((string id, TrackValue value) in Creature.Tracks)
         {
             renamed.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };

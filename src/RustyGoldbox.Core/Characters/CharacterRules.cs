@@ -76,10 +76,11 @@ public static class CharacterRules
 
         try
         {
-            decimal gain = TakeLevel(rules, character, characterClass, evaluator);
+            (decimal kept, _) = TakeLevel(rules, character, characterClass, evaluator);
             if (rules.LevelTrack is Definition levelTrack)
             {
-                character.Tracks[levelTrack.Id] = new TrackValue { Max = gain };
+                // The track's own maximum is what levels keep; StartTracks starts it at the full maximum.
+                character.Tracks[levelTrack.Id] = new TrackValue { Max = kept };
             }
 
             StartTracks(rules, character, evaluator);
@@ -165,11 +166,12 @@ public static class CharacterRules
                     break;
                 }
 
-                decimal gain = TakeLevel(rules, character, characterClass, evaluator);
+                (decimal kept, decimal bonus) = TakeLevel(rules, character, characterClass, evaluator);
+                decimal gain = checked(kept + bonus);
                 if (rules.LevelTrack is Definition levelTrack)
                 {
                     TrackValue value = character.Tracks[levelTrack.Id];
-                    value.Max = checked((value.Max ?? 0) + gain);
+                    value.Max = checked((value.Max ?? 0) + kept);
                     value.Current = checked((value.Current ?? 0) + gain);
                 }
 
@@ -215,15 +217,22 @@ public static class CharacterRules
         return problems.Count == before;
     }
 
-    /// <summary>Adds a level in <paramref name="characterClass"/> and returns what the level track gains from it.</summary>
-    private static decimal TakeLevel(RuleSet rules, Character character, Definition characterClass, Evaluator evaluator)
+    /// <summary>
+    /// Adds a level in <paramref name="characterClass"/>. Returns its hp,
+    /// which is kept, and its hp_bonus as the character is now, which the
+    /// level track's maximum recomputes.
+    /// </summary>
+    private static (decimal Kept, decimal Bonus) TakeLevel(RuleSet rules, Character character, Definition characterClass, Evaluator evaluator)
     {
         // The gain is evaluated as the character is once it has the level.
         character.Levels.Add(new LevelTaken(characterClass, 0));
         int classLevel = character.ClassLevels()[characterClass];
-        decimal gain = Evaluate(rules, evaluator, characterClass, $"$.levels[{classLevel - 1}].hp", character.ToCreature());
-        character.Levels[^1] = new LevelTaken(characterClass, gain);
-        return gain;
+        Creature creature = character.ToCreature();
+        decimal kept = Evaluate(rules, evaluator, characterClass, $"$.levels[{classLevel - 1}].hp", creature);
+        string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
+        decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? Evaluate(rules, evaluator, characterClass, bonusPath, creature) : 0;
+        character.Levels[^1] = new LevelTaken(characterClass, kept);
+        return (kept, bonus);
     }
 
     /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>

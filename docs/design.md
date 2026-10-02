@@ -169,7 +169,10 @@ table for total level, and each new level goes to a class the player picks,
 checked against the race and the class's requirements (3.5e style). A class's
 modifiers read `class.level`, the creature's level in that class, so
 per-class progressions such as base attack and base saves add up across
-classes. Classic split-experience multi-classing and dual-classing are not
+classes. A class level's `hp` is rolled once and kept; its optional
+`hp_bonus` is added as the character is now, so a constitution-style change
+moves every level's hit points (3.5e), while rulesets without it keep each
+level's gain as rolled (first edition). Classic split-experience multi-classing and dual-classing are not
 expressible yet.
 
 Each definition file holds one definition: `type`, `id` and the type's

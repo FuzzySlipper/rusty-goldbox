@@ -38,6 +38,13 @@ public sealed class Creature
     /// <summary>The creature's level in each of its classes, in the order taken; each class's modifiers apply at that level.</summary>
     public Dictionary<Definition, int> ClassLevels { get; } = [];
 
+    /// <summary>
+    /// A character's levels as (class, level in that class): each one's
+    /// hp_bonus adds to the level track's own maximum, as the creature is now.
+    /// Monsters bring their maximum whole, so they have none.
+    /// </summary>
+    public List<(Definition Class, int ClassLevel)> LevelsTaken { get; } = [];
+
     /// <summary>Track values by track ID.</summary>
     public Dictionary<string, TrackValue> Tracks { get; } = [];
 
