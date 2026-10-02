@@ -64,6 +64,15 @@ jobs:
           set -o pipefail
           dotnet test tests/RustyGoldbox.Tests 2>&1 | tee test.log
 
+      # The runtime renders with render-wgpu and needs a graphics adapter to
+      # start. Hosted runners have no GPU, so give it Mesa's software Vulkan
+      # driver (lavapipe).
+      - name: Install a software Vulkan driver
+        if: steps.propose.outputs.changed == 'true'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers libvulkan1
+
       - name: Serve the product on the proposed pair
         if: steps.propose.outputs.changed == 'true'
         run: |
