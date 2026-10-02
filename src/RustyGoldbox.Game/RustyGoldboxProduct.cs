@@ -1,12 +1,13 @@
 using Rusty.Engine;
 using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Game.Presentation;
 
 namespace RustyGoldbox.Game;
 
 /// <summary>
 /// The Engine product: runs Core campaigns from the module bundles under
-/// Engine input and persistence, and publishes the session as a debug
-/// projection for the DOM readout.
+/// Engine input and persistence, draws the first-person view, and publishes
+/// the session as a projection for the DOM panels.
 /// </summary>
 public sealed class RustyGoldboxProduct : IEngineProduct
 {
@@ -15,13 +16,16 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private readonly IEngineContext _engine;
     private readonly UiStream _uiStream;
     private readonly GameSession _session;
+    private readonly FirstPersonView _view;
     private ulong _uiSequence;
 
     public RustyGoldboxProduct(ProductCreateContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _engine = context.Engine;
-        _session = new GameSession(new ModuleLibrary(problems => OpenModules(context.Content, context.Engine.Content, problems)));
+        ModuleLibrary library = new(problems => OpenModules(context.Content, context.Engine.Content, problems));
+        _session = new GameSession(library);
+        _view = new FirstPersonView(_engine, library);
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
@@ -66,7 +70,11 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     {
     }
 
-    public void Dispose() => _uiStream.Dispose();
+    public void Dispose()
+    {
+        _view.Dispose();
+        _uiStream.Dispose();
+    }
 
     /// <summary>The product's own module bundles, then the modules installed in the module library.</summary>
     private static List<ProductContentBundle> OpenModules(ProductContent content, IContentService service, List<string> problems)
@@ -92,6 +100,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
 
     private void Publish()
     {
+        _view.Show(_session);
         UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session));
         _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
     }

@@ -119,7 +119,8 @@ export function mountProductUi(root, context) {
   });
 }
 
-const PANEL_STYLE = 'position:absolute;top:8px;left:8px;max-width:560px;max-height:calc(100% - 16px);overflow:auto;'
+// The first-person view is drawn by the Engine in the top-left window (FirstPersonView.Window); the panel sits to its right.
+const PANEL_STYLE = 'position:absolute;top:1%;left:49%;right:1%;max-height:98%;overflow:auto;'
   + 'padding:10px;background:rgba(16,16,24,.92);color:#e0def4;font:13px/1.35 ui-monospace,monospace;border-radius:6px';
 const HEADING_STYLE = 'font-size:14px;margin:8px 0 4px';
 const LOG_STYLE = 'max-height:220px;overflow:auto;white-space:pre-wrap;margin:6px 0;padding:4px;background:rgba(255,255,255,.05)';

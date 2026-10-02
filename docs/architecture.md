@@ -61,6 +61,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
+| `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
+| `src/RustyGoldbox.Game/Presentation/FirstPersonView.cs` | The Engine scene: the view-window camera at the party, the area mesh and wall-set texture, a cell's backdrop as a sprite over the view |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
@@ -194,8 +196,22 @@ scope `goldbox.character.<n>` and the game starts from the same seed, so a
 session replays from it. Play commands are the same text commands `goldbox
 play` scripts use.
 
+`FirstPersonView` draws play in a window at the top left of the screen
+(`FirstPersonView.Window`; the Engine measures camera viewports and sprite
+placement from the lower left, and a sprite's placement is within the
+camera's viewport). The area becomes one generated mesh: each wall, door or
+secret door on a cell edge is a quad facing into that cell (back faces are not
+drawn), and each cell has a floor and a ceiling, textured from the area's
+wall set frames or a plain material. The mesh is rebuilt only when the area
+(or its module's content) changes. The camera stands at the party's cell
+centre, half a cell up, at the facing's yaw (north is the Engine's zero yaw).
+When the party's cell has a backdrop, it shows over the view as a sprite
+fitted to the window. Textures are admitted from the module's bundle or
+container once per asset content. The Engine's default lights light the
+scene.
+
 After each update that applied input, and on `Start` and `Restart`, the
-product publishes `rusty.goldbox.session`: the screen, status, notes,
+product shows the view and publishes `rusty.goldbox.session`: the screen, status, notes,
 campaigns, the party, and in play the position, the player-view map, the
 waiting menu and the latest log lines. The DOM renders it and holds no state.
 

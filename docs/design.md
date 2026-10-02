@@ -304,6 +304,12 @@ regression checks for module and rules behavior.
   map to declared digital intents for moving and choosing. Play commands are
   the CLI's text commands, so the play part of a Game session is a valid
   `goldbox play` script (the party itself is made in the Game).
+- **Presentation.** The Engine renderer draws the first-person view from
+  asset-module art: each area becomes one generated mesh textured from its
+  wall set, with the camera at the party. A cell's backdrop shows as a sprite
+  over the view window. The DOM draws text, menus and panels around the window.
+  Module images can't be DOM images (bundles give no URLs), so pictures are
+  renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine
   persistence scope, as the same JSON `goldbox play --save` writes.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with

@@ -73,6 +73,34 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
         return found;
     }
 
+    /// <summary>
+    /// Runs <paramref name="read"/> on the bundle or container a loaded
+    /// module came from (its source location), for art the presentation
+    /// admits after loading. Null when it is no longer there.
+    /// </summary>
+    public T? ReadModule<T>(string location, Func<ProductContentBundle, T> read)
+        where T : class
+    {
+        T? result = null;
+        List<ProductContentBundle> bundles = open([]);
+        try
+        {
+            if (bundles.FirstOrDefault(bundle => bundle.Id == location) is ProductContentBundle found)
+            {
+                result = read(found);
+            }
+        }
+        finally
+        {
+            foreach (ProductContentBundle bundle in bundles)
+            {
+                bundle.Dispose();
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>Opens every bundle for the length of <paramref name="work"/>; loaded modules keep what they read.</summary>
     private void WithBundles(List<string> problems, Action<List<ModuleSource>> work)
     {

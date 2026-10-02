@@ -31,7 +31,7 @@ CoreCLR loads the product, and changes to C#, UI or content inputs rebuild and
 reload it; module edits reload as content bundles without a restart. See
 `rusty dev --help` for `--bind-host`, `--live-debug` and `--debugger`.
 
-The page is a debug readout. Open a campaign, roll a party (and give it
+The first-person view draws in the top-left window and the panel sits beside it. Open a campaign, roll a party (and give it
 equipment), then play with the buttons, a typed command, or the keys: arrows
 or WASD move and turn, X turns around, L looks, digits choose menu options.
 Saves go to named slots in the Engine persistence root, which `rusty dev`
@@ -161,7 +161,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | --- | --- |
 | `src/RustyGoldbox.Core/` | Module format and loading (from directories or Engine bundles), definition types, expressions, rule evaluation, characters, combat, campaigns and saves |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
-| `src/RustyGoldbox.Game/` | Engine product: module bundles, input intents, save slots and the session projection over Core |
+| `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person view (`Presentation/`) and the session projection over Core |
 | `src/ui/main.js` | DOM debug readout and intent claims |
 | `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
 | `goldbox.json` | Workspace: module search directories |
@@ -170,6 +170,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |
 | `docs/architecture.md` | Current owners and data flow |
 | `docs/ui.md` | DOM companion contract |
+| `docs/evidence/` | Screenshots that record what a presentation change looked like |
 | `docs/agent-review/` | Review workflow and lane packets |
 
 Read [AGENTS.md](AGENTS.md) before changing anything.
