@@ -304,12 +304,22 @@ regression checks for module and rules behavior.
   map to declared digital intents for moving and choosing. Play commands are
   the CLI's text commands, so the play part of a Game session is a valid
   `goldbox play` script (the party itself is made in the Game).
-- **Presentation.** The Engine renderer draws the first-person view from
-  asset-module art: each area becomes one generated mesh textured from its
-  wall set, with the camera at the party. A cell's backdrop shows as a sprite
-  over the view window. The DOM draws text, menus and panels around the window.
-  Module images can't be DOM images (bundles give no URLs), so pictures are
-  renderer sprites.
+- **Presentation.** The Engine renderer draws everything from asset-module
+  art, and the art is always flat images so a campaign can bring its own
+  easily:
+  - Navigation is real 3D: each area becomes one generated mesh textured
+    from its wall set (the textures are effectively sprites on geometry),
+    with a perspective camera at the party. A cell's backdrop shows as a
+    picture over the view window.
+  - Everything else is a billboard sprite: props such as chests and pillars,
+    and monsters, standing in the 3D view, and every combatant in combat.
+    Combat uses side-view sprites under a perspective camera looking down at
+    the field, the way Gold Box showed side-view figures in a pseudo-iso view.
+  - Sprites are drawn facing one way and flipped horizontally for the other.
+    There are no directional sprite sets and no meshes or mesh animation. A
+    sprite may be an animated strip of frames.
+  - The DOM draws text, menus and panels around the view. Module images can't
+    be DOM images (bundles give no URLs), so pictures are renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine
   persistence scope, as the same JSON `goldbox play --save` writes.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
