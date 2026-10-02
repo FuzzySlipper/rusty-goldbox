@@ -29,36 +29,41 @@ public static class ManifestReader
     /// </summary>
     public static ModuleManifest? Read(string moduleDirectory, List<ModuleDiagnostic> diagnostics)
     {
-        string directory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(moduleDirectory));
-        string path = Path.Combine(directory, FileName);
-        if (!Directory.Exists(directory))
+        DirectoryModuleSource source = new(moduleDirectory);
+        if (!Directory.Exists(source.Directory))
         {
             diagnostics.Add(new ModuleDiagnostic(
                 "module.not-found",
-                $"There is no directory at {directory}. Pass the path of a module directory (the one containing {FileName}).",
-                File: directory));
+                $"There is no directory at {source.Directory}. Pass the path of a module directory (the one containing {FileName}).",
+                File: source.Directory));
             return null;
         }
 
-        if (!File.Exists(path))
+        return Read(source, diagnostics);
+    }
+
+    /// <summary>Reads <c>module.json</c> from a module source; see <see cref="Read(string, List{ModuleDiagnostic})"/>.</summary>
+    public static ModuleManifest? Read(ModuleSource source, List<ModuleDiagnostic> diagnostics)
+    {
+        if (!source.Contains(FileName))
         {
             diagnostics.Add(new ModuleDiagnostic(
                 "manifest.missing",
-                $"The directory has no {FileName}. Create one with `goldbox module new <kind> <id>`.",
-                File: path));
+                $"{source.Location} has no {FileName}. Create one with `goldbox module new <kind> <id>`.",
+                File: source.ManifestPath));
             return null;
         }
 
-        using JsonDocument? document = JsonFiles.Parse(path, null, diagnostics);
+        using JsonDocument? document = JsonFiles.Parse(source, FileName, null, diagnostics);
         if (document is null)
         {
             return null;
         }
 
-        return new Reader(directory, path, diagnostics).Read(document.RootElement);
+        return new Reader(source, diagnostics).Read(document.RootElement);
     }
 
-    private sealed class Reader(string directory, string path, List<ModuleDiagnostic> diagnostics)
+    private sealed class Reader(ModuleSource source, List<ModuleDiagnostic> diagnostics)
     {
         private readonly int _errorsBefore = diagnostics.Count;
         private string? _module;
@@ -92,7 +97,7 @@ public static class ManifestReader
                 return null;
             }
 
-            return new ModuleManifest(directory, format!.Value, id!, kind!.Value, version!.Value, title!, requires, provenance!);
+            return new ModuleManifest(source, format!.Value, id!, kind!.Value, version!.Value, title!, requires, provenance!);
         }
 
         private void CheckUnknownFields(JsonElement root)
@@ -308,7 +313,7 @@ public static class ManifestReader
 
         private void Error(string rule, string jsonPath, string message)
         {
-            diagnostics.Add(new ModuleDiagnostic(rule, message, _module, path, jsonPath));
+            diagnostics.Add(new ModuleDiagnostic(rule, message, _module, source.ManifestPath, jsonPath));
         }
     }
 }

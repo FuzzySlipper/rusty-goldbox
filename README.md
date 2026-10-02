@@ -28,8 +28,27 @@ rusty dev --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --port 8787
 
 Open the URL printed by the host. `rusty dev` runs the pinned pair's runtime:
 CoreCLR loads the product, and changes to C#, UI or content inputs rebuild and
-reload it. See `rusty dev --help` for `--bind-host`, `--live-debug` and
-`--debugger`.
+reload it; module edits reload as content bundles without a restart. See
+`rusty dev --help` for `--bind-host`, `--live-debug` and `--debugger`.
+
+The page is a debug readout. Open a campaign, roll a party (and give it
+equipment), then play with the buttons, a typed command, or the keys: arrows
+or WASD move and turn, X turns around, L looks, digits choose menu options.
+Saves go to named slots in the Engine persistence root, which `rusty dev`
+keeps in `.runtime/persistence`; `goldbox play --store .runtime/persistence`
+loads and writes the same slots.
+
+A release is one compressed container plus the managed files beside it, with
+every module bundle inside:
+
+```bash
+rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --pack release --compress
+```
+
+`--pack` and `rusty pack-content` are commands of the pinned pair's own
+`rusty` (`~/.cache/rusty-engine/pairs/<pin>/runtime-pack/bin/rusty`); an older
+bootstrap `rusty` on `PATH` may not have them until it is refreshed with the
+install script above.
 
 ## Authoring modules
 
@@ -68,7 +87,15 @@ Campaigns play from command scripts, and save and resume:
 
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- map render entrance --module modules/sample-crypt
-dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt.script
+dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt.script --save game.json
+dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --load game.json --script more.script
+```
+
+With `--store <dir>`, `--load` and `--save` name save slots in that Engine
+persistence root instead of files, such as the Game's under `rusty dev`:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --store .runtime/persistence --load slot-1 --script more.script --save slot-2
 ```
 
 Fights run headless from a seed; one run prints the transcript, more print
@@ -117,14 +144,13 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 
 | Path | Responsibility |
 | --- | --- |
-| `src/RustyGoldbox.Core/` | Module format and loading, definition types, expressions and rule evaluation; later characters, combat and campaigns |
+| `src/RustyGoldbox.Core/` | Module format and loading (from directories or Engine bundles), definition types, expressions, rule evaluation, characters, combat, campaigns and saves |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
-| `src/RustyGoldbox.Game/` | Engine product: lifecycle and projections |
-| `src/ui/main.js` | DOM debug readout |
-| `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign |
+| `src/RustyGoldbox.Game/` | Engine product: module bundles, input intents, save slots and the session projection over Core |
+| `src/ui/main.js` | DOM debug readout and intent claims |
+| `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
-| `content/` | Product content root; module bundles are staged from here |
 | `Directory.Build.props` | Engine SDK/runtime pin |
 | `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |
 | `docs/architecture.md` | Current owners and data flow |

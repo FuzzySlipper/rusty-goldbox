@@ -5,14 +5,65 @@
     <RustyEngineProductTitle>Rusty Goldbox</RustyEngineProductTitle>
     <RustyEngineProductUiRoot>$(MSBuildProjectDirectory)/../ui</RustyEngineProductUiRoot>
     <RustyEngineProductUiEntry>main.js</RustyEngineProductUiEntry>
-    <RustyEngineProductContentRoot>$(MSBuildProjectDirectory)/../../content</RustyEngineProductContentRoot>
+    <RustyEngineProductContentRoot>$(MSBuildProjectDirectory)/../../modules</RustyEngineProductContentRoot>
     <RustyEngineProductUiProjectionStream>rusty-goldbox</RustyEngineProductUiProjectionStream>
-    <RustyEngineProductUiProjectionContract>rusty.goldbox.status</RustyEngineProductUiProjectionContract>
+    <RustyEngineProductUiProjectionContract>rusty.goldbox.session</RustyEngineProductUiProjectionContract>
     <RustyEngineProductInputCursorMode>unlocked</RustyEngineProductInputCursorMode>
-    <RustyEngineWatchPaths>$(MSBuildProjectDirectory);$(RustyEngineProductUiRoot);$(RustyEngineProductContentRoot)</RustyEngineWatchPaths>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
+    <ProjectReference Include="../RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
+    <InternalsVisibleTo Include="RustyGoldbox.Tests" />
+  </ItemGroup>
+
+  <!-- Every module directory under modules/ is its own content bundle, named
+       after the directory. The Game opens them with Content.OpenBundle;
+       rusty dev reloads bundle edits without a restart. -->
+  <ItemGroup>
+    <_GoldboxModuleDirectory Include="$([System.IO.Directory]::GetDirectories('$(RustyEngineProductContentRoot)'))" />
+    <RustyEngineContentBundle Include="@(_GoldboxModuleDirectory->'%(Filename)%(Extension)')" />
+  </ItemGroup>
+
+  <!-- goldbox.command carries the DOM's goldbox.command.v1 payloads. The
+       digital intents move the party and choose menu options from keys. -->
+  <ItemGroup>
+    <RustyEngineProductInputIntent Include="goldbox.command" Value="payload:goldbox.command.v1" />
+    <RustyEngineProductInputIntent Include="party.forward" Value="digital" />
+    <RustyEngineProductInputIntent Include="party.back" Value="digital" />
+    <RustyEngineProductInputIntent Include="party.left" Value="digital" />
+    <RustyEngineProductInputIntent Include="party.right" Value="digital" />
+    <RustyEngineProductInputIntent Include="party.around" Value="digital" />
+    <RustyEngineProductInputIntent Include="party.look" Value="digital" />
+    <RustyEngineProductInputMapping Include="party.forward.arrow-up" Intent="party.forward" Trigger="key:arrow-up:pressed" />
+    <RustyEngineProductInputMapping Include="party.forward.key-w" Intent="party.forward" Trigger="key:key-w:pressed" />
+    <RustyEngineProductInputMapping Include="party.back.arrow-down" Intent="party.back" Trigger="key:arrow-down:pressed" />
+    <RustyEngineProductInputMapping Include="party.back.key-s" Intent="party.back" Trigger="key:key-s:pressed" />
+    <RustyEngineProductInputMapping Include="party.left.arrow-left" Intent="party.left" Trigger="key:arrow-left:pressed" />
+    <RustyEngineProductInputMapping Include="party.left.key-a" Intent="party.left" Trigger="key:key-a:pressed" />
+    <RustyEngineProductInputMapping Include="party.right.arrow-right" Intent="party.right" Trigger="key:arrow-right:pressed" />
+    <RustyEngineProductInputMapping Include="party.right.key-d" Intent="party.right" Trigger="key:key-d:pressed" />
+    <RustyEngineProductInputMapping Include="party.around.key-x" Intent="party.around" Trigger="key:key-x:pressed" />
+    <RustyEngineProductInputMapping Include="party.look.key-l" Intent="party.look" Trigger="key:key-l:pressed" />
+  </ItemGroup>
+  <ItemGroup>
+    <RustyEngineProductInputIntent Include="menu.choose-1" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-2" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-3" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-4" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-5" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-6" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-7" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-8" Value="digital" />
+    <RustyEngineProductInputIntent Include="menu.choose-9" Value="digital" />
+    <RustyEngineProductInputMapping Include="menu.choose-1.digit-1" Intent="menu.choose-1" Trigger="key:digit-1:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-2.digit-2" Intent="menu.choose-2" Trigger="key:digit-2:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-3.digit-3" Intent="menu.choose-3" Trigger="key:digit-3:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-4.digit-4" Intent="menu.choose-4" Trigger="key:digit-4:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-5.digit-5" Intent="menu.choose-5" Trigger="key:digit-5:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-6.digit-6" Intent="menu.choose-6" Trigger="key:digit-6:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-7.digit-7" Intent="menu.choose-7" Trigger="key:digit-7:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-8.digit-8" Intent="menu.choose-8" Trigger="key:digit-8:pressed" />
+    <RustyEngineProductInputMapping Include="menu.choose-9.digit-9" Intent="menu.choose-9" Trigger="key:digit-9:pressed" />
   </ItemGroup>
 </Project>

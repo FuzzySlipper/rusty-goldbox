@@ -42,7 +42,7 @@ public static class SaveFile
                 writer.WriteStartObject();
                 writer.WriteString("id", loaded.Manifest.Id);
                 writer.WriteString("version", loaded.Manifest.Version.ToString());
-                writer.WriteString("identity", ModuleIdentity.Of(loaded.Manifest));
+                writer.WriteString("identity", loaded.Manifest.Source.Identity);
                 writer.WriteEndObject();
             }
 
@@ -109,11 +109,18 @@ public static class SaveFile
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
 
-    /// <summary>Reads a save against the loaded module set; problems name the file and JSON path.</summary>
+    /// <summary>Reads a save file against the loaded module set; problems name the file and JSON path.</summary>
     public static CampaignState? Read(string path, ModuleSet set, List<ModuleDiagnostic> problems)
     {
         using JsonDocument? document = JsonFiles.Parse(path, null, problems);
         return document is null ? null : new Reader(path, set, problems).Read(document.RootElement);
+    }
+
+    /// <summary>Reads save JSON from elsewhere (an Engine save slot) named <paramref name="location"/> in problems.</summary>
+    public static CampaignState? Read(ReadOnlyMemory<byte> json, string location, ModuleSet set, List<ModuleDiagnostic> problems)
+    {
+        using JsonDocument? document = JsonFiles.Parse(json, location, null, problems);
+        return document is null ? null : new Reader(location, set, problems).Read(document.RootElement);
     }
 
     private sealed class Reader(string path, ModuleSet set, List<ModuleDiagnostic> problems)
@@ -226,7 +233,7 @@ public static class SaveFile
                 {
                     differences.Add($"{manifest.Id} is {manifest.Version}, but the save was made with {entry.Version}");
                 }
-                else if (entry.Identity != ModuleIdentity.Of(manifest))
+                else if (entry.Identity != manifest.Source.Identity)
                 {
                     differences.Add($"{manifest.Id} {manifest.Version} has different content from when the save was made");
                 }

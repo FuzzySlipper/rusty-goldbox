@@ -8,7 +8,7 @@ public sealed record ModuleRequirement(string Id, VersionRange Range, int Index)
 
 /// <summary>A module's checked <c>module.json</c>.</summary>
 public sealed record ModuleManifest(
-    string Directory,
+    ModuleSource Source,
     int Format,
     string Id,
     ModuleKind Kind,
@@ -17,5 +17,5 @@ public sealed record ModuleManifest(
     IReadOnlyList<ModuleRequirement> Requires,
     string Provenance)
 {
-    public string ManifestPath => Path.Combine(Directory, ManifestReader.FileName);
+    public string ManifestPath => Source.ManifestPath;
 }

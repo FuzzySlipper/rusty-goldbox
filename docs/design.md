@@ -252,7 +252,11 @@ seed and a command script fully reproduce a run. A transcript records seeds,
 commands, rolls and outcomes.
 
 **Saves** record the resolved module set (ID, version and content identity for
-each, the identity being a hash of the module's files) and the campaign state.
+each, the identity being the Engine's bundle identity: a hash of the module's
+files that is the same for a directory, a bundle and a container) and the
+campaign state. They are files for the CLI and named slots in Engine
+persistence for the Game; `goldbox play --store` reads and writes the same
+slots.
 Command *n* of a campaign rolls on its own random scope, so a game saved and
 resumed rolls exactly as one played straight through. Loading a save under a different module set is
 refused with a message that names the differences. Save migration is out of
@@ -284,11 +288,18 @@ regression checks for module and rules behavior.
 
 ## Engine integration
 
-- **Content during development.** Each module that the Game should see is
-  declared as a `RustyEngineContentBundle` under the product content root.
+- **Content during development.** `modules/` is the product content root, and
+  each module directory in it is declared as a `RustyEngineContentBundle`.
   The Game opens the bundles for the selected campaign and its requirements
-  with `Content.OpenBundle`, and Core loads definitions from the bundle files.
-  `rusty dev` reloads bundle edits without a restart.
+  with `Content.OpenBundle`, and Core loads definitions from the bundle files
+  through the same loader the CLI uses on directories. `rusty dev` reloads
+  bundle edits without a restart.
+- **Input.** The DOM claims one declared payload intent for its actions; keys
+  map to declared digital intents for moving and choosing. Play commands are
+  the CLI's text commands, so the play part of a Game session is a valid
+  `goldbox play` script (the party itself is made in the Game).
+- **Persistence.** Saves go through `ProductStateStore` in one Engine
+  persistence scope, as the same JSON `goldbox play --save` writes.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
   its content as one zstd-compressed `.rpak`.
 - **Independent module export.** `rusty pack-content <module-dir> --output

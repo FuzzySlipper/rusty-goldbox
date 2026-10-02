@@ -1,39 +1,65 @@
 namespace RustyGoldbox.Core.Modules;
 
-/// <summary>
-/// The modules available in a set of search directories: each directory
-/// itself if it holds a <c>module.json</c>, and each of its immediate
-/// subdirectories that does.
-/// </summary>
+/// <summary>The modules a load can pick requirements from, by ID.</summary>
 internal sealed class ModuleCatalog
 {
     private readonly Dictionary<string, List<ModuleManifest>> _byId = [];
     private readonly List<string> _unreadable = [];
 
-    private ModuleCatalog(IReadOnlyList<string> searchDirectories)
+    private ModuleCatalog(IReadOnlyList<string> searched, string howToAdd)
     {
-        SearchDirectories = searchDirectories;
+        Searched = searched;
+        HowToAdd = howToAdd;
     }
 
-    public IReadOnlyList<string> SearchDirectories { get; }
+    /// <summary>Where modules were looked for, for messages.</summary>
+    public IReadOnlyList<string> Searched { get; }
 
-    /// <summary>Module directories whose manifests have errors, so they can't be used.</summary>
+    /// <summary>How to make a missing module available, for messages.</summary>
+    public string HowToAdd { get; }
+
+    /// <summary>Modules whose manifests have errors, so they can't be used.</summary>
     public IReadOnlyList<string> Unreadable => _unreadable;
 
-    public static ModuleCatalog Scan(IReadOnlyList<string> searchDirectories, string excludedDirectory, List<ModuleDiagnostic> diagnostics)
+    /// <param name="available">Every module source that may be required; the root is skipped.</param>
+    /// <param name="searched">Where <paramref name="available"/> came from, for messages.</param>
+    /// <param name="howToAdd">How to make a missing module available, for messages.</param>
+    public static ModuleCatalog Read(IEnumerable<ModuleSource> available, ModuleManifest root, IReadOnlyList<string> searched, string howToAdd)
     {
-        ModuleCatalog catalog = new(searchDirectories);
-        HashSet<string> seen = [excludedDirectory];
-        foreach (string searchDirectory in searchDirectories)
+        ModuleCatalog catalog = new(searched, howToAdd);
+        HashSet<string> seen = [root.Source.Location];
+        foreach (ModuleSource source in available)
         {
-            catalog.TryAdd(searchDirectory, seen);
-            foreach (string child in DirectoryListing.List(searchDirectory, directories: true, null, diagnostics) ?? [])
+            if (seen.Add(source.Location))
             {
-                catalog.TryAdd(child, seen);
+                catalog.Add(source);
             }
         }
 
         return catalog;
+    }
+
+    /// <summary>
+    /// The module directories in a set of search directories: each directory
+    /// itself if it holds a <c>module.json</c>, and each of its immediate
+    /// subdirectories that does.
+    /// </summary>
+    public static List<ModuleSource> Directories(IReadOnlyList<string> searchDirectories, List<ModuleDiagnostic> diagnostics)
+    {
+        List<ModuleSource> sources = [];
+        foreach (string searchDirectory in searchDirectories)
+        {
+            IEnumerable<string> children = DirectoryListing.List(searchDirectory, directories: true, null, diagnostics) ?? [];
+            foreach (string directory in children.Prepend(searchDirectory))
+            {
+                if (File.Exists(Path.Combine(directory, ManifestReader.FileName)))
+                {
+                    sources.Add(new DirectoryModuleSource(directory));
+                }
+            }
+        }
+
+        return sources;
     }
 
     public IReadOnlyList<ModuleManifest> Find(string id)
@@ -41,20 +67,15 @@ internal sealed class ModuleCatalog
         return _byId.TryGetValue(id, out List<ModuleManifest>? candidates) ? candidates : [];
     }
 
-    private void TryAdd(string directory, HashSet<string> seen)
+    private void Add(ModuleSource source)
     {
-        if (!File.Exists(Path.Combine(directory, ManifestReader.FileName)) || !seen.Add(directory))
-        {
-            return;
-        }
-
         // Problems in modules nobody requires are not this load's problems;
         // they are reported when that module is validated itself.
         List<ModuleDiagnostic> ignored = [];
-        ModuleManifest? manifest = ManifestReader.Read(directory, ignored);
+        ModuleManifest? manifest = ManifestReader.Read(source, ignored);
         if (manifest is null)
         {
-            _unreadable.Add(directory);
+            _unreadable.Add(source.Location);
             return;
         }
 

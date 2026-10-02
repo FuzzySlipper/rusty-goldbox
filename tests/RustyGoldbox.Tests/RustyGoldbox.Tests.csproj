@@ -13,5 +13,6 @@
     <Using Include="Xunit" />
     <ProjectReference Include="../../src/RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
     <ProjectReference Include="../../src/RustyGoldbox.Cli/RustyGoldbox.Cli.csproj" />
+    <ProjectReference Include="../../src/RustyGoldbox.Game/RustyGoldbox.Game.csproj" />
   </ItemGroup>
 </Project>

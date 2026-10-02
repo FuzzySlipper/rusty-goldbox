@@ -89,7 +89,7 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
         if (copies.Count > 1)
         {
             Error(module, "resolve.ambiguous", $"{at}.id",
-                $"{picked.Id} {picked.Version} is in more than one directory: {string.Join(", ", copies.Select(copy => copy.Directory))}. Remove one copy or give it a different version.");
+                $"{picked.Id} {picked.Version} is in more than one place: {string.Join(", ", copies.Select(copy => copy.Source.Location))}. Remove one copy or give it a different version.");
             return null;
         }
 
@@ -221,14 +221,13 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
 
     private string NotFoundMessage(ModuleManifest module, ModuleRequirement requirement)
     {
-        string directories = catalog.SearchDirectories.Count == 0
+        string searched = catalog.Searched.Count == 0
             ? "(there are none)"
-            : string.Join(", ", catalog.SearchDirectories);
-        string message = $"'{module.Id}' requires '{requirement.Id}', but no module with that ID is in the search directories: {directories}. "
-            + "Add the directory that holds it with --modules <dir> or to the \"modules\" list in goldbox.json.";
+            : string.Join(", ", catalog.Searched);
+        string message = $"'{module.Id}' requires '{requirement.Id}', but no module with that ID is in the places searched: {searched}. {catalog.HowToAdd}";
         if (catalog.Unreadable.Count > 0)
         {
-            message += $" These module directories were skipped because their module.json has errors: {string.Join(", ", catalog.Unreadable)}.";
+            message += $" These modules were skipped because their module.json has errors: {string.Join(", ", catalog.Unreadable)}.";
         }
 
         return message;

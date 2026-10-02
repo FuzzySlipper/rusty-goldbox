@@ -13,13 +13,13 @@ public sealed class ModuleSet
 {
     internal ModuleSet(
         ModuleManifest? root,
-        IReadOnlyList<string> searchDirectories,
+        IReadOnlyList<string> searched,
         IReadOnlyList<LoadedModule> loadOrder,
         RuleSet? rules,
         IReadOnlyList<ModuleDiagnostic> diagnostics)
     {
         Root = root;
-        SearchDirectories = searchDirectories;
+        Searched = searched;
         LoadOrder = loadOrder;
         Rules = rules;
         Diagnostics = diagnostics;
@@ -28,7 +28,8 @@ public sealed class ModuleSet
     /// <summary>The module that was asked for, when its manifest is valid.</summary>
     public ModuleManifest? Root { get; }
 
-    public IReadOnlyList<string> SearchDirectories { get; }
+    /// <summary>Where requirements were looked for: search directories, or the bundles a product offered.</summary>
+    public IReadOnlyList<string> Searched { get; }
 
     /// <summary>Resolved modules, each after everything it requires. The root is last.</summary>
     public IReadOnlyList<LoadedModule> LoadOrder { get; }

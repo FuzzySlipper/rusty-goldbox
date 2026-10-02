@@ -10,14 +10,13 @@ modules/<id>/module.json + definition files
   -> RustyGoldbox.Core (load, resolve, check, evaluate; dice through Engine Random)
   -> RustyGoldbox.Cli (`goldbox`: parse arguments, host Engine services, print text or --json)
 
-RustyGoldbox.Game (C#)
+modules/<id>/ staged as Engine content bundles (or packed as containers)
+  -> RustyGoldbox.Game (C#: ModuleLibrary -> Core; GameSession; SessionProjection)
   -> Rusty.Engine safe SDK
   -> SDK-generated bind entry point and ABI
-  -> packaged Rust host, input, UI transport and browser shell
+  -> packaged Rust host, input, persistence, UI transport and browser shell
   -> DOM companion
 ```
-
-The Game does not use Core yet.
 
 ## Owners
 
@@ -26,6 +25,9 @@ The Game does not use Core yet.
 | `src/RustyGoldbox.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
 | `src/RustyGoldbox.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `goldbox.json` |
 | `src/RustyGoldbox.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
+| `src/RustyGoldbox.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
+| `src/RustyGoldbox.Core/Modules/BundleModuleSource.cs` | A module in an Engine content bundle or container |
+| `src/RustyGoldbox.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from |
 | `src/RustyGoldbox.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
 | `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), and checking one file against its type (`DefinitionReader`) |
 | `src/RustyGoldbox.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
@@ -46,19 +48,23 @@ The Game does not use Core yet.
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls: parsing the map text and drawing it |
 | `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, variables, fired triggers, pending menu, party, gold, inventory |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` | The play command surface: movement, triggers, event chains, fights, status |
-| `src/RustyGoldbox.Core/Campaigns/SaveFile.cs`, `ModuleIdentity.cs` | Saves, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source) |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
 | `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
-| `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks and the status projection |
-| `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, content/UI roots, projection identity and host defaults |
-| `src/ui/main.js` | DOM status readout and projection subscription |
+| `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
+| `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
+| `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns and loading a module set from them |
+| `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
+| `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
+| `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
+| `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
-| `content/` | Product-authored data |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
@@ -67,7 +73,17 @@ The Game does not use Core yet.
 `ModuleLoader.Load` reads the root manifest, finds search directories, scans
 them for candidate modules, resolves one version per required ID, orders the
 set so each module follows what it requires, checks kind rules and then checks
-every definition file. Every problem becomes a `ModuleDiagnostic` with a rule
+every definition file. It reads files through a `ModuleSource`: the CLI
+loads module directories, and the Game loads Engine content bundles through
+the same overload that takes a root source and the available ones. Files are
+read in path order either way, so both see definitions in the same order.
+
+A module's content identity is the Engine's bundle identity: SHA-256 over each
+file's relative path, a zero byte and that file's SHA-256, in path order. A
+directory computes it on first use; a bundle or container already carries it
+(`ProductContentBundle.Identity`). The same files give the same identity
+however they are stored, so a save made from source directories loads in the
+Game and the other way round. Every problem becomes a `ModuleDiagnostic` with a rule
 ID, module, file, JSON path and a message that says how to fix it. Loading
 reports all problems it can find rather than stopping at the first.
 
@@ -113,9 +129,14 @@ returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu waits for a choice, the chain ends, or the adventure does. A
 combat event fights the party against an encounter with `CombatRunner`, and
-the party keeps the damage. `goldbox play` gives command *n* a dice stream
+the party keeps the damage. `CampaignRunner` gives command *n* a dice stream
 scoped `goldbox.play.<n>` from the campaign's seed, which a save records with
 the command count; that is what makes a resumed save roll as an unbroken run.
+
+A save is the JSON `SaveFile` writes. `goldbox play` keeps it in a file, or
+with `--store <dir>` in a `SaveSlots` slot of that Engine persistence root;
+the Game uses the same slots (scope `goldbox-saves`), so either loads the
+other's saves.
 
 ## Characters
 
@@ -140,11 +161,32 @@ The installed runtime loads the product assembly through its SDK-generated bind
 entry point and constructs it with `ProductCreateContext`. The product opens
 its UI stream through `IEngineContext.Ui`.
 
+The product content root is `modules/`, and the project declares every
+directory there as a `RustyEngineContentBundle` named after it. `ModuleLibrary`
+opens all bundles for each listing or load and disposes them afterwards, so
+under `rusty dev` an edited module is seen on the next open without a restart.
+A release (`rusty build --pack`) carries the same bundles inside its container.
+
 The product uses Engine's default `demand` lifecycle: updates run when there
-is input or work, not on a fixed clock, which suits a turn-based game. On
-`Start` and `Restart` it publishes a `rusty.goldbox.status` projection with a
-`status` string. The DOM displays it and holds no state. No input intents are
-declared yet.
+is input, not on a fixed clock, which suits a turn-based game. Input is the
+`goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
+claims (`{ "action": ..., fields }`: refresh, open, roll, equip, drop, begin,
+play, save, load, quit), plus digital intents mapped from keys: arrows and
+WASD move and turn, X turns around, L looks, digits choose menu options.
+Payloads come from the page, so `GameCommands` checks every field once and
+turns a bad one into a note; a key intent acts on a key press or on a UI claim
+with a positive value. Every rule decision is Core's. `GameSession` holds the screen (title, party, play), the loaded
+module set, the party being rolled and the `CampaignRunner`. Opening a
+campaign takes a `seed` from the payload or, without one, picks one from the
+clock: roll *n* of character creation uses
+scope `goldbox.character.<n>` and the game starts from the same seed, so a
+session replays from it. Play commands are the same text commands `goldbox
+play` scripts use.
+
+After each update that applied input, and on `Start` and `Restart`, the
+product publishes `rusty.goldbox.session`: the screen, status, notes,
+campaigns, the party, and in play the position, the player-view map, the
+waiting menu and the latest log lines. The DOM renders it and holds no state.
 
 ## Build and host
 

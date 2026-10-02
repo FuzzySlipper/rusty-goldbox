@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Rusty.Engine.Testing;
+using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
@@ -8,9 +10,9 @@ namespace RustyGoldbox.Tests;
 
 public sealed class CampaignTests
 {
-    private static string SampleCrypt => Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt");
+    internal static string SampleCrypt => Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt");
 
-    private static string Script(string name) => Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "scripts", name);
+    internal static string Script(string name) => Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "scripts", name);
 
     [Fact]
     public void SampleCryptPlaysFromStartToFinish()
@@ -46,6 +48,53 @@ public sealed class CampaignTests
         Assert.Contains("Combat with", string.Join("\n", Commands(resumed)), StringComparison.Ordinal);
         Assert.Equal(File.ReadAllText(Path.Combine(scratch.Root, "whole.json")), File.ReadAllText(Path.Combine(scratch.Root, "resumed.json")));
         Assert.True(resumed.GetProperty("ended").GetBoolean());
+    }
+
+    [Fact]
+    public void SaveSlotsInEnginePersistenceCarryGamesBothWays()
+    {
+        using TempModules scratch = new();
+        WriteParty(scratch, Rules.ClassicPath);
+        string store = Path.Combine(scratch.Root, "persistence");
+        string[] lines = File.ReadAllLines(Script("crypt.script"));
+        int split = Array.FindIndex(lines, line => line.StartsWith("choose 1", StringComparison.Ordinal));
+        File.WriteAllLines(Path.Combine(scratch.Root, "first.script"), lines[..split]);
+        File.WriteAllLines(Path.Combine(scratch.Root, "second.script"), lines[split..]);
+        Play(scratch, "--party", "ada.json,brom.json", "--seed", "5", "--script", Script("crypt.script"), "--save", "whole.json");
+        Play(scratch, "--party", "ada.json,brom.json", "--seed", "5", "--script", "first.script", "--save", "half.json");
+
+        // The CLI writes a slot; the store holds the same save JSON a file does.
+        Play(scratch, "--party", "ada.json,brom.json", "--seed", "5", "--script", "first.script", "--store", store, "--save", "from-cli");
+        string half = File.ReadAllText(Path.Combine(scratch.Root, "half.json"));
+        using (EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store }))
+        {
+            host.Call(engine =>
+            {
+                using SaveSlots slots = new(engine);
+                Assert.Equal(half, System.Text.Encoding.UTF8.GetString(slots.Read("from-cli")!));
+
+                // The Game writes slots through the same SaveSlots.
+                slots.Write("from-game", half);
+            });
+        }
+
+        // The CLI resumes the slot the Game wrote, exactly as from the file.
+        Play(scratch, "--load", "from-game", "--store", store, "--script", "second.script", "--save", "resumed");
+        using (EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store }))
+        {
+            string resumed = host.Call(engine =>
+            {
+                using SaveSlots slots = new(engine);
+                return System.Text.Encoding.UTF8.GetString(slots.Read("resumed")!);
+            });
+            Assert.Equal(File.ReadAllText(Path.Combine(scratch.Root, "whole.json")), resumed);
+        }
+
+        (int code, string output) = Run(scratch, "play", "--campaign", SampleCrypt, "--store", store, "--load", "empty-slot");
+        Assert.Equal(1, code);
+        Assert.Contains("save.store", output, StringComparison.Ordinal);
+        Assert.Contains("The slot is empty", output, StringComparison.Ordinal);
+        Assert.Equal(2, Run(scratch, "play", "--campaign", SampleCrypt, "--store", store, "--load", "../escape").Code);
     }
 
     [Fact]
@@ -202,14 +251,14 @@ public sealed class CampaignTests
         return JsonDocument.Parse(output).RootElement.Clone();
     }
 
-    private static (int Code, string Output) Run(TempModules scratch, params string[] args)
+    internal static (int Code, string Output) Run(TempModules scratch, params string[] args)
     {
         using StringWriter output = new();
         int code = Cli.GoldboxCli.Run(args, output, scratch.Root);
         return (code, output.ToString());
     }
 
-    private static void WriteParty(TempModules scratch, string classic)
+    internal static void WriteParty(TempModules scratch, string classic)
     {
         Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Ada", "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--seed", "2", "--out", "ada.json");
         Run(scratch, "character", "new", "--module", classic, "--class", "cleric", "--race", "dwarf", "--name", "Brom", "--attributes", "str=13,dex=10,con=14,int=9,wis=15,cha=10", "--seed", "4", "--out", "brom.json");

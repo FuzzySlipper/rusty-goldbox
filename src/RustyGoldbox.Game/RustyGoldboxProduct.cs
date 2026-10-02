@@ -1,33 +1,50 @@
-using System.Text;
 using Rusty.Engine;
 
 namespace RustyGoldbox.Game;
 
 /// <summary>
-/// Engine product shell. It publishes a status readout until the campaign
-/// runtime from Core is wired in (design phase 5).
+/// The Engine product: runs Core campaigns from the module bundles under
+/// Engine input and persistence, and publishes the session as a debug
+/// projection for the DOM readout.
 /// </summary>
 public sealed class RustyGoldboxProduct : IEngineProduct
 {
     private const string UiStreamId = "rusty-goldbox";
-    private const string UiContract = "rusty.goldbox.status";
-    private const string StatusKey = "status";
-    private const string IdleStatus = "No campaign loaded";
-
+    private const string UiContract = "rusty.goldbox.session";
     private readonly IEngineContext _engine;
     private readonly UiStream _uiStream;
+    private readonly GameSession _session;
     private ulong _uiSequence;
 
     public RustyGoldboxProduct(ProductCreateContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _engine = context.Engine;
+        _session = new GameSession(new ModuleLibrary(() => OpenBundles(context.Content)));
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
-    public void Start() => PublishStatus(IdleStatus);
+    public void Start()
+    {
+        _session.Refresh();
+        Publish();
+    }
 
-    public ProductUpdateResult Update(ProductUpdate update) => ProductUpdateResult.None;
+    public ProductUpdateResult Update(ProductUpdate update)
+    {
+        bool changed = false;
+        foreach (ProductInputEvent input in update.Input)
+        {
+            changed |= GameCommands.Apply(_session, _engine, input);
+        }
+
+        if (changed)
+        {
+            Publish();
+        }
+
+        return ProductUpdateResult.None;
+    }
 
     public void Pause()
     {
@@ -37,7 +54,12 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     {
     }
 
-    public void Restart() => PublishStatus(IdleStatus);
+    public void Restart()
+    {
+        _session.Quit();
+        _session.Refresh();
+        Publish();
+    }
 
     public void Shutdown()
     {
@@ -45,17 +67,20 @@ public sealed class RustyGoldboxProduct : IEngineProduct
 
     public void Dispose() => _uiStream.Dispose();
 
-    private void PublishStatus(string status)
+    private static List<ProductContentBundle> OpenBundles(ProductContent content)
     {
-        byte[] text = Encoding.UTF8.GetBytes(StatusKey + status);
-        uint keyLength = (uint)Encoding.UTF8.GetByteCount(StatusKey);
-        uint statusLength = (uint)text.Length - keyLength;
-        StructuredValueNode[] nodes =
-        [
-            new(StructuredValueKind.Object, 0, 0, 0, 0, 0, 0, 0, 1),
-            new(StructuredValueKind.String, 0, 0, 0, keyLength, keyLength, statusLength, 0, 0),
-        ];
-        UiValue value = new(nodes, new uint[] { 1 }, 0, text);
+        List<ProductContentBundle> bundles = [];
+        foreach (ContentBundleInfo info in content.ListBundles().Span)
+        {
+            bundles.Add(content.OpenBundle(info.Id));
+        }
+
+        return bundles;
+    }
+
+    private void Publish()
+    {
+        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session));
         _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
     }
 }

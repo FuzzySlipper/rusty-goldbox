@@ -349,6 +349,14 @@ public sealed class CampaignRunner
         return null;
     }
 
+    /// <summary>The waiting menu's options, numbered as <c>choose</c> takes them; empty when no menu waits.</summary>
+    public IReadOnlyList<(int Number, string Label)> MenuOptions()
+    {
+        return _state.PendingMenu is Definition menu
+            ? Offered(menu).Select(option => (option.Number, option.Label)).ToList()
+            : [];
+    }
+
     private List<(int Number, string Label, int Index)> Offered(Definition menu)
     {
         List<(int, string, int)> offered = [];

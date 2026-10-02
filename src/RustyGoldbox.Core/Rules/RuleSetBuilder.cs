@@ -486,15 +486,14 @@ public sealed class RuleSetBuilder
             else if (definition.Type == DefinitionTypes.Asset)
             {
                 string file = definition.Json.GetProperty("file").GetString()!;
-                string root = _manifests[definition.Module].Directory;
-                string full = Path.GetFullPath(Path.Combine(root, file));
-                if (Path.IsPathRooted(file) || file.Contains('\\', StringComparison.Ordinal) || !full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                ModuleSource source = _manifests[definition.Module].Source;
+                if (file.Split('/').Any(part => part is "" or "." or "..") || file.Contains('\\', StringComparison.Ordinal) || file.Contains(':', StringComparison.Ordinal))
                 {
                     Error(definition, "asset.file", "$.file", $"'{file}' must be a relative path inside the module, with forward slashes.");
                 }
-                else if (!File.Exists(full))
+                else if (!source.Contains(file))
                 {
-                    Error(definition, "asset.file", "$.file", $"There is no file '{file}' in module '{definition.Module}' ({full}).");
+                    Error(definition, "asset.file", "$.file", $"There is no file '{file}' in module '{definition.Module}' ({source.PathOf(file)}).");
                 }
             }
             else if (definition.Type == DefinitionTypes.Campaign)

@@ -21,7 +21,31 @@ public static class ModuleLoader
             return new ModuleSet(null, directories, [], null, diagnostics);
         }
 
-        ModuleCatalog catalog = ModuleCatalog.Scan(directories, root.Directory, diagnostics);
+        string howToAdd = "Add the directory that holds it with --modules <dir> or to the \"modules\" list in goldbox.json.";
+        return Load(root, ModuleCatalog.Directories(directories, diagnostics), directories, howToAdd, diagnostics);
+    }
+
+    /// <summary>
+    /// Loads <paramref name="root"/>, picking its requirements from
+    /// <paramref name="available"/> (which may include the root itself).
+    /// </summary>
+    /// <param name="searched">Where the sources came from, named in messages about missing modules.</param>
+    /// <param name="howToAdd">How to make a missing module available, for the same messages.</param>
+    public static ModuleSet Load(ModuleSource root, IReadOnlyList<ModuleSource> available, IReadOnlyList<string> searched, string howToAdd)
+    {
+        List<ModuleDiagnostic> diagnostics = [];
+        ModuleManifest? manifest = ManifestReader.Read(root, diagnostics);
+        if (manifest is null)
+        {
+            return new ModuleSet(null, searched, [], null, diagnostics);
+        }
+
+        return Load(manifest, available, searched, howToAdd, diagnostics);
+    }
+
+    private static ModuleSet Load(ModuleManifest root, IReadOnlyList<ModuleSource> available, IReadOnlyList<string> searched, string howToAdd, List<ModuleDiagnostic> diagnostics)
+    {
+        ModuleCatalog catalog = ModuleCatalog.Read(available, root, searched, howToAdd);
         List<LoadedModule> order = new ModuleResolver(catalog, diagnostics).Resolve(root);
         List<Definition> definitions = [];
         foreach (LoadedModule loaded in order)
@@ -37,6 +61,6 @@ public static class ModuleLoader
             rules = RuleSetBuilder.Build(order, definitions, diagnostics);
         }
 
-        return new ModuleSet(root, directories, order, rules, diagnostics);
+        return new ModuleSet(root, searched, order, rules, diagnostics);
     }
 }

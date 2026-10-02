@@ -99,13 +99,13 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             WriteJson(new
             {
                 ok = set.IsValid,
-                searchDirectories = set.SearchDirectories.Select(Display),
+                searchDirectories = set.Searched.Select(Display),
                 loadOrder = set.LoadOrder.Select(loaded => new
                 {
                     id = loaded.Manifest.Id,
                     version = loaded.Manifest.Version.ToString(),
                     kind = ModuleKinds.Name(loaded.Manifest.Kind),
-                    path = Display(loaded.Manifest.Directory),
+                    path = Display(loaded.Manifest.Source.Location),
                     requires = loaded.Requires.Select(requirement => new
                     {
                         id = requirement.Id,
@@ -125,7 +125,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             foreach (LoadedModule loaded in set.LoadOrder)
             {
                 ModuleManifest manifest = loaded.Manifest;
-                writer.WriteLine($"  {number}. {manifest.Id} {manifest.Version} ({ModuleKinds.Name(manifest.Kind)})  {Display(manifest.Directory)}");
+                writer.WriteLine($"  {number}. {manifest.Id} {manifest.Version} ({ModuleKinds.Name(manifest.Kind)})  {Display(manifest.Source.Location)}");
                 foreach (ResolvedRequirement requirement in loaded.Requires)
                 {
                     writer.WriteLine($"       requires {requirement.Id} {requirement.Range} -> {requirement.Version}");
@@ -134,7 +134,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 number++;
             }
 
-            string directories = set.SearchDirectories.Count == 0 ? "(none)" : string.Join(", ", set.SearchDirectories.Select(Display));
+            string directories = set.Searched.Count == 0 ? "(none)" : string.Join(", ", set.Searched.Select(Display));
             writer.WriteLine($"Search directories: {directories}");
         }
 
@@ -182,7 +182,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             version = manifest.Version.ToString(),
             kind = ModuleKinds.Name(manifest.Kind),
             title = manifest.Title,
-            path = Display(manifest.Directory),
+            path = Display(manifest.Source.Location),
         };
     }
 

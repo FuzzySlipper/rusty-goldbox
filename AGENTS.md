@@ -122,9 +122,16 @@ Engine mechanisms this product relies on:
   `RustyEngineToolHost`, so `EngineTestHost.Create()` gives `goldbox` the
   product's in-process service set (no renderer, input or lifecycle). Seeded
   `Random` draws match the running product's. Don't substitute a local RNG.
-- **Module containers.** `rusty pack-content <module> --output <file>` packs
+- **Module bundles and containers.** The Game's content root is `modules/`,
+  one `RustyEngineContentBundle` per module directory, opened with
+  `Content.OpenBundle`. `rusty pack-content <module> --output <file>` packs
   one module; `ProductContentBundle.OpenContainer` opens an installed one as a
-  bundle. Don't write a local container format or archive reader.
+  bundle. Core reads either through `BundleModuleSource`, and a module's
+  content identity is the Engine's bundle identity. Don't write a local
+  container format, archive reader or second identity hash.
+- **Persistence.** Saves are `SaveSlots` over `ProductStateStore` in the
+  Engine persistence root; the CLI reaches the same slots through the tool
+  host's `PersistenceRoot`. Don't write save files from the Game.
 
 ## Verification
 

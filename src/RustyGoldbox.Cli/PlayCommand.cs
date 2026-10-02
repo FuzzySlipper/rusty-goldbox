@@ -1,4 +1,5 @@
 using System.Globalization;
+using Rusty.Engine.Persistence;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
@@ -17,12 +18,13 @@ namespace RustyGoldbox.Cli;
 internal static class PlayCommand
 {
     private const string Usage =
-        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--modules <dir>]...\n"
-        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>]";
+        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--store <dir>] [--modules <dir>]...\n"
+        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--store <dir>]\n"
+        + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--party", "--seed", "--script", "--save", "--load"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--party", "--seed", "--script", "--save", "--load", "--store"], []);
         bool loading = parsed.Single("--load") is not null;
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || loading == (parsed.Single("--party") is not null)))
         {
@@ -38,6 +40,16 @@ internal static class PlayCommand
         if (error is null && parsed.Single("--seed") is string seedText && !ulong.TryParse(seedText, NumberStyles.None, CultureInfo.InvariantCulture, out seed))
         {
             error = $"--seed must be a whole number from 0 to {ulong.MaxValue}, but was '{seedText}'.";
+        }
+
+        string? store = parsed.Single("--store") is string storeText ? Path.GetFullPath(storeText, workingDirectory) : null;
+        if (error is null && store is not null)
+        {
+            error = SlotError("--load", parsed.Single("--load")) ?? SlotError("--save", parsed.Single("--save"));
+            if (error is null && loading && !Directory.Exists(store))
+            {
+                error = $"--store: there is no persistence root at {store}.";
+            }
         }
 
         if (error is not null)
@@ -64,9 +76,10 @@ internal static class PlayCommand
             return output.UsageError($"--script: {exception.Message}");
         }
 
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
         List<ModuleDiagnostic> problems = [];
         CampaignState? state = loading
-            ? SaveFile.Read(Path.GetFullPath(parsed.Single("--load")!, workingDirectory), set, problems)
+            ? Load(host, store, parsed.Single("--load")!, set, workingDirectory, problems)
             : NewGame(rules, set, parsed.Single("--party")!, seed, workingDirectory, problems);
         if (state is null)
         {
@@ -77,7 +90,6 @@ internal static class PlayCommand
         CampaignRunner runner = new(rules, state);
         try
         {
-            using EngineTestHost host = EngineTestHost.Create();
             host.Call(engine =>
             {
                 if (!loading)
@@ -89,8 +101,6 @@ internal static class PlayCommand
                 {
                     transcript.Add((command, runner.Execute(command, engine.Random)));
                 }
-
-                return true;
             });
         }
         catch (RuleFailure failure)
@@ -99,21 +109,83 @@ internal static class PlayCommand
             return output.Problems([failure.Diagnostic]);
         }
 
-        if (parsed.Single("--save") is string savePath)
+        if (parsed.Single("--save") is string save && Save(host, store, save, SaveFile.ToJson(state, set), workingDirectory) is ModuleDiagnostic problem)
         {
-            string full = Path.GetFullPath(savePath, workingDirectory);
-            try
-            {
-                File.WriteAllText(full, SaveFile.ToJson(state, set));
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                return output.Problems([new ModuleDiagnostic("save.write", $"Can't write the save: {exception.Message}", File: full)]);
-            }
+            return output.Problems([problem]);
         }
 
         output.PlayTranscript(state, transcript);
         return GoldboxCli.Ok;
+    }
+
+    private static string? SlotError(string option, string? slot)
+    {
+        return slot is null || SaveSlots.IsValidName(slot)
+            ? null
+            : $"{option} names a save slot when --store is given; '{slot}' isn't one. Use {SaveSlots.NameDescription}.";
+    }
+
+    private static CampaignState? Load(EngineTestHost host, string? store, string save, ModuleSet set, string workingDirectory, List<ModuleDiagnostic> problems)
+    {
+        if (store is null)
+        {
+            return SaveFile.Read(Path.GetFullPath(save, workingDirectory), set, problems);
+        }
+
+        string location = $"{SaveSlots.Location(save)} in {store}";
+        byte[]? json;
+        try
+        {
+            json = host.Call(engine =>
+            {
+                using SaveSlots slots = new(engine);
+                return slots.Read(save);
+            });
+        }
+        catch (PersistenceStorageException exception)
+        {
+            problems.Add(new ModuleDiagnostic("save.store", $"Can't read the save: {exception.Message}", File: location));
+            return null;
+        }
+
+        if (json is null)
+        {
+            problems.Add(new ModuleDiagnostic("save.store", $"The slot is empty. Save to it with --store {store} --save {save}.", File: location));
+            return null;
+        }
+
+        return SaveFile.Read(json, location, set, problems);
+    }
+
+    private static ModuleDiagnostic? Save(EngineTestHost host, string? store, string save, string json, string workingDirectory)
+    {
+        if (store is null)
+        {
+            string full = Path.GetFullPath(save, workingDirectory);
+            try
+            {
+                File.WriteAllText(full, json);
+                return null;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                return new ModuleDiagnostic("save.write", $"Can't write the save: {exception.Message}", File: full);
+            }
+        }
+
+        try
+        {
+            host.Call(engine =>
+            {
+                using SaveSlots slots = new(engine);
+                slots.Write(save, json);
+            });
+            return null;
+        }
+        catch (PersistenceStorageException exception)
+        {
+            return new ModuleDiagnostic("save.store", $"Can't write the save: {exception.Message}", File: $"{SaveSlots.Location(save)} in {store}");
+        }
     }
 
     private static CampaignState? NewGame(RuleSet rules, ModuleSet set, string partyFiles, ulong seed, string workingDirectory, List<ModuleDiagnostic> problems)

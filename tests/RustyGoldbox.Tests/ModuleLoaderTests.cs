@@ -208,7 +208,7 @@ public sealed class ModuleLoaderTests
         {
             ModuleSet set = ModuleLoader.Load(ruleset, []);
 
-            Assert.Equal(["file.read", "directory.read"], set.Diagnostics.Select(diagnostic => diagnostic.Rule));
+            Assert.Equal(["directory.read", "file.read"], set.Diagnostics.Select(diagnostic => diagnostic.Rule));
         }
         finally
         {
@@ -238,8 +238,8 @@ public sealed class ModuleLoaderTests
         ModuleSet set = ModuleLoader.Load(ruleset, []);
 
         Assert.Equal(
-            [("definition.type-missing", "notes.json"), ("definition.type-unknown", "fighter.json")],
+            [("definition.type-unknown", "fighter.json"), ("definition.type-missing", "notes.json")],
             set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!))));
-        Assert.Contains("attribute, track, derived, table", set.Diagnostics[1].Message, StringComparison.Ordinal);
+        Assert.Contains("attribute, track, derived, table", set.Diagnostics[0].Message, StringComparison.Ordinal);
     }
 }

@@ -12,16 +12,18 @@ internal static class JsonFiles
         CommentHandling = JsonCommentHandling.Disallow,
     };
 
+    private static ReadOnlySpan<byte> Utf8Bom => [0xEF, 0xBB, 0xBF];
+
     /// <summary>
     /// Parses a JSON file, reporting syntax errors with their line and column.
     /// Returns null when the file can't be read or parsed.
     /// </summary>
     public static JsonDocument? Parse(string path, string? module, List<ModuleDiagnostic> diagnostics)
     {
-        string text;
+        byte[] bytes;
         try
         {
-            text = File.ReadAllText(path);
+            bytes = File.ReadAllBytes(path);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -29,9 +31,37 @@ internal static class JsonFiles
             return null;
         }
 
+        return Parse(bytes, path, module, diagnostics);
+    }
+
+    /// <summary>Parses one file of a module source; see <see cref="Parse(string, string?, List{ModuleDiagnostic})"/>.</summary>
+    public static JsonDocument? Parse(ModuleSource source, string relativePath, string? module, List<ModuleDiagnostic> diagnostics)
+    {
+        byte[] bytes;
         try
         {
-            return JsonDocument.Parse(text, Options);
+            bytes = source.Read(relativePath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            diagnostics.Add(new ModuleDiagnostic("file.read", $"Can't read the file: {exception.Message}", module, source.PathOf(relativePath)));
+            return null;
+        }
+
+        return Parse(bytes, source.PathOf(relativePath), module, diagnostics);
+    }
+
+    /// <summary>Parses JSON text that came from <paramref name="file"/> (a path or other location, for diagnostics).</summary>
+    public static JsonDocument? Parse(ReadOnlyMemory<byte> utf8, string file, string? module, List<ModuleDiagnostic> diagnostics)
+    {
+        if (utf8.Span.StartsWith(Utf8Bom))
+        {
+            utf8 = utf8[Utf8Bom.Length..];
+        }
+
+        try
+        {
+            return JsonDocument.Parse(utf8, Options);
         }
         catch (JsonException exception)
         {
@@ -42,7 +72,7 @@ internal static class JsonFiles
                 "json.syntax",
                 $"The file is not valid JSON{location}: {FirstSentence(exception.Message)} Comments and trailing commas are not allowed.",
                 module,
-                path));
+                file));
             return null;
         }
     }
