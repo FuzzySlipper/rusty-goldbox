@@ -1,5 +1,21 @@
 {
   "type": "race",
   "id": "sylvan",
-  "name": "Sylvan"
+  "name": "Sylvan",
+  "ability_adjustments": {
+    "stamina": -2
+  },
+  "boosts": [
+    {
+      "from": [
+        "finesse"
+      ]
+    },
+    {
+      "from": [
+        "intellect"
+      ]
+    },
+    {}
+  ]
 }

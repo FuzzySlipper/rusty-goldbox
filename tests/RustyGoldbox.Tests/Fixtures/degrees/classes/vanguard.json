@@ -41,5 +41,13 @@
       "hp": "if self.level == 1 then 10 + self.ancestry_hp else 10",
       "hp_bonus": "self.stamina_mod"
     }
+  ],
+  "boosts": [
+    {
+      "from": [
+        "brawn",
+        "finesse"
+      ]
+    }
   ]
 }

@@ -1,16 +1,20 @@
 {
   "type": "character-creation",
-  "id": "standard",
-  "name": "Standard",
-  "default": true,
+  "id": "array",
+  "name": "Standard array",
   "attributes": [
     "might",
     "grace",
     "grit",
     "wit"
   ],
-  "attribute_roll": "roll_keep(4, 6, 3)",
-  "assignment": "arrange",
+  "method": "array",
+  "array": [
+    15,
+    14,
+    13,
+    12
+  ],
   "starting_gold": {
     "warrior": "roll(4, 4) * 10",
     "adept": "roll(3, 4) * 10"

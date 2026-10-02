@@ -35,14 +35,18 @@ internal static class GoldboxCli
               "conditions": [ids], "equipment": [ids]}. Dice use Engine Random; the seed defaults to 1.
 
           goldbox character new --module <path> --class <id> --race <id> [--name <name>]
-                [--attributes <id>=<n>,...] [--priority <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
-              Rolls (or takes) attributes, applies the race, checks requirements, rolls the
+                [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
+                [--boosts <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
+              Makes attributes by the creation's method (roll, array, point buy or boosts), applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
               track, and rolls gold. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range. --portrait gives the character a
               portrait asset from the module set. --feature fills the choices creation and the
               first level grant (a background, a feat), matched to them by kind in order.
+              Where creation makes scores by boosts, --boosts names the attribute for each
+              boost that offers a choice: race, creation features, class, then creation.
+              Where it uses point buy, --attributes are the bought scores.
           goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--seed <n>]
               Adds experience, gains every level reached and saves the file. Where the
               advancement counts experience by character level, levels go to --class (a

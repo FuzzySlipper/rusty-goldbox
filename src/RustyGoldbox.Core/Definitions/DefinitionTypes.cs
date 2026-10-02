@@ -12,6 +12,11 @@ public static class DefinitionTypes
     private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
     private static readonly UseKind Use = new();
 
+    private static readonly Field Boosts = new("boosts", new ListKind(new ObjectKind(
+        [
+            new("from", new ListKind(new StatKind(true)), false, "The attributes this boost may raise; one is fixed, several are the player's choice, and without it any attribute."),
+        ])), false, "Under character creation with method \"boosts\": each entry raises one attribute by the creation's boost, and one source never boosts the same attribute twice.");
+
     private static readonly Field GrantKind = new("kind", new TextKind(), true, "The kind of feature chosen, as features name it, for example \"feat\" or \"background\".");
     private static readonly Field GrantCount = new("count", new IntegerKind(), false, "How many to choose; without it, 1.");
 
@@ -86,6 +91,7 @@ public static class DefinitionTypes
             new("ability_limits", new MapKind(new StatKind(true), new ListKind(new IntegerKind(), 2)), false, "[min, max] each attribute must fall within after adjustment."),
             new("classes", new ListKind(new ReferenceKind("class")), false, "Classes characters of this race may take; without it, any class."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers every member of the race has."),
+            Boosts,
         ],
         """
         {
@@ -116,6 +122,7 @@ public static class DefinitionTypes
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
             new("modifiers", new ListKind(ClassModifier), false, "Modifiers a creature with levels in the class has. They may read class.level, its level in this class, so per-class progressions add up across classes: { \"stat\": \"base_attack\", \"value\": \"floor(class.level * 3 / 4)\" }."),
+            Boosts,
         ],
         """
         {
@@ -165,6 +172,7 @@ public static class DefinitionTypes
             new("repeatable", new BooleanKind(), false, "If true, a character may choose it more than once, and its modifiers add each time (ability increases)."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers a character with the feature has."),
             new("actions", new ListKind(Use), false, "Actions the feature lets a character take in combat, after its classes' actions."),
+            Boosts,
         ],
         """
         {
@@ -518,12 +526,20 @@ public static class DefinitionTypes
 
     public static DefinitionType CharacterCreation { get; } = new(
         "character-creation",
-        "How new characters are made: attribute rolls, whether they may be rearranged, and starting gold.",
+        "How new characters are made: how attribute scores are made (rolled, an arranged array, point buy or boosts), the features every character chooses, and starting gold. A ruleset may offer several; one marked default is used when none is named.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("attributes", new ListKind(new StatKind(true)), true, "Every attribute once, in the order rolls are taken and sheets show them."),
-            new("attribute_roll", PlainNumber, true, "Roll for each attribute, for example \"3d6\" or \"roll_keep(4, 6, 3)\"."),
-            new("assignment", new EnumKind(["in-order", "arrange"]), true, "Whether rolls are taken in attribute order or arranged by the player."),
+            new("method", new EnumKind(["roll", "array", "point-buy", "boosts"]), false, "How attribute scores are made: rolled (the default), a fixed array the player arranges, points spent from a budget, or boosts from a base. Given scores (--attributes) skip roll, array and boosts; point buy checks them."),
+            new("default", new BooleanKind(), false, "With more than one character-creation definition, true marks the one used when none is named."),
+            new("attribute_roll", PlainNumber, false, "Method roll: the roll for each attribute, for example \"3d6\" or \"roll_keep(4, 6, 3)\"."),
+            new("assignment", new EnumKind(["in-order", "arrange"]), false, "Method roll: whether rolls are taken in attribute order (the default) or arranged by the player."),
+            new("array", new ListKind(new IntegerKind()), false, "Method array: one score per attribute, which the player arranges by priority, for example [15, 14, 13, 12, 10, 8]."),
+            new("base", new IntegerKind(), false, "Methods point-buy and boosts: the score every attribute starts at."),
+            new("budget", new IntegerKind(), false, "Method point-buy: the points to spend."),
+            new("costs", new ReferenceKind("table"), false, "Method point-buy: a table from a score to its total cost from the base, for example rows [8, 0], [9, 1], ..., [18, 16]."),
+            new("boost", new IntegerKind(), false, "Method boosts: how much each boost raises an attribute."),
+            new("boosts", Boosts.Kind, false, "Method boosts: boosts every new character has besides those of its race, creation features and class; usually free ones ({})."),
             new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), true, "Starting gold pieces for each class."),
             new("features", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
         ],

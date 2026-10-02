@@ -1,5 +1,21 @@
 {
   "type": "race",
   "id": "hillfolk",
-  "name": "Hillfolk"
+  "name": "Hillfolk",
+  "ability_adjustments": {
+    "presence": -2
+  },
+  "boosts": [
+    {
+      "from": [
+        "stamina"
+      ]
+    },
+    {
+      "from": [
+        "insight"
+      ]
+    },
+    {}
+  ]
 }

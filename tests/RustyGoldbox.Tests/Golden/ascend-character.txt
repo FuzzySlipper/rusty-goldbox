@@ -66,6 +66,58 @@ error[character.race] ascend tests/RustyGoldbox.Tests/Fixtures/ascend/races/ston
 1 error.
 [exit 1]
 
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --creation point_buy --class warrior --race folk --name Pell --attributes might=16,grace=14,grit=14,wit=10 --feature iron_will,great_fortitude
+error[character.point-buy] ascend tests/RustyGoldbox.Tests/Fixtures/ascend/creation/point_buy.json $.budget
+  These scores cost 24 points, but ascend:point_buy gives 22. Lower some scores.
+1 error.
+[exit 1]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --creation point_buy --class warrior --race folk --name Pell --attributes might=16,grace=14,grit=12,wit=10 --feature iron_will,great_fortitude
+Pell: Folk Warrior 1 (0 xp, next level at 1000)
+  hit points 11/11
+  gold 60
+  features: Iron will (feat), Great fortitude (feat)
+  might          16     Might
+  grace          14     Grace
+  grit           12     Grit
+  wit            10     Wit
+  ac             12     Armour class (higher is better)
+  attack_bonus   1      Base attack bonus (each class adds its own)
+  fort_base      4      Base Fortitude save (each class adds its own)
+  grace_mod      2      Grace modifier
+  grit_mod       1      Grit modifier
+  initiative_bonus 2      Initiative bonus
+  might_mod      3      Might modifier
+  reflex_base    0      Base Reflex save (each class adds its own)
+  save_dc        10     Difficulty class of the creature's hexes
+  will_base      0      Base Will save (each class adds its own)
+  wit_mod        0      Wit modifier
+  seed 1: 4d4: 2+1+1+2 = 6
+[exit 0]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --creation array --class warrior --race folk --name Quill --priority might,grit,grace,wit --feature iron_will,great_fortitude
+Quill: Folk Warrior 1 (0 xp, next level at 1000)
+  hit points 12/12
+  gold 60
+  features: Iron will (feat), Great fortitude (feat)
+  might          15     Might
+  grace          13     Grace
+  grit           14     Grit
+  wit            12     Wit
+  ac             11     Armour class (higher is better)
+  attack_bonus   1      Base attack bonus (each class adds its own)
+  fort_base      4      Base Fortitude save (each class adds its own)
+  grace_mod      1      Grace modifier
+  grit_mod       2      Grit modifier
+  initiative_bonus 1      Initiative bonus
+  might_mod      2      Might modifier
+  reflex_base    0      Base Reflex save (each class adds its own)
+  save_dc        11     Difficulty class of the creature's hexes
+  will_base      0      Base Will save (each class adds its own)
+  wit_mod        1      Wit modifier
+  seed 1: 4d4: 2+1+1+2 = 6
+[exit 0]
+
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class adept --race folk --name Ilse --attributes might=9,grace=12,grit=10,wit=16 --feature iron_will --out ilse.json
 Ilse: Folk Adept 1 (0 xp, next level at 1000)
   hit points 6/6

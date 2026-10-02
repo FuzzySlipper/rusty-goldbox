@@ -3,5 +3,14 @@
   "id": "scribe",
   "name": "Scribe",
   "kind": "background",
-  "description": "Copied ledgers for a merchant house."
+  "description": "Copied ledgers for a merchant house.",
+  "boosts": [
+    {
+      "from": [
+        "intellect",
+        "insight"
+      ]
+    },
+    {}
+  ]
 }

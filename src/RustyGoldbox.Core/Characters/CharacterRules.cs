@@ -11,6 +11,7 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="Priority">For rulesets that let players arrange rolls: attributes from most to least important; the highest roll goes first.</param>
 /// <param name="Creation">The character-creation definition to use when the set has more than one.</param>
 /// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
+/// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
 public sealed record CreationRequest(
     string Name,
     string Class,
@@ -18,7 +19,8 @@ public sealed record CreationRequest(
     IReadOnlyDictionary<string, decimal>? Attributes = null,
     IReadOnlyList<string>? Priority = null,
     string? Creation = null,
-    IReadOnlyList<string>? Features = null);
+    IReadOnlyList<string>? Features = null,
+    IReadOnlyList<string>? Boosts = null);
 
 /// <summary>A choice a character makes: <see cref="Count"/> features of a kind, and what grants it, for messages.</summary>
 public sealed record Grant(string Kind, int Count, string From);
@@ -47,12 +49,31 @@ public static class CharacterRules
             .Select(entry => rules.Stats[entry.GetString()!].Definition)
             .ToList();
         Evaluator evaluator = new(rules, dice);
+        string method = creation.Json.TryGetProperty("method", out JsonElement declared) ? declared.GetString()! : "roll";
+        if (request.Boosts is not null && method != "boosts")
+        {
+            problems.Add(new ModuleDiagnostic("character.boosts", $"{creation.QualifiedId} makes scores by {method}, not boosts; leave the boosts out."));
+            return null;
+        }
+
+        if (request.Priority is not null && method == "boosts")
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", $"{creation.QualifiedId} makes scores by boosts, which name their attributes; a priority doesn't apply."));
+            return null;
+        }
+
         Dictionary<string, decimal>? scores;
         try
         {
-            scores = request.Attributes is null
-                ? RollAttributes(rules, creation, attributes, request.Priority, evaluator, problems)
-                : GivenAttributes(attributes, request.Attributes, request.Priority, problems);
+            scores = (method, request.Attributes) switch
+            {
+                ("point-buy", null) => Missing(creation, "point buy spends points on scores, so give them (--attributes)", problems),
+                ("point-buy", _) => PointBuy(rules, creation, attributes, request.Attributes, request.Priority, problems),
+                (_, not null) => GivenAttributes(attributes, request.Attributes, request.Priority, problems),
+                ("array", _) => ArrayAttributes(creation, attributes, request.Priority, problems),
+                ("boosts", _) => BoostAttributes(rules, creation, attributes, race, characterClass, CreationFeatures(creation, choices), request.Boosts ?? [], problems),
+                _ => RollAttributes(rules, creation, attributes, request.Priority, evaluator, problems),
+            };
         }
         catch (RuleFailure failure)
         {
@@ -433,16 +454,16 @@ public static class CharacterRules
     /// <summary>Evaluates a definition's expression; a failure names the definition, file and path.</summary>
     private static decimal Evaluate(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
     {
-        return Value(rules, evaluator, definition, path, self).Number;
+        return EvaluateValue(rules, evaluator, definition, path, self).Number;
     }
 
     /// <summary>Evaluates a definition's boolean expression, such as a requirement.</summary>
     private static bool Holds(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature self)
     {
-        return Value(rules, evaluator, definition, path, self).Boolean;
+        return EvaluateValue(rules, evaluator, definition, path, self).Boolean;
     }
 
-    private static Value Value(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
+    private static Value EvaluateValue(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
     {
         try
         {
@@ -487,7 +508,7 @@ public static class CharacterRules
         Evaluator evaluator,
         List<ModuleDiagnostic> problems)
     {
-        bool arrange = creation.Json.GetProperty("assignment").GetString() == "arrange";
+        bool arrange = creation.Json.TryGetProperty("assignment", out JsonElement assignment) && assignment.GetString() == "arrange";
         if (!arrange && priority is not null)
         {
             problems.Add(new ModuleDiagnostic("character.priority", $"{creation.QualifiedId} assigns rolls in attribute order, so a priority doesn't apply. Leave it out, or give the attribute scores."));
@@ -501,18 +522,33 @@ public static class CharacterRules
         }
 
         List<decimal> rolls = attributes.Select(_ => Evaluate(rules, evaluator, creation, "$.attribute_roll", null)).ToList();
+        return Arrange(attributes, rolls, priority, problems);
+    }
+
+    /// <summary>
+    /// Scores in attribute order, or with a priority the highest to its first
+    /// attribute, the next highest to its second, and so on.
+    /// </summary>
+    private static Dictionary<string, decimal>? Arrange(List<Definition> attributes, List<decimal> values, IReadOnlyList<string>? priority, List<ModuleDiagnostic> problems)
+    {
         Dictionary<string, decimal> scores = [];
         if (priority is null)
         {
             for (int i = 0; i < attributes.Count; i++)
             {
-                scores[attributes[i].Id] = rolls[i];
+                scores[attributes[i].Id] = values[i];
             }
 
             return scores;
         }
 
-        List<decimal> best = rolls.OrderDescending().ToList();
+        if (!IsPermutation(priority, attributes))
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", $"The priority must list every attribute once: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
+            return null;
+        }
+
+        List<decimal> best = values.OrderDescending().ToList();
         Dictionary<string, decimal> byPriority = [];
         for (int i = 0; i < priority.Count; i++)
         {
@@ -525,6 +561,163 @@ public static class CharacterRules
         }
 
         return scores;
+    }
+
+    private static Dictionary<string, decimal>? Missing(Definition creation, string what, List<ModuleDiagnostic> problems)
+    {
+        problems.Add(new ModuleDiagnostic("character.attributes", $"{creation.QualifiedId}: {what}."));
+        return null;
+    }
+
+    /// <summary>The array's scores, highest to the first attribute of the priority (or in attribute order without one).</summary>
+    private static Dictionary<string, decimal>? ArrayAttributes(Definition creation, List<Definition> attributes, IReadOnlyList<string>? priority, List<ModuleDiagnostic> problems)
+    {
+        List<decimal> values = creation.Json.GetProperty("array").EnumerateArray().Select(value => value.GetDecimal()).ToList();
+        return Arrange(attributes, values, priority, problems);
+    }
+
+    /// <summary>Given scores, each with a cost in the creation's table, spending no more than its budget.</summary>
+    private static Dictionary<string, decimal>? PointBuy(
+        RuleSet rules,
+        Definition creation,
+        List<Definition> attributes,
+        IReadOnlyDictionary<string, decimal> given,
+        IReadOnlyList<string>? priority,
+        List<ModuleDiagnostic> problems)
+    {
+        Dictionary<string, decimal>? scores = GivenAttributes(attributes, given, priority, problems);
+        if (scores is null)
+        {
+            return null;
+        }
+
+        Definition costs = rules.Reference(creation, "$.costs");
+        decimal budget = creation.Json.GetProperty("budget").GetDecimal();
+        decimal spent = 0;
+        foreach ((string id, decimal score) in scores)
+        {
+            if (rules.Tables[costs].Lookup([Value.Of(score)]) is not Value cost)
+            {
+                problems.Add(new ModuleDiagnostic("character.point-buy", $"{id} {score} has no cost in {costs.QualifiedId}; choose a score it lists.", costs.Module, costs.File, "$.rows"));
+                continue;
+            }
+
+            spent += cost.Number;
+        }
+
+        if (problems.Count == 0 && spent > budget)
+        {
+            problems.Add(new ModuleDiagnostic("character.point-buy", $"These scores cost {spent} points, but {creation.QualifiedId} gives {budget}. Lower some scores.", creation.Module, creation.File, "$.budget"));
+        }
+
+        return problems.Count > 0 ? null : scores;
+    }
+
+    /// <summary>The features creation grants, as the matching in <see cref="Choose"/> will take them: the first of each grant's kind, in order.</summary>
+    private static List<Definition> CreationFeatures(Definition creation, List<Definition> choices)
+    {
+        List<Definition> left = [.. choices];
+        List<Definition> taken = [];
+        foreach (Grant grant in CreationGrants(creation))
+        {
+            for (int made = 0; made < grant.Count; made++)
+            {
+                if (left.FirstOrDefault(choice => choice.Json.GetProperty("kind").GetString() == grant.Kind) is Definition feature)
+                {
+                    left.Remove(feature);
+                    taken.Add(feature);
+                }
+            }
+        }
+
+        return taken;
+    }
+
+    /// <summary>
+    /// Every attribute at the creation's base, then each source's boosts in
+    /// turn: the race, the creation features, the class and the creation. A
+    /// boost with one attribute is fixed; any other takes the next of
+    /// <paramref name="chosen"/>, which must be one it offers and not one the
+    /// same source already raised.
+    /// </summary>
+    private static Dictionary<string, decimal>? BoostAttributes(
+        RuleSet rules,
+        Definition creation,
+        List<Definition> attributes,
+        Definition race,
+        Definition characterClass,
+        List<Definition> features,
+        IReadOnlyList<string> chosen,
+        List<ModuleDiagnostic> problems)
+    {
+        decimal start = creation.Json.GetProperty("base").GetDecimal();
+        decimal boost = creation.Json.GetProperty("boost").GetDecimal();
+        Dictionary<string, decimal> scores = attributes.ToDictionary(attribute => attribute.Id, _ => start);
+        Queue<string> left = new(chosen);
+        foreach (Definition source in new[] { race }.Concat(features).Append(characterClass).Append(creation))
+        {
+            if (!source.Json.TryGetProperty("boosts", out JsonElement boosts))
+            {
+                continue;
+            }
+
+            HashSet<string> raised = [];
+            int index = 0;
+            foreach (JsonElement entry in boosts.EnumerateArray())
+            {
+                string at = $"$.boosts[{index}]";
+                index++;
+                List<string> offered = entry.TryGetProperty("from", out JsonElement from)
+                    ? from.EnumerateArray().Select(attribute => attribute.GetString()!).ToList()
+                    : attributes.Select(attribute => attribute.Id).ToList();
+                string what = $"{source.Name}'s boost {index} ({(entry.TryGetProperty("from", out _) ? string.Join(" or ", offered) : "any attribute")})";
+                string attribute;
+                if (offered.Count == 1)
+                {
+                    attribute = offered[0];
+                }
+                else if (!left.TryDequeue(out string? next))
+                {
+                    List<string> open = offered.Where(id => !raised.Contains(id)).ToList();
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{what} needs a choice; add one of {string.Join(", ", open)} to --boosts.", source.Module, source.File, at));
+                    return null;
+                }
+                else if (!offered.Contains(next))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{what} can't raise '{next}'; it offers {string.Join(", ", offered)}.", source.Module, source.File, at));
+                    return null;
+                }
+                else
+                {
+                    attribute = next;
+                }
+
+                if (!raised.Add(attribute))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{source.Name} already boosted {attribute}; one source boosts each attribute at most once. Choose another for {what}.", source.Module, source.File, at));
+                    return null;
+                }
+
+                scores[attribute] += boost;
+            }
+        }
+
+        if (left.Count > 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.boosts", $"There are more boosts given than choices to make; nothing takes {string.Join(", ", left)}."));
+            return null;
+        }
+
+        foreach (Definition attribute in attributes)
+        {
+            decimal max = attribute.Json.GetProperty("max").GetDecimal();
+            if (scores[attribute.Id] > max)
+            {
+                problems.Add(new ModuleDiagnostic("character.boosts", $"Boosts take {attribute.Id} to {scores[attribute.Id]}, above its maximum {max}."));
+            }
+        }
+
+        return problems.Count > 0 ? null : scores;
     }
 
     private static Dictionary<string, decimal>? GivenAttributes(
@@ -653,14 +846,15 @@ public static class CharacterRules
         }
 
         List<Definition> all = rules.OfType(DefinitionTypes.CharacterCreation).ToList();
-        if (all.Count == 1)
+        List<Definition> defaults = all.Where(creation => creation.Json.TryGetProperty("default", out JsonElement isDefault) && isDefault.GetBoolean()).ToList();
+        if (all.Count == 1 || defaults.Count == 1)
         {
-            return all[0];
+            return all.Count == 1 ? all[0] : defaults[0];
         }
 
         string message = all.Count == 0
             ? "The module set has no character-creation definition. Add one (see `goldbox schema character-creation`)."
-            : $"The module set has more than one character-creation definition ({string.Join(", ", all.Select(definition => definition.QualifiedId))}); choose one by its ID.";
+            : $"The module set has more than one character-creation definition ({string.Join(", ", all.Select(definition => definition.QualifiedId))}) and none is the default; choose one by its ID.";
         problems.Add(new ModuleDiagnostic("character.creation", message));
         return null;
     }

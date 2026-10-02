@@ -11,7 +11,7 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--seed <n>]\n"
         + "       goldbox character show <file> --module <path>";
 
@@ -33,7 +33,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--portrait", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--class") is null || parsed.Single("--race") is null))
         {
             error = Usage;
@@ -61,7 +61,8 @@ internal static class CharacterCommand
             attributes,
             priority,
             parsed.Single("--creation"),
-            Features(parsed));
+            Features(parsed),
+            parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));

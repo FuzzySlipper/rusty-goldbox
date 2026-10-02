@@ -186,7 +186,17 @@ order and each grant takes the next of its kind; each level records the
 features chosen at it. A repeatable feature with an attribute modifier is an
 ability increase. A race may leave out its class list to allow any class, so
 an ancestry-and-class ruleset needs no per-race patches when an extension adds
-a class. Classic split-experience multi-classing and dual-classing are not
+a class.
+
+A **character-creation** definition makes attribute scores by one method:
+rolled (in order or arranged by the player's priority), a fixed array the
+player arranges, point buy (a base, a budget and a table of each score's
+cost), or boosts. Under boosts every attribute starts at a base, and the race,
+the features creation grants (a background), the class and the creation
+definition each list boosts, fixed or a choice among attributes, that raise
+one attribute by the creation's boost; one source never boosts the same
+attribute twice. A ruleset may offer several creation definitions and mark
+one the default. Classic split-experience multi-classing and dual-classing are not
 expressible yet.
 
 Each definition file holds one definition: `type`, `id` and the type's

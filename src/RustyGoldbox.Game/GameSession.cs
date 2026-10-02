@@ -103,7 +103,7 @@ internal sealed class GameSession(ModuleLibrary library)
 
     /// <summary>Rolls a character with the ruleset's character creation.</summary>
     /// <param name="portrait">A portrait asset for the character, or null for none.</param>
-    public void Roll(IEngineContext engine, string name, string race, string characterClass, string? portrait = null, IReadOnlyList<string>? features = null)
+    public void Roll(IEngineContext engine, string name, string race, string characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null)
     {
         Notes.Clear();
         if (Screen != Screen.Party)
@@ -124,7 +124,7 @@ internal sealed class GameSession(ModuleLibrary library)
         int roll = ++_rolls;
         using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.{roll}"));
         DiceRoller dice = new(engine.Random, stream);
-        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Features: features), dice, problems);
+        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Features: features, Boosts: boosts), dice, problems);
         if (character is null)
         {
             Notes.AddRange(problems.Select(problem => problem.Message));

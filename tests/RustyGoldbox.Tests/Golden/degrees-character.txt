@@ -1,58 +1,70 @@
-$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class mystic --race sylvan --name Wren --feature stonehide,scribe,sylvan_step,spark
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class mystic --race sylvan --name Wren --feature stonehide,scribe,sylvan_step,spark --boosts insight,intellect,finesse,insight,finesse,stamina,presence
 error[character.feature] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/features/stonehide.json $.requirements
   Wren doesn't meet degrees:stonehide's requirements: self.race == 'hillfolk'.
 1 error.
 [exit 1]
 
-$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry --out tor.json
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry --boosts brawn,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
 error[character.feature] 
   level 1 (degrees:standard) grants 1 ancestry feat for Tor, so choose one with --feature. Open to the character: degrees:hill_lore, degrees:hill_toughness.
 1 error.
 [exit 1]
 
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --out tor.json
+error[character.boosts] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/races/hillfolk.json $.boosts[2]
+  Hillfolk's boost 3 (any attribute) needs a choice; add one of brawn, finesse, intellect, presence to --boosts.
+1 error.
+[exit 1]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --boosts stamina,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
+error[character.boosts] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/races/hillfolk.json $.boosts[2]
+  Hillfolk already boosted stamina; one source boosts each attribute at most once. Choose another for Hillfolk's boost 3 (any attribute).
+1 error.
+[exit 1]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --boosts brawn,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
 Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
-  hit points 20/20
+  hit points 23/23
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat)
-  brawn          10     Brawn
-  finesse        10     Finesse
-  stamina        10     Stamina
+  brawn          16     Brawn
+  finesse        12     Finesse
+  stamina        16     Stamina
   intellect      10     Intellect
-  insight        10     Insight
-  presence       10     Presence
-  ac             13     Armour class
+  insight        16     Insight
+  presence       8      Presence
+  ac             14     Armour class
   ancestry_hp    10     Ancestry hit points
-  brawn_mod      0      Brawn modifier
-  finesse_mod    0      Finesse modifier
-  insight_mod    0      Insight modifier
+  brawn_mod      3      Brawn modifier
+  finesse_mod    1      Finesse modifier
+  insight_mod    3      Insight modifier
   intellect_mod  0      Intellect modifier
-  presence_mod   0      Presence modifier
-  stamina_mod    0      Stamina modifier
+  presence_mod   -1     Presence modifier
+  stamina_mod    3      Stamina modifier
 Saved to tor.json.
   seed 1: no dice rolled
 [exit 0]
 
 $ goldbox character level tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --xp 1000 --feature battle_cry --seed 2
-Reached level 2: +10 hit points.
+Reached level 2: +13 hit points.
 Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
-  hit points 30/30
+  hit points 36/36
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat)
-  brawn          10     Brawn
-  finesse        10     Finesse
-  stamina        10     Stamina
+  brawn          16     Brawn
+  finesse        12     Finesse
+  stamina        16     Stamina
   intellect      10     Intellect
-  insight        10     Insight
-  presence       10     Presence
-  ac             13     Armour class
+  insight        16     Insight
+  presence       8      Presence
+  ac             14     Armour class
   ancestry_hp    10     Ancestry hit points
-  brawn_mod      0      Brawn modifier
-  finesse_mod    0      Finesse modifier
-  insight_mod    0      Insight modifier
+  brawn_mod      3      Brawn modifier
+  finesse_mod    1      Finesse modifier
+  insight_mod    3      Insight modifier
   intellect_mod  0      Intellect modifier
-  presence_mod   0      Presence modifier
-  stamina_mod    0      Stamina modifier
+  presence_mod   -1     Presence modifier
+  stamina_mod    3      Stamina modifier
 Saved to tor.json.
   seed 2: no dice rolled
 [exit 0]
@@ -92,16 +104,16 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
     ],
     "experience": 1000,
     "attributes": {
-      "brawn": 10,
-      "finesse": 10,
-      "stamina": 10,
+      "brawn": 16,
+      "finesse": 12,
+      "stamina": 16,
       "intellect": 10,
-      "insight": 10,
-      "presence": 10
+      "insight": 16,
+      "presence": 8
     },
     "tracks": {
       "hit_points": {
-        "current": 30,
+        "current": 36,
         "max": 30
       }
     },
@@ -117,21 +129,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "brawn",
       "name": "Brawn",
       "kind": "attribute",
-      "value": 10,
+      "value": 16,
       "problem": null
     },
     {
       "id": "finesse",
       "name": "Finesse",
       "kind": "attribute",
-      "value": 10,
+      "value": 12,
       "problem": null
     },
     {
       "id": "stamina",
       "name": "Stamina",
       "kind": "attribute",
-      "value": 10,
+      "value": 16,
       "problem": null
     },
     {
@@ -145,21 +157,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "insight",
       "name": "Insight",
       "kind": "attribute",
-      "value": 10,
+      "value": 16,
       "problem": null
     },
     {
       "id": "presence",
       "name": "Presence",
       "kind": "attribute",
-      "value": 10,
+      "value": 8,
       "problem": null
     },
     {
       "id": "ac",
       "name": "Armour class",
       "kind": "derived",
-      "value": 13,
+      "value": 14,
       "problem": null
     },
     {
@@ -173,21 +185,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "brawn_mod",
       "name": "Brawn modifier",
       "kind": "derived",
-      "value": 0,
+      "value": 3,
       "problem": null
     },
     {
       "id": "finesse_mod",
       "name": "Finesse modifier",
       "kind": "derived",
-      "value": 0,
+      "value": 1,
       "problem": null
     },
     {
       "id": "insight_mod",
       "name": "Insight modifier",
       "kind": "derived",
-      "value": 0,
+      "value": 3,
       "problem": null
     },
     {
@@ -201,14 +213,14 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "presence_mod",
       "name": "Presence modifier",
       "kind": "derived",
-      "value": 0,
+      "value": -1,
       "problem": null
     },
     {
       "id": "stamina_mod",
       "name": "Stamina modifier",
       "kind": "derived",
-      "value": 0,
+      "value": 3,
       "problem": null
     }
   ],
@@ -216,8 +228,8 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 30,
-      "max": 30,
+      "current": 36,
+      "max": 36,
       "problem": null
     }
   ],

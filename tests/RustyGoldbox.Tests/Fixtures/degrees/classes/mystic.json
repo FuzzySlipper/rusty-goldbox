@@ -41,5 +41,12 @@
       "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
       "hp_bonus": "self.stamina_mod"
     }
+  ],
+  "boosts": [
+    {
+      "from": [
+        "insight"
+      ]
+    }
   ]
 }

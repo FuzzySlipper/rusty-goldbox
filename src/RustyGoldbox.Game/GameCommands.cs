@@ -120,7 +120,8 @@ internal static class GameCommands
                 case "roll":
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
                     IReadOnlyList<string>? features = payload.TryGetProperty("features", out _) ? Texts(payload, "features") : null;
-                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"), portrait, features);
+                    IReadOnlyList<string>? boosts = payload.TryGetProperty("boosts", out _) ? Texts(payload, "boosts") : null;
+                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"), portrait, features, boosts);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));

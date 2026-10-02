@@ -498,8 +498,66 @@ public sealed class RuleSetBuilder
                 Error(creation, "creation.attributes", "$.attributes",
                     $"attributes must list every attribute of the module set exactly once: {string.Join(", ", attributes)}.");
             }
+
+            CheckCreationMethod(creation, listed.Count);
+        }
+
+        List<Definition> defaults = _rules.OfType(DefinitionTypes.CharacterCreation)
+            .Where(creation => creation.Json.TryGetProperty("default", out JsonElement isDefault) && isDefault.GetBoolean())
+            .ToList();
+        foreach (Definition extra in defaults.Skip(1))
+        {
+            Error(extra, "creation.default", "$.default", $"{defaults[0].QualifiedId} is already the default character creation; only one may be.");
         }
     }
+
+    /// <summary>Each method's fields are there, and only that method's.</summary>
+    private void CheckCreationMethod(Definition creation, int attributeCount)
+    {
+        string method = creation.Json.TryGetProperty("method", out JsonElement given) ? given.GetString()! : "roll";
+        Dictionary<string, string[]> needs = new()
+        {
+            ["roll"] = ["attribute_roll"],
+            ["array"] = ["array"],
+            ["point-buy"] = ["base", "budget", "costs"],
+            ["boosts"] = ["base", "boost"],
+        };
+        Dictionary<string, string> owner = new()
+        {
+            ["attribute_roll"] = "roll",
+            ["assignment"] = "roll",
+            ["array"] = "array",
+            ["budget"] = "point-buy",
+            ["costs"] = "point-buy",
+            ["boost"] = "boosts",
+            ["boosts"] = "boosts",
+        };
+        foreach (string field in needs[method].Where(field => !creation.Json.TryGetProperty(field, out _)))
+        {
+            Error(creation, "creation.method", "$", $"Method {method} needs \"{field}\" (see `goldbox schema character-creation`).");
+        }
+
+        foreach ((string field, string forMethod) in owner.Where(entry => entry.Value != method && creation.Json.TryGetProperty(entry.Key, out _)))
+        {
+            Error(creation, "creation.method", $"$.{field}", $"\"{field}\" belongs to method {forMethod}, but this creation's method is {method}. Remove it or change the method.");
+        }
+
+        if (method == "array" && creation.Json.TryGetProperty("array", out JsonElement array) && array.GetArrayLength() != attributeCount)
+        {
+            Error(creation, "creation.method", "$.array", $"The array needs one score per attribute ({attributeCount}), but has {array.GetArrayLength()}.");
+        }
+
+        if (method == "point-buy" && _rules.References.TryGetValue((creation, "$.costs"), out Definition? costs))
+        {
+            JsonElement keys = costs.Json.GetProperty("keys");
+            if (keys.GetArrayLength() != 1 || keys[0].GetProperty("type").GetString() != "number" || costs.Json.GetProperty("value").GetString() != "number")
+            {
+                Error(creation, "creation.method", "$.costs", $"{costs.QualifiedId} must have one number key (the score) and number values (its cost).");
+            }
+        }
+    }
+
+
 
     private void CheckActions()
     {

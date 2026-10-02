@@ -31,6 +31,9 @@ public sealed class CharacterTests
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,iron_will", "--seed", "8"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,lightning_reflexes", "--seed", "8"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3000", "--class", "adept", "--seed", "9"],
+            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=14,wit=10", "--feature", "iron_will,great_fortitude"],
+            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=12,wit=10", "--feature", "iron_will,great_fortitude"],
+            ["character", "new", "--module", Ascend, "--creation", "array", "--class", "warrior", "--race", "folk", "--name", "Quill", "--priority", "might,grit,grace,wit", "--feature", "iron_will,great_fortitude"],
             ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--feature", "iron_will", "--out", "ilse.json"],
             ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--feature", "great_fortitude", "--seed", "4"],
             ["character", "show", "ilse.json", "--module", Ascend, "--json"]));
@@ -40,9 +43,11 @@ public sealed class CharacterTests
     public void AncestryHeritageAndBackgroundAreChosenFeatures()
     {
         Golden.Verify("degrees-character.txt", CliTranscript.Run(
-            ["character", "new", "--module", Degrees, "--class", "mystic", "--race", "sylvan", "--name", "Wren", "--feature", "stonehide,scribe,sylvan_step,spark"],
-            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry", "--out", "tor.json"],
+            ["character", "new", "--module", Degrees, "--class", "mystic", "--race", "sylvan", "--name", "Wren", "--feature", "stonehide,scribe,sylvan_step,spark", "--boosts", "insight,intellect,finesse,insight,finesse,stamina,presence"],
+            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry", "--boosts", "brawn,insight,stamina,brawn,brawn,stamina,finesse,insight", "--out", "tor.json"],
             ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--out", "tor.json"],
+            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--boosts", "stamina,insight,stamina,brawn,brawn,stamina,finesse,insight", "--out", "tor.json"],
+            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--boosts", "brawn,insight,stamina,brawn,brawn,stamina,finesse,insight", "--out", "tor.json"],
             ["character", "level", "tor.json", "--module", Degrees, "--xp", "1000", "--feature", "battle_cry", "--seed", "2"],
             ["character", "show", "tor.json", "--module", Degrees, "--json"]));
     }
@@ -56,6 +61,11 @@ public sealed class CharacterTests
         Assert.Equal(["character.class"], Problems(Ascend, new CreationRequest("x", "adept", "folk", Attributes: Scores(10, 10, 10, 9))));
         Assert.Equal(["character.race", "character.race"], Problems(Ascend, new CreationRequest("x", "adept", "stoneborn", Attributes: Scores(10, 10, 4, 12))));
         Assert.Equal(["character.reference"], Problems(Ascend, new CreationRequest("x", "bard", "folk", Attributes: Scores(10, 10, 10, 10))));
+        Assert.Equal(["character.attributes"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Creation: "point_buy")));
+        Assert.Equal(["character.point-buy"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Attributes: Scores(19, 8, 8, 8), Creation: "point_buy")));
+        Assert.Equal(["character.boosts"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Boosts: ["might"])));
+        Assert.Equal(["character.priority"], Problems(Degrees, new CreationRequest("x", "vanguard", "hillfolk", Priority: ["brawn"])));
+        Assert.Equal(["character.boosts"], Problems(Degrees, new CreationRequest("x", "vanguard", "hillfolk", Features: ["stonehide", "sentry", "hill_lore", "battle_cry"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight", "presence"])));
     }
 
     [Fact]
