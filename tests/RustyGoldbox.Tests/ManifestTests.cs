@@ -8,14 +8,14 @@ public sealed class ManifestTests
     public void ValidManifestReads()
     {
         using TempModules modules = new();
-        string directory = modules.Module("osric", "ruleset");
+        string directory = modules.Module("classic", "ruleset");
 
         List<ModuleDiagnostic> diagnostics = [];
         ModuleManifest? manifest = ManifestReader.Read(directory, diagnostics);
 
         Assert.Empty(diagnostics);
         Assert.NotNull(manifest);
-        Assert.Equal("osric", manifest.Id);
+        Assert.Equal("classic", manifest.Id);
         Assert.Equal(ModuleKind.Ruleset, manifest.Kind);
         Assert.Equal(new ModuleVersion(0, 1, 0), manifest.Version);
     }
@@ -31,7 +31,7 @@ public sealed class ManifestTests
               "kind": "rules",
               "version": "1.0",
               "title": "",
-              "requires": [ { "id": "osric", "version": "1.x" }, "osric", { "id": "broken", "version": "*" } ],
+              "requires": [ { "id": "classic", "version": "1.x" }, "classic", { "id": "broken", "version": "*" } ],
               "colour": "red"
             }
             """);

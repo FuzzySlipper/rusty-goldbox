@@ -1,0 +1,8 @@
+{
+  "type": "check",
+  "id": "save_death",
+  "name": "Saving throw against death, paralysis and poison",
+  "roll": "1d20",
+  "target": "table(saving_throws, self.class, self.level, 'death')",
+  "succeeds": "at-least"
+}

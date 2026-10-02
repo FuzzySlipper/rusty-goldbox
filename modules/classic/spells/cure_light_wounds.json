@@ -1,0 +1,13 @@
+{
+  "type": "spell",
+  "id": "cure_light_wounds",
+  "name": "Cure light wounds",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "Touch",
+  "duration": "Instantaneous",
+  "area": "Creature touched",
+  "casting_time": "5 segments",
+  "description": "Restores 1d8 hit points, never above the creature's normal maximum. No effect on undead."
+}

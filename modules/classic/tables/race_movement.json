@@ -1,0 +1,18 @@
+{
+  "type": "table",
+  "id": "race_movement",
+  "name": "Base movement rate (ft per round)",
+  "keys": [
+    {
+      "name": "race",
+      "type": "text"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    ["human", 120],
+    ["dwarf", 90],
+    ["elf", 120],
+    ["halfling", 90]
+  ]
+}

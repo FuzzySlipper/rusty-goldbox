@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "shield",
+  "name": "Shield",
+  "kind": "shield",
+  "cost": 12,
+  "weight": 8,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "-1"
+    }
+  ]
+}

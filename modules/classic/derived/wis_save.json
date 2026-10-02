@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "wis_save",
+  "name": "Wisdom mental saving throw bonus",
+  "value": "table(wis_save, self.wis)"
+}

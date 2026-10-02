@@ -1,0 +1,22 @@
+{
+  "type": "table",
+  "id": "dex_missile",
+  "name": "Dexterity missile bonus to hit",
+  "keys": [
+    {
+      "name": "dexterity",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, -3],
+    [4, -2],
+    [5, -1],
+    ["6-15", 0],
+    [16, 1],
+    [17, 2],
+    [18, 3],
+    [19, 3]
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "movement",
+  "name": "Movement rate (ft per round)",
+  "value": "table(race_movement, self.race)"
+}

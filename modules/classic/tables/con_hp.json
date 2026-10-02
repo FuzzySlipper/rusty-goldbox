@@ -1,0 +1,19 @@
+{
+  "type": "table",
+  "id": "con_hp",
+  "name": "Constitution hit point bonus per die",
+  "keys": [
+    {
+      "name": "constitution",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, -2],
+    ["4-6", -1],
+    ["7-14", 0],
+    [15, 1],
+    ["16-19", 2]
+  ]
+}

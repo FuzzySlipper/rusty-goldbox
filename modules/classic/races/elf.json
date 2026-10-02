@@ -1,0 +1,41 @@
+{
+  "type": "race",
+  "id": "elf",
+  "name": "Elf",
+  "ability_adjustments": {
+    "dex": 1,
+    "con": -1
+  },
+  "ability_limits": {
+    "str": [
+      3,
+      18
+    ],
+    "dex": [
+      7,
+      19
+    ],
+    "con": [
+      8,
+      17
+    ],
+    "int": [
+      8,
+      18
+    ],
+    "wis": [
+      3,
+      18
+    ],
+    "cha": [
+      8,
+      18
+    ]
+  },
+  "classes": [
+    "cleric",
+    "fighter",
+    "magic_user",
+    "thief"
+  ]
+}

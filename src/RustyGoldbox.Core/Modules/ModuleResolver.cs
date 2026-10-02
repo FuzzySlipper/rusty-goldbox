@@ -188,7 +188,7 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
         {
             Error(module, "requires.kind", "$.requires",
                 $"{kind} must require exactly one ruleset module, but '{module.Id}' requires {rulesets}. "
-                + "Add or keep one entry like { \"id\": \"osric\", \"version\": \"^0.1.0\" } that names a ruleset.");
+                + "Add or keep one entry like { \"id\": \"classic\", \"version\": \"^0.1.0\" } that names a ruleset.");
         }
 
         if (module.Kind == ModuleKind.Campaign && assets == 0)

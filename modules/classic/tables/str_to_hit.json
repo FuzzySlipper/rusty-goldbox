@@ -1,0 +1,21 @@
+{
+  "type": "table",
+  "id": "str_to_hit",
+  "name": "Strength bonus to hit",
+  "keys": [
+    {
+      "name": "strength",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, -3],
+    ["4-5", -2],
+    ["6-7", -1],
+    ["8-16", 0],
+    [17, 1],
+    [18, 1],
+    [19, 3]
+  ]
+}

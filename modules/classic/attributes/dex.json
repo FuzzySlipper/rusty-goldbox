@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "dex",
+  "name": "Dexterity",
+  "min": 3,
+  "max": 19,
+  "default": 10
+}

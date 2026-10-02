@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "thac0",
+  "name": "Roll needed to hit armour class 0",
+  "value": "table(thac0, self.class, self.level)"
+}

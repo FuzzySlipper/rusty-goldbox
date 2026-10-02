@@ -1,3 +1,5 @@
+using RustyGoldbox.Core.Rules;
+
 namespace RustyGoldbox.Core.Modules;
 
 /// <summary>A requirement and the version the resolver picked for it.</summary>
@@ -13,11 +15,13 @@ public sealed class ModuleSet
         ModuleManifest? root,
         IReadOnlyList<string> searchDirectories,
         IReadOnlyList<LoadedModule> loadOrder,
+        RuleSet? rules,
         IReadOnlyList<ModuleDiagnostic> diagnostics)
     {
         Root = root;
         SearchDirectories = searchDirectories;
         LoadOrder = loadOrder;
+        Rules = rules;
         Diagnostics = diagnostics;
     }
 
@@ -28,6 +32,9 @@ public sealed class ModuleSet
 
     /// <summary>Resolved modules, each after everything it requires. The root is last.</summary>
     public IReadOnlyList<LoadedModule> LoadOrder { get; }
+
+    /// <summary>Every definition of the set, checked; null when earlier problems stopped the checks.</summary>
+    public RuleSet? Rules { get; }
 
     public IReadOnlyList<ModuleDiagnostic> Diagnostics { get; }
 

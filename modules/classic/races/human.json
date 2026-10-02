@@ -1,0 +1,11 @@
+{
+  "type": "race",
+  "id": "human",
+  "name": "Human",
+  "classes": [
+    "fighter",
+    "cleric",
+    "magic_user",
+    "thief"
+  ]
+}

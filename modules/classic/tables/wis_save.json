@@ -1,0 +1,23 @@
+{
+  "type": "table",
+  "id": "wis_save",
+  "name": "Wisdom mental saving throw bonus",
+  "keys": [
+    {
+      "name": "wisdom",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, -3],
+    [4, -2],
+    ["5-7", -1],
+    ["8-14", 0],
+    [15, 1],
+    [16, 2],
+    [17, 3],
+    [18, 4],
+    [19, 5]
+  ]
+}

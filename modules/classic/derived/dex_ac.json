@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dex_ac",
+  "name": "Dexterity armour class adjustment",
+  "value": "table(dex_ac, self.dex)"
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "ac",
+  "name": "Armour class (lower is better)",
+  "value": "10 + self.dex_ac"
+}

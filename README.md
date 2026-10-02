@@ -45,6 +45,17 @@ dotnet run --project src/RustyGoldbox.Cli -- module deps modules/my-rules --json
 `goldbox.json` makes `modules/` the workspace search directory, so new modules
 go there and required modules are found there. Every command accepts `--json`.
 
+The format is described by the tool itself, and rules can be tried against a
+module:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- schema
+dotnet run --project src/RustyGoldbox.Cli -- schema class
+dotnet run --project src/RustyGoldbox.Cli -- module inspect modules/classic
+dotnet run --project src/RustyGoldbox.Cli -- eval "self.thac0" --module modules/classic --context '{"self": {"class": "fighter", "level": 5}}'
+dotnet run --project src/RustyGoldbox.Cli -- eval --check attack --module modules/classic --seed 7 --context '{"self": {"class": "fighter", "level": 5, "str": 17}, "target": {"monster": "ogre"}}'
+```
+
 ## Tests
 
 ```bash
@@ -83,11 +94,11 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 
 | Path | Responsibility |
 | --- | --- |
-| `src/RustyGoldbox.Core/` | Module format and loading; later rules, combat and campaign runtime |
+| `src/RustyGoldbox.Core/` | Module format and loading, definition types, expressions and rule evaluation; later characters, combat and campaigns |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
 | `src/RustyGoldbox.Game/` | Engine product: lifecycle and projections |
 | `src/ui/main.js` | DOM debug readout |
-| `modules/` | First-party module sources |
+| `modules/` | First-party module sources; `modules/classic` is the first ruleset |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks |
 | `content/` | Product content root; module bundles are staged from here |

@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "classic",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Classic first-edition rules",
+  "requires": [],
+  "provenance": "Game mechanics adapted from Open Game Content under the OGL 1.0a; monsters are original. See PROVENANCE.md and LICENSE-OGL.txt."
+}

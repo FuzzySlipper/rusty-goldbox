@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "arrows",
+  "name": "Arrows (dozen)",
+  "kind": "ammunition",
+  "cost": 2,
+  "weight": 4,
+  "damage": "1d6"
+}

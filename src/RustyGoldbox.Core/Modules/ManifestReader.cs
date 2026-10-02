@@ -203,7 +203,7 @@ public static class ManifestReader
             string at = $"$.requires[{index}]";
             if (entry.ValueKind != JsonValueKind.Object)
             {
-                Error("manifest.field-type", at, $"Each requires entry must be an object like {{ \"id\": \"osric\", \"version\": \"^0.1.0\" }}, but this is {JsonFiles.Describe(entry.ValueKind)}.");
+                Error("manifest.field-type", at, $"Each requires entry must be an object like {{ \"id\": \"classic\", \"version\": \"^0.1.0\" }}, but this is {JsonFiles.Describe(entry.ValueKind)}.");
                 return null;
             }
 
@@ -254,7 +254,7 @@ public static class ManifestReader
         {
             if (!entry.TryGetProperty(name, out JsonElement value))
             {
-                Error("manifest.field-required", at, $"This requires entry has no \"{name}\". Write it like {{ \"id\": \"osric\", \"version\": \"^0.1.0\" }}.");
+                Error("manifest.field-required", at, $"This requires entry has no \"{name}\". Write it like {{ \"id\": \"classic\", \"version\": \"^0.1.0\" }}.");
                 return null;
             }
 

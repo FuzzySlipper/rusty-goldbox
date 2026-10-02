@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "heavy_mace",
+  "name": "Heavy mace",
+  "kind": "weapon",
+  "cost": 10,
+  "weight": 10,
+  "damage": "if target.size == 'large' then 1d6 else 1d6 + 1"
+}

@@ -1,0 +1,21 @@
+{
+  "type": "table",
+  "id": "str_damage",
+  "name": "Strength damage adjustment",
+  "keys": [
+    {
+      "name": "strength",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, -1],
+    ["4-5", -1],
+    ["6-15", 0],
+    [16, 1],
+    [17, 1],
+    [18, 2],
+    [19, 6]
+  ]
+}

@@ -19,6 +19,15 @@ internal static class GoldboxCli
               "modules" directory of the nearest goldbox.json, else ".".
           goldbox module validate <path> [--modules <dir>]...
           goldbox module deps <path> [--modules <dir>]...
+          goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]...
+              Lists the resolved definitions and stats, or shows the selected ones.
+          goldbox schema [<type> | module | expressions]
+              The format reference: definition types with fields and examples.
+          goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
+          goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
+              Evaluates against the module set. Context: {"self": creature, "target": creature};
+              a creature is {"monster": id} or {"class": id, "race": id, "level": n, "<stat>": n,
+              "conditions": [ids], "equipment": [ids]}. Dice use Engine Random; the seed defaults to 1.
 
         Every command accepts --json for structured output.
 
@@ -27,7 +36,7 @@ internal static class GoldboxCli
         Required modules are found in --modules directories, the "modules" list
         of the nearest goldbox.json, or (with neither) the module's siblings.
 
-        Exit codes: 0 ok, 1 the module has errors, 2 bad arguments.
+        Exit codes: 0 ok, 1 the module has errors or evaluation failed, 2 bad arguments.
         """;
 
     public static int Run(IReadOnlyList<string> args, TextWriter output, string workingDirectory)
@@ -39,9 +48,16 @@ internal static class GoldboxCli
             return args.Count == 0 ? Usage : Ok;
         }
 
-        if (args[0] != "module" || args.Count < 2)
+        switch (args[0])
         {
-            return printer.UsageError($"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.");
+            case "schema":
+                return SchemaCommand.Run(args.Skip(1), printer);
+            case "eval":
+                return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "module" when args.Count >= 2:
+                break;
+            default:
+                return printer.UsageError($"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.");
         }
 
         IEnumerable<string> rest = args.Skip(2);
@@ -50,8 +66,9 @@ internal static class GoldboxCli
             "new" => ModuleNew(rest, printer, workingDirectory),
             "validate" => ModuleValidate(rest, printer, workingDirectory),
             "deps" => ModuleDeps(rest, printer, workingDirectory),
+            "inspect" => InspectCommand.Run(rest, printer, workingDirectory),
             "--help" or "-h" => Print(output, Help),
-            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate and deps."),
+            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps and inspect."),
         };
     }
 
@@ -88,7 +105,7 @@ internal static class GoldboxCli
             string rangeText = at < 0 ? "" : require[(at + 1)..];
             if (!ModuleIds.IsValid(requiredId) || !VersionRange.TryParse(rangeText, out VersionRange? range))
             {
-                return printer.UsageError($"--require '{require}' must be <id>@<range>, for example osric@^0.1.0. Ranges: {VersionRange.FormatDescription}.");
+                return printer.UsageError($"--require '{require}' must be <id>@<range>, for example classic@^0.1.0. Ranges: {VersionRange.FormatDescription}.");
             }
 
             requires.Add((requiredId, range!));

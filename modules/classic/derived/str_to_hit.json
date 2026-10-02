@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "str_to_hit",
+  "name": "Strength bonus to hit",
+  "value": "table(str_to_hit, self.str)"
+}

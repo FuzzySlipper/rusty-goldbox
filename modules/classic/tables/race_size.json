@@ -1,0 +1,18 @@
+{
+  "type": "table",
+  "id": "race_size",
+  "name": "Size category",
+  "keys": [
+    {
+      "name": "race",
+      "type": "text"
+    }
+  ],
+  "value": "text",
+  "rows": [
+    ["human", "medium"],
+    ["dwarf", "medium"],
+    ["elf", "medium"],
+    ["halfling", "small"]
+  ]
+}

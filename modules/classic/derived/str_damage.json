@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "str_damage",
+  "name": "Strength damage adjustment",
+  "value": "table(str_damage, self.str)"
+}

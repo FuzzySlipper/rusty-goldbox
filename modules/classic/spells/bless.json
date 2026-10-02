@@ -1,0 +1,13 @@
+{
+  "type": "spell",
+  "id": "bless",
+  "name": "Bless",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "60 ft",
+  "duration": "6 rounds",
+  "area": "50 × 50 ft",
+  "casting_time": "1 round",
+  "description": "Allies in the area who are not yet in melee gain +1 to attack rolls and morale."
+}

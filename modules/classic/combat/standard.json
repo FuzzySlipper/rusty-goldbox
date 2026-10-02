@@ -1,0 +1,18 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Standard combat",
+  "surprise": "table(surprise_segments, 1d6)",
+  "initiative": "1d6",
+  "initiative_by": "side",
+  "round_seconds": 60,
+  "segments": 10,
+  "attack": "attack",
+  "missile_attack": "missile_attack",
+  "actions": [
+    {
+      "id": "action",
+      "per_round": 1
+    }
+  ]
+}

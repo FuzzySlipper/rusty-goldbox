@@ -1,3 +1,6 @@
+using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Rules;
+
 namespace RustyGoldbox.Core.Modules;
 
 /// <summary>Loads a module and everything it requires, checking all of it.</summary>
@@ -15,16 +18,25 @@ public static class ModuleLoader
         List<string> directories = ModuleSearchPaths.Find(modulePath, searchDirectories, diagnostics);
         if (root is null)
         {
-            return new ModuleSet(null, directories, [], diagnostics);
+            return new ModuleSet(null, directories, [], null, diagnostics);
         }
 
         ModuleCatalog catalog = ModuleCatalog.Scan(directories, root.Directory, diagnostics);
         List<LoadedModule> order = new ModuleResolver(catalog, diagnostics).Resolve(root);
+        List<Definition> definitions = [];
         foreach (LoadedModule loaded in order)
         {
-            DefinitionFiles.Check(loaded.Manifest, diagnostics);
+            definitions.AddRange(DefinitionFiles.Read(loaded.Manifest, diagnostics));
         }
 
-        return new ModuleSet(root, directories, order, diagnostics);
+        // Cross-definition checks run once every file reads cleanly; otherwise
+        // one broken file would surface again as every reference to it.
+        RuleSet? rules = null;
+        if (diagnostics.Count == 0)
+        {
+            rules = RuleSetBuilder.Build(order, definitions, diagnostics);
+        }
+
+        return new ModuleSet(root, directories, order, rules, diagnostics);
     }
 }

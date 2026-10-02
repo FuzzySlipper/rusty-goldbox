@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "long_sword",
+  "name": "Long sword",
+  "kind": "weapon",
+  "cost": 15,
+  "weight": 7,
+  "damage": "if target.size == 'large' then 1d12 else 1d8"
+}

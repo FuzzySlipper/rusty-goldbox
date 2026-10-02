@@ -1,0 +1,13 @@
+{
+  "type": "spell",
+  "id": "magic_missile",
+  "name": "Magic missile",
+  "lists": {
+    "magic_user": 1
+  },
+  "range": "60 ft + 10 ft per level",
+  "duration": "Instantaneous",
+  "area": "One or more creatures in a 10 × 10 ft area",
+  "casting_time": "1 segment",
+  "description": "Unerring missiles of magical energy, 1d4+1 damage each; one missile, plus one for every two levels beyond first."
+}

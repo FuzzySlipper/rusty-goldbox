@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "leather_armour",
+  "name": "Leather armour",
+  "kind": "armour",
+  "cost": 5,
+  "weight": 15,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "-2"
+    }
+  ]
+}

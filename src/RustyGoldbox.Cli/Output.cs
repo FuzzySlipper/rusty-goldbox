@@ -1,6 +1,9 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Cli;
 
@@ -12,6 +15,13 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         WriteIndented = true,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+
+    public bool Json => json;
+
+    public void Line(string text = "")
+    {
+        writer.WriteLine(text);
+    }
 
     public int UsageError(string message)
     {
@@ -133,7 +143,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return set.IsValid ? GoldboxCli.Ok : GoldboxCli.Invalid;
     }
 
-    private void WriteDiagnostics(IReadOnlyList<ModuleDiagnostic> diagnostics)
+    public void WriteDiagnostics(IReadOnlyList<ModuleDiagnostic> diagnostics)
     {
         foreach (ModuleDiagnostic diagnostic in diagnostics)
         {
@@ -191,7 +201,184 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative) ? path : relative;
     }
 
-    private void WriteJson(object value)
+    /// <summary>Reports a module set that failed to load.</summary>
+    public int ModuleErrors(ModuleSet set)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = false, diagnostics = set.Diagnostics.Select(ToJson) });
+        }
+        else
+        {
+            WriteDiagnostics(set.Diagnostics);
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    /// <summary>An expression given on the command line that doesn't parse or type-check.</summary>
+    public int ExpressionError(string text, ExpressionException exception)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = false, diagnostics = new[] { new { rule = "expression", message = exception.Message, expression = text, column = exception.Column } } });
+        }
+        else
+        {
+            writer.WriteLine($"error[expression] column {exception.Column}");
+            writer.WriteLine($"  {text}");
+            writer.WriteLine($"  {new string(' ', Math.Max(0, exception.Column - 1))}^");
+            writer.WriteLine($"  {exception.Message}");
+        }
+
+        return GoldboxCli.Usage;
+    }
+
+    public int EvaluationError(string what, ExpressionException exception, ulong seed, IReadOnlyList<DiceRoll> rolls)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = false, seed, rolls = rolls.Select(RollJson), diagnostics = new[] { new { rule = "evaluate", message = exception.Message, expression = what } } });
+        }
+        else
+        {
+            writer.WriteLine($"error[evaluate] {what}");
+            writer.WriteLine($"  {exception.Message}");
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    public void Evaluated(string text, Value value, ulong seed, IReadOnlyList<DiceRoll> rolls)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = true, expression = text, type = ExprTypes.Name(value.Type), value = ValueJson(value), seed, rolls = rolls.Select(RollJson) });
+            return;
+        }
+
+        writer.WriteLine($"{text} = {value} ({ExprTypes.Name(value.Type)})");
+        WriteRolls(seed, rolls);
+    }
+
+    public void Checked(Definition check, CheckResult result, ulong seed, IReadOnlyList<DiceRoll> rolls)
+    {
+        string comparison = check.Json.GetProperty("succeeds").GetString()!;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                check = check.QualifiedId,
+                roll = result.Roll,
+                modifier = result.Modifier,
+                total = result.Total,
+                target = result.Target,
+                succeeds = comparison,
+                success = result.Success,
+                seed,
+                rolls = rolls.Select(RollJson),
+            });
+            return;
+        }
+
+        string modifier = result.Modifier == 0 ? "" : $" {(result.Modifier > 0 ? "+" : "-")} modifier {Math.Abs(result.Modifier)} = {result.Total}";
+        string outcome = result.Success ? "succeeds" : "fails";
+        string needs = comparison == "at-least" ? $"{result.Target} or more" : $"{result.Target} or less";
+        writer.WriteLine($"{check.QualifiedId} ({check.Name}): roll {result.Roll}{modifier}, needs {needs}: {outcome}");
+        WriteRolls(seed, rolls);
+    }
+
+    public void DefinitionList(RuleSet rules, IReadOnlyList<Definition> definitions, bool includeStats)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                definitions = definitions.Select(definition => new { id = definition.QualifiedId, type = definition.Type.Name, name = definition.Name, file = Display(definition.File) }),
+                stats = includeStats
+                    ? rules.Stats.Values.OrderBy(stat => stat.Id, StringComparer.Ordinal).Select(stat => new { id = stat.Id, kind = stat.Definition.Type.Name, type = ExprTypes.Name(stat.Type) })
+                    : null,
+            });
+            return;
+        }
+
+        foreach (IGrouping<string, Definition> group in definitions.GroupBy(definition => definition.Type.Name))
+        {
+            writer.WriteLine($"{group.Key} ({group.Count()}):");
+            foreach (Definition definition in group)
+            {
+                writer.WriteLine($"  {definition.QualifiedId,-32} {Display(definition.File)}");
+            }
+        }
+
+        if (includeStats && rules.Stats.Count > 0)
+        {
+            writer.WriteLine("stats (read as self.<id> or target.<id>; built in: level, class, race):");
+            foreach (Stat stat in rules.Stats.Values.OrderBy(stat => stat.Id, StringComparer.Ordinal))
+            {
+                writer.WriteLine($"  {stat.Id,-16} {stat.Definition.Type.Name,-10} {ExprTypes.Name(stat.Type)}");
+            }
+        }
+    }
+
+    public void Definitions(RuleSet rules, IReadOnlyList<Definition> definitions)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                definitions = definitions.Select(definition => new
+                {
+                    id = definition.QualifiedId,
+                    type = definition.Type.Name,
+                    file = Display(definition.File),
+                    definition = definition.Json,
+                    expressions = InspectCommand.Expressions(rules, definition).Select(entry => new { path = entry.Path, expression = entry.Text, type = entry.Type }),
+                }),
+            });
+            return;
+        }
+
+        foreach (Definition definition in definitions)
+        {
+            writer.WriteLine($"{definition.QualifiedId} ({definition.Type.Name})  {Display(definition.File)}");
+            writer.WriteLine(JsonSerializer.Serialize(definition.Json, JsonOptions));
+            List<(string Path, string Text, string Type)> expressions = InspectCommand.Expressions(rules, definition).ToList();
+            if (expressions.Count > 0)
+            {
+                writer.WriteLine("Expression types:");
+                foreach ((string path, string text, string type) in expressions)
+                {
+                    writer.WriteLine($"  {path}: {text}  -> {type}");
+                }
+            }
+
+            writer.WriteLine();
+        }
+    }
+
+    private void WriteRolls(ulong seed, IReadOnlyList<DiceRoll> rolls)
+    {
+        string shown = rolls.Count == 0 ? "no dice rolled" : string.Join("; ", rolls);
+        writer.WriteLine($"  seed {seed}: {shown}");
+    }
+
+    private static object RollJson(DiceRoll roll) => new { dice = $"{roll.Count}d{roll.Sides}", faces = roll.Faces, total = roll.Total };
+
+    private static object ValueJson(Value value)
+    {
+        return value.Type switch
+        {
+            ExprType.Number => value.Number,
+            ExprType.Boolean => value.Boolean,
+            _ => value.Text,
+        };
+    }
+
+    public void WriteJson(object value)
     {
         writer.WriteLine(JsonSerializer.Serialize(value, JsonOptions));
     }

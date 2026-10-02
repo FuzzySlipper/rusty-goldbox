@@ -1,0 +1,16 @@
+{
+  "type": "condition",
+  "id": "blessed",
+  "name": "Blessed",
+  "description": "+1 to attack rolls.",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "1"
+    },
+    {
+      "check": "missile_attack",
+      "value": "1"
+    }
+  ]
+}

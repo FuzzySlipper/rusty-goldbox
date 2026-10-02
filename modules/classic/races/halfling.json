@@ -1,0 +1,49 @@
+{
+  "type": "race",
+  "id": "halfling",
+  "name": "Halfling",
+  "ability_adjustments": {
+    "str": -1,
+    "dex": 1
+  },
+  "ability_limits": {
+    "str": [
+      6,
+      17
+    ],
+    "dex": [
+      8,
+      19
+    ],
+    "con": [
+      10,
+      18
+    ],
+    "int": [
+      6,
+      18
+    ],
+    "wis": [
+      3,
+      17
+    ],
+    "cha": [
+      3,
+      18
+    ]
+  },
+  "classes": [
+    "fighter",
+    "thief"
+  ],
+  "modifiers": [
+    {
+      "check": "save_spell",
+      "value": "floor(self.con / 3.5)"
+    },
+    {
+      "check": "save_wand",
+      "value": "floor(self.con / 3.5)"
+    }
+  ]
+}

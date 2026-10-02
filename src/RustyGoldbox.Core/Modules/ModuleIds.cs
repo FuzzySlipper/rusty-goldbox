@@ -3,7 +3,7 @@ namespace RustyGoldbox.Core.Modules;
 public static class ModuleIds
 {
     public const string FormatDescription =
-        "lowercase letters, digits and single hyphens, starting with a letter, for example \"osric\" or \"stone-crypt\"";
+        "lowercase letters, digits and single hyphens, starting with a letter, for example \"classic\" or \"stone-crypt\"";
 
     public static bool IsValid(string id)
     {

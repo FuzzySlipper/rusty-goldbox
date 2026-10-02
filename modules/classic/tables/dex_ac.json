@@ -1,0 +1,24 @@
+{
+  "type": "table",
+  "id": "dex_ac",
+  "name": "Dexterity armour class adjustment",
+  "keys": [
+    {
+      "name": "dexterity",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [3, 4],
+    [4, 3],
+    [5, 2],
+    [6, 1],
+    ["7-14", 0],
+    [15, -1],
+    [16, -2],
+    [17, -3],
+    [18, -4],
+    [19, -4]
+  ]
+}

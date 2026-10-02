@@ -1,0 +1,13 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Standard",
+  "attribute_roll": "3d6",
+  "assignment": "in-order",
+  "starting_gold": {
+    "fighter": "(3d6 + 2) * 10",
+    "cleric": "3d6 * 10",
+    "magic_user": "2d4 * 10",
+    "thief": "2d6 * 10"
+  }
+}

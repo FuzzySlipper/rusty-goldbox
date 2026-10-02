@@ -1,0 +1,13 @@
+{
+  "type": "spell",
+  "id": "sleep",
+  "name": "Sleep",
+  "lists": {
+    "magic_user": 1
+  },
+  "range": "30 ft + 10 ft per level",
+  "duration": "5 rounds per level",
+  "area": "15 ft radius",
+  "casting_time": "1 segment",
+  "description": "Creatures in the area fall into magical sleep with no saving throw; how many depends on their hit dice."
+}

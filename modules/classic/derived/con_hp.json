@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "con_hp",
+  "name": "Constitution hit point bonus per die",
+  "value": "if self.class == 'fighter' then table(con_hp_fighter, self.con) else table(con_hp, self.con)"
+}

@@ -1,23 +1,34 @@
 using System.Text.Json;
+using RustyGoldbox.Core.Definitions;
 
 namespace RustyGoldbox.Core.Modules;
 
 /// <summary>
-/// Checks a module's definition files: every <c>.json</c> file other than
-/// <c>module.json</c> is a JSON object whose <c>type</c> field names its
-/// definition type.
+/// Reads a module's definition files: every <c>.json</c> file other than
+/// <c>module.json</c>, each holding one definition whose <c>type</c> field
+/// names its definition type.
 /// </summary>
 internal static class DefinitionFiles
 {
-    // No definition types exist yet; ruleset types add themselves here.
-    private static readonly HashSet<string> KnownTypes = [];
-
-    public static void Check(ModuleManifest module, List<ModuleDiagnostic> diagnostics)
+    public static List<Definition> Read(ModuleManifest module, List<ModuleDiagnostic> diagnostics)
     {
+        List<Definition> definitions = [];
         foreach (string path in Find(module.Directory, module.Id, diagnostics))
         {
-            CheckFile(module, path, diagnostics);
+            using JsonDocument? document = JsonFiles.Parse(path, module.Id, diagnostics);
+            if (document is null)
+            {
+                continue;
+            }
+
+            Definition? definition = DefinitionReader.Read(document.RootElement, module.Id, path, diagnostics);
+            if (definition is not null)
+            {
+                definitions.Add(definition);
+            }
         }
+
+        return definitions;
     }
 
     private static IEnumerable<string> Find(string directory, string module, List<ModuleDiagnostic> diagnostics)
@@ -48,41 +59,6 @@ internal static class DefinitionFiles
             {
                 yield return file;
             }
-        }
-    }
-
-    private static void CheckFile(ModuleManifest module, string path, List<ModuleDiagnostic> diagnostics)
-    {
-        using JsonDocument? document = JsonFiles.Parse(path, module.Id, diagnostics);
-        if (document is null)
-        {
-            return;
-        }
-
-        JsonElement root = document.RootElement;
-        if (root.ValueKind != JsonValueKind.Object
-            || !root.TryGetProperty("type", out JsonElement type)
-            || type.ValueKind != JsonValueKind.String)
-        {
-            diagnostics.Add(new ModuleDiagnostic(
-                "definition.type-missing",
-                "A definition file must be a JSON object with a string \"type\" field naming its definition type.",
-                module.Id,
-                path,
-                "$.type"));
-            return;
-        }
-
-        string name = type.GetString()!;
-        if (!KnownTypes.Contains(name))
-        {
-            string known = KnownTypes.Count == 0 ? "none yet" : string.Join(", ", KnownTypes.Order(StringComparer.Ordinal));
-            diagnostics.Add(new ModuleDiagnostic(
-                "definition.type-unknown",
-                $"'{name}' is not a definition type. Known types: {known}.",
-                module.Id,
-                path,
-                "$.type"));
         }
     }
 }

@@ -1,0 +1,57 @@
+{
+  "type": "table",
+  "id": "thac0",
+  "name": "Roll needed to hit armour class 0",
+  "keys": [
+    {
+      "name": "class",
+      "type": "text"
+    },
+    {
+      "name": "level",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    ["fighter", 0, 21],
+    ["fighter", 1, 20],
+    ["fighter", 2, 19],
+    ["fighter", 3, 18],
+    ["fighter", 4, 17],
+    ["fighter", 5, 16],
+    ["fighter", 6, 15],
+    ["fighter", 7, 14],
+    ["fighter", 8, 13],
+    ["fighter", 9, 12],
+    ["fighter", 10, 11],
+    ["fighter", 11, 10],
+    ["fighter", 12, 9],
+    ["fighter", 13, 8],
+    ["fighter", 14, 7],
+    ["fighter", 15, 6],
+    ["fighter", 16, 5],
+    ["fighter", 17, 4],
+    ["fighter", 18, 3],
+    ["fighter", 19, 2],
+    ["fighter", "20+", 1],
+    ["cleric", "1-3", 20],
+    ["cleric", "4-6", 18],
+    ["cleric", "7-9", 16],
+    ["cleric", "10-12", 14],
+    ["cleric", "13-15", 12],
+    ["cleric", "16-18", 10],
+    ["cleric", "19+", 9],
+    ["magic_user", "1-5", 21],
+    ["magic_user", "6-10", 19],
+    ["magic_user", "11-15", 17],
+    ["magic_user", "16-20", 15],
+    ["magic_user", "21+", 13],
+    ["thief", "1-4", 21],
+    ["thief", "5-8", 19],
+    ["thief", "9-12", 16],
+    ["thief", "13-16", 14],
+    ["thief", "17-20", 12],
+    ["thief", "21+", 10]
+  ]
+}

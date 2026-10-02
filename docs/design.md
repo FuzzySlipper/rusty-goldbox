@@ -58,18 +58,18 @@ Meaning comes from the manifest and each file's declared type, not from paths.
 ```json
 {
   "format": 1,
-  "id": "osric",
+  "id": "classic",
   "kind": "ruleset",
   "version": "0.1.0",
-  "title": "OSRIC-flavoured core rules",
+  "title": "Classic first-edition rules",
   "requires": [],
-  "provenance": "Adapted from the OSRIC SRD (OGL 1.0a); see PROVENANCE.md"
+  "provenance": "Game mechanics adapted from Open Game Content under the OGL 1.0a; see PROVENANCE.md"
 }
 ```
 
 Every field is required and unknown fields are errors. IDs are lowercase
 letters, digits and single hyphens, starting with a letter. Versions are
-`MAJOR.MINOR.PATCH`. A `requires` entry is `{ "id": "osric", "version":
+`MAJOR.MINOR.PATCH`. A `requires` entry is `{ "id": "classic", "version":
 "^0.1.0" }`; ranges are an exact version, `^1.2.0` (same major; same minor
 below 1.0.0), `~1.2.0` (same minor), space-separated comparators
 (`>=1.0.0 <2.0.0`) or `*`.
@@ -95,10 +95,10 @@ create a different loader.
 
 - Each definition has an ID that is local to its module (`fighter`), with
   the definition type known from where it's used.
-- Another module's definition is referenced as `module:id` (`osric:fighter`).
+- Another module's definition is referenced as `module:id` (`classic:fighter`).
   A module may reference only modules it lists in `requires`. Transitive
-  dependencies can't be referenced: a campaign that names `osric:` must
-  require `osric` itself.
+  dependencies can't be referenced: a campaign that names `classic:` must
+  require `classic` itself.
 - `requires` entries take an ID and a version range. The resolver picks one
   version per ID: breadth-first from the module being loaded, each ID gets the
   highest available version that satisfies the ranges known when it is first
@@ -133,6 +133,20 @@ plus a small **expression language**:
 - no assignment, loops, user-defined functions or side effects. Expressions
   are type-checked when a module loads, so an unknown stat or table fails
   validation, not play.
+
+Stats are the ruleset's **attributes** (rolled scores) and **derived values**
+(expressions over other stats, with inferred types), plus the built-ins
+`level`, `class` and `race`. Stat IDs form one namespace across the module
+set. **Modifiers** from races, conditions and equipped items add to a stat or
+to a check's roll. A **check** compares a roll, plus its modifiers, with a
+target. A **monster** names the class and level whose tables it uses, and its
+`stats` replace derived values. Attributes may declare a `default` for
+creatures that have none.
+
+Each definition file holds one definition: `type`, `id` and the type's
+fields. Definition IDs use lowercase letters, digits and underscores, so they
+can appear in expressions. `goldbox schema` lists every type with its fields
+and an example, and the expression functions.
 
 State changes come from a fixed vocabulary of **operations** implemented in
 C#: deal damage, heal, apply or remove a condition, modify a stat for a

@@ -10,26 +10,26 @@ public sealed class ModuleLoaderTests
     public void CampaignLoadsAfterEverythingItRequires()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset");
+        modules.Module("classic", "ruleset");
         modules.Module("crypt-art", "assets");
-        modules.Module("house", "extension", requires: Require("osric", "^0.1.0"));
+        modules.Module("house", "extension", requires: Require("classic", "^0.1.0"));
         string campaign = modules.Module("sample", "campaign",
-            requires: $"{Require("house", "*")}, {Require("osric", "^0.1.0")}, {Require("crypt-art", "*")}");
+            requires: $"{Require("house", "*")}, {Require("classic", "^0.1.0")}, {Require("crypt-art", "*")}");
 
         ModuleSet set = ModuleLoader.Load(campaign, []);
 
         Assert.Empty(set.Diagnostics);
-        Assert.Equal(["osric", "house", "crypt-art", "sample"], set.LoadOrder.Select(loaded => loaded.Manifest.Id));
+        Assert.Equal(["classic", "house", "crypt-art", "sample"], set.LoadOrder.Select(loaded => loaded.Manifest.Id));
     }
 
     [Fact]
     public void PicksTheHighestMatchingVersion()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset", "0.1.0", directory: "osric-0.1");
-        modules.Module("osric", "ruleset", "0.1.4", directory: "osric-0.1.4");
-        modules.Module("osric", "ruleset", "0.2.0", directory: "osric-0.2");
-        string extension = modules.Module("house", "extension", requires: Require("osric", "^0.1.0"));
+        modules.Module("classic", "ruleset", "0.1.0", directory: "classic-0.1");
+        modules.Module("classic", "ruleset", "0.1.4", directory: "classic-0.1.4");
+        modules.Module("classic", "ruleset", "0.2.0", directory: "classic-0.2");
+        string extension = modules.Module("house", "extension", requires: Require("classic", "^0.1.0"));
 
         ModuleSet set = ModuleLoader.Load(extension, []);
 
@@ -41,7 +41,7 @@ public sealed class ModuleLoaderTests
     public void MissingRequirementNamesTheSearchDirectories()
     {
         using TempModules modules = new();
-        string extension = modules.Module("house", "extension", requires: Require("osric", "^0.1.0"));
+        string extension = modules.Module("house", "extension", requires: Require("classic", "^0.1.0"));
 
         ModuleSet set = ModuleLoader.Load(extension, []);
 
@@ -56,12 +56,12 @@ public sealed class ModuleLoaderTests
     public void ConflictingRangesAreAnError()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset", "0.1.0", directory: "osric-0.1");
-        modules.Module("osric", "ruleset", "0.2.0", directory: "osric-0.2");
+        modules.Module("classic", "ruleset", "0.1.0", directory: "classic-0.1");
+        modules.Module("classic", "ruleset", "0.2.0", directory: "classic-0.2");
         modules.Module("crypt-art", "assets");
-        modules.Module("house", "extension", requires: Require("osric", "~0.2.0"));
+        modules.Module("house", "extension", requires: Require("classic", "~0.2.0"));
         string campaign = modules.Module("clash", "campaign",
-            requires: $"{Require("osric", "^0.1.0")}, {Require("house", "*")}, {Require("crypt-art", "*")}");
+            requires: $"{Require("classic", "^0.1.0")}, {Require("house", "*")}, {Require("crypt-art", "*")}");
 
         ModuleSet set = ModuleLoader.Load(campaign, []);
 
@@ -90,8 +90,8 @@ public sealed class ModuleLoaderTests
     public void KindRulesApplyToRequirements()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset");
-        modules.Module("house", "extension", requires: Require("osric", "*"));
+        modules.Module("classic", "ruleset");
+        modules.Module("house", "extension", requires: Require("classic", "*"));
         string ruleset = modules.Module("bad-rules", "ruleset", requires: Require("house", "*"));
 
         ModuleSet set = ModuleLoader.Load(ruleset, []);
@@ -114,12 +114,12 @@ public sealed class ModuleLoaderTests
     public void ModuleSetHasOneRuleset()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset");
+        modules.Module("classic", "ruleset");
         modules.Module("srd35", "ruleset");
         modules.Module("art", "assets");
         modules.Module("house", "extension", requires: Require("srd35", "*"));
         string campaign = modules.Module("mixed", "campaign",
-            requires: $"{Require("osric", "*")}, {Require("house", "*")}, {Require("art", "*")}");
+            requires: $"{Require("classic", "*")}, {Require("house", "*")}, {Require("art", "*")}");
 
         ModuleSet set = ModuleLoader.Load(campaign, []);
 
@@ -131,9 +131,9 @@ public sealed class ModuleLoaderTests
     public void SameVersionInTwoDirectoriesIsAmbiguous()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset", directory: "osric-a");
-        modules.Module("osric", "ruleset", directory: "osric-b");
-        string extension = modules.Module("house", "extension", requires: Require("osric", "*"));
+        modules.Module("classic", "ruleset", directory: "classic-a");
+        modules.Module("classic", "ruleset", directory: "classic-b");
+        string extension = modules.Module("house", "extension", requires: Require("classic", "*"));
 
         ModuleSet set = ModuleLoader.Load(extension, []);
 
@@ -145,8 +145,8 @@ public sealed class ModuleLoaderTests
     {
         using TempModules modules = new();
         modules.Write("goldbox.json", """{ "modules": ["rules", "campaigns"] }""");
-        modules.Module("osric", "ruleset", directory: "rules/osric");
-        string extension = modules.Module("house", "extension", requires: Require("osric", "*"), directory: "campaigns/house");
+        modules.Module("classic", "ruleset", directory: "rules/classic");
+        string extension = modules.Module("house", "extension", requires: Require("classic", "*"), directory: "campaigns/house");
 
         ModuleSet set = ModuleLoader.Load(extension, []);
 
@@ -158,22 +158,22 @@ public sealed class ModuleLoaderTests
     public void TrailingSeparatorStillSearchesSiblings()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset");
-        string extension = modules.Module("house", "extension", requires: Require("osric", "*"));
+        modules.Module("classic", "ruleset");
+        string extension = modules.Module("house", "extension", requires: Require("classic", "*"));
 
         ModuleSet set = ModuleLoader.Load(extension + Path.DirectorySeparatorChar, []);
 
         Assert.Empty(set.Diagnostics);
-        Assert.Equal(["osric", "house"], set.LoadOrder.Select(loaded => loaded.Manifest.Id));
+        Assert.Equal(["classic", "house"], set.LoadOrder.Select(loaded => loaded.Manifest.Id));
     }
 
     [Fact]
     public void ExplicitSearchDirectoriesReplaceSiblings()
     {
         using TempModules modules = new();
-        modules.Module("osric", "ruleset", "0.1.0", directory: "shared/osric");
-        modules.Module("osric", "ruleset", "0.2.0", directory: "campaigns/osric");
-        string extension = modules.Module("house", "extension", requires: Require("osric", "*"), directory: "campaigns/house");
+        modules.Module("classic", "ruleset", "0.1.0", directory: "shared/classic");
+        modules.Module("classic", "ruleset", "0.2.0", directory: "campaigns/classic");
+        string extension = modules.Module("house", "extension", requires: Require("classic", "*"), directory: "campaigns/house");
 
         ModuleSet set = ModuleLoader.Load(extension, [Path.Combine(modules.Root, "shared")]);
 
@@ -185,7 +185,7 @@ public sealed class ModuleLoaderTests
     public void MissingSearchDirectoryIsAnError()
     {
         using TempModules modules = new();
-        string ruleset = modules.Module("osric", "ruleset");
+        string ruleset = modules.Module("classic", "ruleset");
 
         ModuleSet set = ModuleLoader.Load(ruleset, [Path.Combine(modules.Root, "nowhere")]);
 
@@ -197,9 +197,9 @@ public sealed class ModuleLoaderTests
     public void UnreadableFilesAndDirectoriesAreDiagnostics()
     {
         using TempModules modules = new();
-        string ruleset = modules.Module("osric", "ruleset");
-        modules.Write("osric/locked.json", """{ "type": "class" }""");
-        modules.Write("osric/sealed/x.json", """{ "type": "class" }""");
+        string ruleset = modules.Module("classic", "ruleset");
+        modules.Write("classic/locked.json", """{ "type": "attribute" }""");
+        modules.Write("classic/sealed/x.json", """{ "type": "attribute" }""");
         File.SetUnixFileMode(Path.Combine(ruleset, "locked.json"), UnixFileMode.None);
         File.SetUnixFileMode(Path.Combine(ruleset, "sealed"), UnixFileMode.None);
         try
@@ -229,14 +229,15 @@ public sealed class ModuleLoaderTests
     public void DefinitionFilesMustNameAKnownType()
     {
         using TempModules modules = new();
-        string ruleset = modules.Module("osric", "ruleset");
-        modules.Write("osric/classes/fighter.json", """{ "type": "class" }""");
-        modules.Write("osric/notes.json", """[1, 2]""");
+        string ruleset = modules.Module("classic", "ruleset");
+        modules.Write("classic/classes/fighter.json", """{ "type": "spellbook", "id": "fighter" }""");
+        modules.Write("classic/notes.json", """[1, 2]""");
 
         ModuleSet set = ModuleLoader.Load(ruleset, []);
 
         Assert.Equal(
             [("definition.type-missing", "notes.json"), ("definition.type-unknown", "fighter.json")],
             set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!))));
+        Assert.Contains("attribute, derived, table", set.Diagnostics[1].Message, StringComparison.Ordinal);
     }
 }

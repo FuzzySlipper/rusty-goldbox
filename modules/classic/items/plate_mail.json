@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "plate_mail",
+  "name": "Plate mail",
+  "kind": "armour",
+  "cost": 400,
+  "weight": 45,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "-7"
+    }
+  ]
+}

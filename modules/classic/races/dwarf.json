@@ -1,0 +1,50 @@
+{
+  "type": "race",
+  "id": "dwarf",
+  "name": "Dwarf",
+  "ability_adjustments": {
+    "con": 1,
+    "cha": -1
+  },
+  "ability_limits": {
+    "str": [
+      8,
+      18
+    ],
+    "dex": [
+      3,
+      17
+    ],
+    "con": [
+      12,
+      19
+    ],
+    "int": [
+      3,
+      18
+    ],
+    "wis": [
+      3,
+      18
+    ],
+    "cha": [
+      3,
+      16
+    ]
+  },
+  "classes": [
+    "cleric",
+    "fighter",
+    "thief"
+  ],
+  "modifiers": [
+    {
+      "check": "save_spell",
+      "value": "floor(self.con / 3.5)"
+    },
+    {
+      "check": "save_wand",
+      "value": "floor(self.con / 3.5)"
+    }
+  ]
+}

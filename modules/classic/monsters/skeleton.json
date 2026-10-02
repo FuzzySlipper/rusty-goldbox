@@ -1,0 +1,20 @@
+{
+  "type": "monster",
+  "id": "skeleton",
+  "name": "Skeleton",
+  "class": "fighter",
+  "level": 2,
+  "hit_points": "1d8",
+  "stats": {
+    "ac": "7",
+    "movement": "120",
+    "size": "'medium'"
+  },
+  "attacks": [
+    {
+      "name": "claw",
+      "damage": "1d6"
+    }
+  ],
+  "xp": 14
+}

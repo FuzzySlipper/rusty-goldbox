@@ -1,0 +1,8 @@
+{
+  "type": "item",
+  "id": "short_bow",
+  "name": "Short bow",
+  "kind": "weapon",
+  "cost": 15,
+  "weight": 8
+}

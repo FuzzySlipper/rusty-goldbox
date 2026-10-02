@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dex_missile",
+  "name": "Dexterity missile bonus to hit",
+  "value": "table(dex_missile, self.dex)"
+}

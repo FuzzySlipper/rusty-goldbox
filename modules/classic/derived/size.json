@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "size",
+  "name": "Size: small, medium or large",
+  "value": "table(race_size, self.race)"
+}

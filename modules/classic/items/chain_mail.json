@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "chain_mail",
+  "name": "Chain mail",
+  "kind": "armour",
+  "cost": 75,
+  "weight": 30,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "-5"
+    }
+  ]
+}
