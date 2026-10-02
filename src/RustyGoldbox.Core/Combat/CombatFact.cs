@@ -99,6 +99,14 @@ public sealed record ConditionFact(string Who, string Condition, bool Applied, d
     }
 }
 
+/// <summary>A creature reacted out of turn to another.</summary>
+public sealed record ReactionFact(string Who, string Reaction, string To) : CombatFact
+{
+    public override string Kind => "reaction";
+
+    public override string Describe() => $"{Who} reacts to {To}: {Reaction}.";
+}
+
 /// <summary>A creature moved on the combat field.</summary>
 public sealed record MoveFact(string Who, Cell From, Cell To, int Cells) : CombatFact
 {

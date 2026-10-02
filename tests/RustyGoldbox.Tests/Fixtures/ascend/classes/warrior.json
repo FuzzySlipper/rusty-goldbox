@@ -79,5 +79,8 @@
       "stat": "will_base",
       "value": "floor(class.level / 3)"
     }
+  ],
+  "reactions": [
+    "attack_of_opportunity"
   ]
 }

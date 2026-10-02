@@ -234,6 +234,16 @@ creatures are, and the `move` operation steps the actor toward or away from
 its target through free cells, so movement costs whatever budget the moving
 action costs. Without a field everyone is in reach.
 
+**Reactions** happen out of turn: a reaction names a trigger (an enemy
+leaving its reach, an enemy's action about to resolve against it, or an
+enemy's operation wounding it), spends a combat budget (usually a `reaction`
+budget refilled each turn) and resolves its use against whoever triggered it.
+Classes, monsters and features list the reactions they give. A `targeted`
+reaction is an interrupt: it resolves before the action's check (a raised
+shield), and an attacker it defeats doesn't act. Reactions don't set off
+further reactions, and budgets start full so a creature can react before its
+first turn.
+
 A combat budget's `per_turn` is an expression, so a condition that lowers a
 stat it reads takes actions away. Expressions evaluated during a fight
 (budgets, initiative, actions, operations and condition hooks) read

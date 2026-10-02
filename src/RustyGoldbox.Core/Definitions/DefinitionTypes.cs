@@ -126,6 +126,7 @@ public static class DefinitionTypes
             ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
+            new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
             new("equipment", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Item), false, "Which items members of the class may equip, reading item.id, item.kind, item.weight and item.cost, for example \"item.kind != 'armour' or item.id == 'leather_armour'\". Without it, any item."),
             new("modifiers", new ListKind(ClassModifier), false, "Modifiers a creature with levels in the class has. They may read class.level, its level in this class, so per-class progressions add up across classes: { \"stat\": \"base_attack\", \"value\": \"floor(class.level * 3 / 4)\" }."),
             Boosts,
@@ -186,6 +187,7 @@ public static class DefinitionTypes
             new("repeatable", new BooleanKind(), false, "If true, a character may choose it more than once, and its modifiers add each time (ability increases)."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers a character with the feature has."),
             new("actions", new ListKind(Use), false, "Actions the feature lets a character take in combat, after its classes' actions."),
+            new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
             Boosts,
         ],
         """
@@ -197,6 +199,21 @@ public static class DefinitionTypes
           "requirements": "self.level >= 1",
           "modifiers": [ { "check": "save_will", "value": "2" } ]
         }
+        """);
+
+    public static DefinitionType Reaction { get; } = new(
+        "reaction",
+        "Something a creature does out of turn when a trigger happens: an attack of opportunity, a shield raised before a blow lands, a riposte after a wound. It spends a combat budget, usually one refilled each turn (\"reaction\": 1), and resolves its use against the creature that triggered it. Classes, monsters and features list the reactions they give; reactions don't trigger further reactions.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("trigger", new EnumKind(["leaves_reach", "targeted", "damaged"]), true, "\"leaves_reach\": an enemy steps from within its reach to outside it (before the step). \"targeted\": an enemy's action is about to resolve against it, before any check (an interrupt). \"damaged\": an enemy's operation lowered its track."),
+            new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"reaction\": 1 }."),
+            new("reach", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Combat), false, "With leaves_reach, how many cells it watches; without it, 1."),
+            new("when", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Combat), false, "Whether it reacts, with target as the creature that triggered it."),
+            new("use", Use, true, "The action it takes against the creature that triggered it (or itself, for an action targeting self), with its parameters or from_item."),
+        ],
+        """
+        { "type": "reaction", "id": "attack_of_opportunity", "name": "Attack of opportunity", "trigger": "leaves_reach", "cost": { "reaction": 1 }, "use": { "action": "melee_attack", "from_item": "weapon" } }
         """);
 
     public static DefinitionType Check { get; } = new(
@@ -300,6 +317,7 @@ public static class DefinitionTypes
             new("tracks", new MapKind(new ReferenceKind("track"), SelfNumber), false, "Maximum for each track the ruleset doesn't compute itself, for example { \"hit_points\": \"2d8\" }; rolled when the monster appears."),
             new("stats", new MapKind(new StatKind(false), new ExpressionKind(null, Roots.Self)), false, "Stat values that replace the derived ones, each of the stat's type, for example { \"ac\": \"6\", \"size\": \"'large'\" }."),
             new("actions", new ListKind(Use), true, "Actions the monster takes in combat, in order of preference, for example { \"action\": \"melee_attack\", \"name\": \"bite\", \"damage\": \"1d3\" }."),
+            new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
             new("xp", new IntegerKind(), true, "Experience for defeating it."),
         ],
         """
@@ -585,7 +603,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Reaction, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure,
     ];
 

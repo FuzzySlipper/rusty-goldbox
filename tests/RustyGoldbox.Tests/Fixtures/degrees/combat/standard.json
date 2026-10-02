@@ -13,6 +13,10 @@
     {
       "id": "action",
       "per_turn": "if combat.surprise_round then 1 else self.actions"
+    },
+    {
+      "id": "reaction",
+      "per_turn": 1
     }
   ],
   "track": "hit_points",

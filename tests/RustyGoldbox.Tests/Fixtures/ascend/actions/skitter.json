@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "skitter",
+  "name": "Skitter",
+  "cost": {
+    "move": 1
+  },
+  "target": "enemy",
+  "valid_target": "combat.distance <= 1",
+  "always": [
+    {
+      "op": "move",
+      "toward": "away",
+      "distance": "2"
+    }
+  ]
+}

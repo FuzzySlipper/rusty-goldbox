@@ -1,0 +1,12 @@
+{
+  "type": "reaction",
+  "id": "raise_shield",
+  "name": "Raise shield",
+  "trigger": "targeted",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "brace"
+  }
+}

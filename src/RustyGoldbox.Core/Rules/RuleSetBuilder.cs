@@ -630,6 +630,15 @@ public sealed class RuleSetBuilder
         HashSet<string> budget = _rules.OfType(DefinitionTypes.Combat)
             .SelectMany(combat => combat.Json.GetProperty("budget").EnumerateArray().Select(entry => entry.GetProperty("id").GetString()!))
             .ToHashSet();
+        foreach (Definition reaction in _rules.OfType(DefinitionTypes.Reaction))
+        {
+            foreach (JsonProperty entry in reaction.Json.GetProperty("cost").EnumerateObject().Where(entry => !budget.Contains(entry.Name)))
+            {
+                string known = budget.Count == 0 ? "No combat definition declares a budget." : $"Budget IDs: {string.Join(", ", budget.Order(StringComparer.Ordinal))}.";
+                Error(reaction, "action.cost", $"$.cost.{entry.Name}", $"'{entry.Name}' is not a budget in any combat definition. {known}");
+            }
+        }
+
         foreach (Definition action in _rules.OfType(DefinitionTypes.Action))
         {
             JsonElement cost = action.Json.GetProperty("cost");

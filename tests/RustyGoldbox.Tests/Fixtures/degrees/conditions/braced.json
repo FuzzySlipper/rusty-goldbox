@@ -1,0 +1,12 @@
+{
+  "type": "condition",
+  "id": "braced",
+  "name": "Braced",
+  "description": "A raised shield.",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "2"
+    }
+  ]
+}

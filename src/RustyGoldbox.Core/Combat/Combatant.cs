@@ -17,6 +17,9 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     public IReadOnlyList<UseOption> Uses { get; } = uses;
 
+    /// <summary>The reactions the creature has, each with the use it reacts with.</summary>
+    public List<(Definition Reaction, UseOption Use)> Reactions { get; } = [];
+
     public int Side { get; set; }
 
     public bool Defeated { get; set; }
@@ -66,7 +69,9 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
         renamed.Conditions.AddRange(Creature.Conditions);
         renamed.Equipment.AddRange(Creature.Equipment);
-        return new Combatant(newName, renamed, Uses);
+        Combatant copy = new(newName, renamed, Uses);
+        copy.Reactions.AddRange(Reactions);
+        return copy;
     }
 
     /// <summary>
@@ -83,7 +88,9 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment))
             .DistinctBy(use => (use.Action, use.Name))
             .ToList();
-        return new Combatant(character.Name, creature, uses);
+        Combatant combatant = new(character.Name, creature, uses);
+        combatant.AddReactions(rules, creature.ClassLevels.Keys.Concat(creature.Features.Distinct()));
+        return combatant;
     }
 
     /// <summary>A monster as a combatant: its track maxima rolled, every track at its start.</summary>
@@ -104,7 +111,38 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         {
             evaluator.StartTrack(creature, track);
         }
-        return new Combatant(name, creature, ReadUses(rules, monster, "$.actions", []));
+        Combatant combatant = new(name, creature, ReadUses(rules, monster, "$.actions", []));
+        combatant.AddReactions(rules, [monster]);
+        return combatant;
+    }
+
+    /// <summary>
+    /// Adds the reactions <paramref name="sources"/> list, once each, with the
+    /// use each reacts with (the first its equipment allows, for from_item).
+    /// </summary>
+    private void AddReactions(RuleSet rules, IEnumerable<Definition> sources)
+    {
+        foreach (Definition source in sources)
+        {
+            if (!source.Json.TryGetProperty("reactions", out JsonElement reactions))
+            {
+                continue;
+            }
+
+            for (int index = 0; index < reactions.GetArrayLength(); index++)
+            {
+                Definition reaction = rules.Reference(source, $"$.reactions[{index}]");
+                if (Reactions.Any(entry => entry.Reaction == reaction))
+                {
+                    continue;
+                }
+
+                if (ReadUse(rules, reaction, reaction.Json.GetProperty("use"), "$.use", Creature.Equipment).FirstOrDefault() is UseOption use)
+                {
+                    Reactions.Add((reaction, use));
+                }
+            }
+        }
     }
 
     private static List<UseOption> ReadUses(RuleSet rules, Definition owner, string path, IReadOnlyList<Definition> equipment)
@@ -118,45 +156,53 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         int index = 0;
         foreach (JsonElement use in uses.EnumerateArray())
         {
-            string at = $"{path}[{index}]";
+            options.AddRange(ReadUse(rules, owner, use, $"{path}[{index}]", equipment));
             index++;
-            Definition action = rules.Reference(owner, $"{at}.action");
-            List<string> parameters = action.Json.TryGetProperty("parameters", out JsonElement declared)
-                ? declared.EnumerateArray().Select(parameter => parameter.GetString()!).ToList()
-                : [];
-            Dictionary<string, CompiledExpression> given = [];
-            foreach (string parameter in parameters)
+        }
+
+        return options;
+    }
+
+    /// <summary>The options one use gives: itself, or with from_item one per equipped item of the kind that fills its parameters.</summary>
+    private static List<UseOption> ReadUse(RuleSet rules, Definition owner, JsonElement use, string at, IReadOnlyList<Definition> equipment)
+    {
+        List<UseOption> options = [];
+        Definition action = rules.Reference(owner, $"{at}.action");
+        List<string> parameters = action.Json.TryGetProperty("parameters", out JsonElement declared)
+            ? declared.EnumerateArray().Select(parameter => parameter.GetString()!).ToList()
+            : [];
+        Dictionary<string, CompiledExpression> given = [];
+        foreach (string parameter in parameters)
+        {
+            if (rules.TryExpression(owner, $"{at}.{parameter}", out CompiledExpression? expression))
             {
-                if (rules.TryExpression(owner, $"{at}.{parameter}", out CompiledExpression? expression))
+                given[parameter] = expression!;
+            }
+        }
+
+        string name = use.TryGetProperty("name", out JsonElement named) ? named.GetString()! : action.Name;
+        if (!use.TryGetProperty("from_item", out JsonElement kind))
+        {
+            options.Add(new UseOption(action, name, given));
+            return options;
+        }
+
+        // One option per equipped item of the kind that has every missing parameter.
+        foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == kind.GetString()))
+        {
+            Dictionary<string, CompiledExpression> filled = new(given);
+            foreach (string parameter in parameters.Where(parameter => !given.ContainsKey(parameter)))
+            {
+                if (rules.TryExpression(item, $"$.parameters.{parameter}", out CompiledExpression? fromItem))
                 {
-                    given[parameter] = expression!;
+                    filled[parameter] = fromItem!;
                 }
             }
 
-            string name = use.TryGetProperty("name", out JsonElement named) ? named.GetString()! : action.Name;
-            if (!use.TryGetProperty("from_item", out JsonElement kind))
+            if (filled.Count == parameters.Count)
             {
-                options.Add(new UseOption(action, name, given));
-                continue;
-            }
-
-            // One option per equipped item of the kind that has every missing parameter.
-            foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == kind.GetString()))
-            {
-                Dictionary<string, CompiledExpression> filled = new(given);
-                foreach (string parameter in parameters.Where(parameter => !given.ContainsKey(parameter)))
-                {
-                    if (rules.TryExpression(item, $"$.parameters.{parameter}", out CompiledExpression? fromItem))
-                    {
-                        filled[parameter] = fromItem!;
-                    }
-                }
-
-                if (filled.Count == parameters.Count)
-                {
-                    string itemName = use.TryGetProperty("name", out _) ? name : $"{action.Name} ({item.Name})";
-                    options.Add(new UseOption(action, itemName, filled));
-                }
+                string itemName = use.TryGetProperty("name", out _) ? name : $"{action.Name} ({item.Name})";
+                options.Add(new UseOption(action, itemName, filled));
             }
         }
 

@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "brace",
+  "name": "Raise shield",
+  "cost": {
+    "action": 1
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "braced",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

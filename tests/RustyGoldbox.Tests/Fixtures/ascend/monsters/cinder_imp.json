@@ -13,6 +13,9 @@
   "xp": 50,
   "actions": [
     {
+      "action": "skitter"
+    },
+    {
       "action": "ember"
     },
     {

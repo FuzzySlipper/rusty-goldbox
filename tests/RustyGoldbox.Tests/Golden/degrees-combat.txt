@@ -28,11 +28,14 @@ Round 2.
   Wren is out of the fight.
   Raider 1 is no longer Slowed.
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 4 + 7 = 11 against 17: failure.  [1d20: 4 = 4]
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 4 + 7 = 11 against 19: failure.  [1d20: 4 = 4]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 3 + 2 = 5 against 17: critical_failure.  [1d20: 3 = 3]
+  Raider 2 rolls Strike: 3 + 2 = 5 against 19: critical_failure.  [1d20: 3 = 3]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 17 - 3 = 14 against 17: failure.  [1d20: 17 = 17]
+  Raider 2 rolls Strike: 17 - 3 = 14 against 19: failure.  [1d20: 17 = 17]
 Round 3.
   Tor uses Power swing (Longblade) on Raider 1.
   Tor rolls Strike: 17 + 6 = 23 against 15: success.  [1d20: 17 = 17]
@@ -40,60 +43,41 @@ Round 3.
   Raider 1 is out of the fight.
   Tor uses Strike (Longblade) on Raider 2.
   Tor rolls Strike: 12 + 1 = 13 against 15: failure.  [1d20: 12 = 12]
+  Tor is no longer Braced.
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 14 + 7 = 21 against 17: success.  [1d20: 14 = 14]
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 14 + 7 = 21 against 19: success.  [1d20: 14 = 14]
   Tor loses 4 hit points (19 left).  [1d6: 2 = 2]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 15 + 2 = 17 against 17: success.  [1d20: 15 = 15]
-  Tor loses 6 hit points (13 left).  [1d6: 4 = 4]
+  Raider 2 rolls Strike: 15 + 2 = 17 against 19: failure.  [1d20: 15 = 15]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 14 - 3 = 11 against 17: failure.  [1d20: 14 = 14]
+  Raider 2 rolls Strike: 12 - 3 = 9 against 19: critical_failure.  [1d20: 12 = 12]
 Round 4.
   Tor uses Power swing (Longblade) on Raider 2.
   Tor rolls Strike: 14 + 6 = 20 against 15: success.  [1d20: 14 = 14]
-  Raider 2 loses 5 hit points (13 left).  [1d8: 1 = 1; 1d8: 1 = 1]
+  Raider 2 loses 10 hit points (8 left).  [1d8: 6 = 6; 1d8: 1 = 1]
   Tor uses Strike (Longblade) on Raider 2.
   Tor rolls Strike: 5 + 1 = 6 against 15: failure.  [1d20: 5 = 5]
+  Tor is no longer Braced.
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 11 + 7 = 18 against 17: success.  [1d20: 11 = 11]
-  Tor loses 3 hit points (10 left).  [1d6: 1 = 1]
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 5 + 7 = 12 against 19: failure.  [1d20: 5 = 5]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 14 + 2 = 16 against 17: failure.  [1d20: 14 = 14]
+  Raider 2 rolls Strike: 11 + 2 = 13 against 19: failure.  [1d20: 11 = 11]
   Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 13 - 3 = 10 against 17: failure.  [1d20: 13 = 13]
+  Raider 2 rolls Strike: 9 - 3 = 6 against 19: critical_failure.  [1d20: 9 = 9]
 Round 5.
   Tor uses Power swing (Longblade) on Raider 2.
   Tor rolls Strike: 14 + 6 = 20 against 15: success.  [1d20: 14 = 14]
-  Raider 2 loses 12 hit points (1 left).  [1d8: 2 = 2; 1d8: 7 = 7]
-  Tor uses Strike (Longblade) on Raider 2.
-  Tor rolls Strike: 10 + 1 = 11 against 15: failure.  [1d20: 10 = 10]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 6 + 7 = 13 against 17: failure.  [1d20: 6 = 6]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 14 + 2 = 16 against 17: failure.  [1d20: 14 = 14]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 6 - 3 = 3 against 17: critical_failure.  [1d20: 6 = 6]
-Round 6.
-  Tor uses Power swing (Longblade) on Raider 2.
-  Tor rolls Strike: 3 + 6 = 9 against 15: failure.  [1d20: 3 = 3]
-  Tor uses Strike (Longblade) on Raider 2.
-  Tor rolls Strike: 7 + 1 = 8 against 15: failure.  [1d20: 7 = 7]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 15 + 7 = 22 against 17: success.  [1d20: 15 = 15]
-  Tor loses 7 hit points (3 left).  [1d6: 5 = 5]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 12 + 2 = 14 against 17: failure.  [1d20: 12 = 12]
-  Raider 2 uses Spear on Tor.
-  Raider 2 rolls Strike: 5 - 3 = 2 against 17: critical_failure.  [1d20: 5 = 5]
-Round 7.
-  Tor uses Power swing (Longblade) on Raider 2.
-  Tor rolls Strike: 3 + 6 = 9 against 15: failure.  [1d20: 3 = 3]
-  Tor uses Strike (Longblade) on Raider 2.
-  Tor rolls Strike: 18 + 1 = 19 against 15: success.  [1d20: 18 = 18]
-  Raider 2 loses 4 hit points (-3 left).  [1d8: 1 = 1]
+  Raider 2 loses 10 hit points (-2 left).  [1d8: 5 = 5; 1d8: 2 = 2]
   Raider 2 is out of the fight.
-Party wins after 7 rounds.
-Party: Tor 3/23, Wren -1/12 (out)
-Raiders: Raider 1 -9/18 (out), Raider 2 -3/18 (out)
+  Tor is no longer Braced.
+Party wins after 5 rounds.
+Party: Tor 19/23, Wren -1/12 (out)
+Raiders: Raider 1 -9/18 (out), Raider 2 -2/18 (out)
 [exit 0]
 

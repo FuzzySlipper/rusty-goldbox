@@ -136,7 +136,9 @@ it, or the first fallen ally. An action's check gives a tier; the action's
 operations for that tier run, then its `always` operations. Defeated
 creatures take no turns; with the combat's `downed_conditions`, those that
 had no turn in a round still run their conditions and count them down at the
-round's end. Every change is a `CombatFact`, with the dice that produced it.
+round's end. Reactions resolve where their triggers happen: as a mover
+leaves a reach, before an action's check against the reactor, and after an
+operation wounds it. Every change is a `CombatFact`, with the dice that produced it.
 
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope

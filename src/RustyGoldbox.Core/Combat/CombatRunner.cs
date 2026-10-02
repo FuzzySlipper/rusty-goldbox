@@ -34,6 +34,7 @@ public sealed class CombatRunner
     private readonly Definition _track;
     private readonly CombatField? _field;
     private Combatant? _turn;
+    private bool _reacting;
 
     private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice)
     {
@@ -96,6 +97,14 @@ public sealed class CombatRunner
         }
 
         RollSurprise();
+
+        // Budgets start full, so reactions can be taken before a creature's first turn.
+        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest);
+        foreach (Combatant member in Everyone)
+        {
+            Refill(member);
+        }
+
         int round = 0;
         int? winner = Winner();
         bool rollEachRound = _combat.Json.GetProperty("initiative_each").GetString() == "round";
@@ -247,6 +256,57 @@ public sealed class CombatRunner
         return value;
     }
 
+    /// <summary>Fills a creature's budgets to their per_turn amounts.</summary>
+    private void Refill(Combatant actor)
+    {
+        int index = 0;
+        foreach (JsonElement entry in _combat.Json.GetProperty("budget").EnumerateArray())
+        {
+            decimal perTurn = Number(_combat, $"$.budget[{index}].per_turn", new Scope(actor.Creature, null));
+            actor.Budget[entry.GetProperty("id").GetString()!] = (int)Math.Clamp(decimal.Floor(perTurn), 0, int.MaxValue);
+            index++;
+        }
+    }
+
+    /// <summary>
+    /// Lets <paramref name="reactor"/> react to <paramref name="source"/>: the
+    /// first of its reactions to the trigger that it can afford, that
+    /// <paramref name="fits"/> and whose "when" holds. A creature out of the
+    /// fight, or one a condition stops acting, doesn't react, and reactions
+    /// don't set off further reactions.
+    /// </summary>
+    private void React(string trigger, Combatant reactor, Combatant source, Func<Definition, bool>? fits = null)
+    {
+        if (_reacting || reactor.Defeated || reactor == source
+            || reactor.Creature.Conditions.Any(condition => condition.Json.TryGetProperty("prevents_actions", out JsonElement prevents) && prevents.GetBoolean()))
+        {
+            return;
+        }
+
+        foreach ((Definition reaction, UseOption use) in reactor.Reactions)
+        {
+            if (reaction.Json.GetProperty("trigger").GetString() != trigger || !Affordable(reactor, reaction) || (fits is not null && !fits(reaction))
+                || (reaction.Json.TryGetProperty("when", out _) && !Evaluate(reaction, "$.when", new Scope(reactor.Creature, source.Creature)).Boolean))
+            {
+                continue;
+            }
+
+            Spend(reactor, reaction);
+            Record(new ReactionFact(reactor.Name, reaction.Name, source.Name));
+            _reacting = true;
+            try
+            {
+                Act(reactor, use, [use.Action.Json.GetProperty("target").GetString() == "self" ? reactor : source]);
+            }
+            finally
+            {
+                _reacting = false;
+            }
+
+            return;
+        }
+    }
+
     /// <summary>Takes a creature's turn unless it is out of the fight; returns whether it had one.</summary>
     private bool TakeTurn(Combatant actor)
     {
@@ -314,13 +374,7 @@ public sealed class CombatRunner
             return;
         }
 
-        int index = 0;
-        foreach (JsonElement entry in _combat.Json.GetProperty("budget").EnumerateArray())
-        {
-            decimal perTurn = Number(_combat, $"$.budget[{index}].per_turn", new Scope(actor.Creature, null));
-            actor.Budget[entry.GetProperty("id").GetString()!] = (int)Math.Clamp(decimal.Floor(perTurn), 0, int.MaxValue);
-            index++;
-        }
+        Refill(actor);
 
         bool acted = false;
         while (!actor.Defeated && StandingSides() > 1 && Choose(actor) is (UseOption use, List<Combatant> targets))
@@ -476,6 +530,16 @@ public sealed class CombatRunner
                 continue;
             }
 
+            // An enemy it targets may interrupt first; it may not survive to act.
+            if (target != actor && target.Side != actor.Side)
+            {
+                React("targeted", target, actor);
+                if (actor.Defeated)
+                {
+                    return;
+                }
+            }
+
             Scope scope = new(actor.Creature, target.Creature, use.Parameters);
             if (action.Json.TryGetProperty("check", out _))
             {
@@ -541,8 +605,14 @@ public sealed class CombatRunner
         }
 
         int before = _dice.Rolls.Count;
+        int factsBefore = _facts.Count;
         Located(owner, path, () => Apply(owner, operation, path, scope, op, who, before));
         CheckDefeated(who);
+        if (op == "damage" && who != actor && who.Side != actor.Side
+            && _facts.Skip(factsBefore).OfType<DamageFact>().Any(damage => damage.Who == who.Name && damage.Amount > 0))
+        {
+            React("damaged", who, actor);
+        }
     }
 
     private bool Apply(Definition owner, JsonElement operation, string path, Scope scope, string op, Combatant who, int before)
@@ -673,6 +743,23 @@ public sealed class CombatRunner
                 .Select(entry => (Cell?)entry.Cell)
                 .FirstOrDefault();
             if (next is not Cell step)
+            {
+                break;
+            }
+
+            // Enemies whose reach this step leaves may strike first.
+            foreach (Combatant enemy in Everyone.Where(member => member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList())
+            {
+                Cell watcher = enemy.Creature.Position!.Value;
+                Cell from = here;
+                React("leaves_reach", enemy, actor, reaction =>
+                {
+                    decimal reach = reaction.Json.TryGetProperty("reach", out _) ? Number(reaction, "$.reach", new Scope(enemy.Creature, null)) : 1;
+                    return _field.Distance(watcher, from) <= reach && _field.Distance(watcher, step) > reach;
+                });
+            }
+
+            if (actor.Defeated)
             {
                 break;
             }
