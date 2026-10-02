@@ -3,6 +3,7 @@ using System.Text.Json;
 using Rusty.Engine;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Game;
 
 namespace RustyGoldbox.Tests;
@@ -34,6 +35,37 @@ public sealed class GameTests
             Run(session, engine, payload);
             Assert.Contains(note, Assert.Single(session.Notes), StringComparison.Ordinal);
             Assert.Empty(session.Party);
+        });
+    }
+
+    [Fact]
+    public void TheLibraryListsInstalledCampaignsAndNamesBrokenContainers()
+    {
+        using TempModules scratch = new();
+        string library = Path.Combine(scratch.Root, "library");
+        foreach (string id in SampleSet)
+        {
+            EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch, Path.Combine(library, $"{id}-0.1.0.rpak"));
+        }
+
+        // A second copy of the same campaign (as when the product ships it and it is also installed).
+        File.Copy(Path.Combine(library, "sample-crypt-0.1.0.rpak"), Path.Combine(library, "sample-crypt-copy.rpak"));
+        scratch.Write("library/zzz-broken-0.1.0.rpak", "not a container");
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = new(new ModuleLibrary(problems =>
+            {
+                List<ProductContentBundle> opened = [];
+                InstalledModules.Open(engine.Content, library, opened, problems);
+                return opened;
+            }));
+            session.Refresh();
+
+            Assert.Equal("sample-crypt", Assert.Single(session.Campaigns).Id);
+            Assert.Contains("zzz-broken-0.1.0.rpak isn't a usable module container", Assert.Single(session.Notes), StringComparison.Ordinal);
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign = session.Campaigns[0].Bundle, seed = "1" }));
+            Assert.Equal(Screen.Party, session.Screen);
         });
     }
 
@@ -115,7 +147,7 @@ public sealed class GameTests
                 ? Path.Combine(scratch.Root, id + ".rpak")
                 : EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
             .ToList();
-        GameSession session = new(new ModuleLibrary(() => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+        GameSession session = new(new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
         session.Refresh();
         string campaign = Assert.Single(session.Campaigns).Bundle;
         Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = "11" }));

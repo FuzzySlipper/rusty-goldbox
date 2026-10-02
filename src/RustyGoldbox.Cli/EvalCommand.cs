@@ -42,7 +42,7 @@ internal static class EvalCommand
             return output.UsageError(error);
         }
 
-        ModuleSet set = ModuleLoader.Load(
+        ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(modulePath!, workingDirectory),
             parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
         if (set.Rules is null || !set.IsValid)

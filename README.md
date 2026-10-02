@@ -45,10 +45,25 @@ every module bundle inside:
 rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --pack release --compress
 ```
 
+Modules also ship and install on their own, as Engine content containers.
+`goldbox module pack` validates a module and packs it; `--install` puts it in
+the Game's module library (`$GOLDBOX_MODULE_LIBRARY`, else
+`$XDG_DATA_HOME/rusty-goldbox/modules`, else
+`~/.local/share/rusty-goldbox/modules`), where the Game offers it beside its
+own modules without a rebuild:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- module pack modules/sample-crypt --install
+```
+
+The CLI reads installed containers too: any `.rpak` in a search directory is
+a candidate module, and a command's module path may be one.
+
 `--pack` and `rusty pack-content` are commands of the pinned pair's own
 `rusty` (`~/.cache/rusty-engine/pairs/<pin>/runtime-pack/bin/rusty`); an older
 bootstrap `rusty` on `PATH` may not have them until it is refreshed with the
-install script above.
+install script above. `goldbox module pack` uses the pair's copy when it is
+installed.
 
 ## Authoring modules
 

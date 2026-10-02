@@ -57,7 +57,7 @@ internal static class PlayCommand
             return output.UsageError(error);
         }
 
-        ModuleSet set = ModuleLoader.Load(
+        ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--campaign")!, workingDirectory),
             parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
         if (set.Rules is null || !set.IsValid)

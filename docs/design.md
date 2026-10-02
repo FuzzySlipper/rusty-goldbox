@@ -281,7 +281,7 @@ path and the rule that failed. Module directories resolve through
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
 | `goldbox play --campaign … --seed N [--script file]` | Play from a command script or stdin and emit a transcript. |
-| `goldbox module pack <path>` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
+| `goldbox module pack <path> [--output <file> \| --install]` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
 
 Golden transcripts from `goldbox play` and `goldbox sim` are the main
 regression checks for module and rules behavior.
@@ -302,12 +302,20 @@ regression checks for module and rules behavior.
   persistence scope, as the same JSON `goldbox play --save` writes.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
   its content as one zstd-compressed `.rpak`.
-- **Independent module export.** `rusty pack-content <module-dir> --output
-  <file> [--compress]` packs one module into an Engine content container.
-  An installed container opens at run time as an ordinary bundle with
-  `ProductContentBundle.OpenContainer`, so ruleset, asset and campaign modules
-  ship and install separately. Replace an installed container by renaming a
-  new file into place, never by rewriting it while open. Don't write a local
+- **Independent module export.** `goldbox module pack <module-dir>` validates
+  a module with its requirements, then packs it with the pinned pair's
+  `rusty pack-content --compress` into `<id>-<version>.rpak`; `--install`
+  writes it into the module library (`$GOLDBOX_MODULE_LIBRARY`, else
+  `$XDG_DATA_HOME/rusty-goldbox/modules`, else
+  `~/.local/share/rusty-goldbox/modules`). An installed container opens at run
+  time as an ordinary bundle with `ProductContentBundle.OpenContainer`, so
+  ruleset, asset and campaign modules ship and install separately. The Game
+  offers the modules in its library beside its own bundles; the CLI finds
+  `.rpak` files in its search directories and takes one as a module path.
+  A container and a source directory of the same module version with the same
+  content are one module; with different content they are ambiguous.
+  Replace an installed container by renaming a new file into place (`rusty
+  pack-content` does), never by rewriting it while open. Don't write a local
   container format or archive reader.
 - **The CLI and Engine services.** The CLI sets `RustyEngineToolHost` and
   creates the Engine service set in process with `EngineTestHost.Create()`:

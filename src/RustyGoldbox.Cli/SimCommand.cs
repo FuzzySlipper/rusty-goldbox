@@ -40,7 +40,7 @@ internal static class SimCommand
             return output.UsageError(error);
         }
 
-        ModuleSet set = ModuleLoader.Load(
+        ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--module")!, workingDirectory),
             parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
         if (set.Rules is null || !set.IsValid)

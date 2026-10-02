@@ -163,7 +163,7 @@ internal static class CharacterCommand
 
     private static ModuleSet Load(Arguments parsed, string workingDirectory)
     {
-        return ModuleLoader.Load(
+        return ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--module")!, workingDirectory),
             parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
     }

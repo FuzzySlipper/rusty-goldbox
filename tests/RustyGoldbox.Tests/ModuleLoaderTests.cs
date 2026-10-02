@@ -130,11 +130,12 @@ public sealed class ModuleLoaderTests
     }
 
     [Fact]
-    public void SameVersionInTwoDirectoriesIsAmbiguous()
+    public void SameVersionWithDifferentContentIsAmbiguous()
     {
         using TempModules modules = new();
         modules.Module("classic", "ruleset", directory: "classic-a");
         modules.Module("classic", "ruleset", directory: "classic-b");
+        modules.Write("classic-b/notes.txt", "A different copy.");
         string extension = modules.Module("house", "extension", requires: Require("classic", "*"));
 
         ModuleSet set = ModuleLoader.Load(extension, []);

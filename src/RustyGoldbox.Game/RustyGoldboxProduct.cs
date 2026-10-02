@@ -1,4 +1,5 @@
 using Rusty.Engine;
+using RustyGoldbox.Core.Modules;
 
 namespace RustyGoldbox.Game;
 
@@ -20,7 +21,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     {
         ArgumentNullException.ThrowIfNull(context);
         _engine = context.Engine;
-        _session = new GameSession(new ModuleLibrary(() => OpenBundles(context.Content)));
+        _session = new GameSession(new ModuleLibrary(problems => OpenModules(context.Content, context.Engine.Content, problems)));
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
@@ -67,15 +68,26 @@ public sealed class RustyGoldboxProduct : IEngineProduct
 
     public void Dispose() => _uiStream.Dispose();
 
-    private static List<ProductContentBundle> OpenBundles(ProductContent content)
+    /// <summary>The product's own module bundles, then the modules installed in the module library.</summary>
+    private static List<ProductContentBundle> OpenModules(ProductContent content, IContentService service, List<string> problems)
     {
-        List<ProductContentBundle> bundles = [];
-        foreach (ContentBundleInfo info in content.ListBundles().Span)
+        List<ProductContentBundle> modules = [];
+        try
         {
-            bundles.Add(content.OpenBundle(info.Id));
-        }
+            foreach (ContentBundleInfo info in content.ListBundles().Span)
+            {
+                modules.Add(content.OpenBundle(info.Id));
+            }
 
-        return bundles;
+            InstalledModules.Open(service, InstalledModules.DefaultDirectory(), modules, problems);
+            return modules;
+        }
+        catch
+        {
+            // Nothing returns to dispose these, so release them before failing.
+            modules.ForEach(bundle => bundle.Dispose());
+            throw;
+        }
     }
 
     private void Publish()

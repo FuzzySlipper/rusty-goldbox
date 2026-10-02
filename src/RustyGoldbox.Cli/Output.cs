@@ -92,6 +92,21 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return set.IsValid ? GoldboxCli.Ok : GoldboxCli.Invalid;
     }
 
+    public int Packed(ModuleManifest module, string container)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = true, module = ModuleJson(module), container = Display(container), identity = module.Source.Identity });
+        }
+        else
+        {
+            writer.WriteLine($"ok: packed {module.Id} {module.Version} ({ModuleKinds.Name(module.Kind)}) into {Display(container)}.");
+            writer.WriteLine($"  identity {module.Source.Identity}");
+        }
+
+        return GoldboxCli.Ok;
+    }
+
     public int Dependencies(ModuleSet set)
     {
         if (json)

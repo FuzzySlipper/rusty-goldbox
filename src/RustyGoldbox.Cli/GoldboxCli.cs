@@ -21,6 +21,11 @@ internal static class GoldboxCli
           goldbox module deps <path> [--modules <dir>]...
           goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]...
               Lists the resolved definitions and stats, or shows the selected ones.
+          goldbox module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...
+              Validates the module, then packs it into an Engine content container
+              (<id>-<version>.rpak here, or in the Game's module library with --install:
+              $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
+              else ~/.local/share/rusty-goldbox/modules).
           goldbox schema [<type> | module | expressions]
               The format reference: definition types with fields and examples.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
@@ -60,7 +65,9 @@ internal static class GoldboxCli
         Kinds: ruleset, extension, assets, campaign.
         Ranges: 1.2.3, ^1.2.0, ~1.2.0, ">=1.0.0 <2.0.0", *.
         Required modules are found in --modules directories, the "modules" list
-        of the nearest goldbox.json, or (with neither) the module's siblings.
+        of the nearest goldbox.json, or (with neither) the module's siblings: module
+        directories, and installed .rpak containers directly in those directories.
+        A <path> may be an installed .rpak as well as a module directory.
 
         Exit codes: 0 ok, 1 the module has errors or evaluation failed, 2 bad arguments.
         """;
@@ -101,8 +108,9 @@ internal static class GoldboxCli
             "validate" => ModuleValidate(rest, printer, workingDirectory),
             "deps" => ModuleDeps(rest, printer, workingDirectory),
             "inspect" => InspectCommand.Run(rest, printer, workingDirectory),
+            "pack" => PackCommand.Run(rest, printer, workingDirectory),
             "--help" or "-h" => Print(output, Help),
-            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps and inspect."),
+            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect and pack."),
         };
     }
 
@@ -195,7 +203,7 @@ internal static class GoldboxCli
 
         string path = Path.GetFullPath(parsed.Positionals[0], workingDirectory);
         List<string> searchDirectories = parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList();
-        return ModuleLoader.Load(path, searchDirectories);
+        return ModuleSets.Load(path, searchDirectories);
     }
 
     private static int Print(TextWriter output, string text)

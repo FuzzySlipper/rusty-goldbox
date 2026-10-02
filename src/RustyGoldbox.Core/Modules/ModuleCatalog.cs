@@ -1,3 +1,5 @@
+using Rusty.Engine;
+
 namespace RustyGoldbox.Core.Modules;
 
 /// <summary>The modules a load can pick requirements from, by ID.</summary>
@@ -18,15 +20,17 @@ internal sealed class ModuleCatalog
     /// <summary>How to make a missing module available, for messages.</summary>
     public string HowToAdd { get; }
 
-    /// <summary>Modules whose manifests have errors, so they can't be used.</summary>
+    /// <summary>Modules whose manifests have errors, or containers that don't open, so they can't be used.</summary>
     public IReadOnlyList<string> Unreadable => _unreadable;
 
     /// <param name="available">Every module source that may be required; the root is skipped.</param>
     /// <param name="searched">Where <paramref name="available"/> came from, for messages.</param>
     /// <param name="howToAdd">How to make a missing module available, for messages.</param>
-    public static ModuleCatalog Read(IEnumerable<ModuleSource> available, ModuleManifest root, IReadOnlyList<string> searched, string howToAdd)
+    /// <param name="unreadable">Candidates that couldn't be opened at all, named in the same messages.</param>
+    public static ModuleCatalog Read(IEnumerable<ModuleSource> available, ModuleManifest root, IReadOnlyList<string> searched, string howToAdd, IEnumerable<string> unreadable)
     {
         ModuleCatalog catalog = new(searched, howToAdd);
+        catalog._unreadable.AddRange(unreadable);
         HashSet<string> seen = [root.Source.Location];
         foreach (ModuleSource source in available)
         {
@@ -40,11 +44,21 @@ internal sealed class ModuleCatalog
     }
 
     /// <summary>
-    /// The module directories in a set of search directories: each directory
-    /// itself if it holds a <c>module.json</c>, and each of its immediate
-    /// subdirectories that does.
+    /// The modules in a set of search directories: each directory itself if
+    /// it holds a <c>module.json</c>, each immediate subdirectory that does,
+    /// and each installed container (<c>.rpak</c>) directly in it when
+    /// <paramref name="content"/> is given. Containers open into <paramref name="opened"/>,
+    /// which the caller disposes; one that doesn't open goes to
+    /// <paramref name="unreadable"/>.
     /// </summary>
-    public static List<ModuleSource> Directories(IReadOnlyList<string> searchDirectories, List<ModuleDiagnostic> diagnostics)
+    /// <param name="root">The module being loaded, which is not opened again.</param>
+    public static List<ModuleSource> Sources(
+        IReadOnlyList<string> searchDirectories,
+        string root,
+        IContentService? content,
+        List<ProductContentBundle> opened,
+        List<string> unreadable,
+        List<ModuleDiagnostic> diagnostics)
     {
         List<ModuleSource> sources = [];
         foreach (string searchDirectory in searchDirectories)
@@ -55,6 +69,23 @@ internal sealed class ModuleCatalog
                 if (File.Exists(Path.Combine(directory, ManifestReader.FileName)))
                 {
                     sources.Add(new DirectoryModuleSource(directory));
+                }
+            }
+
+            // Without the content service containers can't be read; like other
+            // modules nobody may require, they are not this load's problem.
+            IEnumerable<string> containers = content is null ? [] : InstalledModules.In(searchDirectory, diagnostics).Where(path => path != root);
+            foreach (string container in containers)
+            {
+                try
+                {
+                    ProductContentBundle bundle = ProductContentBundle.OpenContainer(content!, container);
+                    opened.Add(bundle);
+                    sources.Add(new BundleModuleSource(bundle));
+                }
+                catch (EngineCallException exception)
+                {
+                    unreadable.Add($"{container} ({exception.Message})");
                 }
             }
         }

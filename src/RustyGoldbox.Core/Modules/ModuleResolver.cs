@@ -85,11 +85,13 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
         }
 
         ModuleManifest picked = matching[0];
+        // Copies with the same content (a source directory and its installed
+        // container, say) are the same module; only differing copies are ambiguous.
         List<ModuleManifest> copies = matching.Where(candidate => candidate.Version == picked.Version).ToList();
-        if (copies.Count > 1)
+        if (copies.Select(copy => copy.Source.Identity).Distinct().Count() > 1)
         {
             Error(module, "resolve.ambiguous", $"{at}.id",
-                $"{picked.Id} {picked.Version} is in more than one place: {string.Join(", ", copies.Select(copy => copy.Source.Location))}. Remove one copy or give it a different version.");
+                $"{picked.Id} {picked.Version} is in more than one place: {string.Join(", ", copies.Select(copy => copy.Source.Location))}. They have different content: remove one copy or give it a different version.");
             return null;
         }
 

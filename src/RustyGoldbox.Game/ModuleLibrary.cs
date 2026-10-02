@@ -4,31 +4,42 @@ using RustyGoldbox.Core.Modules;
 namespace RustyGoldbox.Game;
 
 /// <summary>A campaign module the product can start, found in a content bundle.</summary>
-internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version);
+internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version, string Identity);
 
 /// <summary>
-/// The modules the product ships: one Engine content bundle per module
-/// directory. Each call opens the bundles afresh, so under <c>rusty dev</c> it
-/// sees bundle edits without a restart.
+/// The modules the product can load: its own content bundles (one per module
+/// directory) and modules installed as containers in the module library.
+/// Each call opens them afresh, so under <c>rusty dev</c> it sees bundle
+/// edits and newly installed modules without a restart.
 /// </summary>
-/// <param name="open">Opens every bundle the product has; the library disposes them.</param>
-internal sealed class ModuleLibrary(Func<List<ProductContentBundle>> open)
+/// <param name="open">
+/// Opens every bundle and container the product has, describing any that
+/// don't open in the list it is given; the library disposes what it returns.
+/// </param>
+internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle>> open)
 {
-    private const string HowToAdd =
-        "Put the module's directory under modules/; the Game project declares every directory there as a content bundle.";
+    private static readonly string HowToAdd =
+        $"Install it with `goldbox module pack <dir> --install` (into {InstalledModules.DefaultDirectory()}), or put its directory under modules/ and rebuild.";
 
-    /// <summary>Every bundle holding a valid campaign manifest. Other bundles' problems are left for their own load.</summary>
-    public List<CampaignChoice> Campaigns()
+    /// <summary>
+    /// Every bundle holding a valid campaign manifest. Containers that don't
+    /// open are described in <paramref name="problems"/>; other bundles'
+    /// problems are left for their own load.
+    /// </summary>
+    public List<CampaignChoice> Campaigns(List<string> problems)
     {
         List<CampaignChoice> campaigns = [];
-        WithBundles(sources =>
+        WithBundles(problems, sources =>
         {
             foreach (ModuleSource source in sources)
             {
                 ModuleManifest? manifest = ManifestReader.Read(source, []);
-                if (manifest is { Kind: ModuleKind.Campaign })
+                // A campaign the product ships and also has installed, with the
+                // same content, is one campaign; list its first copy.
+                if (manifest is { Kind: ModuleKind.Campaign }
+                    && !campaigns.Any(campaign => campaign.Id == manifest.Id && campaign.Version == manifest.Version && campaign.Identity == source.Identity))
                 {
-                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version));
+                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version, source.Identity));
                 }
             }
         });
@@ -39,7 +50,7 @@ internal sealed class ModuleLibrary(Func<List<ProductContentBundle>> open)
     public ModuleSet Load(string bundle)
     {
         ModuleSet? set = null;
-        WithBundles(sources =>
+        WithBundles([], sources =>
         {
             ModuleSource root = sources.FirstOrDefault(source => source.Location == bundle)
                 ?? throw new InvalidOperationException($"There is no content bundle '{bundle}'.");
@@ -48,13 +59,14 @@ internal sealed class ModuleLibrary(Func<List<ProductContentBundle>> open)
         return set!;
     }
 
-    /// <summary>The bundle holding version <paramref name="version"/> of module <paramref name="id"/>, for finding a save's campaign.</summary>
-    public string? BundleOf(string id, string version)
+    /// <summary>The bundle holding the module a save names: its ID, version and content identity.</summary>
+    public string? BundleOf(string id, string version, string identity)
     {
         string? found = null;
-        WithBundles(sources =>
+        WithBundles([], sources =>
         {
-            found = sources.FirstOrDefault(source => ManifestReader.Read(source, []) is { } manifest
+            found = sources.FirstOrDefault(source => source.Identity == identity
+                && ManifestReader.Read(source, []) is { } manifest
                 && manifest.Id == id
                 && manifest.Version.ToString() == version)?.Location;
         });
@@ -62,9 +74,9 @@ internal sealed class ModuleLibrary(Func<List<ProductContentBundle>> open)
     }
 
     /// <summary>Opens every bundle for the length of <paramref name="work"/>; loaded modules keep what they read.</summary>
-    private void WithBundles(Action<List<ModuleSource>> work)
+    private void WithBundles(List<string> problems, Action<List<ModuleSource>> work)
     {
-        List<ProductContentBundle> bundles = open();
+        List<ProductContentBundle> bundles = open(problems);
         try
         {
             work(bundles.Select(bundle => (ModuleSource)new BundleModuleSource(bundle)).ToList());

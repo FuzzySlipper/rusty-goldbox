@@ -1,0 +1,112 @@
+using System.Diagnostics;
+using System.Reflection;
+using RustyGoldbox.Core.Modules;
+
+namespace RustyGoldbox.Cli;
+
+/// <summary>
+/// <c>goldbox module pack</c>: validates a module with its requirements, then
+/// packs its directory into an Engine content container with the pinned
+/// pair's <c>rusty pack-content</c>. The container installs on its own.
+/// </summary>
+internal static class PackCommand
+{
+    private const string Usage = "Usage: goldbox module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...";
+
+    public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--output", "--modules"], ["--install"]);
+        if (error is null && (parsed.Positionals.Count != 1 || (parsed.Has("--install") && parsed.Single("--output") is not null)))
+        {
+            error = Usage;
+        }
+
+        string path = error is null ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(parsed.Positionals[0], workingDirectory)) : "";
+        if (error is null && !Directory.Exists(path))
+        {
+            error = $"{path} is not a module directory. Pack a module's source directory (the one with module.json).";
+        }
+
+        string? requested = parsed.Single("--output");
+        if (error is null && requested is not null && !InstalledModules.IsContainer(requested))
+        {
+            error = $"--output must end in {InstalledModules.Extension}, which is how module searches recognise installed modules.";
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        ModuleSet set = ModuleSets.Load(path, parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+        if (set.Root is null || !set.IsValid)
+        {
+            return output.ModuleErrors(set);
+        }
+
+        ModuleManifest root = set.Root;
+        string target = requested is not null
+            ? Path.GetFullPath(requested, workingDirectory)
+            : Path.Combine(parsed.Has("--install") ? InstalledModules.DefaultDirectory() : workingDirectory, InstalledModules.FileName(root.Id, root.Version));
+        if (target.StartsWith(path + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        {
+            return output.UsageError($"The container would be written inside the module it packs ({target}). Run from outside the module directory, or pass --output or --install.");
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return output.Problems([new ModuleDiagnostic("pack.output", $"Can't create the output directory: {exception.Message}", root.Id, target)]);
+        }
+
+        if (Pack(path, target) is string failure)
+        {
+            return output.Problems([new ModuleDiagnostic("pack.failed", failure, root.Id, target)]);
+        }
+
+        return output.Packed(root, target);
+    }
+
+    /// <summary>Runs <c>rusty pack-content</c>; returns why it failed, or null.</summary>
+    private static string? Pack(string directory, string target)
+    {
+        string rusty = PairRusty() ?? "rusty";
+        ProcessStartInfo start = new(rusty, ["pack-content", directory, "--output", target, "--compress"])
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        try
+        {
+            using Process process = Process.Start(start)!;
+            Task<string> errors = process.StandardError.ReadToEndAsync();
+            string printed = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode == 0)
+            {
+                return null;
+            }
+
+            string said = (errors.Result + printed).Trim();
+            string hint = said.Contains("unknown command", StringComparison.Ordinal)
+                ? " This `rusty` is an older bootstrap without pack-content: run `rusty install` here for the pinned pair, or refresh the bootstrap."
+                : "";
+            return $"{rusty} pack-content failed ({process.ExitCode}): {said}{hint}";
+        }
+        catch (System.ComponentModel.Win32Exception exception)
+        {
+            return $"Can't run {rusty}: {exception.Message}. Install the Engine's `rusty` (see README) and run `rusty install`.";
+        }
+    }
+
+    /// <summary>The pinned pair's own <c>rusty</c>, recorded at build time, when it is installed here.</summary>
+    private static string? PairRusty()
+    {
+        string? path = typeof(PackCommand).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => attribute.Key == "RustyEnginePairRusty")?.Value;
+        return path is not null && File.Exists(path) ? path : null;
+    }
+}

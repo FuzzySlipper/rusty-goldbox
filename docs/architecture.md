@@ -27,7 +27,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
 | `src/RustyGoldbox.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
 | `src/RustyGoldbox.Core/Modules/BundleModuleSource.cs` | A module in an Engine content bundle or container |
-| `src/RustyGoldbox.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from |
+| `src/RustyGoldbox.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from: module directories and installed containers in the search directories |
+| `src/RustyGoldbox.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
 | `src/RustyGoldbox.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
 | `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), and checking one file against its type (`DefinitionReader`) |
 | `src/RustyGoldbox.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
@@ -53,7 +54,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source) |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns and loading a module set from them |
@@ -73,9 +74,15 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 `ModuleLoader.Load` reads the root manifest, finds search directories, scans
 them for candidate modules, resolves one version per required ID, orders the
 set so each module follows what it requires, checks kind rules and then checks
-every definition file. It reads files through a `ModuleSource`: the CLI
-loads module directories, and the Game loads Engine content bundles through
-the same overload that takes a root source and the available ones. Files are
+every definition file. It reads files through a `ModuleSource`: module
+directories, and Engine bundles and containers (`BundleModuleSource`). Given
+the Engine content service (the CLI loads inside a tool-host call), the
+search also opens every installed `.rpak` directly in a search directory, and
+the module path may be one; the loader disposes what it opened once the set
+is read. A container that doesn't open is named in "not found" messages. The
+Game loads from its bundles and module library through the overload that
+takes a root source and the available ones. Two copies of one module version
+are ambiguous only when their content identities differ. Files are
 read in path order either way, so both see definitions in the same order.
 
 A module's content identity is the Engine's bundle identity: SHA-256 over each
@@ -163,8 +170,11 @@ its UI stream through `IEngineContext.Ui`.
 
 The product content root is `modules/`, and the project declares every
 directory there as a `RustyEngineContentBundle` named after it. `ModuleLibrary`
-opens all bundles for each listing or load and disposes them afterwards, so
-under `rusty dev` an edited module is seen on the next open without a restart.
+opens all bundles, and every container in the module library
+(`InstalledModules.DefaultDirectory`), for each listing or load and disposes
+them afterwards, so under `rusty dev` an edited or newly installed module is
+seen on the next open without a restart. A library container that doesn't
+open becomes a note on the title screen.
 A release (`rusty build --pack`) carries the same bundles inside its container.
 
 The product uses Engine's default `demand` lifecycle: updates run when there

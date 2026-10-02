@@ -124,9 +124,9 @@ Engine mechanisms this product relies on:
   `Random` draws match the running product's. Don't substitute a local RNG.
 - **Module bundles and containers.** The Game's content root is `modules/`,
   one `RustyEngineContentBundle` per module directory, opened with
-  `Content.OpenBundle`. `rusty pack-content <module> --output <file>` packs
-  one module; `ProductContentBundle.OpenContainer` opens an installed one as a
-  bundle. Core reads either through `BundleModuleSource`, and a module's
+  `Content.OpenBundle`. `goldbox module pack` packs one module with the
+  pinned pair's `rusty pack-content`; `ProductContentBundle.OpenContainer`
+  opens an installed one (`InstalledModules`) as a bundle. Core reads either through `BundleModuleSource`, and a module's
   content identity is the Engine's bundle identity. Don't write a local
   container format, archive reader or second identity hash.
 - **Persistence.** Saves are `SaveSlots` over `ProductStateStore` in the

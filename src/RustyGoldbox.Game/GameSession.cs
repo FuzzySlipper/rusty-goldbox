@@ -65,10 +65,10 @@ internal sealed class GameSession(ModuleLibrary library)
     public void Refresh()
     {
         Notes.Clear();
-        Campaigns = library.Campaigns();
+        Campaigns = library.Campaigns(Notes);
         if (Campaigns.Count == 0)
         {
-            Notes.Add("No campaign modules are in the product's content bundles.");
+            Notes.Add($"No campaign modules are in the product's content bundles or its module library ({InstalledModules.DefaultDirectory()}).");
         }
     }
 
@@ -245,15 +245,15 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (CampaignModule(json) is not (string module, string version))
+        if (CampaignModule(json) is not (string module, string version, string identity))
         {
             Notes.Add($"{SaveSlots.Location(slot)} isn't a campaign save.");
             return;
         }
 
-        if (library.BundleOf(module, version) is not string bundle)
+        if (library.BundleOf(module, version, identity) is not string bundle)
         {
-            Notes.Add($"{SaveSlots.Location(slot)} was made with {module} {version}, which the product doesn't have.");
+            Notes.Add($"{SaveSlots.Location(slot)} was made with {module} {version} as it was then; the product has no module with that content.");
             return;
         }
 
@@ -301,8 +301,8 @@ internal sealed class GameSession(ModuleLibrary library)
         return set;
     }
 
-    /// <summary>The campaign module (ID and version) a save names, without trusting the rest of it yet.</summary>
-    private static (string Id, string Version)? CampaignModule(byte[] json)
+    /// <summary>The campaign module (ID, version and identity) a save names, without trusting the rest of it yet.</summary>
+    private static (string Id, string Version, string Identity)? CampaignModule(byte[] json)
     {
         try
         {
@@ -322,9 +322,10 @@ internal sealed class GameSession(ModuleLibrary library)
             {
                 if (entry.ValueKind == JsonValueKind.Object
                     && entry.TryGetProperty("id", out JsonElement id) && id.ValueKind == JsonValueKind.String && id.GetString() == module
-                    && entry.TryGetProperty("version", out JsonElement version) && version.ValueKind == JsonValueKind.String)
+                    && entry.TryGetProperty("version", out JsonElement version) && version.ValueKind == JsonValueKind.String
+                    && entry.TryGetProperty("identity", out JsonElement identity) && identity.ValueKind == JsonValueKind.String)
                 {
-                    return (module, version.GetString()!);
+                    return (module, version.GetString()!, identity.GetString()!);
                 }
             }
 

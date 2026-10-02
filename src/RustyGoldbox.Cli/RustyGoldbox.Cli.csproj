@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RustyGoldbox.Tests" />
+    <!-- module pack runs the pinned pair's own rusty when it is installed here. -->
+    <AssemblyMetadata Include="RustyEnginePairRusty" Value="$(RustyEngineCache)/pairs/$(RustyEnginePackageVersion)/runtime-pack/bin/rusty" />
     <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
     <ProjectReference Include="../RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
   </ItemGroup>
