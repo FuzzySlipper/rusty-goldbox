@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "grit",
+  "name": "Grit",
+  "min": 3,
+  "max": 20,
+  "default": 10
+}

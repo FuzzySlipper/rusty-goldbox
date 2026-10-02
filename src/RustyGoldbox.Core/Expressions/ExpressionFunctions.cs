@@ -18,6 +18,7 @@ public static class ExpressionFunctions
         new("ceil", "ceil(x)", "x rounded up to a whole number.", 1, 1),
         new("abs", "abs(x)", "x without its sign.", 1, 1),
         new("roll", "roll(count, sides)", "Rolls count dice with the given number of sides and adds them; for counts that aren't fixed, like roll(self.level, 4).", 2, 2),
+        new("roll_keep", "roll_keep(count, sides, keep)", "Rolls count dice and adds the highest keep of them: roll_keep(4, 6, 3) is 4d6 dropping the lowest.", 3, 3),
         new("table", "table(id, key, ...)", "Looks up a table definition by its keys; gives the table's value type.", 2, int.MaxValue),
     ];
 

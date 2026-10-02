@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "ac",
+  "name": "Armour class (higher is better)",
+  "value": "10 + self.grace_mod"
+}

@@ -1,0 +1,21 @@
+{
+  "type": "table",
+  "id": "progression",
+  "keys": [
+    {
+      "name": "class",
+      "type": "text"
+    }
+  ],
+  "value": "text",
+  "rows": [
+    [
+      "warrior",
+      "full"
+    ],
+    [
+      "adept",
+      "half"
+    ]
+  ]
+}

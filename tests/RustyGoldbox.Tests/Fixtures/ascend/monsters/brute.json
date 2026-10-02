@@ -1,0 +1,19 @@
+{
+  "type": "monster",
+  "id": "brute",
+  "name": "Brute",
+  "class": "warrior",
+  "level": 2,
+  "hit_points": "2d10 + 4",
+  "stats": {
+    "ac": "13",
+    "might": "16"
+  },
+  "attacks": [
+    {
+      "name": "club",
+      "damage": "1d8 + self.might_mod"
+    }
+  ],
+  "xp": 100
+}

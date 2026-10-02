@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "might_mod",
+  "name": "Might modifier",
+  "value": "floor((self.might - 10) / 2)"
+}

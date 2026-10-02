@@ -71,7 +71,11 @@ scheduler, renderer or state authority. All randomness goes through Engine
 - Rules belong in ruleset data, not in C#. If Core code mentions a specific
   class, spell, stat name or edition, that's a bug unless it's a fixture.
 - Record provenance for any module content adapted from a published game or
-  SRD, and use only open-licensed sources. UA/Dungeon Craft is a reference for
+  SRD, and use only open-licensed sources.
+- The engine must be able to express rule systems the repository doesn't
+  distribute. Prove a new Core capability with more than one ruleset shape,
+  using original fixture rulesets in `tests/` shaped like other systems; never
+  add copied commercial rules text or tables. UA/Dungeon Craft is a reference for
   features, not a source of code or formats.
 - When a definition type changes, update the first-party modules and the
   golden transcripts that use it in the same change.
@@ -131,6 +135,10 @@ dotnet test tests/RustyGoldbox.Tests
 dotnet run --project src/RustyGoldbox.Cli -- module validate modules/<id>
 rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
 ```
+
+Golden transcripts live in `tests/RustyGoldbox.Tests/Golden/`. After an
+intended behaviour change, regenerate them with `GOLDBOX_UPDATE_GOLDEN=1 dotnet
+test tests/RustyGoldbox.Tests`, read the diff, and commit it with the change.
 
 `rusty dev --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` is the
 edit-run loop for the product. `rusty build … --aot` is an explicit

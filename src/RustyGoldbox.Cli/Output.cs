@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -360,13 +361,80 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
     }
 
+    /// <summary>Rule problems that stop a command, such as a class requirement the character misses.</summary>
+    public int Problems(IReadOnlyList<ModuleDiagnostic> problems)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = false, diagnostics = problems.Select(ToJson) });
+        }
+        else
+        {
+            WriteDiagnostics(problems);
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    /// <param name="path">The file the character was just saved to, if any.</param>
+    public void CharacterSheet(RuleSet rules, Character character, string? path, ulong? seed, IReadOnlyList<DiceRoll> rolls, IReadOnlyList<LevelGain> gains)
+    {
+        List<SheetStat> stats = Core.Characters.CharacterSheet.Stats(rules, character);
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                saved_to = path is null ? null : Display(path),
+                character = JsonDocument.Parse(CharacterFile.ToJson(character)).RootElement,
+                next_level_experience = character.NextLevelExperience(),
+                spell_slots = character.SpellSlots(),
+                stats = stats.Select(stat => new { id = stat.Id, name = stat.Name, kind = stat.Kind, value = stat.Value is Value value ? ValueJson(value) : null, problem = stat.Problem }),
+                levels_gained = gains.Select(gain => new { level = gain.Level, hit_points = gain.HitPoints }),
+                seed,
+                rolls = rolls.Select(RollJson),
+            });
+            return;
+        }
+
+        foreach (LevelGain gain in gains)
+        {
+            writer.WriteLine($"Reached level {gain.Level}: +{gain.HitPoints} hit points.");
+        }
+
+        string next = character.NextLevelExperience() is decimal needed ? $"next level at {needed}" : "highest level";
+        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.Class.Name} {character.Level} ({character.Experience} xp, {next})");
+        writer.WriteLine($"  hit points {character.HitPoints}/{character.MaxHitPoints}, gold {character.Gold}");
+        IReadOnlyList<int> slots = character.SpellSlots();
+        if (slots.Count > 0)
+        {
+            writer.WriteLine($"  spells per day by spell level: {string.Join(" / ", slots)}");
+        }
+
+        foreach (SheetStat stat in stats)
+        {
+            string value = stat.Value is Value shown ? shown.ToString() : $"(can't compute: {stat.Problem})";
+            writer.WriteLine($"  {stat.Id,-14} {value,-6} {stat.Name}");
+        }
+
+        if (path is not null)
+        {
+            writer.WriteLine($"Saved to {Display(path)}.");
+        }
+
+        if (seed is ulong used)
+        {
+            WriteRolls(used, rolls);
+        }
+    }
+
     private void WriteRolls(ulong seed, IReadOnlyList<DiceRoll> rolls)
     {
         string shown = rolls.Count == 0 ? "no dice rolled" : string.Join("; ", rolls);
         writer.WriteLine($"  seed {seed}: {shown}");
     }
 
-    private static object RollJson(DiceRoll roll) => new { dice = $"{roll.Count}d{roll.Sides}", faces = roll.Faces, total = roll.Total };
+    private static object RollJson(DiceRoll roll) => new { dice = $"{roll.Count}d{roll.Sides}", faces = roll.Faces, kept = roll.Kept, total = roll.Total };
 
     private static object ValueJson(Value value)
     {

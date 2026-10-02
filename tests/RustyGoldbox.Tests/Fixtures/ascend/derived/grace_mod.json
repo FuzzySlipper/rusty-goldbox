@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "grace_mod",
+  "name": "Grace modifier",
+  "value": "floor((self.grace - 10) / 2)"
+}

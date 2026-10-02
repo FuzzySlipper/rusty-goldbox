@@ -1,0 +1,33 @@
+{
+  "type": "class",
+  "id": "warrior",
+  "name": "Warrior",
+  "requirements": {
+    "might": 8
+  },
+  "prime_requisites": [
+    "might"
+  ],
+  "levels": [
+    {
+      "xp": 0,
+      "hp": "10 + self.grit_mod"
+    },
+    {
+      "xp": 1000,
+      "hp": "max(1, 1d10 + self.grit_mod)"
+    },
+    {
+      "xp": 3000,
+      "hp": "max(1, 1d10 + self.grit_mod)"
+    },
+    {
+      "xp": 6000,
+      "hp": "max(1, 1d10 + self.grit_mod)"
+    },
+    {
+      "xp": 10000,
+      "hp": "max(1, 1d10 + self.grit_mod)"
+    }
+  ]
+}

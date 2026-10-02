@@ -45,5 +45,8 @@ small:
   paralysis and poison table).
 - The wisdom mental saving throw bonus (`wis_save`) is available as a derived
   value but isn't added to any check automatically.
+- Hit points gained at a level are at least 1 (`max(1, ...)`), so a low
+  constitution penalty can't leave a character with 0 hit points. The source
+  doesn't state a minimum.
 - Armour movement limits, thief skills, turning undead and spell effects are
   not modelled yet.

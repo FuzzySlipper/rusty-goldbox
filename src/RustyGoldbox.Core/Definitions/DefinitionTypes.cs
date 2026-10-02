@@ -251,7 +251,8 @@ public static class DefinitionTypes
         "How new characters are made: attribute rolls, whether they may be rearranged, and starting gold.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("attribute_roll", PlainNumber, true, "Roll for each attribute, for example \"3d6\"."),
+            new("attributes", new ListKind(new StatKind(true)), true, "Every attribute once, in the order rolls are taken and sheets show them."),
+            new("attribute_roll", PlainNumber, true, "Roll for each attribute, for example \"3d6\" or \"roll_keep(4, 6, 3)\"."),
             new("assignment", new EnumKind(["in-order", "arrange"]), true, "Whether rolls are taken in attribute order or arranged by the player."),
             new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), true, "Starting gold pieces for each class."),
         ],
@@ -260,6 +261,7 @@ public static class DefinitionTypes
           "type": "character-creation",
           "id": "standard",
           "name": "Standard",
+          "attributes": ["str", "dex", "con", "int", "wis", "cha"],
           "attribute_roll": "3d6",
           "assignment": "in-order",
           "starting_gold": { "fighter": "(3d6 + 2) * 10" }

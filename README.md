@@ -56,6 +56,14 @@ dotnet run --project src/RustyGoldbox.Cli -- eval "self.thac0" --module modules/
 dotnet run --project src/RustyGoldbox.Cli -- eval --check attack --module modules/classic --seed 7 --context '{"self": {"class": "fighter", "level": 5, "str": 17}, "target": {"monster": "ogre"}}'
 ```
 
+Characters are JSON files made and advanced under a module set:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
+dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module modules/classic --xp 5000 --seed 3
+dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
+```
+
 ## Tests
 
 ```bash
@@ -100,7 +108,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/ui/main.js` | DOM debug readout |
 | `modules/` | First-party module sources; `modules/classic` is the first ruleset |
 | `goldbox.json` | Workspace: module search directories |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `content/` | Product content root; module bundles are staged from here |
 | `Directory.Build.props` | Engine SDK/runtime pin |
 | `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |

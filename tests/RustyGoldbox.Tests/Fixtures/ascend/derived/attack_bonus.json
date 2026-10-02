@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "attack_bonus",
+  "name": "Attack bonus",
+  "value": "if table(progression, self.class) == 'full' then self.level else floor(self.level / 2)"
+}

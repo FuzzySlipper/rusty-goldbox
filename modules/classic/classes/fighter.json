@@ -16,39 +16,39 @@
   "levels": [
     {
       "xp": 0,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 1900,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 4250,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 7750,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 16000,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 35000,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 75000,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 125000,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 250000,
-      "hp": "1d10"
+      "hp": "max(1, 1d10 + self.con_hp)"
     },
     {
       "xp": 500000,

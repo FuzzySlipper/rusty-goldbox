@@ -1,0 +1,18 @@
+{
+  "type": "race",
+  "id": "stoneborn",
+  "name": "Stoneborn",
+  "ability_adjustments": {
+    "grit": 2,
+    "grace": -2
+  },
+  "ability_limits": {
+    "grit": [
+      8,
+      20
+    ]
+  },
+  "classes": [
+    "warrior"
+  ]
+}

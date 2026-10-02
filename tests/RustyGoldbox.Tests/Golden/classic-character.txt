@@ -1,0 +1,54 @@
+$ goldbox character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
+Brom: Dwarf Fighter 1 (0 xp, next level at 1900)
+  hit points 7/7, gold 140
+  str            11     Strength
+  dex            11     Dexterity
+  con            16     Constitution
+  int            8      Intelligence
+  wis            13     Wisdom
+  cha            6      Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         2      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       90     Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     0      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          20     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to brom.json.
+  seed 11: 3d6: 5+1+5 = 11; 3d6: 6+3+2 = 11; 3d6: 6+4+5 = 15; 3d6: 2+3+3 = 8; 3d6: 3+6+4 = 13; 3d6: 1+1+5 = 7; 1d10: 5 = 5; 3d6: 6+2+4 = 12
+[exit 0]
+
+$ goldbox character level brom.json --module modules/classic --xp 5000 --seed 3
+Reached level 2: +5 hit points.
+Reached level 3: +12 hit points.
+Brom: Dwarf Fighter 3 (5000 xp, next level at 7750)
+  hit points 24/24, gold 140
+  str            11     Strength
+  dex            11     Dexterity
+  con            16     Constitution
+  int            8      Intelligence
+  wis            13     Wisdom
+  cha            6      Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         2      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       90     Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     0      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          18     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to brom.json.
+  seed 3: 1d10: 3 = 3; 1d10: 10 = 10
+[exit 0]
+
+$ goldbox character new --module modules/classic --class magic_user --race dwarf --seed 1
+error[character.race] classic modules/classic/races/dwarf.json $.classes
+  classic:dwarf can't take the class classic:magic_user. Its classes: cleric, fighter, thief.
+1 error.
+[exit 1]
+

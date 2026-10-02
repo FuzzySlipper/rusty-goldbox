@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "grit_mod",
+  "name": "Grit modifier",
+  "value": "floor((self.grit - 10) / 2)"
+}

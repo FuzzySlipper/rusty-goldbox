@@ -154,6 +154,16 @@ duration, move, grant XP or items, set a variable, and so on. Each operation
 takes expression arguments. Rulesets and campaigns choose and combine
 operations; they can't define new ones.
 
+**Expressible, not distributed.** The engine's job is to express rule
+systems, not to ship them. The repository distributes only rulesets whose
+source license allows it, with provenance (such as `modules/classic`, from OGL
+content). Other systems, including current commercial editions, must be
+writable as ruleset data that a user supplies, with no new code. That claim is
+checked with small original fixture rulesets in the tests that are shaped like
+those systems (ascending AC and ability modifiers, proficiency ranks, other
+action economies) but copy none of their text or tables. Core features stay
+edition-neutral and are exercised by more than one ruleset shape.
+
 **Plugin boundary.** Modules are the plugins. They are data only and load at
 runtime with no compilation. New *primitive* behavior, such as an operation,
 an expression function or a combat-procedure hook, is added to Core in this

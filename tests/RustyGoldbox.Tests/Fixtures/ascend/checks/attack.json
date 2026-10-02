@@ -1,0 +1,8 @@
+{
+  "type": "check",
+  "id": "attack",
+  "name": "Attack",
+  "roll": "1d20 + self.attack_bonus + self.might_mod",
+  "target": "target.ac",
+  "succeeds": "at-least"
+}

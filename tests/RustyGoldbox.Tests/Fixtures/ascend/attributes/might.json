@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "might",
+  "name": "Might",
+  "min": 3,
+  "max": 20,
+  "default": 10
+}

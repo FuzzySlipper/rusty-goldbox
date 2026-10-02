@@ -29,6 +29,17 @@ internal static class GoldboxCli
               a creature is {"monster": id} or {"class": id, "race": id, "level": n, "<stat>": n,
               "conditions": [ids], "equipment": [ids]}. Dice use Engine Random; the seed defaults to 1.
 
+          goldbox character new --module <path> --class <id> --race <id> [--name <name>]
+                [--attributes <id>=<n>,...] [--priority <id>,...] [--seed <n>] [--out <file>]
+              Rolls (or takes) attributes, applies the race, checks requirements and rolls
+              level-1 hit points and gold. --priority arranges rolls where the ruleset allows.
+              --attributes skips the ruleset's roll entirely (for given or point-bought scores);
+              scores must be within each attribute's range.
+          goldbox character level <file> --module <path> --xp <n> [--seed <n>]
+              Adds experience, gains every level reached and saves the file.
+          goldbox character show <file> --module <path>
+              Prints the derived sheet.
+
         Every command accepts --json for structured output.
 
         Kinds: ruleset, extension, assets, campaign.
@@ -54,6 +65,8 @@ internal static class GoldboxCli
                 return SchemaCommand.Run(args.Skip(1), printer);
             case "eval":
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "character":
+                return CharacterCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:

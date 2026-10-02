@@ -16,43 +16,43 @@
   "levels": [
     {
       "xp": 0,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 2400,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 4800,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 10250,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 22000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 40000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 60000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 80000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 140000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     },
     {
       "xp": 250000,
-      "hp": "1d4"
+      "hp": "max(1, 1d4 + self.con_hp)"
     }
   ],
   "spell_slots": [

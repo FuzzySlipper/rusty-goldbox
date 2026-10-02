@@ -1,7 +1,5 @@
 using System.Globalization;
 using System.Text.Json;
-using Rusty.Engine;
-using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -115,26 +113,20 @@ internal static class EvalCommand
         return GoldboxCli.Ok;
     }
 
-    /// <summary>
-    /// Runs <paramref name="evaluate"/> inside one Engine host callback with a
-    /// dice roller on a stream seeded from <paramref name="seed"/>.
-    /// </summary>
     private static (T? Result, IReadOnlyList<DiceRoll> Rolls, ExpressionException? Failure) InHost<T>(ulong seed, Func<DiceRoller, T> evaluate)
     {
-        using EngineTestHost host = EngineTestHost.Create();
-        return host.Call(engine =>
+        ((T? result, ExpressionException? failure), IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, RandomScope));
-            DiceRoller dice = new(engine.Random, stream);
             try
             {
-                return ((T?)evaluate(dice), dice.Rolls, (ExpressionException?)null);
+                return ((T?)evaluate(dice), (ExpressionException?)null);
             }
             catch (ExpressionException exception)
             {
-                return (default(T), dice.Rolls, exception);
+                return (default(T), exception);
             }
         });
+        return (result, rolls, failure);
     }
 
     private static (Creature? Self, Creature? Target, string? Error) ReadContext(string? context, RuleSet rules, string workingDirectory)

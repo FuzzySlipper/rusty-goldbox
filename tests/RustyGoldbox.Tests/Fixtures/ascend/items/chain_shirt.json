@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "chain_shirt",
+  "name": "Chain shirt",
+  "kind": "armour",
+  "cost": 100,
+  "weight": 25,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "4"
+    }
+  ]
+}

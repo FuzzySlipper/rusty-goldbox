@@ -270,28 +270,40 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 "floor" => Value.Of(decimal.Floor(arguments[0])),
                 "ceil" => Value.Of(decimal.Ceiling(arguments[0])),
                 "abs" => Value.Of(Math.Abs(arguments[0])),
+                "roll_keep" => Value.Of(RollKeep(arguments[0], arguments[1], arguments[2], call.Column)),
                 _ => Value.Of(RollDynamic(arguments[0], arguments[1], call.Column)),
             };
         }
 
-        private long RollDynamic(decimal count, decimal sides, int column)
+        private long RollDynamic(decimal count, decimal sides, int column, int? keep = null)
         {
             if (count != decimal.Truncate(count) || sides != decimal.Truncate(sides) || count < 0 || sides < 1 || count > int.MaxValue || sides > int.MaxValue)
             {
-                throw new ExpressionException($"roll({count}, {sides}) needs a whole number of dice (0 or more) with a whole number of sides (1 or more).", column);
+                string call = keep is null ? $"roll({count}, {sides})" : $"roll_keep({count}, {sides}, {keep})";
+                throw new ExpressionException($"{call} needs a whole number of dice (0 or more) with a whole number of sides (1 or more).", column);
             }
 
-            return count == 0 ? 0 : Roll((int)count, (int)sides, column);
+            return count == 0 ? 0 : Roll((int)count, (int)sides, column, keep);
         }
 
-        private long Roll(int count, int sides, int column)
+        private long RollKeep(decimal count, decimal sides, decimal keep, int column)
+        {
+            if (keep != decimal.Truncate(keep) || keep < 0 || keep > count)
+            {
+                throw new ExpressionException($"roll_keep({count}, {sides}, {keep}) needs a whole number to keep, from 0 to the number of dice.", column);
+            }
+
+            return RollDynamic(count, sides, column, (int)keep);
+        }
+
+        private long Roll(int count, int sides, int column, int? keep = null)
         {
             if (evaluator.Dice is null)
             {
                 throw new ExpressionException("This expression rolls dice, but no dice roller was given.", column);
             }
 
-            return evaluator.Dice.Roll(count, sides);
+            return evaluator.Dice.Roll(count, sides, keep ?? count);
         }
     }
 }

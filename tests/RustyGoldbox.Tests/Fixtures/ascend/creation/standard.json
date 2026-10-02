@@ -1,0 +1,17 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Standard",
+  "attributes": [
+    "might",
+    "grace",
+    "grit",
+    "wit"
+  ],
+  "attribute_roll": "roll_keep(4, 6, 3)",
+  "assignment": "arrange",
+  "starting_gold": {
+    "warrior": "roll(4, 4) * 10",
+    "adept": "roll(3, 4) * 10"
+  }
+}

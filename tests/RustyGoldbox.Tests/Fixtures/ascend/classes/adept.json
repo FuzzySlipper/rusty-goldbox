@@ -1,0 +1,54 @@
+{
+  "type": "class",
+  "id": "adept",
+  "name": "Adept",
+  "requirements": {
+    "wit": 10
+  },
+  "prime_requisites": [
+    "wit"
+  ],
+  "levels": [
+    {
+      "xp": 0,
+      "hp": "6 + self.grit_mod"
+    },
+    {
+      "xp": 1000,
+      "hp": "max(1, 1d6 + self.grit_mod)"
+    },
+    {
+      "xp": 3000,
+      "hp": "max(1, 1d6 + self.grit_mod)"
+    },
+    {
+      "xp": 6000,
+      "hp": "max(1, 1d6 + self.grit_mod)"
+    },
+    {
+      "xp": 10000,
+      "hp": "max(1, 1d6 + self.grit_mod)"
+    }
+  ],
+  "spell_slots": [
+    [
+      1
+    ],
+    [
+      2
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      2,
+      1
+    ]
+  ]
+}

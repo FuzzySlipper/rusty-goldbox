@@ -1,0 +1,186 @@
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class warrior --race stoneborn --name Kara --priority might,grit,grace,wit --seed 5 --out kara.json
+Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
+  hit points 12/12, gold 140
+  might          18     Might
+  grace          9      Grace
+  grit           14     Grit
+  wit            11     Wit
+  ac             9      Armour class (higher is better)
+  attack_bonus   1      Attack bonus
+  grace_mod      -1     Grace modifier
+  grit_mod       2      Grit modifier
+  might_mod      4      Might modifier
+  wit_mod        0      Wit modifier
+Saved to kara.json.
+  seed 5: 4d6 keep 3: 4+6+1+1 = 11; 4d6 keep 3: 4+5+2+3 = 12; 4d6 keep 3: 2+1+4+5 = 11; 4d6 keep 3: 4+6+6+6 = 18; 4d4: 4+4+3+3 = 14
+[exit 0]
+
+$ goldbox character level kara.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --xp 3500 --seed 8
+Reached level 2: +9 hit points.
+Reached level 3: +9 hit points.
+Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
+  hit points 30/30, gold 140
+  might          18     Might
+  grace          9      Grace
+  grit           14     Grit
+  wit            11     Wit
+  ac             9      Armour class (higher is better)
+  attack_bonus   3      Attack bonus
+  grace_mod      -1     Grace modifier
+  grit_mod       2      Grit modifier
+  might_mod      4      Might modifier
+  wit_mod        0      Wit modifier
+Saved to kara.json.
+  seed 8: 1d10: 7 = 7; 1d10: 7 = 7
+[exit 0]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class adept --race folk --name Ilse --attributes might=9,grace=12,grit=10,wit=16 --out ilse.json
+Ilse: Folk Adept 1 (0 xp, next level at 1000)
+  hit points 6/6, gold 40
+  spells per day by spell level: 1
+  might          9      Might
+  grace          12     Grace
+  grit           10     Grit
+  wit            16     Wit
+  ac             11     Armour class (higher is better)
+  attack_bonus   0      Attack bonus
+  grace_mod      1      Grace modifier
+  grit_mod       0      Grit modifier
+  might_mod      -1     Might modifier
+  wit_mod        3      Wit modifier
+Saved to ilse.json.
+  seed 1: 3d4: 2+1+1 = 4
+[exit 0]
+
+$ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend
+Ilse: Folk Adept 1 (0 xp, next level at 1000)
+  hit points 6/6, gold 40
+  spells per day by spell level: 1
+  might          9      Might
+  grace          12     Grace
+  grit           10     Grit
+  wit            16     Wit
+  ac             11     Armour class (higher is better)
+  attack_bonus   0      Attack bonus
+  grace_mod      1      Grace modifier
+  grit_mod       0      Grit modifier
+  might_mod      -1     Might modifier
+  wit_mod        3      Wit modifier
+[exit 0]
+
+$ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --json
+{
+  "ok": true,
+  "saved_to": null,
+  "character": {
+    "format": 1,
+    "name": "Ilse",
+    "modules": [
+      {
+        "id": "ascend",
+        "version": "0.1.0"
+      }
+    ],
+    "race": "ascend:folk",
+    "class": "ascend:adept",
+    "level": 1,
+    "experience": 0,
+    "attributes": {
+      "might": 9,
+      "grace": 12,
+      "grit": 10,
+      "wit": 16
+    },
+    "hit_points": {
+      "max": 6,
+      "current": 6,
+      "gains": [
+        6
+      ]
+    },
+    "gold": 40,
+    "equipment": [],
+    "conditions": []
+  },
+  "next_level_experience": 1000,
+  "spell_slots": [
+    1
+  ],
+  "stats": [
+    {
+      "id": "might",
+      "name": "Might",
+      "kind": "attribute",
+      "value": 9,
+      "problem": null
+    },
+    {
+      "id": "grace",
+      "name": "Grace",
+      "kind": "attribute",
+      "value": 12,
+      "problem": null
+    },
+    {
+      "id": "grit",
+      "name": "Grit",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "wit",
+      "name": "Wit",
+      "kind": "attribute",
+      "value": 16,
+      "problem": null
+    },
+    {
+      "id": "ac",
+      "name": "Armour class (higher is better)",
+      "kind": "derived",
+      "value": 11,
+      "problem": null
+    },
+    {
+      "id": "attack_bonus",
+      "name": "Attack bonus",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "grace_mod",
+      "name": "Grace modifier",
+      "kind": "derived",
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "grit_mod",
+      "name": "Grit modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "might_mod",
+      "name": "Might modifier",
+      "kind": "derived",
+      "value": -1,
+      "problem": null
+    },
+    {
+      "id": "wit_mod",
+      "name": "Wit modifier",
+      "kind": "derived",
+      "value": 3,
+      "problem": null
+    }
+  ],
+  "levels_gained": [],
+  "seed": null,
+  "rolls": []
+}
+[exit 0]
+

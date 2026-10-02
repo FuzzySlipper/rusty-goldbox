@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "ascend",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Ascend (test fixture)",
+  "requires": [],
+  "provenance": "Original test fixture shaped like an ascending armour class ruleset. Contains no published rules text or tables."
+}

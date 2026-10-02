@@ -1,0 +1,9 @@
+{
+  "type": "race",
+  "id": "folk",
+  "name": "Folk",
+  "classes": [
+    "warrior",
+    "adept"
+  ]
+}

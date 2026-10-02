@@ -36,6 +36,7 @@ public sealed class RuleSetBuilder
         builder.CheckExpressions();
         builder.CompileModifiers();
         builder.CheckMonsterStats();
+        builder.CheckCreationAttributes();
         return builder._rules;
     }
 
@@ -309,6 +310,20 @@ public sealed class RuleSetBuilder
                 {
                     Error(monster, "modifier.loop", path, $"This stat reads self.{stat.Name}, so it would depend on itself. Give it a value or read other stats.");
                 }
+            }
+        }
+    }
+
+    private void CheckCreationAttributes()
+    {
+        List<string> attributes = _rules.Stats.Values.Where(stat => stat.IsAttribute).Select(stat => stat.Id).Order(StringComparer.Ordinal).ToList();
+        foreach (Definition creation in _rules.OfType(DefinitionTypes.CharacterCreation))
+        {
+            List<string> listed = creation.Json.GetProperty("attributes").EnumerateArray().Select(entry => entry.GetString()!).ToList();
+            if (!listed.Order(StringComparer.Ordinal).SequenceEqual(attributes))
+            {
+                Error(creation, "creation.attributes", "$.attributes",
+                    $"attributes must list every attribute of the module set exactly once: {string.Join(", ", attributes)}.");
             }
         }
     }

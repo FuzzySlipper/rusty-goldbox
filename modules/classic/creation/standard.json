@@ -2,6 +2,14 @@
   "type": "character-creation",
   "id": "standard",
   "name": "Standard",
+  "attributes": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+  ],
   "attribute_roll": "3d6",
   "assignment": "in-order",
   "starting_gold": {

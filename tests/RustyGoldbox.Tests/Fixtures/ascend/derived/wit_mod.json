@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "wit_mod",
+  "name": "Wit modifier",
+  "value": "floor((self.wit - 10) / 2)"
+}

@@ -35,16 +35,20 @@ The Game does not use Core yet.
 | `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
+| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, and the creature view expressions read |
+| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, gold) and gaining levels, from character-creation, race and class data |
+| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`), the Engine tool host for `eval`, and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks and the status projection |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, content/UI roots, projection identity and host defaults |
 | `src/ui/main.js` | DOM status readout and projection subscription |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `content/` | Product-authored data |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 ## Module loading
@@ -63,9 +67,20 @@ it doesn't reappear as every reference to the broken definition. Expressions
 are compiled once there; `Evaluator` only evaluates them.
 
 Dice need Engine `Random`, whose calls are confined to a host callback.
-`goldbox eval` creates the Engine tool host (`RustyEngineToolHost`,
-`EngineTestHost.Create()`), opens a stream seeded from `--seed` and evaluates
-inside one `Call`.
+Commands that roll (`eval`, `character new`, `character level`) create the
+Engine tool host (`RustyEngineToolHost`, `EngineTestHost.Create()`), open a
+stream seeded from `--seed` and do their work inside one `Call`.
+
+## Characters
+
+`CharacterRules` reads everything from data: the character-creation
+definition's attribute order, roll and assignment, the race's adjustments,
+limits and classes, the class's requirements and per-level `hp` expressions,
+and starting gold. A character file stores its choices and progress plus the
+module IDs and versions it was made under. Reading it needs each of those
+modules loaded at a compatible version; extra modules, such as a campaign that
+requires the ruleset, are fine. Derived values are never stored; the sheet
+computes them.
 
 Candidate modules whose manifests have errors are skipped during resolution
 and named in "not found" messages; their own errors are reported when they
