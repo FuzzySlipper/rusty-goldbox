@@ -1,0 +1,15 @@
+{
+  "type": "action",
+  "id": "zap",
+  "name": "Zap",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "always": [
+    {
+      "op": "damage",
+      "amount": "roll_explode(1, 6, 6)"
+    }
+  ]
+}

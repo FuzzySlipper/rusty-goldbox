@@ -10,7 +10,7 @@ public sealed record SheetStat(string Id, string Name, string Kind, Value? Value
 /// <summary>A track on a sheet: current and maximum, or why the maximum couldn't be computed.</summary>
 public sealed record SheetTrack(Definition Track, decimal? Current, decimal? Max, string? Problem);
 
-/// <summary>A character's computed stats, in the rule set's definition order.</summary>
+/// <summary>A character's computed stats and tracks (those it has any of), in the rule set's definition order.</summary>
 public static class CharacterSheet
 {
     public static List<SheetTrack> Tracks(RuleSet rules, Character character)
@@ -23,7 +23,12 @@ public static class CharacterSheet
             decimal? current = creature.Track(track.Id).Current;
             try
             {
-                tracks.Add(new SheetTrack(track, current, evaluator.TrackMax(creature, track), null));
+                // A pool the character has none of (spell slots of a level it can't cast) isn't on its sheet.
+                decimal max = evaluator.TrackMax(creature, track);
+                if (max != 0)
+                {
+                    tracks.Add(new SheetTrack(track, current, max, null));
+                }
             }
             catch (ExpressionException exception)
             {

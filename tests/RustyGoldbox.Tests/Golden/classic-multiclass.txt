@@ -23,6 +23,7 @@ Thror: Dwarf Fighter 1 / Thief 1 (level 2, 0 xp, Fighter 0 of 1900, Thief 0 of 1
   str_damage     0      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          20     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to thror.json.
   seed 4: 1d10: 3 = 3; 1d6: 1 = 1; 3d6: 2+4+3 = 9; 2d6: 2+3 = 5
@@ -50,6 +51,7 @@ Thror: Dwarf Fighter 2 / Thief 3 (level 5, 5000 xp, Fighter 2500 of 4250, Thief 
   str_damage     0      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          19     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to thror.json.
   seed 3: 1d10: 3 = 3; 1d6: 2 = 2; 1d6: 3 = 3
@@ -74,6 +76,7 @@ Aldo: Human Fighter 1 (0 xp, Fighter 0 of 1900)
   str_damage     1      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          20     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
   seed 1: 1d10: 6 = 6; 3d6: 1+5+4 = 10
@@ -106,6 +109,7 @@ Aldo: Human Fighter 3 (4500 xp, Fighter 4500 of 7750)
   str_damage     1      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          18     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
   seed 2: 1d10: 7 = 7; 1d10: 1 = 1
@@ -115,6 +119,7 @@ $ goldbox character level aldo.json --module modules/classic --xp 0 --class magi
 Reached level 4 (Magic user 1): +0 hit points.
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
   hit points 14/14
+  1st level spells 1/1
   gold 120
   Magic user spells per day by spell level: 1
   str            16     Strength
@@ -132,6 +137,7 @@ Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, le
   str_damage     1      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          21     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
   seed 5: no dice rolled
@@ -143,6 +149,8 @@ Reached level 6 (Magic user 3): +0 hit points.
 Reached level 7 (Magic user 4): +1 hit points.
 Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 22000, left Fighter)
   hit points 15/15
+  1st level spells 3/3
+  2nd level spells 2/2
   gold 120
   Magic user spells per day by spell level: 3 / 2
   str            16     Strength
@@ -160,6 +168,7 @@ Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 220
   str_damage     1      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          18     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
   seed 6: 1d4: 1 = 1
@@ -230,6 +239,21 @@ $ goldbox character show aldo.json --module modules/classic --json
       "hit_points": {
         "current": 15,
         "max": 15
+      },
+      "spells_1": {
+        "current": 3
+      },
+      "spells_2": {
+        "current": 2
+      },
+      "spells_3": {
+        "current": 0
+      },
+      "spells_4": {
+        "current": 0
+      },
+      "spells_5": {
+        "current": 0
       }
     },
     "gold": 120,
@@ -361,6 +385,13 @@ $ goldbox character show aldo.json --module modules/classic --json
       "problem": null
     },
     {
+      "id": "undead",
+      "name": "Undead",
+      "kind": "derived",
+      "value": false,
+      "problem": null
+    },
+    {
       "id": "wis_save",
       "name": "Wisdom mental saving throw bonus",
       "kind": "derived",
@@ -374,6 +405,20 @@ $ goldbox character show aldo.json --module modules/classic --json
       "name": "Hit points",
       "current": 15,
       "max": 15,
+      "problem": null
+    },
+    {
+      "id": "spells_1",
+      "name": "1st level spells",
+      "current": 3,
+      "max": 3,
+      "problem": null
+    },
+    {
+      "id": "spells_2",
+      "name": "2nd level spells",
+      "current": 2,
+      "max": 2,
       "problem": null
     }
   ],

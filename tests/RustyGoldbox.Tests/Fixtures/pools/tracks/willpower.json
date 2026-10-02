@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "willpower",
+  "name": "Willpower",
+  "max": "self.resolve * 2"
+}

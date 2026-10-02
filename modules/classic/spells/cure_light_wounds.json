@@ -9,6 +9,9 @@
   "duration": "Instantaneous",
   "area": "Creature touched",
   "casting_time": "5 segments",
+  "cost": {
+    "spells_1": "1"
+  },
   "effect": {
     "action": "spell_heal",
     "amount": "1d8"

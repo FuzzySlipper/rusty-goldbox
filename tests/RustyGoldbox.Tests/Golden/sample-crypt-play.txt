@@ -104,8 +104,9 @@ seed 1
     Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
     Ada uses Melee attack (Long sword) on Skeleton 1.
     Ada rolls Melee attack: 2 against 13: failure.  [1d20: 2 = 2]
-    Brom uses Melee attack (Heavy mace) on Skeleton 1.
-    Brom rolls Melee attack: 2 against 13: failure.  [1d20: 2 = 2]
+    Brom uses Cure light wounds on Ada.
+    Brom spends 1 1st level spells (0 left).
+    Ada regains 2 hit points (6).  [1d8: 2 = 2]
     Skeleton 1 uses claw on Ada.
     Skeleton 1 rolls Melee attack: 9 against 15: failure.  [1d20: 9 = 9]
     Round 6.
@@ -139,9 +140,10 @@ seed 1
   Combat with Crypt guard: the party wins.
   The party finds 100 gold, Dagger.  [2d6: 6+4 = 10]
   guards_defeated is now true.
+  In the quiet guardroom you bind your wounds and pray.
   The rattling stops. A draught rises from somewhere to the west.
 > status
-  Ada (hit points 4/8) | Brom (hit points 8/8) | gold 220 + 120 | carrying Dagger
+  Ada (hit points 6/8) | Brom (hit points 8/8, 1st level spells 1/1) | gold 220 + 120 | carrying Dagger
 > around
   The party faces north.
 > forward

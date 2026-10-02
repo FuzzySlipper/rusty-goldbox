@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
+        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -127,6 +127,11 @@ public static class CharacterFile
             writer.WriteEndObject();
             writer.WriteNumber("gold", character.Gold);
             WriteReferences(writer, "equipment", character.Equipment);
+            if (character.Spells.Count > 0)
+            {
+                WriteReferences(writer, "spells", character.Spells);
+            }
+
             WriteReferences(writer, "conditions", character.Conditions);
             if (character.Portrait is Definition portrait)
             {
@@ -234,6 +239,15 @@ public static class CharacterFile
             }
 
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
+            ReadList(root, "spells", DefinitionTypes.Spell, character.Spells);
+            for (int index = 0; index < character.Spells.Count; index++)
+            {
+                if (CharacterRules.SpellProblem(_rules, character, character.Spells[index]) is string unknown)
+                {
+                    Error($"$.spells[{index}]", unknown);
+                }
+            }
+
             if (root.TryGetProperty("portrait", out JsonElement portrait) && Resolve(portrait, "$.portrait", DefinitionTypes.Asset) is Definition asset)
             {
                 if (CharacterRules.PortraitProblem(asset) is string problem)

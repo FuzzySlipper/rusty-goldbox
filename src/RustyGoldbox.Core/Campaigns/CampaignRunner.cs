@@ -257,6 +257,22 @@ public sealed class CampaignRunner
                 return Next(evt, "$.next");
             case "treasure":
                 return Treasure(evt, dice, facts);
+            case "rest":
+                Evaluator evaluator = new(_rules, null);
+                for (int i = 0; i < json.GetProperty("tracks").GetArrayLength(); i++)
+                {
+                    Definition track = _rules.Reference(evt, $"$.tracks[{i}]");
+                    foreach (Character character in _state.Party)
+                    {
+                        if (Located(track, "$", () => evaluator.KnownTrackMax(character.ToCreature(), track)) is decimal max)
+                        {
+                            character.Tracks[track.Id].Current = max;
+                        }
+                    }
+                }
+
+                facts.Add(new TextFact(json.GetProperty("text").GetString()!));
+                return Next(evt, "$.next");
             case "combat":
                 return Fight(evt, dice, facts);
             default:
@@ -436,11 +452,10 @@ public sealed class CampaignRunner
         foreach (Character character in _state.Party)
         {
             Creature creature = character.ToCreature();
-            string tracks = string.Join(", ", _rules.Tracks.Values.Select(track =>
-            {
-                decimal current = creature.Track(track.Id).Current ?? 0;
-                return $"{track.Name.ToLowerInvariant()} {Fact(current)}/{Fact(evaluator.TrackMax(creature, track))}";
-            }));
+            string tracks = string.Join(", ", _rules.Tracks.Values
+                .Select(track => (Track: track, Max: evaluator.TrackMax(creature, track)))
+                .Where(entry => entry.Max != 0)
+                .Select(entry => $"{entry.Track.Name.ToLowerInvariant()} {Fact(creature.Track(entry.Track.Id).Current ?? 0)}/{Fact(entry.Max)}"));
             lines.Add($"{character.Name} ({tracks})");
         }
 

@@ -261,7 +261,7 @@ public sealed class CampaignTests
     internal static void WriteParty(TempModules scratch, string classic)
     {
         Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Ada", "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--seed", "2", "--out", "ada.json");
-        Run(scratch, "character", "new", "--module", classic, "--class", "cleric", "--race", "dwarf", "--name", "Brom", "--attributes", "str=13,dex=10,con=14,int=9,wis=15,cha=10", "--seed", "4", "--out", "brom.json");
+        Run(scratch, "character", "new", "--module", classic, "--class", "cleric", "--race", "dwarf", "--name", "Brom", "--attributes", "str=13,dex=10,con=14,int=9,wis=15,cha=10", "--spells", "cure_light_wounds", "--seed", "4", "--out", "brom.json");
         Equip(scratch, "ada.json", "classic:long_sword", "classic:chain_mail", "classic:shield");
         Equip(scratch, "brom.json", "classic:heavy_mace", "classic:chain_mail");
     }

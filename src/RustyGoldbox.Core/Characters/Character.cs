@@ -84,6 +84,9 @@ public sealed class Character
 
     public List<Definition> Equipment { get; } = [];
 
+    /// <summary>The spells the character knows or has prepared, cast in combat while it can pay for them.</summary>
+    public List<Definition> Spells { get; } = [];
+
     public List<Definition> Conditions { get; } = [];
 
     /// <summary>The portrait asset the character is shown with, when one was chosen.</summary>

@@ -7,8 +7,11 @@
   },
   "range": "60 ft",
   "duration": "6 rounds",
-  "area": "50 × 50 ft",
+  "area": "50 \u00d7 50 ft",
   "casting_time": "1 round",
+  "cost": {
+    "spells_1": "1"
+  },
   "effect": {
     "action": "bless"
   },

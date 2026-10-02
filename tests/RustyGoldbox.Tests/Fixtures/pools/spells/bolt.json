@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "bolt",
+  "name": "Bolt",
+  "lists": {
+    "bruiser": 1
+  },
+  "range": "Sight",
+  "duration": "Instant",
+  "area": "One creature",
+  "casting_time": "One action",
+  "cost": {
+    "willpower": "2"
+  },
+  "effect": {
+    "action": "zap"
+  },
+  "description": "A crackle of spent will that strikes one foe."
+}

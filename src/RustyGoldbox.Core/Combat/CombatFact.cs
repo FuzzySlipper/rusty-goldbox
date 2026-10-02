@@ -99,6 +99,14 @@ public sealed record ConditionFact(string Who, string Condition, bool Applied, d
     }
 }
 
+/// <summary>A creature spent from a track to pay for what it did, such as a spell slot.</summary>
+public sealed record SpentFact(string Who, Definition Track, decimal Amount, decimal Left) : CombatFact
+{
+    public override string Kind => "spent";
+
+    public override string Describe() => $"{Who} spends {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Left)} left).";
+}
+
 /// <summary>A creature reacted out of turn to another.</summary>
 public sealed record ReactionFact(string Who, string Reaction, string To) : CombatFact
 {

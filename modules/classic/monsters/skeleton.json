@@ -10,7 +10,8 @@
   "stats": {
     "ac": "7",
     "movement": "120",
-    "size": "'medium'"
+    "size": "'medium'",
+    "undead": "true"
   },
   "actions": [
     {

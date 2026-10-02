@@ -281,7 +281,7 @@ public static class DefinitionTypes
 
     public static DefinitionType Spell { get; } = new(
         "spell",
-        "A spell: which class lists it is on and at what level, and how it is cast.",
+        "A spell: which class lists it is on and at what level, what casting it spends, and the action it uses. A character casts the spells it knows (its spells list) while it can pay their cost.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("lists", new MapKind(new ReferenceKind("class"), new IntegerKind()), true, "Spell level on each class's list."),
@@ -290,7 +290,8 @@ public static class DefinitionTypes
             new("area", new TextKind(), true, "Area of effect, as text."),
             new("casting_time", new TextKind(), true, "Casting time, as text."),
             new("save", new ReferenceKind("check"), false, "The saving throw targets may make, if any."),
-            new("effect", Use, false, "The action casting the spell uses, with its parameters."),
+            new("effect", Use, false, "The action casting the spell uses, with its parameters. Without it, the spell can't be cast in combat."),
+            new("cost", new MapKind(new ReferenceKind("track"), SelfNumber), false, "What casting spends from the caster's tracks, for example { \"spells_1\": \"1\" } for a spell slot or { \"power_points\": \"3\" }. A spell is offered only while every track can pay; tracks are restored by rest events."),
             new("description", new TextKind(), true, "What the spell does."),
         ],
         """
@@ -387,6 +388,7 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
             new("target", new EnumKind(["enemy", "ally", "hurt_ally", "fallen_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (by default the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, an ally out of the fight (to bring back), itself, or everyone on a side."),
+            new("max_targets", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "For all_enemies or all_allies, the most creatures it affects, worked out when it is taken, for example \"2d4\"; those prefer ranks highest are chosen."),
             new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; without it, any distance."),
             new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
             new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),

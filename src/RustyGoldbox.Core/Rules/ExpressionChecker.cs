@@ -289,6 +289,11 @@ internal sealed class ExpressionChecker(
             return CheckEachClass(call, function);
         }
 
+        if (function.Name == "spell_slots" && !roots.HasFlag(Roots.Self))
+        {
+            throw new ExpressionException("spell_slots() reads self's classes, but this field can't read self.", call.Column);
+        }
+
         if (call.Arguments.Count < function.MinArguments || call.Arguments.Count > function.MaxArguments)
         {
             throw new ExpressionException($"{function.Signature} takes {function.ArgumentCountText}, but got {call.Arguments.Count}.", call.Column);

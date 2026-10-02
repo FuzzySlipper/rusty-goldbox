@@ -316,6 +316,83 @@ public static class CharacterRules
         return $"{character.Name} can't equip {item.Name}: {classes} {(refusing.Count == 1 ? "doesn't" : "don't")} allow it.";
     }
 
+    /// <summary>
+    /// Why the character can't know <paramref name="spell"/>, or null when it
+    /// can: the spell must be on one of its classes' lists, castable (it has an
+    /// effect), and payable from its tracks at their maximum.
+    /// </summary>
+    public static string? SpellProblem(RuleSet rules, Character character, Definition spell)
+    {
+        Creature creature = character.ToCreature();
+        bool listed = false;
+        if (spell.Json.TryGetProperty("lists", out JsonElement lists))
+        {
+            foreach (JsonProperty entry in lists.EnumerateObject())
+            {
+                listed |= creature.ClassLevels.ContainsKey(rules.Reference(spell, $"$.lists.{entry.Name}"));
+            }
+        }
+
+        if (!listed)
+        {
+            return $"{spell.Name} isn't on the spell list of any of {character.Name}'s classes.";
+        }
+
+        if (!spell.Json.TryGetProperty("effect", out _))
+        {
+            return $"{spell.Name} has no effect to cast in combat.";
+        }
+
+        Evaluator evaluator = new(rules, null);
+        if (spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            foreach (JsonProperty entry in cost.EnumerateObject())
+            {
+                Definition track = rules.Reference(spell, $"$.cost.{entry.Name}");
+                decimal needed = evaluator.Evaluate(rules.Expression(spell, $"$.cost.{entry.Name}"), creature, null).Number;
+                decimal max = evaluator.KnownTrackMax(creature, track) ?? 0;
+                if (max < needed)
+                {
+                    return $"{character.Name} can't cast {spell.Name}: it needs {needed} {track.Name.ToLowerInvariant()}, and {character.Name} has at most {max}.";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Gives the character these spells to know, in order; problems name each one it can't.</summary>
+    public static bool SetSpells(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> spells = [];
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Spell, id, "spell", problems) is not Definition spell)
+            {
+                continue;
+            }
+
+            if (SpellProblem(rules, character, spell) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.spell", problem, spell.Module, spell.File, "$.lists"));
+            }
+            else if (!spells.Contains(spell))
+            {
+                spells.Add(spell);
+            }
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        character.Spells.Clear();
+        character.Spells.AddRange(spells);
+        return true;
+    }
+
     /// <summary>The character-creation definition used when none is named, or null when the set has none or several without a default.</summary>
     public static Definition? DefaultCreation(RuleSet rules) => FindCreation(rules, null, []);
 

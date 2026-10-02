@@ -11,8 +11,9 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
+        + "       goldbox character spells <file> --module <path> --set <id>,...\n"
         + "       goldbox character show <file> --module <path>";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
@@ -27,13 +28,14 @@ internal static class CharacterCommand
             "new" => New(args.Skip(1), output, workingDirectory),
             "level" => Level(args.Skip(1), output, workingDirectory),
             "show" => Show(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level and show.\n{Usage}"),
+            "spells" => Spells(args.Skip(1), output, workingDirectory),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells and show.\n{Usage}"),
         };
     }
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--class") is null || parsed.Single("--race") is null))
         {
             error = Usage;
@@ -68,7 +70,9 @@ internal static class CharacterCommand
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));
-        if (character is null || (parsed.Single("--portrait") is string portrait && !CharacterRules.SetPortrait(set.Rules, character, portrait, problems)))
+        if (character is null
+            || (parsed.Single("--portrait") is string portrait && !CharacterRules.SetPortrait(set.Rules, character, portrait, problems))
+            || (parsed.Single("--spells") is string spells && !CharacterRules.SetSpells(set.Rules, character, List(spells), problems)))
         {
             return output.Problems(problems);
         }
@@ -132,6 +136,43 @@ internal static class CharacterCommand
     private static IReadOnlyList<string> Features(Arguments parsed)
     {
         return parsed.Single("--feature")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+    }
+
+    private static string[] List(string text) => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary><c>character spells</c>: sets the spells a character knows, checked against its classes and tracks.</summary>
+    private static int Spells(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--set"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--set") is null))
+        {
+            error = Usage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.SetSpells(set.Rules!, character!, List(parsed.Single("--set")!), problems))
+        {
+            return output.Problems(problems);
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules!, character!, path, null, [], []);
+        return GoldboxCli.Ok;
     }
 
     private static int Show(IEnumerable<string> args, Output output, string workingDirectory)

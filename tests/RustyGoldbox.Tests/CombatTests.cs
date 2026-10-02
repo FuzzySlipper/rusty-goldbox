@@ -21,6 +21,20 @@ public sealed class CombatTests
     private static string Fixture(string name) => Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", name);
 
     [Fact]
+    public void ClassicCastersSpendSpellSlots()
+    {
+        using TempModules scratch = new();
+        WriteCharacter(scratch, Rules.ClassicPath, "ada.json", new CreationRequest("Ada", "fighter", "human", Attributes: Scores(("str", 16), ("dex", 13), ("con", 15), ("int", 10), ("wis", 9), ("cha", 11))), "long_sword", "chain_mail", "shield");
+        Golden.Verify("classic-spells.txt", CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "human", "--name", "Mira", "--attributes", "str=9,dex=14,con=12,int=16,wis=10,cha=10", "--spells", "bless", "--out", "mira.json"],
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "human", "--name", "Mira", "--attributes", "str=9,dex=14,con=12,int=16,wis=10,cha=10", "--spells", "sleep,magic_missile", "--out", "mira.json"],
+            // Sleep takes 2d4 rats of 4 hit dice or fewer and spends Mira's one 1st level spell; magic missile then can't be paid for.
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "rat_pack", "--seed", "3"],
+            // Skeletons are undead, so sleep has no one to take and Mira casts magic missile instead.
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"]));
+    }
+
+    [Fact]
     public void ClassicPartyFightsAnEncounter()
     {
         using TempModules scratch = new();
@@ -90,6 +104,11 @@ public sealed class CombatTests
     {
         using TempModules scratch = new();
         WriteCharacter(scratch, Fixture("pools"), "mags.json", new CreationRequest("Mags", "bruiser", "human", Attributes: Scores(("power", 4), ("finesse", 3), ("resolve", 2))), "club");
+        // Bolt spends 2 of Mags's 4 willpower, a pool rather than slots, so Mags casts twice and then fights.
+        string file = Path.Combine(scratch.Root, "mags.json");
+        System.Text.Json.Nodes.JsonNode mags = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;
+        mags["spells"] = new System.Text.Json.Nodes.JsonArray("pools:bolt");
+        File.WriteAllText(file, mags.ToJsonString());
 
         // Tens roll again and ones cancel successes (a thug botches below 0); the club's damage explodes on a 6.
         Golden.Verify("pools-combat.txt", CliTranscript.Run(scratch.Root,

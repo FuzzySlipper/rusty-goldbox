@@ -1,0 +1,143 @@
+$ goldbox character new --module modules/classic --class magic_user --race human --name Mira --attributes str=9,dex=14,con=12,int=16,wis=10,cha=10 --spells bless --out mira.json
+error[character.spell] classic modules/classic/spells/bless.json $.lists
+  Bless isn't on the spell list of any of Mira's classes.
+1 error.
+[exit 1]
+
+$ goldbox character new --module modules/classic --class magic_user --race human --name Mira --attributes str=9,dex=14,con=12,int=16,wis=10,cha=10 --spells sleep,magic_missile --out mira.json
+Mira: Human Magic user 1 (0 xp, Magic user 0 of 2400)
+  hit points 2/2
+  1st level spells 1/1
+  gold 20
+  spells: Sleep, Magic missile
+  spells per day by spell level: 1
+  str            9      Strength
+  dex            14     Dexterity
+  con            12     Constitution
+  int            16     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     0      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          21     Roll needed to hit armour class 0
+  undead         false  Undead
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to mira.json.
+  seed 1: 1d4: 2 = 2; 2d4: 1+1 = 2
+[exit 0]
+
+$ goldbox sim combat --module modules/classic --party ada.json,mira.json --encounter rat_pack --seed 3
+seed 3
+Round 1.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Rat pack rolls 2 for initiative.  [1d6: 2 = 2]
+  Ada uses Melee attack (Long sword) on Giant rat 3.
+  Ada rolls Melee attack: 12 against 13: failure.  [1d20: 12 = 12]
+  Mira uses Sleep on Giant rat 1, Giant rat 2.  [2d4: 1+1 = 2]
+  Mira spends 1 1st level spells (0 left).
+  Giant rat 1 is Asleep for 5 rounds.
+  Giant rat 2 is Asleep for 5 rounds.
+  Giant rat 1 doesn't act (asleep).
+  Giant rat 2 doesn't act (asleep).
+  Giant rat 3 uses bite on Ada.
+  Giant rat 3 rolls Melee attack: 3 against 17: failure.  [1d20: 3 = 3]
+Round 2.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Rat pack rolls 6 for initiative.  [1d6: 6 = 6]
+  Giant rat 1 doesn't act (asleep).
+  Giant rat 2 doesn't act (asleep).
+  Giant rat 3 uses bite on Ada.
+  Giant rat 3 rolls Melee attack: 6 against 17: failure.  [1d20: 6 = 6]
+  Ada uses Melee attack (Long sword) on Giant rat 3.
+  Ada rolls Melee attack: 11 against 13: failure.  [1d20: 11 = 11]
+  Mira uses Punch on Giant rat 3.
+  Mira rolls Melee attack: 10 against 14: failure.  [1d20: 10 = 10]
+Round 3.
+  Party rolls 6 for initiative.  [1d6: 6 = 6]
+  Rat pack rolls 1 for initiative.  [1d6: 1 = 1]
+  Ada uses Melee attack (Long sword) on Giant rat 3.
+  Ada rolls Melee attack: 19 against 13: success.  [1d20: 19 = 19]
+  Giant rat 3 loses 9 hit points (-8 left).  [1d8: 8 = 8]
+  Giant rat 3 is out of the fight.
+  Mira uses Punch on Giant rat 2.
+  Mira rolls Melee attack: 3 against 14: failure.  [1d20: 3 = 3]
+  Giant rat 1 doesn't act (asleep).
+  Giant rat 2 doesn't act (asleep).
+Round 4.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Rat pack rolls 1 for initiative.  [1d6: 1 = 1]
+  Ada uses Melee attack (Long sword) on Giant rat 2.
+  Ada rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+  Mira uses Punch on Giant rat 2.
+  Mira rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
+  Giant rat 1 doesn't act (asleep).
+  Giant rat 2 doesn't act (asleep).
+Round 5.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Rat pack rolls 4 for initiative.  [1d6: 4 = 4]
+  Giant rat 1 doesn't act (asleep).
+  Giant rat 1 is no longer Asleep.
+  Giant rat 2 doesn't act (asleep).
+  Giant rat 2 is no longer Asleep.
+  Ada uses Melee attack (Long sword) on Giant rat 2.
+  Ada rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
+  Mira uses Punch on Giant rat 2.
+  Mira rolls Melee attack: 15 against 14: success.  [1d20: 15 = 15]
+  Giant rat 2 loses 2 hit points (0 left).  [1d2: 2 = 2]
+  Giant rat 2 is out of the fight.
+Round 6.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Rat pack rolls 4 for initiative.  [1d6: 4 = 4]
+  Giant rat 1 uses bite on Ada.
+  Giant rat 1 rolls Melee attack: 9 against 17: failure.  [1d20: 9 = 9]
+  Ada uses Melee attack (Long sword) on Giant rat 1.
+  Ada rolls Melee attack: 5 against 13: failure.  [1d20: 5 = 5]
+  Mira uses Punch on Giant rat 1.
+  Mira rolls Melee attack: 5 against 14: failure.  [1d20: 5 = 5]
+Round 7.
+  Party rolls 3 for initiative.  [1d6: 3 = 3]
+  Rat pack rolls 1 for initiative.  [1d6: 1 = 1]
+  Ada uses Melee attack (Long sword) on Giant rat 1.
+  Ada rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
+  Giant rat 1 loses 6 hit points (-3 left).  [1d8: 5 = 5]
+  Giant rat 1 is out of the fight.
+Party wins after 7 rounds.
+Party: Ada 2/2, Mira 2/2
+Rat pack: Giant rat 1 -3/3 (out), Giant rat 2 0/2 (out), Giant rat 3 -8/1 (out)
+[exit 0]
+
+$ goldbox sim combat --module modules/classic --party ada.json,mira.json --encounter crypt_guard --seed 3
+seed 3
+Round 1.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
+  Skeleton 1 uses claw on Ada.
+  Skeleton 1 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 20 against 15: success.  [1d20: 20 = 20]
+  Ada loses 6 hit points (-4 left).  [1d6: 6 = 6]
+  Ada is out of the fight.
+  Mira uses Magic missile on Skeleton 1.
+  Mira spends 1 1st level spells (0 left).
+  Skeleton 1 loses 2 hit points (-1 left).  [1d4: 1 = 1]
+  Skeleton 1 is out of the fight.
+Round 2.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
+  Mira uses Punch on Skeleton 2.
+  Mira rolls Melee attack: 9 against 14: failure.  [1d20: 9 = 9]
+  Skeleton 2 uses claw on Mira.
+  Skeleton 2 rolls Melee attack: 14 against 9: success.  [1d20: 14 = 14]
+  Mira loses 2 hit points (0 left).  [1d6: 2 = 2]
+  Mira is out of the fight.
+Crypt guard wins after 2 rounds.
+Party: Ada -4/2 (out), Mira 0/2 (out)
+Crypt guard: Skeleton 1 -1/1 (out), Skeleton 2 7/7
+[exit 0]
+

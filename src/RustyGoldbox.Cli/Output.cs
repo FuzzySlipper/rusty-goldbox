@@ -454,6 +454,11 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
 
         writer.WriteLine($"  gold {character.Gold}");
+        if (character.Spells.Count > 0)
+        {
+            writer.WriteLine($"  spells: {string.Join(", ", character.Spells.Select(spell => spell.Name))}");
+        }
+
         if (character.Features.Any())
         {
             writer.WriteLine($"  features: {string.Join(", ", character.Features.Select(feature => $"{feature.Name} ({feature.Json.GetProperty("kind").GetString()})"))}");

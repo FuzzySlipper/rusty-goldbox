@@ -294,9 +294,14 @@ Combat is built so that no die convention is assumed:
   check's outcome. Attacks, spells, heals and aimed shots are all actions.
   Creatures list the actions they can take as *uses* that supply the action's
   parameters (a monster's bite damage) or take them from equipment (a
-  weapon's damage); a spell names the use its casting performs. Casting in
-  combat (which spells a creature can cast, and what casting costs) isn't
-  wired yet, so today spells are defined and checked but not cast.
+  weapon's damage); a spell names the use its casting performs and what
+  casting spends from the caster's tracks. Per-day resources are tracks: spell
+  slots of each level (whose maximum `spell_slots(level)` reads from the
+  classes) or a single pool of power points. A character knows a list of
+  spells, each on one of its classes' lists and payable at full resources;
+  in combat it casts them first while it can pay, and a `rest` event restores
+  the tracks it names. An action with `max_targets` affects that many of its
+  candidates, the ones `prefer` ranks highest (sleep by hit dice).
 - **Checks give outcome tiers.** A check is a roll, an optional bonus and a
   target, rolled high or under, with ordered tiers that read the roll and
   margin. That expresses natural-20 criticals, degrees of success by margin,

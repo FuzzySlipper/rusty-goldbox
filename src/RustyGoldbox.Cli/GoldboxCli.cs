@@ -36,7 +36,7 @@ internal static class GoldboxCli
 
           goldbox character new --module <path> --class <id> --race <id> [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
-                [--boosts <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
+                [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
               Makes attributes by the creation's method (roll, array, point buy or boosts), applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
               track, and rolls gold. --priority arranges rolls where the ruleset allows.
@@ -55,6 +55,9 @@ internal static class GoldboxCli
               new class must accept the character), else to the class of the latest level.
               Where experience is split, a new --class is a class change (dual-classing).
               --feature fills the choices the new levels grant, --boosts the boosts they grant.
+          goldbox character spells <file> --module <path> --set <id>,...
+              Sets the spells the character knows: each on one of its classes' lists and
+              payable from its tracks. Combat casts them first while it can pay.
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 

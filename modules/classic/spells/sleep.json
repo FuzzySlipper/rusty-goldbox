@@ -9,5 +9,11 @@
   "duration": "5 rounds per level",
   "area": "15 ft radius",
   "casting_time": "1 segment",
-  "description": "Creatures in the area fall into magical sleep with no saving throw; how many depends on their hit dice."
+  "cost": {
+    "spells_1": "1"
+  },
+  "effect": {
+    "action": "spell_sleep"
+  },
+  "description": "Up to 2d4 living creatures of 4 hit dice or fewer, the weakest first, fall into magical sleep with no saving throw."
 }

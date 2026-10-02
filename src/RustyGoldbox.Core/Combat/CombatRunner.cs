@@ -438,7 +438,7 @@ public sealed class CombatRunner
     {
         foreach (UseOption use in actor.Uses)
         {
-            if (!Affordable(actor, use.Action))
+            if (!Affordable(actor, use.Action) || (use.Spell is Definition spell && !SpellAffordable(actor, spell)))
             {
                 continue;
             }
@@ -521,8 +521,27 @@ public sealed class CombatRunner
 
     private void Act(Combatant actor, UseOption use, List<Combatant> targets)
     {
-        Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))));
         Definition action = use.Action;
+        if (action.Json.TryGetProperty("max_targets", out _) && targets.Count > 1)
+        {
+            int before = _dice.Rolls.Count;
+            decimal most = Number(action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
+            IEnumerable<Combatant> ranked = action.Json.TryGetProperty("prefer", out _)
+                ? targets.OrderByDescending(target => Number(action, "$.prefer", new Scope(actor.Creature, target.Creature, use.Parameters)))
+                : targets;
+            targets = ranked.Take((int)Math.Clamp(decimal.Floor(most), 0, targets.Count)).ToList();
+            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), before);
+        }
+        else
+        {
+            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))));
+        }
+
+        if (use.Spell is Definition cast)
+        {
+            PaySpell(actor, cast);
+        }
+
         foreach (Combatant target in targets)
         {
             if (target.Defeated && target != actor && action.Json.GetProperty("target").GetString() != "fallen_ally")
@@ -810,6 +829,39 @@ public sealed class CombatRunner
         {
             combatant.Defeated = defeated;
             Record(defeated ? new DefeatedFact(combatant.Name) : new ReturnedFact(combatant.Name));
+        }
+    }
+
+    /// <summary>Whether the caster's tracks can pay every cost of the spell.</summary>
+    private bool SpellAffordable(Combatant caster, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return true;
+        }
+
+        return cost.EnumerateObject().All(entry =>
+        {
+            Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
+            return _evaluator.TrackCurrent(caster.Creature, track) >= Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+        });
+    }
+
+    /// <summary>Spends the spell's cost from the caster's tracks.</summary>
+    private void PaySpell(Combatant caster, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return;
+        }
+
+        foreach (JsonProperty entry in cost.EnumerateObject())
+        {
+            Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
+            decimal amount = Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            TrackValue value = caster.Creature.Track(track.Id);
+            value.Current = _evaluator.TrackCurrent(caster.Creature, track) - amount;
+            Record(new SpentFact(caster.Name, track, amount, value.Current.Value));
         }
     }
 

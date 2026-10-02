@@ -6,7 +6,8 @@ using RustyGoldbox.Core.Rules;
 namespace RustyGoldbox.Core.Combat;
 
 /// <summary>An action a combatant can take, with the parameters it is used with.</summary>
-public sealed record UseOption(Definition Action, string Name, IReadOnlyDictionary<string, CompiledExpression> Parameters);
+/// <param name="Spell">When the use casts a spell, the spell, whose cost it also spends.</param>
+public sealed record UseOption(Definition Action, string Name, IReadOnlyDictionary<string, CompiledExpression> Parameters, Definition? Spell = null);
 
 /// <summary>A creature in a fight: its side, state for this combat, and the actions it can take.</summary>
 public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseOption> uses)
@@ -75,19 +76,25 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
     }
 
     /// <summary>
-    /// A character as a combatant: its classes' actions in the order the
-    /// classes were taken, then its features' actions, with item parameters
+    /// A character as a combatant: the spells it knows, then its classes'
+    /// actions in the order the classes were taken, then its features' actions, with item parameters
     /// from its equipment. A use already given (the same action and name) is
     /// listed once.
     /// </summary>
     public static Combatant FromCharacter(RuleSet rules, Character character)
     {
         Creature creature = character.ToCreature(character.Name);
-        List<UseOption> uses = creature.ClassLevels.Keys
-            .Concat(creature.Features.Distinct())
-            .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment))
-            .DistinctBy(use => (use.Action, use.Name))
+        // Known spells come first, so a caster casts while it can pay.
+        List<UseOption> spells = character.Spells
+            .Where(spell => spell.Json.TryGetProperty("effect", out _))
+            .SelectMany(spell => ReadUse(rules, spell, spell.Json.GetProperty("effect"), "$.effect", creature.Equipment)
+                .Select(use => use with { Name = spell.Name, Spell = spell }))
             .ToList();
+        List<UseOption> uses = spells;
+        uses.AddRange(creature.ClassLevels.Keys
+            .Concat(creature.Features.Distinct())
+            .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment)));
+        uses = uses.DistinctBy(use => (use.Action, use.Name)).ToList();
         Combatant combatant = new(character.Name, creature, uses);
         combatant.AddReactions(rules, creature.ClassLevels.Keys.Concat(creature.Features.Distinct()));
         return combatant;

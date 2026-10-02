@@ -1,0 +1,11 @@
+{
+  "type": "event",
+  "id": "catch_breath",
+  "kind": "rest",
+  "text": "In the quiet guardroom you bind your wounds and pray.",
+  "tracks": [
+    "classic:spells_1",
+    "classic:spells_2"
+  ],
+  "next": "quiet"
+}

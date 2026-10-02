@@ -575,6 +575,24 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 });
             }
 
+            if (call.Function == "spell_slots")
+            {
+                Creature self = scope.Self ?? throw new ExpressionException("spell_slots() needs a self creature, but none was given.", call.Column);
+                decimal spellLevel = Evaluate(call.Arguments[0]).Number;
+                decimal slots = 0;
+                foreach ((Definition characterClass, int classLevel) in self.ClassLevels)
+                {
+                    if (spellLevel == decimal.Truncate(spellLevel) && spellLevel >= 1
+                        && characterClass.Json.TryGetProperty("spell_slots", out JsonElement table) && classLevel <= table.GetArrayLength()
+                        && table[classLevel - 1].GetArrayLength() >= spellLevel)
+                    {
+                        slots += table[classLevel - 1][(int)spellLevel - 1].GetInt32();
+                    }
+                }
+
+                return Value.Of(slots);
+            }
+
             List<decimal> arguments = call.Arguments.Select(argument => Evaluate(argument).Number).ToList();
             return call.Function switch
             {

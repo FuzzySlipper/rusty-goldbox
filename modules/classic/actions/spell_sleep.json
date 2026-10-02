@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "spell_sleep",
+  "name": "Sleep",
+  "cost": {
+    "action": 1
+  },
+  "target": "all_enemies",
+  "max_targets": "2d4",
+  "valid_target": "target.level <= 4 and not target.undead",
+  "prefer": "0 - target.level",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "asleep",
+      "rounds": "5 * self.level"
+    }
+  ]
+}

@@ -25,6 +25,7 @@ public static class ExpressionFunctions
         new("class_min", "class_min(x)", "The smallest of x worked out once for each class self has, reading that class as class.id and class.level: class_min(table(thac0, class.id, class.level)) is the best attack table of a multi-classed character.", 1, 1),
         new("class_max", "class_max(x)", "The largest of x worked out once for each class self has (class.id, class.level).", 1, 1),
         new("class_sum", "class_sum(x)", "The total of x worked out once for each class self has (class.id, class.level).", 1, 1),
+        new("spell_slots", "spell_slots(level)", "Spells per day of a spell level that self's classes give at their levels (their spell_slots), added over its classes: the maximum for a track of spell slots.", 1, 1),
         new("table", "table(id, key, ...)", "Looks up a table definition by its keys; gives the table's value type.", 2, int.MaxValue),
     ];
 

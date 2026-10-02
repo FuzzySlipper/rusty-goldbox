@@ -17,6 +17,7 @@ Brom: Dwarf Fighter 1 (0 xp, Fighter 0 of 1900)
   str_damage     0      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          20     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to brom.json.
   seed 11: 3d6: 5+1+5 = 11; 3d6: 6+3+2 = 11; 3d6: 6+4+5 = 15; 3d6: 2+3+3 = 8; 3d6: 3+6+4 = 13; 3d6: 1+1+5 = 7; 1d10: 5 = 5; 3d6: 6+2+4 = 12
@@ -43,6 +44,7 @@ Brom: Dwarf Fighter 3 (5000 xp, Fighter 5000 of 7750)
   str_damage     0      Strength damage adjustment
   str_to_hit     0      Strength bonus to hit
   thac0          18     Roll needed to hit armour class 0
+  undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to brom.json.
   seed 3: 1d10: 3 = 3; 1d10: 10 = 10

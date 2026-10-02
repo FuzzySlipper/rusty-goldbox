@@ -93,7 +93,17 @@ public static class EventTypes
         [new("text", new TextKind(), true, "The closing text.")],
         """{ "type": "event", "id": "victory", "kind": "end", "text": "The crypt is quiet at last." }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, End];
+    public static DefinitionType Rest { get; } = new(
+        "rest",
+        "The party rests: each character's named tracks return to their maximum (spell slots, power points, or hit points for a full night).",
+        [
+            new("text", new TextKind(), true, "What the party sees."),
+            new("tracks", new ListKind(new ReferenceKind("track")), true, "The tracks restored."),
+            Next,
+        ],
+        """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
+
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

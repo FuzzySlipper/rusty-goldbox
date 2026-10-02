@@ -4,5 +4,5 @@
   "kind": "set",
   "variable": "guards_defeated",
   "value": "true",
-  "next": "quiet"
+  "next": "catch_breath"
 }

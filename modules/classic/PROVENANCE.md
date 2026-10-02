@@ -63,8 +63,13 @@ small:
   doesn't state a minimum.
 - Surprise costs the surprised side its first whole round, rather than one
   or two segments.
-- Combat has no positions or movement yet, fighters make one attack per round
-  at every level, and spells aren't cast in combat (their effects are defined
-  but spell slots aren't spent yet). Sleep has no effect defined.
+- Combat has no positions or movement, and fighters make one attack per round
+  at every level.
+- Spells cast in combat spend a slot of their level, from tracks whose
+  maximum adds the slots of every class the character has; a character
+  knows a list of spells rather than memorising them each day, and the
+  sample crypt's rest restores slots. Sleep affects up to 2d4 living
+  creatures of 4 hit dice or fewer, weakest first, rather than the source's
+  count by hit dice band; magic missile fires all its missiles at one target.
 - Monsters' hit points are their hit dice rolled as written, with no minimum.
 - Armour movement limits, thief skills and turning undead are not modelled yet.
