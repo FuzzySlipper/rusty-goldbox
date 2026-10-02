@@ -323,9 +323,10 @@ public static class DefinitionTypes
             new("monster", new ReferenceKind("monster"), false, "The monster it draws."),
             new("class", new ReferenceKind("class"), false, "The class it draws (for every character of the class)."),
             new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite asset."),
+            new("icon", new ReferenceKind("asset", "icon"), false, "A small picture for lists, such as the combat roster."),
         ],
         """
-        { "type": "figure", "id": "skeleton", "monster": "classic:skeleton", "sprite": "placeholder-art:skeleton" }
+        { "type": "figure", "id": "skeleton", "monster": "classic:skeleton", "sprite": "placeholder-art:skeleton", "icon": "placeholder-art:skull" }
         """);
 
     public static DefinitionType Variable { get; } = new(

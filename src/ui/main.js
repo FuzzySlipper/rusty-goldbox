@@ -24,6 +24,7 @@ export function mountProductUi(root, context) {
   const name = element('input', { value: 'Ada', size: '10', 'aria-label': 'Character name' });
   const race = element('select', { 'aria-label': 'Race' });
   const characterClass = element('select', { 'aria-label': 'Class' });
+  const portrait = element('select', { 'aria-label': 'Portrait' });
   const command = element('input', { size: '14', placeholder: 'command', 'aria-label': 'Play command' });
   command.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && command.value.trim().length > 0) {
@@ -68,12 +69,14 @@ export function mountProductUi(root, context) {
   const renderParty = (view) => {
     fill(race, view.races ?? []);
     fill(characterClass, view.classes ?? []);
+    fill(portrait, [{ id: '', name: '(no portrait)' }, ...(view.portraits ?? [])]);
     const members = element('ol', { style: 'padding-left:20px' });
     (view.party ?? []).forEach((member, index) => {
       const item = element('select', { 'aria-label': `Item for ${member.name}` });
       fill(item, view.items ?? []);
       members.append(element('li', {},
-        element('div', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}`),
+        // Pictures need an Engine image path (rusty-engine #9129); until then the portrait is named.
+        element('div', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}${member.portrait ? `, portrait ${member.portrait}` : ''}`),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
         row(item,
@@ -84,7 +87,8 @@ export function mountProductUi(root, context) {
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`), members,
       row(name, race, characterClass,
-        button('Roll', () => send({ action: 'roll', name: name.value, race: race.value, class: characterClass.value }))),
+        portrait,
+        button('Roll', () => send({ action: 'roll', name: name.value, race: race.value, class: characterClass.value, ...(portrait.value ? { portrait: portrait.value } : {}) }))),
       row(button('Begin', () => send({ action: 'begin' })), button('Back', () => send({ action: 'quit' }))));
   };
 

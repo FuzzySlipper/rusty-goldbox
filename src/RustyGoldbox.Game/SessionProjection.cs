@@ -45,6 +45,9 @@ internal static class SessionProjection
             projection["races"] = Choices(rules, DefinitionTypes.Race);
             projection["classes"] = Choices(rules, DefinitionTypes.Class);
             projection["items"] = Choices(rules, DefinitionTypes.Item);
+            projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
+                .Where(asset => asset.Json.GetProperty("kind").GetString() == "portrait")
+                .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id }).ToArray());
             projection["party"] = new JsonArray(session.Party.Select(character => (JsonNode)Member(rules, character)).ToArray());
         }
 
@@ -65,6 +68,7 @@ internal static class SessionProjection
                     ["max"] = member.Max is decimal max ? (double)max : null,
                     ["defeated"] = fight.Defeated.Contains(member.Name),
                     ["acting"] = fight.Acting.Who == member.Name,
+                    ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
                 }).ToArray()),
                 ["log"] = Strings(fight.Lines.TakeLast(14)),
             };
@@ -194,6 +198,7 @@ internal static class SessionProjection
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
             ["equipment"] = new JsonArray(character.Equipment.Select(item => (JsonNode)new JsonObject { ["id"] = item.QualifiedId, ["name"] = item.Name }).ToArray()),
             ["gold"] = (double)character.Gold,
+            ["portrait"] = character.Portrait?.QualifiedId,
         };
     }
 

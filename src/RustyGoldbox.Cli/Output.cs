@@ -440,6 +440,10 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
 
         writer.WriteLine($"  gold {character.Gold}");
+        if (character.Portrait is Core.Definitions.Definition portrait)
+        {
+            writer.WriteLine($"  portrait {portrait.QualifiedId}");
+        }
         IReadOnlyList<int> slots = character.SpellSlots();
         if (slots.Count > 0)
         {

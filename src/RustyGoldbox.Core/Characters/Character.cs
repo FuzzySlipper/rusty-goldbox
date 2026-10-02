@@ -40,6 +40,9 @@ public sealed class Character
 
     public List<Definition> Conditions { get; } = [];
 
+    /// <summary>The portrait asset the character is shown with, when one was chosen.</summary>
+    public Definition? Portrait { get; set; }
+
     /// <summary>The character as a creature expressions can read.</summary>
     public Creature ToCreature(string label = "self")
     {

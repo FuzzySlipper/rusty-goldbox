@@ -36,6 +36,9 @@ public sealed class RuleSet
     /// <summary>The sprite asset each monster or class is drawn with, from figure definitions.</summary>
     public Dictionary<Definition, Definition> Figures { get; } = [];
 
+    /// <summary>The icon asset each monster or class is listed with, from figure definitions that give one.</summary>
+    public Dictionary<Definition, Definition> Icons { get; } = [];
+
     /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
     public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
 

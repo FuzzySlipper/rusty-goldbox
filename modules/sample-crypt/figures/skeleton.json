@@ -2,5 +2,6 @@
   "type": "figure",
   "id": "skeleton",
   "monster": "classic:skeleton",
-  "sprite": "placeholder-art:skeleton"
+  "sprite": "placeholder-art:skeleton",
+  "icon": "placeholder-art:skull"
 }

@@ -128,7 +128,8 @@ create a different loader.
   the pixel it stands on, its height in cells and optional named animations
   (frames and fps, looping or once). A `figure` definition (in a campaign or
   extension, since rulesets carry no art) says which sprite draws a monster or
-  a class.
+  a class, and optionally the icon that lists it. A character may have a
+  `portrait` asset, chosen at creation and kept in its file and saves.
 
 ### Rules as data
 

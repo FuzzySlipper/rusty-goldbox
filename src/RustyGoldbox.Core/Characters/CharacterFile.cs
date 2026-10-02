@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "class", "level", "experience", "attributes", "tracks", "level_gains", "gold", "equipment", "conditions",
+        "format", "name", "modules", "race", "class", "level", "experience", "attributes", "tracks", "level_gains", "gold", "equipment", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -94,6 +94,11 @@ public static class CharacterFile
             writer.WriteNumber("gold", character.Gold);
             WriteReferences(writer, "equipment", character.Equipment);
             WriteReferences(writer, "conditions", character.Conditions);
+            if (character.Portrait is Definition portrait)
+            {
+                writer.WriteString("portrait", portrait.QualifiedId);
+            }
+
             writer.WriteEndObject();
         }
     }
@@ -188,6 +193,16 @@ public static class CharacterFile
             }
             ReadList(root, "equipment", DefinitionTypes.Item, character.Equipment);
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
+            if (root.TryGetProperty("portrait", out JsonElement portrait) && Resolve(portrait, "$.portrait", DefinitionTypes.Asset) is Definition asset)
+            {
+                if (CharacterRules.PortraitProblem(asset) is string problem)
+                {
+                    Error("$.portrait", problem);
+                }
+
+                character.Portrait = asset;
+            }
+
             return problems.Count > _before ? null : character;
         }
 

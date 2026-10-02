@@ -193,4 +193,32 @@ public sealed class CharacterTests
             return work(new DiceRoller(engine.Random, stream));
         });
     }
+
+    [Fact]
+    public void ACharacterCanHaveAPortraitFromTheModuleSet()
+    {
+        using TempModules scratch = new();
+        string crypt = Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt");
+        (int code, string output) = CampaignTests.Run(scratch, "character", "new", "--module", crypt, "--class", "fighter", "--race", "human", "--name", "Ada",
+            "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--portrait", "placeholder-art:fighter_portrait", "--out", "ada.json");
+        Assert.True(code == 0, output);
+        Assert.Contains("portrait placeholder-art:fighter_portrait", output, StringComparison.Ordinal);
+        Assert.Contains("\"portrait\": \"placeholder-art:fighter_portrait\"", File.ReadAllText(Path.Combine(scratch.Root, "ada.json")), StringComparison.Ordinal);
+
+        // Saves carry it with the party.
+        File.WriteAllText(Path.Combine(scratch.Root, "look.script"), "look\n");
+        Assert.Equal(0, CampaignTests.Run(scratch, "play", "--campaign", crypt, "--party", "ada.json", "--script", "look.script", "--save", "game.json").Code);
+        Assert.Contains("placeholder-art:fighter_portrait", File.ReadAllText(Path.Combine(scratch.Root, "game.json")), StringComparison.Ordinal);
+
+        (int refused, string message) = CampaignTests.Run(scratch, "character", "new", "--module", crypt, "--class", "fighter", "--race", "human",
+            "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--portrait", "placeholder-art:hall");
+        Assert.Equal(1, refused);
+        Assert.Contains("placeholder-art:hall is a backdrop asset, but a character's portrait must be a portrait.", message, StringComparison.Ordinal);
+
+        string edited = File.ReadAllText(Path.Combine(scratch.Root, "ada.json")).Replace("fighter_portrait", "skull", StringComparison.Ordinal);
+        File.WriteAllText(Path.Combine(scratch.Root, "ada.json"), edited);
+        (int unread, string why) = CampaignTests.Run(scratch, "character", "show", "ada.json", "--module", crypt);
+        Assert.Equal(1, unread);
+        Assert.Contains("$.portrait", why, StringComparison.Ordinal);
+    }
 }

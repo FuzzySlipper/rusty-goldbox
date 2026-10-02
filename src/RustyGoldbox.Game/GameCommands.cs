@@ -118,7 +118,8 @@ internal static class GameCommands
                     session.Open(Text(payload, "campaign"), seed);
                     break;
                 case "roll":
-                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"));
+                    string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
+                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"), portrait);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));

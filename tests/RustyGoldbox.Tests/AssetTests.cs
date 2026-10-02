@@ -165,6 +165,12 @@ public sealed class AssetTests
         ModuleSet set = ModuleLoader.Load(house, search);
         Assert.Empty(set.Diagnostics);
         Assert.Equal("art:rat", set.Rules!.Figures.Single().Value.QualifiedId);
+        Assert.Empty(set.Rules.Icons);
+
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "i.png"));
+        modules.Write("art/badge.json", """{ "type": "asset", "id": "badge", "kind": "icon", "file": "i.png" }""");
+        modules.Write("house/rat.json", """{ "type": "figure", "id": "rat", "monster": "classic:giant_rat", "sprite": "art:rat", "icon": "art:badge" }""");
+        Assert.Equal("art:badge", ModuleLoader.Load(house, search).Rules!.Icons.Single().Value.QualifiedId);
 
         modules.Write("house/again.json", """{ "type": "figure", "id": "again", "monster": "classic:giant_rat", "sprite": "art:rat" }""");
         modules.Write("house/nothing.json", """{ "type": "figure", "id": "nothing", "sprite": "art:rat" }""");

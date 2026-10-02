@@ -35,12 +35,13 @@ internal static class GoldboxCli
               "conditions": [ids], "equipment": [ids]}. Dice use Engine Random; the seed defaults to 1.
 
           goldbox character new --module <path> --class <id> --race <id> [--name <name>]
-                [--attributes <id>=<n>,...] [--priority <id>,...] [--seed <n>] [--out <file>]
+                [--attributes <id>=<n>,...] [--priority <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
               Rolls (or takes) attributes, applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
               track, and rolls gold. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
-              scores must be within each attribute's range.
+              scores must be within each attribute's range. --portrait gives the character a
+              portrait asset from the module set.
           goldbox character level <file> --module <path> --xp <n> [--seed <n>]
               Adds experience, gains every level reached and saves the file.
           goldbox character show <file> --module <path>

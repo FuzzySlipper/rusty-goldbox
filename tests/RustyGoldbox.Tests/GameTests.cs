@@ -71,6 +71,29 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void ARollCanChooseAPortrait()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            Assert.Contains("placeholder-art:cleric_portrait", SessionProjection.Build(session)["portraits"]!.ToJsonString(), StringComparison.Ordinal);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Brom", "race": "classic:human", "class": "classic:cleric", "portrait": "placeholder-art:cleric_portrait" }""");
+            }
+
+            Assert.Equal("placeholder-art:cleric_portrait", session.Party.Single().Portrait!.QualifiedId);
+            Assert.Equal("placeholder-art:cleric_portrait", SessionProjection.Build(session)["party"]![0]!["portrait"]!.GetValue<string>());
+
+            Run(session, engine, """{ "action": "roll", "name": "Cid", "race": "classic:human", "class": "classic:fighter", "portrait": "placeholder-art:crypt" }""");
+            Assert.Single(session.Party);
+            Assert.Contains(session.Notes, note => note.Contains("must be a portrait", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
     public void KeyIntentsActOnPressesOnly()
     {
         Assert.True(GameCommands.IsPress(Digital(InputProvenance.DirectUi, InputEdge.None, 1)));

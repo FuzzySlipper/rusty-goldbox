@@ -643,6 +643,10 @@ public sealed class RuleSetBuilder
         }
 
         _rules.Figures[subject] = sprite;
+        if (_rules.References.TryGetValue((figure, "$.icon"), out Definition? icon))
+        {
+            _rules.Icons[subject] = icon;
+        }
     }
 
     private static bool Inside(int value, int size) => value >= 0 && value < size;

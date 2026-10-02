@@ -93,6 +93,43 @@ public static class CharacterRules
         return problems.Count > 0 ? null : character;
     }
 
+    /// <summary>Gives a character a portrait asset; problems name the reference.</summary>
+    public static bool SetPortrait(RuleSet rules, Character character, string reference, List<ModuleDiagnostic> problems)
+    {
+        if (FindPortrait(rules, reference, problems) is not Definition portrait)
+        {
+            return false;
+        }
+
+        character.Portrait = portrait;
+        return true;
+    }
+
+    /// <summary>The portrait asset <paramref name="reference"/> names, or null with the problem.</summary>
+    public static Definition? FindPortrait(RuleSet rules, string reference, List<ModuleDiagnostic> problems)
+    {
+        if (rules.Find(DefinitionTypes.Asset, reference, out string? missing) is not Definition asset)
+        {
+            problems.Add(new ModuleDiagnostic("character.portrait", missing!));
+            return null;
+        }
+
+        if (PortraitProblem(asset) is string problem)
+        {
+            problems.Add(new ModuleDiagnostic("character.portrait", problem));
+            return null;
+        }
+
+        return asset;
+    }
+
+    /// <summary>Why an asset can't be a portrait, or null when it can.</summary>
+    public static string? PortraitProblem(Definition asset)
+    {
+        string kind = asset.Json.GetProperty("kind").GetString()!;
+        return kind == "portrait" ? null : $"{asset.QualifiedId} is a {kind} asset, but a character's portrait must be a portrait.";
+    }
+
     /// <summary>
     /// Adds experience and gains every level it reaches, rolling hit points
     /// for each. On a problem it returns null and the character may be partly

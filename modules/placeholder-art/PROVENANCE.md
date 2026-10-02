@@ -13,3 +13,5 @@ admits.
 | `skeleton` | `sprites/skeleton.png` | A sprite sheet of 32 x 48 frames facing right: a four-frame idle sway and a three-frame sword attack |
 | `fighter`, `cleric`, `magic_user`, `thief` | `sprites/<id>.png` | Hero sprite sheets of 32 x 48 frames facing right: a two-frame idle and a two-frame attack |
 | `bones` | `sprites/bones.png` | A single 32 x 16 frame: a skull and scattered bones, for lying on a floor |
+| `fighter_portrait`, `cleric_portrait`, `magic_user_portrait`, `thief_portrait` | `portraits/<class>.png` | 48 x 48 head-and-shoulders portraits matching the hero sprites |
+| `skull` | `icons/skull.png` | A 24 x 24 skull icon |

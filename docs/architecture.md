@@ -40,7 +40,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
 | `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, and the creature view expressions read |
-| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, gold) and gaining levels, from character-creation, race and class data |
+| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, gold), giving them a portrait asset, and gaining levels, from character-creation, race and class data |
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
@@ -237,6 +237,12 @@ class has a `figure` for, under a camera straight on and 30 degrees down;
 figures are spherical billboards so they stay upright under that camera.
 Continue (a button, Enter or Space) skips to the end, then returns to play.
 Play commands wait until then.
+
+Portraits and icons reach the projection as asset IDs (a party member's
+`portrait`, a combatant's `icon`) but aren't drawn yet: the DOM can't show
+bundle images, and viewport sprites draw in every composition view, so a
+roster strip beside the view isn't possible on the pinned Engine
+(rusty-engine #9129).
 
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,

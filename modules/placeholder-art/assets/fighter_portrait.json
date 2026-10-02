@@ -1,0 +1,6 @@
+{
+  "type": "asset",
+  "id": "fighter_portrait",
+  "kind": "portrait",
+  "file": "portraits/fighter.png"
+}
