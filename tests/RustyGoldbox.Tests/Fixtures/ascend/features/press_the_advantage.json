@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "press_the_advantage",
+  "name": "Press the advantage",
+  "kind": "feat",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "2",
+      "against": "target.condition.shaken"
+    }
+  ]
+}

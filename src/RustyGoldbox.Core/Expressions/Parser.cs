@@ -119,7 +119,7 @@ public static class Parser
         private Expr ParseMultiplicative()
         {
             Expr left = ParseUnary();
-            while (Peek() is { Kind: TokenKind.Operator, Text: "*" or "/" })
+            while (Peek() is { Kind: TokenKind.Operator, Text: "*" or "/" or "%" })
             {
                 Token op = Next();
                 left = new BinaryExpr(op.Column, op.Text, left, ParseUnary());
@@ -203,6 +203,19 @@ public static class Parser
                     }
 
                     name = variable;
+                }
+
+                // A creature's conditions: self.condition.<id>, read as PathExpr(root, "condition", id).
+                if (token.Text is "self" or "target" && name.Text == "condition" && Peek() is { Kind: TokenKind.Operator, Text: "." })
+                {
+                    _position++;
+                    Token condition = Next();
+                    if (condition.Kind != TokenKind.Name || Keywords.Contains(condition.Text))
+                    {
+                        throw new ExpressionException($"Expected a condition ID after '{token.Text}.condition.'.", condition.Column);
+                    }
+
+                    return new PathExpr(token.Column, token.Text, name.Text, condition.Text);
                 }
 
                 if (Peek() is { Kind: TokenKind.Operator, Text: "." } after)

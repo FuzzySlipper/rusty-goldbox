@@ -147,7 +147,7 @@ public static class DefinitionTypes
             [
                 GrantKind,
                 GrantCount,
-                new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, read as the character is with the new level, for example \"self.level == 1 or floor(self.level / 3) * 3 == self.level\"."),
+                new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, read as the character is with the new level, for example \"self.level == 1 or self.level % 3 == 0\"."),
             ])), false, "Features characters choose as their total level rises, whatever the class: feats, ability increases."),
         ],
         """
@@ -157,7 +157,7 @@ public static class DefinitionTypes
           "name": "Character levels",
           "experience": "character",
           "levels": [0, 1000, 3000, 6000, 10000],
-          "grants": [ { "kind": "feat", "when": "self.level == 1 or floor(self.level / 3) * 3 == self.level" } ]
+          "grants": [ { "kind": "feat", "when": "self.level == 1 or self.level % 3 == 0" } ]
         }
         """);
 

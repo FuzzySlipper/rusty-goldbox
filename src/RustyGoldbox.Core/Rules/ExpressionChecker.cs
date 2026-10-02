@@ -57,11 +57,12 @@ internal sealed class ExpressionChecker(
             "check" => Roots.Check,
             "campaign" => Roots.Campaign,
             "class" => Roots.Class,
+            "outer" => Roots.Outer,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter>, check.<result>, campaign.var.<name> and class.level.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name> and class.level.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -108,14 +109,29 @@ internal sealed class ExpressionChecker(
             return ExprType.Number;
         }
 
-        if (root == Roots.Check)
+        if (root is Roots.Check or Roots.Outer)
         {
             if (!RuleSet.CheckFields.Contains(path.Name))
             {
-                throw new ExpressionException($"'check.{path.Name}' is not a check result. Results: {string.Join(", ", RuleSet.CheckFields)}.", path.Column);
+                throw new ExpressionException($"'{path.Root}.{path.Name}' is not a check result. Results: {string.Join(", ", RuleSet.CheckFields)}.", path.Column);
             }
 
             return ExprType.Number;
+        }
+
+        if (path.Key is string conditionId)
+        {
+            if (rules.Find(DefinitionTypes.Condition, conditionId, out string? problem) is not Definition condition)
+            {
+                throw new ExpressionException($"{path.Root}.condition.{conditionId}: {problem}", path.Column);
+            }
+
+            if (!rules.VisibleModules[module].Contains(condition.Module))
+            {
+                throw new ExpressionException($"Condition '{conditionId}' belongs to module '{condition.Module}', which '{module}' does not require. Add it to requires.", path.Column);
+            }
+
+            return ExprType.Boolean;
         }
 
         if (RuleSet.BuiltInStats.TryGetValue(path.Name, out ExprType builtIn))
@@ -164,7 +180,7 @@ internal sealed class ExpressionChecker(
         ExprType right = Check(binary.Right);
         switch (binary.Operator)
         {
-            case "+" or "-" or "*" or "/":
+            case "+" or "-" or "*" or "/" or "%":
                 Expect(left, ExprType.Number, binary.Column, $"'{binary.Operator}'");
                 Expect(right, ExprType.Number, binary.Column, $"'{binary.Operator}'");
                 return ExprType.Number;

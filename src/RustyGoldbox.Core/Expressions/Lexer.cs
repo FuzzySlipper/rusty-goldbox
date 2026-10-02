@@ -17,7 +17,7 @@ internal readonly record struct Token(TokenKind Kind, string Text, int Column);
 /// <summary>Splits expression text into tokens.</summary>
 internal static class Lexer
 {
-    private static readonly string[] Operators = ["==", "!=", "<=", ">=", "<", ">", "+", "-", "*", "/", "(", ")", ",", "."];
+    private static readonly string[] Operators = ["==", "!=", "<=", ">=", "<", ">", "+", "-", "*", "/", "%", "(", ")", ",", "."];
 
     public static List<Token> Tokenize(string text)
     {

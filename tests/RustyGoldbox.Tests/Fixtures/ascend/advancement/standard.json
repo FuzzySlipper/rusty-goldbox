@@ -16,11 +16,11 @@
   "grants": [
     {
       "kind": "feat",
-      "when": "self.level == 1 or floor(self.level / 3) * 3 == self.level"
+      "when": "self.level == 1 or self.level % 3 == 0"
     },
     {
       "kind": "ability increase",
-      "when": "floor(self.level / 4) * 4 == self.level"
+      "when": "self.level % 4 == 0"
     }
   ]
 }

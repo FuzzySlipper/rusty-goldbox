@@ -12,8 +12,11 @@ public sealed record TextLiteral(int Column, string Value) : Expr(Column);
 /// <summary>A dice literal such as <c>2d6</c> or <c>d20</c>.</summary>
 public sealed record DiceLiteral(int Column, int Count, int Sides) : Expr(Column);
 
-/// <summary>A read of the evaluation context: <c>self.str</c>, <c>target.ac</c>.</summary>
-public sealed record PathExpr(int Column, string Root, string Name) : Expr(Column);
+/// <summary>
+/// A read of the evaluation context: <c>self.str</c>, <c>target.ac</c>, or with
+/// a <see cref="Key"/> a member of a collection, <c>self.condition.shaken</c>.
+/// </summary>
+public sealed record PathExpr(int Column, string Root, string Name, string? Key = null) : Expr(Column);
 
 /// <summary>A bare or module-qualified name; only valid where a definition is expected, such as a table.</summary>
 public sealed record NameExpr(int Column, string Name) : Expr(Column);

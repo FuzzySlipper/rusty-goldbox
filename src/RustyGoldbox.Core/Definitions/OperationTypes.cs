@@ -61,7 +61,7 @@ public static class OperationTypes
         [
             new("check", new ReferenceKind("check"), true, "The check to make."),
             new("by", new EnumKind(["target", "self"]), false, "Who rolls it: the action's target (the default) or the creature acting; the other one is the check's target."),
-            new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(ActionRoots | Roots.Check))), true, "Operations for each outcome tier: success, failure or one of the check's tiers."),
+            new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(ActionRoots | Roots.Check))), true, "Operations for each outcome tier: success, failure or one of the check's tiers. They read this check as check, and when this check is made in another check's outcomes, that one as outer."),
         ],
         """{ "op": "check", "check": "parry", "outcomes": { "failure": [ { "op": "damage", "amount": "use.damage" } ] } }""");
 

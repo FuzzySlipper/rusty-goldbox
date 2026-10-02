@@ -21,6 +21,9 @@ public enum Roots
 
     /// <summary>class.level: the creature's level in the class a modifier belongs to.</summary>
     Class = 32,
+
+    /// <summary>outer.roll, outer.total, outer.target, outer.margin: the check a nested check was made during.</summary>
+    Outer = 64,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -91,6 +94,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
             roots.Add("class.level");
         }
 
+        if (Roots.HasFlag(Roots.Outer))
+        {
+            roots.Add("outer");
+        }
+
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);
         return $"expression ({type}; {reads})";
     }
@@ -146,7 +154,7 @@ public sealed record ModifierKind(Roots Roots = Roots.Self) : FieldKind
     public override string Describe()
     {
         string reads = Roots.HasFlag(Roots.Class) ? "self, class.level" : "self";
-        return $"modifier {{ \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read {reads}) }}";
+        return $"modifier {{ \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read {reads}), \"against\"?: for a check, a boolean that may also read target; the modifier applies only when it holds }}";
     }
 }
 

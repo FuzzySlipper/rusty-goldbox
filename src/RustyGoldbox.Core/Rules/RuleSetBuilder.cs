@@ -351,7 +351,8 @@ public sealed class RuleSetBuilder
                 }
                 else if (_rules.References.TryGetValue((definition, $"{path}.check"), out Definition? check))
                 {
-                    list.Add(new Modifier(null, check, value!, path));
+                    _rules.TryExpression(definition, $"{path}.against", out CompiledExpression? against);
+                    list.Add(new Modifier(null, check, value!, path, against));
                 }
             }
 

@@ -24,7 +24,7 @@ Saved to kara.json.
 
 $ goldbox character level kara.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --xp 3500 --seed 8
 error[character.feature] kara.json
-  Warrior level 2 grants 1 feat for Kara, so choose one with --feature. Open to the character: ascend:great_fortitude, ascend:improved_initiative, ascend:lightning_reflexes, ascend:second_wind.
+  Warrior level 2 grants 1 feat for Kara, so choose one with --feature. Open to the character: ascend:great_fortitude, ascend:improved_initiative, ascend:lightning_reflexes, ascend:press_the_advantage, ascend:second_wind.
 1 error.
 [exit 1]
 

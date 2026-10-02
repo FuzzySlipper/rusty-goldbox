@@ -466,7 +466,7 @@ public sealed class CombatRunner
         CheckResult result = MakeCheck(check, roller, other);
         if (operation.GetProperty("outcomes").TryGetProperty(result.Tier, out JsonElement operations))
         {
-            RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result }, actor, target);
+            RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target);
         }
     }
 

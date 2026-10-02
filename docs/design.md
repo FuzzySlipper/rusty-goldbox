@@ -137,10 +137,11 @@ A ruleset has to express both AD&D-style descending AC/THAC0 and 3.5e-style
 ascending AC and bonus stacking without new code. A ruleset is therefore data
 plus a small **expression language**:
 
-- arithmetic, comparisons, boolean logic, `if`/`then`/`else`, `min`/`max`/
-  `floor`, and dice (`2d6+1`, `1d20`);
+- arithmetic (including `%` remainder), comparisons, boolean logic,
+  `if`/`then`/`else`, `min`/`max`/`floor`, and dice (`2d6+1`, `1d20`);
 - reads of the evaluation context (`self.str`, `target.ac`, `self.level`,
-  `campaign.var.gate_open`, and in a class's modifiers `class.level`) and
+  `target.condition.prone`, `campaign.var.gate_open`, in a class's modifiers
+  `class.level`, and in a check made during another check `outer.margin`) and
   table lookups (`table(thac0, self.class, self.level)`);
 - no assignment, loops, user-defined functions or side effects. Expressions
   are type-checked when a module loads, so an unknown stat or table fails
@@ -155,7 +156,9 @@ and starting value, and is read as `self.<id>` and `self.max_<id>`. No pool is
 built in; a ruleset declares its own, and one may be built from class level
 gains. Stat IDs form one namespace across the module
 set. **Modifiers** from races, classes, features, conditions and equipped items
-add to a stat or to a check's roll. A **check** compares a roll, plus its modifiers,
+add to a stat or to a check's roll; a check modifier with `against` applies only
+when its expression, which may read the target, holds (+2 against a shaken
+foe). A **check** compares a roll, plus its modifiers,
 with a target. A **monster** names the class and level whose tables it uses,
 and its `stats` replace derived values. Attributes may declare a `default` for
 creatures that have none.

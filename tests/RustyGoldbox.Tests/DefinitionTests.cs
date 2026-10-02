@@ -220,5 +220,22 @@ public sealed class DefinitionTests
         Assert.Contains("Feature kinds: feat.", Message(set, "grant.kind"), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AgainstReadsTheTargetOfACheckModifierOnly()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/attack.json", """{ "type": "check", "id": "attack", "name": "Attack", "roll": "1d20", "target": "10", "succeeds": "at-least" }""");
+        modules.Write("rules/bold.json", """
+            { "type": "condition", "id": "bold", "name": "Bold", "modifiers": [
+              { "check": "attack", "value": "2", "against": "target.condition.ready" },
+              { "stat": "hit", "value": "1", "against": "true" } ] }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Equal(("definition.field-value", "$.modifiers[1].against"), Assert.Single(set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!))));
+    }
+
     private static string Message(ModuleSet set, string rule) => set.Diagnostics.First(diagnostic => diagnostic.Rule == rule).Message;
 }

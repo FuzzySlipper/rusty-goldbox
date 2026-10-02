@@ -28,6 +28,12 @@
               "op": "damage",
               "amount": "use.damage + self.damage_bonus + 3"
             }
+          ],
+          "success": [
+            {
+              "op": "damage",
+              "amount": "floor(max(0, outer.margin - check.margin) / 10)"
+            }
           ]
         }
       }

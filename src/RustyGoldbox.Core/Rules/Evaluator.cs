@@ -14,7 +14,8 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 /// <summary>
 /// What an expression can read: the creatures, the parameters of the action
 /// being used, the check being resolved, and for a class's modifier the
-/// creature's level in that class.
+/// creature's level in that class. While a nested check resolves,
+/// <see cref="Outer"/> is the check it was made during.
 /// </summary>
 public sealed record Scope(
     Creature? Self,
@@ -22,7 +23,8 @@ public sealed record Scope(
     IReadOnlyDictionary<string, CompiledExpression>? Use = null,
     CheckResult? Check = null,
     IReadOnlyDictionary<string, Value>? Variables = null,
-    int? ClassLevel = null);
+    int? ClassLevel = null,
+    CheckResult? Outer = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -108,7 +110,9 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         {
             foreach (Modifier entry in rules.ModifiersOf(source))
             {
-                if (entry.Check == check)
+                // A modifier with "against" applies only when its target matches.
+                if (entry.Check == check
+                    && (entry.Against is null || (target is not null && Evaluate(entry.Against, ModifierScope(self, source) with { Target = target }).Boolean)))
                 {
                     modifier = Add(modifier, Evaluate(entry.Value, ModifierScope(self, source)).Number, 1);
                 }
@@ -345,9 +349,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                     : throw new ExpressionException("class.level has no value outside a class's modifiers.", path.Column);
             }
 
-            if (path.Root == "check")
+            if (path.Root is "check" or "outer")
             {
-                CheckResult check = scope.Check ?? throw new ExpressionException($"check.{path.Name} has no value outside a check.", path.Column);
+                CheckResult check = (path.Root == "check" ? scope.Check : scope.Outer)
+                    ?? throw new ExpressionException(path.Root == "check"
+                        ? $"check.{path.Name} has no value outside a check."
+                        : $"outer.{path.Name} has no value here: it reads the check a nested check was made during, and there is none.", path.Column);
                 return Value.Of(path.Name switch
                 {
                     "roll" => check.Roll,
@@ -361,6 +368,11 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             if (creature is null)
             {
                 throw new ExpressionException($"'{path.Root}.{path.Name}' needs a {path.Root} creature, but none was given.", path.Column);
+            }
+
+            if (path.Key is string condition)
+            {
+                return Value.Of(creature.Conditions.Any(held => held.Id == condition));
             }
 
             try
@@ -402,6 +414,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                     }
 
                     return Value.Of(Arithmetic(() => left.Number / right.Number, binary.Column));
+                case "%":
+                    if (right.Number == 0)
+                    {
+                        throw new ExpressionException("Remainder of division by zero.", binary.Column);
+                    }
+
+                    return Value.Of(left.Number % right.Number);
                 case "<":
                     return Value.Of(left.Number < right.Number);
                 case "<=":

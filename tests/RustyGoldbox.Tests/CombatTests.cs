@@ -36,7 +36,7 @@ public sealed class CombatTests
     public void AscendingArmourClassFightUsesCriticalsAndTwoBudgets()
     {
         using TempModules scratch = new();
-        WriteCharacter(scratch, Fixture("ascend"), "kara.json", new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 10)), Features: ["iron_will", "great_fortitude"]), "longsword");
+        WriteCharacter(scratch, Fixture("ascend"), "kara.json", new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 10)), Features: ["iron_will", "press_the_advantage"]), "longsword");
         WriteCharacter(scratch, Fixture("ascend"), "ilse.json", new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 12), ("wit", 16)), Features: ["lightning_reflexes"]));
 
         // Ilse has no weapon, so she hexes: the brute saves against her difficulty class.
@@ -86,6 +86,8 @@ public sealed class CombatTests
 
         Golden.Verify("percentile-combat.txt", CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", Fixture("percentile"), "--party", "sten.json", "--encounter", "wolves", "--seed", "13"],
+            // A parry that succeeds by less than the attack lets 1 point through per 10 of the difference (round 6).
+            ["sim", "combat", "--module", Fixture("percentile"), "--party", "sten.json", "--encounter", "wolves", "--seed", "2"],
             ["sim", "combat", "--module", Fixture("percentile"), "--party", "sten.json", "--encounter", "wolves", "--seed", "13", "--runs", "100", "--json"]));
     }
 

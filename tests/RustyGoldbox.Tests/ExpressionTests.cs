@@ -23,6 +23,8 @@ public sealed class ExpressionTests
     [InlineData("self.hit + self.str", "18")]
     [InlineData("self.strong and self.class == 'warrior'", "true")]
     [InlineData("target.hit", "0")]
+    [InlineData("7 % 3 + 9 % 3", "1")]
+    [InlineData("self.condition.ready and not target.condition.ready", "true")]
     public void Evaluates(string text, string expected)
     {
         using TempModules modules = new();
@@ -56,6 +58,8 @@ public sealed class ExpressionTests
     [InlineData("if 1 then 2 else 3", "condition after 'if' needs a boolean")]
     [InlineData("if true then 1 else 'a'", "same type")]
     [InlineData("self.nope", "'nope' is not a stat")]
+    [InlineData("self.condition.nope", "There is no condition 'nope'")]
+    [InlineData("outer.margin", "'outer.margin' isn't available here")]
     [InlineData("target.str", "'target.str' isn't available here; this field is an expression (any type; may read self)")]
     [InlineData("table(nope, 1)", "no table 'nope' in module 'rules'")]
     [InlineData("table(bonus)", "has 1 key")]

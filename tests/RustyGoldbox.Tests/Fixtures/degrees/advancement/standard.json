@@ -13,7 +13,7 @@
   "grants": [
     {
       "kind": "ancestry feat",
-      "when": "self.level == 1 or floor((self.level - 1) / 4) * 4 == self.level - 1"
+      "when": "self.level % 4 == 1"
     }
   ]
 }

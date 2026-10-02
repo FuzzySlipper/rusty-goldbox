@@ -226,14 +226,19 @@ public static class DefinitionReader
             }
 
             // Operation fields read what their surroundings allow: without a target
-            // (a condition's each_turn) "to" can only be self; outside a check, no check.
+            // (a condition's each_turn) "to" can only be self; outside a check, no
+            // check; outside a nested check, no outer.
             List<Field> fields = [new("op", new TextKind(), true, "The operation.")];
             foreach (Field field in operation.Fields)
             {
                 fields.Add(field.Kind switch
                 {
                     ExpressionKind expression => field with { Kind = expression with { Roots = roots } },
-                    MapKind { Value: ListKind { Item: OperationKind } } map => field with { Kind = map with { Value = new ListKind(new OperationKind(roots | Roots.Check)) } },
+                    // A check made inside another check's outcomes can also read that one as outer.
+                    MapKind { Value: ListKind { Item: OperationKind } } map => field with
+                    {
+                        Kind = map with { Value = new ListKind(new OperationKind(roots | Roots.Check | (roots.HasFlag(Roots.Check) ? Roots.Outer : Roots.None))) },
+                    },
                     _ => field,
                 });
             }
@@ -356,9 +361,9 @@ public static class DefinitionReader
             bool hasCheck = value.TryGetProperty("check", out JsonElement check);
             foreach (JsonProperty property in value.EnumerateObject())
             {
-                if (property.Name is not ("stat" or "check" or "value"))
+                if (property.Name is not ("stat" or "check" or "value" or "against"))
                 {
-                    Error("definition.unknown-field", $"{path}.{property.Name}", $"'{property.Name}' is not a modifier field. Fields: stat or check, and value.");
+                    Error("definition.unknown-field", $"{path}.{property.Name}", $"'{property.Name}' is not a modifier field. Fields: stat or check, value, and for a check against.");
                 }
             }
 
@@ -373,6 +378,18 @@ public static class DefinitionReader
             else
             {
                 ReadValue(check, new ReferenceKind("check"), $"{path}.check");
+            }
+
+            if (value.TryGetProperty("against", out JsonElement against))
+            {
+                if (hasStat)
+                {
+                    Error("definition.field-value", $"{path}.against", "\"against\" reads the target of a check, so it only goes on a check modifier; a stat has no target.");
+                }
+                else
+                {
+                    ReadExpression(against, new ExpressionKind(ExprType.Boolean, kind.Roots | Roots.Target), $"{path}.against");
+                }
             }
 
             if (value.TryGetProperty("value", out JsonElement amount))

@@ -49,7 +49,7 @@ Round 2.
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Brute 1.
-  Kara rolls Attack: 3 + 4 + 2 modifiers = 9 against 13: failure.  [1d20: 3 = 3]
+  Kara rolls Attack: 3 + 4 + 4 modifiers = 11 against 13: failure.  [1d20: 3 = 3]
   Brute 2 uses Club on Kara.
   Brute 2 rolls Attack: 15 + 5 = 20 against 11: success.  [1d20: 15 = 15]
   Kara loses 10 hit points (2 left).  [1d8: 7 = 7]
