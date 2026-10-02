@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_proficiency_rank",
+  "name": "Spell rank (0 untrained to 4 legendary; classes raise it)",
+  "value": "0"
+}

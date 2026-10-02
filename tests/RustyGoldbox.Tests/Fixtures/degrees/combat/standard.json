@@ -1,0 +1,18 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Three actions",
+  "initiative": "1d20 + self.insight_mod",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": 3
+    }
+  ],
+  "track": "hit_points",
+  "defeated": "self.hit_points <= 0"
+}

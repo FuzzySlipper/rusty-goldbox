@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "reflex_proficiency_rank",
+  "name": "Reflex rank (0 untrained to 4 legendary; classes raise it)",
+  "value": "0"
+}

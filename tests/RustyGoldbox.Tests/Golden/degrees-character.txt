@@ -27,20 +27,30 @@ Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
   hit points 23/23
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat)
-  brawn          16     Brawn
-  finesse        12     Finesse
-  stamina        16     Stamina
-  intellect      10     Intellect
-  insight        16     Insight
-  presence       8      Presence
-  ac             14     Armour class
-  ancestry_hp    10     Ancestry hit points
-  brawn_mod      3      Brawn modifier
-  finesse_mod    1      Finesse modifier
-  insight_mod    3      Insight modifier
-  intellect_mod  0      Intellect modifier
-  presence_mod   -1     Presence modifier
-  stamina_mod    3      Stamina modifier
+  brawn                   16     Brawn
+  finesse                 12     Finesse
+  stamina                 16     Stamina
+  intellect               10     Intellect
+  insight                 16     Insight
+  presence                8      Presence
+  ac                      17     Armour class
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      3      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               3      Brawn modifier
+  finesse_mod             1      Finesse modifier
+  insight_mod             3      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  4      Reflex modifier
+  reflex_proficiency      3      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                13     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             3      Stamina modifier
+  weapon_proficiency      3      Weapon proficiency
+  weapon_proficiency_rank 1      Weapon rank (0 untrained to 4 legendary; classes raise it)
 Saved to tor.json.
   seed 1: no dice rolled
 [exit 0]
@@ -51,20 +61,30 @@ Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
   hit points 36/36
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat)
-  brawn          16     Brawn
-  finesse        12     Finesse
-  stamina        16     Stamina
-  intellect      10     Intellect
-  insight        16     Insight
-  presence       8      Presence
-  ac             14     Armour class
-  ancestry_hp    10     Ancestry hit points
-  brawn_mod      3      Brawn modifier
-  finesse_mod    1      Finesse modifier
-  insight_mod    3      Insight modifier
-  intellect_mod  0      Intellect modifier
-  presence_mod   -1     Presence modifier
-  stamina_mod    3      Stamina modifier
+  brawn                   16     Brawn
+  finesse                 12     Finesse
+  stamina                 16     Stamina
+  intellect               10     Intellect
+  insight                 16     Insight
+  presence                8      Presence
+  ac                      18     Armour class
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      4      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               3      Brawn modifier
+  finesse_mod             1      Finesse modifier
+  insight_mod             3      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  5      Reflex modifier
+  reflex_proficiency      4      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                13     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             3      Stamina modifier
+  weapon_proficiency      4      Weapon proficiency
+  weapon_proficiency_rank 1      Weapon rank (0 untrained to 4 legendary; classes raise it)
 Saved to tor.json.
   seed 2: no dice rolled
 [exit 0]
@@ -171,7 +191,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "ac",
       "name": "Armour class",
       "kind": "derived",
-      "value": 14,
+      "value": 18,
       "problem": null
     },
     {
@@ -179,6 +199,20 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "name": "Ancestry hit points",
       "kind": "derived",
       "value": 10,
+      "problem": null
+    },
+    {
+      "id": "armour_proficiency",
+      "name": "Armour proficiency",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "armour_proficiency_rank",
+      "name": "Armour rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 1,
       "problem": null
     },
     {
@@ -217,10 +251,66 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "problem": null
     },
     {
+      "id": "reflex",
+      "name": "Reflex modifier",
+      "kind": "derived",
+      "value": 5,
+      "problem": null
+    },
+    {
+      "id": "reflex_proficiency",
+      "name": "Reflex proficiency",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "reflex_proficiency_rank",
+      "name": "Reflex rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "spell_dc",
+      "name": "Spell difficulty class",
+      "kind": "derived",
+      "value": 13,
+      "problem": null
+    },
+    {
+      "id": "spell_proficiency",
+      "name": "Spell proficiency",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "spell_proficiency_rank",
+      "name": "Spell rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
       "id": "stamina_mod",
       "name": "Stamina modifier",
       "kind": "derived",
       "value": 3,
+      "problem": null
+    },
+    {
+      "id": "weapon_proficiency",
+      "name": "Weapon proficiency",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "weapon_proficiency_rank",
+      "name": "Weapon rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 1,
       "problem": null
     }
   ],

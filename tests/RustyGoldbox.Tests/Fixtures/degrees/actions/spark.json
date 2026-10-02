@@ -1,0 +1,38 @@
+{
+  "type": "action",
+  "id": "spark",
+  "name": "Spark",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "always": [
+    {
+      "op": "check",
+      "check": "reflex_save",
+      "outcomes": {
+        "success": [
+          {
+            "op": "damage",
+            "amount": "floor(use.damage / 2)"
+          }
+        ],
+        "failure": [
+          {
+            "op": "damage",
+            "amount": "use.damage"
+          }
+        ],
+        "critical_failure": [
+          {
+            "op": "damage",
+            "amount": "use.damage * 2"
+          }
+        ]
+      }
+    }
+  ]
+}

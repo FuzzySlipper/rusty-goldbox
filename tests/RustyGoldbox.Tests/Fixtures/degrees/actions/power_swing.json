@@ -1,0 +1,27 @@
+{
+  "type": "action",
+  "id": "power_swing",
+  "name": "Power swing",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "strike",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage + use.damage + self.brawn_mod"
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "damage",
+        "amount": "(use.damage + use.damage + self.brawn_mod) * 2"
+      }
+    ]
+  }
+}

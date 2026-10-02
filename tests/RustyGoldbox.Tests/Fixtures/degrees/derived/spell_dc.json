@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_dc",
+  "name": "Spell difficulty class",
+  "value": "10 + self.insight_mod + self.spell_proficiency"
+}

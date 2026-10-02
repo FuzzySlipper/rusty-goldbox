@@ -3,21 +3,21 @@ Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
   hit points 12/12
   gold 140
   features: Weapon focus (feat), Iron will (feat)
-  might          18     Might
-  grace          9      Grace
-  grit           14     Grit
-  wit            11     Wit
-  ac             9      Armour class (higher is better)
-  attack_bonus   1      Base attack bonus (each class adds its own)
-  fort_base      2      Base Fortitude save (each class adds its own)
-  grace_mod      -1     Grace modifier
-  grit_mod       2      Grit modifier
+  might            18     Might
+  grace            9      Grace
+  grit             14     Grit
+  wit              11     Wit
+  ac               9      Armour class (higher is better)
+  attack_bonus     1      Base attack bonus (each class adds its own)
+  fort_base        2      Base Fortitude save (each class adds its own)
+  grace_mod        -1     Grace modifier
+  grit_mod         2      Grit modifier
   initiative_bonus -1     Initiative bonus
-  might_mod      4      Might modifier
-  reflex_base    0      Base Reflex save (each class adds its own)
-  save_dc        10     Difficulty class of the creature's hexes
-  will_base      0      Base Will save (each class adds its own)
-  wit_mod        0      Wit modifier
+  might_mod        4      Might modifier
+  reflex_base      0      Base Reflex save (each class adds its own)
+  save_dc          10     Difficulty class of the creature's hexes
+  will_base        0      Base Will save (each class adds its own)
+  wit_mod          0      Wit modifier
 Saved to kara.json.
   seed 5: 4d6 keep 3: 4+6+1+1 = 11; 4d6 keep 3: 4+5+2+3 = 12; 4d6 keep 3: 2+1+4+5 = 11; 4d6 keep 3: 4+6+6+6 = 18; 4d4: 4+4+3+3 = 14
 [exit 0]
@@ -41,21 +41,21 @@ Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
   hit points 30/30
   gold 140
   features: Weapon focus (feat), Iron will (feat), Great fortitude (feat), Lightning reflexes (feat)
-  might          18     Might
-  grace          9      Grace
-  grit           14     Grit
-  wit            11     Wit
-  ac             9      Armour class (higher is better)
-  attack_bonus   3      Base attack bonus (each class adds its own)
-  fort_base      5      Base Fortitude save (each class adds its own)
-  grace_mod      -1     Grace modifier
-  grit_mod       2      Grit modifier
+  might            18     Might
+  grace            9      Grace
+  grit             14     Grit
+  wit              11     Wit
+  ac               9      Armour class (higher is better)
+  attack_bonus     3      Base attack bonus (each class adds its own)
+  fort_base        5      Base Fortitude save (each class adds its own)
+  grace_mod        -1     Grace modifier
+  grit_mod         2      Grit modifier
   initiative_bonus -1     Initiative bonus
-  might_mod      4      Might modifier
-  reflex_base    3      Base Reflex save (each class adds its own)
-  save_dc        11     Difficulty class of the creature's hexes
-  will_base      1      Base Will save (each class adds its own)
-  wit_mod        0      Wit modifier
+  might_mod        4      Might modifier
+  reflex_base      3      Base Reflex save (each class adds its own)
+  save_dc          11     Difficulty class of the creature's hexes
+  will_base        1      Base Will save (each class adds its own)
+  wit_mod          0      Wit modifier
 Saved to kara.json.
   seed 8: 1d10: 7 = 7; 1d10: 7 = 7
 [exit 0]
@@ -77,21 +77,21 @@ Pell: Folk Warrior 1 (0 xp, next level at 1000)
   hit points 11/11
   gold 60
   features: Iron will (feat), Great fortitude (feat)
-  might          16     Might
-  grace          14     Grace
-  grit           12     Grit
-  wit            10     Wit
-  ac             12     Armour class (higher is better)
-  attack_bonus   1      Base attack bonus (each class adds its own)
-  fort_base      4      Base Fortitude save (each class adds its own)
-  grace_mod      2      Grace modifier
-  grit_mod       1      Grit modifier
+  might            16     Might
+  grace            14     Grace
+  grit             12     Grit
+  wit              10     Wit
+  ac               12     Armour class (higher is better)
+  attack_bonus     1      Base attack bonus (each class adds its own)
+  fort_base        4      Base Fortitude save (each class adds its own)
+  grace_mod        2      Grace modifier
+  grit_mod         1      Grit modifier
   initiative_bonus 2      Initiative bonus
-  might_mod      3      Might modifier
-  reflex_base    0      Base Reflex save (each class adds its own)
-  save_dc        10     Difficulty class of the creature's hexes
-  will_base      0      Base Will save (each class adds its own)
-  wit_mod        0      Wit modifier
+  might_mod        3      Might modifier
+  reflex_base      0      Base Reflex save (each class adds its own)
+  save_dc          10     Difficulty class of the creature's hexes
+  will_base        0      Base Will save (each class adds its own)
+  wit_mod          0      Wit modifier
   seed 1: 4d4: 2+1+1+2 = 6
 [exit 0]
 
@@ -100,21 +100,21 @@ Quill: Folk Warrior 1 (0 xp, next level at 1000)
   hit points 12/12
   gold 60
   features: Iron will (feat), Great fortitude (feat)
-  might          15     Might
-  grace          13     Grace
-  grit           14     Grit
-  wit            12     Wit
-  ac             11     Armour class (higher is better)
-  attack_bonus   1      Base attack bonus (each class adds its own)
-  fort_base      4      Base Fortitude save (each class adds its own)
-  grace_mod      1      Grace modifier
-  grit_mod       2      Grit modifier
+  might            15     Might
+  grace            13     Grace
+  grit             14     Grit
+  wit              12     Wit
+  ac               11     Armour class (higher is better)
+  attack_bonus     1      Base attack bonus (each class adds its own)
+  fort_base        4      Base Fortitude save (each class adds its own)
+  grace_mod        1      Grace modifier
+  grit_mod         2      Grit modifier
   initiative_bonus 1      Initiative bonus
-  might_mod      2      Might modifier
-  reflex_base    0      Base Reflex save (each class adds its own)
-  save_dc        11     Difficulty class of the creature's hexes
-  will_base      0      Base Will save (each class adds its own)
-  wit_mod        1      Wit modifier
+  might_mod        2      Might modifier
+  reflex_base      0      Base Reflex save (each class adds its own)
+  save_dc          11     Difficulty class of the creature's hexes
+  will_base        0      Base Will save (each class adds its own)
+  wit_mod          1      Wit modifier
   seed 1: 4d4: 2+1+1+2 = 6
 [exit 0]
 
@@ -124,21 +124,21 @@ Ilse: Folk Adept 1 (0 xp, next level at 1000)
   gold 40
   features: Iron will (feat)
   spells per day by spell level: 1
-  might          9      Might
-  grace          12     Grace
-  grit           10     Grit
-  wit            16     Wit
-  ac             11     Armour class (higher is better)
-  attack_bonus   0      Base attack bonus (each class adds its own)
-  fort_base      0      Base Fortitude save (each class adds its own)
-  grace_mod      1      Grace modifier
-  grit_mod       0      Grit modifier
+  might            9      Might
+  grace            12     Grace
+  grit             10     Grit
+  wit              16     Wit
+  ac               11     Armour class (higher is better)
+  attack_bonus     0      Base attack bonus (each class adds its own)
+  fort_base        0      Base Fortitude save (each class adds its own)
+  grace_mod        1      Grace modifier
+  grit_mod         0      Grit modifier
   initiative_bonus 1      Initiative bonus
-  might_mod      -1     Might modifier
-  reflex_base    0      Base Reflex save (each class adds its own)
-  save_dc        13     Difficulty class of the creature's hexes
-  will_base      2      Base Will save (each class adds its own)
-  wit_mod        3      Wit modifier
+  might_mod        -1     Might modifier
+  reflex_base      0      Base Reflex save (each class adds its own)
+  save_dc          13     Difficulty class of the creature's hexes
+  will_base        2      Base Will save (each class adds its own)
+  wit_mod          3      Wit modifier
 Saved to ilse.json.
   seed 1: 3d4: 2+1+1 = 4
 [exit 0]
@@ -150,21 +150,21 @@ Ilse: Folk Adept 1 / Warrior 1 (level 2, 1000 xp, next level at 3000)
   gold 40
   features: Iron will (feat), Great fortitude (feat)
   Adept spells per day by spell level: 1
-  might          9      Might
-  grace          12     Grace
-  grit           10     Grit
-  wit            16     Wit
-  ac             11     Armour class (higher is better)
-  attack_bonus   1      Base attack bonus (each class adds its own)
-  fort_base      4      Base Fortitude save (each class adds its own)
-  grace_mod      1      Grace modifier
-  grit_mod       0      Grit modifier
+  might            9      Might
+  grace            12     Grace
+  grit             10     Grit
+  wit              16     Wit
+  ac               11     Armour class (higher is better)
+  attack_bonus     1      Base attack bonus (each class adds its own)
+  fort_base        4      Base Fortitude save (each class adds its own)
+  grace_mod        1      Grace modifier
+  grit_mod         0      Grit modifier
   initiative_bonus 1      Initiative bonus
-  might_mod      -1     Might modifier
-  reflex_base    0      Base Reflex save (each class adds its own)
-  save_dc        14     Difficulty class of the creature's hexes
-  will_base      2      Base Will save (each class adds its own)
-  wit_mod        3      Wit modifier
+  might_mod        -1     Might modifier
+  reflex_base      0      Base Reflex save (each class adds its own)
+  save_dc          14     Difficulty class of the creature's hexes
+  will_base        2      Base Will save (each class adds its own)
+  wit_mod          3      Wit modifier
 Saved to ilse.json.
   seed 4: 1d10: 3 = 3
 [exit 0]

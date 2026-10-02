@@ -2,5 +2,5 @@
   "type": "derived",
   "id": "ac",
   "name": "Armour class",
-  "value": "10 + self.finesse_mod"
+  "value": "10 + self.finesse_mod + self.armour_proficiency"
 }

@@ -49,5 +49,29 @@
         "finesse"
       ]
     }
+  ],
+  "modifiers": [
+    {
+      "stat": "weapon_proficiency_rank",
+      "value": "if class.level >= 5 then 2 else 1"
+    },
+    {
+      "stat": "armour_proficiency_rank",
+      "value": "1"
+    },
+    {
+      "stat": "reflex_proficiency_rank",
+      "value": "1"
+    }
+  ],
+  "actions": [
+    {
+      "action": "power_swing",
+      "from_item": "weapon"
+    },
+    {
+      "action": "strike",
+      "from_item": "weapon"
+    }
   ]
 }

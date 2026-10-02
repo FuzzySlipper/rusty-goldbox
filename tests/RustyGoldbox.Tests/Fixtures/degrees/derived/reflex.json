@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "reflex",
+  "name": "Reflex modifier",
+  "value": "self.finesse_mod + self.reflex_proficiency"
+}

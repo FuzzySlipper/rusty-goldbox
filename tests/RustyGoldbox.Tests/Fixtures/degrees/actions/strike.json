@@ -1,0 +1,27 @@
+{
+  "type": "action",
+  "id": "strike",
+  "name": "Strike",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "strike",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage + self.brawn_mod"
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "damage",
+        "amount": "(use.damage + self.brawn_mod) * 2"
+      }
+    ]
+  }
+}

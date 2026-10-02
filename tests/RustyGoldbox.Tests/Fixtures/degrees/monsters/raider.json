@@ -1,0 +1,24 @@
+{
+  "type": "monster",
+  "id": "raider",
+  "name": "Raider",
+  "level": 1,
+  "tracks": {
+    "hit_points": "18"
+  },
+  "stats": {
+    "ac": "15",
+    "brawn": "14",
+    "weapon_proficiency": "5",
+    "reflex": "5",
+    "insight_mod": "1"
+  },
+  "xp": 40,
+  "actions": [
+    {
+      "action": "strike",
+      "name": "Spear",
+      "damage": "1d6"
+    }
+  ]
+}

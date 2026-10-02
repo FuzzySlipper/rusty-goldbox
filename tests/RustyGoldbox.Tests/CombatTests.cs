@@ -11,8 +11,9 @@ using static RustyGoldbox.Tests.TempModules;
 namespace RustyGoldbox.Tests;
 
 /// <summary>
-/// The combat loop under three ruleset shapes: classic (descending AC, one
-/// action), ascend (ascending AC, critical tier, standard and move budget) and
+/// The combat loop under four ruleset shapes: classic (descending AC, one
+/// action), ascend (ascending AC, critical tier, standard and move budget),
+/// degrees (three actions, four degrees of success, basic saves) and
 /// percentile (d100 roll-under, special and fumble tiers, active parry).
 /// </summary>
 public sealed class CombatTests
@@ -61,6 +62,20 @@ public sealed class CombatTests
         // Warrior 1 and adept 2 each add their own progression.
         Assert.Equal(2m, evaluator.Stat(combatant.Creature, "attack_bonus").Number);
         Assert.Equal(3m, evaluator.Stat(combatant.Creature, "will_base").Number);
+    }
+
+    [Fact]
+    public void DegreesFightUsesThreeActionsAndFourDegrees()
+    {
+        using TempModules scratch = new();
+        WriteCharacter(scratch, Fixture("degrees"), "tor.json", new CreationRequest("Tor", "vanguard", "hillfolk",
+            Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight"]), "longblade");
+        WriteCharacter(scratch, Fixture("degrees"), "wren.json", new CreationRequest("Wren", "mystic", "sylvan",
+            Features: ["duskwood", "scribe", "sylvan_step", "spark"], Boosts: ["insight", "insight", "finesse", "intellect", "finesse", "stamina", "brawn"]), "staff");
+
+        // Natural 20s and 1s shift a degree; spark is a basic save the target rolls against Wren's spell DC.
+        Golden.Verify("degrees-combat.txt", CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "3"]));
     }
 
     [Fact]

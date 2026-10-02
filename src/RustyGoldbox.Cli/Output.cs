@@ -465,10 +465,11 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             writer.WriteLine($"  {whose}spells per day by spell level: {string.Join(" / ", slots)}");
         }
 
+        int width = Math.Max(14, stats.Select(stat => stat.Id.Length).DefaultIfEmpty(0).Max());
         foreach (SheetStat stat in stats)
         {
             string value = stat.Value is Value shown ? shown.ToString() : $"(can't compute: {stat.Problem})";
-            writer.WriteLine($"  {stat.Id,-14} {value,-6} {stat.Name}");
+            writer.WriteLine($"  {stat.Id.PadRight(width)} {value,-6} {stat.Name}");
         }
 
         if (path is not null)

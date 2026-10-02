@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "armour_proficiency_rank",
+  "name": "Armour rank (0 untrained to 4 legendary; classes raise it)",
+  "value": "0"
+}

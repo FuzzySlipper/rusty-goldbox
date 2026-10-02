@@ -72,7 +72,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry) |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 ## Module loading
