@@ -371,6 +371,17 @@ public sealed class CampaignRunner
         return null;
     }
 
+    /// <summary>
+    /// Evaluates a checked boolean expression of <paramref name="owner"/> (a
+    /// cell's prop condition, say) against the campaign variables. It rolls
+    /// nothing, so presentation can ask it at any time.
+    /// </summary>
+    public bool IsTrue(Definition owner, string path)
+    {
+        Evaluator evaluator = new(_rules, null);
+        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables))).Boolean;
+    }
+
     /// <summary>The waiting menu's options, numbered as <c>choose</c> takes them; empty when no menu waits.</summary>
     public IReadOnlyList<(int Number, string Label)> MenuOptions()
     {

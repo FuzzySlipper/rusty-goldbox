@@ -317,7 +317,9 @@ regression checks for module and rules behavior.
     with a perspective camera at the party. A cell's backdrop shows as a
     picture over the view window.
   - Everything else is a billboard sprite: props such as chests and pillars,
-    and monsters, standing in the 3D view, and every combatant in combat.
+    and monsters, standing in the 3D view, and every combatant in combat. A
+    cell's `prop` names a sprite and, optionally, a campaign condition that
+    hides it (an opened chest, a defeated guard).
     Combat uses side-view sprites under a perspective camera looking down at
     the field, the way Gold Box showed side-view figures in a pseudo-iso view.
   - Sprites are drawn facing one way and flipped horizontally for the other.

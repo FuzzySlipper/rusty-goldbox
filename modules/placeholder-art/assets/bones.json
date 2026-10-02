@@ -1,0 +1,12 @@
+{
+  "type": "asset",
+  "id": "bones",
+  "kind": "sprite",
+  "file": "sprites/bones.png",
+  "frame_size": [
+    32,
+    16
+  ],
+  "faces": "right",
+  "height": 0.25
+}

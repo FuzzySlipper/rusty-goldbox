@@ -173,4 +173,27 @@ public sealed class AssetTests
             [("nothing.json", "figure.subject"), ("portrait.json", "reference.asset-kind"), ("rat.json", "figure.duplicate")],
             ModuleLoader.Load(house, search).Diagnostics.Select(diagnostic => (Path.GetFileName(diagnostic.File!), diagnostic.Rule)).Order());
     }
+
+    [Fact]
+    public void APropIsASpriteWithABooleanCondition()
+    {
+        using TempModules modules = new();
+        modules.Module("rules", "ruleset");
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/chest.json", """{ "type": "asset", "id": "chest", "kind": "sprite", "file": "a.png", "frame_size": [32, 48], "faces": "right", "height": 0.5 }""");
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "kind": "backdrop", "file": "a.png" }""");
+        string tale = modules.Module("tale", "campaign", requires: $"{TempModules.Require("rules", "*")}, {TempModules.Require("art", "*")}");
+        modules.Write("tale/opened.json", """{ "type": "variable", "id": "opened", "value_type": "boolean", "initial": "false" }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 1 } }""");
+        void Hall(string cells) => modules.Write("tale/hall.json", $$"""{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|     |", "+--+--+"], "cells": [{{cells}}], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+
+        Hall("""{ "at": [1, 0], "prop": { "sprite": "art:chest", "hidden": "campaign.var.opened" } }""");
+        Assert.Empty(ModuleLoader.Load(tale, []).Diagnostics);
+
+        Hall("""{ "at": [1, 0], "prop": { "sprite": "art:picture", "hidden": "1 + 1" } }""");
+        Assert.Equal(
+            [("expression.type", "$.cells[0].prop.hidden"), ("reference.asset-kind", "$.cells[0].prop.sprite")],
+            ModuleLoader.Load(tale, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+    }
 }

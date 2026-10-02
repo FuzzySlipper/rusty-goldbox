@@ -212,7 +212,11 @@ wall set frames or a plain material. The mesh is rebuilt only when the area
 (or its module's content) changes. The camera stands at the party's cell
 centre, half a cell up, at the facing's yaw (north is the Engine's zero yaw).
 When the party's cell has a backdrop, it shows over the view as a sprite
-fitted to the window.
+fitted to the window. A cell's prop stands at the cell's centre as a
+cylindrical billboard playing its idle animation; while its `hidden`
+condition holds (`CampaignRunner.IsTrue` against the campaign variables) it is
+published invisible. The area mesh and props are released only after a
+publish has stopped showing them.
 
 Sprites stand in the scene as cylindrical billboards (`SpriteArt`): the atlas
 frames carry their world size (a world-sized sprite's quad is its frame

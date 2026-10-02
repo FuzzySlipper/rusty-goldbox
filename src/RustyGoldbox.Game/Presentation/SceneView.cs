@@ -25,6 +25,7 @@ internal sealed class SceneView : IDisposable
 
     private const ulong AreaObject = 1;
     private const ulong BackdropObject = 2;
+    private const ulong PropObjects = 10_000;
     private const double EyeHeight = 0.5;
     private const double FieldOfView = 70;
 
@@ -34,7 +35,10 @@ internal sealed class SceneView : IDisposable
     private readonly Material _plain;
     private readonly Dictionary<string, Art> _art = [];
     private readonly CombatScene _combat;
+    private readonly List<IDisposable> _retired = [];
+    private readonly List<Prop> _props = [];
     private bool _showingCombat;
+    private bool _showingArea;
     private string? _areaKey;
     private MeshResource? _mesh;
     private Appearance? _area;
@@ -55,6 +59,7 @@ internal sealed class SceneView : IDisposable
     {
         List<AppearanceFact> facts = [];
         _showingCombat = false;
+        _showingArea = false;
         if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
         {
             CampaignState state = runner.State;
@@ -66,7 +71,9 @@ internal sealed class SceneView : IDisposable
             }
             else if (session.Screen == Screen.Play)
             {
+                _showingArea = true;
                 ShowArea(rules, session.Set, state.Area, facts);
+                ShowProps(runner, state.Area, facts);
                 Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
                 _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
                 if (Backdrop(rules, state) is Definition backdrop && ArtFor(rules, session.Set, backdrop) is { Sprite: Appearance sprite })
@@ -78,6 +85,7 @@ internal sealed class SceneView : IDisposable
 
         _engine.Graphics.PublishSnapshot(facts.ToArray());
         _combat.ReleaseRetired();
+        ReleaseRetired();
     }
 
     /// <summary>Advances animations; call in every update.</summary>
@@ -87,6 +95,17 @@ internal sealed class SceneView : IDisposable
         {
             _combat.Tick();
         }
+
+        if (_showingArea)
+        {
+            foreach (Prop prop in _props)
+            {
+                if (prop.Playback is SpritePlayback playback)
+                {
+                    _engine.Graphics.AdvanceSpritePlayback(new SpritePlaybackAdvanceRequest(playback));
+                }
+            }
+        }
     }
 
     public void Dispose()
@@ -94,8 +113,8 @@ internal sealed class SceneView : IDisposable
         // Nothing may still be published when it is released.
         _engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
         _combat.Dispose();
-        _area?.Dispose();
-        _mesh?.Dispose();
+        RetireArea();
+        ReleaseRetired();
         foreach (Art art in _art.Values)
         {
             art.Figures?.Dispose();
@@ -114,18 +133,86 @@ internal sealed class SceneView : IDisposable
         string key = $"{area.QualifiedId}@{set.LoadOrder.First(loaded => loaded.Manifest.Id == area.Module).Manifest.Source.Identity}";
         if (key != _areaKey)
         {
-            _area?.Dispose();
-            _mesh?.Dispose();
-            _area = null;
-            _mesh = null;
+            RetireArea();
             _areaKey = key;
             Build(rules, set, area, wallSet);
+            BuildProps(rules, set, area);
         }
 
         if (_area is not null)
         {
             facts.Add(new AppearanceFact(AreaObject, false, 0, Placed, _area, true, RenderLayer.Scene));
         }
+    }
+
+    /// <summary>Each cell's prop, standing at the cell's centre as a billboard turned to the camera.</summary>
+    private void BuildProps(RuleSet rules, ModuleSet set, Definition area)
+    {
+        if (!area.Json.TryGetProperty("cells", out JsonElement cells))
+        {
+            return;
+        }
+
+        int index = 0;
+        foreach (JsonElement cell in cells.EnumerateArray())
+        {
+            string path = $"$.cells[{index}]";
+            index++;
+            if (!cell.TryGetProperty("prop", out JsonElement prop) || SpriteArtOf(rules, set, rules.Reference(area, $"{path}.prop.sprite")) is not SpriteArt art)
+            {
+                continue;
+            }
+
+            JsonElement at = cell.GetProperty("at");
+            Appearance figure = art.CreateFigure();
+            string? hidden = prop.TryGetProperty("hidden", out _) ? $"{path}.prop.hidden" : null;
+            Transform placement = new(new Vector3(at[0].GetInt32() + 0.5f, 0, at[1].GetInt32() + 0.5f), Quaternion.Identity, art.Scale(art.FacesRight));
+            _props.Add(new Prop(figure, art.Play(figure, "idle"), placement, hidden));
+        }
+    }
+
+    private void ShowProps(CampaignRunner runner, Definition area, List<AppearanceFact> facts)
+    {
+        ulong id = PropObjects;
+        foreach (Prop prop in _props)
+        {
+            bool there = prop.HiddenPath is null || !runner.IsTrue(area, prop.HiddenPath);
+            facts.Add(new AppearanceFact(id++, false, 0, prop.Placement, prop.Figure, there, RenderLayer.Scene));
+        }
+    }
+
+    /// <summary>Takes the current area's mesh and props out of use; they are released after the next publish.</summary>
+    private void RetireArea()
+    {
+        foreach (Prop prop in _props)
+        {
+            if (prop.Playback is not null)
+            {
+                _retired.Add(prop.Playback);
+            }
+
+            _retired.Add(prop.Figure);
+        }
+
+        _props.Clear();
+        if (_area is not null)
+        {
+            _retired.Add(_area);
+            _retired.Add(_mesh!);
+        }
+
+        _area = null;
+        _mesh = null;
+    }
+
+    private void ReleaseRetired()
+    {
+        foreach (IDisposable retired in _retired)
+        {
+            retired.Dispose();
+        }
+
+        _retired.Clear();
     }
 
     private void Build(RuleSet rules, ModuleSet set, Definition area, Definition? wallSet)
@@ -252,8 +339,10 @@ internal sealed class SceneView : IDisposable
     /// <summary>The sprite a monster or class is drawn with, from the set's figures.</summary>
     private SpriteArt? SpriteFor(RuleSet rules, ModuleSet set, Definition kind)
     {
-        return rules.Figures.TryGetValue(kind, out Definition? sprite) ? ArtFor(rules, set, sprite)?.Figures : null;
+        return rules.Figures.TryGetValue(kind, out Definition? sprite) ? SpriteArtOf(rules, set, sprite) : null;
     }
+
+    private SpriteArt? SpriteArtOf(RuleSet rules, ModuleSet set, Definition sprite) => ArtFor(rules, set, sprite)?.Figures;
 
     /// <summary>The area's wall set floor, which combat in the area stands on.</summary>
     private (Material Material, UvRect Frame)? Floor(RuleSet rules, ModuleSet set, Definition area)
@@ -267,6 +356,9 @@ internal sealed class SceneView : IDisposable
         Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
         return frames.TryGetValue("floor", out UvRect floor) && ArtFor(rules, set, wallSet) is Art art ? (art.Material, floor) : null;
     }
+
+    /// <summary>A cell's prop: its figure and animation, where it stands, and the condition that hides it.</summary>
+    private sealed record Prop(Appearance Figure, SpritePlayback? Playback, Transform Placement, string? HiddenPath);
 
     /// <summary>An admitted asset: its texture and material, and its backdrop sprite or sprite atlas when it has one.</summary>
     private sealed record Art(RenderResource Texture, Material Material, Appearance? Sprite, SpriteArt? Figures);

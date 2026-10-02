@@ -399,6 +399,12 @@ public static class DefinitionTypes
                 new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell; x west to east and y north to south, from 0."),
                 new("zone", new TextKind(), false, "A zone tag for the cell."),
                 new("backdrop", new ReferenceKind("asset", "backdrop"), false, "The backdrop asset shown in the cell."),
+                new("prop", new ObjectKind(
+                [
+                    new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite standing in the cell (a chest, a pillar, bones, a guard)."),
+                    new("hidden", new ExpressionKind(Expressions.ExprType.Boolean, Roots.Campaign), false,
+                        "While this is true the prop isn't there, for example \"campaign.var.chest_opened\"; it may read campaign.var."),
+                ]), false, "Something standing in the middle of the cell in the first-person view. It doesn't block movement."),
                 new("event", new ReferenceKind("event"), false, "The event that runs when the party enters the cell."),
                 new("facing", new EnumKind(["north", "east", "south", "west"]), false, "Run the event only when the party enters facing this way."),
                 new("once", new BooleanKind(), false, "If true, the event runs only the first time."),

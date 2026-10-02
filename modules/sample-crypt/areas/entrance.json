@@ -21,7 +21,10 @@
       "zone": "hall",
       "backdrop": "placeholder-art:hall",
       "event": "bones",
-      "once": true
+      "once": true,
+      "prop": {
+        "sprite": "placeholder-art:bones"
+      }
     },
     {
       "at": [
@@ -41,7 +44,11 @@
       "zone": "crypt",
       "backdrop": "placeholder-art:crypt",
       "event": "guards",
-      "once": true
+      "once": true,
+      "prop": {
+        "sprite": "placeholder-art:skeleton",
+        "hidden": "campaign.var.guards_defeated"
+      }
     },
     {
       "at": [

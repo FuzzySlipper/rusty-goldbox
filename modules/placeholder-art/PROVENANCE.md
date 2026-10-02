@@ -12,3 +12,4 @@ admits.
 | `crypt` | `backdrops/crypt.png` | Coffins under vaults |
 | `skeleton` | `sprites/skeleton.png` | A sprite sheet of 32 x 48 frames facing right: a four-frame idle sway and a three-frame sword attack |
 | `fighter`, `cleric`, `magic_user`, `thief` | `sprites/<id>.png` | Hero sprite sheets of 32 x 48 frames facing right: a two-frame idle and a two-frame attack |
+| `bones` | `sprites/bones.png` | A single 32 x 16 frame: a skull and scattered bones, for lying on a floor |

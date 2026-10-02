@@ -202,6 +202,62 @@ public sealed class GameTests
         });
     }
 
+    [Fact]
+    public void TheWholeCryptShowsThroughTheEngineWithItsProps()
+    {
+        using TempModules scratch = new();
+        List<string> script = File.ReadAllLines(CampaignTests.Script("crypt.script"))
+            .Select(line => line.Split('#')[0].Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            foreach ((string name, string characterClass, string[] items) in new[]
+            {
+                ("Ada", "classic:fighter", new[] { "classic:long_sword", "classic:chain_mail", "classic:shield" }),
+                ("Brom", "classic:cleric", new[] { "classic:heavy_mace", "classic:chain_mail" }),
+            })
+            {
+                for (int attempt = 0; attempt < 50 && session.Party.All(member => member.Name != name); attempt++)
+                {
+                    Run(session, engine, $$"""{ "action": "roll", "name": "{{name}}", "race": "classic:human", "class": "{{characterClass}}" }""");
+                }
+
+                int member = session.Party.FindIndex(character => character.Name == name);
+                foreach (string item in items)
+                {
+                    Run(session, engine, $$"""{ "action": "equip", "member": {{member}}, "item": "{{item}}" }""");
+                }
+            }
+
+            Run(session, engine, """{ "action": "begin" }""");
+            using SceneView view = new(engine, new ModuleLibrary(_ => Containers(scratch).Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+            Core.Definitions.Definition entrance = session.Runner!.State.Area;
+            string guardProp = "$.cells[2].prop.hidden";
+            Assert.False(session.Runner.IsTrue(entrance, guardProp));
+
+            // Every step shows: corridors with props, the fight, the stairs to the second area.
+            view.Show(session);
+            foreach (string command in script)
+            {
+                Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
+                view.Show(session);
+                while (session.Screen == Screen.Combat)
+                {
+                    Run(session, engine, """{ "action": "continue" }""");
+                    view.Show(session);
+                }
+            }
+
+            // The party won (the seed is fixed), so the guard prop is gone and the party went down the stairs.
+            Assert.True(session.Runner.State.Ended);
+            Assert.True(session.Runner.IsTrue(entrance, guardProp));
+            Assert.NotEqual(entrance, session.Runner.State.Area);
+        });
+    }
+
     /// <summary>A session over the packed sample modules, with the sample campaign open on seed 11.</summary>
     private static GameSession OpenSession(TempModules scratch, IEngineContext engine)
     {
