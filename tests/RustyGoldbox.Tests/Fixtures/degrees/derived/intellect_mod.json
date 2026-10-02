@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "intellect_mod",
+  "name": "Intellect modifier",
+  "value": "floor((self.intellect - 10) / 2)"
+}

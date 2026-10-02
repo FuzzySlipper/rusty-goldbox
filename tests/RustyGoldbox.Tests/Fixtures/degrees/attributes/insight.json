@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "insight",
+  "name": "Insight",
+  "min": 1,
+  "max": 30,
+  "default": 10
+}

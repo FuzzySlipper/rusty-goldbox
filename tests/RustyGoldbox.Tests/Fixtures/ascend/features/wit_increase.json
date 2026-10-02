@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "wit_increase",
+  "name": "Wit +1",
+  "kind": "ability increase",
+  "repeatable": true,
+  "modifiers": [
+    {
+      "stat": "wit",
+      "value": "1"
+    }
+  ]
+}

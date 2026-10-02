@@ -64,9 +64,12 @@ public sealed class Creature
 
     public List<Definition> Conditions { get; } = [];
 
+    /// <summary>A character's chosen features, repeats included.</summary>
+    public List<Definition> Features { get; } = [];
+
     public List<Definition> Equipment { get; } = [];
 
-    /// <summary>The race, classes, conditions and equipment whose modifiers apply to this creature.</summary>
+    /// <summary>The race, classes, features, conditions and equipment whose modifiers apply to this creature.</summary>
     public IEnumerable<Definition> ModifierSources()
     {
         if (Race is not null)
@@ -77,6 +80,11 @@ public sealed class Creature
         foreach (Definition characterClass in ClassLevels.Keys)
         {
             yield return characterClass;
+        }
+
+        foreach (Definition feature in Features)
+        {
+            yield return feature;
         }
 
         foreach (Definition condition in Conditions)
@@ -181,6 +189,9 @@ public sealed class Creature
                 case "conditions":
                     ReadList(rules, DefinitionTypes.Condition, property.Value, at, creature.Conditions, errors);
                     break;
+                case "features":
+                    ReadList(rules, DefinitionTypes.Feature, property.Value, at, creature.Features, errors);
+                    break;
                 case "equipment":
                     ReadList(rules, DefinitionTypes.Item, property.Value, at, creature.Equipment, errors);
                     break;
@@ -238,7 +249,7 @@ public sealed class Creature
         {
             string stats = string.Join(", ", rules.Stats.Keys.Order(StringComparer.Ordinal));
             string tracks = string.Join(", ", rules.Tracks.Keys.SelectMany(id => new[] { id, $"max_{id}" }));
-            errors.Add($"{at}: '{property.Name}' is not a stat, track or creature field. Fields: monster, class, classes, race, level, conditions, equipment. Tracks: {tracks}. Stats: {stats}.");
+            errors.Add($"{at}: '{property.Name}' is not a stat, track or creature field. Fields: monster, class, classes, race, level, features, conditions, equipment. Tracks: {tracks}. Stats: {stats}.");
         }
         else if (stat.Type != Expressions.ExprType.Number)
         {

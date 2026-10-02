@@ -3,5 +3,24 @@
   "id": "standard",
   "name": "Character levels",
   "experience": "character",
-  "levels": [0, 1000, 3000, 6000, 10000, 15000, 21000, 28000]
+  "levels": [
+    0,
+    1000,
+    3000,
+    6000,
+    10000,
+    15000,
+    21000,
+    28000
+  ],
+  "grants": [
+    {
+      "kind": "feat",
+      "when": "self.level == 1 or floor(self.level / 3) * 3 == self.level"
+    },
+    {
+      "kind": "ability increase",
+      "when": "floor(self.level / 4) * 4 == self.level"
+    }
+  ]
 }

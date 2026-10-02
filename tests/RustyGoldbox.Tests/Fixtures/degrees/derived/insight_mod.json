@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "insight_mod",
+  "name": "Insight modifier",
+  "value": "floor((self.insight - 10) / 2)"
+}

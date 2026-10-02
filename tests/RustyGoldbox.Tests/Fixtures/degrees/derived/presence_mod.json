@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "presence_mod",
+  "name": "Presence modifier",
+  "value": "floor((self.presence - 10) / 2)"
+}

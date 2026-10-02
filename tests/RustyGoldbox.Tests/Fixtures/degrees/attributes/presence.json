@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "presence",
+  "name": "Presence",
+  "min": 1,
+  "max": 30,
+  "default": 10
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "stamina_mod",
+  "name": "Stamina modifier",
+  "value": "floor((self.stamina - 10) / 2)"
+}

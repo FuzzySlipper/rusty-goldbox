@@ -11,6 +11,8 @@ public sealed class CharacterTests
 {
     private static string Ascend => Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "ascend");
 
+    private static string Degrees => Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "degrees");
+
     [Fact]
     public void ClassicFighterIsCreatedAndLevelled()
     {
@@ -24,12 +26,25 @@ public sealed class CharacterTests
     public void AscendingArmourClassRulesetUsesTheSameCommands()
     {
         Golden.Verify("ascend-character.txt", CliTranscript.Run(
-            ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--seed", "5", "--out", "kara.json"],
+            ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--feature", "weapon_focus,iron_will", "--seed", "5", "--out", "kara.json"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--seed", "8"],
+            ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,iron_will", "--seed", "8"],
+            ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,lightning_reflexes", "--seed", "8"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3000", "--class", "adept", "--seed", "9"],
-            ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--out", "ilse.json"],
-            ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--seed", "4"],
+            ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--feature", "iron_will", "--out", "ilse.json"],
+            ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--feature", "great_fortitude", "--seed", "4"],
             ["character", "show", "ilse.json", "--module", Ascend, "--json"]));
+    }
+
+    [Fact]
+    public void AncestryHeritageAndBackgroundAreChosenFeatures()
+    {
+        Golden.Verify("degrees-character.txt", CliTranscript.Run(
+            ["character", "new", "--module", Degrees, "--class", "mystic", "--race", "sylvan", "--name", "Wren", "--feature", "stonehide,scribe,sylvan_step,spark"],
+            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry", "--out", "tor.json"],
+            ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--out", "tor.json"],
+            ["character", "level", "tor.json", "--module", Degrees, "--xp", "1000", "--feature", "battle_cry", "--seed", "2"],
+            ["character", "show", "tor.json", "--module", Degrees, "--json"]));
     }
 
     [Fact]
@@ -47,10 +62,11 @@ public sealed class CharacterTests
     public void LevellingStopsAtTheLastLevel()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10)))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 13, 10, 10), Features: ["iron_will", "great_fortitude"]))!;
 
         List<ModuleDiagnostic> problems = [];
-        List<LevelGain>? gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 1_000_000, dice, problems));
+        List<LevelGain>? gains = WithDice(dice => CharacterRules.AddExperience(
+            set.Rules!, character, 1_000_000, dice, problems, features: ["lightning_reflexes", "weapon_focus", "might_increase", "improved_initiative"]));
 
         Assert.Empty(problems);
         Assert.Equal([2, 3, 4, 5], gains!.Select(gain => gain.Level));
@@ -59,7 +75,7 @@ public sealed class CharacterTests
         Assert.Equal(character.Levels.Sum(level => level.Gain), character.Tracks["hit_points"].Max);
 
         // The waiting levels go to another class, up to the last character level.
-        gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 0, dice, problems, "adept"));
+        gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 0, dice, problems, "adept", ["dodge", "might_increase"]));
         Assert.Empty(problems);
         Assert.Equal([6, 7, 8], gains!.Select(gain => gain.Level));
         Assert.Equal(new Dictionary<string, int> { ["warrior"] = 5, ["adept"] = 3 }, character.ClassLevels().ToDictionary(entry => entry.Key.Id, entry => entry.Value));
@@ -70,9 +86,9 @@ public sealed class CharacterTests
     public void HitPointBonusesFollowTheStatsTheyRead()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(14, 10, 14, 10)))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(14, 10, 14, 10), Features: ["iron_will", "great_fortitude"]))!;
         List<ModuleDiagnostic> problems = [];
-        WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems));
+        WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, features: ["lightning_reflexes", "weapon_focus"]));
         Assert.Empty(problems);
         decimal before = MaxHitPoints(set, character);
         Assert.Equal(character.Levels.Sum(level => level.Gain) + (3 * 2), before);
@@ -87,7 +103,7 @@ public sealed class CharacterTests
     public void ANewClassMustAcceptTheCharacter()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character weak = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 9)))!;
+        Character weak = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 9), Features: ["iron_will", "great_fortitude"]))!;
         List<ModuleDiagnostic> problems = [];
 
         Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, weak, 1000, dice, problems, "adept")));
@@ -111,7 +127,7 @@ public sealed class CharacterTests
     {
         using TempModules modules = new();
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(9, 12, 10, 16)))!;
+        Character character = Create(set, new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(9, 12, 10, 16), Features: ["iron_will"]))!;
         string file = Path.Combine(modules.Root, "ilse.json");
         File.WriteAllText(file, CharacterFile.ToJson(character));
 
@@ -143,8 +159,8 @@ public sealed class CharacterTests
         ModuleSet set = ModuleLoader.Load(ascend, []);
         Assert.Empty(set.Diagnostics);
 
-        ModuleDiagnostic roll = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "warrior", "folk")));
-        ModuleDiagnostic hitPoints = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "adept", "folk", Attributes: Scores(10, 10, 10, 12))));
+        ModuleDiagnostic roll = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "warrior", "folk", Features: ["iron_will", "great_fortitude"])));
+        ModuleDiagnostic hitPoints = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "adept", "folk", Attributes: Scores(10, 10, 10, 12), Features: ["iron_will"])));
 
         Assert.Equal(("character.evaluate", "$.attribute_roll"), (roll.Rule, roll.JsonPath));
         Assert.EndsWith("standard.json", roll.File, StringComparison.Ordinal);
@@ -156,7 +172,7 @@ public sealed class CharacterTests
     public void HugeExperienceIsAProblemNotACrash()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10)))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10), Features: ["iron_will", "great_fortitude"]))!;
         character.Experience = decimal.MaxValue - 1;
         List<ModuleDiagnostic> problems = [];
 

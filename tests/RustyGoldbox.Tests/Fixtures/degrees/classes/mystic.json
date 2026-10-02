@@ -1,0 +1,45 @@
+{
+  "type": "class",
+  "id": "mystic",
+  "name": "Mystic",
+  "prime_requisites": [
+    "insight"
+  ],
+  "levels": [
+    {
+      "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
+      "hp_bonus": "self.stamina_mod",
+      "grants": [
+        {
+          "kind": "mystic feat"
+        }
+      ]
+    },
+    {
+      "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
+      "hp_bonus": "self.stamina_mod",
+      "grants": [
+        {
+          "kind": "mystic feat"
+        }
+      ]
+    },
+    {
+      "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
+      "hp_bonus": "self.stamina_mod"
+    },
+    {
+      "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
+      "hp_bonus": "self.stamina_mod",
+      "grants": [
+        {
+          "kind": "mystic feat"
+        }
+      ]
+    },
+    {
+      "hp": "if self.level == 1 then 6 + self.ancestry_hp else 6",
+      "hp_bonus": "self.stamina_mod"
+    }
+  ]
+}

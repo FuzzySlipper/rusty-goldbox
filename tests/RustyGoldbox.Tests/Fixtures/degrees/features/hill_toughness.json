@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "hill_toughness",
+  "name": "Hill toughness",
+  "kind": "ancestry feat",
+  "requirements": "self.race == 'hillfolk'",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "1"
+    }
+  ]
+}

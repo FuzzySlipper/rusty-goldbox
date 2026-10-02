@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "ancestry_hp",
+  "name": "Ancestry hit points",
+  "value": "table(ancestry_hp, self.race)"
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "brawn_mod",
+  "name": "Brawn modifier",
+  "value": "floor((self.brawn - 10) / 2)"
+}

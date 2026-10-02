@@ -1,0 +1,19 @@
+{
+  "type": "advancement",
+  "id": "standard",
+  "name": "Character levels",
+  "experience": "character",
+  "levels": [
+    0,
+    1000,
+    2000,
+    3000,
+    4000
+  ],
+  "grants": [
+    {
+      "kind": "ancestry feat",
+      "when": "self.level == 1 or floor((self.level - 1) / 4) * 4 == self.level - 1"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "hill_lore",
+  "name": "Hill lore",
+  "kind": "ancestry feat",
+  "requirements": "self.race == 'hillfolk'"
+}

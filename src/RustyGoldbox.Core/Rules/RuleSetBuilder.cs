@@ -40,6 +40,7 @@ public sealed class RuleSetBuilder
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
         builder.CheckAdvancement();
+        builder.CheckGrants();
         builder.CheckActions();
         builder.CheckCampaigns();
         return builder._rules;
@@ -430,6 +431,58 @@ public sealed class RuleSetBuilder
                 }
 
                 index++;
+            }
+        }
+    }
+
+    /// <summary>Every grant chooses at least one feature of a kind some feature has.</summary>
+    private void CheckGrants()
+    {
+        HashSet<string> kinds = _rules.OfType(DefinitionTypes.Feature).Select(feature => feature.Json.GetProperty("kind").GetString()!).ToHashSet();
+        foreach (Definition definition in _rules.Definitions)
+        {
+            List<(JsonElement Grants, string Path)> lists = [];
+            if (definition.Type == DefinitionTypes.CharacterCreation && definition.Json.TryGetProperty("features", out JsonElement features))
+            {
+                lists.Add((features, "$.features"));
+            }
+            else if (definition.Type == DefinitionTypes.Advancement && definition.Json.TryGetProperty("grants", out JsonElement grants))
+            {
+                lists.Add((grants, "$.grants"));
+            }
+            else if (definition.Type == DefinitionTypes.Class)
+            {
+                int index = 0;
+                foreach (JsonElement level in definition.Json.GetProperty("levels").EnumerateArray())
+                {
+                    if (level.TryGetProperty("grants", out JsonElement levelGrants))
+                    {
+                        lists.Add((levelGrants, $"$.levels[{index}].grants"));
+                    }
+
+                    index++;
+                }
+            }
+
+            foreach ((JsonElement list, string path) in lists)
+            {
+                int index = 0;
+                foreach (JsonElement grant in list.EnumerateArray())
+                {
+                    string at = $"{path}[{index}]";
+                    index++;
+                    string kind = grant.GetProperty("kind").GetString()!;
+                    if (!kinds.Contains(kind))
+                    {
+                        string known = kinds.Count == 0 ? "No feature definitions are loaded." : $"Feature kinds: {string.Join(", ", kinds.Order(StringComparer.Ordinal))}.";
+                        Error(definition, "grant.kind", $"{at}.kind", $"No feature has kind '{kind}', so nothing could fill this grant. {known}");
+                    }
+
+                    if (grant.TryGetProperty("count", out JsonElement count) && count.GetInt32() < 1)
+                    {
+                        Error(definition, "grant.count", $"{at}.count", "A grant chooses at least 1 feature.");
+                    }
+                }
             }
         }
     }

@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "weapon_focus",
+  "name": "Weapon focus",
+  "kind": "feat",
+  "requirements": "self.attack_bonus >= 1",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "1"
+    }
+  ]
+}

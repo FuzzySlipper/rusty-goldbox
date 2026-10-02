@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "lightning_reflexes",
+  "name": "Lightning reflexes",
+  "kind": "feat",
+  "modifiers": [
+    {
+      "stat": "reflex_base",
+      "value": "2"
+    }
+  ]
+}

@@ -119,7 +119,8 @@ internal static class GameCommands
                     break;
                 case "roll":
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
-                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"), portrait);
+                    IReadOnlyList<string>? features = payload.TryGetProperty("features", out _) ? Texts(payload, "features") : null;
+                    session.Roll(engine, Text(payload, "name").Trim(), Text(payload, "race"), Text(payload, "class"), portrait, features);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));
@@ -170,6 +171,14 @@ internal static class GameCommands
         return string.IsNullOrWhiteSpace(text)
             ? throw new PayloadException($"\"{field}\" must be non-empty text")
             : text;
+    }
+
+    private static List<string> Texts(JsonElement payload, string field)
+    {
+        JsonElement value = payload.GetProperty(field);
+        return value.ValueKind == JsonValueKind.Array && value.EnumerateArray().All(entry => entry.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(entry.GetString()))
+            ? value.EnumerateArray().Select(entry => entry.GetString()!).ToList()
+            : throw new PayloadException($"\"{field}\" must be an array of non-empty text");
     }
 
     private static int Integer(JsonElement payload, string field)

@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "great_fortitude",
+  "name": "Great fortitude",
+  "kind": "feat",
+  "modifiers": [
+    {
+      "stat": "fort_base",
+      "value": "2"
+    }
+  ]
+}

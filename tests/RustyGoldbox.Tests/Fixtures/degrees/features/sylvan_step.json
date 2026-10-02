@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "sylvan_step",
+  "name": "Sylvan step",
+  "kind": "ancestry feat",
+  "requirements": "self.race == 'sylvan'"
+}

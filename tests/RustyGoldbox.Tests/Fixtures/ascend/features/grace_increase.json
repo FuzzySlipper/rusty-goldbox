@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "grace_increase",
+  "name": "Grace +1",
+  "kind": "ability increase",
+  "repeatable": true,
+  "modifiers": [
+    {
+      "stat": "grace",
+      "value": "1"
+    }
+  ]
+}

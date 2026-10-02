@@ -2,7 +2,7 @@
   "type": "combat",
   "id": "standard",
   "name": "Standard",
-  "initiative": "1d20 + self.grace_mod",
+  "initiative": "1d20 + self.initiative_bonus",
   "initiative_by": "creature",
   "initiative_order": "highest-first",
   "initiative_each": "combat",

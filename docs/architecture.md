@@ -160,9 +160,11 @@ limits and classes, the class's requirements and per-level `hp` expressions
 track starts at its `start` or maximum. Levels come from the advancement
 definition when there is one (experience by character, each level in a chosen
 class) and otherwise from the class's own `xp` table; a class with no levels
-left leaves the next level waiting for another class. A character file stores
-its choices, its tracks' current values (and the level track's maximum), each
-level's class and gain, and the module IDs and versions it was made under. Reading it needs each of those
+left leaves the next level waiting for another class. Features fill the
+grants of creation, the advancement and the class level in that order. A
+character file stores its choices, its tracks' current values (and the level
+track's maximum), each level's class, gain and features, and the module IDs
+and versions it was made under. Reading it needs each of those
 modules loaded at a compatible version; extra modules, such as a campaign that
 requires the ruleset, are fine. Derived values are never stored; the sheet
 computes them.

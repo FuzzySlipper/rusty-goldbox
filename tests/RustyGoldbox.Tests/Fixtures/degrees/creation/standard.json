@@ -1,0 +1,27 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Standard",
+  "attributes": [
+    "brawn",
+    "finesse",
+    "stamina",
+    "intellect",
+    "insight",
+    "presence"
+  ],
+  "attribute_roll": "10",
+  "assignment": "in-order",
+  "starting_gold": {
+    "vanguard": "15",
+    "mystic": "15"
+  },
+  "features": [
+    {
+      "kind": "heritage"
+    },
+    {
+      "kind": "background"
+    }
+  ]
+}

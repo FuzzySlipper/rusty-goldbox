@@ -154,8 +154,8 @@ play (hit points, fatigue, magic points, a dying value): each has a maximum
 and starting value, and is read as `self.<id>` and `self.max_<id>`. No pool is
 built in; a ruleset declares its own, and one may be built from class level
 gains. Stat IDs form one namespace across the module
-set. **Modifiers** from races, classes, conditions and equipped items add to
-a stat or to a check's roll. A **check** compares a roll, plus its modifiers,
+set. **Modifiers** from races, classes, features, conditions and equipped items
+add to a stat or to a check's roll. A **check** compares a roll, plus its modifiers,
 with a target. A **monster** names the class and level whose tables it uses,
 and its `stats` replace derived values. Attributes may declare a `default` for
 creatures that have none.
@@ -172,7 +172,21 @@ per-class progressions such as base attack and base saves add up across
 classes. A class level's `hp` is rolled once and kept; its optional
 `hp_bonus` is added as the character is now, so a constitution-style change
 moves every level's hit points (3.5e), while rulesets without it keep each
-level's gain as rolled (first edition). Classic split-experience multi-classing and dual-classing are not
+level's gain as rolled (first edition).
+
+What a character chooses beyond race and class is a **feature**: a
+background, heritage, feat, class feature or ability increase, each with a
+`kind` in the ruleset's own words, optional requirements (an expression read
+as the character is with the level that grants it), modifiers and actions.
+Choices are **grants** of a kind: character creation grants some to every new
+character (a background and a heritage), the advancement grants others at
+character levels its `when` expression picks (a feat every third level), and
+a class level grants its own (bonus feats). The player names features in
+order and each grant takes the next of its kind; each level records the
+features chosen at it. A repeatable feature with an attribute modifier is an
+ability increase. A race may leave out its class list to allow any class, so
+an ancestry-and-class ruleset needs no per-race patches when an extension adds
+a class. Classic split-experience multi-classing and dual-classing are not
 expressible yet.
 
 Each definition file holds one definition: `type`, `id` and the type's

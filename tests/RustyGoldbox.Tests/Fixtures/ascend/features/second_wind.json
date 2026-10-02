@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "second_wind",
+  "name": "Second wind",
+  "kind": "feat",
+  "requirements": "self.grit >= 13",
+  "actions": [
+    {
+      "action": "second_wind"
+    }
+  ]
+}

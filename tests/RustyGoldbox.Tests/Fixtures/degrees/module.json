@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "degrees",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Degrees (test fixture)",
+  "requires": [],
+  "provenance": "Original test fixture shaped like a ruleset with ancestries, heritages, backgrounds, proficiency added to level and four degrees of success. Contains no published rules text or tables."
+}

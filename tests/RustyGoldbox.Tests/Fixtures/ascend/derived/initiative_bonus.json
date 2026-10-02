@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "initiative_bonus",
+  "name": "Initiative bonus",
+  "value": "self.grace_mod"
+}

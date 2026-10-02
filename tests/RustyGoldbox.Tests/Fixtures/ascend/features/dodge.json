@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "dodge",
+  "name": "Dodge",
+  "kind": "feat",
+  "requirements": "self.grace >= 13",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "1"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "second_wind",
+  "name": "Second wind",
+  "cost": {
+    "move": 1
+  },
+  "target": "self",
+  "available": "self.hit_points * 2 < self.max_hit_points",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "1d8 + self.grit_mod",
+      "to": "self"
+    }
+  ]
+}

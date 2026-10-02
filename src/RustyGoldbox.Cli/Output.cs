@@ -450,6 +450,11 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
 
         writer.WriteLine($"  gold {character.Gold}");
+        if (character.Features.Any())
+        {
+            writer.WriteLine($"  features: {string.Join(", ", character.Features.Select(feature => $"{feature.Name} ({feature.Json.GetProperty("kind").GetString()})"))}");
+        }
+
         if (character.Portrait is Core.Definitions.Definition portrait)
         {
             writer.WriteLine($"  portrait {portrait.QualifiedId}");

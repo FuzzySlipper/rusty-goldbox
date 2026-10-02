@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "duskwood",
+  "name": "Duskwood sylvan",
+  "kind": "heritage",
+  "requirements": "self.race == 'sylvan'",
+  "description": "Sees well in dim light."
+}

@@ -202,5 +202,23 @@ public sealed class DefinitionTests
         Assert.Contains("isn't available here", Message(set, "expression.type"), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void GrantsNeedAFeatureOfTheirKind()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/brave.json", """{ "type": "feature", "id": "brave", "name": "Brave", "kind": "feat" }""");
+        modules.Write("rules/rogue.json", """
+            { "type": "class", "id": "rogue", "name": "Rogue", "levels": [ { "xp": 0, "hp": "1d6", "grants": [ { "kind": "talent" }, { "kind": "feat", "count": 0 } ] } ] }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [("grant.count", "$.levels[0].grants[1].count"), ("grant.kind", "$.levels[0].grants[0].kind")],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+        Assert.Contains("Feature kinds: feat.", Message(set, "grant.kind"), StringComparison.Ordinal);
+    }
+
     private static string Message(ModuleSet set, string rule) => set.Diagnostics.First(diagnostic => diagnostic.Rule == rule).Message;
 }

@@ -11,7 +11,21 @@
   "levels": [
     {
       "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",
-      "hp_bonus": "self.grit_mod"
+      "hp_bonus": "self.grit_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
+    },
+    {
+      "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",
+      "hp_bonus": "self.grit_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
     },
     {
       "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",
@@ -19,11 +33,12 @@
     },
     {
       "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",
-      "hp_bonus": "self.grit_mod"
-    },
-    {
-      "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",
-      "hp_bonus": "self.grit_mod"
+      "hp_bonus": "self.grit_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
     },
     {
       "hp": "if self.level == 1 then 10 else max(1 - self.grit_mod, 1d10)",

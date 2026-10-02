@@ -62,6 +62,11 @@ public static class CharacterFile
                 writer.WriteStartObject();
                 writer.WriteString("class", level.Class.QualifiedId);
                 writer.WriteNumber("gain", level.Gain);
+                if (level.Features.Count > 0)
+                {
+                    WriteReferences(writer, "features", level.Features);
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -122,7 +127,7 @@ public static class CharacterFile
         return new Reader(file, set, problems, at).Read(root);
     }
 
-    private static void WriteReferences(Utf8JsonWriter writer, string name, List<Definition> definitions)
+    private static void WriteReferences(Utf8JsonWriter writer, string name, IEnumerable<Definition> definitions)
     {
         writer.WriteStartArray(name);
         foreach (Definition definition in definitions)
@@ -199,12 +204,14 @@ public static class CharacterFile
             return problems.Count > _before ? null : character;
         }
 
-        /// <summary>Reads "levels": one { "class", "gain" } per character level, none past its class's last level.</summary>
+        private static bool Repeatable(Definition feature) => feature.Json.TryGetProperty("repeatable", out JsonElement repeatable) && repeatable.GetBoolean();
+
+        /// <summary>Reads "levels": one { "class", "gain", "features"? } per character level, none past its class's last level.</summary>
         private bool ReadLevels(JsonElement root, Character character)
         {
             if (!root.TryGetProperty("levels", out JsonElement levels) || levels.ValueKind != JsonValueKind.Array || levels.GetArrayLength() == 0)
             {
-                Error("$.levels", "\"levels\" must be an array with one { \"class\", \"gain\" } per character level, first to last, and at least one.");
+                Error("$.levels", "\"levels\" must be an array with one { \"class\", \"gain\", \"features\"? } per character level, first to last, and at least one.");
                 return false;
             }
 
@@ -216,17 +223,24 @@ public static class CharacterFile
                 index++;
                 if (level.ValueKind != JsonValueKind.Object)
                 {
-                    Error(at, "Each level must be an object { \"class\", \"gain\" }.");
+                    Error(at, "Each level must be an object { \"class\", \"gain\", \"features\"? }.");
                     continue;
                 }
 
                 Definition? characterClass = Reference(level, "class", DefinitionTypes.Class, at);
+                List<Definition> features = [];
+                ReadList(level, "features", DefinitionTypes.Feature, features, at);
                 if (Number(level, "gain", at) is not decimal gain || characterClass is null)
                 {
                     continue;
                 }
 
-                character.Levels.Add(new LevelTaken(characterClass, gain));
+                foreach (Definition feature in features.Where(feature => !Repeatable(feature) && (character.Features.Contains(feature) || features.Count(other => other == feature) > 1)).Distinct())
+                {
+                    Error($"{at}.features", $"{feature.QualifiedId} isn't repeatable, but the character has it more than once.");
+                }
+
+                character.Levels.Add(new LevelTaken(characterClass, gain, features));
                 int classLevels = characterClass.Json.GetProperty("levels").GetArrayLength();
                 if (character.ClassLevels()[characterClass] > classLevels)
                 {
@@ -368,7 +382,7 @@ public static class CharacterFile
             }
         }
 
-        private void ReadList(JsonElement root, string name, DefinitionType type, List<Definition> into)
+        private void ReadList(JsonElement root, string name, DefinitionType type, List<Definition> into, string at = "$")
         {
             if (!root.TryGetProperty(name, out JsonElement list))
             {
@@ -377,14 +391,14 @@ public static class CharacterFile
 
             if (list.ValueKind != JsonValueKind.Array)
             {
-                Error($"$.{name}", $"\"{name}\" must be an array of {type.Name} IDs.");
+                Error($"{at}.{name}", $"\"{name}\" must be an array of {type.Name} IDs.");
                 return;
             }
 
             int index = 0;
             foreach (JsonElement entry in list.EnumerateArray())
             {
-                if (Resolve(entry, $"$.{name}[{index}]", type) is Definition definition)
+                if (Resolve(entry, $"{at}.{name}[{index}]", type) is Definition definition)
                 {
                     into.Add(definition);
                 }

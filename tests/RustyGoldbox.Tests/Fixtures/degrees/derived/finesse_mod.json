@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "finesse_mod",
+  "name": "Finesse modifier",
+  "value": "floor((self.finesse - 10) / 2)"
+}

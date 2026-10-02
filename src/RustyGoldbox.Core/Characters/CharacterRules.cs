@@ -10,13 +10,18 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="Attributes">Scores to use instead of rolling; every attribute, before racial adjustments.</param>
 /// <param name="Priority">For rulesets that let players arrange rolls: attributes from most to least important; the highest roll goes first.</param>
 /// <param name="Creation">The character-creation definition to use when the set has more than one.</param>
+/// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
 public sealed record CreationRequest(
     string Name,
     string Class,
     string Race,
     IReadOnlyDictionary<string, decimal>? Attributes = null,
     IReadOnlyList<string>? Priority = null,
-    string? Creation = null);
+    string? Creation = null,
+    IReadOnlyList<string>? Features = null);
+
+/// <summary>A choice a character makes: <see cref="Count"/> features of a kind, and what grants it, for messages.</summary>
+public sealed record Grant(string Kind, int Count, string From);
 
 /// <summary>A level gained: the character level reached, the class it was taken in, and the hit points it added.</summary>
 public sealed record LevelGain(int Level, Definition Class, decimal Amount);
@@ -32,7 +37,8 @@ public static class CharacterRules
         Definition? creation = FindCreation(rules, request.Creation, problems);
         Definition? characterClass = Find(rules, DefinitionTypes.Class, request.Class, "class", problems);
         Definition? race = Find(rules, DefinitionTypes.Race, request.Race, "race", problems);
-        if (creation is null || characterClass is null || race is null)
+        List<Definition>? choices = FindFeatures(rules, request.Features, problems);
+        if (creation is null || characterClass is null || race is null || choices is null)
         {
             return null;
         }
@@ -81,6 +87,12 @@ public static class CharacterRules
             {
                 // The track's own maximum is what levels keep; StartTracks starts it at the full maximum.
                 character.Tracks[levelTrack.Id] = new TrackValue { Max = kept };
+            }
+
+            List<Grant> grants = [.. CreationGrants(creation), .. LevelGrants(rules, character, evaluator)];
+            if (!Choose(rules, character, grants, choices, evaluator, problems) || !NoneLeft(choices, problems))
+            {
+                return null;
             }
 
             StartTracks(rules, character, evaluator);
@@ -137,11 +149,25 @@ public static class CharacterRules
     /// <paramref name="nextClass"/> (a new class must accept the character),
     /// otherwise in the class of the latest level; with experience by class
     /// the character stays in its class. Levelling stops where that class has
-    /// no more levels. On a problem it returns null and the character may be
-    /// partly advanced; don't save it.
+    /// no more levels. The choices each level grants take <paramref name="features"/>
+    /// by kind, in order. On a problem it returns null and the character may
+    /// be partly advanced; don't save it.
     /// </summary>
-    public static List<LevelGain>? AddExperience(RuleSet rules, Character character, decimal experience, DiceRoller dice, List<ModuleDiagnostic> problems, string? nextClass = null)
+    public static List<LevelGain>? AddExperience(
+        RuleSet rules,
+        Character character,
+        decimal experience,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems,
+        string? nextClass = null,
+        IReadOnlyList<string>? features = null)
     {
+        List<Definition>? choices = FindFeatures(rules, features, problems);
+        if (choices is null)
+        {
+            return null;
+        }
+
         Definition? chosen = null;
         if (nextClass is not null)
         {
@@ -176,9 +202,13 @@ public static class CharacterRules
                 }
 
                 gains.Add(new LevelGain(character.Level, characterClass, gain));
+                if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems))
+                {
+                    return null;
+                }
             }
 
-            return gains;
+            return NoneLeft(choices, problems) ? gains : null;
         }
         catch (Exception exception) when (exception is RuleFailure or OverflowException)
         {
@@ -225,14 +255,149 @@ public static class CharacterRules
     private static (decimal Kept, decimal Bonus) TakeLevel(RuleSet rules, Character character, Definition characterClass, Evaluator evaluator)
     {
         // The gain is evaluated as the character is once it has the level.
-        character.Levels.Add(new LevelTaken(characterClass, 0));
+        character.Levels.Add(new LevelTaken(characterClass, 0, []));
         int classLevel = character.ClassLevels()[characterClass];
         Creature creature = character.ToCreature();
         decimal kept = Evaluate(rules, evaluator, characterClass, $"$.levels[{classLevel - 1}].hp", creature);
         string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
         decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? Evaluate(rules, evaluator, characterClass, bonusPath, creature) : 0;
-        character.Levels[^1] = new LevelTaken(characterClass, kept);
+        character.Levels[^1] = character.Levels[^1] with { Gain = kept };
         return (kept, bonus);
+    }
+
+    /// <summary>The choices every new character makes, from the character-creation definition.</summary>
+    private static List<Grant> CreationGrants(Definition creation)
+    {
+        return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})");
+    }
+
+    /// <summary>
+    /// The choices the character's latest level grants: the advancement's
+    /// grants whose "when" holds now, then the class level's.
+    /// </summary>
+    private static List<Grant> LevelGrants(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        List<Grant> grants = [];
+        if (rules.Advancement is Definition advancement && advancement.Json.TryGetProperty("grants", out JsonElement advancementGrants))
+        {
+            for (int index = 0; index < advancementGrants.GetArrayLength(); index++)
+            {
+                string path = $"$.grants[{index}]";
+                if (Holds(rules, evaluator, advancement, $"{path}.when", character.ToCreature()))
+                {
+                    grants.Add(Grant(advancementGrants[index], $"level {character.Level} ({advancement.QualifiedId})"));
+                }
+            }
+        }
+
+        Definition characterClass = character.LatestClass;
+        int classLevel = character.ClassLevels()[characterClass];
+        grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[classLevel - 1], "grants", $"{characterClass.Name} level {classLevel}"));
+        return grants;
+    }
+
+    private static List<Grant> Grants(JsonElement owner, string field, string from)
+    {
+        return owner.TryGetProperty(field, out JsonElement grants) ? grants.EnumerateArray().Select(grant => Grant(grant, from)).ToList() : [];
+    }
+
+    private static Grant Grant(JsonElement grant, string from)
+    {
+        int count = grant.TryGetProperty("count", out JsonElement given) ? given.GetInt32() : 1;
+        return new Grant(grant.GetProperty("kind").GetString()!, count, from);
+    }
+
+    /// <summary>
+    /// Fills each grant from <paramref name="choices"/>: the first features
+    /// left of its kind, each one's requirements met and not taken twice
+    /// unless repeatable. The chosen features join the latest level.
+    /// </summary>
+    private static bool Choose(RuleSet rules, Character character, List<Grant> grants, List<Definition> choices, Evaluator evaluator, List<ModuleDiagnostic> problems)
+    {
+        foreach (Grant grant in grants)
+        {
+            for (int made = 0; made < grant.Count; made++)
+            {
+                Definition? feature = choices.FirstOrDefault(choice => choice.Json.GetProperty("kind").GetString() == grant.Kind);
+                if (feature is null)
+                {
+                    List<string> offered = rules.OfType(DefinitionTypes.Feature)
+                        .Where(candidate => candidate.Json.GetProperty("kind").GetString() == grant.Kind && Problem(rules, character, candidate, evaluator) is null)
+                        .Select(candidate => candidate.QualifiedId)
+                        .ToList();
+                    problems.Add(new ModuleDiagnostic(
+                        "character.feature",
+                        $"{grant.From} grants {grant.Count} {grant.Kind} for {character.Name}, so choose {(grant.Count - made == 1 ? "one" : $"{grant.Count - made} more")} with --feature. {Offer(grant.Kind, offered)}"));
+                    return false;
+                }
+
+                choices.Remove(feature);
+                if (Problem(rules, character, feature, evaluator) is ModuleDiagnostic problem)
+                {
+                    problems.Add(problem);
+                    return false;
+                }
+
+                LevelTaken latest = character.Levels[^1];
+                character.Levels[^1] = latest with { Features = [.. latest.Features, feature] };
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Why the character can't choose <paramref name="feature"/> now: it has it and it isn't repeatable, or it misses the requirements.</summary>
+    private static ModuleDiagnostic? Problem(RuleSet rules, Character character, Definition feature, Evaluator evaluator)
+    {
+        bool repeatable = feature.Json.TryGetProperty("repeatable", out JsonElement repeat) && repeat.GetBoolean();
+        if (!repeatable && character.Features.Contains(feature))
+        {
+            return new ModuleDiagnostic("character.feature", $"{character.Name} already has {feature.QualifiedId}, and it isn't repeatable.", feature.Module, feature.File, "$");
+        }
+
+        if (rules.TryExpression(feature, "$.requirements", out CompiledExpression? requirements)
+            && !Holds(rules, evaluator, feature, "$.requirements", character.ToCreature()))
+        {
+            return new ModuleDiagnostic(
+                "character.feature",
+                $"{character.Name} doesn't meet {feature.QualifiedId}'s requirements: {requirements!.Text}.",
+                feature.Module,
+                feature.File,
+                "$.requirements");
+        }
+
+        return null;
+    }
+
+    private static string Offer(string kind, List<string> offered)
+    {
+        return offered.Count == 0 ? $"No {kind} is open to the character now." : $"Open to the character: {string.Join(", ", offered)}.";
+    }
+
+    /// <summary>Every feature given must have filled a grant.</summary>
+    private static bool NoneLeft(List<Definition> choices, List<ModuleDiagnostic> problems)
+    {
+        foreach (Definition extra in choices)
+        {
+            problems.Add(new ModuleDiagnostic("character.feature", $"Nothing granted a {extra.Json.GetProperty("kind").GetString()} for {extra.QualifiedId}; leave it out, or give it at a level that grants one."));
+        }
+
+        return choices.Count == 0;
+    }
+
+    private static List<Definition>? FindFeatures(RuleSet rules, IReadOnlyList<string>? ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> found = [];
+        foreach (string id in ids ?? [])
+        {
+            if (Find(rules, DefinitionTypes.Feature, id, "feature", problems) is Definition feature)
+            {
+                found.Add(feature);
+            }
+        }
+
+        return problems.Count == before ? found : null;
     }
 
     /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>
@@ -268,9 +433,20 @@ public static class CharacterRules
     /// <summary>Evaluates a definition's expression; a failure names the definition, file and path.</summary>
     private static decimal Evaluate(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
     {
+        return Value(rules, evaluator, definition, path, self).Number;
+    }
+
+    /// <summary>Evaluates a definition's boolean expression, such as a requirement.</summary>
+    private static bool Holds(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature self)
+    {
+        return Value(rules, evaluator, definition, path, self).Boolean;
+    }
+
+    private static Value Value(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
+    {
         try
         {
-            return evaluator.Evaluate(rules.Expression(definition, path), self, null).Number;
+            return evaluator.Evaluate(rules.Expression(definition, path), self, null);
         }
         catch (ExpressionException exception)
         {
@@ -282,7 +458,6 @@ public static class CharacterRules
                 path));
         }
     }
-
 
     private static decimal StartingGold(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
     {
@@ -406,6 +581,11 @@ public static class CharacterRules
 
     private static void CheckRaceClass(RuleSet rules, Definition race, Definition characterClass, List<ModuleDiagnostic> problems)
     {
+        if (!race.Json.TryGetProperty("classes", out _))
+        {
+            return;
+        }
+
         int index = 0;
         bool allowed = false;
         foreach (JsonElement _ in race.Json.GetProperty("classes").EnumerateArray())

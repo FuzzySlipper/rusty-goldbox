@@ -1,0 +1,229 @@
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class mystic --race sylvan --name Wren --feature stonehide,scribe,sylvan_step,spark
+error[character.feature] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/features/stonehide.json $.requirements
+  Wren doesn't meet degrees:stonehide's requirements: self.race == 'hillfolk'.
+1 error.
+[exit 1]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry --out tor.json
+error[character.feature] 
+  level 1 (degrees:standard) grants 1 ancestry feat for Tor, so choose one with --feature. Open to the character: degrees:hill_lore, degrees:hill_toughness.
+1 error.
+[exit 1]
+
+$ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --out tor.json
+Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
+  hit points 20/20
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat)
+  brawn          10     Brawn
+  finesse        10     Finesse
+  stamina        10     Stamina
+  intellect      10     Intellect
+  insight        10     Insight
+  presence       10     Presence
+  ac             13     Armour class
+  ancestry_hp    10     Ancestry hit points
+  brawn_mod      0      Brawn modifier
+  finesse_mod    0      Finesse modifier
+  insight_mod    0      Insight modifier
+  intellect_mod  0      Intellect modifier
+  presence_mod   0      Presence modifier
+  stamina_mod    0      Stamina modifier
+Saved to tor.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character level tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --xp 1000 --feature battle_cry --seed 2
+Reached level 2: +10 hit points.
+Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
+  hit points 30/30
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat)
+  brawn          10     Brawn
+  finesse        10     Finesse
+  stamina        10     Stamina
+  intellect      10     Intellect
+  insight        10     Insight
+  presence       10     Presence
+  ac             13     Armour class
+  ancestry_hp    10     Ancestry hit points
+  brawn_mod      0      Brawn modifier
+  finesse_mod    0      Finesse modifier
+  insight_mod    0      Insight modifier
+  intellect_mod  0      Intellect modifier
+  presence_mod   0      Presence modifier
+  stamina_mod    0      Stamina modifier
+Saved to tor.json.
+  seed 2: no dice rolled
+[exit 0]
+
+$ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --json
+{
+  "ok": true,
+  "saved_to": null,
+  "character": {
+    "format": 1,
+    "name": "Tor",
+    "modules": [
+      {
+        "id": "degrees",
+        "version": "0.1.0"
+      }
+    ],
+    "race": "degrees:hillfolk",
+    "levels": [
+      {
+        "class": "degrees:vanguard",
+        "gain": 20,
+        "features": [
+          "degrees:stonehide",
+          "degrees:sentry",
+          "degrees:hill_toughness",
+          "degrees:shield_ward"
+        ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:battle_cry"
+        ]
+      }
+    ],
+    "experience": 1000,
+    "attributes": {
+      "brawn": 10,
+      "finesse": 10,
+      "stamina": 10,
+      "intellect": 10,
+      "insight": 10,
+      "presence": 10
+    },
+    "tracks": {
+      "hit_points": {
+        "current": 30,
+        "max": 30
+      }
+    },
+    "gold": 15,
+    "equipment": [],
+    "conditions": []
+  },
+  "next_level_experience": 2000,
+  "level_waiting": false,
+  "spell_slots": [],
+  "stats": [
+    {
+      "id": "brawn",
+      "name": "Brawn",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "finesse",
+      "name": "Finesse",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "stamina",
+      "name": "Stamina",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "intellect",
+      "name": "Intellect",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "presence",
+      "name": "Presence",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "ac",
+      "name": "Armour class",
+      "kind": "derived",
+      "value": 13,
+      "problem": null
+    },
+    {
+      "id": "ancestry_hp",
+      "name": "Ancestry hit points",
+      "kind": "derived",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "brawn_mod",
+      "name": "Brawn modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "finesse_mod",
+      "name": "Finesse modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "insight_mod",
+      "name": "Insight modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "intellect_mod",
+      "name": "Intellect modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "presence_mod",
+      "name": "Presence modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "stamina_mod",
+      "name": "Stamina modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    }
+  ],
+  "tracks": [
+    {
+      "id": "hit_points",
+      "name": "Hit points",
+      "current": 30,
+      "max": 30,
+      "problem": null
+    }
+  ],
+  "levels_gained": [],
+  "seed": null,
+  "rolls": []
+}
+[exit 0]
+

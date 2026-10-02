@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "stonehide",
+  "name": "Stonehide hillfolk",
+  "kind": "heritage",
+  "requirements": "self.race == 'hillfolk'",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "1"
+    }
+  ]
+}

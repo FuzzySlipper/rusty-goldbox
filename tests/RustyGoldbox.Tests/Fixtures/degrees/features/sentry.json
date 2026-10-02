@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "sentry",
+  "name": "Sentry",
+  "kind": "background",
+  "description": "Stood watch on a town wall."
+}

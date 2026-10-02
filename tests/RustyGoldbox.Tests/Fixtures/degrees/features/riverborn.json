@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "riverborn",
+  "name": "Riverborn hillfolk",
+  "kind": "heritage",
+  "requirements": "self.race == 'hillfolk'",
+  "description": "Grew up on the water."
+}

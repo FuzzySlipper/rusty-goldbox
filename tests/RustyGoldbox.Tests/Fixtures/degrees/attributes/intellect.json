@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "intellect",
+  "name": "Intellect",
+  "min": 1,
+  "max": 30,
+  "default": 10
+}

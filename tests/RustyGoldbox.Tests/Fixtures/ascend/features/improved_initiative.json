@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "improved_initiative",
+  "name": "Improved initiative",
+  "kind": "feat",
+  "modifiers": [
+    {
+      "stat": "initiative_bonus",
+      "value": "4"
+    }
+  ]
+}

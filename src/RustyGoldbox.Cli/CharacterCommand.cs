@@ -11,8 +11,8 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
-        + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--seed <n>]\n"
+        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--seed <n>]\n"
         + "       goldbox character show <file> --module <path>";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
@@ -33,7 +33,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--portrait", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--class") is null || parsed.Single("--race") is null))
         {
             error = Usage;
@@ -60,7 +60,8 @@ internal static class CharacterCommand
             parsed.Single("--race")!,
             attributes,
             priority,
-            parsed.Single("--creation"));
+            parsed.Single("--creation"),
+            Features(parsed));
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));
@@ -81,7 +82,7 @@ internal static class CharacterCommand
 
     private static int Level(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--xp", "--class", "--seed"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--xp", "--class", "--feature", "--seed"], []);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--xp") is null))
         {
             error = Usage;
@@ -108,7 +109,7 @@ internal static class CharacterCommand
 
         List<ModuleDiagnostic> problems = [];
         (List<LevelGain>? gains, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
-            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class")));
+            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class"), Features(parsed)));
         if (gains is null)
         {
             // Problems from ruleset expressions name their definition; the rest are about this character.
@@ -122,6 +123,12 @@ internal static class CharacterCommand
 
         output.CharacterSheet(set.Rules!, character!, path, seed, rolls, gains);
         return GoldboxCli.Ok;
+    }
+
+    /// <summary>--feature ids, comma-separated, in the order the grants take them.</summary>
+    private static IReadOnlyList<string> Features(Arguments parsed)
+    {
+        return parsed.Single("--feature")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
     }
 
     private static int Show(IEnumerable<string> args, Output output, string workingDirectory)

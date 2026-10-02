@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "scribe",
+  "name": "Scribe",
+  "kind": "background",
+  "description": "Copied ledgers for a merchant house."
+}

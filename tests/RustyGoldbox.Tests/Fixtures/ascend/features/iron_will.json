@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "iron_will",
+  "name": "Iron will",
+  "kind": "feat",
+  "modifiers": [
+    {
+      "check": "save_will",
+      "value": "2"
+    }
+  ]
+}

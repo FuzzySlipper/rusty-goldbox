@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "might_increase",
+  "name": "Might +1",
+  "kind": "ability increase",
+  "repeatable": true,
+  "modifiers": [
+    {
+      "stat": "might",
+      "value": "1"
+    }
+  ]
+}

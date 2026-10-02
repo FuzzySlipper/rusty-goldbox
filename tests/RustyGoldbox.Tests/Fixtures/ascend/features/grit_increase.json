@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "grit_increase",
+  "name": "Grit +1",
+  "kind": "ability increase",
+  "repeatable": true,
+  "modifiers": [
+    {
+      "stat": "grit",
+      "value": "1"
+    }
+  ]
+}

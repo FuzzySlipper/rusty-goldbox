@@ -12,6 +12,9 @@ public static class DefinitionTypes
     private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
     private static readonly UseKind Use = new();
 
+    private static readonly Field GrantKind = new("kind", new TextKind(), true, "The kind of feature chosen, as features name it, for example \"feat\" or \"background\".");
+    private static readonly Field GrantCount = new("count", new IntegerKind(), false, "How many to choose; without it, 1.");
+
     public static DefinitionType Attribute { get; } = new(
         "attribute",
         "A rolled or assigned score every character has, such as strength. Expressions read it as self.<id>.",
@@ -81,7 +84,7 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("ability_adjustments", new MapKind(new StatKind(true), new IntegerKind()), false, "Added to rolled attributes at character creation."),
             new("ability_limits", new MapKind(new StatKind(true), new ListKind(new IntegerKind(), 2)), false, "[min, max] each attribute must fall within after adjustment."),
-            new("classes", new ListKind(new ReferenceKind("class")), true, "Classes characters of this race may take."),
+            new("classes", new ListKind(new ReferenceKind("class")), false, "Classes characters of this race may take; without it, any class."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers every member of the race has."),
         ],
         """
@@ -108,6 +111,7 @@ public static class DefinitionTypes
                 new("xp", new IntegerKind(), false, "Experience needed for this level; the first level needs 0. Required when each class has its own experience (no advancement definition, or one with experience \"class\"); left out when the advancement definition sets experience by character level."),
                 new("hp", SelfNumber, true, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept."),
                 new("hp_bonus", SelfNumber, false, "Added to this level's gain as the character is now, not as it was: recomputed whenever the stats it reads change, for example \"self.con_mod\" so a higher constitution raises every level's hit points. Without it, the whole gain is hp."),
+                new("grants", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
             ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
@@ -132,9 +136,45 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("experience", new EnumKind(["class", "character"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level."),
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
+            new("grants", new ListKind(new ObjectKind(
+            [
+                GrantKind,
+                GrantCount,
+                new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, read as the character is with the new level, for example \"self.level == 1 or floor(self.level / 3) * 3 == self.level\"."),
+            ])), false, "Features characters choose as their total level rises, whatever the class: feats, ability increases."),
         ],
         """
-        { "type": "advancement", "id": "standard", "name": "Character levels", "experience": "character", "levels": [0, 1000, 3000, 6000, 10000] }
+        {
+          "type": "advancement",
+          "id": "standard",
+          "name": "Character levels",
+          "experience": "character",
+          "levels": [0, 1000, 3000, 6000, 10000],
+          "grants": [ { "kind": "feat", "when": "self.level == 1 or floor(self.level / 3) * 3 == self.level" } ]
+        }
+        """);
+
+    public static DefinitionType Feature { get; } = new(
+        "feature",
+        "Something a character chooses: a background, heritage, feat, class feature or ability increase. Character creation, the advancement and class levels grant choices of a kind; a feature brings modifiers and actions.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("kind", new TextKind(), true, "What sort of feature it is, in the ruleset's own words; grants choose by kind, for example \"feat\"."),
+            new("description", new TextKind(), false, "What the feature means in play."),
+            new("requirements", new ExpressionKind(ExprType.Boolean, Roots.Self), false, "What the character must be to choose it, read with the level that grants it, for example \"self.might >= 13\" or \"self.race == 'dwarf'\"."),
+            new("repeatable", new BooleanKind(), false, "If true, a character may choose it more than once, and its modifiers add each time (ability increases)."),
+            new("modifiers", new ListKind(Modifier), false, "Modifiers a character with the feature has."),
+            new("actions", new ListKind(Use), false, "Actions the feature lets a character take in combat, after its classes' actions."),
+        ],
+        """
+        {
+          "type": "feature",
+          "id": "iron_will",
+          "name": "Iron will",
+          "kind": "feat",
+          "requirements": "self.level >= 1",
+          "modifiers": [ { "check": "save_will", "value": "2" } ]
+        }
         """);
 
     public static DefinitionType Check { get; } = new(
@@ -485,6 +525,7 @@ public static class DefinitionTypes
             new("attribute_roll", PlainNumber, true, "Roll for each attribute, for example \"3d6\" or \"roll_keep(4, 6, 3)\"."),
             new("assignment", new EnumKind(["in-order", "arrange"]), true, "Whether rolls are taken in attribute order or arranged by the player."),
             new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), true, "Starting gold pieces for each class."),
+            new("features", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
         ],
         """
         {
@@ -500,7 +541,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Advancement, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure,
     ];
 

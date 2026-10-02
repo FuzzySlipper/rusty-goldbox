@@ -8,11 +8,11 @@ namespace RustyGoldbox.Core.Characters;
 public sealed record ModuleStamp(string Id, ModuleVersion Version);
 
 /// <summary>
-/// One character level: the class it was taken in, and what the level track
+/// One character level: the class it was taken in, what the level track
 /// gained then from the level's hp (its hp_bonus, if any, is added as the
-/// character is now).
+/// character is now), and the features chosen at it.
 /// </summary>
-public sealed record LevelTaken(Definition Class, decimal Gain);
+public sealed record LevelTaken(Definition Class, decimal Gain, IReadOnlyList<Definition> Features);
 
 /// <summary>A player character: its choices, scores and progress under a rule set.</summary>
 public sealed class Character
@@ -43,6 +43,9 @@ public sealed class Character
 
         return levels;
     }
+
+    /// <summary>Every feature the character has chosen, in the order chosen; a repeatable one may appear more than once.</summary>
+    public IEnumerable<Definition> Features => Levels.SelectMany(level => level.Features);
 
     /// <summary>The class of the latest level: where the next level goes unless the player picks another.</summary>
     public Definition LatestClass => Levels[^1].Class;
@@ -96,6 +99,7 @@ public sealed class Character
             creature.Values[id] = score;
         }
 
+        creature.Features.AddRange(Features);
         creature.Equipment.AddRange(Equipment);
         creature.Conditions.AddRange(Conditions);
         return creature;

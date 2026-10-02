@@ -52,6 +52,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         }
 
         renamed.LevelsTaken.AddRange(Creature.LevelsTaken);
+        renamed.Features.AddRange(Creature.Features);
 
         foreach ((string id, TrackValue value) in Creature.Tracks)
         {
@@ -70,14 +71,16 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     /// <summary>
     /// A character as a combatant: its classes' actions in the order the
-    /// classes were taken, with item parameters from its equipment. A use
-    /// another class already gives (the same action and name) is listed once.
+    /// classes were taken, then its features' actions, with item parameters
+    /// from its equipment. A use already given (the same action and name) is
+    /// listed once.
     /// </summary>
     public static Combatant FromCharacter(RuleSet rules, Character character)
     {
         Creature creature = character.ToCreature(character.Name);
         List<UseOption> uses = creature.ClassLevels.Keys
-            .SelectMany(characterClass => ReadUses(rules, characterClass, "$.actions", creature.Equipment))
+            .Concat(creature.Features.Distinct())
+            .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment))
             .DistinctBy(use => (use.Action, use.Name))
             .ToList();
         return new Combatant(character.Name, creature, uses);

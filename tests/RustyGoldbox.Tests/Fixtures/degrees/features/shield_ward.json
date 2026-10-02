@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "shield_ward",
+  "name": "Shield ward",
+  "kind": "vanguard feat",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "1"
+    }
+  ]
+}

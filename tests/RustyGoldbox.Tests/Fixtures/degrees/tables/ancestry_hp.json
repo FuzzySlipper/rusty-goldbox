@@ -1,0 +1,21 @@
+{
+  "type": "table",
+  "id": "ancestry_hp",
+  "keys": [
+    {
+      "name": "ancestry",
+      "type": "text"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [
+      "hillfolk",
+      10
+    ],
+    [
+      "sylvan",
+      6
+    ]
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "stamina",
+  "name": "Stamina",
+  "min": 1,
+  "max": 30,
+  "default": 10
+}

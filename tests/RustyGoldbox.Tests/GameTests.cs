@@ -21,6 +21,7 @@ public sealed class GameTests
     [InlineData("""{ "action": "equip", "member": 0, "item": null }""", "\"item\" must be non-empty text")]
     [InlineData("""{ "action": "play", "command": null }""", "\"command\" must be non-empty text")]
     [InlineData("""{ "action": "roll", "name": " ", "race": "classic:human", "class": "classic:fighter" }""", "\"name\" must be non-empty text")]
+    [InlineData("""{ "action": "roll", "name": "A", "race": "classic:human", "class": "classic:fighter", "features": [1] }""", "\"features\" must be an array of non-empty text")]
     [InlineData("""{ "action": "drop", "member": "0" }""", "\"member\" must be a whole number")]
     [InlineData("""{ "action": "open", "campaign": "x", "seed": 7 }""", "\"seed\" must be non-empty text")]
     [InlineData("""{ "action": "save", "slot": "../escape" }""", "isn't a save slot name")]
