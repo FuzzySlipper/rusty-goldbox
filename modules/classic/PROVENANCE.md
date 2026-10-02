@@ -21,6 +21,7 @@ artwork, its title and trademarks, or its variable experience point rule.
 | `classes/`, `tables/thac0`, `tables/saving_throws` | Chapter I, fighter, cleric, magic user and thief (pp. 10–27) |
 | `items/` | Chapter I, equipment and armour (pp. 31–34) |
 | `creation/standard` (rolls, starting gold) | Chapter I (pp. 1, 30) |
+| `advancement/standard`, race `multiclasses`, class level `hp` division | Chapter I, multi-classing and dual-classing (pp. 27–28) and permitted class options (pp. 4–7) |
 | `spells/` | Chapter II, cleric and magic user level 1 spells; descriptions are reworded |
 | `checks/`, `actions/`, `combat/standard` | Chapter III, combat (pp. 125–128) |
 
@@ -39,7 +40,17 @@ small:
   plain 18 row.
 - Only the fighter, cleric, magic user and thief classes are included, up to
   level 10, and only humans, dwarves, elves and halflings. There are no
-  multi-classed characters and no racial level limits.
+  racial level limits.
+- Multi-classed characters attack and save with the most favourable of their
+  classes' tables (`class_min`). The source states that rule for monsters
+  with the abilities of several classes (p. 129); it doesn't say so for
+  characters. Experience is divided evenly in whole points, rounding down.
+  The race rules on which class's armour and weapon limits apply are not
+  modelled.
+- A dual-classed character's old class doesn't work at all until the new
+  class passes its level, rather than working at the cost of the adventure's
+  experience. Starting money for a multi-classed character is the wealthiest
+  of its classes', as the source says (p. 30).
 - The dwarf and halfling constitution bonus applies to saves against spells
   and wands, but not to saves against poison (which share the death,
   paralysis and poison table).

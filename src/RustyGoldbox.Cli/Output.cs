@@ -417,6 +417,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 character = JsonDocument.Parse(CharacterFile.ToJson(character)).RootElement,
                 next_level_experience = character.NextLevelExperience(rules),
                 level_waiting = character.LevelWaiting(rules),
+                class_progress = !rules.ExperienceSplit ? null : character.ClassProgress().Select(progress => new { @class = progress.Class.QualifiedId, experience = progress.Experience, next_level_experience = progress.Next }),
                 spell_slots = character.SpellSlots().Select(entry => new { @class = entry.Class.QualifiedId, slots = entry.Slots }),
                 stats = stats.Select(stat => new { id = stat.Id, name = stat.Name, kind = stat.Kind, value = stat.Value is Value value ? ValueJson(value) : null, problem = stat.Problem }),
                 tracks = tracks.Select(track => new { id = track.Track.Id, name = track.Track.Name, current = track.Current, max = track.Max, problem = track.Problem }),
@@ -429,15 +430,18 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
         // A character with one class reads as before; with several, each line says which class.
         bool multiclass = character.ClassLevels().Count > 1;
+        string left = character.LeftClasses.Count > 0 ? $", left {string.Join(" and ", character.LeftClasses.Select(each => each.Name))}" : "";
         foreach (LevelGain gain in gains)
         {
             string taken = multiclass ? $" ({gain.Class.Name} {character.Levels.Take(gain.Level).Count(level => level.Class == gain.Class)})" : "";
             writer.WriteLine($"Reached level {gain.Level}{taken}: +{gain.Amount} {levelTrack}.");
         }
 
-        string next = character.NextLevelExperience(rules) is decimal needed ? $"next level at {needed}" : "highest level";
+        string next = rules.ExperienceSplit
+            ? string.Join(", ", character.ClassProgress().Select(progress => $"{progress.Class.Name} {N(progress.Experience)}" + (progress.Next is decimal needed ? $" of {N(needed)}" : " (highest level)")))
+            : character.NextLevelExperience(rules) is decimal needed ? $"next level at {needed}" : "highest level";
         string total = multiclass ? $"level {character.Level}, " : "";
-        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.ClassText} ({total}{character.Experience} xp, {next})");
+        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.ClassText} ({total}{character.Experience} xp, {next}{left})");
         if (character.LevelWaiting(rules))
         {
             writer.WriteLine($"  level {character.Level + 1} is waiting: {character.LatestClass.Name} has no more levels, so take it in another class (character level --xp 0 --class <id>).");

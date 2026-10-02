@@ -3,6 +3,6 @@
   "id": "save_death",
   "name": "Saving throw against death, paralysis and poison",
   "roll": "1d20",
-  "target": "table(saving_throws, self.class, self.level, 'death')",
+  "target": "class_min(table(saving_throws, class.id, class.level, 'death'))",
   "succeeds": "at-least"
 }

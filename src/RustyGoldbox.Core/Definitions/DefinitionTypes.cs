@@ -8,6 +8,7 @@ public static class DefinitionTypes
     private static readonly ExpressionKind SelfNumber = new(ExprType.Number, Roots.Self);
     private static readonly ExpressionKind CombatNumber = new(ExprType.Number, Roots.Self | Roots.Target);
     private static readonly ExpressionKind PlainNumber = new(ExprType.Number, Roots.None);
+    private static readonly ExpressionKind ClassNumber = new(ExprType.Number, Roots.Self | Roots.Class);
     private static readonly ModifierKind Modifier = new();
     private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
     private static readonly UseKind Use = new();
@@ -91,6 +92,7 @@ public static class DefinitionTypes
             new("ability_adjustments", new MapKind(new StatKind(true), new IntegerKind()), false, "Added to rolled attributes at character creation."),
             new("ability_limits", new MapKind(new StatKind(true), new ListKind(new IntegerKind(), 2)), false, "[min, max] each attribute must fall within after adjustment."),
             new("classes", new ListKind(new ReferenceKind("class")), false, "Classes characters of this race may take; without it, any class."),
+            new("multiclasses", new ListKind(new ListKind(new ReferenceKind("class"))), false, "With experience \"split\": the combinations of classes a character of the race may start with together, for example [[\"fighter\", \"thief\"]]."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers every member of the race has."),
             Boosts,
         ],
@@ -116,8 +118,8 @@ public static class DefinitionTypes
             new("levels", new ListKind(new ObjectKind(
             [
                 new("xp", new IntegerKind(), false, "Experience needed for this level; the first level needs 0. Required when each class has its own experience (no advancement definition, or one with experience \"class\"); left out when the advancement definition sets experience by character level."),
-                new("hp", SelfNumber, false, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept. Required when a track has from_levels; left out when none does."),
-                new("hp_bonus", SelfNumber, false, "Added to this level's gain as the character is now, not as it was: recomputed whenever the stats it reads change, for example \"self.con_mod\" so a higher constitution raises every level's hit points. Without it, the whole gain is hp."),
+                new("hp", ClassNumber, false, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept. Required when a track has from_levels; left out when none does."),
+                new("hp_bonus", ClassNumber, false, "Added to this level's gain as the character is now, not as it was: recomputed whenever the stats it reads change, for example \"self.con_mod\" so a higher constitution raises every level's hit points. Without it, the whole gain is hp."),
                 new("grants", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
             ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
@@ -142,7 +144,8 @@ public static class DefinitionTypes
         "How characters gain levels. Without one, each class has its own experience table (levels[].xp) and a character stays in one class. With experience \"character\", one table gives the experience for each total character level, and each new level is taken in a class of the player's choice, so a character can hold levels in several classes. A module set has at most one.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("experience", new EnumKind(["class", "character"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level."),
+            new("experience", new EnumKind(["class", "character", "split"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level. \"split\": a character may start with several classes (as its race's multiclasses allow); experience is divided evenly between the classes it advances in, each on its own levels[].xp, and class_change may let it leave its class for a new one."),
+            new("class_change", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Class), false, "With experience \"split\": whether a character may leave its classes for a new one (dual-classing), read with class.id as the new class, for example \"self.race == 'human' and self.classes == 1\". The classes left stop advancing and their modifiers and actions wait until the new class's level is higher; self.former_level is the highest of them. Without it, no class change."),
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
             new("grants", new ListKind(new ObjectKind(
             [

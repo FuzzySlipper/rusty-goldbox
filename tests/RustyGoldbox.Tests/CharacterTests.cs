@@ -23,6 +23,24 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ClassicMultiClassedAndDualClassedCharacters()
+    {
+        Golden.Verify("classic-multiclass.txt", CliTranscript.Run(
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter,magic_user", "--race", "dwarf", "--name", "Nain", "--attributes", "str=15,dex=14,con=15,int=10,wis=10,cha=9"],
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter,thief", "--race", "dwarf", "--name", "Thror", "--attributes", "str=15,dex=14,con=15,int=10,wis=10,cha=9", "--seed", "4", "--out", "thror.json"],
+            // Experience divides evenly: 2500 each takes the thief to level 3 but the fighter only to 2.
+            ["character", "level", "thror.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3"],
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "human", "--name", "Aldo", "--attributes", "str=16,dex=12,con=13,int=17,wis=10,cha=10", "--out", "aldo.json"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--class", "thief", "--seed", "2"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--seed", "2"],
+            // A dual-classed fighter starts magic user at level 1, gains no hit points until passing fighter 3,
+            // and fights with the magic user's table until then.
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "0", "--class", "magic_user", "--seed", "5"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "20000", "--seed", "6"],
+            ["character", "show", "aldo.json", "--module", Rules.ClassicPath, "--json"]));
+    }
+
+    [Fact]
     public void AscendingArmourClassRulesetUsesTheSameCommands()
     {
         Golden.Verify("ascend-character.txt", CliTranscript.Run(

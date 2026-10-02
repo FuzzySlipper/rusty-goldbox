@@ -26,7 +26,8 @@ public sealed record Scope(
     IReadOnlyDictionary<string, Value>? Variables = null,
     int? ClassLevel = null,
     CheckResult? Outer = null,
-    IReadOnlyDictionary<string, decimal>? ConditionValues = null);
+    IReadOnlyDictionary<string, decimal>? ConditionValues = null,
+    Definition? Class = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -152,9 +153,10 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
     /// </summary>
     private static Scope ModifierScope(Creature creature, Definition source)
     {
-        int? classLevel = source.Type == DefinitionTypes.Class ? creature.ClassLevels[source] : null;
+        bool isClass = source.Type == DefinitionTypes.Class;
+        int? classLevel = isClass ? creature.ClassLevels[source] : null;
         IReadOnlyDictionary<string, decimal>? values = source.Type == DefinitionTypes.Condition ? ConditionValuesOf(creature, source) : null;
-        return new Scope(creature, null, ClassLevel: classLevel, ConditionValues: values);
+        return new Scope(creature, null, ClassLevel: classLevel, ConditionValues: values, Class: isClass ? source : null);
     }
 
     /// <summary>A condition's values for a creature that has it: the values it was applied with, over the condition's defaults.</summary>
@@ -275,7 +277,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         {
             if (rules.TryExpression(characterClass, $"$.levels[{classLevel - 1}].hp_bonus", out CompiledExpression? bonus))
             {
-                total = Add(total, Evaluate(bonus!, creature, null).Number, 1);
+                total = Add(total, Evaluate(bonus!, new Scope(creature, null, ClassLevel: classLevel, Class: characterClass)).Number, 1);
             }
         }
 
@@ -325,6 +327,10 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return creature.Level is int level
                     ? Value.Of(level)
                     : throw new ExpressionException($"{creature.Label} has no level. Give {creature.Label} a \"level\".", 1);
+            case "classes":
+                return Value.Of(creature.AdvancingClasses ?? creature.ClassLevels.Count);
+            case "former_level":
+                return Value.Of(creature.FormerLevel);
             case "class":
                 return creature.Class is not null
                     ? Value.Of(creature.Class.Id)
@@ -389,9 +395,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
             if (path.Root == "class")
             {
-                return scope.ClassLevel is int classLevel
-                    ? Value.Of(classLevel)
-                    : throw new ExpressionException("class.level has no value outside a class's modifiers.", path.Column);
+                if (scope.ClassLevel is not int classLevel || scope.Class is not Definition current)
+                {
+                    throw new ExpressionException($"class.{path.Name} has no value here: it is read in a class's own fields and inside class_min() and the like.", path.Column);
+                }
+
+                return path.Name == "id" ? Value.Of(current.Id) : Value.Of(classLevel);
             }
 
             if (path.Root == "condition")
@@ -499,6 +508,30 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return table.Lookup(keys)
                     ?? throw new ExpressionException(
                         $"Table '{table.Definition.Id}' has no row for ({string.Join(", ", keys)}).", call.Column);
+            }
+
+            if (call.Function is "class_min" or "class_max" or "class_sum")
+            {
+                Creature self = scope.Self ?? throw new ExpressionException($"{call.Function}() needs a self creature, but none was given.", call.Column);
+
+                // A creature given only a class and a level has that one class.
+                IReadOnlyDictionary<Definition, int> classes = self.ClassLevels.Count > 0 || self.Class is null || self.Level is not int level
+                    ? self.ClassLevels
+                    : new Dictionary<Definition, int> { [self.Class] = level };
+                if (classes.Count == 0)
+                {
+                    throw new ExpressionException($"{self.Label} has no class for {call.Function}() to go over. Give {self.Label} a \"class\" and \"level\".", call.Column);
+                }
+
+                List<decimal> each = classes
+                    .Select(entry => new Run(evaluator, expression, scope with { Class = entry.Key, ClassLevel = entry.Value }).Evaluate(call.Arguments[0]).Number)
+                    .ToList();
+                return Value.Of(call.Function switch
+                {
+                    "class_min" => each.Min(),
+                    "class_max" => each.Max(),
+                    _ => each.Aggregate(0m, (total, value) => Add(total, value, call.Column)),
+                });
             }
 
             List<decimal> arguments = call.Arguments.Select(argument => Evaluate(argument).Number).ToList();

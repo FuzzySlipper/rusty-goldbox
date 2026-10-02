@@ -47,10 +47,13 @@ internal static class GoldboxCli
               Where creation makes scores by boosts, --boosts names the attribute for each
               boost that offers a choice: race, creation features, class, then creation.
               Where it uses point buy, --attributes are the bought scores.
+              Where experience is split between classes, --class fighter,thief starts with
+              both, as the race's multiclasses allow.
           goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]
               Adds experience, gains every level reached and saves the file. Where the
               advancement counts experience by character level, levels go to --class (a
               new class must accept the character), else to the class of the latest level.
+              Where experience is split, a new --class is a class change (dual-classing).
               --feature fills the choices the new levels grant, --boosts the boosts they grant.
           goldbox character show <file> --module <path>
               Prints the derived sheet.

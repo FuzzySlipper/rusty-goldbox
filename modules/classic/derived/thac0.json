@@ -2,5 +2,5 @@
   "type": "derived",
   "id": "thac0",
   "name": "Roll needed to hit armour class 0",
-  "value": "table(thac0, self.class, self.level)"
+  "value": "class_min(table(thac0, class.id, class.level))"
 }

@@ -173,7 +173,14 @@ table for total level, and each new level goes to a class the player picks,
 checked against the race and the class's requirements (3.5e style). A class's
 modifiers read `class.level`, the creature's level in that class, so
 per-class progressions such as base attack and base saves add up across
-classes. A class level's `hp` is rolled once and kept; its optional
+classes. With experience **split** (first-edition multi-classing), a
+character may start with several classes its race's `multiclasses` allow;
+experience is divided evenly between them, each advances on its own table,
+and expressions take the best table with `class_min(...)` and divide hit
+points by `self.classes`. Under split experience a `class_change` expression
+allows dual-classing: the old classes stop, and their modifiers and actions
+wait until the new class passes them (`self.former_level`). A class level's
+`hp` is rolled once and kept; its optional
 `hp_bonus` is added as the character is now, so a constitution-style change
 moves every level's hit points (3.5e), while rulesets without it keep each
 level's gain as rolled (first edition).
@@ -207,8 +214,7 @@ the features creation grants (a background), the class and the creation
 definition each list boosts, fixed or a choice among attributes, that raise
 one attribute by the creation's boost; one source never boosts the same
 attribute twice. A ruleset may offer several creation definitions and mark
-one the default. Classic split-experience multi-classing and dual-classing are not
-expressible yet.
+one the default.
 
 A condition may declare **values** with defaults (`{ "amount": 5 }`) that
 `apply_condition` sets when it applies the condition ("ongoing 5"); its

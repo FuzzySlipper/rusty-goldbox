@@ -38,6 +38,12 @@ public sealed class Creature
     /// <summary>The creature's level in each of its classes, in the order taken; each class's modifiers apply at that level.</summary>
     public Dictionary<Definition, int> ClassLevels { get; } = [];
 
+    /// <summary>How many classes a character advances in (self.classes); without a value, its number of classes.</summary>
+    public int? AdvancingClasses { get; set; }
+
+    /// <summary>The highest level of a class the character left by changing class (self.former_level), or 0.</summary>
+    public int FormerLevel { get; set; }
+
     /// <summary>
     /// A character's levels as (class, level in that class): each one's
     /// hp_bonus adds to the level track's own maximum, as the creature is now.

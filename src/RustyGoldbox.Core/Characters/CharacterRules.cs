@@ -11,6 +11,7 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="Priority">For rulesets that let players arrange rolls: attributes from most to least important; the highest roll goes first.</param>
 /// <param name="Creation">The character-creation definition to use when the set has more than one.</param>
 /// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
+/// <param name="AlsoClasses">Under experience split between classes: further classes to start with, as the race's multiclasses allow.</param>
 /// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
 public sealed record CreationRequest(
     string Name,
@@ -20,7 +21,8 @@ public sealed record CreationRequest(
     IReadOnlyList<string>? Priority = null,
     string? Creation = null,
     IReadOnlyList<string>? Features = null,
-    IReadOnlyList<string>? Boosts = null);
+    IReadOnlyList<string>? Boosts = null,
+    IReadOnlyList<string>? AlsoClasses = null);
 
 /// <summary>A choice a character makes: <see cref="Count"/> features of any of <see cref="Kinds"/>, and what grants it, for messages.</summary>
 public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
@@ -43,9 +45,18 @@ public static class CharacterRules
     {
         Definition? creation = FindCreation(rules, request.Creation, problems);
         Definition? characterClass = Find(rules, DefinitionTypes.Class, request.Class, "class", problems);
+        List<Definition> classes = characterClass is null ? [] : [characterClass];
+        foreach (string also in request.AlsoClasses ?? [])
+        {
+            if (Find(rules, DefinitionTypes.Class, also, "class", problems) is Definition another)
+            {
+                classes.Add(another);
+            }
+        }
+
         Definition? race = Find(rules, DefinitionTypes.Race, request.Race, "race", problems);
         List<Definition>? choices = FindFeatures(rules, request.Features, problems);
-        if (creation is null || characterClass is null || race is null || choices is null)
+        if (creation is null || characterClass is null || race is null || choices is null || problems.Count > 0)
         {
             return null;
         }
@@ -92,9 +103,21 @@ public static class CharacterRules
         }
 
         Adjust(race, scores);
-        CheckRaceClass(rules, race, characterClass, problems);
+        if (classes.Count > 1)
+        {
+            CheckMulticlass(rules, race, classes, problems);
+        }
+        else
+        {
+            CheckRaceClass(rules, race, characterClass, problems);
+        }
+
         CheckRaceLimits(race, scores, problems);
-        CheckClass(characterClass, scores, problems);
+        foreach (Definition each in classes)
+        {
+            CheckClass(each, scores, problems);
+        }
+
         if (problems.Count > 0)
         {
             return null;
@@ -108,7 +131,15 @@ public static class CharacterRules
 
         try
         {
-            (decimal kept, _) = TakeLevel(rules, character, characterClass, evaluator);
+            decimal kept = TakeLevels(rules, character, classes, evaluator).Sum(gain => gain.Kept);
+            if (rules.ExperienceSplit)
+            {
+                foreach (Definition each in classes)
+                {
+                    character.ClassExperience[each] = 0;
+                }
+            }
+
             if (rules.LevelTrack is Definition levelTrack)
             {
                 // The track's own maximum is what levels keep; StartTracks starts it at the full maximum.
@@ -143,6 +174,7 @@ public static class CharacterRules
     public static void CheckHistory(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
     {
         Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation };
+        replay.LeftClasses.AddRange(character.LeftClasses);
         foreach ((string id, decimal score) in character.Attributes)
         {
             replay.Attributes[id] = score;
@@ -276,7 +308,39 @@ public static class CharacterRules
             character.Experience = checked(character.Experience + experience);
             Evaluator evaluator = new(rules, dice);
             List<LevelGain> gains = [];
-            while (character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
+            if (rules.ExperienceSplit)
+            {
+                if (chosen is not null && !character.AdvancingClasses().Contains(chosen))
+                {
+                    // Changing class: the old classes stop, and the new one starts at its first level.
+                    character.LeftClasses.AddRange(character.AdvancingClasses());
+                    character.ClassExperience[chosen] = 0;
+                    if (!Advance(rules, character, chosen, evaluator, gains, choices, boostChoices, problems))
+                    {
+                        return null;
+                    }
+                }
+
+                List<Definition> advancing = character.AdvancingClasses();
+                decimal share = decimal.Floor(experience / advancing.Count);
+                foreach (Definition each in advancing)
+                {
+                    character.ClassExperience[each] = checked(character.ClassExperience.GetValueOrDefault(each) + share);
+                }
+
+                foreach (Definition each in advancing)
+                {
+                    while (character.ClassProgress().First(progress => progress.Class == each) is { Next: decimal needed } progress && progress.Experience >= needed)
+                    {
+                        if (!Advance(rules, character, each, evaluator, gains, choices, boostChoices, problems))
+                        {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            while (!rules.ExperienceSplit && character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
             {
                 // A class with no levels left stops here; the level waits for another class (see LevelWaiting).
                 Definition characterClass = chosen ?? character.LatestClass;
@@ -285,18 +349,7 @@ public static class CharacterRules
                     break;
                 }
 
-                (decimal kept, decimal bonus) = TakeLevel(rules, character, characterClass, evaluator);
-                decimal gain = checked(kept + bonus);
-                if (rules.LevelTrack is Definition levelTrack)
-                {
-                    TrackValue value = character.Tracks[levelTrack.Id];
-                    value.Max = checked((value.Max ?? 0) + kept);
-                    value.Current = checked((value.Current ?? 0) + gain);
-                }
-
-                gains.Add(new LevelGain(character.Level, characterClass, gain));
-                if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
-                    || !LevelBoosts(rules, character, evaluator, boostChoices, problems))
+                if (!Advance(rules, character, characterClass, evaluator, gains, choices, boostChoices, problems))
                 {
                     return null;
                 }
@@ -319,6 +372,56 @@ public static class CharacterRules
         }
     }
 
+    /// <summary>Takes one level in <paramref name="characterClass"/>, raising the level track, then makes that level's choices.</summary>
+    private static bool Advance(
+        RuleSet rules,
+        Character character,
+        Definition characterClass,
+        Evaluator evaluator,
+        List<LevelGain> gains,
+        List<Definition> choices,
+        Queue<string> boostChoices,
+        List<ModuleDiagnostic> problems)
+    {
+        (decimal kept, decimal bonus) = TakeLevels(rules, character, [characterClass], evaluator)[0];
+        decimal gain = checked(kept + bonus);
+        if (rules.LevelTrack is Definition levelTrack)
+        {
+            TrackValue value = character.Tracks[levelTrack.Id];
+            value.Max = checked((value.Max ?? 0) + kept);
+            value.Current = checked((value.Current ?? 0) + gain);
+        }
+
+        gains.Add(new LevelGain(character.Level, characterClass, gain));
+        return Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
+            && LevelBoosts(rules, character, evaluator, boostChoices, problems);
+    }
+
+    /// <summary>A multi-classed character's classes must be a combination its race lists in multiclasses.</summary>
+    private static void CheckMulticlass(RuleSet rules, Definition race, List<Definition> classes, List<ModuleDiagnostic> problems)
+    {
+        if (!rules.ExperienceSplit)
+        {
+            problems.Add(new ModuleDiagnostic("character.multiclass", "Starting with several classes needs an advancement definition with experience \"split\"."));
+            return;
+        }
+
+        List<List<Definition>> allowed = [];
+        if (race.Json.TryGetProperty("multiclasses", out JsonElement combinations))
+        {
+            for (int index = 0; index < combinations.GetArrayLength(); index++)
+            {
+                allowed.Add(Enumerable.Range(0, combinations[index].GetArrayLength()).Select(item => rules.Reference(race, $"$.multiclasses[{index}][{item}]")).ToList());
+            }
+        }
+
+        if (!allowed.Any(combination => combination.Count == classes.Count && combination.All(classes.Contains)))
+        {
+            string listed = allowed.Count == 0 ? "none" : string.Join("; ", allowed.Select(combination => string.Join("/", combination.Select(each => each.Id))));
+            problems.Add(new ModuleDiagnostic("character.multiclass", $"{race.QualifiedId} can't combine {string.Join("/", classes.Select(each => each.Id))}. Its multi-class combinations: {listed}.", race.Module, race.File, "$.multiclasses"));
+        }
+    }
+
     /// <summary>
     /// Whether the character's next levels may go to <paramref name="characterClass"/>:
     /// its own classes always; a new class only under an advancement by
@@ -330,6 +433,39 @@ public static class CharacterRules
         if (character.ClassLevels().ContainsKey(characterClass))
         {
             return true;
+        }
+
+        if (rules.ExperienceSplit)
+        {
+            Definition advancement = rules.Advancement!;
+            if (!rules.TryExpression(advancement, "$.class_change", out CompiledExpression? change))
+            {
+                problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't change to {characterClass.QualifiedId}: {advancement.QualifiedId} has no class_change.", advancement.Module, advancement.File, "$"));
+                return false;
+            }
+
+            Evaluator evaluator = new(rules, null);
+            bool allowed;
+            try
+            {
+                allowed = evaluator.Evaluate(change!, new Scope(character.ToCreature(), null, ClassLevel: 0, Class: characterClass)).Boolean;
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.evaluate", exception.Message, advancement.Module, advancement.File, "$.class_change"));
+                return false;
+            }
+
+            if (!allowed)
+            {
+                problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't change to {characterClass.QualifiedId}: {change!.Text}.", advancement.Module, advancement.File, "$.class_change"));
+                return false;
+            }
+
+            int checkedBefore = problems.Count;
+            CheckRaceClass(rules, character.Race, characterClass, problems);
+            CheckClass(characterClass, character.Attributes, problems);
+            return problems.Count == checkedBefore;
         }
 
         if (!rules.ExperienceByCharacter)
@@ -348,22 +484,38 @@ public static class CharacterRules
     }
 
     /// <summary>
-    /// Adds a level in <paramref name="characterClass"/>. Returns its hp,
-    /// which is kept, and its hp_bonus as the character is now, which the
-    /// level track's maximum recomputes.
+    /// Adds a level in each of <paramref name="classes"/> (a new
+    /// multi-classed character's first levels, or one level), then works out
+    /// each one's hp, which is kept, and its hp_bonus as the character is now,
+    /// which the level track's maximum recomputes. Gains read the character
+    /// with all the new levels, so a multi-classed character's first levels
+    /// see every class.
     /// </summary>
-    private static (decimal Kept, decimal Bonus) TakeLevel(RuleSet rules, Character character, Definition characterClass, Evaluator evaluator)
+    private static List<(decimal Kept, decimal Bonus)> TakeLevels(RuleSet rules, Character character, List<Definition> classes, Evaluator evaluator)
     {
-        // The gain is evaluated as the character is once it has the level.
-        character.Levels.Add(new LevelTaken(characterClass, 0, []));
-        int classLevel = character.ClassLevels()[characterClass];
+        int first = character.Levels.Count;
+        foreach (Definition characterClass in classes)
+        {
+            character.Levels.Add(new LevelTaken(characterClass, 0, []));
+        }
+
         Creature creature = character.ToCreature();
-        string keptPath = $"$.levels[{classLevel - 1}].hp";
-        decimal kept = rules.TryExpression(characterClass, keptPath, out _) ? Evaluate(rules, evaluator, characterClass, keptPath, creature) : 0;
-        string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
-        decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? Evaluate(rules, evaluator, characterClass, bonusPath, creature) : 0;
-        character.Levels[^1] = character.Levels[^1] with { Gain = kept };
-        return (kept, bonus);
+        Dictionary<Definition, int> levels = character.ClassLevels();
+        List<(decimal Kept, decimal Bonus)> gains = [];
+        for (int index = 0; index < classes.Count; index++)
+        {
+            Definition characterClass = classes[index];
+            int classLevel = levels[characterClass];
+            Scope scope = new(creature, null, ClassLevel: classLevel, Class: characterClass);
+            string keptPath = $"$.levels[{classLevel - 1}].hp";
+            decimal kept = rules.TryExpression(characterClass, keptPath, out _) ? EvaluateValue(rules, evaluator, characterClass, keptPath, scope).Number : 0;
+            string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
+            decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? EvaluateValue(rules, evaluator, characterClass, bonusPath, scope).Number : 0;
+            character.Levels[first + index] = character.Levels[first + index] with { Gain = kept };
+            gains.Add((kept, bonus));
+        }
+
+        return gains;
     }
 
     /// <summary>The choices every new character makes, from the character-creation definition.</summary>
@@ -620,9 +772,14 @@ public static class CharacterRules
 
     private static Value EvaluateValue(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
     {
+        return EvaluateValue(rules, evaluator, definition, path, new Scope(self, null));
+    }
+
+    private static Value EvaluateValue(RuleSet rules, Evaluator evaluator, Definition definition, string path, Scope scope)
+    {
         try
         {
-            return evaluator.Evaluate(rules.Expression(definition, path), self, null);
+            return evaluator.Evaluate(rules.Expression(definition, path), scope);
         }
         catch (ExpressionException exception)
         {
@@ -635,24 +792,36 @@ public static class CharacterRules
         }
     }
 
+    /// <summary>The creation's starting gold for the character's class; with several classes, the wealthiest of them.</summary>
     private static decimal StartingGold(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
     {
-        foreach (JsonProperty entry in creation.Json.GetProperty("starting_gold").EnumerateObject())
+        List<decimal> amounts = [];
+        foreach (Definition characterClass in character.ClassLevels().Keys)
         {
-            string path = $"$.starting_gold.{entry.Name}";
-            if (rules.Reference(creation, path) == character.Class)
+            string? found = null;
+            foreach (JsonProperty entry in creation.Json.GetProperty("starting_gold").EnumerateObject())
             {
-                return Evaluate(rules, evaluator, creation, path, character.ToCreature());
+                if (rules.Reference(creation, $"$.starting_gold.{entry.Name}") == characterClass)
+                {
+                    found = $"$.starting_gold.{entry.Name}";
+                }
             }
+
+            if (found is null)
+            {
+                problems.Add(new ModuleDiagnostic(
+                    "character.gold",
+                    $"{creation.QualifiedId} has no starting_gold for {characterClass.QualifiedId}. Add \"{characterClass.Id}\" to its starting_gold.",
+                    creation.Module,
+                    creation.File,
+                    "$.starting_gold"));
+                continue;
+            }
+
+            amounts.Add(Evaluate(rules, evaluator, creation, found, character.ToCreature()));
         }
 
-        problems.Add(new ModuleDiagnostic(
-            "character.gold",
-            $"{creation.QualifiedId} has no starting_gold for {character.Class.QualifiedId}. Add \"{character.Class.Id}\" to its starting_gold.",
-            creation.Module,
-            creation.File,
-            "$.starting_gold"));
-        return 0;
+        return amounts.DefaultIfEmpty(0).Max();
     }
 
     private static Dictionary<string, decimal>? RollAttributes(

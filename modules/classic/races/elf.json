@@ -37,5 +37,24 @@
     "fighter",
     "magic_user",
     "thief"
+  ],
+  "multiclasses": [
+    [
+      "fighter",
+      "magic_user"
+    ],
+    [
+      "fighter",
+      "thief"
+    ],
+    [
+      "magic_user",
+      "thief"
+    ],
+    [
+      "fighter",
+      "magic_user",
+      "thief"
+    ]
   ]
 }

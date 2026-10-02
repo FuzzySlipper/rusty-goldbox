@@ -424,6 +424,10 @@ public sealed class RuleSetBuilder
         Definition? advancement = all.FirstOrDefault();
         _rules.Advancement = advancement;
         bool byCharacter = advancement?.Json.GetProperty("experience").GetString() == "character";
+        if (advancement is not null && advancement.Json.TryGetProperty("class_change", out _) && advancement.Json.GetProperty("experience").GetString() != "split")
+        {
+            Error(advancement, "advancement.class-change", "$.class_change", "class_change applies to experience \"split\", where a character advances in its own classes; remove it or change the experience.");
+        }
         if (advancement is not null)
         {
             bool hasLevels = advancement.Json.TryGetProperty("levels", out _);
@@ -463,7 +467,7 @@ public sealed class RuleSetBuilder
                 }
                 else if (!byCharacter && !hasXp)
                 {
-                    string why = advancement is null ? "Without an advancement definition" : $"With {advancement.QualifiedId}'s experience \"class\"";
+                    string why = advancement is null ? "Without an advancement definition" : $"With {advancement.QualifiedId}'s experience \"{advancement.Json.GetProperty("experience").GetString()}\"";
                     Error(characterClass, "class.xp", $"$.levels[{index}]", $"{why}, each class level needs \"xp\": the experience it takes.");
                 }
 

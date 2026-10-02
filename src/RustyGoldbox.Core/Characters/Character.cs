@@ -39,6 +39,15 @@ public sealed class Character
     /// <summary>The character's total level over all its classes.</summary>
     public int Level => Levels.Count;
 
+    /// <summary>With experience split between classes: each class's own experience.</summary>
+    public Dictionary<Definition, decimal> ClassExperience { get; } = [];
+
+    /// <summary>Classes the character left by changing class (dual-classing); they no longer advance.</summary>
+    public List<Definition> LeftClasses { get; } = [];
+
+    /// <summary>The classes the character still advances in, in the order taken.</summary>
+    public List<Definition> AdvancingClasses() => ClassLevels().Keys.Where(characterClass => !LeftClasses.Contains(characterClass)).ToList();
+
     /// <summary>The character's level in each of its classes, in the order it took them.</summary>
     public Dictionary<Definition, int> ClassLevels()
     {
@@ -91,10 +100,19 @@ public sealed class Character
             creature.LevelsTaken.Add((taken.Class, reached[taken.Class]));
         }
 
+        // A class left by changing class waits until the new classes pass its level.
+        int advancing = reached.Where(entry => !LeftClasses.Contains(entry.Key)).Select(entry => entry.Value).DefaultIfEmpty(0).Max();
         foreach ((Definition characterClass, int level) in reached)
         {
-            creature.ClassLevels[characterClass] = level;
+            if (!LeftClasses.Contains(characterClass) || level < advancing)
+            {
+                creature.ClassLevels[characterClass] = level;
+            }
         }
+
+        creature.Class = creature.ClassLevels.Keys.FirstOrDefault() ?? Class;
+        creature.AdvancingClasses = reached.Keys.Count(characterClass => !LeftClasses.Contains(characterClass));
+        creature.FormerLevel = LeftClasses.Select(characterClass => reached.GetValueOrDefault(characterClass)).DefaultIfEmpty(0).Max();
 
         foreach ((string id, TrackValue value) in Tracks)
         {
@@ -119,6 +137,11 @@ public sealed class Character
     /// </summary>
     public decimal? NextLevelExperience(RuleSet rules)
     {
+        if (rules.ExperienceSplit)
+        {
+            return null;
+        }
+
         System.Text.Json.JsonElement levels = rules.ExperienceByCharacter
             ? rules.Advancement!.Json.GetProperty("levels")
             : Class.Json.GetProperty("levels");
@@ -135,6 +158,19 @@ public sealed class Character
     /// taken it, because the class it levels in has no more levels.
     /// </summary>
     public bool LevelWaiting(RuleSet rules) => NextLevelExperience(rules) is decimal needed && Experience >= needed;
+
+    /// <summary>With experience split between classes: each advancing class's experience and what its next level needs (null at its last).</summary>
+    public IReadOnlyList<(Definition Class, decimal Experience, decimal? Next)> ClassProgress()
+    {
+        Dictionary<Definition, int> levels = ClassLevels();
+        return AdvancingClasses().Select(characterClass =>
+        {
+            System.Text.Json.JsonElement table = characterClass.Json.GetProperty("levels");
+            int level = levels[characterClass];
+            decimal? next = level < table.GetArrayLength() && table[level].TryGetProperty("xp", out System.Text.Json.JsonElement xp) ? xp.GetDecimal() : null;
+            return (characterClass, ClassExperience.GetValueOrDefault(characterClass), next);
+        }).ToList();
+    }
 
     /// <summary>Spells per day by spell level for each class that has spells, at the character's level in it.</summary>
     public IReadOnlyList<(Definition Class, IReadOnlyList<int> Slots)> SpellSlots()

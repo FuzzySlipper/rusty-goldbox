@@ -103,12 +103,12 @@ internal sealed class ExpressionChecker(
 
         if (root == Roots.Class)
         {
-            if (path.Name != "level")
+            return path.Name switch
             {
-                throw new ExpressionException($"'class.{path.Name}' is not something a class can give. A class modifier reads class.level, the creature's level in that class.", path.Column);
-            }
-
-            return ExprType.Number;
+                "level" => ExprType.Number,
+                "id" => ExprType.Text,
+                _ => throw new ExpressionException($"'class.{path.Name}' is not something a class can give. Read class.level (the creature's level in that class) or class.id (its ID).", path.Column),
+            };
         }
 
         if (root == Roots.Condition)
@@ -262,6 +262,11 @@ internal sealed class ExpressionChecker(
             return CheckTable(call);
         }
 
+        if (function.Name is "class_min" or "class_max" or "class_sum")
+        {
+            return CheckEachClass(call, function);
+        }
+
         if (call.Arguments.Count < function.MinArguments || call.Arguments.Count > function.MaxArguments)
         {
             throw new ExpressionException($"{function.Signature} takes {function.ArgumentCountText}, but got {call.Arguments.Count}.", call.Column);
@@ -270,6 +275,29 @@ internal sealed class ExpressionChecker(
         foreach (Expr argument in call.Arguments)
         {
             Expect(Check(argument), ExprType.Number, argument.Column, $"{function.Name}()");
+        }
+
+        return ExprType.Number;
+    }
+
+    /// <summary>class_min and the like: the argument is checked as if inside a class, reading class.id and class.level.</summary>
+    private ExprType CheckEachClass(CallExpr call, ExpressionFunction function)
+    {
+        if (call.Arguments.Count != 1)
+        {
+            throw new ExpressionException($"{function.Signature} takes {function.ArgumentCountText}, but got {call.Arguments.Count}.", call.Column);
+        }
+
+        if (!roots.HasFlag(Roots.Self))
+        {
+            throw new ExpressionException($"{function.Name}() goes over self's classes, but this field can't read self.", call.Column);
+        }
+
+        ExpressionChecker inner = new(rules, module, roots | Roots.Class, useParameters, conditionValues, derivedType, isInferring);
+        Expect(inner.Check(call.Arguments[0]), ExprType.Number, call.Arguments[0].Column, $"{function.Name}()");
+        foreach ((Expr expr, CompiledTable table) in inner.Tables)
+        {
+            Tables[expr] = table;
         }
 
         return ExprType.Number;

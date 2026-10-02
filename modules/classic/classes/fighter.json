@@ -16,43 +16,43 @@
   "levels": [
     {
       "xp": 0,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 1900,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 4250,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 7750,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 16000,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 35000,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 75000,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 125000,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 250000,
-      "hp": "max(1, 1d10 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d10 + self.con_hp) / self.classes))"
     },
     {
       "xp": 500000,
-      "hp": "3"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor(3 / self.classes))"
     }
   ],
   "actions": [

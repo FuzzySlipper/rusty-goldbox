@@ -25,6 +25,8 @@ public sealed class RuleSet
         ["level"] = ExprType.Number,
         ["class"] = ExprType.Text,
         ["race"] = ExprType.Text,
+        ["classes"] = ExprType.Number,
+        ["former_level"] = ExprType.Number,
     };
 
     /// <summary>Campaign variables by ID.</summary>
@@ -44,6 +46,9 @@ public sealed class RuleSet
 
     /// <summary>The set's advancement definition, if it has one; without one each class has its own experience.</summary>
     public Definition? Advancement { get; internal set; }
+
+    /// <summary>Whether experience is divided between a character's classes, each advancing on its own table.</summary>
+    public bool ExperienceSplit => Advancement?.Json.GetProperty("experience").GetString() == "split";
 
     /// <summary>Whether experience is counted by character level, with each level taken in a chosen class.</summary>
     public bool ExperienceByCharacter => Advancement?.Json.GetProperty("experience").GetString() == "character";

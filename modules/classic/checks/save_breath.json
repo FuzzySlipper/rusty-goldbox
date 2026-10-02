@@ -3,6 +3,6 @@
   "id": "save_breath",
   "name": "Saving throw against breath weapons",
   "roll": "1d20",
-  "target": "table(saving_throws, self.class, self.level, 'breath')",
+  "target": "class_min(table(saving_throws, class.id, class.level, 'breath'))",
   "succeeds": "at-least"
 }

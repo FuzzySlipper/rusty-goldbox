@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "creation", "levels", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
+        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -84,6 +84,22 @@ public static class CharacterFile
 
             writer.WriteEndArray();
             writer.WriteNumber("experience", character.Experience);
+            if (character.ClassExperience.Count > 0)
+            {
+                writer.WriteStartObject("class_experience");
+                foreach ((Definition characterClass, decimal points) in character.ClassExperience)
+                {
+                    writer.WriteNumber(characterClass.QualifiedId, points);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            if (character.LeftClasses.Count > 0)
+            {
+                WriteReferences(writer, "left_classes", character.LeftClasses);
+            }
+
             writer.WriteStartObject("attributes");
             foreach ((string id, decimal score) in character.Attributes)
             {
@@ -194,6 +210,12 @@ public static class CharacterFile
             }
 
             character.Experience = experience ?? 0;
+            ReadList(root, "left_classes", DefinitionTypes.Class, character.LeftClasses);
+            if (root.TryGetProperty("class_experience", out JsonElement classExperience))
+            {
+                ReadClassExperience(classExperience, character);
+            }
+
             character.Gold = gold ?? 0;
             ReadAttributes(root, character);
             ReadTracks(root, character);
@@ -277,6 +299,34 @@ public static class CharacterFile
             }
 
             return problems.Count == before;
+        }
+
+        /// <summary>"class_experience": each class's own experience, by class ID; only classes the character has.</summary>
+        private void ReadClassExperience(JsonElement given, Character character)
+        {
+            if (given.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.class_experience", "\"class_experience\" must be an object of experience by class ID.");
+                return;
+            }
+
+            foreach (JsonProperty entry in given.EnumerateObject())
+            {
+                string at = $"$.class_experience.{entry.Name}";
+                if (Resolve(entry.Name, at, DefinitionTypes.Class) is not Definition characterClass)
+                {
+                    continue;
+                }
+
+                if (!character.ClassLevels().ContainsKey(characterClass))
+                {
+                    Error(at, $"The character has no levels in {characterClass.QualifiedId}.");
+                }
+                else if (Number(given, entry.Name, "$.class_experience") is decimal points)
+                {
+                    character.ClassExperience[characterClass] = points;
+                }
+            }
         }
 
         private List<ModuleStamp> ReadModules(JsonElement root)
@@ -454,7 +504,12 @@ public static class CharacterFile
                 return null;
             }
 
-            Definition? found = _rules.Find(type, value.GetString()!, out string? problem);
+            return Resolve(value.GetString()!, at, type);
+        }
+
+        private Definition? Resolve(string reference, string at, DefinitionType type)
+        {
+            Definition? found = _rules.Find(type, reference, out string? problem);
             if (found is null)
             {
                 Error(at, problem!);

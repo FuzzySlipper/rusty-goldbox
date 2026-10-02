@@ -16,43 +16,43 @@
   "levels": [
     {
       "xp": 0,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 2400,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 4800,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 10250,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 22000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 40000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 60000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 80000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 140000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     },
     {
       "xp": 250000,
-      "hp": "max(1, 1d4 + self.con_hp)"
+      "hp": "if class.level <= self.former_level then 0 else max(1, floor((1d4 + self.con_hp) / self.classes))"
     }
   ],
   "spell_slots": [

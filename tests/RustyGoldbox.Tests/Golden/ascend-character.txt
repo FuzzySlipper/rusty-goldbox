@@ -219,6 +219,7 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
   },
   "next_level_experience": 3000,
   "level_waiting": false,
+  "class_progress": null,
   "spell_slots": [
     {
       "class": "ascend:adept",

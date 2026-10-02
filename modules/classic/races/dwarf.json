@@ -37,6 +37,12 @@
     "fighter",
     "thief"
   ],
+  "multiclasses": [
+    [
+      "fighter",
+      "thief"
+    ]
+  ],
   "modifiers": [
     {
       "check": "save_spell",

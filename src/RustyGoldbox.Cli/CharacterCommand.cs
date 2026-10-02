@@ -54,15 +54,17 @@ internal static class CharacterCommand
         }
 
         IReadOnlyList<string>? priority = parsed.Single("--priority")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        string[] classes = parsed.Single("--class")!.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         CreationRequest request = new(
             parsed.Single("--name") ?? "Unnamed",
-            parsed.Single("--class")!,
+            classes.FirstOrDefault() ?? "",
             parsed.Single("--race")!,
             attributes,
             priority,
             parsed.Single("--creation"),
             Features(parsed),
-            parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+            parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
+            classes.Skip(1).ToList());
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));

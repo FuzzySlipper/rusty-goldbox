@@ -1,0 +1,385 @@
+$ goldbox character new --module modules/classic --class fighter,magic_user --race dwarf --name Nain --attributes str=15,dex=14,con=15,int=10,wis=10,cha=9
+error[character.multiclass] classic modules/classic/races/dwarf.json $.multiclasses
+  classic:dwarf can't combine fighter/magic_user. Its multi-class combinations: fighter/thief.
+1 error.
+[exit 1]
+
+$ goldbox character new --module modules/classic --class fighter,thief --race dwarf --name Thror --attributes str=15,dex=14,con=15,int=10,wis=10,cha=9 --seed 4 --out thror.json
+Thror: Dwarf Fighter 1 / Thief 1 (level 2, 0 xp, Fighter 0 of 1900, Thief 0 of 1250)
+  hit points 3/3
+  gold 110
+  str            15     Strength
+  dex            14     Dexterity
+  con            16     Constitution
+  int            10     Intelligence
+  wis            10     Wisdom
+  cha            8      Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         2      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       90     Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     0      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          20     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to thror.json.
+  seed 4: 1d10: 3 = 3; 1d6: 1 = 1; 3d6: 2+4+3 = 9; 2d6: 2+3 = 5
+[exit 0]
+
+$ goldbox character level thror.json --module modules/classic --xp 5000 --seed 3
+Reached level 3 (Fighter 2): +2 hit points.
+Reached level 4 (Thief 2): +2 hit points.
+Reached level 5 (Thief 3): +2 hit points.
+Thror: Dwarf Fighter 2 / Thief 3 (level 5, 5000 xp, Fighter 2500 of 4250, Thief 2500 of 5000)
+  hit points 9/9
+  gold 110
+  str            15     Strength
+  dex            14     Dexterity
+  con            16     Constitution
+  int            10     Intelligence
+  wis            10     Wisdom
+  cha            8      Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         2      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       90     Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     0      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          19     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to thror.json.
+  seed 3: 1d10: 3 = 3; 1d6: 2 = 2; 1d6: 3 = 3
+[exit 0]
+
+$ goldbox character new --module modules/classic --class fighter --race human --name Aldo --attributes str=16,dex=12,con=13,int=17,wis=10,cha=10 --out aldo.json
+Aldo: Human Fighter 1 (0 xp, Fighter 0 of 1900)
+  hit points 6/6
+  gold 120
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          20     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
+  seed 1: 1d10: 6 = 6; 3d6: 1+5+4 = 10
+[exit 0]
+
+$ goldbox character level aldo.json --module modules/classic --xp 4500 --class thief --seed 2
+error[character.multiclass] classic modules/classic/advancement/standard.json $.class_change
+  Aldo can't change to classic:thief: self.race == 'human' and self.classes == 1 and (if self.class == 'fighter' then self.str else if self.class == 'cleric' then self.wis else if self.class == 'magic_user' then self.int else self.dex) >= 15 and (if class.id == 'fighter' then self.str else if class.id == 'cleric' then self.wis else if class.id == 'magic_user' then self.int else self.dex) >= 17.
+1 error.
+[exit 1]
+
+$ goldbox character level aldo.json --module modules/classic --xp 4500 --seed 2
+Reached level 2: +7 hit points.
+Reached level 3: +1 hit points.
+Aldo: Human Fighter 3 (4500 xp, Fighter 4500 of 7750)
+  hit points 14/14
+  gold 120
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          18     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
+  seed 2: 1d10: 7 = 7; 1d10: 1 = 1
+[exit 0]
+
+$ goldbox character level aldo.json --module modules/classic --xp 0 --class magic_user --seed 5
+Reached level 4 (Magic user 1): +0 hit points.
+Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
+  hit points 14/14
+  gold 120
+  Magic user spells per day by spell level: 1
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          21     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
+  seed 5: no dice rolled
+[exit 0]
+
+$ goldbox character level aldo.json --module modules/classic --xp 20000 --seed 6
+Reached level 5 (Magic user 2): +0 hit points.
+Reached level 6 (Magic user 3): +0 hit points.
+Reached level 7 (Magic user 4): +1 hit points.
+Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 22000, left Fighter)
+  hit points 15/15
+  gold 120
+  Magic user spells per day by spell level: 3 / 2
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          18     Roll needed to hit armour class 0
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
+  seed 6: 1d4: 1 = 1
+[exit 0]
+
+$ goldbox character show aldo.json --module modules/classic --json
+{
+  "ok": true,
+  "saved_to": null,
+  "character": {
+    "format": 1,
+    "name": "Aldo",
+    "modules": [
+      {
+        "id": "classic",
+        "version": "0.1.0"
+      }
+    ],
+    "race": "classic:human",
+    "creation": "classic:standard",
+    "levels": [
+      {
+        "class": "classic:fighter",
+        "gain": 6
+      },
+      {
+        "class": "classic:fighter",
+        "gain": 7
+      },
+      {
+        "class": "classic:fighter",
+        "gain": 1
+      },
+      {
+        "class": "classic:magic_user",
+        "gain": 0
+      },
+      {
+        "class": "classic:magic_user",
+        "gain": 0
+      },
+      {
+        "class": "classic:magic_user",
+        "gain": 0
+      },
+      {
+        "class": "classic:magic_user",
+        "gain": 1
+      }
+    ],
+    "experience": 24500,
+    "class_experience": {
+      "classic:fighter": 4500,
+      "classic:magic_user": 20000
+    },
+    "left_classes": [
+      "classic:fighter"
+    ],
+    "attributes": {
+      "str": 16,
+      "dex": 12,
+      "con": 13,
+      "int": 17,
+      "wis": 10,
+      "cha": 10
+    },
+    "tracks": {
+      "hit_points": {
+        "current": 15,
+        "max": 15
+      }
+    },
+    "gold": 120,
+    "equipment": [],
+    "conditions": []
+  },
+  "next_level_experience": null,
+  "level_waiting": false,
+  "class_progress": [
+    {
+      "class": "classic:magic_user",
+      "experience": 20000,
+      "next_level_experience": 22000
+    }
+  ],
+  "spell_slots": [
+    {
+      "class": "classic:magic_user",
+      "slots": [
+        3,
+        2
+      ]
+    }
+  ],
+  "stats": [
+    {
+      "id": "str",
+      "name": "Strength",
+      "kind": "attribute",
+      "value": 16,
+      "problem": null
+    },
+    {
+      "id": "dex",
+      "name": "Dexterity",
+      "kind": "attribute",
+      "value": 12,
+      "problem": null
+    },
+    {
+      "id": "con",
+      "name": "Constitution",
+      "kind": "attribute",
+      "value": 13,
+      "problem": null
+    },
+    {
+      "id": "int",
+      "name": "Intelligence",
+      "kind": "attribute",
+      "value": 17,
+      "problem": null
+    },
+    {
+      "id": "wis",
+      "name": "Wisdom",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "cha",
+      "name": "Charisma",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "ac",
+      "name": "Armour class (lower is better)",
+      "kind": "derived",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "con_hp",
+      "name": "Constitution hit point bonus per die",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "dex_ac",
+      "name": "Dexterity armour class adjustment",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "dex_missile",
+      "name": "Dexterity missile bonus to hit",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "movement",
+      "name": "Movement rate (ft per round)",
+      "kind": "derived",
+      "value": 120,
+      "problem": null
+    },
+    {
+      "id": "size",
+      "name": "Size: small, medium or large",
+      "kind": "derived",
+      "value": "medium",
+      "problem": null
+    },
+    {
+      "id": "str_damage",
+      "name": "Strength damage adjustment",
+      "kind": "derived",
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "str_to_hit",
+      "name": "Strength bonus to hit",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "thac0",
+      "name": "Roll needed to hit armour class 0",
+      "kind": "derived",
+      "value": 18,
+      "problem": null
+    },
+    {
+      "id": "wis_save",
+      "name": "Wisdom mental saving throw bonus",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    }
+  ],
+  "tracks": [
+    {
+      "id": "hit_points",
+      "name": "Hit points",
+      "current": 15,
+      "max": 15,
+      "problem": null
+    }
+  ],
+  "levels_gained": [],
+  "seed": null,
+  "rolls": []
+}
+[exit 0]
+

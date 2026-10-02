@@ -3,6 +3,6 @@
   "id": "save_spell",
   "name": "Saving throw against spells",
   "roll": "1d20",
-  "target": "table(saving_throws, self.class, self.level, 'spell')",
+  "target": "class_min(table(saving_throws, class.id, class.level, 'spell'))",
   "succeeds": "at-least"
 }

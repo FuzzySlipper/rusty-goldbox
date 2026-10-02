@@ -213,6 +213,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
   },
   "next_level_experience": null,
   "level_waiting": false,
+  "class_progress": null,
   "spell_slots": [],
   "stats": [
     {
