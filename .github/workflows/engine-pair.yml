@@ -1,9 +1,9 @@
 name: engine-pair
 
 # Keeps Rusty Goldbox on the newest published Engine pair. The pin advances
-# only after the product builds and serves on the proposed pair; a pair that
-# breaks the product fails this workflow and opens (or updates) an issue,
-# and the product stays on its working pin.
+# only after the product builds, its tests pass and it serves on the proposed
+# pair; a pair that breaks the product fails this workflow and opens (or
+# updates) an issue, and the product stays on its working pin.
 
 on:
   schedule:
@@ -57,6 +57,12 @@ jobs:
         run: |
           set -o pipefail
           rusty build --project "$PROJECT" 2>&1 | tee build.log
+
+      - name: Test on the proposed pair
+        if: steps.propose.outputs.changed == 'true'
+        run: |
+          set -o pipefail
+          dotnet test tests/RustyGoldbox.Tests 2>&1 | tee test.log
 
       - name: Serve the product on the proposed pair
         if: steps.propose.outputs.changed == 'true'
@@ -115,7 +121,7 @@ jobs:
             echo '```'
             sed -n '/^What changed/,/^Next:/p' update.log | sed '$d'
             echo '```'
-            for log in build.log dev.log; do
+            for log in build.log test.log dev.log; do
               [[ -s "$log" ]] || continue
               echo "### Last lines of $log"
               echo '```'

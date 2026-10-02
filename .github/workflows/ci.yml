@@ -1,0 +1,47 @@
+name: ci
+
+# Checks every push and pull request on the pinned Engine pair: Core and CLI
+# tests, the Game build, and validation of every first-party module.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Get rusty and the pinned pair
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/FuzzySlipper/rusty-engine/main/scripts/install-rusty.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/rusty" install
+
+      - name: Test
+        run: dotnet test tests/RustyGoldbox.Tests
+
+      - name: Build the Game
+        run: rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
+
+      - name: Validate first-party modules
+        run: |
+          shopt -s nullglob
+          status=0
+          for manifest in modules/*/module.json; do
+            module=$(dirname "$manifest")
+            dotnet run --project src/RustyGoldbox.Cli -- module validate "$module" || status=1
+          done
+          exit $status

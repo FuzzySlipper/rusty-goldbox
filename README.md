@@ -51,6 +51,9 @@ go there and required modules are found there. Every command accepts `--json`.
 dotnet test tests/RustyGoldbox.Tests
 ```
 
+The `ci` workflow runs these tests, builds the Game and validates every
+module under `modules/` on each push to `main` and each pull request.
+
 ## Engine pin
 
 `Directory.Build.props` pins the exact SDK/runtime pair. `rusty install`
