@@ -27,7 +27,8 @@ public sealed record Scope(
     int? ClassLevel = null,
     CheckResult? Outer = null,
     IReadOnlyDictionary<string, decimal>? ConditionValues = null,
-    Definition? Class = null);
+    Definition? Class = null,
+    Definition? Item = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -401,6 +402,18 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 }
 
                 return path.Name == "id" ? Value.Of(current.Id) : Value.Of(classLevel);
+            }
+
+            if (path.Root == "item")
+            {
+                Definition item = scope.Item ?? throw new ExpressionException($"item.{path.Name} has no value here: it is read in a class's equipment rule.", path.Column);
+                return path.Name switch
+                {
+                    "id" => Value.Of(item.Id),
+                    "kind" => Value.Of(item.Json.GetProperty("kind").GetString()!),
+                    "weight" => Value.Of(item.Json.GetProperty("weight").GetDecimal()),
+                    _ => Value.Of(item.Json.GetProperty("cost").GetDecimal()),
+                };
             }
 
             if (path.Root == "condition")

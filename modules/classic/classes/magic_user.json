@@ -117,5 +117,6 @@
       "name": "Punch",
       "damage": "1d2"
     }
-  ]
+  ],
+  "equipment": "item.id == 'dagger'"
 }

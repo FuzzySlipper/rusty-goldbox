@@ -56,5 +56,6 @@
       "magic_user",
       "thief"
     ]
-  ]
+  ],
+  "multiclass_equipment": "any"
 }

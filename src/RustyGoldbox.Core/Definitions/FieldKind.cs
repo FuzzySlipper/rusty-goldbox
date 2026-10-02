@@ -27,6 +27,9 @@ public enum Roots
 
     /// <summary>condition.&lt;value&gt;: a value the condition was applied with, inside the condition's own definition.</summary>
     Condition = 128,
+
+    /// <summary>item.id, item.kind, item.weight, item.cost: the item a class's equipment rule is asked about.</summary>
+    Item = 256,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -105,6 +108,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
         if (Roots.HasFlag(Roots.Condition))
         {
             roots.Add("condition.<value>");
+        }
+
+        if (Roots.HasFlag(Roots.Item))
+        {
+            roots.Add("item");
         }
 
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);

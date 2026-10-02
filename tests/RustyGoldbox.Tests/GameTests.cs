@@ -72,6 +72,29 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void AClassRefusesEquipmentItMayNotUse()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Mira", "race": "classic:human", "class": "classic:magic_user" }""");
+            }
+
+            Run(session, engine, """{ "action": "equip", "member": 0, "item": "classic:chain_mail" }""");
+            Assert.Equal("Mira can't equip Chain mail: Magic user doesn't allow it.", Assert.Single(session.Notes));
+            Assert.Empty(session.Party[0].Equipment);
+
+            Run(session, engine, """{ "action": "equip", "member": 0, "item": "classic:dagger" }""");
+            Assert.Empty(session.Notes);
+            Assert.Equal("dagger", Assert.Single(session.Party[0].Equipment).Id);
+        });
+    }
+
+    [Fact]
     public void ARollCanChooseAPortrait()
     {
         using TempModules scratch = new();

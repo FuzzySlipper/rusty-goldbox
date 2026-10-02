@@ -21,6 +21,7 @@ artwork, its title and trademarks, or its variable experience point rule.
 | `classes/`, `tables/thac0`, `tables/saving_throws` | Chapter I, fighter, cleric, magic user and thief (pp. 10–27) |
 | `items/` | Chapter I, equipment and armour (pp. 31–34) |
 | `creation/standard` (rolls, starting gold) | Chapter I (pp. 1, 30) |
+| class `equipment`, race `multiclass_equipment` | Chapter I, armour and weapons permitted to each class (pp. 11, 18, 20, 25) and the races' multi-class restrictions (pp. 4–7) |
 | `advancement/standard`, race `multiclasses`, class level `hp` division | Chapter I, multi-classing and dual-classing (pp. 27–28) and permitted class options (pp. 4–7) |
 | `spells/` | Chapter II, cleric and magic user level 1 spells; descriptions are reworded |
 | `checks/`, `actions/`, `combat/standard` | Chapter III, combat (pp. 125–128) |
@@ -45,8 +46,9 @@ small:
   classes' tables (`class_min`). The source states that rule for monsters
   with the abilities of several classes (p. 129); it doesn't say so for
   characters. Experience is divided evenly in whole points, rounding down.
-  The race rules on which class's armour and weapon limits apply are not
-  modelled.
+  Dwarves follow the more restrictive class's armour and weapon limits and
+  elves and halflings the less restrictive; the source's narrower rule that
+  thieving abilities only work in thief armour is not modelled.
 - A dual-classed character's old class doesn't work at all until the new
   class passes its level, rather than working at the cost of the adventure's
   experience. Starting money for a multi-classed character is the wealthiest

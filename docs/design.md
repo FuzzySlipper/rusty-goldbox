@@ -170,7 +170,11 @@ and `self.class` the first class. Without an **advancement** definition each
 class has its own experience table and a character keeps its one class
 (first-edition style). An advancement with experience by character gives one
 table for total level, and each new level goes to a class the player picks,
-checked against the race and the class's requirements (3.5e style). A class's
+checked against the race and the class's requirements (3.5e style). A class's `equipment` expression (reading `item.id`, `item.kind`,
+`item.weight` and `item.cost`) says what its members may equip, checked when
+an item is equipped and when a character file loads; a race's
+`multiclass_equipment` says whether a multi-classed character needs every
+class to allow an item or any one. A class's
 modifiers read `class.level`, the creature's level in that class, so
 per-class progressions such as base attack and base saves add up across
 classes. With experience **split** (first-edition multi-classing), a

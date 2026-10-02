@@ -43,6 +43,7 @@
       "thief"
     ]
   ],
+  "multiclass_equipment": "all",
   "modifiers": [
     {
       "check": "save_spell",

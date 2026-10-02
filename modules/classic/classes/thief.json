@@ -64,5 +64,6 @@
       "name": "Punch",
       "damage": "1d2"
     }
-  ]
+  ],
+  "equipment": "item.id == 'leather_armour' or item.id == 'dagger' or item.id == 'long_sword'"
 }

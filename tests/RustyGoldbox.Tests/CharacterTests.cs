@@ -143,6 +143,38 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void MultiClassedRacesTakeTheMoreOrLessRestrictiveEquipmentRule()
+    {
+        ModuleSet set = ModuleLoader.Load(Rules.ClassicPath, []);
+        RuleSet rules = set.Rules!;
+        Dictionary<string, decimal> scores = new() { ["str"] = 15, ["dex"] = 14, ["con"] = 15, ["int"] = 12, ["wis"] = 10, ["cha"] = 9 };
+        Character dwarf = Create(set, new CreationRequest("Thror", "fighter", "dwarf", Attributes: scores, AlsoClasses: ["thief"]))!;
+        Character elf = Create(set, new CreationRequest("Lir", "fighter", "elf", Attributes: scores, AlsoClasses: ["thief"]))!;
+        Core.Definitions.Definition chain = rules.Find(Core.Definitions.DefinitionTypes.Item, "chain_mail", out _)!;
+        Core.Definitions.Definition sword = rules.Find(Core.Definitions.DefinitionTypes.Item, "long_sword", out _)!;
+
+        // Dwarves take the more restrictive rule (the thief's), elves the less (the fighter's).
+        Assert.Equal("Thror can't equip Chain mail: Thief doesn't allow it.", CharacterRules.EquipmentProblem(rules, dwarf, chain));
+        Assert.Null(CharacterRules.EquipmentProblem(rules, dwarf, sword));
+        Assert.Null(CharacterRules.EquipmentProblem(rules, elf, chain));
+    }
+
+    [Fact]
+    public void AFileWithEquipmentTheClassForbidsIsRefused()
+    {
+        using TempModules modules = new();
+        ModuleSet set = ModuleLoader.Load(Rules.ClassicPath, []);
+        Character mage = Create(set, new CreationRequest("Mira", "magic_user", "human", Attributes: new Dictionary<string, decimal> { ["str"] = 9, ["dex"] = 12, ["con"] = 12, ["int"] = 16, ["wis"] = 10, ["cha"] = 10 }))!;
+        mage.Equipment.Add(set.Rules!.Find(Core.Definitions.DefinitionTypes.Item, "chain_mail", out _)!);
+        string file = Path.Combine(modules.Root, "mira.json");
+        File.WriteAllText(file, CharacterFile.ToJson(mage));
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.Null(CharacterFile.Read(file, set, problems));
+        Assert.Equal(("character.file", "$.equipment[0]"), (Assert.Single(problems).Rule, problems[0].JsonPath));
+    }
+
+    [Fact]
     public void ToughnessRaisesTheMaximumEachTimeItIsTaken()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);

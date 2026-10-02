@@ -229,6 +229,37 @@ public static class CharacterRules
         return total;
     }
 
+    /// <summary>
+    /// Why the character may not equip <paramref name="item"/>, or null when it
+    /// may: its classes' equipment rules (a class without one allows anything),
+    /// any one of them or every one as its race's multiclass_equipment says.
+    /// Classes waiting after a class change don't count.
+    /// </summary>
+    public static string? EquipmentProblem(RuleSet rules, Character character, Definition item)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        List<Definition> refusing = [];
+        foreach (Definition characterClass in creature.ClassLevels.Keys)
+        {
+            if (rules.TryExpression(characterClass, "$.equipment", out CompiledExpression? rule)
+                && !evaluator.Evaluate(rule!, new Scope(creature, null, Item: item)).Boolean)
+            {
+                refusing.Add(characterClass);
+            }
+        }
+
+        bool every = character.Race.Json.TryGetProperty("multiclass_equipment", out JsonElement mode) && mode.GetString() == "all";
+        bool refused = every ? refusing.Count > 0 : refusing.Count == creature.ClassLevels.Count && refusing.Count > 0;
+        if (!refused)
+        {
+            return null;
+        }
+
+        string classes = string.Join(" and ", refusing.Select(each => each.Name));
+        return $"{character.Name} can't equip {item.Name}: {classes} {(refusing.Count == 1 ? "doesn't" : "don't")} allow it.";
+    }
+
     /// <summary>The character-creation definition used when none is named, or null when the set has none or several without a default.</summary>
     public static Definition? DefaultCreation(RuleSet rules) => FindCreation(rules, null, []);
 

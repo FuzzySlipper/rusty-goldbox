@@ -162,10 +162,18 @@ internal sealed class GameSession(ModuleLibrary library)
         }
 
         List<Definition> equipment = Party[member].Equipment;
-        if (!equipment.Remove(found))
+        if (equipment.Remove(found))
         {
-            equipment.Add(found);
+            return;
         }
+
+        if (CharacterRules.EquipmentProblem(Set.Rules, Party[member], found) is string refused)
+        {
+            Notes.Add(refused);
+            return;
+        }
+
+        equipment.Add(found);
     }
 
     public void Begin(IEngineContext engine)

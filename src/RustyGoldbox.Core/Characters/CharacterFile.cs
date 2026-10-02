@@ -225,6 +225,14 @@ public static class CharacterFile
             }
 
             ReadList(root, "equipment", DefinitionTypes.Item, character.Equipment);
+            for (int index = 0; index < character.Equipment.Count; index++)
+            {
+                if (CharacterRules.EquipmentProblem(_rules, character, character.Equipment[index]) is string refused)
+                {
+                    Error($"$.equipment[{index}]", refused);
+                }
+            }
+
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
             if (root.TryGetProperty("portrait", out JsonElement portrait) && Resolve(portrait, "$.portrait", DefinitionTypes.Asset) is Definition asset)
             {
