@@ -1,0 +1,14 @@
+{
+  "type": "campaign",
+  "id": "trial",
+  "name": "Ascend trial",
+  "start": {
+    "area": "hall",
+    "entry": "door"
+  },
+  "party": {
+    "min": 1,
+    "max": 4
+  },
+  "intro": "ambush"
+}

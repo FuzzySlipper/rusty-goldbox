@@ -18,6 +18,13 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 /// <see cref="Outer"/> is the check it was made during. Inside a condition's
 /// own fields, <see cref="ConditionValues"/> are the values it was applied with.
 /// </summary>
+/// <summary>
+/// The fight an evaluator is resolving: the round, whether anyone is
+/// surprised in it, how far apart two creatures are, and how far a creature
+/// is from its nearest standing enemy. Without a field everyone is 1 apart.
+/// </summary>
+public sealed record CombatMoment(int Round, bool SurpriseRound, Func<Creature, Creature, decimal> Distance, Func<Creature, decimal> Nearest);
+
 public sealed record Scope(
     Creature? Self,
     Creature? Target,
@@ -42,8 +49,8 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
     private DiceRoller? Dice => dice;
 
-    /// <summary>The fight this evaluator is resolving, read as combat.round and combat.surprise_round; null outside one.</summary>
-    public (int Round, bool SurpriseRound)? Combat { get; set; }
+    /// <summary>The fight this evaluator is resolving, read as combat.&lt;field&gt;; null outside one.</summary>
+    public CombatMoment? Combat { get; set; }
 
     public Value Evaluate(CompiledExpression expression, Creature? self, Creature? target)
     {
@@ -409,8 +416,20 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
             if (path.Root == "combat")
             {
-                (int round, bool surpriseRound) = evaluator.Combat ?? throw new ExpressionException($"combat.{path.Name} has no value outside a fight.", path.Column);
-                return path.Name == "round" ? Value.Of(round) : Value.Of(surpriseRound);
+                CombatMoment fight = evaluator.Combat ?? throw new ExpressionException($"combat.{path.Name} has no value outside a fight.", path.Column);
+                switch (path.Name)
+                {
+                    case "round":
+                        return Value.Of(fight.Round);
+                    case "surprise_round":
+                        return Value.Of(fight.SurpriseRound);
+                    case "nearest":
+                        return Value.Of(fight.Nearest(scope.Self ?? throw new ExpressionException("combat.nearest needs a self creature.", path.Column)));
+                    default:
+                        Creature from = scope.Self ?? throw new ExpressionException("combat.distance needs a self creature.", path.Column);
+                        Creature to = scope.Target ?? throw new ExpressionException("combat.distance needs a target creature; it is read where an action looks at its target.", path.Column);
+                        return Value.Of(fight.Distance(from, to));
+                }
             }
 
             if (path.Root == "item")

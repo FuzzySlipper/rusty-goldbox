@@ -226,6 +226,14 @@ A condition may declare **values** with defaults (`{ "amount": 5 }`) that
 `apply_condition` sets when it applies the condition ("ongoing 5"); its
 modifiers and its start- and end-of-turn operations read them as
 `condition.amount`, so a save that ends the condition is an end-of-turn check.
+A combat definition may put its fights on a **field**: a grid of cells with
+a distance metric (diagonal steps counting 1, or only straight steps). The
+sides start at opposite edges; an action's `range` limits its targets to that
+many cells, `combat.distance` and `combat.nearest` read how far apart
+creatures are, and the `move` operation steps the actor toward or away from
+its target through free cells, so movement costs whatever budget the moving
+action costs. Without a field everyone is in reach.
+
 A combat budget's `per_turn` is an expression, so a condition that lowers a
 stat it reads takes actions away. Expressions evaluated during a fight
 (budgets, initiative, actions, operations and condition hooks) read

@@ -67,7 +67,7 @@ internal sealed class SceneView : IDisposable
             {
                 _showingCombat = true;
                 _combat.Show(fight, kind => SpriteFor(rules, session.Set, kind), Floor(rules, session.Set, state.Area), facts);
-                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(CombatScene.Pose, CombatScene.FieldOfView)));
+                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.Pose, CombatScene.FieldOfView)));
             }
             else if (session.Screen == Screen.Play)
             {

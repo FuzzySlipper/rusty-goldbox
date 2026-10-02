@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "advance",
+  "name": "Advance",
+  "cost": {
+    "move": 1
+  },
+  "target": "enemy",
+  "valid_target": "combat.nearest > 1",
+  "prefer": "0 - combat.distance",
+  "always": [
+    {
+      "op": "move",
+      "distance": "floor(self.speed / 5)"
+    }
+  ]
+}

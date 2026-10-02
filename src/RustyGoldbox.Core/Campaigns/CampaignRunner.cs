@@ -304,15 +304,19 @@ public sealed class CampaignRunner
     {
         Definition track = _rules.Reference(combat, "$.track");
         Evaluator evaluator = new(_rules, null);
+        CombatField? field = CombatField.Of(combat);
         List<FightMember> members = [];
         for (int side = 0; side < sides.Count; side++)
         {
-            foreach (Combatant member in sides[side].Members)
+            // The same starting cells the combat runner deploys to.
+            IReadOnlyList<Cell>? cells = field?.Deploy(side, sides[side].Members.Count);
+            for (int index = 0; index < sides[side].Members.Count; index++)
             {
+                Combatant member = sides[side].Members[index];
                 Creature creature = member.Creature;
                 decimal start = evaluator.TrackCurrent(creature, track);
                 decimal? max = evaluator.KnownTrackMax(creature, track);
-                members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max));
+                members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max, cells?[index]));
             }
         }
 
@@ -349,7 +353,7 @@ public sealed class CampaignRunner
             null => FightOutcome.Undecided,
             _ => FightOutcome.Lost,
         };
-        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome));
+        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat)));
         if (outcome == FightOutcome.Won)
         {
             return Next(evt, "$.on_win");

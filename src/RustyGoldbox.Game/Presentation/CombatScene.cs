@@ -1,6 +1,7 @@
 using System.Numerics;
 using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 
 namespace RustyGoldbox.Game.Presentation;
@@ -10,11 +11,13 @@ namespace RustyGoldbox.Game.Presentation;
 /// right and its foes on the right facing left, each a side-view sprite
 /// billboarded fully to a camera looking down at 30 degrees. It follows a
 /// <see cref="FightReplay"/>: the acting figure plays its attack, the others
-/// idle, and the defeated leave the field. Figures without a figure
-/// definition draw as plain blocks.
+/// idle, the defeated leave the field, and in a fight on a combat field each
+/// figure stands on its cell and moves as the fight's moves show. Figures
+/// without a figure definition draw as plain blocks.
 /// </summary>
 internal sealed class CombatScene : IDisposable
 {
+    /// <summary>The field of a fight without positions.</summary>
     public const int Width = 6;
     public const int Depth = 5;
 
@@ -31,6 +34,8 @@ internal sealed class CombatScene : IDisposable
     private MeshResource? _floorMesh;
     private Appearance? _floor;
     private int _acted;
+    private int _width = Width;
+    private int _depth = Depth;
 
     public CombatScene(IGraphicsService graphics, Material plain)
     {
@@ -41,8 +46,14 @@ internal sealed class CombatScene : IDisposable
     /// <summary>The combat camera's vertical field of view: narrower than the corridor's, framing the field.</summary>
     public const double FieldOfView = 46;
 
-    /// <summary>Where the camera stands: straight on, centred, 30 degrees down.</summary>
-    public static CameraPose Pose { get; } = new(new Vector3(Width / 2f, 3.2f, (Depth / 2f) + 4.6f), -30, 0);
+    /// <summary>Where the camera stands for the current field: straight on, centred, 30 degrees down, further back for a wider field.</summary>
+    public CameraPose Pose => PoseFor(_width, _depth);
+
+    public static CameraPose PoseFor(int width, int depth)
+    {
+        float back = 4.6f + (Math.Max(0, Math.Max(width - Width, depth - Depth)) * 1.4f);
+        return new CameraPose(new Vector3(width / 2f, 3.2f + (back - 4.6f) * 0.55f, (depth / 2f) + back), -30, 0);
+    }
 
     /// <summary>Adds the scene for <paramref name="fight"/>, building it when the fight is new.</summary>
     /// <param name="spriteFor">The sprite a monster or class is drawn with, or null.</param>
@@ -67,6 +78,11 @@ internal sealed class CombatScene : IDisposable
         ulong id = FigureObjects;
         foreach ((string name, Figure figure) in _figures)
         {
+            if (fight.Positions.TryGetValue(name, out Cell cell))
+            {
+                figure.StandOn(new Vector3(cell.X + 0.5f, 0, cell.Y + 0.5f));
+            }
+
             facts.Add(new AppearanceFact(id++, false, 0, figure.Placement, figure.Appearance, !fight.Defeated.Contains(name), RenderLayer.Scene));
         }
     }
@@ -105,7 +121,9 @@ internal sealed class CombatScene : IDisposable
         Retire();
         _fight = fight;
         _acted = 0;
-        AreaGeometry geometry = AreaMesh.Floor(Width, Depth, floor?.Frame);
+        _width = fight.Fight.Field?.Width ?? Width;
+        _depth = fight.Fight.Field?.Height ?? Depth;
+        AreaGeometry geometry = AreaMesh.Floor(_width, _depth, floor?.Frame);
         _floorMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
             geometry.Positions,
             geometry.Normals,
@@ -124,6 +142,12 @@ internal sealed class CombatScene : IDisposable
                 bool left = side.Key == 0;
                 float x = left ? 1.7f - (i % 2 * 0.4f) : Width - 1.7f + (i % 2 * 0.4f);
                 float z = 0.6f + ((Depth - 1.2f) * (i + 0.5f) / members.Count);
+                if (members[i].Position is Cell cell)
+                {
+                    x = cell.X + 0.5f;
+                    z = cell.Y + 0.5f;
+                }
+
                 Definition? kind = members[i].Monster ?? members[i].Class;
                 SpriteArt? art = kind is null ? null : spriteFor(kind);
                 _figures[members[i].Name] = art is null
@@ -161,9 +185,18 @@ internal sealed class CombatScene : IDisposable
     /// <summary>One combatant on the field and its current animation.</summary>
     private sealed class Figure(SpriteArt? art, Appearance appearance, Transform placement)
     {
+        // A block stands on its centre, raised to half its height; a sprite on its anchor.
+        private readonly float _lift = placement.Translation.Y;
+
         public Appearance Appearance { get; } = appearance;
 
-        public Transform Placement { get; } = placement;
+        public Transform Placement { get; private set; } = placement;
+
+        /// <summary>Moves the figure to stand at <paramref name="ground"/>.</summary>
+        public void StandOn(Vector3 ground)
+        {
+            Placement = Placement with { Translation = ground + new Vector3(0, _lift, 0) };
+        }
 
         public SpritePlayback? Playback { get; private set; }
 

@@ -16,6 +16,7 @@ Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
   might_mod        4      Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
   save_dc          10     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
   wit_mod          0      Wit modifier
 Saved to kara.json.
@@ -54,6 +55,7 @@ Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
   might_mod        4      Might modifier
   reflex_base      3      Base Reflex save (each class adds its own)
   save_dc          11     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        1      Base Will save (each class adds its own)
   wit_mod          0      Wit modifier
 Saved to kara.json.
@@ -90,6 +92,7 @@ Pell: Folk Warrior 1 (0 xp, next level at 1000)
   might_mod        3      Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
   save_dc          10     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
   wit_mod          0      Wit modifier
   seed 1: 4d4: 2+1+1+2 = 6
@@ -113,6 +116,7 @@ Quill: Folk Warrior 1 (0 xp, next level at 1000)
   might_mod        2      Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
   save_dc          11     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
   wit_mod          1      Wit modifier
   seed 1: 4d4: 2+1+1+2 = 6
@@ -137,6 +141,7 @@ Ilse: Folk Adept 1 (0 xp, next level at 1000)
   might_mod        -1     Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
   save_dc          13     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        2      Base Will save (each class adds its own)
   wit_mod          3      Wit modifier
 Saved to ilse.json.
@@ -163,6 +168,7 @@ Ilse: Folk Adept 1 / Warrior 1 (level 2, 1000 xp, next level at 3000)
   might_mod        -1     Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
   save_dc          14     Difficulty class of the creature's hexes
+  speed            30     Speed in feet
   will_base        2      Base Will save (each class adds its own)
   wit_mod          3      Wit modifier
 Saved to ilse.json.
@@ -318,6 +324,13 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
       "name": "Difficulty class of the creature's hexes",
       "kind": "derived",
       "value": 14,
+      "problem": null
+    },
+    {
+      "id": "speed",
+      "name": "Speed in feet",
+      "kind": "derived",
+      "value": 30,
       "problem": null
     },
     {

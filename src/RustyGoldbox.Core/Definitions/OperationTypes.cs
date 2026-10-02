@@ -76,7 +76,16 @@ public static class OperationTypes
         ],
         """{ "op": "if", "when": "target.condition.prone", "then": [ { "op": "damage", "amount": "use.damage * 2" } ], "else": [ { "op": "damage", "amount": "use.damage" } ] }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If];
+    public static DefinitionType Move { get; } = new(
+        "move",
+        "Moves the creature acting on the combat field, cell by cell, toward its target (stopping within 1) or away from it. Creatures still fighting block cells. In a fight without a field it does nothing.",
+        [
+            new("distance", new ExpressionKind(ExprType.Number, ActionRoots), true, "Most cells to move, for example \"floor(self.speed / 5)\"."),
+            new("toward", new EnumKind(["target", "away"]), false, "Toward the action's target (the default) or away from it."),
+        ],
+        """{ "op": "move", "distance": "floor(self.speed / 5)" }""");
+
+    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If, Move];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(operation => operation.Name == name);
 }

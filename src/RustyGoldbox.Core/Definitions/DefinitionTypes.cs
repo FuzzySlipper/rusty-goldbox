@@ -337,6 +337,12 @@ public static class DefinitionTypes
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
             new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),
+            new("field", new ObjectKind(
+            [
+                new("width", new IntegerKind(), true, "Cells across; the first side starts on the left edge and the second on the right."),
+                new("height", new IntegerKind(), true, "Cells down."),
+                new("metric", new EnumKind(["chebyshev", "manhattan"]), false, "How distance counts: a diagonal step is 1 (chebyshev, the default) or there are only straight steps (manhattan)."),
+            ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells, and the move operation moves them. Without it, fights have no positions and everyone is in reach (combat.distance is 1)."),
             new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down at the end of each round it had no turn, though it takes no actions (bleeding out, a save to stabilise). Without it, a defeated creature's conditions wait."),
         ],
         """
@@ -363,6 +369,7 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
             new("target", new EnumKind(["enemy", "ally", "hurt_ally", "fallen_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (by default the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, an ally out of the fight (to bring back), itself, or everyone on a side."),
+            new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; without it, any distance."),
             new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
             new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),
             new("parameters", new ListKind(new TextKind()), false, "Names uses must supply (or get from an item), read as use.<name>, for example [\"damage\"]."),

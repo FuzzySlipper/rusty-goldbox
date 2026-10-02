@@ -4,23 +4,24 @@ Round 1.
   Kara rolls 12 for initiative.  [1d20: 11 = 11]
   Brute 1 rolls 16 for initiative.  [1d20: 16 = 16]
   Brute 2 rolls 9 for initiative.  [1d20: 9 = 9]
+  Brute 1 uses Advance on Kara.
+  Brute 1 moves 6 cells to (1, 1).
   Brute 1 uses Club on Kara.
   Brute 1 rolls Attack: 14 + 5 = 19 against 11: success.  [1d20: 14 = 14]
   Kara loses 5 hit points (7 left).  [1d8: 2 = 2]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Brute 2.
-  Kara rolls Attack: 20 + 4 + 2 modifiers = 26 against 13: critical.  [1d20: 20 = 20]
-  Brute 2 loses 20 hit points (-4 left).  [1d8: 8 = 8; 1d8: 6 = 6]
-  Brute 2 is out of the fight.
-Round 2.
-  Brute 1 uses Club on Kara.
-  Brute 1 rolls Attack: 7 + 5 = 12 against 11: success.  [1d20: 7 = 7]
+  Kara uses Melee attack (Longsword) on Brute 1.
+  Kara rolls Attack: 20 + 4 = 24 against 13: critical.  [1d20: 20 = 20]
+  Brute 1 loses 20 hit points (-3 left).  [1d8: 8 = 8; 1d8: 6 = 6]
+  Brute 1 is out of the fight.
+  Kara uses Advance on Brute 2.
+  Kara moves 6 cells to (6, 1).
+  Brute 2 uses Club on Kara.
+  Brute 2 rolls Attack: 7 + 5 = 12 against 11: success.  [1d20: 7 = 7]
   Kara loses 8 hit points (-1 left).  [1d8: 5 = 5]
   Kara is out of the fight.
-Brutes wins after 2 rounds.
+Brutes wins after 1 round.
 Party: Kara -1/12 (out)
-Brutes: Brute 1 17/17, Brute 2 -4/16 (out)
+Brutes: Brute 1 -3/17 (out), Brute 2 16/16
 [exit 0]
 
 $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/ascend --party kara.json,ilse.json --encounter brutes --seed 20
@@ -30,45 +31,42 @@ Round 1.
   Ilse rolls 13 for initiative.  [1d20: 12 = 12]
   Brute 1 rolls 9 for initiative.  [1d20: 9 = 9]
   Brute 2 rolls 19 for initiative.  [1d20: 19 = 19]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
+  Kara uses Advance on Brute 1.
+  Kara moves 6 cells to (6, 1).
   Kara uses Melee attack (Longsword) on Brute 1.
-  Kara rolls Attack: 11 + 4 + 2 modifiers = 17 against 13: success.  [1d20: 11 = 11]
+  Kara rolls Attack: 11 + 4 = 15 against 13: success.  [1d20: 11 = 11]
   Brute 1 loses 6 hit points (15 left).  [1d8: 3 = 3]
-  Brute 2 uses Club on Ilse.
+  Brute 2 uses Club on Kara.
   Brute 2 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
-  Ilse loses 5 hit points (2 left).  [1d8: 2 = 2]
+  Kara loses 5 hit points (7 left).  [1d8: 2 = 2]
+  Ilse uses Advance on Brute 1.
+  Ilse moves 6 cells to (6, 2).
   Ilse uses Hex on Brute 1.
   Brute 1 rolls Will save: 5 against 13: failure.  [1d20: 5 = 5]
   Brute 1 is Shaken for 2 rounds.
-  Brute 1 uses Club on Ilse.
-  Brute 1 rolls Attack: 11 + 5 - 2 modifiers = 14 against 11: success.  [1d20: 11 = 11]
-  Ilse loses 10 hit points (-8 left).  [1d8: 7 = 7]
-  Ilse is out of the fight.
-Round 2.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Brute 1.
-  Kara rolls Attack: 3 + 4 + 4 modifiers = 11 against 13: failure.  [1d20: 3 = 3]
-  Brute 2 uses Club on Kara.
-  Brute 2 rolls Attack: 15 + 5 = 20 against 11: success.  [1d20: 15 = 15]
-  Kara loses 10 hit points (2 left).  [1d8: 7 = 7]
   Brute 1 uses Club on Kara.
-  Brute 1 rolls Attack: 6 + 5 - 2 modifiers = 9 against 11: failure.  [1d20: 6 = 6]
+  Brute 1 rolls Attack: 11 + 5 - 2 modifiers = 14 against 11: success.  [1d20: 11 = 11]
+  Kara loses 10 hit points (-3 left).  [1d8: 7 = 7]
+  Kara is out of the fight.
+Round 2.
+  Brute 2 uses Club on Ilse.
+  Brute 2 rolls Attack: 3 + 5 = 8 against 11: failure.  [1d20: 3 = 3]
+  Ilse uses Mend on Kara.
+  Kara regains 6 hit points (3).  [1d8: 3 = 3]
+  Kara is back in the fight.
+  Brute 1 uses Club on Kara.
+  Brute 1 rolls Attack: 19 + 5 - 2 modifiers = 22 against 11: success.  [1d20: 19 = 19]
+  Kara loses 9 hit points (-6 left).  [1d8: 6 = 6]
+  Kara is out of the fight.
   Brute 1 is no longer Shaken.
 Round 3.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Brute 1.
-  Kara rolls Attack: 8 + 4 + 2 modifiers = 14 against 13: success.  [1d20: 8 = 8]
-  Brute 1 loses 10 hit points (5 left).  [1d8: 7 = 7]
-  Brute 2 uses Club on Kara.
-  Brute 2 rolls Attack: 18 + 5 = 23 against 11: success.  [1d20: 18 = 18]
-  Kara loses 4 hit points (-2 left).  [1d8: 1 = 1]
-  Kara is out of the fight.
+  Brute 2 uses Club on Ilse.
+  Brute 2 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
+  Ilse loses 10 hit points (-3 left).  [1d8: 7 = 7]
+  Ilse is out of the fight.
 Brutes wins after 3 rounds.
-Party: Kara -2/12 (out), Ilse -8/7 (out)
-Brutes: Brute 1 5/21, Brute 2 22/22
+Party: Kara -6/12 (out), Ilse -3/7 (out)
+Brutes: Brute 1 15/21, Brute 2 22/22
 [exit 0]
 
 $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/ascend --party kara.json --encounter imps --seed 1
@@ -77,68 +75,71 @@ Round 1.
   Kara rolls 7 for initiative.  [1d20: 6 = 6]
   Cinder imp 1 rolls 2 for initiative.  [1d20: 2 = 2]
   Cinder imp 2 rolls 8 for initiative.  [1d20: 8 = 8]
+  Cinder imp 2 uses Advance on Kara.
+  Cinder imp 2 moves 6 cells to (1, 2).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 18 + 3 = 21 against 11: success.  [1d20: 18 = 18]
   Kara loses 1 hit points (11 left).
   Kara is Burning.  [1d4: 4 = 4]
   Kara loses 4 hit points (7 left).
+  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Kara rolls Attack: 11 + 4 = 15 against 14: success.  [1d20: 11 = 11]
+  Cinder imp 2 loses 6 hit points (3 left).  [1d8: 3 = 3]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Cinder imp 1.
-  Kara rolls Attack: 11 + 4 + 2 modifiers = 17 against 14: success.  [1d20: 11 = 11]
-  Cinder imp 1 loses 6 hit points (3 left).  [1d8: 3 = 3]
   Kara rolls Save to end: 15 against 10: success.  [1d20: 15 = 15]
   Kara is no longer Burning.
+  Cinder imp 1 uses Advance on Kara.
+  Cinder imp 1 moves 6 cells to (1, 1).
   Cinder imp 1 uses Ember on Kara.
   Cinder imp 1 rolls Attack: 5 + 3 = 8 against 11: failure.  [1d20: 5 = 5]
 Round 2.
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 2 + 3 = 5 against 11: failure.  [1d20: 2 = 2]
+  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Kara rolls Attack: 14 + 4 + 2 modifiers = 20 against 14: success.  [1d20: 14 = 14]
+  Cinder imp 2 loses 4 hit points (-1 left).  [1d8: 1 = 1]
+  Cinder imp 2 is out of the fight.
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Cinder imp 1.
-  Kara rolls Attack: 14 + 4 + 2 modifiers = 20 against 14: success.  [1d20: 14 = 14]
-  Cinder imp 1 loses 4 hit points (-1 left).  [1d8: 1 = 1]
-  Cinder imp 1 is out of the fight.
-Round 3.
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 10 + 3 = 13 against 11: success.  [1d20: 10 = 10]
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 10 + 3 = 13 against 11: success.  [1d20: 10 = 10]
   Kara loses 1 hit points (6 left).
   Kara is Burning.  [1d4: 2 = 2]
+Round 3.
   Kara loses 2 hit points (4 left).
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
   Kara rolls Attack: 8 + 4 + 2 modifiers = 14 against 14: success.  [1d20: 8 = 8]
-  Cinder imp 2 loses 7 hit points (2 left).  [1d8: 4 = 4]
-  Kara rolls Save to end: 5 against 10: failure.  [1d20: 5 = 5]
-Round 4.
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 8 + 3 = 11 against 11: success.  [1d20: 8 = 8]
-  Kara loses 1 hit points (3 left).  [1d6: 1 = 1]
-  Kara loses 2 hit points (1 left).
+  Cinder imp 1 loses 7 hit points (2 left).  [1d8: 4 = 4]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Kara rolls Save to end: 5 against 10: failure.  [1d20: 5 = 5]
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 8 + 3 = 11 against 11: success.  [1d20: 8 = 8]
+  Kara loses 1 hit points (3 left).  [1d6: 1 = 1]
+Round 4.
+  Kara loses 2 hit points (1 left).
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
   Kara rolls Attack: 5 + 4 + 2 modifiers = 11 against 14: failure.  [1d20: 5 = 5]
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
   Kara rolls Save to end: 16 against 10: success.  [1d20: 16 = 16]
   Kara is no longer Burning.
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 6 + 3 = 9 against 11: failure.  [1d20: 6 = 6]
 Round 5.
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 6 + 3 = 9 against 11: failure.  [1d20: 6 = 6]
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
+  Kara rolls Attack: 6 + 4 + 2 modifiers = 12 against 14: failure.  [1d20: 6 = 6]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
-  Kara rolls Attack: 6 + 4 + 2 modifiers = 12 against 14: failure.  [1d20: 6 = 6]
-Round 6.
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 10 + 3 = 13 against 11: success.  [1d20: 10 = 10]
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 10 + 3 = 13 against 11: success.  [1d20: 10 = 10]
   Kara loses 1 hit points (0 left).
   Kara is out of the fight.
   Kara is Burning.  [1d4: 3 = 3]
-Cinder imps wins after 6 rounds.
+Cinder imps wins after 5 rounds.
 Party: Kara 0/12 (out)
-Cinder imps: Cinder imp 1 -1/9 (out), Cinder imp 2 2/9
+Cinder imps: Cinder imp 1 2/9, Cinder imp 2 -1/9 (out)
 [exit 0]
 
 $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/ascend --party kara.json,mender.json --encounter bullies --seed 14
@@ -148,11 +149,13 @@ Round 1.
   Ilse rolls 18 for initiative.  [1d20: 17 = 17]
   Bully 1 rolls 4 for initiative.  [1d20: 4 = 4]
   Bully 2 rolls 12 for initiative.  [1d20: 12 = 12]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
+  Kara uses Advance on Bully 1.
+  Kara moves 6 cells to (6, 1).
   Kara uses Melee attack (Longsword) on Bully 2.
-  Kara rolls Attack: 15 + 4 + 2 modifiers = 21 against 12: success.  [1d20: 15 = 15]
+  Kara rolls Attack: 15 + 4 = 19 against 12: success.  [1d20: 15 = 15]
   Bully 2 loses 10 hit points (2 left).  [1d8: 7 = 7]
+  Ilse uses Advance on Bully 1.
+  Ilse moves 6 cells to (6, 2).
   Ilse uses Hex on Bully 2.
   Bully 2 rolls Will save: 4 against 13: failure.  [1d20: 4 = 4]
   Bully 2 is Shaken for 2 rounds.
@@ -162,12 +165,12 @@ Round 1.
   Bully 1 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
   Kara loses 11 hit points (1 left).  [1d10: 8 = 8]
 Round 2.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Bully 2.
-  Kara rolls Attack: 15 + 4 + 4 modifiers = 23 against 12: success.  [1d20: 15 = 15]
+  Kara rolls Attack: 15 + 4 + 2 modifiers = 21 against 12: success.  [1d20: 15 = 15]
   Bully 2 loses 6 hit points (-4 left).  [1d8: 3 = 3]
   Bully 2 is out of the fight.
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
   Ilse uses Hex on Bully 1.
   Bully 1 rolls Will save: 6 against 13: failure.  [1d20: 6 = 6]
   Bully 1 is Shaken for 2 rounds.
@@ -175,11 +178,11 @@ Round 2.
   Bully 1 rolls Attack: 1 + 5 - 2 modifiers = 4 against 11: miss.  [1d20: 1 = 1]
   Bully 2 is no longer Shaken.
 Round 3.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Bully 1.
   Kara rolls Attack: 4 + 4 + 4 modifiers = 12 against 12: success.  [1d20: 4 = 4]
   Bully 1 loses 7 hit points (6 left).  [1d8: 4 = 4]
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
   Ilse uses Punch on Bully 1.
   Ilse rolls Attack: 2 - 1 = 1 against 12: failure.  [1d20: 2 = 2]
   Bully 1 uses Smash on Kara.
@@ -209,10 +212,10 @@ Round 6.
   Bully 1 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
   Kara loses 4 hit points (4 left).  [1d10: 1 = 1]
 Round 7.
+  Kara uses Melee attack (Longsword) on Bully 1.
+  Kara rolls Attack: 3 + 4 = 7 against 12: failure.  [1d20: 3 = 3]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 3 + 4 + 2 modifiers = 9 against 12: failure.  [1d20: 3 = 3]
   Ilse uses Hex on Bully 1.
   Bully 1 rolls Will save: 11 against 13: failure.  [1d20: 11 = 11]
   Bully 1 is Shaken for 2 rounds.
@@ -228,10 +231,10 @@ Round 8.
   Bully 1 rolls Attack: 6 + 5 - 2 modifiers = 9 against 11: failure.  [1d20: 6 = 6]
   Bully 1 is no longer Shaken.
 Round 9.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Bully 1.
   Kara rolls Attack: 3 + 4 + 2 modifiers = 9 against 12: failure.  [1d20: 3 = 3]
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
   Ilse uses Hex on Bully 1.
   Bully 1 rolls Will save: 1 against 13: failure.  [1d20: 1 = 1]
   Bully 1 is Shaken for 2 rounds.
@@ -253,10 +256,8 @@ Round 11.
   Bully 1 uses Smash on Kara.
   Bully 1 rolls Attack: 1 + 5 = 6 against 11: miss.  [1d20: 1 = 1]
 Round 12.
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 20 + 4 + 2 modifiers = 26 against 12: critical.  [1d20: 20 = 20]
+  Kara rolls Attack: 20 + 4 = 24 against 12: critical.  [1d20: 20 = 20]
   Bully 1 loses 13 hit points (-7 left).  [1d8: 1 = 1; 1d8: 6 = 6]
   Bully 1 is out of the fight.
 Party wins after 12 rounds.

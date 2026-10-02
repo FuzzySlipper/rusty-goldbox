@@ -6,6 +6,7 @@
     "standard": 1
   },
   "target": "enemy",
+  "range": "1",
   "parameters": [
     "damage"
   ],

@@ -38,6 +38,9 @@ public sealed class Creature
     /// <summary>The creature's level in each of its classes, in the order taken; each class's modifiers apply at that level.</summary>
     public Dictionary<Definition, int> ClassLevels { get; } = [];
 
+    /// <summary>Where the creature stands on the combat field, in a fight that has one.</summary>
+    public Combat.Cell? Position { get; set; }
+
     /// <summary>How many classes a character advances in (self.classes); without a value, its number of classes.</summary>
     public int? AdvancingClasses { get; set; }
 

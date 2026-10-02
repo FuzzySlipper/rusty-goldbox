@@ -63,6 +63,9 @@
       "action": "hex"
     },
     {
+      "action": "advance"
+    },
+    {
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d3"

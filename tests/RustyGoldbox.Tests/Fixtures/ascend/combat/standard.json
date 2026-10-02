@@ -7,6 +7,11 @@
   "initiative_order": "highest-first",
   "initiative_each": "combat",
   "round_seconds": 6,
+  "field": {
+    "width": 8,
+    "height": 4,
+    "metric": "chebyshev"
+  },
   "budget": [
     {
       "id": "standard",

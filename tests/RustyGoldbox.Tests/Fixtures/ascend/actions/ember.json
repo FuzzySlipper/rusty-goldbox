@@ -6,6 +6,7 @@
     "standard": 1
   },
   "target": "enemy",
+  "range": "6",
   "check": "attack",
   "outcomes": {
     "success": [

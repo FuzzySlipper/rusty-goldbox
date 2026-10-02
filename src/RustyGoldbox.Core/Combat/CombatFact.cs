@@ -99,6 +99,14 @@ public sealed record ConditionFact(string Who, string Condition, bool Applied, d
     }
 }
 
+/// <summary>A creature moved on the combat field.</summary>
+public sealed record MoveFact(string Who, Cell From, Cell To, int Cells) : CombatFact
+{
+    public override string Kind => "move";
+
+    public override string Describe() => $"{Who} moves {Cells} cell{(Cells == 1 ? "" : "s")} to ({To.X}, {To.Y}).";
+}
+
 public sealed record DefeatedFact(string Who) : CombatFact
 {
     public override string Kind => "defeated";

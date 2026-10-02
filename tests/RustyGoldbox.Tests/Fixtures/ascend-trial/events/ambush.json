@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "ambush",
+  "kind": "combat",
+  "encounter": "ascend:brutes"
+}

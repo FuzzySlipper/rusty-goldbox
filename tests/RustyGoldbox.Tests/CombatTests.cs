@@ -64,7 +64,7 @@ public sealed class CombatTests
         Combatant combatant = Combatant.FromCharacter(set.Rules!, character);
 
         // Warrior's uses first, then the adept's (its punch is the warrior's, so it appears once), then the features'.
-        Assert.Equal(["Aim", "Punch", "Mend", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
+        Assert.Equal(["Advance", "Aim", "Punch", "Mend", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
         Evaluator evaluator = new(set.Rules!, null);
         // Warrior 1 and adept 2 each add their own progression.
         Assert.Equal(2m, evaluator.Stat(combatant.Creature, "attack_bonus").Number);
@@ -211,6 +211,26 @@ public sealed class CombatTests
         Assert.Contains("Hexer doesn't act (surprised).", lines.Take(round2));
         Assert.Contains("Hexer uses Hex on Dummy.", lines.Skip(round2));
         Assert.Single(lines, line => line.Contains("for initiative", StringComparison.Ordinal) && line.StartsWith("Hexers", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AFieldDeploysSidesAtOppositeEdgesAndCountsDistance()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/grid.json", """
+            { "type": "combat", "id": "grid", "name": "Grid", "initiative": "self.str", "initiative_by": "side", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "field": { "width": 6, "height": 3, "metric": "manhattan" }, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        CombatField field = CombatField.Of(rules.Find(DefinitionTypes.Combat, "grid", out _)!)!;
+
+        // The middle row first, then outward; a full column moves one in.
+        Assert.Equal([new Cell(0, 1), new Cell(0, 0), new Cell(0, 2), new Cell(1, 1)], field.Deploy(0, 4));
+        Assert.Equal([new Cell(5, 1), new Cell(5, 0)], field.Deploy(1, 2));
+        Assert.Equal(6, field.Distance(new Cell(0, 0), new Cell(5, 1)));
+        Assert.Equal(4, field.Neighbours(new Cell(2, 1)).Count());
+        Assert.Equal(2, field.Neighbours(new Cell(0, 0)).Count());
     }
 
     [Fact]

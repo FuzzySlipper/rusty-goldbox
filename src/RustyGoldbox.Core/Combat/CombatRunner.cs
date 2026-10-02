@@ -32,6 +32,7 @@ public sealed class CombatRunner
     private readonly List<CombatSide> _sides;
     private readonly List<CombatFact> _facts = [];
     private readonly Definition _track;
+    private readonly CombatField? _field;
     private Combatant? _turn;
 
     private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice)
@@ -42,13 +43,33 @@ public sealed class CombatRunner
         _evaluator = new Evaluator(rules, dice);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
+        _field = CombatField.Of(combat);
         for (int side = 0; side < _sides.Count; side++)
         {
-            foreach (Combatant member in _sides[side].Members)
+            IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count);
+            for (int index = 0; index < _sides[side].Members.Count; index++)
             {
+                Combatant member = _sides[side].Members[index];
                 member.Side = side;
+                member.Creature.Position = cells?[index];
             }
         }
+    }
+
+    /// <summary>Cells apart on the field; without a field, everyone is 1 apart (within reach).</summary>
+    private decimal Distance(Creature from, Creature to)
+    {
+        return _field is not null && from.Position is Cell a && to.Position is Cell b ? _field.Distance(a, b) : 1;
+    }
+
+    /// <summary>How far a creature is from its nearest enemy still fighting (0 with none).</summary>
+    private decimal Nearest(Creature creature)
+    {
+        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature);
+        return Everyone.Where(member => !member.Defeated && self is not null && member.Side != self.Side)
+            .Select(member => Distance(creature, member.Creature))
+            .DefaultIfEmpty(0)
+            .Min();
     }
 
     /// <summary>Rounds a fight runs when its combat definition sets no round_limit.</summary>
@@ -82,7 +103,7 @@ public sealed class CombatRunner
         while (winner is null && StandingSides() > 1 && round < maxRounds)
         {
             round++;
-            _evaluator.Combat = (round, Everyone.Any(member => member.SurprisedRounds > 0));
+            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest);
             Record(new RoundFact(round));
             if (order is null || rollEachRound)
             {
@@ -405,6 +426,12 @@ public sealed class CombatRunner
             "fallen_ally" => Everyone.Where(member => member.Defeated && member.Side == actor.Side && member != actor).ToList(),
             _ => allies.Where(member => Missing(member) > 0).ToList(),
         };
+        if (_field is not null && kind != "self" && action.Json.TryGetProperty("range", out _))
+        {
+            decimal range = Number(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
+            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range).ToList();
+        }
+
         if (action.Json.TryGetProperty("valid_target", out _))
         {
             candidates = candidates.Where(candidate => Evaluate(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)).Boolean).ToList();
@@ -493,6 +520,12 @@ public sealed class CombatRunner
         if (op == "check")
         {
             RunCheck(owner, operation, path, scope, actor, target);
+            return;
+        }
+
+        if (op == "move")
+        {
+            Move(owner, operation, path, scope, actor, target);
             return;
         }
 
@@ -606,6 +639,52 @@ public sealed class CombatRunner
         if (operation.GetProperty("outcomes").TryGetProperty(result.Tier, out JsonElement operations))
         {
             RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target);
+        }
+    }
+
+    /// <summary>
+    /// The move operation: the actor steps cell by cell, up to the distance,
+    /// toward its target (stopping once within 1) or away from it, each step to
+    /// the free neighbouring cell that most changes the distance. Creatures
+    /// still fighting block cells. Without a field it does nothing.
+    /// </summary>
+    private void Move(Definition owner, JsonElement operation, string path, Scope scope, Combatant actor, Combatant? target)
+    {
+        if (_field is null || actor.Creature.Position is not Cell start || target?.Creature.Position is not Cell goal || target == actor)
+        {
+            return;
+        }
+
+        bool away = operation.TryGetProperty("toward", out JsonElement toward) && toward.GetString() == "away";
+        decimal allowed = Number(owner, $"{path}.distance", scope);
+        HashSet<Cell> blocked = Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
+            .Select(member => member.Creature.Position!.Value)
+            .ToHashSet();
+        Cell here = start;
+        int steps = 0;
+        while (steps < allowed && (away || _field.Distance(here, goal) > 1))
+        {
+            int now = _field.Distance(here, goal);
+            Cell? next = _field.Neighbours(here)
+                .Where(cell => !blocked.Contains(cell))
+                .Select(cell => (Cell: cell, Distance: _field.Distance(cell, goal)))
+                .Where(entry => away ? entry.Distance > now : entry.Distance < now)
+                .OrderBy(entry => away ? -entry.Distance : entry.Distance)
+                .Select(entry => (Cell?)entry.Cell)
+                .FirstOrDefault();
+            if (next is not Cell step)
+            {
+                break;
+            }
+
+            here = step;
+            steps++;
+        }
+
+        if (steps > 0)
+        {
+            actor.Creature.Position = here;
+            Record(new MoveFact(actor.Name, start, here, steps));
         }
     }
 

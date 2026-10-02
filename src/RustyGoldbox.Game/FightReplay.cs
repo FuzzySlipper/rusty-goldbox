@@ -13,6 +13,7 @@ internal sealed class FightReplay
 {
     private readonly Dictionary<string, decimal> _values = [];
     private readonly HashSet<string> _defeated = [];
+    private readonly Dictionary<string, Cell> _positions = [];
     private readonly List<string> _lines = [];
     private double _waited;
 
@@ -22,6 +23,10 @@ internal sealed class FightReplay
         foreach (FightMember member in fight.Members)
         {
             _values[member.Name] = member.Start;
+            if (member.Position is Cell cell)
+            {
+                _positions[member.Name] = cell;
+            }
         }
     }
 
@@ -36,6 +41,9 @@ internal sealed class FightReplay
     public IReadOnlyDictionary<string, decimal> Values => _values;
 
     public IReadOnlySet<string> Defeated => _defeated;
+
+    /// <summary>Where each member stands on the fight's field, as of the facts shown; empty for a fight without one.</summary>
+    public IReadOnlyDictionary<string, Cell> Positions => _positions;
 
     /// <summary>The combatant of the latest action shown, and how many actions have shown (so a repeat acts again).</summary>
     public (string? Who, int Count) Acting { get; private set; }
@@ -82,6 +90,9 @@ internal sealed class FightReplay
             case HealFact heal when heal.Track == Fight.Track:
                 _values[heal.Who] = heal.Now;
                 break;
+            case MoveFact move:
+                _positions[move.Who] = move.To;
+                break;
             case DefeatedFact defeated:
                 _defeated.Add(defeated.Who);
                 break;
@@ -97,6 +108,7 @@ internal sealed class FightReplay
         RoundFact => 0.5,
         ActionFact => 0.6,
         DamageFact or HealFact => 0.5,
+        MoveFact => 0.4,
         DefeatedFact or EndFact => 0.7,
         _ => 0.25,
     };

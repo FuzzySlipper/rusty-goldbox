@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "ascend-trial",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Ascend trial (test fixture)",
+  "requires": [
+    {
+      "id": "ascend",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "placeholder-art",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original test fixture: a one-room campaign whose opening fight is on ascend's combat field."
+}

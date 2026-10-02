@@ -47,11 +47,14 @@
   ],
   "actions": [
     {
-      "action": "aim"
-    },
-    {
       "action": "melee_attack",
       "from_item": "weapon"
+    },
+    {
+      "action": "advance"
+    },
+    {
+      "action": "aim"
     },
     {
       "action": "melee_attack",

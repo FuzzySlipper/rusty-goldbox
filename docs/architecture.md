@@ -44,6 +44,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
+| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field: cells, distance, neighbours and where each side starts |
 | `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise, initiative, turns, budgets, the choice policy, checks and operations, condition durations, defeat |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
@@ -64,7 +65,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
 | `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
-| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field, side-view figures as spherical billboards (party left facing right, foes right facing left), attack animations for the actor, defeated figures leaving |
+| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving |
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sprite asset as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
@@ -72,7 +73,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game) |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 ## Module loading

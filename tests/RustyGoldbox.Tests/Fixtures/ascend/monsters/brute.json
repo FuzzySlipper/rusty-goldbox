@@ -17,6 +17,9 @@
       "action": "melee_attack",
       "name": "Club",
       "damage": "1d8"
+    },
+    {
+      "action": "advance"
     }
   ]
 }

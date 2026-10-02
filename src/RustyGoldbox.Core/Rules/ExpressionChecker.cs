@@ -117,9 +117,9 @@ internal sealed class ExpressionChecker(
         {
             return path.Name switch
             {
-                "round" => ExprType.Number,
+                "round" or "distance" or "nearest" => ExprType.Number,
                 "surprise_round" => ExprType.Boolean,
-                _ => throw new ExpressionException($"'combat.{path.Name}' is not something a fight gives. Read combat.round or combat.surprise_round.", path.Column),
+                _ => throw new ExpressionException($"'combat.{path.Name}' is not something a fight gives. Read combat.round, combat.surprise_round, combat.distance (self to target, in cells) or combat.nearest (self to its nearest enemy).", path.Column),
             };
         }
 

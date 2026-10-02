@@ -113,11 +113,12 @@ public enum FightOutcome
 /// class it is, and its value on the combat's track (its maximum when the
 /// ruleset gives one).
 /// </summary>
-public sealed record FightMember(string Name, int Side, Definition? Monster, Definition? Class, decimal Start, decimal? Max);
+public sealed record FightMember(string Name, int Side, Definition? Monster, Definition? Class, decimal Start, decimal? Max, Combat.Cell? Position = null);
 
 /// <summary>A fight: who took part, what happened in order, and how it ended.</summary>
 /// <param name="Track">The combat's track (usually hit points) that <see cref="FightMember"/> values are on.</param>
-public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome) : PlayFact
+/// <param name="Field">The combat field the fight was on, or null for a fight without positions.</param>
+public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome, Combat.CombatField? Field = null) : PlayFact
 {
     public override string Kind => "combat";
 

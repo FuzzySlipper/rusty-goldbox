@@ -17,6 +17,9 @@
       "action": "smash",
       "name": "Smash",
       "damage": "1d10"
+    },
+    {
+      "action": "advance"
     }
   ]
 }
