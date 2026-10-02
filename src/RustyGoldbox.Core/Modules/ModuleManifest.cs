@@ -1,0 +1,21 @@
+namespace RustyGoldbox.Core.Modules;
+
+/// <summary>One entry of a manifest's <c>requires</c> list.</summary>
+/// <param name="Id">The required module's ID.</param>
+/// <param name="Range">Acceptable versions.</param>
+/// <param name="Index">Position in the <c>requires</c> array, for diagnostics.</param>
+public sealed record ModuleRequirement(string Id, VersionRange Range, int Index);
+
+/// <summary>A module's checked <c>module.json</c>.</summary>
+public sealed record ModuleManifest(
+    string Directory,
+    int Format,
+    string Id,
+    ModuleKind Kind,
+    ModuleVersion Version,
+    string Title,
+    IReadOnlyList<ModuleRequirement> Requires,
+    string Provenance)
+{
+    public string ManifestPath => Path.Combine(Directory, ManifestReader.FileName);
+}

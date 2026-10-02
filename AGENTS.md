@@ -116,9 +116,12 @@ authorized. Stop that slice and continue independent work. Known gaps:
   (rusty-engine Den task #9040; tracked here as rusty-goldbox #9052). Until
   the Engine provides these, modules ship as source directories staged as
   `RustyEngineContentBundle`s. Don't write a local container format.
-- **In-process Engine services for the CLI.** Confirm that
-  `EngineTestHost` is supported for tool use, or request a supported host
-  (rusty-goldbox Den task #9046). Don't substitute a local RNG.
+- **In-process Engine services for the CLI.** At the current pin,
+  `EngineTestHost` is documented for test projects only, and Engine `Random`
+  is reachable only through `IEngineContext`. A supported host for tool
+  executables is requested as rusty-engine Den task #9054 (tracked here as
+  rusty-goldbox #9046). Until it lands, CLI commands that need Engine
+  services wait. Don't substitute a local RNG.
 
 ## Verification
 

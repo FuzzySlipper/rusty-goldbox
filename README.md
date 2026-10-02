@@ -31,6 +31,26 @@ CoreCLR loads the product, and changes to C#, UI or content inputs rebuild and
 reload it. See `rusty dev --help` for `--bind-host`, `--live-debug` and
 `--debugger`.
 
+## Authoring modules
+
+`goldbox` is the authoring CLI. From the repository root:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- --help
+dotnet run --project src/RustyGoldbox.Cli -- module new ruleset my-rules
+dotnet run --project src/RustyGoldbox.Cli -- module validate modules/my-rules
+dotnet run --project src/RustyGoldbox.Cli -- module deps modules/my-rules --json
+```
+
+`goldbox.json` makes `modules/` the workspace search directory, so new modules
+go there and required modules are found there. Every command accepts `--json`.
+
+## Tests
+
+```bash
+dotnet test tests/RustyGoldbox.Tests
+```
+
 ## Engine pin
 
 `Directory.Build.props` pins the exact SDK/runtime pair. `rusty install`
@@ -60,8 +80,13 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 
 | Path | Responsibility |
 | --- | --- |
+| `src/RustyGoldbox.Core/` | Module format and loading; later rules, combat and campaign runtime |
+| `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
 | `src/RustyGoldbox.Game/` | Engine product: lifecycle and projections |
 | `src/ui/main.js` | DOM debug readout |
+| `modules/` | First-party module sources |
+| `goldbox.json` | Workspace: module search directories |
+| `tests/RustyGoldbox.Tests/` | Core and CLI checks |
 | `content/` | Product content root; module bundles are staged from here |
 | `Directory.Build.props` | Engine SDK/runtime pin |
 | `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RustyGoldbox.Cli/RustyGoldbox.Cli.csproj" />
+    <Project Path="src/RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
+    <Project Path="src/RustyGoldbox.Game/RustyGoldbox.Game.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RustyGoldbox.Tests/RustyGoldbox.Tests.csproj" />
+  </Folder>
+</Solution>

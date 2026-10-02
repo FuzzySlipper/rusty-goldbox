@@ -67,17 +67,29 @@ Meaning comes from the manifest and each file's declared type, not from paths.
 }
 ```
 
+Every field is required and unknown fields are errors. IDs are lowercase
+letters, digits and single hyphens, starting with a letter. Versions are
+`MAJOR.MINOR.PATCH`. A `requires` entry is `{ "id": "osric", "version":
+"^0.1.0" }`; ranges are an exact version, `^1.2.0` (same major; same minor
+below 1.0.0), `~1.2.0` (same minor), space-separated comparators
+(`>=1.0.0 <2.0.0`) or `*`.
+
+Every other `.json` file in the module directory is a definition file: a JSON
+object whose `type` field names its definition type. Other files (media,
+`PROVENANCE.md`) are not read as definitions.
+
 ### Kinds
 
-| Kind | Contains | Typical requires |
+| Kind | Contains | May require |
 | --- | --- | --- |
-| `ruleset` | Attributes, derived values, races, classes and level tables, checks, conditions, item types, spells and abilities, monsters, the combat procedure and character creation | none |
-| `extension` | Additions to a ruleset (classes, spells, monsters) and declared patches to its definitions (house rules) | one ruleset |
-| `assets` | Logical asset IDs mapped to files: wall sets, backdrops, portraits, combat icons, sounds and music | none |
-| `campaign` | Areas, maps, events, encounters, NPCs, shops, variables, the starting party rules and the start location | exactly one ruleset, any extensions, one or more asset modules |
+| `ruleset` | Attributes, derived values, races, classes and level tables, checks, conditions, item types, spells and abilities, monsters, the combat procedure and character creation | assets modules only; usually nothing |
+| `extension` | Additions to a ruleset (classes, spells, monsters) and declared patches to its definitions (house rules) | exactly one ruleset, plus extensions and assets |
+| `assets` | Logical asset IDs mapped to files: wall sets, backdrops, portraits, combat icons, sounds and music | other assets modules only |
+| `campaign` | Areas, maps, events, encounters, NPCs, shops, variables, the starting party rules and the start location | exactly one ruleset, one or more assets modules, any extensions |
 
-A kind tells the validator what is allowed. It does not create a different
-loader.
+No module may require a campaign, and a resolved module set contains at most
+one ruleset. A kind tells the validator what is allowed. It does not
+create a different loader.
 
 ### Identity and references
 
@@ -88,7 +100,16 @@ loader.
   dependencies can't be referenced: a campaign that names `osric:` must
   require `osric` itself.
 - `requires` entries take an ID and a version range. The resolver picks one
-  version per ID, and any conflict is an error.
+  version per ID: breadth-first from the module being loaded, each ID gets the
+  highest available version that satisfies the ranges known when it is first
+  required. A later range that excludes it is a conflict error; the resolver
+  does not backtrack. Requirement cycles are errors.
+- Required modules are found in search directories: `--modules <dir>`
+  arguments together with the `modules` list of the nearest `goldbox.json`
+  (paths relative to it), or, with neither, the module's sibling directories.
+  A search directory may itself be a module or contain module directories.
+  Directories have no precedence: the same ID and version in two of them is an
+  error.
 - Load order is dependency order. Two modules defining the same qualified ID
   is impossible by construction. Changing another module's definition takes an
   explicit `patch` entry in an `extension` or `campaign`. A patch names its

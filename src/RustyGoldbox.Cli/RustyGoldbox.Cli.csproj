@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>goldbox</AssemblyName>
+    <RootNamespace>RustyGoldbox.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RustyGoldbox.Tests" />
+    <ProjectReference Include="../RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
+  </ItemGroup>
+</Project>
