@@ -1,0 +1,19 @@
+{
+  "type": "monster",
+  "id": "cinder_imp",
+  "name": "Cinder imp",
+  "level": 1,
+  "tracks": {
+    "hit_points": "9"
+  },
+  "stats": {
+    "ac": "14",
+    "attack_bonus": "3"
+  },
+  "xp": 50,
+  "actions": [
+    {
+      "action": "ember"
+    }
+  ]
+}

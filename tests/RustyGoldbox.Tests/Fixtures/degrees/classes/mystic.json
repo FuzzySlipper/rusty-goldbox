@@ -69,6 +69,9 @@
       "damage": "2d4 + self.insight_mod"
     },
     {
+      "action": "hinder"
+    },
+    {
       "action": "strike",
       "from_item": "weapon"
     }

@@ -180,6 +180,7 @@ public sealed class CombatRunner
         }
 
         _turn = actor;
+        actor.Creature.Rolled.Clear();
         ActOnTurn(actor);
         EndTurn(actor);
         _turn = null;
@@ -197,7 +198,7 @@ public sealed class CombatRunner
         {
             if (condition.Json.TryGetProperty("each_turn", out JsonElement operations))
             {
-                RunOperations(condition, operations, "$.each_turn", new Scope(actor.Creature, null), actor, null);
+                RunOperations(condition, operations, "$.each_turn", ConditionScope(actor, condition), actor, null);
                 if (actor.Defeated)
                 {
                     return;
@@ -213,9 +214,12 @@ public sealed class CombatRunner
             return;
         }
 
+        int index = 0;
         foreach (JsonElement entry in _combat.Json.GetProperty("budget").EnumerateArray())
         {
-            actor.Budget[entry.GetProperty("id").GetString()!] = entry.GetProperty("per_turn").GetInt32();
+            decimal perTurn = Number(_combat, $"$.budget[{index}].per_turn", new Scope(actor.Creature, null));
+            actor.Budget[entry.GetProperty("id").GetString()!] = (int)Math.Clamp(decimal.Floor(perTurn), 0, int.MaxValue);
+            index++;
         }
 
         bool acted = false;
@@ -244,6 +248,14 @@ public sealed class CombatRunner
             combatant.SurprisedRounds--;
         }
 
+        foreach (Definition condition in combatant.Creature.Conditions.ToList())
+        {
+            if (!combatant.Defeated && condition.Json.TryGetProperty("end_of_turn", out JsonElement operations))
+            {
+                RunOperations(condition, operations, "$.end_of_turn", ConditionScope(combatant, condition), combatant, null);
+            }
+        }
+
         foreach (Definition condition in combatant.ConditionRounds.Keys.ToList())
         {
             if (combatant.AppliedThisTurn.Contains(condition))
@@ -260,6 +272,7 @@ public sealed class CombatRunner
 
             combatant.ConditionRounds.Remove(condition);
             combatant.Creature.Conditions.Remove(condition);
+            combatant.Creature.ConditionValues.Remove(condition);
             Record(new ConditionFact(combatant.Name, condition.Name, false, null));
         }
 
@@ -353,6 +366,7 @@ public sealed class CombatRunner
     {
         int before = _dice.Rolls.Count;
         CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature));
+        by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
         Record(new CheckFact(by.Name, check.Name, result), before);
         return result;
     }
@@ -374,6 +388,17 @@ public sealed class CombatRunner
         if (op == "check")
         {
             RunCheck(owner, operation, path, scope, actor, target);
+            return;
+        }
+
+        if (op == "if")
+        {
+            string branch = Evaluate(owner, $"{path}.when", scope).Boolean ? "then" : "else";
+            if (operation.TryGetProperty(branch, out JsonElement operations))
+            {
+                RunOperations(owner, operations, $"{path}.{branch}", scope, actor, target);
+            }
+
             return;
         }
 
@@ -424,6 +449,14 @@ public sealed class CombatRunner
                     who.Creature.Conditions.Add(condition);
                 }
 
+                // Values are worked out now, by whoever applies the condition; the rest keep their defaults.
+                who.Creature.ConditionValues.Remove(condition);
+                if (operation.TryGetProperty("values", out JsonElement values))
+                {
+                    who.Creature.ConditionValues[condition] = values.EnumerateObject()
+                        .ToDictionary(value => value.Name, value => Number(owner, $"{path}.values.{value.Name}", scope));
+                }
+
                 if (rounds is decimal timed)
                 {
                     who.ConditionRounds[condition] = timed;
@@ -447,6 +480,7 @@ public sealed class CombatRunner
                 if (who.Creature.Conditions.Remove(condition))
                 {
                     who.ConditionRounds.Remove(condition);
+                    who.Creature.ConditionValues.Remove(condition);
                     Record(new ConditionFact(who.Name, condition.Name, false, null));
                 }
 
@@ -468,6 +502,12 @@ public sealed class CombatRunner
         {
             RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target);
         }
+    }
+
+    /// <summary>What a condition's own operations read: its holder as self, and the values it was applied with.</summary>
+    private static Scope ConditionScope(Combatant holder, Definition condition)
+    {
+        return new Scope(holder.Creature, null, ConditionValues: Evaluator.ConditionValuesOf(holder.Creature, condition));
     }
 
     private decimal Number(Definition owner, string path, Scope scope) => Evaluate(owner, path, scope).Number;

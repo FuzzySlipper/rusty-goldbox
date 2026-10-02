@@ -34,6 +34,7 @@ Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
   insight                 16     Insight
   presence                8      Presence
   ac                      17     Armour class
+  actions                 3      Actions each turn
   ancestry_hp             10     Ancestry hit points
   armour_proficiency      3      Armour proficiency
   armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
@@ -68,6 +69,7 @@ Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
   insight                 16     Insight
   presence                8      Presence
   ac                      18     Armour class
+  actions                 3      Actions each turn
   ancestry_hp             10     Ancestry hit points
   armour_proficiency      4      Armour proficiency
   armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
@@ -192,6 +194,13 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "name": "Armour class",
       "kind": "derived",
       "value": 18,
+      "problem": null
+    },
+    {
+      "id": "actions",
+      "name": "Actions each turn",
+      "kind": "derived",
+      "value": 3,
       "problem": null
     },
     {

@@ -1,0 +1,15 @@
+{
+  "type": "condition",
+  "id": "slowed",
+  "name": "Slowed",
+  "description": "Loses actions each turn.",
+  "values": {
+    "amount": 1
+  },
+  "modifiers": [
+    {
+      "stat": "actions",
+      "value": "-condition.amount"
+    }
+  ]
+}

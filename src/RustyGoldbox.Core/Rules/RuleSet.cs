@@ -138,7 +138,7 @@ public sealed class RuleSet
     public CompiledExpression Compile(string text, string module, Roots roots)
     {
         Expr root = Parser.Parse(text);
-        ExpressionChecker checker = new(this, module, roots, [], derived => Stats[derived.Id].Type, _ => false);
+        ExpressionChecker checker = new(this, module, roots, [], [], derived => Stats[derived.Id].Type, _ => false);
         ExprType type = checker.Check(root);
         return new CompiledExpression(text, root, type, checker.Tables);
     }

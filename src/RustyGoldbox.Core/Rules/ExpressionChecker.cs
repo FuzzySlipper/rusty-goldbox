@@ -13,6 +13,7 @@ internal sealed class ExpressionChecker(
     string module,
     Roots roots,
     IReadOnlyList<string> useParameters,
+    IReadOnlyList<string> conditionValues,
     Func<Definition, ExprType?> derivedType,
     Func<Definition, bool> isInferring)
 {
@@ -58,11 +59,12 @@ internal sealed class ExpressionChecker(
             "campaign" => Roots.Campaign,
             "class" => Roots.Class,
             "outer" => Roots.Outer,
+            "condition" => Roots.Condition,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name> and class.level.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, self.rolled.<check>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name>, class.level and condition.<value>.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -109,11 +111,37 @@ internal sealed class ExpressionChecker(
             return ExprType.Number;
         }
 
+        if (root == Roots.Condition)
+        {
+            if (!conditionValues.Contains(path.Name))
+            {
+                string known = conditionValues.Count == 0 ? "This condition declares no values." : $"Its values: {string.Join(", ", conditionValues)}.";
+                throw new ExpressionException($"'{path.Name}' is not a value of this condition. {known} Declare it in the condition's \"values\".", path.Column);
+            }
+
+            return ExprType.Number;
+        }
+
         if (root is Roots.Check or Roots.Outer)
         {
             if (!RuleSet.CheckFields.Contains(path.Name))
             {
                 throw new ExpressionException($"'{path.Root}.{path.Name}' is not a check result. Results: {string.Join(", ", RuleSet.CheckFields)}.", path.Column);
+            }
+
+            return ExprType.Number;
+        }
+
+        if (path.Key is string checkId && path.Name == "rolled")
+        {
+            if (rules.Find(DefinitionTypes.Check, checkId, out string? missing) is not Definition check)
+            {
+                throw new ExpressionException($"{path.Root}.rolled.{checkId}: {missing}", path.Column);
+            }
+
+            if (!rules.VisibleModules[module].Contains(check.Module))
+            {
+                throw new ExpressionException($"Check '{checkId}' belongs to module '{check.Module}', which '{module}' does not require. Add it to requires.", path.Column);
             }
 
             return ExprType.Number;

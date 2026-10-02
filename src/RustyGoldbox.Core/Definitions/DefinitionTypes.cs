@@ -218,9 +218,11 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("description", new TextKind(), false, "What the condition means in play."),
-            new("modifiers", new ListKind(Modifier), true, "Stat and check modifiers while the condition lasts."),
+            new("values", new MapKind(new TextKind(), new NumberKind()), false, "Numbers the condition is applied with, and their defaults, read in its own fields as condition.<name>: { \"amount\": 5 } for \"ongoing 5\". apply_condition may give others."),
+            new("modifiers", new ListKind(new ModifierKind(Roots.Self | Roots.Condition)), true, "Stat and check modifiers while the condition lasts."),
             new("prevents_actions", new BooleanKind(), false, "If true, a creature with the condition takes no actions."),
-            new("each_turn", new ListKind(new OperationKind(Roots.Self)), false, "Operations at the start of each of the creature's turns, for example ongoing damage (\"to\" must be self)."),
+            new("each_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition)), false, "Operations at the start of each of the creature's turns, for example ongoing damage (\"to\" must be self)."),
+            new("end_of_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition)), false, "Operations at the end of each of the creature's turns, for example a save that ends the condition."),
         ],
         """
         {
@@ -315,7 +317,7 @@ public static class DefinitionTypes
             new("budget", new ListKind(new ObjectKind(
             [
                 new("id", new TextKind(), true, "Budget name that action costs use, for example \"action\", \"standard\" or \"actions\"."),
-                new("per_turn", new IntegerKind(), true, "How many a creature has at the start of each turn."),
+                new("per_turn", SelfNumber, true, "How many a creature has at the start of each turn, for example 3 or \"self.actions\" so conditions can change it; rounded down, never below 0."),
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
             new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),

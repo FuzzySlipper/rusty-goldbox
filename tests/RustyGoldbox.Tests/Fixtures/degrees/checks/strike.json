@@ -3,7 +3,7 @@
   "id": "strike",
   "name": "Strike",
   "roll": "1d20",
-  "bonus": "self.weapon_proficiency + self.brawn_mod",
+  "bonus": "self.weapon_proficiency + self.brawn_mod - min(2, self.rolled.strike) * 5",
   "target": "target.ac",
   "succeeds": "at-least",
   "tiers": [

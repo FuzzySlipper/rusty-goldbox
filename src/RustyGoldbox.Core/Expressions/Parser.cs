@@ -205,17 +205,18 @@ public static class Parser
                     name = variable;
                 }
 
-                // A creature's conditions: self.condition.<id>, read as PathExpr(root, "condition", id).
-                if (token.Text is "self" or "target" && name.Text == "condition" && Peek() is { Kind: TokenKind.Operator, Text: "." })
+                // A creature's conditions and check counts: self.condition.<id>, self.rolled.<check>,
+                // read as PathExpr(root, "condition" or "rolled", id).
+                if (token.Text is "self" or "target" && name.Text is "condition" or "rolled" && Peek() is { Kind: TokenKind.Operator, Text: "." })
                 {
                     _position++;
-                    Token condition = Next();
-                    if (condition.Kind != TokenKind.Name || Keywords.Contains(condition.Text))
+                    Token key = Next();
+                    if (key.Kind != TokenKind.Name || Keywords.Contains(key.Text))
                     {
-                        throw new ExpressionException($"Expected a condition ID after '{token.Text}.condition.'.", condition.Column);
+                        throw new ExpressionException($"Expected {(name.Text == "condition" ? "a condition" : "a check")} ID after '{token.Text}.{name.Text}.'.", key.Column);
                     }
 
-                    return new PathExpr(token.Column, token.Text, name.Text, condition.Text);
+                    return new PathExpr(token.Column, token.Text, name.Text, key.Text);
                 }
 
                 if (Peek() is { Kind: TokenKind.Operator, Text: "." } after)

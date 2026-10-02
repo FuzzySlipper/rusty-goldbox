@@ -287,7 +287,7 @@ public sealed class RuleSetBuilder
             return null;
         }
 
-        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), InferDerived, IsInferring);
+        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), ConditionValues(definition), InferDerived, IsInferring);
         ExprType type;
         try
         {
@@ -938,6 +938,18 @@ public sealed class RuleSetBuilder
     {
         if (element.ValueKind == JsonValueKind.Object)
         {
+            if (element.TryGetProperty("op", out JsonElement applied) && applied.ValueKind == JsonValueKind.String && applied.GetString() == "apply_condition"
+                && element.TryGetProperty("values", out JsonElement given)
+                && _rules.References.TryGetValue((definition, $"{path}.condition"), out Definition? condition))
+            {
+                List<string> declared = ConditionValues(condition);
+                foreach (JsonProperty value in given.EnumerateObject().Where(value => !declared.Contains(value.Name)))
+                {
+                    string known = declared.Count == 0 ? $"{condition.QualifiedId} declares no values." : $"Its values: {string.Join(", ", declared)}.";
+                    Error(definition, "condition.value", $"{path}.values.{value.Name}", $"'{value.Name}' is not a value of {condition.QualifiedId}. {known}");
+                }
+            }
+
             if (element.TryGetProperty("op", out JsonElement op) && op.ValueKind == JsonValueKind.String && op.GetString() == "check"
                 && element.TryGetProperty("outcomes", out JsonElement outcomes)
                 && _rules.References.TryGetValue((definition, $"{path}.check"), out Definition? check))
@@ -1053,6 +1065,14 @@ public sealed class RuleSetBuilder
     private string StatList(bool attributesOnly) => _rules.StatList(attributesOnly);
 
     private bool IsInferring(Definition derived) => _inferring.Contains(derived);
+
+    /// <summary>The values a condition's own expressions may read as condition.&lt;name&gt;.</summary>
+    private static List<string> ConditionValues(Definition definition)
+    {
+        return definition.Type == DefinitionTypes.Condition && definition.Json.TryGetProperty("values", out JsonElement values) && values.ValueKind == JsonValueKind.Object
+            ? values.EnumerateObject().Select(value => value.Name).ToList()
+            : [];
+    }
 
     /// <summary>The parameters an action's expressions may read as use.&lt;name&gt;.</summary>
     private static List<string> UseParameters(Definition definition)

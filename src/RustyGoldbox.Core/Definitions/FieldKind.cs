@@ -24,6 +24,9 @@ public enum Roots
 
     /// <summary>outer.roll, outer.total, outer.target, outer.margin: the check a nested check was made during.</summary>
     Outer = 64,
+
+    /// <summary>condition.&lt;value&gt;: a value the condition was applied with, inside the condition's own definition.</summary>
+    Condition = 128,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -99,6 +102,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
             roots.Add("outer");
         }
 
+        if (Roots.HasFlag(Roots.Condition))
+        {
+            roots.Add("condition.<value>");
+        }
+
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);
         return $"expression ({type}; {reads})";
     }
@@ -153,7 +161,7 @@ public sealed record ModifierKind(Roots Roots = Roots.Self) : FieldKind
 {
     public override string Describe()
     {
-        string reads = Roots.HasFlag(Roots.Class) ? "self, class.level" : "self";
+        string reads = "self" + (Roots.HasFlag(Roots.Class) ? ", class.level" : "") + (Roots.HasFlag(Roots.Condition) ? ", condition.<value>" : "");
         return $"modifier {{ \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read {reads}), \"against\"?: for a check, a boolean that may also read target; the modifier applies only when it holds }}";
     }
 }

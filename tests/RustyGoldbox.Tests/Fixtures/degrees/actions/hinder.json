@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "hinder",
+  "name": "Hinder",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "slowed",
+      "rounds": "1",
+      "values": {
+        "amount": "1"
+      }
+    }
+  ]
+}

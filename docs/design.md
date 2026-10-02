@@ -140,7 +140,8 @@ plus a small **expression language**:
 - arithmetic (including `%` remainder), comparisons, boolean logic,
   `if`/`then`/`else`, `min`/`max`/`floor`, and dice (`2d6+1`, `1d20`);
 - reads of the evaluation context (`self.str`, `target.ac`, `self.level`,
-  `target.condition.prone`, `campaign.var.gate_open`, in a class's modifiers
+  `target.condition.prone`, `self.rolled.attack` (how often the creature has
+  rolled that check since its latest turn began), `campaign.var.gate_open`, in a class's modifiers
   `class.level`, and in a check made during another check `outer.margin`) and
   table lookups (`table(thac0, self.class, self.level)`);
 - no assignment, loops, user-defined functions or side effects. Expressions
@@ -202,6 +203,13 @@ attribute twice. A ruleset may offer several creation definitions and mark
 one the default. Classic split-experience multi-classing and dual-classing are not
 expressible yet.
 
+A condition may declare **values** with defaults (`{ "amount": 5 }`) that
+`apply_condition` sets when it applies the condition ("ongoing 5"); its
+modifiers and its start- and end-of-turn operations read them as
+`condition.amount`, so a save that ends the condition is an end-of-turn check.
+A combat budget's `per_turn` is an expression, so a condition that lowers a
+stat it reads takes actions away.
+
 Each definition file holds one definition: `type`, `id` and the type's
 fields. Definition IDs use lowercase letters, digits and underscores, so they
 can appear in expressions. `goldbox schema` lists every type with its fields
@@ -210,7 +218,7 @@ and an example, and the expression functions.
 State changes come from a fixed vocabulary of **operations** implemented in
 C#: deal damage, heal, apply or remove a condition (conditions carry stat and
 check modifiers, so a timed condition is a timed modifier), make a further
-check, and later move, grant XP or items, set a variable, and so on. Each operation
+check, branch with `if`, and later move, grant XP or items, set a variable, and so on. Each operation
 takes expression arguments. Rulesets and campaigns choose and combine
 operations; they can't define new ones.
 

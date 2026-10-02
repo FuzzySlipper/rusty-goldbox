@@ -10,7 +10,7 @@
   "budget": [
     {
       "id": "action",
-      "per_turn": 3
+      "per_turn": "self.actions"
     }
   ],
   "track": "hit_points",

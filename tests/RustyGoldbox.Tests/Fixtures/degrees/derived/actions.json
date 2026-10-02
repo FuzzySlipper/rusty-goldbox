@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "actions",
+  "name": "Actions each turn",
+  "value": "3"
+}

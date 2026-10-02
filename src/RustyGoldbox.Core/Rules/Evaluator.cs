@@ -15,7 +15,8 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 /// What an expression can read: the creatures, the parameters of the action
 /// being used, the check being resolved, and for a class's modifier the
 /// creature's level in that class. While a nested check resolves,
-/// <see cref="Outer"/> is the check it was made during.
+/// <see cref="Outer"/> is the check it was made during. Inside a condition's
+/// own fields, <see cref="ConditionValues"/> are the values it was applied with.
 /// </summary>
 public sealed record Scope(
     Creature? Self,
@@ -24,7 +25,8 @@ public sealed record Scope(
     CheckResult? Check = null,
     IReadOnlyDictionary<string, Value>? Variables = null,
     int? ClassLevel = null,
-    CheckResult? Outer = null);
+    CheckResult? Outer = null,
+    IReadOnlyDictionary<string, decimal>? ConditionValues = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -143,11 +145,39 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         return result;
     }
 
-    /// <summary>What a modifier from <paramref name="source"/> reads: the creature, and its level in the source when that is a class.</summary>
+    /// <summary>
+    /// What a modifier from <paramref name="source"/> reads: the creature, its
+    /// level in the source when that is a class, and the source's values when
+    /// that is a condition.
+    /// </summary>
     private static Scope ModifierScope(Creature creature, Definition source)
     {
         int? classLevel = source.Type == DefinitionTypes.Class ? creature.ClassLevels[source] : null;
-        return new Scope(creature, null, ClassLevel: classLevel);
+        IReadOnlyDictionary<string, decimal>? values = source.Type == DefinitionTypes.Condition ? ConditionValuesOf(creature, source) : null;
+        return new Scope(creature, null, ClassLevel: classLevel, ConditionValues: values);
+    }
+
+    /// <summary>A condition's values for a creature that has it: the values it was applied with, over the condition's defaults.</summary>
+    public static IReadOnlyDictionary<string, decimal> ConditionValuesOf(Creature creature, Definition condition)
+    {
+        Dictionary<string, decimal> values = [];
+        if (condition.Json.TryGetProperty("values", out JsonElement defaults))
+        {
+            foreach (JsonProperty value in defaults.EnumerateObject())
+            {
+                values[value.Name] = value.Value.GetDecimal();
+            }
+        }
+
+        if (creature.ConditionValues.TryGetValue(condition, out Dictionary<string, decimal>? given))
+        {
+            foreach ((string name, decimal value) in given)
+            {
+                values[name] = value;
+            }
+        }
+
+        return values;
     }
 
     private Value BaseStat(Creature creature, string name)
@@ -349,6 +379,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                     : throw new ExpressionException("class.level has no value outside a class's modifiers.", path.Column);
             }
 
+            if (path.Root == "condition")
+            {
+                return scope.ConditionValues is not null && scope.ConditionValues.TryGetValue(path.Name, out decimal conditionValue)
+                    ? Value.Of(conditionValue)
+                    : throw new ExpressionException($"condition.{path.Name} has no value here: it is read inside a condition's own fields.", path.Column);
+            }
+
             if (path.Root is "check" or "outer")
             {
                 CheckResult check = (path.Root == "check" ? scope.Check : scope.Outer)
@@ -370,9 +407,11 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 throw new ExpressionException($"'{path.Root}.{path.Name}' needs a {path.Root} creature, but none was given.", path.Column);
             }
 
-            if (path.Key is string condition)
+            if (path.Key is string key)
             {
-                return Value.Of(creature.Conditions.Any(held => held.Id == condition));
+                return path.Name == "rolled"
+                    ? Value.Of(creature.Rolled.GetValueOrDefault(key))
+                    : Value.Of(creature.Conditions.Any(held => held.Id == key));
             }
 
             try

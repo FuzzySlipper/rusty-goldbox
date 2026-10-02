@@ -1,0 +1,8 @@
+{
+  "type": "check",
+  "id": "save_ends",
+  "name": "Save to end",
+  "roll": "1d20",
+  "target": "10",
+  "succeeds": "at-least"
+}

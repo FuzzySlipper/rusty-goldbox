@@ -41,6 +41,7 @@ public static class OperationTypes
         "Gives a creature a condition, optionally for a number of rounds. Applying one it already has restarts its duration.",
         [
             new("condition", new ReferenceKind("condition"), true, "The condition."),
+            new("values", new MapKind(new TextKind(), new ExpressionKind(ExprType.Number, ActionRoots)), false, "Values for the condition's declared values, worked out now, for example { \"amount\": \"1d6\" }; the rest keep their defaults."),
             new("rounds", new ExpressionKind(ExprType.Number, ActionRoots), false, "Rounds it lasts, counted at the end of each of the holder's turns, so 1 covers its next turn; without it, it lasts until removed or the combat ends."),
             To,
         ],
@@ -65,7 +66,17 @@ public static class OperationTypes
         ],
         """{ "op": "check", "check": "parry", "outcomes": { "failure": [ { "op": "damage", "amount": "use.damage" } ] } }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check];
+    public static DefinitionType If { get; } = new(
+        "if",
+        "Runs operations when a boolean holds, and others when it doesn't.",
+        [
+            new("when", new ExpressionKind(ExprType.Boolean, ActionRoots), true, "The test, for example \"target.condition.prone\"."),
+            new("then", new ListKind(new OperationKind(ActionRoots)), true, "Operations when it holds."),
+            new("else", new ListKind(new OperationKind(ActionRoots)), false, "Operations when it doesn't."),
+        ],
+        """{ "op": "if", "when": "target.condition.prone", "then": [ { "op": "damage", "amount": "use.damage * 2" } ], "else": [ { "op": "damage", "amount": "use.damage" } ] }""");
+
+    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(operation => operation.Name == name);
 }

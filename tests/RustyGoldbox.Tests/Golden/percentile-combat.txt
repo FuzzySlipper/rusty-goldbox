@@ -82,7 +82,7 @@ Round 3.
   Sten loses 1 hit points (20 left).  [1d6: 1 = 1]
   Wolf 1 uses Bite on Sten.
   Wolf 1 rolls Strike: 16 against 53: success.  [1d100: 16 = 16]
-  Sten rolls Parry: 59 against 41: failure.  [1d100: 59 = 59]
+  Sten rolls Parry: 59 against 21: failure.  [1d100: 59 = 59]
   Sten loses 2 hit points (18 left).  [1d6: 2 = 2]
 Round 4.
   Sten uses Power strike (Sword) on Wolf 2.
@@ -139,17 +139,17 @@ $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/percentile --par
   "seed": 13,
   "runs": 100,
   "wins": {
-    "Party": 63,
-    "Wolves": 37
+    "Party": 62,
+    "Wolves": 38
   },
   "undecided": 0,
   "rounds": {
     "min": 2,
-    "mean": 8.07,
-    "max": 24
+    "mean": 7.81,
+    "max": 18
   },
   "party_survival": {
-    "Sten": 63
+    "Sten": 62
   }
 }
 [exit 0]

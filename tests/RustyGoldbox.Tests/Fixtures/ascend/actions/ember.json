@@ -1,0 +1,37 @@
+{
+  "type": "action",
+  "id": "ember",
+  "name": "Ember",
+  "cost": {
+    "standard": 1
+  },
+  "target": "enemy",
+  "check": "attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "if",
+        "when": "target.condition.burning",
+        "then": [
+          {
+            "op": "damage",
+            "amount": "1d6"
+          }
+        ],
+        "else": [
+          {
+            "op": "damage",
+            "amount": "1"
+          },
+          {
+            "op": "apply_condition",
+            "condition": "burning",
+            "values": {
+              "amount": "1d4"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

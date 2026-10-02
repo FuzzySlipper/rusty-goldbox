@@ -234,6 +234,8 @@ public static class DefinitionReader
                 fields.Add(field.Kind switch
                 {
                     ExpressionKind expression => field with { Kind = expression with { Roots = roots } },
+                    ListKind { Item: OperationKind } => field with { Kind = new ListKind(new OperationKind(roots)) },
+                    MapKind { Value: ExpressionKind valueExpression } map => field with { Kind = map with { Value = valueExpression with { Roots = roots } } },
                     // A check made inside another check's outcomes can also read that one as outer.
                     MapKind { Value: ListKind { Item: OperationKind } } map => field with
                     {

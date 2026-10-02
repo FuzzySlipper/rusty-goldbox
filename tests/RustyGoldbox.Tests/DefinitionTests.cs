@@ -237,5 +237,31 @@ public sealed class DefinitionTests
         Assert.Equal(("definition.field-value", "$.modifiers[1].against"), Assert.Single(set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!))));
     }
 
+    [Fact]
+    public void ConditionValuesAreDeclaredAndGivenByName()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/burning.json", """
+            { "type": "condition", "id": "burning", "name": "Burning", "values": { "amount": 2 }, "modifiers": [ { "stat": "hit", "value": "-condition.heat" } ],
+              "end_of_turn": [ { "op": "damage", "amount": "condition.amount", "to": "self" } ] }
+            """);
+        modules.Write("rules/ember.json", """
+            { "type": "action", "id": "ember", "name": "Ember", "cost": { "action": 1 }, "target": "enemy",
+              "always": [ { "op": "apply_condition", "condition": "burning", "values": { "amount": "1d4", "heat": "1" } } ] }
+            """);
+        modules.Write("rules/combat.json", """
+            { "type": "combat", "id": "standard", "name": "Standard", "initiative": "1d6", "initiative_by": "side", "initiative_order": "highest-first", "initiative_each": "round",
+              "round_seconds": 6, "budget": [ { "id": "action", "per_turn": "1 + self.hit" } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [("condition.value", "$.always[0].values.heat"), ("expression.type", "$.modifiers[0].value")],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+        Assert.Contains("Its values: amount", Message(set, "expression.type"), StringComparison.Ordinal);
+    }
+
     private static string Message(ModuleSet set, string rule) => set.Diagnostics.First(diagnostic => diagnostic.Rule == rule).Message;
 }

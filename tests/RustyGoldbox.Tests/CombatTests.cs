@@ -42,7 +42,10 @@ public sealed class CombatTests
         // Ilse has no weapon, so she hexes: the brute saves against her difficulty class.
         Golden.Verify("ascend-combat.txt", CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "brutes", "--seed", "11"],
-            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json,ilse.json", "--encounter", "brutes", "--seed", "20"]));
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json,ilse.json", "--encounter", "brutes", "--seed", "20"],
+            // Ember sets Kara burning for a rolled amount each turn until a save at the end of her turn ends it,
+            // and fans the flames for 1d6 when she already burns.
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "imps", "--seed", "1"]));
     }
 
     [Fact]

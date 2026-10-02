@@ -64,6 +64,12 @@ public sealed class Creature
 
     public List<Definition> Conditions { get; } = [];
 
+    /// <summary>Values conditions were applied with, by condition; a condition without an entry has its defaults.</summary>
+    public Dictionary<Definition, Dictionary<string, decimal>> ConditionValues { get; } = [];
+
+    /// <summary>How many times the creature has rolled each check (by ID) since its latest turn began, read as self.rolled.&lt;check&gt;.</summary>
+    public Dictionary<string, int> Rolled { get; } = [];
+
     /// <summary>A character's chosen features, repeats included.</summary>
     public List<Definition> Features { get; } = [];
 
