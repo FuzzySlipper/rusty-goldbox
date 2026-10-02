@@ -66,16 +66,6 @@ internal static class PlayCommand
         }
 
         RuleSet rules = set.Rules;
-        List<string> commands;
-        try
-        {
-            commands = ReadScript(parsed.Single("--script"), workingDirectory);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return output.UsageError($"--script: {exception.Message}");
-        }
-
         using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
         List<ModuleDiagnostic> problems = [];
         CampaignState? state = loading
@@ -84,6 +74,17 @@ internal static class PlayCommand
         if (state is null)
         {
             return output.Problems(problems);
+        }
+
+        // Commands are read once the game is ready, so a save or party that can't load never waits on standard input.
+        List<string> commands;
+        try
+        {
+            commands = ReadScript(parsed.Single("--script"), workingDirectory);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return output.UsageError($"--script: {exception.Message}");
         }
 
         List<(string? Command, List<PlayFact> Facts)> transcript = [];
