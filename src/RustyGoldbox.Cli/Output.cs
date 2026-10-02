@@ -358,6 +358,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                     file = Display(definition.File),
                     definition = definition.Json,
                     expressions = InspectCommand.Expressions(rules, definition).Select(entry => new { path = entry.Path, expression = entry.Text, type = entry.Type }),
+                    image = rules.ImageSizes.TryGetValue(definition, out (int Width, int Height) size) ? new { width = size.Width, height = size.Height } : null,
                 }),
             });
             return;
@@ -367,6 +368,11 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             writer.WriteLine($"{definition.QualifiedId} ({definition.Type.Name})  {Display(definition.File)}");
             writer.WriteLine(JsonSerializer.Serialize(definition.Json, JsonOptions));
+            if (rules.ImageSizes.TryGetValue(definition, out (int Width, int Height) image))
+            {
+                writer.WriteLine($"Image: {image.Width} x {image.Height} RGBA PNG");
+            }
+
             List<(string Path, string Text, string Type)> expressions = InspectCommand.Expressions(rules, definition).ToList();
             if (expressions.Count > 0)
             {

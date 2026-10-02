@@ -326,15 +326,32 @@ public static class DefinitionTypes
         { "type": "variable", "id": "gate_open", "value_type": "boolean", "initial": "false" }
         """);
 
+    /// <summary>The asset kinds the presentation draws, each an RGBA PNG.</summary>
+    public static IReadOnlyList<string> AssetKinds { get; } = ["wall_set", "backdrop", "portrait", "icon"];
+
+    /// <summary>The frames a wall set has; the first two are required.</summary>
+    public static IReadOnlyList<string> WallSetFrames { get; } = ["wall", "door", "floor", "ceiling"];
+
     public static DefinitionType Asset { get; } = new(
         "asset",
-        "A logical asset ID mapped to a file in the module: walls, backdrops, portraits, sounds. Other modules refer to it as module:id, never by path.",
+        "A logical asset ID mapped to an image in the module. Other modules refer to it as module:id, never by path. "
+        + "The file is an 8-bit RGBA PNG (the format the Engine renderer admits). Kinds: wall_set (one image holding "
+        + "the frames the first-person view draws an area with), backdrop (a cell's background picture), portrait "
+        + "(a character's picture) and icon (a combatant's picture).",
         [
-            new("kind", new TextKind(), true, "What sort of asset, for example \"wall_set\", \"backdrop\" or \"portrait\"."),
-            new("file", new TextKind(), true, "Path of the file inside this module, with forward slashes."),
+            new("kind", new EnumKind(AssetKinds), true, "What the asset is for; references say which kind they need."),
+            new("file", new TextKind(), true, "Path of the PNG inside this module, with forward slashes."),
+            new("frames", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
+                "wall_set only: named pixel rectangles [x, y, width, height] inside the image. wall and door are required; floor and ceiling are optional."),
         ],
         """
-        { "type": "asset", "id": "stone_wall", "kind": "wall_set", "file": "walls/stone.svg" }
+        {
+          "type": "asset",
+          "id": "stone_wall",
+          "kind": "wall_set",
+          "file": "walls/stone.png",
+          "frames": { "wall": [0, 0, 64, 64], "door": [64, 0, 64, 64], "floor": [128, 0, 64, 64], "ceiling": [192, 0, 64, 64] }
+        }
         """);
 
     public static DefinitionType Area { get; } = new(
@@ -343,12 +360,12 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("map", new ListKind(new TextKind()), true, "The grid as " + Campaigns.AreaMap.FormatDescription),
-            new("wall_set", new ReferenceKind("asset"), false, "Wall art for the area."),
+            new("wall_set", new ReferenceKind("asset", "wall_set"), false, "The wall_set asset the first-person view draws the area with."),
             new("cells", new ListKind(new ObjectKind(
             [
                 new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell; x west to east and y north to south, from 0."),
                 new("zone", new TextKind(), false, "A zone tag for the cell."),
-                new("backdrop", new ReferenceKind("asset"), false, "Backdrop art."),
+                new("backdrop", new ReferenceKind("asset", "backdrop"), false, "The backdrop asset shown in the cell."),
                 new("event", new ReferenceKind("event"), false, "The event that runs when the party enters the cell."),
                 new("facing", new EnumKind(["north", "east", "south", "west"]), false, "Run the event only when the party enters facing this way."),
                 new("once", new BooleanKind(), false, "If true, the event runs only the first time."),

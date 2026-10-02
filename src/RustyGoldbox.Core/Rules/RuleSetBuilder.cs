@@ -161,6 +161,11 @@ public sealed class RuleSetBuilder
                         if (target is not null)
                         {
                             _rules.References[(definition, site.JsonPath)] = target;
+                            if (reference.AssetKind is string kind && target.Json.GetProperty("kind").GetString() != kind)
+                            {
+                                Error(definition, "reference.asset-kind", site.JsonPath,
+                                    $"{target.QualifiedId} is a {target.Json.GetProperty("kind").GetString()} asset, but this needs a {kind}.");
+                            }
                         }
 
                         break;
@@ -495,6 +500,10 @@ public sealed class RuleSetBuilder
                 {
                     Error(definition, "asset.file", "$.file", $"There is no file '{file}' in module '{definition.Module}' ({source.PathOf(file)}).");
                 }
+                else
+                {
+                    CheckImage(definition, source, file);
+                }
             }
             else if (definition.Type == DefinitionTypes.Campaign)
             {
@@ -524,6 +533,66 @@ public sealed class RuleSetBuilder
                 {
                     Error(campaign, "campaign.definition", "$", $"Only campaign modules can define a campaign; '{module.Id}' is a {ModuleKinds.Name(module.Kind)}.");
                 }
+            }
+        }
+    }
+
+    /// <summary>The asset's file is a PNG the renderer admits, and a wall set's frames lie inside it.</summary>
+    private void CheckImage(Definition asset, ModuleSource source, string file)
+    {
+        byte[] bytes;
+        try
+        {
+            bytes = source.Read(file);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Error(asset, "asset.file", "$.file", $"Can't read '{file}': {exception.Message}");
+            return;
+        }
+
+        if (PngImage.Read(bytes, out int width, out int height) is string problem)
+        {
+            Error(asset, "asset.image", "$.file", $"'{file}' {problem} Save it as an 8-bit RGBA PNG.");
+            return;
+        }
+
+        _rules.ImageSizes[asset] = (width, height);
+        bool wallSet = asset.Json.GetProperty("kind").GetString() == "wall_set";
+        if (!asset.Json.TryGetProperty("frames", out JsonElement frames))
+        {
+            if (wallSet)
+            {
+                Error(asset, "asset.frames", "$", $"A wall_set needs \"frames\" naming the {string.Join(" and ", DefinitionTypes.WallSetFrames.Take(2))} rectangles (and optionally floor and ceiling) in its image.");
+            }
+
+            return;
+        }
+
+        if (!wallSet)
+        {
+            Error(asset, "asset.frames", "$.frames", "Only wall_set assets have frames; this image is drawn whole.");
+            return;
+        }
+
+        foreach (string required in DefinitionTypes.WallSetFrames.Take(2).Where(name => !frames.TryGetProperty(name, out _)))
+        {
+            Error(asset, "asset.frames", "$.frames", $"Missing the \"{required}\" frame.");
+        }
+
+        foreach (JsonProperty frame in frames.EnumerateObject())
+        {
+            string at = $"$.frames.{frame.Name}";
+            if (!DefinitionTypes.WallSetFrames.Contains(frame.Name))
+            {
+                Error(asset, "asset.frames", at, $"'{frame.Name}' is not a wall_set frame; frames are {string.Join(", ", DefinitionTypes.WallSetFrames)}.");
+                continue;
+            }
+
+            int[] rect = frame.Value.EnumerateArray().Select(value => value.GetInt32()).ToArray();
+            if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
+            {
+                Error(asset, "asset.frames", at, $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
             }
         }
     }

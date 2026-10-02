@@ -33,6 +33,9 @@ public sealed class RuleSet
     /// <summary>Tracks by ID. Expressions read each as &lt;id&gt; (current) and max_&lt;id&gt;.</summary>
     public Dictionary<string, Definition> Tracks { get; } = [];
 
+    /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
+    public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
+
     /// <summary>The track characters' class level gains build, if the set has one.</summary>
     public Definition? LevelTrack => Tracks.Values.FirstOrDefault(track =>
         track.Json.TryGetProperty("from_levels", out System.Text.Json.JsonElement fromLevels) && fromLevels.GetBoolean());

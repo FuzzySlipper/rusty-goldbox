@@ -2,5 +2,31 @@
   "type": "asset",
   "id": "stone_wall",
   "kind": "wall_set",
-  "file": "walls/stone.svg"
+  "file": "walls/stone.png",
+  "frames": {
+    "wall": [
+      0,
+      0,
+      64,
+      64
+    ],
+    "door": [
+      64,
+      0,
+      64,
+      64
+    ],
+    "floor": [
+      128,
+      0,
+      64,
+      64
+    ],
+    "ceiling": [
+      192,
+      0,
+      64,
+      64
+    ]
+  }
 }

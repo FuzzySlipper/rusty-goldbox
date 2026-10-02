@@ -115,9 +115,15 @@ create a different loader.
   explicit `patch` entry in an `extension` or `campaign`. A patch names its
   target and the fields it replaces, and validation reports every patch it
   applied.
-- Asset references are logical IDs (`stonecrypt:wall/stone`), never file
+- Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
   provides the same IDs. `goldbox module validate` lists any that are missing.
+- An asset has a kind (`wall_set`, `backdrop`, `portrait`, `icon`), and a
+  reference names the kind it needs: an area's `wall_set`, a cell's
+  `backdrop`. Asset files are 8-bit RGBA PNGs, the format the Engine renderer
+  admits, and validation reads each header to check that. A wall set is one
+  image with named frames (pixel rectangles for `wall` and `door`, optionally
+  `floor` and `ceiling`), so art of any size and layout fits.
 
 ### Rules as data
 

@@ -88,10 +88,16 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
     }
 }
 
-/// <summary>A reference to another definition: <c>id</c> in the same module or <c>module:id</c> in a required one.</summary>
-public sealed record ReferenceKind(string DefinitionType) : FieldKind
+/// <summary>
+/// A reference to another definition: <c>id</c> in the same module or
+/// <c>module:id</c> in a required one. With <paramref name="AssetKind"/>, it
+/// must be an asset of that kind.
+/// </summary>
+public sealed record ReferenceKind(string DefinitionType, string? AssetKind = null) : FieldKind
 {
-    public override string Describe() => $"reference to a {DefinitionType} (\"id\" or \"module:id\")";
+    public override string Describe() => AssetKind is null
+        ? $"reference to a {DefinitionType} (\"id\" or \"module:id\")"
+        : $"reference to a {AssetKind} asset (\"id\" or \"module:id\")";
 }
 
 /// <summary>The ID of a stat: an attribute or a derived value.</summary>
