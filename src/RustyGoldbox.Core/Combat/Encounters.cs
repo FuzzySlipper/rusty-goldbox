@@ -27,7 +27,7 @@ public static class Encounters
             for (int i = 1; i <= (int)count; i++)
             {
                 string name = count == 1 ? monster.Name : $"{monster.Name} {i}";
-                monsters.Add(Evaluate(rules, monster, "$.hit_points", () => Combatant.FromMonster(rules, monster, name, evaluator)));
+                monsters.Add(Evaluate(rules, monster, "$.tracks", () => Combatant.FromMonster(rules, monster, name, evaluator)));
             }
 
             index++;

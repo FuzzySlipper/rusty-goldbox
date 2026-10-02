@@ -3,6 +3,14 @@ using RustyGoldbox.Core.Definitions;
 
 namespace RustyGoldbox.Core.Rules;
 
+/// <summary>A creature's value on one track; <see cref="Max"/> is its own maximum when the track doesn't compute one.</summary>
+public sealed class TrackValue
+{
+    public decimal? Current { get; set; }
+
+    public decimal? Max { get; set; }
+}
+
 /// <summary>
 /// A creature expressions can read: a character (class, race, level and
 /// attributes) or a monster, plus any conditions and equipment it has.
@@ -25,9 +33,19 @@ public sealed class Creature
 
     public int? Level { get; set; }
 
-    public decimal? HitPoints { get; set; }
+    /// <summary>Track values by track ID.</summary>
+    public Dictionary<string, TrackValue> Tracks { get; } = [];
 
-    public decimal? MaxHitPoints { get; set; }
+    public TrackValue Track(string id)
+    {
+        if (!Tracks.TryGetValue(id, out TrackValue? value))
+        {
+            value = new TrackValue();
+            Tracks[id] = value;
+        }
+
+        return value;
+    }
 
     /// <summary>Attribute scores and stat values given directly; they replace computed values.</summary>
     public Dictionary<string, decimal> Values { get; } = [];
@@ -104,16 +122,16 @@ public sealed class Creature
                     }
 
                     break;
-                case "hit_points" or "max_hit_points":
+                case var name when rules.TryTrack(name, out Definition? track, out bool maximum):
                     if (property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetDecimal(out decimal points))
                     {
-                        if (property.Name == "hit_points")
+                        if (maximum)
                         {
-                            creature.HitPoints = points;
+                            creature.Track(track!.Id).Max = points;
                         }
                         else
                         {
-                            creature.MaxHitPoints = points;
+                            creature.Track(track!.Id).Current = points;
                         }
                     }
                     else
@@ -142,7 +160,8 @@ public sealed class Creature
         if (!rules.Stats.TryGetValue(property.Name, out Stat? stat))
         {
             string stats = string.Join(", ", rules.Stats.Keys.Order(StringComparer.Ordinal));
-            errors.Add($"{at}: '{property.Name}' is not a stat or creature field. Fields: monster, class, race, level, hit_points, max_hit_points, conditions, equipment. Stats: {stats}.");
+            string tracks = string.Join(", ", rules.Tracks.Keys.SelectMany(id => new[] { id, $"max_{id}" }));
+            errors.Add($"{at}: '{property.Name}' is not a stat, track or creature field. Fields: monster, class, race, level, conditions, equipment. Tracks: {tracks}. Stats: {stats}.");
         }
         else if (stat.Type != Expressions.ExprType.Number)
         {

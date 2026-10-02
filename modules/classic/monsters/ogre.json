@@ -4,7 +4,9 @@
   "name": "Ogre",
   "class": "fighter",
   "level": 6,
-  "hit_points": "4d8 + 1",
+  "tracks": {
+    "hit_points": "4d8 + 1"
+  },
   "stats": {
     "ac": "5",
     "movement": "90",

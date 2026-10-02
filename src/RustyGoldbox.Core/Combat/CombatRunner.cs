@@ -10,7 +10,8 @@ namespace RustyGoldbox.Core.Combat;
 public sealed record CombatSide(string Name, IReadOnlyList<Combatant> Members);
 
 /// <summary>How a fight ended: the facts, the winning side (null if none) and the rounds fought.</summary>
-public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides);
+/// <param name="Track">The combat's track, which summaries show.</param>
+public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track);
 
 /// <summary>A rule expression that failed during a fight, located in its definition.</summary>
 public sealed class CombatFailure(ModuleDiagnostic diagnostic) : Exception(diagnostic.Message)
@@ -36,6 +37,7 @@ public sealed class CombatRunner
     private readonly DiceRoller _dice;
     private readonly List<CombatSide> _sides;
     private readonly List<CombatFact> _facts = [];
+    private readonly Definition _track;
     private Combatant? _turn;
 
     private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice)
@@ -44,6 +46,7 @@ public sealed class CombatRunner
         _combat = combat;
         _dice = dice;
         _evaluator = new Evaluator(rules, dice);
+        _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
         for (int side = 0; side < _sides.Count; side++)
         {
@@ -96,7 +99,7 @@ public sealed class CombatRunner
         }
 
         Record(new EndFact(winner is int side ? _sides[side].Name : null, round));
-        return new CombatResult(_facts, winner, round, _sides);
+        return new CombatResult(_facts, winner, round, _sides, _track);
     }
 
     private void RollSurprise()
@@ -295,14 +298,23 @@ public sealed class CombatRunner
             "self" => [actor],
             "all_enemies" => enemies,
             "all_allies" => allies,
-            "enemy" => enemies.OrderBy(member => member.Creature.HitPoints ?? 0).Take(1).ToList(),
+            "enemy" => enemies.OrderBy(Left).Take(1).ToList(),
             "ally" => allies.Take(1).ToList(),
             _ => allies
-                .Where(member => member.Creature.HitPoints < member.Creature.MaxHitPoints)
-                .OrderByDescending(member => (member.Creature.MaxHitPoints ?? 0) - (member.Creature.HitPoints ?? 0))
+                .Where(member => Missing(member) > 0)
+                .OrderByDescending(Missing)
                 .Take(1)
                 .ToList(),
         };
+    }
+
+    /// <summary>What a creature has left on the combat's track.</summary>
+    private decimal Left(Combatant combatant) => combatant.Creature.Track(_track.Id).Current ?? 0;
+
+    /// <summary>How far below its maximum a creature is on the combat's track.</summary>
+    private decimal Missing(Combatant combatant)
+    {
+        return Located(_track, "$", () => _evaluator.TrackMax(combatant.Creature, _track)) - Left(combatant);
     }
 
     private void Act(Combatant actor, UseOption use, List<Combatant> targets)
@@ -373,19 +385,30 @@ public sealed class CombatRunner
         {
             case "damage":
             {
+                Definition track = operation.TryGetProperty("track", out _) ? _rules.Reference(owner, $"{path}.track") : _track;
                 decimal amount = Math.Max(0, Number(owner, $"{path}.amount", scope));
-                who.Creature.HitPoints = (who.Creature.HitPoints ?? 0) - amount;
-                Record(new DamageFact(who.Name, amount, who.Creature.HitPoints.Value), before);
+                TrackValue value = who.Creature.Track(track.Id);
+                decimal current = value.Current ?? 0;
+                decimal lowered = current - amount;
+                if (_evaluator.TrackMin(who.Creature, track) is decimal floor && lowered < floor)
+                {
+                    lowered = Math.Min(current, floor);
+                }
+
+                value.Current = lowered;
+                Record(new DamageFact(who.Name, track.Name.ToLowerInvariant(), current - lowered, lowered), before);
                 break;
             }
 
             case "heal":
             {
+                Definition track = operation.TryGetProperty("track", out _) ? _rules.Reference(owner, $"{path}.track") : _track;
                 decimal amount = Math.Max(0, Number(owner, $"{path}.amount", scope));
-                decimal current = who.Creature.HitPoints ?? 0;
-                decimal healed = who.Creature.MaxHitPoints is decimal max ? Math.Min(max, current + amount) : current + amount;
-                who.Creature.HitPoints = healed;
-                Record(new HealFact(who.Name, healed - current, healed), before);
+                TrackValue value = who.Creature.Track(track.Id);
+                decimal current = value.Current ?? 0;
+                decimal raised = Math.Max(current, Math.Min(_evaluator.TrackRestoreCap(who.Creature, track), current + amount));
+                value.Current = raised;
+                Record(new HealFact(who.Name, track.Name.ToLowerInvariant(), raised - current, raised), before);
                 break;
             }
 

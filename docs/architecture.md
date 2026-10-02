@@ -77,13 +77,19 @@ stream seeded from `--seed` and do their work inside one `Call`.
 
 ## Combat
 
+Tracks (hit points and any other pools) are ruleset definitions; `Creature`
+holds each one's current value and, where the track doesn't compute its
+maximum, the creature's own maximum. `Evaluator` resolves maxima, floors,
+restore caps and starting values. Engine `Track` was considered and not used:
+its maximum is a stored stat, while these are expressions.
+
 `CombatRunner` runs one fight between sides of `Combatant`s. Each round it
 rolls initiative (by side or by creature, from the combat definition), then
 each creature's turn: start-of-turn condition operations, a skip if a
 condition prevents actions, then actions while the turn's budget lasts. The
 choice is a simple deterministic policy: the first use in the creature's list
-it can afford and that has a target, aimed at the enemy with the fewest hit
-points or the ally missing the most. An action's check gives a tier; the
+it can afford and that has a target, aimed at the enemy with the least left on the combat's track or the ally
+missing the most of it. An action's check gives a tier; the
 action's operations for that tier run, then its `always` operations. Timed
 conditions count down at the end of the round. Every change is a
 `CombatFact`, with the dice that produced it.
@@ -96,9 +102,11 @@ and runs the fight inside the Engine tool host; run k uses random scope
 
 `CharacterRules` reads everything from data: the character-creation
 definition's attribute order, roll and assignment, the race's adjustments,
-limits and classes, the class's requirements and per-level `hp` expressions,
-and starting gold. A character file stores its choices and progress plus the
-module IDs and versions it was made under. Reading it needs each of those
+limits and classes, the class's requirements and per-level `hp` expressions
+(which build the track marked `from_levels`), and starting gold. Every other
+track starts at its `start` or maximum. A character file stores its choices,
+its tracks' current values (and the level track's maximum), its level gains,
+and the module IDs and versions it was made under. Reading it needs each of those
 modules loaded at a compatible version; extra modules, such as a campaign that
 requires the ruleset, are fine. Derived values are never stored; the sheet
 computes them.

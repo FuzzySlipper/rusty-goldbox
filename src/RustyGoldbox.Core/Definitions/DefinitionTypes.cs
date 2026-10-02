@@ -24,6 +24,21 @@ public static class DefinitionTypes
         { "type": "attribute", "id": "str", "name": "Strength", "min": 3, "max": 18, "default": 10 }
         """);
 
+    public static DefinitionType Track { get; } = new(
+        "track",
+        "A pool that goes down and up in play: hit points, fatigue, magic points, a dying value. Expressions read it as self.<id> (current) and self.max_<id> (maximum).",
+        [
+            new("name", new TextKind(), true, "Display name, for example \"Hit points\"."),
+            new("max", SelfNumber, false, "The maximum, for example \"self.ht\". Without it, each creature brings its own: characters from their class levels (with from_levels) and monsters from their tracks."),
+            new("min", SelfNumber, false, "The lowest it can go; damage stops there. Without it, there is no floor."),
+            new("restore_cap", SelfNumber, false, "The highest healing can take it; without it, the maximum."),
+            new("start", SelfNumber, false, "The value a creature starts with; without it, the maximum."),
+            new("from_levels", new BooleanKind(), false, "If true, characters' class level \"hp\" gains make up this track's maximum. At most one track may have it."),
+        ],
+        """
+        { "type": "track", "id": "hit_points", "name": "Hit points", "from_levels": true }
+        """);
+
     public static DefinitionType Derived { get; } = new(
         "derived",
         "A value computed from other stats, such as armour class or a to-hit bonus. Expressions read it as self.<id>; its type is inferred from the expression.",
@@ -90,7 +105,7 @@ public static class DefinitionTypes
             new("levels", new ListKind(new ObjectKind(
             [
                 new("xp", new IntegerKind(), true, "Experience needed for this level; the first level needs 0."),
-                new("hp", SelfNumber, true, "Hit points gained on reaching this level, for example \"1d10\" or \"3\"."),
+                new("hp", SelfNumber, true, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\"."),
             ])), true, "One entry per level, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
@@ -202,7 +217,7 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("class", new ReferenceKind("class"), false, "Class whose tables the monster uses, if the ruleset works that way; expressions see it as self.class."),
             new("level", new IntegerKind(), false, "Level the monster acts at, if the ruleset uses levels; expressions see it as self.level."),
-            new("hit_points", SelfNumber, true, "Hit points, for example \"2d8\"."),
+            new("tracks", new MapKind(new ReferenceKind("track"), SelfNumber), false, "Maximum for each track the ruleset doesn't compute itself, for example { \"hit_points\": \"2d8\" }; rolled when the monster appears."),
             new("stats", new MapKind(new StatKind(false), new ExpressionKind(null, Roots.Self)), false, "Stat values that replace the derived ones, each of the stat's type, for example { \"ac\": \"6\", \"size\": \"'large'\" }."),
             new("actions", new ListKind(Use), true, "Actions the monster takes in combat, in order of preference, for example { \"action\": \"melee_attack\", \"name\": \"bite\", \"damage\": \"1d3\" }."),
             new("xp", new IntegerKind(), true, "Experience for defeating it."),
@@ -214,7 +229,7 @@ public static class DefinitionTypes
           "name": "Skeleton",
           "class": "fighter",
           "level": 2,
-          "hit_points": "1d8",
+          "tracks": { "hit_points": "1d8" },
           "stats": { "ac": "7" },
           "actions": [ { "action": "melee_attack", "name": "claw", "damage": "1d6" } ],
           "xp": 14
@@ -237,6 +252,7 @@ public static class DefinitionTypes
                 new("id", new TextKind(), true, "Budget name that action costs use, for example \"action\", \"standard\" or \"actions\"."),
                 new("per_turn", new IntegerKind(), true, "How many a creature has at the start of each turn."),
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
+            new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),
         ],
         """
@@ -251,6 +267,7 @@ public static class DefinitionTypes
           "initiative_each": "round",
           "round_seconds": 60,
           "budget": [ { "id": "action", "per_turn": 1 } ],
+          "track": "hit_points",
           "defeated": "self.hit_points <= 0"
         }
         """);
@@ -261,7 +278,7 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
-            new("target", new EnumKind(["enemy", "ally", "hurt_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (the one with fewest hit points), one ally (the first, which may be itself), the ally missing the most hit points, itself, or everyone on a side."),
+            new("target", new EnumKind(["enemy", "ally", "hurt_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, itself, or everyone on a side."),
             new("parameters", new ListKind(new TextKind()), false, "Names uses must supply (or get from an item), read as use.<name>, for example [\"damage\"]."),
             new("available", new ExpressionKind(ExprType.Boolean, Roots.Self), false, "Whether the creature may take it now; without it, always."),
             new("check", new ReferenceKind("check"), false, "The check that decides the outcome, made by the actor against the target."),
@@ -320,7 +337,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Derived, Table, Race, Class, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
     ];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(type => type.Name == name);

@@ -55,7 +55,7 @@ public sealed class CharacterTests
         Assert.Equal([2, 3, 4, 5], gains!.Select(gain => gain.Level));
         Assert.Equal(5, character.Level);
         Assert.Null(character.NextLevelExperience());
-        Assert.Equal(character.HitPointGains.Sum(), character.MaxHitPoints);
+        Assert.Equal(character.LevelGains.Sum(), character.Tracks["hit_points"].Max);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public sealed class CharacterTests
         string file = Path.Combine(modules.Root, "bad.json");
         File.WriteAllText(file, """
             { "format": 1, "name": 5, "modules": ["ascend"], "race": "folk", "class": "warrior", "level": 2, "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "hit_points": { "max": 5, "current": 5, "gains": "x" }, "gold": 0 }
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "level_gains": "x", "gold": 0 }
             """);
         List<ModuleDiagnostic> problems = [];
 
@@ -135,7 +135,7 @@ public sealed class CharacterTests
         Assert.All(problems, problem => Assert.Equal("character.file", problem.Rule));
         File.WriteAllText(file, """
             { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "class": "warrior", "level": 2, "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "hit_points": { "max": 5, "current": 5, "gains": [5] }, "gold": 0 }
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "level_gains": [5], "gold": 0 }
             """);
         problems.Clear();
         Assert.Null(CharacterFile.Read(file, set, problems));

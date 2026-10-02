@@ -1,6 +1,7 @@
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class warrior --race stoneborn --name Kara --priority might,grit,grace,wit --seed 5 --out kara.json
 Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
-  hit points 12/12, gold 140
+  hit points 12/12
+  gold 140
   might          18     Might
   grace          9      Grace
   grit           14     Grit
@@ -19,7 +20,8 @@ $ goldbox character level kara.json --module tests/RustyGoldbox.Tests/Fixtures/a
 Reached level 2: +9 hit points.
 Reached level 3: +9 hit points.
 Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
-  hit points 30/30, gold 140
+  hit points 30/30
+  gold 140
   might          18     Might
   grace          9      Grace
   grit           14     Grit
@@ -36,7 +38,8 @@ Saved to kara.json.
 
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class adept --race folk --name Ilse --attributes might=9,grace=12,grit=10,wit=16 --out ilse.json
 Ilse: Folk Adept 1 (0 xp, next level at 1000)
-  hit points 6/6, gold 40
+  hit points 6/6
+  gold 40
   spells per day by spell level: 1
   might          9      Might
   grace          12     Grace
@@ -54,7 +57,8 @@ Saved to ilse.json.
 
 $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend
 Ilse: Folk Adept 1 (0 xp, next level at 1000)
-  hit points 6/6, gold 40
+  hit points 6/6
+  gold 40
   spells per day by spell level: 1
   might          9      Might
   grace          12     Grace
@@ -91,13 +95,15 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
       "grit": 10,
       "wit": 16
     },
-    "hit_points": {
-      "max": 6,
-      "current": 6,
-      "gains": [
-        6
-      ]
+    "tracks": {
+      "hit_points": {
+        "current": 6,
+        "max": 6
+      }
     },
+    "level_gains": [
+      6
+    ],
     "gold": 40,
     "equipment": [],
     "conditions": []
@@ -175,6 +181,15 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
       "name": "Wit modifier",
       "kind": "derived",
       "value": 3,
+      "problem": null
+    }
+  ],
+  "tracks": [
+    {
+      "id": "hit_points",
+      "name": "Hit points",
+      "current": 6,
+      "max": 6,
       "problem": null
     }
   ],

@@ -31,8 +31,9 @@ internal static class GoldboxCli
 
           goldbox character new --module <path> --class <id> --race <id> [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--seed <n>] [--out <file>]
-              Rolls (or takes) attributes, applies the race, checks requirements and rolls
-              level-1 hit points and gold. --priority arranges rolls where the ruleset allows.
+              Rolls (or takes) attributes, applies the race, checks requirements, rolls the
+              first level's gain for the level track (usually hit points), starts every
+              track, and rolls gold. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range.
           goldbox character level <file> --module <path> --xp <n> [--seed <n>]

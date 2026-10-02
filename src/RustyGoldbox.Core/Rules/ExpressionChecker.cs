@@ -94,6 +94,11 @@ internal sealed class ExpressionChecker(
             return builtIn;
         }
 
+        if (rules.TryTrack(path.Name, out _, out _))
+        {
+            return ExprType.Number;
+        }
+
         if (!rules.Stats.TryGetValue(path.Name, out Stat? stat))
         {
             throw new ExpressionException($"'{path.Name}' is not a stat. Built in: {string.Join(", ", RuleSet.BuiltInStats.Keys)}. {rules.StatList(false)}", path.Column);

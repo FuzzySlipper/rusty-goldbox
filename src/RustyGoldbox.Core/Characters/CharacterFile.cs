@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "class", "level", "experience", "attributes", "hit_points", "gold", "equipment", "conditions",
+        "format", "name", "modules", "race", "class", "level", "experience", "attributes", "tracks", "level_gains", "gold", "equipment", "conditions",
     ];
 
     public static string ToJson(Character character)
@@ -56,17 +56,31 @@ public static class CharacterFile
             }
 
             writer.WriteEndObject();
-            writer.WriteStartObject("hit_points");
-            writer.WriteNumber("max", character.MaxHitPoints);
-            writer.WriteNumber("current", character.HitPoints);
-            writer.WriteStartArray("gains");
-            foreach (decimal gain in character.HitPointGains)
+            writer.WriteStartObject("tracks");
+            foreach ((string id, TrackValue value) in character.Tracks)
+            {
+                writer.WriteStartObject(id);
+                if (value.Current is decimal current)
+                {
+                    writer.WriteNumber("current", current);
+                }
+
+                if (value.Max is decimal max)
+                {
+                    writer.WriteNumber("max", max);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+            writer.WriteStartArray("level_gains");
+            foreach (decimal gain in character.LevelGains)
             {
                 writer.WriteNumberValue(gain);
             }
 
             writer.WriteEndArray();
-            writer.WriteEndObject();
             writer.WriteNumber("gold", character.Gold);
             WriteReferences(writer, "equipment", character.Equipment);
             WriteReferences(writer, "conditions", character.Conditions);
@@ -148,15 +162,15 @@ public static class CharacterFile
             character.Experience = experience ?? 0;
             character.Gold = gold ?? 0;
             ReadAttributes(root, character);
-            ReadHitPoints(root, character);
+            ReadTracks(root, character);
             if (character.Experience < 0)
             {
                 Error("$.experience", "experience can't be negative.");
             }
 
-            if (problems.Count == _before && character.HitPointGains.Count != character.Level)
+            if (problems.Count == _before && character.LevelGains.Count != character.Level)
             {
-                Error("$.hit_points.gains", $"gains must have one entry per level: {character.Level} for level {character.Level}, but it has {character.HitPointGains.Count}.");
+                Error("$.level_gains", $"level_gains must have one entry per level: {character.Level} for level {character.Level}, but it has {character.LevelGains.Count}.");
             }
             ReadList(root, "equipment", DefinitionTypes.Item, character.Equipment);
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
@@ -251,32 +265,64 @@ public static class CharacterFile
             }
         }
 
-        private void ReadHitPoints(JsonElement root, Character character)
+        private void ReadTracks(JsonElement root, Character character)
         {
-            if (!root.TryGetProperty("hit_points", out JsonElement hitPoints) || hitPoints.ValueKind != JsonValueKind.Object)
+            if (!root.TryGetProperty("tracks", out JsonElement tracks) || tracks.ValueKind != JsonValueKind.Object)
             {
-                Error("$.hit_points", "Missing \"hit_points\": { \"max\", \"current\", \"gains\" }.");
+                Error("$.tracks", "Missing \"tracks\": { <track>: { \"current\", \"max\"? } } for each track of the module set.");
                 return;
             }
 
-            character.MaxHitPoints = Number(hitPoints, "max", "$.hit_points") ?? 0;
-            character.HitPoints = Number(hitPoints, "current", "$.hit_points") ?? 0;
-            if (!hitPoints.TryGetProperty("gains", out JsonElement gains) || gains.ValueKind != JsonValueKind.Array)
+            foreach (JsonProperty entry in tracks.EnumerateObject())
             {
-                Error("$.hit_points.gains", "\"gains\" must be an array with the hit points gained at each level.");
-            }
-            else
-            {
-                foreach (JsonElement gain in gains.EnumerateArray())
+                string at = $"$.tracks.{entry.Name}";
+                if (!_rules.Tracks.ContainsKey(entry.Name))
                 {
-                    if (gain.ValueKind == JsonValueKind.Number && gain.TryGetDecimal(out decimal value))
-                    {
-                        character.HitPointGains.Add(value);
-                    }
-                    else
-                    {
-                        Error("$.hit_points.gains", "gains must be an array of numbers.");
-                    }
+                    Error(at, $"'{entry.Name}' is not a track of this module set. Tracks: {string.Join(", ", _rules.Tracks.Keys)}.");
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Object)
+                {
+                    Error(at, "A track entry must be an object { \"current\", \"max\"? }.");
+                    continue;
+                }
+
+                TrackValue value = new() { Current = Number(entry.Value, "current", at) };
+                if (entry.Value.TryGetProperty("max", out _))
+                {
+                    value.Max = Number(entry.Value, "max", at);
+                }
+
+                character.Tracks[entry.Name] = value;
+            }
+
+            foreach (string missing in _rules.Tracks.Keys.Where(id => !character.Tracks.ContainsKey(id)))
+            {
+                Error("$.tracks", $"Missing track {missing}.");
+            }
+
+            if (_rules.LevelTrack is Definition levelTrack && character.Tracks.TryGetValue(levelTrack.Id, out TrackValue? level) && level.Max is null)
+            {
+                Error($"$.tracks.{levelTrack.Id}", $"{levelTrack.Id} is built from level gains, so it needs \"max\".");
+            }
+
+            if (!root.TryGetProperty("level_gains", out JsonElement gains) || gains.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.level_gains", "\"level_gains\" must be an array with what the level track gained at each level.");
+                return;
+            }
+
+            foreach (JsonElement gain in gains.EnumerateArray())
+            {
+                if (gain.ValueKind == JsonValueKind.Number && gain.TryGetDecimal(out decimal amount))
+                {
+                    character.LevelGains.Add(amount);
+                }
+                else
+                {
+                    Error("$.level_gains", "level_gains must be an array of numbers.");
+                    return;
                 }
             }
         }

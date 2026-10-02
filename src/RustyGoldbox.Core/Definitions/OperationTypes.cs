@@ -14,20 +14,24 @@ public static class OperationTypes
 
     private static readonly Field To = new("to", new EnumKind(["target", "self"]), false, "Who it happens to: the action's target (the default) or the creature acting.");
 
+    private static readonly Field OnTrack = new("track", new ReferenceKind("track"), false, "The track it acts on; without it, the combat definition's track.");
+
     public static DefinitionType Damage { get; } = new(
         "damage",
-        "Takes hit points away.",
+        "Lowers a track (hit points unless it names another), never below the track's minimum.",
         [
-            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), true, "Hit points lost; below 0 counts as 0."),
+            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), true, "How much it goes down; below 0 counts as 0."),
+            OnTrack,
             To,
         ],
         """{ "op": "damage", "amount": "use.damage + self.str_damage" }""");
 
     public static DefinitionType Heal { get; } = new(
         "heal",
-        "Restores hit points, never above the maximum.",
+        "Raises a track (hit points unless it names another), never above its restore cap (normally its maximum).",
         [
-            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), true, "Hit points restored; below 0 counts as 0."),
+            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), true, "How much it goes up; below 0 counts as 0."),
+            OnTrack,
             To,
         ],
         """{ "op": "heal", "amount": "1d8" }""");

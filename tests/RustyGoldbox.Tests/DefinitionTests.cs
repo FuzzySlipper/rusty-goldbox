@@ -143,7 +143,7 @@ public sealed class DefinitionTests
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/grow.json", """{ "type": "condition", "id": "grow", "name": "Grow", "modifiers": [ { "stat": "str", "value": "floor(self.str / 2)" } ] }""");
         modules.Write("rules/brute.json", """
-            { "type": "monster", "id": "brute", "name": "Brute", "class": "warrior", "level": 1, "hit_points": "1d8",
+            { "type": "monster", "id": "brute", "name": "Brute", "class": "warrior", "level": 1, "tracks": { "hit_points": "1d8" },
               "stats": { "str": "self.str + 1", "strong": "1" }, "actions": [], "xp": 5 }
             """);
 

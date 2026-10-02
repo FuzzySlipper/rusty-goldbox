@@ -1,0 +1,52 @@
+{
+  "type": "action",
+  "id": "power_strike",
+  "name": "Power strike",
+  "cost": {
+    "turn": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "available": "self.fatigue >= 3",
+  "check": "strike",
+  "outcomes": {
+    "special": [
+      {
+        "op": "damage",
+        "amount": "use.damage * 2 + self.damage_bonus + 3"
+      }
+    ],
+    "success": [
+      {
+        "op": "check",
+        "check": "parry",
+        "outcomes": {
+          "failure": [
+            {
+              "op": "damage",
+              "amount": "use.damage + self.damage_bonus + 3"
+            }
+          ]
+        }
+      }
+    ],
+    "fumble": [
+      {
+        "op": "apply_condition",
+        "condition": "off_balance",
+        "rounds": "1",
+        "to": "self"
+      }
+    ]
+  },
+  "always": [
+    {
+      "op": "damage",
+      "track": "fatigue",
+      "amount": "3",
+      "to": "self"
+    }
+  ]
+}

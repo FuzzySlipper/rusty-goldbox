@@ -7,9 +7,33 @@ namespace RustyGoldbox.Core.Characters;
 /// <summary>One stat on a sheet: its value, or why it couldn't be computed.</summary>
 public sealed record SheetStat(string Id, string Name, string Kind, Value? Value, string? Problem);
 
+/// <summary>A track on a sheet: current and maximum, or why the maximum couldn't be computed.</summary>
+public sealed record SheetTrack(Definition Track, decimal? Current, decimal? Max, string? Problem);
+
 /// <summary>A character's computed stats, in the rule set's definition order.</summary>
 public static class CharacterSheet
 {
+    public static List<SheetTrack> Tracks(RuleSet rules, Character character)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        List<SheetTrack> tracks = [];
+        foreach (Definition track in rules.Tracks.Values)
+        {
+            decimal? current = creature.Track(track.Id).Current;
+            try
+            {
+                tracks.Add(new SheetTrack(track, current, evaluator.TrackMax(creature, track), null));
+            }
+            catch (ExpressionException exception)
+            {
+                tracks.Add(new SheetTrack(track, current, null, exception.Message));
+            }
+        }
+
+        return tracks;
+    }
+
     public static List<SheetStat> Stats(RuleSet rules, Character character)
     {
         Creature creature = character.ToCreature();

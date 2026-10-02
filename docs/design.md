@@ -136,7 +136,12 @@ plus a small **expression language**:
 
 Stats are the ruleset's **attributes** (rolled scores) and **derived values**
 (expressions over other stats, with inferred types), plus the built-ins
-`level`, `class` and `race`. Stat IDs form one namespace across the module
+`level`, `class` and `race`. **Tracks** are the pools that go down and up in
+play (hit points, fatigue, magic points, a dying value): each has a maximum
+(an expression, or one the creature brings), an optional floor, restore cap
+and starting value, and is read as `self.<id>` and `self.max_<id>`. No pool is
+built in; a ruleset declares its own, and one may be built from class level
+gains. Stat IDs form one namespace across the module
 set. **Modifiers** from races, conditions and equipped items add to a stat or
 to a check's roll. A **check** compares a roll, plus its modifiers, with a
 target. A **monster** names the class and level whose tables it uses, and its
@@ -196,6 +201,9 @@ Combat is built so that no die convention is assumed:
   percentile specials and fumbles, and 3d6 roll-under; `roll_count` gives
   dice-pool successes. Actions branch on tier names, not on hit or miss.
   An operation can make another check, such as a defender's parry.
+- **Pools are declared, not built in.** Damage and heal act on a named
+  track, or the combat's default one; costs that spend a pool are operations
+  on it (an action can spend fatigue to hit harder).
 - **Services resolve, facts record.** The loop and operations change state
   in one place (the combat runner); each change is recorded as a fact, and
   the facts in order are the transcript. Reactions will subscribe to facts

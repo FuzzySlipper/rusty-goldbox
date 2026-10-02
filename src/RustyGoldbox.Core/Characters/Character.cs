@@ -25,12 +25,14 @@ public sealed class Character
     /// <summary>Attribute scores in the ruleset's attribute order, after racial adjustments.</summary>
     public Dictionary<string, decimal> Attributes { get; } = [];
 
-    public decimal MaxHitPoints { get; set; }
+    /// <summary>
+    /// Track values by track ID: every track's current value, and the maximum
+    /// for the track built from level gains.
+    /// </summary>
+    public Dictionary<string, TrackValue> Tracks { get; } = [];
 
-    public decimal HitPoints { get; set; }
-
-    /// <summary>Hit points gained at each level, starting with level 1.</summary>
-    public List<decimal> HitPointGains { get; } = [];
+    /// <summary>What the level track gained at each level, starting with level 1.</summary>
+    public List<decimal> LevelGains { get; } = [];
 
     public decimal Gold { get; set; }
 
@@ -41,7 +43,12 @@ public sealed class Character
     /// <summary>The character as a creature expressions can read.</summary>
     public Creature ToCreature(string label = "self")
     {
-        Creature creature = new(label) { Class = Class, Race = Race, Level = Level, HitPoints = HitPoints, MaxHitPoints = MaxHitPoints };
+        Creature creature = new(label) { Class = Class, Race = Race, Level = Level };
+        foreach ((string id, TrackValue value) in Tracks)
+        {
+            creature.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };
+        }
+
         foreach ((string id, decimal score) in Attributes)
         {
             creature.Values[id] = score;

@@ -3,6 +3,7 @@ using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 using static RustyGoldbox.Tests.TempModules;
@@ -109,7 +110,7 @@ public sealed class CombatTests
         List<string> lines = result.Facts.Select(fact => fact.Describe()).ToList();
         Assert.Contains("Dummy is Hexed for 1 round.", lines);
         Assert.Contains("Dummy doesn't act (hexed).", lines);
-        Assert.Contains("Dummy takes 3 damage (7 hit points left).", lines);
+        Assert.Contains("Dummy loses 3 hit points (7 left).", lines);
         Assert.Contains("Dummy is no longer Hexed.", lines);
         Assert.Equal("Hexers", result.Sides[result.Winner!.Value].Name);
     }
@@ -120,7 +121,7 @@ public sealed class CombatTests
         using TempModules modules = new();
         string root = DuelRuleset(modules);
         modules.Write("rules/quick_dummy.json", """
-            { "type": "monster", "id": "quick_dummy", "name": "Quick dummy", "hit_points": "10", "stats": { "str": "20" },
+            { "type": "monster", "id": "quick_dummy", "name": "Quick dummy", "tracks": { "hit_points": "10" }, "stats": { "str": "20" },
               "actions": [ { "action": "smite", "damage": "1" } ], "xp": 0 }
             """);
         RuleSet rules = Rules.LoadValid(root);
@@ -141,7 +142,7 @@ public sealed class CombatTests
         string root = DuelRuleset(modules);
         modules.Write("rules/ambush.json", """
             { "type": "combat", "id": "ambush", "name": "Ambush", "surprise": "1", "initiative": "self.str", "initiative_by": "side",
-              "initiative_order": "highest-first", "initiative_each": "combat", "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ],
+              "initiative_order": "highest-first", "initiative_each": "combat", "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points",
               "defeated": "self.hit_points <= 0" }
             """);
         RuleSet rules = Rules.LoadValid(root);
@@ -162,14 +163,14 @@ public sealed class CombatTests
         string root = DuelRuleset(modules);
         modules.Write("rules/rout.json", """
             { "type": "combat", "id": "rout", "name": "Rout", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first",
-              "initiative_each": "round", "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "defeated": "self.hit_points <= 0 or self.hit < -5" }
+              "initiative_each": "round", "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0 or self.hit < -5" }
             """);
         modules.Write("rules/crushed.json", """{ "type": "condition", "id": "crushed", "name": "Crushed", "modifiers": [ { "stat": "hit", "value": "-10" } ] }""");
         modules.Write("rules/crush.json", """
             { "type": "action", "id": "crush", "name": "Crush", "cost": { "turn": 1 }, "target": "enemy", "always": [ { "op": "apply_condition", "condition": "crushed" } ] }
             """);
         modules.Write("rules/crusher.json", """
-            { "type": "monster", "id": "crusher", "name": "Crusher", "hit_points": "5", "stats": { "str": "15" }, "actions": [ { "action": "crush" } ], "xp": 0 }
+            { "type": "monster", "id": "crusher", "name": "Crusher", "tracks": { "hit_points": "5" }, "stats": { "str": "15" }, "actions": [ { "action": "crush" } ], "xp": 0 }
             """);
         RuleSet rules = Rules.LoadValid(root);
 
@@ -210,6 +211,93 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void TracksAreSpentFlooredAndCapped()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/focus.json", """{ "type": "track", "id": "focus", "name": "Focus", "max": "2", "min": "0" }""");
+        modules.Write("rules/ward.json", """{ "type": "track", "id": "ward", "name": "Ward", "max": "5", "restore_cap": "8", "start": "0" }""");
+        modules.Write("rules/zap.json", """
+            { "type": "action", "id": "zap", "name": "Zap", "cost": { "turn": 1 }, "target": "enemy", "available": "self.focus >= 1",
+              "always": [ { "op": "damage", "amount": "2" }, { "op": "damage", "track": "focus", "amount": "5", "to": "self" } ] }
+            """);
+        modules.Write("rules/shield_up.json", """
+            { "type": "action", "id": "shield_up", "name": "Shield up", "cost": { "turn": 1 }, "target": "self", "available": "self.ward < 8",
+              "always": [ { "op": "heal", "track": "ward", "amount": "10" } ] }
+            """);
+        modules.Write("rules/zapper.json", """
+            { "type": "monster", "id": "zapper", "name": "Zapper", "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
+              "actions": [ { "action": "shield_up" }, { "action": "zap" }, { "action": "smite", "damage": "1" } ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        List<string> lines = Fight(rules, "duel", "zapper", "dummy", maxRounds: 3);
+
+        Assert.Equal(
+            [
+                "Zapper uses Shield up on Zapper.",
+                "Zapper regains 8 ward (8).",
+                "Zapper uses Zap on Dummy.",
+                "Dummy loses 2 hit points (8 left).",
+                "Zapper loses 2 focus (0 left).",
+                "Zapper uses Smite on Dummy.",
+            ],
+            lines.Where(line => line.StartsWith("Zapper uses", StringComparison.Ordinal) || line.Contains("ward", StringComparison.Ordinal)
+                || line.Contains("focus", StringComparison.Ordinal) || line.StartsWith("Dummy loses", StringComparison.Ordinal)).Take(6));
+    }
+
+    [Fact]
+    public void TracksBelowTheirFloorOrAboveTheirCapDontMove()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/focus.json", """{ "type": "track", "id": "focus", "name": "Focus", "max": "2", "min": "0", "start": "-1" }""");
+        modules.Write("rules/ward.json", """{ "type": "track", "id": "ward", "name": "Ward", "max": "5", "restore_cap": "8", "start": "9" }""");
+        modules.Write("rules/strain.json", """
+            { "type": "action", "id": "strain", "name": "Strain", "cost": { "turn": 1 }, "target": "self",
+              "always": [ { "op": "damage", "track": "focus", "amount": "3", "to": "self" }, { "op": "heal", "track": "ward", "amount": "3", "to": "self" } ] }
+            """);
+        modules.Write("rules/strainer.json", """
+            { "type": "monster", "id": "strainer", "name": "Strainer", "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
+              "actions": [ { "action": "strain" } ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        List<string> lines = Fight(rules, "duel", "strainer", "dummy", maxRounds: 1);
+
+        Assert.Contains("Strainer loses 0 focus (-1 left).", lines);
+        Assert.Contains("Strainer regains 0 ward (9).", lines);
+    }
+
+    [Fact]
+    public void TrackProblemsAreFoundAtLoadOrNamed()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/mana.json", """{ "type": "track", "id": "mana", "name": "Mana" }""");
+        modules.Write("rules/max_mana.json", """{ "type": "track", "id": "max_mana", "name": "Shadow", "max": "1" }""");
+        modules.Write("rules/level.json", """{ "type": "track", "id": "level", "name": "Level", "max": "1" }""");
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [("track.duplicate", "level.json"), ("track.duplicate", "max_mana.json"), ("track.max", "dummy.json"), ("track.max", "hexer.json"), ("track.max", "mana.json")],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!))).Order());
+
+        using TempModules loop = new();
+        string looped = DuelRuleset(loop);
+        loop.Write("rules/rage.json", """{ "type": "track", "id": "rage", "name": "Rage", "max": "self.max_rage + 1", "start": "self.hit_points" }""");
+        RuleSet rules = Rules.LoadValid(looped);
+        Creature self = new("self");
+        self.Track("hit_points").Max = 4;
+
+        ExpressionException error = Assert.Throws<ExpressionException>(() => new Evaluator(rules, null).Evaluate(rules.Compile("self.max_rage", "rules", Roots.Self), self, null));
+
+        Assert.Contains("max_rage depends on itself", error.Message, StringComparison.Ordinal);
+        Assert.Equal(4, new Evaluator(rules, null).Evaluate(rules.Compile("self.hit_points", "rules", Roots.Self), self, null).Number);
+    }
+
+    [Fact]
     public void ActionsAndUsesAreCheckedAtLoad()
     {
         using TempModules modules = new();
@@ -220,7 +308,7 @@ public sealed class CombatTests
         modules.Write("rules/bad_tier.json", """{ "type": "action", "id": "bad_tier", "name": "Bad tier", "cost": { "turn": 1 }, "target": "enemy", "check": "always_hits", "outcomes": { "critical": [] } }""");
         modules.Write("rules/bad_op.json", """{ "type": "condition", "id": "bad_op", "name": "Bad op", "modifiers": [], "each_turn": [ { "op": "damage", "amount": "1", "to": "target" }, { "op": "explode" } ] }""");
         modules.Write("rules/user.json", """
-            { "type": "monster", "id": "user", "name": "User", "class": "warrior", "level": 1, "hit_points": "5",
+            { "type": "monster", "id": "user", "name": "User", "class": "warrior", "level": 1, "tracks": { "hit_points": "5" },
               "actions": [ { "action": "smite" }, { "action": "smite", "damage": "1", "colour": "2" } ], "xp": 0 }
             """);
 
@@ -258,7 +346,7 @@ public sealed class CombatTests
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/combat.json", """
             { "type": "combat", "id": "duel", "name": "Duel", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "round",
-              "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "defeated": "self.hit_points <= 0" }
+              "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
             """);
         modules.Write("rules/always_hits.json", """{ "type": "check", "id": "always_hits", "name": "Always hits", "roll": "20", "target": "10", "succeeds": "at-least" }""");
         modules.Write("rules/hexed.json", """
@@ -274,11 +362,11 @@ public sealed class CombatTests
               "always": [ { "op": "damage", "amount": "use.damage" } ] }
             """);
         modules.Write("rules/hexer.json", """
-            { "type": "monster", "id": "hexer", "name": "Hexer", "class": "warrior", "level": 1, "hit_points": "20", "stats": { "str": "15" },
+            { "type": "monster", "id": "hexer", "name": "Hexer", "class": "warrior", "level": 1, "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
               "actions": [ { "action": "hex" }, { "action": "smite", "damage": "1" } ], "xp": 0 }
             """);
         modules.Write("rules/dummy.json", """
-            { "type": "monster", "id": "dummy", "name": "Dummy", "class": "warrior", "level": 1, "hit_points": "10", "stats": { "str": "5" },
+            { "type": "monster", "id": "dummy", "name": "Dummy", "class": "warrior", "level": 1, "tracks": { "hit_points": "10" }, "stats": { "str": "5" },
               "actions": [ { "action": "smite", "damage": "1" } ], "xp": 0 }
             """);
         return root;

@@ -57,10 +57,66 @@ public sealed class RuleSetBuilder
             _rules.Definitions.Add(definition);
         }
 
+        HashSet<string> trackNames = [];
+        foreach (Definition track in _rules.OfType(DefinitionTypes.Track))
+        {
+            if (RuleSet.BuiltInStats.ContainsKey(track.Id) || trackNames.Contains(track.Id) || RuleSet.BuiltInStats.ContainsKey($"max_{track.Id}"))
+            {
+                Error(track, "track.duplicate", "$.id", $"'{track.Id}' would hide a built-in or another track's max_ name. Use another ID.");
+                continue;
+            }
+
+            if (!_rules.Tracks.TryAdd(track.Id, track))
+            {
+                Error(track, "track.duplicate", "$.id", $"Track '{track.Id}' is already defined in {_rules.Tracks[track.Id].QualifiedId}. Track IDs are shared by the whole module set.");
+                continue;
+            }
+
+            trackNames.Add(track.Id);
+            trackNames.Add($"max_{track.Id}");
+        }
+
+        List<Definition> levelTracks = _rules.Tracks.Values
+            .Where(track => track.Json.TryGetProperty("from_levels", out JsonElement fromLevels) && fromLevels.GetBoolean())
+            .ToList();
+        foreach (Definition extra in levelTracks.Skip(1))
+        {
+            Error(extra, "track.from-levels", "$.from_levels", $"Only one track can have from_levels; {levelTracks[0].QualifiedId} already does.");
+        }
+
+        foreach (Definition track in _rules.Tracks.Values.Where(track => !track.Json.TryGetProperty("max", out _) && !levelTracks.Contains(track)))
+        {
+            Error(track, "track.max", "$", $"Track '{track.Id}' needs a \"max\" expression (or \"from_levels\": true): characters have nothing else to take its maximum from.");
+        }
+
+        foreach (Definition monster in _rules.OfType(DefinitionTypes.Monster))
+        {
+            List<string> given = monster.Json.TryGetProperty("tracks", out JsonElement monsterTracks)
+                ? monsterTracks.EnumerateObject().Select(entry => entry.Name[(entry.Name.IndexOf(':', StringComparison.Ordinal) + 1)..]).ToList()
+                : [];
+            foreach (Definition track in _rules.Tracks.Values.Where(track => !track.Json.TryGetProperty("max", out _) && !given.Contains(track.Id)))
+            {
+                Error(monster, "track.max", "$.tracks",
+                    $"Track '{track.Id}' doesn't compute a maximum, so the monster must give one: \"tracks\": {{ \"{track.Id}\": \"2d8\" }}.");
+            }
+        }
+
+        foreach (Definition characterClass in _rules.OfType(DefinitionTypes.Class).Where(_ => levelTracks.Count == 0))
+        {
+            Error(characterClass, "track.from-levels", "$.levels",
+                "Class levels gain \"hp\", but no track has \"from_levels\": true to receive it. Add one, for example { \"type\": \"track\", \"id\": \"hit_points\", \"name\": \"Hit points\", \"from_levels\": true }.");
+        }
+
         foreach (Definition definition in _rules.Definitions)
         {
             if (definition.Type != DefinitionTypes.Attribute && definition.Type != DefinitionTypes.Derived)
             {
+                continue;
+            }
+
+            if (trackNames.Contains(definition.Id))
+            {
+                Error(definition, "stat.duplicate", "$.id", $"'{definition.Id}' is a track's name (tracks are read as <id> and max_<id>). Use another ID.");
                 continue;
             }
 

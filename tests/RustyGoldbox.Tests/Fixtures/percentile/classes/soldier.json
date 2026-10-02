@@ -14,6 +14,10 @@
   ],
   "actions": [
     {
+      "action": "power_strike",
+      "from_item": "weapon"
+    },
+    {
       "action": "strike",
       "from_item": "weapon"
     },

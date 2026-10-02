@@ -1,0 +1,7 @@
+{
+  "type": "track",
+  "id": "fatigue",
+  "name": "Fatigue",
+  "max": "self.body",
+  "min": "0"
+}

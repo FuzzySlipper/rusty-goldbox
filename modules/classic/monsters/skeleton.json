@@ -4,7 +4,9 @@
   "name": "Skeleton",
   "class": "fighter",
   "level": 2,
-  "hit_points": "1d8",
+  "tracks": {
+    "hit_points": "1d8"
+  },
   "stats": {
     "ac": "7",
     "movement": "120",

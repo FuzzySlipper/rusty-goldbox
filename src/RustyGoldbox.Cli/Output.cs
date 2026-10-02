@@ -384,6 +384,8 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
     public void CharacterSheet(RuleSet rules, Character character, string? path, ulong? seed, IReadOnlyList<DiceRoll> rolls, IReadOnlyList<LevelGain> gains)
     {
         List<SheetStat> stats = Core.Characters.CharacterSheet.Stats(rules, character);
+        List<SheetTrack> tracks = Core.Characters.CharacterSheet.Tracks(rules, character);
+        string levelTrack = rules.LevelTrack?.Name.ToLowerInvariant() ?? "level track";
         if (json)
         {
             WriteJson(new
@@ -394,7 +396,8 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 next_level_experience = character.NextLevelExperience(),
                 spell_slots = character.SpellSlots(),
                 stats = stats.Select(stat => new { id = stat.Id, name = stat.Name, kind = stat.Kind, value = stat.Value is Value value ? ValueJson(value) : null, problem = stat.Problem }),
-                levels_gained = gains.Select(gain => new { level = gain.Level, hit_points = gain.HitPoints }),
+                tracks = tracks.Select(track => new { id = track.Track.Id, name = track.Track.Name, current = track.Current, max = track.Max, problem = track.Problem }),
+                levels_gained = gains.Select(gain => new { level = gain.Level, gained = gain.Amount }),
                 seed,
                 rolls = rolls.Select(RollJson),
             });
@@ -403,12 +406,18 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
         foreach (LevelGain gain in gains)
         {
-            writer.WriteLine($"Reached level {gain.Level}: +{gain.HitPoints} hit points.");
+            writer.WriteLine($"Reached level {gain.Level}: +{gain.Amount} {levelTrack}.");
         }
 
         string next = character.NextLevelExperience() is decimal needed ? $"next level at {needed}" : "highest level";
         writer.WriteLine($"{character.Name}: {character.Race.Name} {character.Class.Name} {character.Level} ({character.Experience} xp, {next})");
-        writer.WriteLine($"  hit points {character.HitPoints}/{character.MaxHitPoints}, gold {character.Gold}");
+        foreach (SheetTrack track in tracks)
+        {
+            string max = track.Max is decimal known ? N(known) : $"(can't compute: {track.Problem})";
+            writer.WriteLine($"  {track.Track.Name.ToLowerInvariant()} {N(track.Current ?? 0)}/{max}");
+        }
+
+        writer.WriteLine($"  gold {character.Gold}");
         IReadOnlyList<int> slots = character.SpellSlots();
         if (slots.Count > 0)
         {
@@ -459,7 +468,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         foreach (CombatSide side in result.Sides)
         {
             string members = string.Join(", ", side.Members.Select(member =>
-                $"{member.Name} {N(member.Creature.HitPoints ?? 0)}/{N(member.Creature.MaxHitPoints ?? 0)}{(member.Defeated ? " (out)" : "")}"));
+                $"{member.Name} {TrackText(member, result.Track)}{(member.Defeated ? " (out)" : "")}"));
             writer.WriteLine($"{side.Name}: {members}");
         }
     }
@@ -510,14 +519,20 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
     private static string N(decimal value) => value.ToString("0.############", System.Globalization.CultureInfo.InvariantCulture);
 
+    private static string TrackText(Combatant member, Definition track)
+    {
+        TrackValue value = member.Creature.Track(track.Id);
+        string max = value.Max is decimal known ? $"/{N(known)}" : "";
+        return $"{N(value.Current ?? 0)}{max}";
+    }
+
     private static IEnumerable<object> Combatants(CombatResult result)
     {
         return result.Sides.SelectMany(side => side.Members.Select(member => (object)new
         {
             name = member.Name,
             side = side.Name,
-            hit_points = member.Creature.HitPoints,
-            max_hit_points = member.Creature.MaxHitPoints,
+            tracks = member.Creature.Tracks.ToDictionary(entry => entry.Key, entry => new { current = entry.Value.Current, max = entry.Value.Max }),
             defeated = member.Defeated,
         }));
     }

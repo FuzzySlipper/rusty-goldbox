@@ -43,7 +43,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         return new Run(this, expression, scope).Evaluate(expression.Root);
     }
 
-    /// <summary>A stat's value for a creature, including modifiers.</summary>
+    /// <summary>A stat's value for a creature, including modifiers; also built-ins and track reads.</summary>
     public Value Stat(Creature creature, string name)
     {
         if (RuleSet.BuiltInStats.ContainsKey(name))
@@ -60,6 +60,11 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         _trail.Add(name);
         try
         {
+            if (rules.TryTrack(name, out Definition? track, out bool maximum))
+            {
+                return Value.Of(maximum ? TrackMax(creature, track!) : TrackCurrent(creature, track!));
+            }
+
             Value value = BaseStat(creature, name);
             if (value.Type != ExprType.Number)
             {
@@ -166,6 +171,53 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         return Evaluate(rules.Expression(stat.Definition, "$.value"), creature, null);
     }
 
+    /// <summary>The track's current value; a creature that has none yet starts it (its start, else its maximum).</summary>
+    public decimal TrackCurrent(Creature creature, Definition track)
+    {
+        StartTrack(creature, track);
+        return creature.Track(track.Id).Current!.Value;
+    }
+
+    /// <summary>The creature's own maximum for the track, or the track's maximum expression.</summary>
+    public decimal TrackMax(Creature creature, Definition track)
+    {
+        if (creature.Tracks.TryGetValue(track.Id, out TrackValue? value) && value.Max is decimal own)
+        {
+            return own;
+        }
+
+        if (rules.TryExpression(track, "$.max", out CompiledExpression? max))
+        {
+            return Evaluate(max!, creature, null).Number;
+        }
+
+        string fix = creature.Monster is not null
+            ? $"Give monster {creature.Monster.QualifiedId} \"tracks\": {{ \"{track.Id}\": <expression> }}"
+            : $"Give the track a \"max\", or give {creature.Label} \"max_{track.Id}\"";
+        throw new ExpressionException($"{creature.Label} has no maximum {track.Id}, and track '{track.Id}' doesn't compute one. {fix}.", 1);
+    }
+
+    /// <summary>The track's minimum for the creature, or null when it has no floor.</summary>
+    public decimal? TrackMin(Creature creature, Definition track)
+    {
+        return rules.TryExpression(track, "$.min", out CompiledExpression? min) ? Evaluate(min!, creature, null).Number : null;
+    }
+
+    /// <summary>How high healing can take the track: its restore cap, else its maximum.</summary>
+    public decimal TrackRestoreCap(Creature creature, Definition track)
+    {
+        return rules.TryExpression(track, "$.restore_cap", out CompiledExpression? cap) ? Evaluate(cap!, creature, null).Number : TrackMax(creature, track);
+    }
+
+    /// <summary>Sets the track's current value to its start (else its maximum) if the creature has none.</summary>
+    public void StartTrack(Creature creature, Definition track)
+    {
+        TrackValue value = creature.Track(track.Id);
+        value.Current ??= rules.TryExpression(track, "$.start", out CompiledExpression? start)
+            ? Evaluate(start!, creature, null).Number
+            : TrackMax(creature, track);
+    }
+
     private static decimal Add(decimal left, decimal right, int column) => Arithmetic(() => left + right, column);
 
     private static decimal Arithmetic(Func<decimal> operation, int column)
@@ -192,14 +244,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return creature.Class is not null
                     ? Value.Of(creature.Class.Id)
                     : throw new ExpressionException($"{creature.Label} has no class. Give {creature.Label} a \"class\" (or a \"monster\").", 1);
-            case "hit_points":
-                return creature.HitPoints is decimal current
-                    ? Value.Of(current)
-                    : throw new ExpressionException($"{creature.Label} has no hit points. Give {creature.Label} \"hit_points\".", 1);
-            case "max_hit_points":
-                return creature.MaxHitPoints is decimal max
-                    ? Value.Of(max)
-                    : throw new ExpressionException($"{creature.Label} has no maximum hit points. Give {creature.Label} \"max_hit_points\".", 1);
+
             default:
                 return creature.Race is not null
                     ? Value.Of(creature.Race.Id)

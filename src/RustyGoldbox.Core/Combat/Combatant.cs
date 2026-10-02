@@ -45,9 +45,12 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             Race = Creature.Race,
             Monster = Creature.Monster,
             Level = Creature.Level,
-            HitPoints = Creature.HitPoints,
-            MaxHitPoints = Creature.MaxHitPoints,
         };
+        foreach ((string id, TrackValue value) in Creature.Tracks)
+        {
+            renamed.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };
+        }
+
         foreach ((string id, decimal value) in Creature.Values)
         {
             renamed.Values[id] = value;
@@ -65,7 +68,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         return new Combatant(character.Name, creature, ReadUses(rules, character.Class, "$.actions", creature.Equipment));
     }
 
-    /// <summary>A monster as a combatant, with rolled hit points.</summary>
+    /// <summary>A monster as a combatant: its track maxima rolled, every track at its start.</summary>
     public static Combatant FromMonster(RuleSet rules, Definition monster, string name, Evaluator evaluator)
     {
         Creature creature = new(name)
@@ -74,9 +77,19 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             Class = monster.Json.TryGetProperty("class", out _) ? rules.Reference(monster, "$.class") : null,
             Level = monster.Json.TryGetProperty("level", out JsonElement level) ? level.GetInt32() : null,
         };
-        decimal hitPoints = evaluator.Evaluate(rules.Expression(monster, "$.hit_points"), creature, null).Number;
-        creature.HitPoints = hitPoints;
-        creature.MaxHitPoints = hitPoints;
+        if (monster.Json.TryGetProperty("tracks", out JsonElement tracks))
+        {
+            foreach (JsonProperty entry in tracks.EnumerateObject())
+            {
+                Definition track = rules.Reference(monster, $"$.tracks.{entry.Name}");
+                creature.Track(track.Id).Max = evaluator.Evaluate(rules.Expression(monster, $"$.tracks.{entry.Name}"), creature, null).Number;
+            }
+        }
+
+        foreach (Definition track in rules.Tracks.Values)
+        {
+            evaluator.StartTrack(creature, track);
+        }
         return new Combatant(name, creature, ReadUses(rules, monster, "$.actions", []));
     }
 

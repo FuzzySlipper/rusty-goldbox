@@ -2,7 +2,9 @@
   "type": "monster",
   "id": "wolf",
   "name": "Wolf",
-  "hit_points": "2d6 + 4",
+  "tracks": {
+    "hit_points": "2d6 + 4"
+  },
   "stats": {
     "agility": "14"
   },

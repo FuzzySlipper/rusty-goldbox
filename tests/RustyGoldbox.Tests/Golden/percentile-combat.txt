@@ -7,39 +7,43 @@ Round 1.
   Wolf 1 uses Bite on Sten.
   Wolf 1 rolls Strike: 50 against 53: success.  [1d100: 50 = 50]
   Sten rolls Parry: 17 against 41: success.  [1d100: 17 = 17]
-  Sten uses Strike (Sword) on Wolf 1.
+  Sten uses Power strike (Sword) on Wolf 1.
   Sten rolls Strike: 85 against 51: failure.  [1d100: 85 = 85]
+  Sten loses 3 fatigue (12 left).
   Wolf 2 uses Bite on Sten.
   Wolf 2 rolls Strike: 99 against 53: fumble.  [1d100: 99 = 99]
   Wolf 2 is Off balance for 1 round.
 Round 2.
   Wolf 1 uses Bite on Sten.
   Wolf 1 rolls Strike: 79 against 53: failure.  [1d100: 79 = 79]
-  Sten uses Strike (Sword) on Wolf 1.
+  Sten uses Power strike (Sword) on Wolf 1.
   Sten rolls Strike: 34 against 51: success.  [1d100: 34 = 34]
   Wolf 1 rolls Parry: 48 against 43: failure.  [1d100: 48 = 48]
-  Wolf 1 takes 9 damage (0 hit points left).  [1d8: 7 = 7]
+  Wolf 1 loses 12 hit points (-3 left).  [1d8: 7 = 7]
   Wolf 1 is out of the fight.
+  Sten loses 3 fatigue (9 left).
   Wolf 2 doesn't act (off balance).
   Wolf 2 is no longer Off balance.
 Round 3.
-  Sten uses Strike (Sword) on Wolf 2.
+  Sten uses Power strike (Sword) on Wolf 2.
   Sten rolls Strike: 45 against 51: success.  [1d100: 45 = 45]
   Wolf 2 rolls Parry: 45 against 43: failure.  [1d100: 45 = 45]
-  Wolf 2 takes 7 damage (5 hit points left).  [1d8: 5 = 5]
+  Wolf 2 loses 10 hit points (2 left).  [1d8: 5 = 5]
+  Sten loses 3 fatigue (6 left).
   Wolf 2 uses Bite on Sten.
   Wolf 2 rolls Strike: 21 against 53: success.  [1d100: 21 = 21]
   Sten rolls Parry: 75 against 41: failure.  [1d100: 75 = 75]
-  Sten takes 2 damage (23 hit points left).  [1d6: 2 = 2]
+  Sten loses 2 hit points (23 left).  [1d6: 2 = 2]
 Round 4.
-  Sten uses Strike (Sword) on Wolf 2.
+  Sten uses Power strike (Sword) on Wolf 2.
   Sten rolls Strike: 27 against 51: success.  [1d100: 27 = 27]
   Wolf 2 rolls Parry: 92 against 43: failure.  [1d100: 92 = 92]
-  Wolf 2 takes 9 damage (-4 hit points left).  [1d8: 7 = 7]
+  Wolf 2 loses 12 hit points (-10 left).  [1d8: 7 = 7]
   Wolf 2 is out of the fight.
+  Sten loses 3 fatigue (3 left).
 Party wins after 4 rounds.
 Party: Sten 23/25
-Wolves: Wolf 1 0/9 (out), Wolf 2 -4/12 (out)
+Wolves: Wolf 1 -3/9 (out), Wolf 2 -10/12 (out)
 [exit 0]
 
 $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/percentile --party sten.json --encounter wolves --seed 13 --runs 100 --json
@@ -48,17 +52,17 @@ $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/percentile --par
   "seed": 13,
   "runs": 100,
   "wins": {
-    "Party": 54,
-    "Wolves": 46
+    "Party": 65,
+    "Wolves": 35
   },
   "undecided": 0,
   "rounds": {
     "min": 2,
-    "mean": 8.77,
+    "mean": 8.33,
     "max": 24
   },
   "party_survival": {
-    "Sten": 54
+    "Sten": 65
   }
 }
 [exit 0]

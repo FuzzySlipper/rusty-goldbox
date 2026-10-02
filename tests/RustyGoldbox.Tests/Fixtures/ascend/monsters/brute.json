@@ -4,7 +4,9 @@
   "name": "Brute",
   "class": "warrior",
   "level": 2,
-  "hit_points": "2d10 + 4",
+  "tracks": {
+    "hit_points": "2d10 + 4"
+  },
   "stats": {
     "ac": "13",
     "might": "16"

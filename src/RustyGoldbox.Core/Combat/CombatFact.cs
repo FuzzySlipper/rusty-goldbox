@@ -69,18 +69,18 @@ public sealed record CheckFact(string Who, string Check, CheckResult Result) : C
     private static string Sign(decimal value) => value < 0 ? $"- {N(-value)}" : $"+ {N(value)}";
 }
 
-public sealed record DamageFact(string Who, decimal Amount, decimal HitPoints) : CombatFact
+public sealed record DamageFact(string Who, string Track, decimal Amount, decimal Left) : CombatFact
 {
     public override string Kind => "damage";
 
-    public override string Describe() => $"{Who} takes {N(Amount)} damage ({N(HitPoints)} hit points left).";
+    public override string Describe() => $"{Who} loses {N(Amount)} {Track} ({N(Left)} left).";
 }
 
-public sealed record HealFact(string Who, decimal Amount, decimal HitPoints) : CombatFact
+public sealed record HealFact(string Who, string Track, decimal Amount, decimal Now) : CombatFact
 {
     public override string Kind => "heal";
 
-    public override string Describe() => $"{Who} regains {N(Amount)} hit points ({N(HitPoints)}).";
+    public override string Describe() => $"{Who} regains {N(Amount)} {Track} ({N(Now)}).";
 }
 
 public sealed record ConditionFact(string Who, string Condition, bool Applied, decimal? Rounds) : CombatFact

@@ -25,9 +25,27 @@ public sealed class RuleSet
         ["level"] = ExprType.Number,
         ["class"] = ExprType.Text,
         ["race"] = ExprType.Text,
-        ["hit_points"] = ExprType.Number,
-        ["max_hit_points"] = ExprType.Number,
     };
+
+    /// <summary>Tracks by ID. Expressions read each as &lt;id&gt; (current) and max_&lt;id&gt;.</summary>
+    public Dictionary<string, Definition> Tracks { get; } = [];
+
+    /// <summary>The track characters' class level gains build, if the set has one.</summary>
+    public Definition? LevelTrack => Tracks.Values.FirstOrDefault(track =>
+        track.Json.TryGetProperty("from_levels", out System.Text.Json.JsonElement fromLevels) && fromLevels.GetBoolean());
+
+    /// <summary>The track a read names: <c>hit_points</c> (current) or <c>max_hit_points</c> (maximum).</summary>
+    public bool TryTrack(string name, out Definition? track, out bool maximum)
+    {
+        maximum = false;
+        if (Tracks.TryGetValue(name, out track))
+        {
+            return true;
+        }
+
+        maximum = name.StartsWith("max_", StringComparison.Ordinal);
+        return maximum && Tracks.TryGetValue(name[4..], out track);
+    }
 
     /// <summary>What <c>check.&lt;name&gt;</c> reads while a check resolves.</summary>
     public static IReadOnlyList<string> CheckFields { get; } = ["roll", "total", "target", "margin"];
@@ -112,6 +130,7 @@ public sealed class RuleSet
         List<string> ids = Stats.Values
             .Where(stat => !attributesOnly || stat.IsAttribute)
             .Select(stat => stat.Id)
+            .Concat(attributesOnly ? [] : Tracks.Keys.SelectMany(id => new[] { id, $"max_{id}" }))
             .Order(StringComparer.Ordinal)
             .ToList();
         string what = attributesOnly ? "Attributes" : "Stats";

@@ -19,7 +19,7 @@ public sealed record CreationRequest(
     string? Creation = null);
 
 /// <summary>A level gained: the level reached and the hit points it added.</summary>
-public sealed record LevelGain(int Level, decimal HitPoints);
+public sealed record LevelGain(int Level, decimal Amount);
 
 /// <summary>
 /// Creates and advances characters from the rule set's character-creation,
@@ -75,10 +75,14 @@ public static class CharacterRules
 
         try
         {
-            decimal hitPoints = HitPointsForLevel(rules, character, evaluator, 1);
-            character.HitPointGains.Add(hitPoints);
-            character.MaxHitPoints = hitPoints;
-            character.HitPoints = hitPoints;
+            if (rules.LevelTrack is Definition levelTrack)
+            {
+                decimal gain = HitPointsForLevel(rules, character, evaluator, 1);
+                character.LevelGains.Add(gain);
+                character.Tracks[levelTrack.Id] = new TrackValue { Max = gain };
+            }
+
+            StartTracks(rules, character, evaluator);
             character.Gold = StartingGold(rules, creation, character, evaluator, problems);
         }
         catch (RuleFailure failure)
@@ -104,11 +108,16 @@ public static class CharacterRules
             while (character.NextLevelExperience() is decimal needed && character.Experience >= needed)
             {
                 character.Level++;
-                decimal hitPoints = HitPointsForLevel(rules, character, evaluator, character.Level);
-                character.HitPointGains.Add(hitPoints);
-                character.MaxHitPoints += hitPoints;
-                character.HitPoints += hitPoints;
-                gains.Add(new LevelGain(character.Level, hitPoints));
+                decimal gain = HitPointsForLevel(rules, character, evaluator, character.Level);
+                character.LevelGains.Add(gain);
+                if (rules.LevelTrack is Definition levelTrack)
+                {
+                    TrackValue value = character.Tracks[levelTrack.Id];
+                    value.Max = checked((value.Max ?? 0) + gain);
+                    value.Current = checked((value.Current ?? 0) + gain);
+                }
+
+                gains.Add(new LevelGain(character.Level, gain));
             }
 
             return gains;
@@ -117,8 +126,38 @@ public static class CharacterRules
         {
             problems.Add(exception is RuleFailure failure
                 ? failure.Diagnostic
-                : new ModuleDiagnostic("character.number", "Experience or hit points would become too large to be a number."));
+                : new ModuleDiagnostic("character.number", "Experience or a track would become too large to be a number."));
             return null;
+        }
+    }
+
+    /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>
+    private static void StartTracks(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        Creature creature = character.ToCreature();
+        foreach (Definition track in rules.Tracks.Values)
+        {
+            string path = track.Json.TryGetProperty("start", out _) ? "$.start" : "$.max";
+            Located(track, path, () =>
+            {
+                evaluator.StartTrack(creature, track);
+                return true;
+            });
+            TrackValue value = character.Tracks.TryGetValue(track.Id, out TrackValue? existing) ? existing : new TrackValue();
+            value.Current ??= creature.Track(track.Id).Current;
+            character.Tracks[track.Id] = value;
+        }
+    }
+
+    private static T Located<T>(Definition definition, string path, Func<T> work)
+    {
+        try
+        {
+            return work();
+        }
+        catch (ExpressionException exception)
+        {
+            throw new RuleFailure(new ModuleDiagnostic("character.evaluate", exception.Message, definition.Module, definition.File, path));
         }
     }
 

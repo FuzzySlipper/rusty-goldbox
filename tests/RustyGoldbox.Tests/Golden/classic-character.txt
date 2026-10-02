@@ -1,6 +1,7 @@
 $ goldbox character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
 Brom: Dwarf Fighter 1 (0 xp, next level at 1900)
-  hit points 7/7, gold 140
+  hit points 7/7
+  gold 140
   str            11     Strength
   dex            11     Dexterity
   con            16     Constitution
@@ -25,7 +26,8 @@ $ goldbox character level brom.json --module modules/classic --xp 5000 --seed 3
 Reached level 2: +5 hit points.
 Reached level 3: +12 hit points.
 Brom: Dwarf Fighter 3 (5000 xp, next level at 7750)
-  hit points 24/24, gold 140
+  hit points 24/24
+  gold 140
   str            11     Strength
   dex            11     Dexterity
   con            16     Constitution

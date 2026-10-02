@@ -13,5 +13,6 @@
       "per_turn": 1
     }
   ],
+  "track": "hit_points",
   "defeated": "self.hit_points <= 0"
 }

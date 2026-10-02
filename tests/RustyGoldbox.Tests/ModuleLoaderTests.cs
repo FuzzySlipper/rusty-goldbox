@@ -238,6 +238,6 @@ public sealed class ModuleLoaderTests
         Assert.Equal(
             [("definition.type-missing", "notes.json"), ("definition.type-unknown", "fighter.json")],
             set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!))));
-        Assert.Contains("attribute, derived, table", set.Diagnostics[1].Message, StringComparison.Ordinal);
+        Assert.Contains("attribute, track, derived, table", set.Diagnostics[1].Message, StringComparison.Ordinal);
     }
 }

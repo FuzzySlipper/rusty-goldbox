@@ -6,17 +6,17 @@ Round 1.
   Brute 2 rolls 9 for initiative.  [1d20: 9 = 9]
   Brute 1 uses Club on Kara.
   Brute 1 rolls Attack: 14 + 5 = 19 against 11: success.  [1d20: 14 = 14]
-  Kara takes 5 damage (7 hit points left).  [1d8: 2 = 2]
+  Kara loses 5 hit points (7 left).  [1d8: 2 = 2]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
   Kara uses Melee attack (Longsword) on Brute 2.
   Kara rolls Attack: 20 + 4 + 2 modifiers = 26 against 13: critical.  [1d20: 20 = 20]
-  Brute 2 takes 20 damage (-4 hit points left).  [1d8: 8 = 8; 1d8: 6 = 6]
+  Brute 2 loses 20 hit points (-4 left).  [1d8: 8 = 8; 1d8: 6 = 6]
   Brute 2 is out of the fight.
 Round 2.
   Brute 1 uses Club on Kara.
   Brute 1 rolls Attack: 7 + 5 = 12 against 11: success.  [1d20: 7 = 7]
-  Kara takes 8 damage (-1 hit points left).  [1d8: 5 = 5]
+  Kara loses 8 hit points (-1 left).  [1d8: 5 = 5]
   Kara is out of the fight.
 Brutes wins after 2 rounds.
 Party: Kara -1/12 (out)
