@@ -10,3 +10,4 @@ admits.
 | `stone_wall` | `walls/stone.png` | A 256 x 64 wall set: stone wall, wooden door, flagstone floor and dark stone ceiling, 64 x 64 each |
 | `hall` | `backdrops/hall.png` | A torchlit archway |
 | `crypt` | `backdrops/crypt.png` | Coffins under vaults |
+| `skeleton` | `sprites/skeleton.png` | A sprite sheet of 32 x 48 frames facing right: a four-frame idle sway and a three-frame sword attack |

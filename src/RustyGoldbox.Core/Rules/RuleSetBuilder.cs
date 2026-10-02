@@ -558,23 +558,38 @@ public sealed class RuleSetBuilder
         }
 
         _rules.ImageSizes[asset] = (width, height);
-        bool wallSet = asset.Json.GetProperty("kind").GetString() == "wall_set";
+        string kind = asset.Json.GetProperty("kind").GetString()!;
         if (!asset.Json.TryGetProperty("frames", out JsonElement frames))
         {
-            if (wallSet)
+            if (kind == "wall_set")
             {
                 Error(asset, "asset.frames", "$", $"A wall_set needs \"frames\" naming the {string.Join(" and ", DefinitionTypes.WallSetFrames.Take(2))} rectangles (and optionally floor and ceiling) in its image.");
             }
-
-            return;
         }
-
-        if (!wallSet)
+        else if (kind != "wall_set")
         {
             Error(asset, "asset.frames", "$.frames", "Only wall_set assets have frames; this image is drawn whole.");
-            return;
+        }
+        else
+        {
+            CheckWallSetFrames(asset, frames, width, height);
         }
 
+        if (kind == "sprite")
+        {
+            CheckSprite(asset, width, height);
+        }
+        else
+        {
+            foreach (string field in DefinitionTypes.SpriteFields.Where(field => asset.Json.TryGetProperty(field, out _)))
+            {
+                Error(asset, "asset.sprite", $"$.{field}", $"\"{field}\" is a sprite field; this asset is a {kind}.");
+            }
+        }
+    }
+
+    private void CheckWallSetFrames(Definition asset, JsonElement frames, int width, int height)
+    {
         foreach (string required in DefinitionTypes.WallSetFrames.Take(2).Where(name => !frames.TryGetProperty(name, out _)))
         {
             Error(asset, "asset.frames", "$.frames", $"Missing the \"{required}\" frame.");
@@ -593,6 +608,85 @@ public sealed class RuleSetBuilder
             if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
             {
                 Error(asset, "asset.frames", at, $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
+            }
+        }
+    }
+
+    private static bool Inside(int value, int size) => value >= 0 && value < size;
+
+    /// <summary>A sprite sheet is a whole grid of equal frames; its animations play frames it has.</summary>
+    private void CheckSprite(Definition asset, int width, int height)
+    {
+        JsonElement json = asset.Json;
+        foreach (string required in new[] { "frame_size", "faces", "height" }.Where(field => !json.TryGetProperty(field, out _)))
+        {
+            Error(asset, "asset.sprite", "$", $"A sprite needs \"{required}\" (see `goldbox schema asset`).");
+        }
+
+        if (json.TryGetProperty("height", out JsonElement standing) && standing.GetDouble() <= 0)
+        {
+            Error(asset, "asset.sprite", "$.height", "height must be more than 0 cells.");
+        }
+
+        if (!json.TryGetProperty("frame_size", out JsonElement size))
+        {
+            return;
+        }
+
+        int frameWidth = size[0].GetInt32();
+        int frameHeight = size[1].GetInt32();
+        if (frameWidth < 1 || frameHeight < 1 || width % frameWidth != 0 || height % frameHeight != 0)
+        {
+            Error(asset, "asset.sprite", "$.frame_size", $"[{frameWidth}, {frameHeight}] must divide the {width} x {height} image into whole frames.");
+            return;
+        }
+
+        int cells = width / frameWidth * (height / frameHeight);
+        int count = cells;
+        if (json.TryGetProperty("frame_count", out JsonElement declared))
+        {
+            count = declared.GetInt32();
+            if (count < 1 || count > cells)
+            {
+                Error(asset, "asset.sprite", "$.frame_count", $"frame_count must be from 1 to the {cells} frames the image holds.");
+                return;
+            }
+        }
+
+        if (json.TryGetProperty("anchor", out JsonElement anchor)
+            && (!Inside(anchor[0].GetInt32(), frameWidth) || !Inside(anchor[1].GetInt32(), frameHeight)))
+        {
+            Error(asset, "asset.sprite", "$.anchor", $"The anchor must be a pixel inside the {frameWidth} x {frameHeight} frame.");
+        }
+
+        if (!json.TryGetProperty("animations", out JsonElement animations))
+        {
+            return;
+        }
+
+        foreach (JsonProperty animation in animations.EnumerateObject())
+        {
+            string at = $"$.animations.{animation.Name}";
+            JsonElement played = animation.Value.GetProperty("frames");
+            if (played.GetArrayLength() == 0)
+            {
+                Error(asset, "asset.sprite", $"{at}.frames", "An animation plays at least one frame.");
+            }
+
+            int index = 0;
+            foreach (JsonElement frame in played.EnumerateArray())
+            {
+                if (frame.GetInt32() < 0 || frame.GetInt32() >= count)
+                {
+                    Error(asset, "asset.sprite", $"{at}.frames[{index}]", $"Frame {frame.GetInt32()} isn't in the sheet; frames are 0 to {count - 1}.");
+                }
+
+                index++;
+            }
+
+            if (animation.Value.GetProperty("fps").GetDouble() <= 0)
+            {
+                Error(asset, "asset.sprite", $"{at}.fps", "fps must be more than 0.");
             }
         }
     }

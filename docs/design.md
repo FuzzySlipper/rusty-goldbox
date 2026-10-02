@@ -123,7 +123,10 @@ create a different loader.
   `backdrop`. Asset files are 8-bit RGBA PNGs, the format the Engine renderer
   admits, and validation reads each header to check that. A wall set is one
   image with named frames (pixel rectangles for `wall` and `door`, optionally
-  `floor` and `ceiling`), so art of any size and layout fits.
+  `floor` and `ceiling`), so art of any size and layout fits. A sprite is a
+  sheet of equal frames (any frame size and count) with the way it faces,
+  the pixel it stands on, its height in cells and optional named animations
+  (frames and fps, looping or once).
 
 ### Rules as data
 

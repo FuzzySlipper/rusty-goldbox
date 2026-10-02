@@ -63,6 +63,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/FirstPersonView.cs` | The Engine scene: the view-window camera at the party, the area mesh and wall-set texture, a cell's backdrop as a sprite over the view |
+| `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sprite asset as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
@@ -206,7 +207,15 @@ wall set frames or a plain material. The mesh is rebuilt only when the area
 (or its module's content) changes. The camera stands at the party's cell
 centre, half a cell up, at the facing's yaw (north is the Engine's zero yaw).
 When the party's cell has a backdrop, it shows over the view as a sprite
-fitted to the window. Textures are admitted from the module's bundle or
+fitted to the window.
+
+Sprites stand in the scene as cylindrical billboards (`SpriteArt`): the atlas
+frames carry their world size (a world-sized sprite's quad is its frame
+size), and the pivot is the anchor pixel's bottom edge. Art faces one way, and
+a negative X scale on the published transform mirrors a figure to face the
+other; the Engine refuses mirrored atlas UVs. Playback advances only during
+an Engine update, so animated sprites need updates while they play. Figures
+are unpublished before their atlas and texture are released. Textures are admitted from the module's bundle or
 container once per asset content. The Engine's default lights light the
 scene.
 

@@ -327,30 +327,49 @@ public static class DefinitionTypes
         """);
 
     /// <summary>The asset kinds the presentation draws, each an RGBA PNG.</summary>
-    public static IReadOnlyList<string> AssetKinds { get; } = ["wall_set", "backdrop", "portrait", "icon"];
+    public static IReadOnlyList<string> AssetKinds { get; } = ["wall_set", "backdrop", "portrait", "icon", "sprite"];
 
     /// <summary>The frames a wall set has; the first two are required.</summary>
     public static IReadOnlyList<string> WallSetFrames { get; } = ["wall", "door", "floor", "ceiling"];
+
+    /// <summary>The fields only a sprite has.</summary>
+    public static IReadOnlyList<string> SpriteFields { get; } = ["frame_size", "frame_count", "faces", "anchor", "height", "animations"];
 
     public static DefinitionType Asset { get; } = new(
         "asset",
         "A logical asset ID mapped to an image in the module. Other modules refer to it as module:id, never by path. "
         + "The file is an 8-bit RGBA PNG (the format the Engine renderer admits). Kinds: wall_set (one image holding "
         + "the frames the first-person view draws an area with), backdrop (a cell's background picture), portrait "
-        + "(a character's picture) and icon (a combatant's picture).",
+        + "(a character's picture), icon (a small picture) and sprite (a figure or prop standing in the 3D view or in "
+        + "combat: a sheet of equal frames, drawn facing one way and flipped for the other, optionally animated).",
         [
             new("kind", new EnumKind(AssetKinds), true, "What the asset is for; references say which kind they need."),
             new("file", new TextKind(), true, "Path of the PNG inside this module, with forward slashes."),
             new("frames", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
                 "wall_set only: named pixel rectangles [x, y, width, height] inside the image. wall and door are required; floor and ceiling are optional."),
+            new("frame_size", new ListKind(new IntegerKind(), 2), false,
+                "sprite only (required): [width, height] of one frame in pixels. Frames are read left to right, then top to bottom, and the image must be a whole number of frames across and down."),
+            new("frame_count", new IntegerKind(), false, "sprite only: how many frames the sheet holds, when the last row isn't full. Defaults to every cell."),
+            new("faces", new EnumKind(["left", "right"]), false, "sprite only (required): which way the art faces; the renderer flips it to face the other way."),
+            new("anchor", new ListKind(new IntegerKind(), 2), false, "sprite only: the pixel [x, y] in a frame that stands on the floor. Defaults to the bottom centre."),
+            new("height", new NumberKind(), false, "sprite only (required): how tall a frame stands, in cells (a cell is 1 x 1 x 1); the width follows the frame's shape."),
+            new("animations", new MapKind(new TextKind(), new ObjectKind(
+            [
+                new("frames", new ListKind(new IntegerKind()), true, "Frame numbers in play order, counting from 0."),
+                new("fps", new NumberKind(), true, "Frames per second."),
+                new("loop", new BooleanKind(), false, "Repeat (true, the default) or play once and hold the last frame."),
+            ])), false, "sprite only: named animations such as idle, walk, attack, hit or die. Without one, the sprite shows frame 0."),
         ],
         """
         {
           "type": "asset",
-          "id": "stone_wall",
-          "kind": "wall_set",
-          "file": "walls/stone.png",
-          "frames": { "wall": [0, 0, 64, 64], "door": [64, 0, 64, 64], "floor": [128, 0, 64, 64], "ceiling": [192, 0, 64, 64] }
+          "id": "skeleton",
+          "kind": "sprite",
+          "file": "sprites/skeleton.png",
+          "frame_size": [32, 48],
+          "faces": "right",
+          "height": 0.8,
+          "animations": { "idle": { "frames": [0, 1, 2, 1], "fps": 4 }, "attack": { "frames": [3, 4, 5], "fps": 8, "loop": false } }
         }
         """);
 
