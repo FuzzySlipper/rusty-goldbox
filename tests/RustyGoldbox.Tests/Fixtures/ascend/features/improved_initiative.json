@@ -2,7 +2,7 @@
   "type": "feature",
   "id": "improved_initiative",
   "name": "Improved initiative",
-  "kind": "feat",
+  "kind": "combat feat",
   "modifiers": [
     {
       "stat": "initiative_bonus",

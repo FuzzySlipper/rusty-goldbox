@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "toughness",
+  "name": "Toughness",
+  "kind": "feat",
+  "repeatable": true,
+  "modifiers": [
+    {
+      "track": "hit_points",
+      "value": "3"
+    }
+  ]
+}

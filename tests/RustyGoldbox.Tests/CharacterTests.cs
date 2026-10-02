@@ -26,16 +26,16 @@ public sealed class CharacterTests
     public void AscendingArmourClassRulesetUsesTheSameCommands()
     {
         Golden.Verify("ascend-character.txt", CliTranscript.Run(
-            ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--feature", "weapon_focus,iron_will", "--seed", "5", "--out", "kara.json"],
+            ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--feature", "iron_will,weapon_focus", "--seed", "5", "--out", "kara.json"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--seed", "8"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,iron_will", "--seed", "8"],
-            ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "great_fortitude,lightning_reflexes", "--seed", "8"],
+            ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--feature", "improved_initiative,lightning_reflexes", "--seed", "8"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3000", "--class", "adept", "--seed", "9"],
-            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=14,wit=10", "--feature", "iron_will,great_fortitude"],
-            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=12,wit=10", "--feature", "iron_will,great_fortitude"],
-            ["character", "new", "--module", Ascend, "--creation", "array", "--class", "warrior", "--race", "folk", "--name", "Quill", "--priority", "might,grit,grace,wit", "--feature", "iron_will,great_fortitude"],
+            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=14,wit=10", "--feature", "iron_will,improved_initiative"],
+            ["character", "new", "--module", Ascend, "--creation", "point_buy", "--class", "warrior", "--race", "folk", "--name", "Pell", "--attributes", "might=16,grace=14,grit=12,wit=10", "--feature", "iron_will,improved_initiative"],
+            ["character", "new", "--module", Ascend, "--creation", "array", "--class", "warrior", "--race", "folk", "--name", "Quill", "--priority", "might,grit,grace,wit", "--feature", "iron_will,improved_initiative"],
             ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--feature", "iron_will", "--out", "ilse.json"],
-            ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--feature", "great_fortitude", "--seed", "4"],
+            ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--feature", "improved_initiative", "--seed", "4"],
             ["character", "show", "ilse.json", "--module", Ascend, "--json"]));
     }
 
@@ -49,6 +49,8 @@ public sealed class CharacterTests
             ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--boosts", "stamina,insight,stamina,brawn,brawn,stamina,finesse,insight", "--out", "tor.json"],
             ["character", "new", "--module", Degrees, "--class", "vanguard", "--race", "hillfolk", "--name", "Tor", "--feature", "stonehide,sentry,hill_toughness,shield_ward", "--boosts", "brawn,insight,stamina,brawn,brawn,stamina,finesse,insight", "--out", "tor.json"],
             ["character", "level", "tor.json", "--module", Degrees, "--xp", "1000", "--feature", "battle_cry", "--seed", "2"],
+            ["character", "level", "tor.json", "--module", Degrees, "--xp", "3000", "--feature", "steady_stance,hill_lore", "--seed", "2"],
+            ["character", "level", "tor.json", "--module", Degrees, "--xp", "3000", "--feature", "steady_stance,hill_lore", "--boosts", "brawn,stamina,insight,finesse", "--seed", "2"],
             ["character", "show", "tor.json", "--module", Degrees, "--json"]));
     }
 
@@ -62,6 +64,7 @@ public sealed class CharacterTests
         Assert.Equal(["character.race", "character.race"], Problems(Ascend, new CreationRequest("x", "adept", "stoneborn", Attributes: Scores(10, 10, 4, 12))));
         Assert.Equal(["character.reference"], Problems(Ascend, new CreationRequest("x", "bard", "folk", Attributes: Scores(10, 10, 10, 10))));
         Assert.Equal(["character.attributes"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Creation: "point_buy")));
+        Assert.Equal(["character.feature"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10), Features: ["iron_will", "great_fortitude"])));
         Assert.Equal(["character.point-buy"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Attributes: Scores(19, 8, 8, 8), Creation: "point_buy")));
         Assert.Equal(["character.boosts"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Boosts: ["might"])));
         Assert.Equal(["character.priority"], Problems(Degrees, new CreationRequest("x", "vanguard", "hillfolk", Priority: ["brawn"])));
@@ -72,11 +75,11 @@ public sealed class CharacterTests
     public void LevellingStopsAtTheLastLevel()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 13, 10, 10), Features: ["iron_will", "great_fortitude"]))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 13, 10, 10), Features: ["iron_will", "improved_initiative"]))!;
 
         List<ModuleDiagnostic> problems = [];
         List<LevelGain>? gains = WithDice(dice => CharacterRules.AddExperience(
-            set.Rules!, character, 1_000_000, dice, problems, features: ["lightning_reflexes", "weapon_focus", "might_increase", "improved_initiative"]));
+            set.Rules!, character, 1_000_000, dice, problems, features: ["lightning_reflexes", "weapon_focus", "might_increase", "dodge"]));
 
         Assert.Empty(problems);
         Assert.Equal([2, 3, 4, 5], gains!.Select(gain => gain.Level));
@@ -85,7 +88,7 @@ public sealed class CharacterTests
         Assert.Equal(character.Levels.Sum(level => level.Gain), character.Tracks["hit_points"].Max);
 
         // The waiting levels go to another class, up to the last character level.
-        gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 0, dice, problems, "adept", ["dodge", "might_increase"]));
+        gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 0, dice, problems, "adept", ["great_fortitude", "might_increase"]));
         Assert.Empty(problems);
         Assert.Equal([6, 7, 8], gains!.Select(gain => gain.Level));
         Assert.Equal(new Dictionary<string, int> { ["warrior"] = 5, ["adept"] = 3 }, character.ClassLevels().ToDictionary(entry => entry.Key.Id, entry => entry.Value));
@@ -96,7 +99,7 @@ public sealed class CharacterTests
     public void HitPointBonusesFollowTheStatsTheyRead()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(14, 10, 14, 10), Features: ["iron_will", "great_fortitude"]))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(14, 10, 14, 10), Features: ["iron_will", "improved_initiative"]))!;
         List<ModuleDiagnostic> problems = [];
         WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, features: ["lightning_reflexes", "weapon_focus"]));
         Assert.Empty(problems);
@@ -110,10 +113,43 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ToughnessRaisesTheMaximumEachTimeItIsTaken()
+    {
+        ModuleSet set = ModuleLoader.Load(Ascend, []);
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10), Features: ["toughness", "improved_initiative"]))!;
+        decimal before = MaxHitPoints(set, character);
+        Assert.Equal(character.Levels[0].Gain + 3, before);
+        Assert.Equal(before, character.Tracks["hit_points"].Current);
+
+        List<ModuleDiagnostic> problems = [];
+        WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, features: ["weapon_focus", "toughness"]));
+        Assert.Empty(problems);
+        Assert.Equal(character.Levels.Sum(level => level.Gain) + 6, MaxHitPoints(set, character));
+    }
+
+    [Fact]
+    public void AFileWithAChoiceNoLevelGrantedIsRefused()
+    {
+        using TempModules modules = new();
+        ModuleSet set = ModuleLoader.Load(Ascend, []);
+        Character character = Create(set, new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(9, 12, 10, 16), Features: ["iron_will"]))!;
+        System.Text.Json.Nodes.JsonNode edited = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
+        edited["levels"]![0]!["features"]!.AsArray().Add("ascend:great_fortitude");
+        string file = Path.Combine(modules.Root, "ilse.json");
+        File.WriteAllText(file, edited.ToJsonString());
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.Null(CharacterFile.Read(file, set, problems));
+        ModuleDiagnostic problem = Assert.Single(problems);
+        Assert.Equal(("character.file", "$.levels"), (problem.Rule, problem.JsonPath));
+        Assert.Contains("Level 1 (Adept): Nothing granted a feat for ascend:great_fortitude", problem.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ANewClassMustAcceptTheCharacter()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character weak = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 9), Features: ["iron_will", "great_fortitude"]))!;
+        Character weak = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 9), Features: ["iron_will", "improved_initiative"]))!;
         List<ModuleDiagnostic> problems = [];
 
         Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, weak, 1000, dice, problems, "adept")));
@@ -169,7 +205,7 @@ public sealed class CharacterTests
         ModuleSet set = ModuleLoader.Load(ascend, []);
         Assert.Empty(set.Diagnostics);
 
-        ModuleDiagnostic roll = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "warrior", "folk", Features: ["iron_will", "great_fortitude"])));
+        ModuleDiagnostic roll = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "warrior", "folk", Features: ["iron_will", "improved_initiative"])));
         ModuleDiagnostic hitPoints = Assert.Single(ProblemDiagnostics(set, new CreationRequest("x", "adept", "folk", Attributes: Scores(10, 10, 10, 12), Features: ["iron_will"])));
 
         Assert.Equal(("character.evaluate", "$.attribute_roll"), (roll.Rule, roll.JsonPath));
@@ -182,7 +218,7 @@ public sealed class CharacterTests
     public void HugeExperienceIsAProblemNotACrash()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
-        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10), Features: ["iron_will", "great_fortitude"]))!;
+        Character character = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 10), Features: ["iron_will", "improved_initiative"]))!;
         character.Experience = decimal.MaxValue - 1;
         List<ModuleDiagnostic> problems = [];
 
@@ -208,7 +244,7 @@ public sealed class CharacterTests
         Assert.Contains(problems, problem => problem.JsonPath == "$.name");
         Assert.All(problems, problem => Assert.Equal("character.file", problem.Rule));
         File.WriteAllText(file, """
-            { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "levels": [ { "class": "warrior", "gain": 5 } ], "experience": -5,
+            { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "creation": "standard", "levels": [ { "class": "warrior", "gain": 5, "features": [ "iron_will", "improved_initiative" ] } ], "experience": -5,
               "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "gold": 0 }
             """);
         problems.Clear();

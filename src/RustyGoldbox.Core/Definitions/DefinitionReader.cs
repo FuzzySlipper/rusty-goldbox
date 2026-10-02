@@ -361,32 +361,37 @@ public static class DefinitionReader
 
             bool hasStat = value.TryGetProperty("stat", out JsonElement stat);
             bool hasCheck = value.TryGetProperty("check", out JsonElement check);
+            bool hasTrack = value.TryGetProperty("track", out JsonElement track);
             foreach (JsonProperty property in value.EnumerateObject())
             {
-                if (property.Name is not ("stat" or "check" or "value" or "against"))
+                if (property.Name is not ("stat" or "check" or "track" or "value" or "against"))
                 {
-                    Error("definition.unknown-field", $"{path}.{property.Name}", $"'{property.Name}' is not a modifier field. Fields: stat or check, value, and for a check against.");
+                    Error("definition.unknown-field", $"{path}.{property.Name}", $"'{property.Name}' is not a modifier field. Fields: stat, check or track, value, and for a check against.");
                 }
             }
 
-            if (hasStat == hasCheck)
+            if ((hasStat ? 1 : 0) + (hasCheck ? 1 : 0) + (hasTrack ? 1 : 0) != 1)
             {
-                Error("definition.field-required", path, "A modifier needs exactly one of \"stat\" (a stat ID) or \"check\" (a check reference), plus \"value\".");
+                Error("definition.field-required", path, "A modifier needs exactly one of \"stat\" (a stat ID), \"check\" (a check reference) or \"track\" (a track whose maximum it raises), plus \"value\".");
             }
             else if (hasStat)
             {
                 ReadValue(stat, new StatKind(false), $"{path}.stat");
             }
-            else
+            else if (hasCheck)
             {
                 ReadValue(check, new ReferenceKind("check"), $"{path}.check");
+            }
+            else
+            {
+                ReadValue(track, new ReferenceKind("track"), $"{path}.track");
             }
 
             if (value.TryGetProperty("against", out JsonElement against))
             {
-                if (hasStat)
+                if (!hasCheck)
                 {
-                    Error("definition.field-value", $"{path}.against", "\"against\" reads the target of a check, so it only goes on a check modifier; a stat has no target.");
+                    Error("definition.field-value", $"{path}.against", "\"against\" reads the target of a check, so it only goes on a check modifier; a stat or track has no target.");
                 }
                 else
                 {

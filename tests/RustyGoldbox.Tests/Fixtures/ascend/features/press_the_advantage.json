@@ -2,7 +2,7 @@
   "type": "feature",
   "id": "press_the_advantage",
   "name": "Press the advantage",
-  "kind": "feat",
+  "kind": "combat feat",
   "modifiers": [
     {
       "check": "attack",

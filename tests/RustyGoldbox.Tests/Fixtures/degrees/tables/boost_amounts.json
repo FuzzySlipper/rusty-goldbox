@@ -1,0 +1,22 @@
+{
+  "type": "table",
+  "id": "boost_amounts",
+  "name": "How much a boost raises a score",
+  "keys": [
+    {
+      "name": "score",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [
+      "1-17",
+      2
+    ],
+    [
+      "18+",
+      1
+    ]
+  ]
+}

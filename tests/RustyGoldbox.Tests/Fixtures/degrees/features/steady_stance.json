@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "steady_stance",
+  "name": "Steady stance",
+  "kind": "vanguard feat",
+  "modifiers": [
+    {
+      "stat": "reflex",
+      "value": "1"
+    }
+  ]
+}

@@ -188,9 +188,16 @@ character levels its `when` expression picks (a feat every third level), and
 a class level grants its own (bonus feats). The player names features in
 order and each grant takes the next of its kind; each level records the
 features chosen at it. A repeatable feature with an attribute modifier is an
-ability increase. A race may leave out its class list to allow any class, so
-an ancestry-and-class ruleset needs no per-race patches when an extension adds
-a class.
+ability increase. A grant may accept several kinds (a general feat slot that
+also takes combat feats, while a warrior's bonus feat takes only combat
+feats). A modifier can also raise a track's maximum (toughness). A race may
+leave out its class list to allow any class, so an ancestry-and-class ruleset
+needs no per-race patches when an extension adds a class. The advancement can
+also grant **level boosts** (four attributes at set levels), each raising a
+score by an amount its table gives for the current score. A character file
+records the creation it was made with and each level's features and boosts;
+loading it replays the levels and refuses a choice no level granted, a
+missed requirement or a wrong number of boosts.
 
 A **character-creation** definition makes attribute scores by one method:
 rolled (in order or arranged by the player's priority), a fixed array the

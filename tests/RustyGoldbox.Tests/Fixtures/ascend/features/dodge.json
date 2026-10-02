@@ -2,7 +2,7 @@
   "type": "feature",
   "id": "dodge",
   "name": "Dodge",
-  "kind": "feat",
+  "kind": "combat feat",
   "requirements": "self.grace >= 13",
   "modifiers": [
     {

@@ -15,7 +15,10 @@
   ],
   "grants": [
     {
-      "kind": "feat",
+      "kinds": [
+        "feat",
+        "combat feat"
+      ],
       "when": "self.level == 1 or self.level % 3 == 0"
     },
     {

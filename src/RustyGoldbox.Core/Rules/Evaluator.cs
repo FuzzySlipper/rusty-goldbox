@@ -231,18 +231,33 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
     {
         if (creature.Tracks.TryGetValue(track.Id, out TrackValue? value) && value.Max is decimal own)
         {
-            return track == rules.LevelTrack ? Add(own, LevelBonus(creature), 1) : own;
+            return Add(track == rules.LevelTrack ? Add(own, LevelBonus(creature), 1) : own, TrackModifiers(creature, track), 1);
         }
 
         if (rules.TryExpression(track, "$.max", out CompiledExpression? max))
         {
-            return Evaluate(max!, creature, null).Number;
+            return Add(Evaluate(max!, creature, null).Number, TrackModifiers(creature, track), 1);
         }
 
         string fix = creature.Monster is not null
             ? $"Give monster {creature.Monster.QualifiedId} \"tracks\": {{ \"{track.Id}\": <expression> }}"
             : $"Give the track a \"max\", or give {creature.Label} \"max_{track.Id}\"";
         throw new ExpressionException($"{creature.Label} has no maximum {track.Id}, and track '{track.Id}' doesn't compute one. {fix}.", 1);
+    }
+
+    /// <summary>What modifiers on the track add to its maximum, such as a toughness feat.</summary>
+    private decimal TrackModifiers(Creature creature, Definition track)
+    {
+        decimal total = 0;
+        foreach (Definition source in creature.ModifierSources())
+        {
+            foreach (Modifier modifier in rules.ModifiersOf(source).Where(modifier => modifier.Track == track))
+            {
+                total = Add(total, Evaluate(modifier.Value, ModifierScope(creature, source)).Number, 1);
+            }
+        }
+
+        return total;
     }
 
     /// <summary>The track's maximum for the creature, or null when neither the creature nor the track gives one.</summary>

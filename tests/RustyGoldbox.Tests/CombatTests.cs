@@ -57,7 +57,7 @@ public sealed class CombatTests
     {
         ModuleSet set = ModuleLoader.Load(Fixture("ascend"), []);
         List<ModuleDiagnostic> problems = [];
-        Character character = WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 12)), Features: ["iron_will", "second_wind"]), dice, problems))!;
+        Character character = WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 12)), Features: ["second_wind", "improved_initiative"]), dice, problems))!;
         WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, "adept", ["great_fortitude"]));
         Assert.Empty(problems);
 

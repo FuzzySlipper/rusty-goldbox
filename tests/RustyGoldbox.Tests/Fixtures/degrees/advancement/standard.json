@@ -15,5 +15,12 @@
       "kind": "ancestry feat",
       "when": "self.level % 4 == 1"
     }
+  ],
+  "level_boosts": [
+    {
+      "count": 4,
+      "when": "self.level % 5 == 0",
+      "amounts": "boost_amounts"
+    }
   ]
 }

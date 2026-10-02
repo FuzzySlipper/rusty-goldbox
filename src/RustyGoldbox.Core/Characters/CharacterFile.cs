@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "levels", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
+        "format", "name", "modules", "race", "creation", "levels", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -56,6 +56,7 @@ public static class CharacterFile
 
             writer.WriteEndArray();
             writer.WriteString("race", character.Race.QualifiedId);
+            writer.WriteString("creation", character.Creation.QualifiedId);
             writer.WriteStartArray("levels");
             foreach (LevelTaken level in character.Levels)
             {
@@ -65,6 +66,17 @@ public static class CharacterFile
                 if (level.Features.Count > 0)
                 {
                     WriteReferences(writer, "features", level.Features);
+                }
+
+                if (level.Boosts.Count > 0)
+                {
+                    writer.WriteStartArray("boosts");
+                    foreach (string boost in level.Boosts)
+                    {
+                        writer.WriteStringValue(boost);
+                    }
+
+                    writer.WriteEndArray();
                 }
 
                 writer.WriteEndObject();
@@ -167,14 +179,15 @@ public static class CharacterFile
             List<ModuleStamp> modules = ReadModules(root);
             string? name = Text(root, "name");
             Definition? race = Reference(root, "race", DefinitionTypes.Race);
+            Definition? creation = Reference(root, "creation", DefinitionTypes.CharacterCreation);
             decimal? experience = Number(root, "experience");
             decimal? gold = Number(root, "gold");
-            if (problems.Count > _before || name is null || race is null)
+            if (problems.Count > _before || name is null || race is null || creation is null)
             {
                 return null;
             }
 
-            Character character = new() { Name = name, Modules = modules, Race = race };
+            Character character = new() { Name = name, Modules = modules, Race = race, Creation = creation };
             if (!ReadLevels(root, character))
             {
                 return null;
@@ -201,17 +214,25 @@ public static class CharacterFile
                 character.Portrait = asset;
             }
 
+            if (problems.Count == _before)
+            {
+                List<ModuleDiagnostic> history = [];
+                CharacterRules.CheckHistory(_rules, character, history);
+                foreach (ModuleDiagnostic problem in history)
+                {
+                    Error("$.levels", problem.Message);
+                }
+            }
+
             return problems.Count > _before ? null : character;
         }
-
-        private static bool Repeatable(Definition feature) => feature.Json.TryGetProperty("repeatable", out JsonElement repeatable) && repeatable.GetBoolean();
 
         /// <summary>Reads "levels": one { "class", "gain", "features"? } per character level, none past its class's last level.</summary>
         private bool ReadLevels(JsonElement root, Character character)
         {
             if (!root.TryGetProperty("levels", out JsonElement levels) || levels.ValueKind != JsonValueKind.Array || levels.GetArrayLength() == 0)
             {
-                Error("$.levels", "\"levels\" must be an array with one { \"class\", \"gain\", \"features\"? } per character level, first to last, and at least one.");
+                Error("$.levels", "\"levels\" must be an array with one { \"class\", \"gain\", \"features\"?, \"boosts\"? } per character level, first to last, and at least one.");
                 return false;
             }
 
@@ -235,12 +256,19 @@ public static class CharacterFile
                     continue;
                 }
 
-                foreach (Definition feature in features.Where(feature => !Repeatable(feature) && (character.Features.Contains(feature) || features.Count(other => other == feature) > 1)).Distinct())
+                List<string> boosts = [];
+                if (level.TryGetProperty("boosts", out JsonElement boosted))
                 {
-                    Error($"{at}.features", $"{feature.QualifiedId} isn't repeatable, but the character has it more than once.");
+                    if (boosted.ValueKind != JsonValueKind.Array || boosted.EnumerateArray().Any(entry => entry.ValueKind != JsonValueKind.String || !_rules.Stats.TryGetValue(entry.GetString()!, out Stat? stat) || !stat.IsAttribute))
+                    {
+                        Error($"{at}.boosts", "\"boosts\" must be an array of the attribute IDs boosted at this level.");
+                        continue;
+                    }
+
+                    boosts.AddRange(boosted.EnumerateArray().Select(entry => entry.GetString()!));
                 }
 
-                character.Levels.Add(new LevelTaken(characterClass, gain, features));
+                character.Levels.Add(new LevelTaken(characterClass, gain, features) { Boosts = boosts });
                 int classLevels = characterClass.Json.GetProperty("levels").GetArrayLength();
                 if (character.ClassLevels()[characterClass] > classLevels)
                 {

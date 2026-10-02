@@ -17,7 +17,8 @@ public static class DefinitionTypes
             new("from", new ListKind(new StatKind(true)), false, "The attributes this boost may raise; one is fixed, several are the player's choice, and without it any attribute."),
         ])), false, "Under character creation with method \"boosts\": each entry raises one attribute by the creation's boost, and one source never boosts the same attribute twice.");
 
-    private static readonly Field GrantKind = new("kind", new TextKind(), true, "The kind of feature chosen, as features name it, for example \"feat\" or \"background\".");
+    private static readonly Field GrantKind = new("kind", new TextKind(), false, "The kind of feature chosen, as features name it, for example \"feat\" or \"background\". Give kind or kinds.");
+    private static readonly Field GrantKinds = new("kinds", new ListKind(new TextKind()), false, "Kinds any of which may be chosen, for example [\"feat\", \"combat feat\"] for a general slot that also takes combat feats.");
     private static readonly Field GrantCount = new("count", new IntegerKind(), false, "How many to choose; without it, 1.");
 
     public static DefinitionType Attribute { get; } = new(
@@ -117,7 +118,7 @@ public static class DefinitionTypes
                 new("xp", new IntegerKind(), false, "Experience needed for this level; the first level needs 0. Required when each class has its own experience (no advancement definition, or one with experience \"class\"); left out when the advancement definition sets experience by character level."),
                 new("hp", SelfNumber, false, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept. Required when a track has from_levels; left out when none does."),
                 new("hp_bonus", SelfNumber, false, "Added to this level's gain as the character is now, not as it was: recomputed whenever the stats it reads change, for example \"self.con_mod\" so a higher constitution raises every level's hit points. Without it, the whole gain is hp."),
-                new("grants", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
+                new("grants", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
             ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
@@ -146,9 +147,16 @@ public static class DefinitionTypes
             new("grants", new ListKind(new ObjectKind(
             [
                 GrantKind,
+                GrantKinds,
                 GrantCount,
                 new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, read as the character is with the new level, for example \"self.level == 1 or self.level % 3 == 0\"."),
             ])), false, "Features characters choose as their total level rises, whatever the class: feats, ability increases."),
+            new("level_boosts", new ListKind(new ObjectKind(
+            [
+                new("count", new IntegerKind(), true, "How many boosts, each to a different attribute."),
+                new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, for example \"self.level % 5 == 0\"."),
+                new("amounts", new ReferenceKind("table"), true, "A table from an attribute's score to how much a boost raises it, for example [\"1-17\", 2], [\"18+\", 1]."),
+            ])), false, "Boosts characters choose as their total level rises (PF2e-style), raising attribute scores for good."),
         ],
         """
         {
@@ -548,7 +556,7 @@ public static class DefinitionTypes
             new("boost", new IntegerKind(), false, "Method boosts: how much each boost raises an attribute."),
             new("boosts", Boosts.Kind, false, "Method boosts: boosts every new character has besides those of its race, creation features and class; usually free ones ({})."),
             new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), true, "Starting gold pieces for each class."),
-            new("features", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
+            new("features", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
         ],
         """
         {

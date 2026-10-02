@@ -12,7 +12,7 @@ internal static class CharacterCommand
 
     private const string Usage =
         "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
-        + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--seed <n>]\n"
+        + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character show <file> --module <path>";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
@@ -83,7 +83,7 @@ internal static class CharacterCommand
 
     private static int Level(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--xp", "--class", "--feature", "--seed"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--xp", "--class", "--feature", "--boosts", "--seed"], []);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--xp") is null))
         {
             error = Usage;
@@ -110,7 +110,7 @@ internal static class CharacterCommand
 
         List<ModuleDiagnostic> problems = [];
         (List<LevelGain>? gains, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
-            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class"), Features(parsed)));
+            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class"), Features(parsed), parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)));
         if (gains is null)
         {
             // Problems from ruleset expressions name their definition; the rest are about this character.

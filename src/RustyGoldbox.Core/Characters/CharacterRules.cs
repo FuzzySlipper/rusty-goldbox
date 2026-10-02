@@ -22,8 +22,13 @@ public sealed record CreationRequest(
     IReadOnlyList<string>? Features = null,
     IReadOnlyList<string>? Boosts = null);
 
-/// <summary>A choice a character makes: <see cref="Count"/> features of a kind, and what grants it, for messages.</summary>
-public sealed record Grant(string Kind, int Count, string From);
+/// <summary>A choice a character makes: <see cref="Count"/> features of any of <see cref="Kinds"/>, and what grants it, for messages.</summary>
+public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
+{
+    public string KindText => string.Join(" or ", Kinds);
+
+    public bool Takes(Definition feature) => Kinds.Contains(feature.Json.GetProperty("kind").GetString()!);
+}
 
 /// <summary>A level gained: the character level reached, the class it was taken in, and the hit points it added.</summary>
 public sealed record LevelGain(int Level, Definition Class, decimal Amount);
@@ -95,7 +100,7 @@ public static class CharacterRules
             return null;
         }
 
-        Character character = new() { Name = request.Name, Modules = modules, Race = race };
+        Character character = new() { Name = request.Name, Modules = modules, Race = race, Creation = creation };
         foreach ((string id, decimal score) in scores)
         {
             character.Attributes[id] = score;
@@ -125,6 +130,71 @@ public static class CharacterRules
         }
 
         return problems.Count > 0 ? null : character;
+    }
+
+    /// <summary>
+    /// Checks a character read from a file against what it could have chosen:
+    /// replaying its levels, each level's features must fill exactly what
+    /// creation (at the first level), the advancement and the class level
+    /// granted, meeting each feature's requirements and repeat rule, and its
+    /// boosts must number what the advancement granted. Requirements read the
+    /// character's current scores.
+    /// </summary>
+    public static void CheckHistory(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation };
+        foreach ((string id, decimal score) in character.Attributes)
+        {
+            replay.Attributes[id] = score;
+        }
+
+        Evaluator evaluator = new(rules, null);
+        for (int index = 0; index < character.Levels.Count; index++)
+        {
+            LevelTaken level = character.Levels[index];
+            replay.Levels.Add(new LevelTaken(level.Class, level.Gain, []));
+            List<ModuleDiagnostic> found = [];
+            try
+            {
+                List<Grant> grants = [.. index == 0 ? CreationGrants(character.Creation) : [], .. LevelGrants(rules, replay, evaluator)];
+                List<Definition> choices = [.. level.Features];
+                if (Choose(rules, replay, grants, choices, evaluator, found) && NoneLeft(choices, found))
+                {
+                    int granted = BoostsGranted(rules, replay, evaluator);
+                    if (granted != level.Boosts.Count)
+                    {
+                        found.Add(new ModuleDiagnostic("character.boosts", $"Level {index + 1} grants {granted} boosts, but the file records {level.Boosts.Count}."));
+                    }
+                }
+            }
+            catch (RuleFailure failure)
+            {
+                found.Add(failure.Diagnostic);
+            }
+
+            problems.AddRange(found.Select(problem => problem with { Message = $"Level {index + 1} ({level.Class.Name}): {problem.Message}" }));
+            replay.Levels[^1] = level;
+        }
+    }
+
+    /// <summary>How many boosts the advancement grants at the character's latest level.</summary>
+    private static int BoostsGranted(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants))
+        {
+            return 0;
+        }
+
+        int total = 0;
+        for (int index = 0; index < grants.GetArrayLength(); index++)
+        {
+            if (Holds(rules, evaluator, advancement, $"$.level_boosts[{index}].when", character.ToCreature()))
+            {
+                total += grants[index].GetProperty("count").GetInt32();
+            }
+        }
+
+        return total;
     }
 
     /// <summary>Gives a character a portrait asset; problems name the reference.</summary>
@@ -181,8 +251,10 @@ public static class CharacterRules
         DiceRoller dice,
         List<ModuleDiagnostic> problems,
         string? nextClass = null,
-        IReadOnlyList<string>? features = null)
+        IReadOnlyList<string>? features = null,
+        IReadOnlyList<string>? boosts = null)
     {
+        Queue<string> boostChoices = new(boosts ?? []);
         List<Definition>? choices = FindFeatures(rules, features, problems);
         if (choices is null)
         {
@@ -223,10 +295,17 @@ public static class CharacterRules
                 }
 
                 gains.Add(new LevelGain(character.Level, characterClass, gain));
-                if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems))
+                if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
+                    || !LevelBoosts(rules, character, evaluator, boostChoices, problems))
                 {
                     return null;
                 }
+            }
+
+            if (boostChoices.Count > 0)
+            {
+                problems.Add(new ModuleDiagnostic("character.boosts", $"No level reached grants boosts for {string.Join(", ", boostChoices)}; leave them out."));
+                return null;
             }
 
             return NoneLeft(choices, problems) ? gains : null;
@@ -326,7 +405,10 @@ public static class CharacterRules
     private static Grant Grant(JsonElement grant, string from)
     {
         int count = grant.TryGetProperty("count", out JsonElement given) ? given.GetInt32() : 1;
-        return new Grant(grant.GetProperty("kind").GetString()!, count, from);
+        IReadOnlyList<string> kinds = grant.TryGetProperty("kinds", out JsonElement several)
+            ? several.EnumerateArray().Select(kind => kind.GetString()!).ToList()
+            : [grant.GetProperty("kind").GetString()!];
+        return new Grant(kinds, count, from);
     }
 
     /// <summary>
@@ -340,16 +422,16 @@ public static class CharacterRules
         {
             for (int made = 0; made < grant.Count; made++)
             {
-                Definition? feature = choices.FirstOrDefault(choice => choice.Json.GetProperty("kind").GetString() == grant.Kind);
+                Definition? feature = choices.FirstOrDefault(grant.Takes);
                 if (feature is null)
                 {
                     List<string> offered = rules.OfType(DefinitionTypes.Feature)
-                        .Where(candidate => candidate.Json.GetProperty("kind").GetString() == grant.Kind && Problem(rules, character, candidate, evaluator) is null)
+                        .Where(candidate => grant.Takes(candidate) && Problem(rules, character, candidate, evaluator) is null)
                         .Select(candidate => candidate.QualifiedId)
                         .ToList();
                     problems.Add(new ModuleDiagnostic(
                         "character.feature",
-                        $"{grant.From} grants {grant.Count} {grant.Kind} for {character.Name}, so choose {(grant.Count - made == 1 ? "one" : $"{grant.Count - made} more")} with --feature. {Offer(grant.Kind, offered)}"));
+                        $"{grant.From} grants {grant.Count} {grant.KindText} for {character.Name}, so choose {(grant.Count - made == 1 ? "one" : $"{grant.Count - made} more")} with --feature. {Offer(grant.KindText, offered)}"));
                     return false;
                 }
 
@@ -363,6 +445,78 @@ public static class CharacterRules
                 LevelTaken latest = character.Levels[^1];
                 character.Levels[^1] = latest with { Features = [.. latest.Features, feature] };
             }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The advancement's level boosts for the latest level: each grant whose
+    /// "when" holds takes its count of attributes from <paramref name="chosen"/>,
+    /// all different, and raises each by its amounts table at the current score.
+    /// </summary>
+    private static bool LevelBoosts(RuleSet rules, Character character, Evaluator evaluator, Queue<string> chosen, List<ModuleDiagnostic> problems)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants))
+        {
+            return true;
+        }
+
+        List<string> boosted = [];
+        for (int index = 0; index < grants.GetArrayLength(); index++)
+        {
+            string path = $"$.level_boosts[{index}]";
+            if (!Holds(rules, evaluator, advancement, $"{path}.when", character.ToCreature()))
+            {
+                continue;
+            }
+
+            Definition amounts = rules.Reference(advancement, $"{path}.amounts");
+            int count = grants[index].GetProperty("count").GetInt32();
+            HashSet<string> thisGrant = [];
+            for (int made = 0; made < count; made++)
+            {
+                string from = $"level {character.Level} ({advancement.QualifiedId})";
+                if (!chosen.TryDequeue(out string? attribute))
+                {
+                    List<string> open = character.Attributes.Keys.Where(id => !thisGrant.Contains(id)).ToList();
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{from} grants {count} boosts for {character.Name}, so give {count - made} more with --boosts; any of {string.Join(", ", open)}, each once.", advancement.Module, advancement.File, path));
+                    return false;
+                }
+
+                if (!character.Attributes.TryGetValue(attribute, out decimal score))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"'{attribute}' is not an attribute. Attributes: {string.Join(", ", character.Attributes.Keys)}."));
+                    return false;
+                }
+
+                if (!thisGrant.Add(attribute))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{from} boosts {count} different attributes, but {attribute} is given twice.", advancement.Module, advancement.File, path));
+                    return false;
+                }
+
+                if (rules.Tables[amounts].Lookup([Value.Of(score)]) is not Value raise)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{amounts.QualifiedId} has no amount for {attribute} {score}.", amounts.Module, amounts.File, "$.rows"));
+                    return false;
+                }
+
+                decimal max = rules.Stats[attribute].Definition.Json.GetProperty("max").GetDecimal();
+                if (score + raise.Number > max)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"A boost would take {attribute} to {score + raise.Number}, above its maximum {max}; boost another attribute."));
+                    return false;
+                }
+
+                character.Attributes[attribute] = score + raise.Number;
+                boosted.Add(attribute);
+            }
+        }
+
+        if (boosted.Count > 0)
+        {
+            character.Levels[^1] = character.Levels[^1] with { Boosts = boosted };
         }
 
         return true;
@@ -623,7 +777,7 @@ public static class CharacterRules
         {
             for (int made = 0; made < grant.Count; made++)
             {
-                if (left.FirstOrDefault(choice => choice.Json.GetProperty("kind").GetString() == grant.Kind) is Definition feature)
+                if (left.FirstOrDefault(grant.Takes) is Definition feature)
                 {
                     left.Remove(feature);
                     taken.Add(feature);

@@ -23,4 +23,4 @@ public sealed record Stat(string Id, Definition Definition, ExprType Type)
 
 /// <summary>A modifier from a race, condition or item: adds to a stat or to a check's roll.</summary>
 /// <param name="Path">Where the modifier is in its definition, for messages.</param>
-public sealed record Modifier(string? Stat, Definition? Check, CompiledExpression Value, string Path, CompiledExpression? Against = null);
+public sealed record Modifier(string? Stat, Definition? Check, CompiledExpression Value, string Path, CompiledExpression? Against = null, Definition? Track = null);

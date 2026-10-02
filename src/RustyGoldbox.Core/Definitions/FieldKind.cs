@@ -162,7 +162,7 @@ public sealed record ModifierKind(Roots Roots = Roots.Self) : FieldKind
     public override string Describe()
     {
         string reads = "self" + (Roots.HasFlag(Roots.Class) ? ", class.level" : "") + (Roots.HasFlag(Roots.Condition) ? ", condition.<value>" : "");
-        return $"modifier {{ \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read {reads}), \"against\"?: for a check, a boolean that may also read target; the modifier applies only when it holds }}";
+        return $"modifier {{ \"stat\": stat ID, \"check\": check reference or \"track\": track reference (raises its maximum), \"value\": number expression (may read {reads}), \"against\"?: for a check, a boolean that may also read target; the modifier applies only when it holds }}";
     }
 }
 

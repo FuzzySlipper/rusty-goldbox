@@ -91,6 +91,49 @@ Saved to tor.json.
   seed 2: no dice rolled
 [exit 0]
 
+$ goldbox character level tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --xp 3000 --feature steady_stance,hill_lore --seed 2
+error[character.boosts] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/advancement/standard.json $.level_boosts[0]
+  level 5 (degrees:standard) grants 4 boosts for Tor, so give 4 more with --boosts; any of brawn, finesse, stamina, intellect, insight, presence, each once.
+1 error.
+[exit 1]
+
+$ goldbox character level tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --xp 3000 --feature steady_stance,hill_lore --boosts brawn,stamina,insight,finesse --seed 2
+Reached level 3: +13 hit points.
+Reached level 4: +13 hit points.
+Reached level 5: +13 hit points.
+Tor: Hillfolk Vanguard 5 (4000 xp, highest level)
+  hit points 75/80
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat), Steady stance (vanguard feat), Hill lore (ancestry feat)
+  brawn                   18     Brawn
+  finesse                 14     Finesse
+  stamina                 18     Stamina
+  intellect               10     Intellect
+  insight                 18     Insight
+  presence                8      Presence
+  ac                      22     Armour class
+  actions                 3      Actions each turn
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      7      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               4      Brawn modifier
+  finesse_mod             2      Finesse modifier
+  insight_mod             4      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  10     Reflex modifier
+  reflex_proficiency      7      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                14     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             4      Stamina modifier
+  weapon_proficiency      9      Weapon proficiency
+  weapon_proficiency_rank 2      Weapon rank (0 untrained to 4 legendary; classes raise it)
+Saved to tor.json.
+  seed 2: no dice rolled
+[exit 0]
+
 $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/degrees --json
 {
   "ok": true,
@@ -105,6 +148,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       }
     ],
     "race": "degrees:hillfolk",
+    "creation": "degrees:standard",
     "levels": [
       {
         "class": "degrees:vanguard",
@@ -122,28 +166,52 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
         "features": [
           "degrees:battle_cry"
         ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:steady_stance"
+        ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:hill_lore"
+        ],
+        "boosts": [
+          "brawn",
+          "stamina",
+          "insight",
+          "finesse"
+        ]
       }
     ],
-    "experience": 1000,
+    "experience": 4000,
     "attributes": {
-      "brawn": 16,
-      "finesse": 12,
-      "stamina": 16,
+      "brawn": 18,
+      "finesse": 14,
+      "stamina": 18,
       "intellect": 10,
-      "insight": 16,
+      "insight": 18,
       "presence": 8
     },
     "tracks": {
       "hit_points": {
-        "current": 36,
-        "max": 30
+        "current": 75,
+        "max": 60
       }
     },
     "gold": 15,
     "equipment": [],
     "conditions": []
   },
-  "next_level_experience": 2000,
+  "next_level_experience": null,
   "level_waiting": false,
   "spell_slots": [],
   "stats": [
@@ -151,21 +219,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "brawn",
       "name": "Brawn",
       "kind": "attribute",
-      "value": 16,
+      "value": 18,
       "problem": null
     },
     {
       "id": "finesse",
       "name": "Finesse",
       "kind": "attribute",
-      "value": 12,
+      "value": 14,
       "problem": null
     },
     {
       "id": "stamina",
       "name": "Stamina",
       "kind": "attribute",
-      "value": 16,
+      "value": 18,
       "problem": null
     },
     {
@@ -179,7 +247,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "insight",
       "name": "Insight",
       "kind": "attribute",
-      "value": 16,
+      "value": 18,
       "problem": null
     },
     {
@@ -193,7 +261,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "ac",
       "name": "Armour class",
       "kind": "derived",
-      "value": 18,
+      "value": 22,
       "problem": null
     },
     {
@@ -214,7 +282,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "armour_proficiency",
       "name": "Armour proficiency",
       "kind": "derived",
-      "value": 4,
+      "value": 7,
       "problem": null
     },
     {
@@ -228,21 +296,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "brawn_mod",
       "name": "Brawn modifier",
       "kind": "derived",
-      "value": 3,
+      "value": 4,
       "problem": null
     },
     {
       "id": "finesse_mod",
       "name": "Finesse modifier",
       "kind": "derived",
-      "value": 1,
+      "value": 2,
       "problem": null
     },
     {
       "id": "insight_mod",
       "name": "Insight modifier",
       "kind": "derived",
-      "value": 3,
+      "value": 4,
       "problem": null
     },
     {
@@ -263,14 +331,14 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "reflex",
       "name": "Reflex modifier",
       "kind": "derived",
-      "value": 5,
+      "value": 10,
       "problem": null
     },
     {
       "id": "reflex_proficiency",
       "name": "Reflex proficiency",
       "kind": "derived",
-      "value": 4,
+      "value": 7,
       "problem": null
     },
     {
@@ -284,7 +352,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "spell_dc",
       "name": "Spell difficulty class",
       "kind": "derived",
-      "value": 13,
+      "value": 14,
       "problem": null
     },
     {
@@ -305,21 +373,21 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "id": "stamina_mod",
       "name": "Stamina modifier",
       "kind": "derived",
-      "value": 3,
+      "value": 4,
       "problem": null
     },
     {
       "id": "weapon_proficiency",
       "name": "Weapon proficiency",
       "kind": "derived",
-      "value": 4,
+      "value": 9,
       "problem": null
     },
     {
       "id": "weapon_proficiency_rank",
       "name": "Weapon rank (0 untrained to 4 legendary; classes raise it)",
       "kind": "derived",
-      "value": 1,
+      "value": 2,
       "problem": null
     }
   ],
@@ -327,8 +395,8 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 36,
-      "max": 36,
+      "current": 75,
+      "max": 80,
       "problem": null
     }
   ],

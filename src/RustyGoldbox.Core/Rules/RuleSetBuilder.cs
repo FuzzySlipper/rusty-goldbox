@@ -367,6 +367,10 @@ public sealed class RuleSetBuilder
 
                     list.Add(new Modifier(id, null, value, path));
                 }
+                else if (_rules.References.TryGetValue((definition, $"{path}.track"), out Definition? track))
+                {
+                    list.Add(new Modifier(null, null, value!, path, Track: track));
+                }
                 else if (_rules.References.TryGetValue((definition, $"{path}.check"), out Definition? check))
                 {
                     _rules.TryExpression(definition, $"{path}.against", out CompiledExpression? against);
@@ -427,7 +431,21 @@ public sealed class RuleSetBuilder
             {
                 Error(advancement, "advancement.levels", "$", "With experience \"character\", give \"levels\": the experience needed for each character level, starting with 0.");
             }
-            else if (!byCharacter && hasLevels)
+
+            if (advancement.Json.TryGetProperty("level_boosts", out JsonElement levelBoosts))
+            {
+                for (int index = 0; index < levelBoosts.GetArrayLength(); index++)
+                {
+                    if (_rules.References.TryGetValue((advancement, $"$.level_boosts[{index}].amounts"), out Definition? amounts)
+                        && (amounts.Json.GetProperty("keys").GetArrayLength() != 1 || amounts.Json.GetProperty("keys")[0].GetProperty("type").GetString() != "number"
+                            || amounts.Json.GetProperty("value").GetString() != "number"))
+                    {
+                        Error(advancement, "advancement.level-boosts", $"$.level_boosts[{index}].amounts", $"{amounts.QualifiedId} must have one number key (the score) and number values (the raise).");
+                    }
+                }
+            }
+
+            if (!byCharacter && hasLevels)
             {
                 Error(advancement, "advancement.levels", "$.levels", "With experience \"class\", each class's levels[].xp decide levels; remove \"levels\" or set experience to \"character\".");
             }
@@ -490,11 +508,21 @@ public sealed class RuleSetBuilder
                 {
                     string at = $"{path}[{index}]";
                     index++;
-                    string kind = grant.GetProperty("kind").GetString()!;
-                    if (!kinds.Contains(kind))
+                    bool hasKind = grant.TryGetProperty("kind", out JsonElement single);
+                    bool hasKinds = grant.TryGetProperty("kinds", out JsonElement several);
+                    if (hasKind == hasKinds)
+                    {
+                        Error(definition, "grant.kind", at, "A grant needs exactly one of \"kind\" (a feature kind) or \"kinds\" (several).");
+                        continue;
+                    }
+
+                    List<(string Kind, string Path)> named = hasKind
+                        ? [(single.GetString()!, $"{at}.kind")]
+                        : several.EnumerateArray().Select((kind, number) => (kind.GetString()!, $"{at}.kinds[{number}]")).ToList();
+                    foreach ((string kind, string kindPath) in named.Where(entry => !kinds.Contains(entry.Kind)))
                     {
                         string known = kinds.Count == 0 ? "No feature definitions are loaded." : $"Feature kinds: {string.Join(", ", kinds.Order(StringComparer.Ordinal))}.";
-                        Error(definition, "grant.kind", $"{at}.kind", $"No feature has kind '{kind}', so nothing could fill this grant. {known}");
+                        Error(definition, "grant.kind", kindPath, $"No feature has kind '{kind}', so nothing could fill this grant. {known}");
                     }
 
                     if (grant.TryGetProperty("count", out JsonElement count) && count.GetInt32() < 1)

@@ -14,7 +14,7 @@
       "hp_bonus": "self.grit_mod",
       "grants": [
         {
-          "kind": "feat"
+          "kind": "combat feat"
         }
       ]
     },
@@ -23,7 +23,7 @@
       "hp_bonus": "self.grit_mod",
       "grants": [
         {
-          "kind": "feat"
+          "kind": "combat feat"
         }
       ]
     },
@@ -36,7 +36,7 @@
       "hp_bonus": "self.grit_mod",
       "grants": [
         {
-          "kind": "feat"
+          "kind": "combat feat"
         }
       ]
     },

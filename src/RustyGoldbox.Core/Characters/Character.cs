@@ -10,9 +10,13 @@ public sealed record ModuleStamp(string Id, ModuleVersion Version);
 /// <summary>
 /// One character level: the class it was taken in, what the level track
 /// gained then from the level's hp (its hp_bonus, if any, is added as the
-/// character is now), and the features chosen at it.
+/// character is now), and the features and boosts chosen at it.
 /// </summary>
-public sealed record LevelTaken(Definition Class, decimal Gain, IReadOnlyList<Definition> Features);
+public sealed record LevelTaken(Definition Class, decimal Gain, IReadOnlyList<Definition> Features)
+{
+    /// <summary>The attributes boosted at this level, in the order chosen (already in the character's scores).</summary>
+    public IReadOnlyList<string> Boosts { get; init; } = [];
+}
 
 /// <summary>A player character: its choices, scores and progress under a rule set.</summary>
 public sealed class Character
@@ -22,6 +26,9 @@ public sealed class Character
     public required IReadOnlyList<ModuleStamp> Modules { get; set; }
 
     public required Definition Race { get; set; }
+
+    /// <summary>The character-creation definition the character was made with; its grants are the first level's choices.</summary>
+    public required Definition Creation { get; set; }
 
     /// <summary>Every level the character has, first to last; a new character has one.</summary>
     public List<LevelTaken> Levels { get; } = [];
