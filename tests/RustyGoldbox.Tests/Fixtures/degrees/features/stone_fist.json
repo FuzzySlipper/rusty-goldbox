@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "stone_fist",
+  "name": "Stone fist",
+  "kind": "ancestry feat",
+  "requirements": "self.race == 'hillfolk' and self.brawn >= 18"
+}

@@ -446,6 +446,13 @@ public sealed class RuleSetBuilder
                     {
                         Error(advancement, "advancement.level-boosts", $"$.level_boosts[{index}].amounts", $"{amounts.QualifiedId} must have one number key (the score) and number values (the raise).");
                     }
+
+                    // Character files record which attributes a level boosted, not by how much; one table lets loading undo them.
+                    if (index > 0 && amounts is not null
+                        && _rules.References.TryGetValue((advancement, "$.level_boosts[0].amounts"), out Definition? first) && first != amounts)
+                    {
+                        Error(advancement, "advancement.level-boosts", $"$.level_boosts[{index}].amounts", $"Every level boost uses one amounts table ({first.QualifiedId}), so a character's earlier scores can be worked out from its boosts.");
+                    }
                 }
             }
 

@@ -207,8 +207,10 @@ needs no per-race patches when an extension adds a class. The advancement can
 also grant **level boosts** (four attributes at set levels), each raising a
 score by an amount its table gives for the current score. A character file
 records the creation it was made with and each level's features and boosts;
-loading it replays the levels and refuses a choice no level granted, a
-missed requirement or a wrong number of boosts.
+loading it replays the levels from the scores before any level boost and
+refuses a choice no level granted, a requirement missed at the level it was
+taken, or a wrong number of boosts. When a level raises a track's maximum
+(its gain, a toughness feat, a boosted stat), the current value rises with it.
 
 A **character-creation** definition makes attribute scores by one method:
 rolled (in order or arranged by the player's priority), a fixed array the

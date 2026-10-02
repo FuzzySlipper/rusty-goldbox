@@ -160,6 +160,30 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void RequirementsAreCheckedWithTheScoresOfTheirLevel()
+    {
+        using TempModules modules = new();
+        ModuleSet set = ModuleLoader.Load(Degrees, []);
+        Character tor = Create(set, new CreationRequest("Tor", "vanguard", "hillfolk",
+            Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight"]))!;
+        List<ModuleDiagnostic> problems = [];
+        WithDice(dice => CharacterRules.AddExperience(set.Rules!, tor, 4000, dice, problems, features: ["battle_cry", "steady_stance", "hill_lore"], boosts: ["brawn", "stamina", "insight", "finesse"]));
+        Assert.Empty(problems);
+        Assert.Equal(18m, tor.Attributes["brawn"]);
+        string file = Path.Combine(modules.Root, "tor.json");
+        File.WriteAllText(file, CharacterFile.ToJson(tor));
+        Assert.NotNull(CharacterFile.Read(file, set, problems));
+
+        // Stone fist needs brawn 18, which only level 5's boost gives, after that level's feat is chosen.
+        System.Text.Json.Nodes.JsonNode edited = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;
+        edited["levels"]![4]!["features"]![0] = "degrees:stone_fist";
+        File.WriteAllText(file, edited.ToJsonString());
+
+        Assert.Null(CharacterFile.Read(file, set, problems));
+        Assert.Contains("Level 5 (Vanguard): Tor doesn't meet degrees:stone_fist's requirements", Assert.Single(problems).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AFileWithEquipmentTheClassForbidsIsRefused()
     {
         using TempModules modules = new();
@@ -187,6 +211,7 @@ public sealed class CharacterTests
         WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, features: ["weapon_focus", "toughness"]));
         Assert.Empty(problems);
         Assert.Equal(character.Levels.Sum(level => level.Gain) + 6, MaxHitPoints(set, character));
+        Assert.Equal(MaxHitPoints(set, character), character.Tracks["hit_points"].Current);
     }
 
     [Fact]

@@ -102,7 +102,7 @@ Reached level 3: +13 hit points.
 Reached level 4: +13 hit points.
 Reached level 5: +13 hit points.
 Tor: Hillfolk Vanguard 5 (4000 xp, highest level)
-  hit points 75/80
+  hit points 80/80
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat), Steady stance (vanguard feat), Hill lore (ancestry feat)
   brawn                   18     Brawn
@@ -203,7 +203,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
     },
     "tracks": {
       "hit_points": {
-        "current": 75,
+        "current": 80,
         "max": 60
       }
     },
@@ -396,7 +396,7 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 75,
+      "current": 80,
       "max": 80,
       "problem": null
     }

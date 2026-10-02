@@ -175,7 +175,12 @@ public static class CharacterRules
     {
         Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation };
         replay.LeftClasses.AddRange(character.LeftClasses);
-        foreach ((string id, decimal score) in character.Attributes)
+        if (ScoresBeforeBoosts(rules, character, problems) is not Dictionary<string, decimal> scores)
+        {
+            return;
+        }
+
+        foreach ((string id, decimal score) in scores)
         {
             replay.Attributes[id] = score;
         }
@@ -206,7 +211,58 @@ public static class CharacterRules
 
             problems.AddRange(found.Select(problem => problem with { Message = $"Level {index + 1} ({level.Class.Name}): {problem.Message}" }));
             replay.Levels[^1] = level;
+            foreach (string boosted in level.Boosts)
+            {
+                replay.Attributes[boosted] += BoostAmount(rules, replay.Attributes[boosted]) ?? 0;
+            }
         }
+    }
+
+    /// <summary>
+    /// The character's scores before its level boosts: each boost, last first,
+    /// undone by finding the score its amounts table raised to the one after.
+    /// </summary>
+    private static Dictionary<string, decimal>? ScoresBeforeBoosts(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        Dictionary<string, decimal> scores = new(character.Attributes);
+        foreach ((LevelTaken level, int index) in character.Levels.Select((level, index) => (level, index)).Reverse())
+        {
+            foreach (string boosted in level.Boosts.Reverse())
+            {
+                decimal after = scores[boosted];
+                decimal min = rules.Stats[boosted].Definition.Json.GetProperty("min").GetDecimal();
+                decimal? found = null;
+                for (decimal score = after - 1; score >= min && found is null; score--)
+                {
+                    if (BoostAmount(rules, score) is decimal amount && score + amount == after)
+                    {
+                        found = score;
+                    }
+                }
+
+                if (found is not decimal was)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"Level {index + 1}: no boost raises {boosted} to {after}, so the file's scores and boosts don't agree."));
+                    return null;
+                }
+
+                scores[boosted] = was;
+            }
+        }
+
+        return scores;
+    }
+
+    /// <summary>What a level boost adds to a score, from the advancement's first level boost table.</summary>
+    private static decimal? BoostAmount(RuleSet rules, decimal score)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants) || grants.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        Definition amounts = rules.Reference(advancement, "$.level_boosts[0].amounts");
+        return rules.Tables[amounts].Lookup([Value.Of(score)])?.Number;
     }
 
     /// <summary>How many boosts the advancement grants at the character's latest level.</summary>
@@ -453,18 +509,40 @@ public static class CharacterRules
         Queue<string> boostChoices,
         List<ModuleDiagnostic> problems)
     {
+        Dictionary<Definition, decimal?> before = Maxima(rules, character, evaluator);
         (decimal kept, decimal bonus) = TakeLevels(rules, character, [characterClass], evaluator)[0];
         decimal gain = checked(kept + bonus);
         if (rules.LevelTrack is Definition levelTrack)
         {
             TrackValue value = character.Tracks[levelTrack.Id];
             value.Max = checked((value.Max ?? 0) + kept);
-            value.Current = checked((value.Current ?? 0) + gain);
         }
 
         gains.Add(new LevelGain(character.Level, characterClass, gain));
-        return Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
-            && LevelBoosts(rules, character, evaluator, boostChoices, problems);
+        if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
+            || !LevelBoosts(rules, character, evaluator, boostChoices, problems))
+        {
+            return false;
+        }
+
+        // Whatever the level raised a maximum by (its gain, a toughness feat, a boosted stat) raises the current value too.
+        foreach ((Definition track, decimal? after) in Maxima(rules, character, evaluator))
+        {
+            if (before[track] is decimal was && after is decimal now && now > was)
+            {
+                TrackValue value = character.Tracks[track.Id];
+                value.Current = checked((value.Current ?? 0) + now - was);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Each track's maximum for the character now, or null where none is known.</summary>
+    private static Dictionary<Definition, decimal?> Maxima(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        Creature creature = character.ToCreature();
+        return rules.Tracks.Values.ToDictionary(track => track, track => evaluator.KnownTrackMax(creature, track));
     }
 
     /// <summary>A multi-classed character's classes must be a combination its race lists in multiclasses.</summary>
