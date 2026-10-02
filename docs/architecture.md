@@ -122,13 +122,17 @@ its maximum is a stored stat, while these are expressions.
 `CombatRunner` runs one fight between sides of `Combatant`s. Each round it
 rolls initiative (by side or by creature, from the combat definition), then
 each creature's turn: start-of-turn condition operations, a skip if a
-condition prevents actions, then actions while the turn's budget lasts. The
-choice is a simple deterministic policy: the first use in the creature's list
-it can afford and that has a target, aimed at the enemy with the least left on the combat's track or the ally
-missing the most of it. An action's check gives a tier; the
-action's operations for that tier run, then its `always` operations. Timed
-conditions count down at the end of the round. Every change is a
-`CombatFact`, with the dice that produced it.
+condition prevents actions, actions while the turn's budget (an expression,
+worked out at the turn's start) lasts, then end-of-turn condition operations
+and durations. The choice is a deterministic policy: the first use in the
+creature's list it can afford and that has a target its `valid_target`
+accepts, aimed at the candidate its `prefer` ranks highest, or by default the
+enemy with the least left on the combat's track, the ally missing the most of
+it, or the first fallen ally. An action's check gives a tier; the action's
+operations for that tier run, then its `always` operations. Defeated
+creatures take no turns; with the combat's `downed_conditions`, those that
+had no turn in a round still run their conditions and count them down at the
+round's end. Every change is a `CombatFact`, with the dice that produced it.
 
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope

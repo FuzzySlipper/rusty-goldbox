@@ -1,7 +1,7 @@
 {
   "type": "action",
-  "id": "melee_attack",
-  "name": "Melee attack",
+  "id": "smash",
+  "name": "Smash",
   "cost": {
     "standard": 1
   },
@@ -9,6 +9,7 @@
   "parameters": [
     "damage"
   ],
+  "prefer": "target.attack_bonus",
   "check": "attack",
   "outcomes": {
     "success": [
@@ -20,9 +21,8 @@
     "critical": [
       {
         "op": "damage",
-        "amount": "use.damage + use.damage + self.might_mod * 2"
+        "amount": "use.damage * 2 + self.might_mod"
       }
     ]
-  },
-  "prefer": "if target.condition.shaken then 100 - target.hit_points else 0 - target.hit_points"
+  }
 }

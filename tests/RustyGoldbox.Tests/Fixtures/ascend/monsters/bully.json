@@ -1,0 +1,22 @@
+{
+  "type": "monster",
+  "id": "bully",
+  "name": "Bully",
+  "class": "warrior",
+  "level": 2,
+  "tracks": {
+    "hit_points": "2d10 + 6"
+  },
+  "stats": {
+    "ac": "12",
+    "might": "16"
+  },
+  "xp": 80,
+  "actions": [
+    {
+      "action": "smash",
+      "name": "Smash",
+      "damage": "1d10"
+    }
+  ]
+}

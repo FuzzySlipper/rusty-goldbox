@@ -1,0 +1,15 @@
+{
+  "type": "action",
+  "id": "mend",
+  "name": "Mend",
+  "cost": {
+    "standard": 1
+  },
+  "target": "fallen_ally",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "1d8 + self.wit_mod"
+    }
+  ]
+}

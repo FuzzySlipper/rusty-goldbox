@@ -38,6 +38,7 @@ public sealed class CombatTests
         using TempModules scratch = new();
         WriteCharacter(scratch, Fixture("ascend"), "kara.json", new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 10)), Features: ["iron_will", "press_the_advantage"]), "longsword");
         WriteCharacter(scratch, Fixture("ascend"), "ilse.json", new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 12), ("wit", 16)), Features: ["lightning_reflexes"]));
+        WriteCharacter(scratch, Fixture("ascend"), "mender.json", new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 16), ("wit", 16)), Features: ["lightning_reflexes"]), "chain_shirt");
 
         // Ilse has no weapon, so she hexes: the brute saves against her difficulty class.
         Golden.Verify("ascend-combat.txt", CliTranscript.Run(scratch.Root,
@@ -45,7 +46,10 @@ public sealed class CombatTests
             ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json,ilse.json", "--encounter", "brutes", "--seed", "20"],
             // Ember sets Kara burning for a rolled amount each turn until a save at the end of her turn ends it,
             // and fans the flames for 1d6 when she already burns.
-            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "imps", "--seed", "1"]));
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "imps", "--seed", "1"],
+            // The bullies' smash prefers the target with the best attack, so Kara falls; Ilse mends her back into
+            // the fight, and a fallen bully's conditions still wear off (downed_conditions).
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json,mender.json", "--encounter", "bullies", "--seed", "14"]));
     }
 
     [Fact]
@@ -60,7 +64,7 @@ public sealed class CombatTests
         Combatant combatant = Combatant.FromCharacter(set.Rules!, character);
 
         // Warrior's uses first, then the adept's (its punch is the warrior's, so it appears once), then the features'.
-        Assert.Equal(["Aim", "Punch", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
+        Assert.Equal(["Aim", "Punch", "Mend", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
         Evaluator evaluator = new(set.Rules!, null);
         // Warrior 1 and adept 2 each add their own progression.
         Assert.Equal(2m, evaluator.Stat(combatant.Creature, "attack_bonus").Number);

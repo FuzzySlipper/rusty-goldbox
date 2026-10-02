@@ -88,6 +88,7 @@ public sealed class CombatRunner
                 order = TurnOrder();
             }
 
+            HashSet<Combatant> tookTurns = [];
             foreach (Combatant combatant in order)
             {
                 if (StandingSides() <= 1)
@@ -95,7 +96,18 @@ public sealed class CombatRunner
                     break;
                 }
 
-                TakeTurn(combatant);
+                if (TakeTurn(combatant))
+                {
+                    tookTurns.Add(combatant);
+                }
+            }
+
+            if (DownedConditions && StandingSides() > 1)
+            {
+                foreach (Combatant downed in Everyone.Where(member => member.Defeated && !tookTurns.Contains(member)).ToList())
+                {
+                    DownedTurn(downed);
+                }
             }
 
             winner = Winner();
@@ -172,17 +184,42 @@ public sealed class CombatRunner
         return value;
     }
 
-    private void TakeTurn(Combatant actor)
+    /// <summary>Takes a creature's turn unless it is out of the fight; returns whether it had one.</summary>
+    private bool TakeTurn(Combatant actor)
     {
         if (actor.Defeated)
         {
-            return;
+            return false;
         }
 
         _turn = actor;
         actor.Creature.Rolled.Clear();
         ActOnTurn(actor);
         EndTurn(actor);
+        _turn = null;
+        return true;
+    }
+
+    /// <summary>Whether defeated creatures still run their conditions and count them down (the combat's downed_conditions).</summary>
+    private bool DownedConditions => _combat.Json.TryGetProperty("downed_conditions", out JsonElement downed) && downed.GetBoolean();
+
+    /// <summary>
+    /// A defeated creature's end of round when downed_conditions is on: its
+    /// conditions' start-of-turn operations, then their end-of-turn ones and
+    /// durations, but no actions (bleeding out, a save to stabilise).
+    /// </summary>
+    private void DownedTurn(Combatant downed)
+    {
+        _turn = downed;
+        foreach (Definition condition in downed.Creature.Conditions.ToList())
+        {
+            if (condition.Json.TryGetProperty("each_turn", out JsonElement operations))
+            {
+                RunOperations(condition, operations, "$.each_turn", ConditionScope(downed, condition), downed, null);
+            }
+        }
+
+        EndTurn(downed, downed: true);
         _turn = null;
     }
 
@@ -241,7 +278,7 @@ public sealed class CombatRunner
     /// condition lasting 1 round always covers the holder's next turn,
     /// whatever the initiative order.
     /// </summary>
-    private void EndTurn(Combatant combatant)
+    private void EndTurn(Combatant combatant, bool downed = false)
     {
         if (combatant.SurprisedRounds > 0)
         {
@@ -250,7 +287,7 @@ public sealed class CombatRunner
 
         foreach (Definition condition in combatant.Creature.Conditions.ToList())
         {
-            if (!combatant.Defeated && condition.Json.TryGetProperty("end_of_turn", out JsonElement operations))
+            if ((downed || !combatant.Defeated) && condition.Json.TryGetProperty("end_of_turn", out JsonElement operations))
             {
                 RunOperations(condition, operations, "$.end_of_turn", ConditionScope(combatant, condition), combatant, null);
             }
@@ -295,7 +332,7 @@ public sealed class CombatRunner
                 continue;
             }
 
-            List<Combatant> targets = Targets(actor, use.Action.Json.GetProperty("target").GetString()!);
+            List<Combatant> targets = Targets(actor, use);
             if (targets.Count > 0)
             {
                 return (use, targets);
@@ -305,22 +342,48 @@ public sealed class CombatRunner
         return null;
     }
 
-    private List<Combatant> Targets(Combatant actor, string kind)
+    /// <summary>
+    /// Who a use would target now: the candidates of the action's target kind
+    /// that its valid_target accepts, then for a single target the one its
+    /// prefer ranks highest (the first on a tie), or without prefer the enemy
+    /// with the least left, the first ally, the ally missing the most, or the
+    /// first fallen ally.
+    /// </summary>
+    private List<Combatant> Targets(Combatant actor, UseOption use)
     {
+        Definition action = use.Action;
+        string kind = action.Json.GetProperty("target").GetString()!;
         List<Combatant> enemies = Everyone.Where(member => !member.Defeated && member.Side != actor.Side).ToList();
         List<Combatant> allies = Everyone.Where(member => !member.Defeated && member.Side == actor.Side).ToList();
-        return kind switch
+        List<Combatant> candidates = kind switch
         {
             "self" => [actor],
-            "all_enemies" => enemies,
-            "all_allies" => allies,
-            "enemy" => enemies.OrderBy(Left).Take(1).ToList(),
-            "ally" => allies.Take(1).ToList(),
-            _ => allies
-                .Where(member => Missing(member) > 0)
-                .OrderByDescending(Missing)
-                .Take(1)
-                .ToList(),
+            "enemy" or "all_enemies" => enemies,
+            "ally" or "all_allies" => allies,
+            "fallen_ally" => Everyone.Where(member => member.Defeated && member.Side == actor.Side && member != actor).ToList(),
+            _ => allies.Where(member => Missing(member) > 0).ToList(),
+        };
+        if (action.Json.TryGetProperty("valid_target", out _))
+        {
+            candidates = candidates.Where(candidate => Evaluate(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)).Boolean).ToList();
+        }
+
+        if (kind is "self" or "all_enemies" or "all_allies" || candidates.Count == 0)
+        {
+            return candidates;
+        }
+
+        if (action.Json.TryGetProperty("prefer", out _))
+        {
+            // Highest first; OrderByDescending is stable, so ties keep listing order.
+            return [candidates.OrderByDescending(candidate => Number(action, "$.prefer", new Scope(actor.Creature, candidate.Creature, use.Parameters))).First()];
+        }
+
+        return kind switch
+        {
+            "enemy" => [candidates.OrderBy(Left).First()],
+            "hurt_ally" => [candidates.OrderByDescending(Missing).First()],
+            _ => [candidates[0]],
         };
     }
 
@@ -339,7 +402,7 @@ public sealed class CombatRunner
         Definition action = use.Action;
         foreach (Combatant target in targets)
         {
-            if (target.Defeated && target != actor)
+            if (target.Defeated && target != actor && action.Json.GetProperty("target").GetString() != "fallen_ally")
             {
                 continue;
             }

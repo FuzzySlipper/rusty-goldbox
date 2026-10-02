@@ -57,6 +57,9 @@
       "from_item": "weapon"
     },
     {
+      "action": "mend"
+    },
+    {
       "action": "hex"
     },
     {

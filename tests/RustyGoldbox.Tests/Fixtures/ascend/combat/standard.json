@@ -18,5 +18,6 @@
     }
   ],
   "track": "hit_points",
-  "defeated": "self.hit_points <= 0"
+  "defeated": "self.hit_points <= 0",
+  "downed_conditions": true
 }
