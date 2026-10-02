@@ -1,4 +1,5 @@
 using System.Globalization;
+using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Combat;
@@ -69,18 +70,18 @@ public sealed record CheckFact(string Who, string Check, CheckResult Result) : C
     private static string Sign(decimal value) => value < 0 ? $"- {N(-value)}" : $"+ {N(value)}";
 }
 
-public sealed record DamageFact(string Who, string Track, decimal Amount, decimal Left) : CombatFact
+public sealed record DamageFact(string Who, Definition Track, decimal Amount, decimal Left) : CombatFact
 {
     public override string Kind => "damage";
 
-    public override string Describe() => $"{Who} loses {N(Amount)} {Track} ({N(Left)} left).";
+    public override string Describe() => $"{Who} loses {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Left)} left).";
 }
 
-public sealed record HealFact(string Who, string Track, decimal Amount, decimal Now) : CombatFact
+public sealed record HealFact(string Who, Definition Track, decimal Amount, decimal Now) : CombatFact
 {
     public override string Kind => "heal";
 
-    public override string Describe() => $"{Who} regains {N(Amount)} {Track} ({N(Now)}).";
+    public override string Describe() => $"{Who} regains {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Now)}).";
 }
 
 public sealed record ConditionFact(string Who, string Condition, bool Applied, decimal? Rounds) : CombatFact

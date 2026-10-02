@@ -52,6 +52,26 @@ internal static class AreaMesh
         return Builder.Join(textured, plain);
     }
 
+    /// <summary>
+    /// A flat field of <paramref name="width"/> by <paramref name="depth"/>
+    /// cells from the origin, each textured with <paramref name="floor"/> or
+    /// plain without one: the floor combat stands on.
+    /// </summary>
+    public static AreaGeometry Floor(int width, int depth, UvRect? floor)
+    {
+        Builder textured = new();
+        Builder plain = new();
+        for (int z = 0; z < depth; z++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                (floor is null ? plain : textured).Flat(x, z, 0, Vector3.UnitY, floor ?? default);
+            }
+        }
+
+        return Builder.Join(textured, plain);
+    }
+
     private sealed class Builder
     {
         public List<Vector3> Positions { get; } = [];

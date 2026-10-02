@@ -126,7 +126,9 @@ create a different loader.
   `floor` and `ceiling`), so art of any size and layout fits. A sprite is a
   sheet of equal frames (any frame size and count) with the way it faces,
   the pixel it stands on, its height in cells and optional named animations
-  (frames and fps, looping or once).
+  (frames and fps, looping or once). A `figure` definition (in a campaign or
+  extension, since rulesets carry no art) says which sprite draws a monster or
+  a class.
 
 ### Rules as data
 

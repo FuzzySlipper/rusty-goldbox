@@ -314,6 +314,20 @@ public static class DefinitionTypes
         { "type": "encounter", "id": "crypt_guard", "name": "Crypt guard", "monsters": [ { "monster": "skeleton", "count": "1d4 + 1" } ] }
         """);
 
+    public static DefinitionType Figure { get; } = new(
+        "figure",
+        "How a monster or a class looks: the sprite drawn for it in combat and in the 3D view. Rulesets carry no art, so "
+        + "figures live in a campaign or extension that requires both the ruleset and an assets module. Give exactly one of "
+        + "monster and class; a module set has at most one figure for each.",
+        [
+            new("monster", new ReferenceKind("monster"), false, "The monster it draws."),
+            new("class", new ReferenceKind("class"), false, "The class it draws (for every character of the class)."),
+            new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite asset."),
+        ],
+        """
+        { "type": "figure", "id": "skeleton", "monster": "classic:skeleton", "sprite": "placeholder-art:skeleton" }
+        """);
+
     public static DefinitionType Variable { get; } = new(
         "variable",
         "A campaign variable: declared with a type and an initial value, read as campaign.var.<id>, changed by set events. Undeclared variables are errors.",
@@ -464,7 +478,7 @@ public static class DefinitionTypes
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
         Attribute, Track, Derived, Table, Race, Class, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
-        Variable, Asset, Area, Event, Campaign,
+        Variable, Asset, Area, Event, Campaign, Figure,
     ];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(type => type.Name == name);

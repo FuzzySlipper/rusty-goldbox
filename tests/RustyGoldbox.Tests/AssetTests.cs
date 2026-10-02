@@ -149,4 +149,28 @@ public sealed class AssetTests
             engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
         });
     }
+
+    [Fact]
+    public void AFigureDrawsOneMonsterOrClassWithASprite()
+    {
+        using TempModules modules = new();
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/rat.json", """{ "type": "asset", "id": "rat", "kind": "sprite", "file": "a.png", "frame_size": [32, 48], "faces": "left", "height": 0.4 }""");
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "kind": "portrait", "file": "a.png" }""");
+        string house = modules.Module("house", "extension", requires: $"{TempModules.Require("classic", "*")}, {TempModules.Require("art", "*")}");
+        modules.Write("house/rat.json", """{ "type": "figure", "id": "rat", "monster": "classic:giant_rat", "sprite": "art:rat" }""");
+        string[] search = [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")];
+
+        ModuleSet set = ModuleLoader.Load(house, search);
+        Assert.Empty(set.Diagnostics);
+        Assert.Equal("art:rat", set.Rules!.Figures.Single().Value.QualifiedId);
+
+        modules.Write("house/again.json", """{ "type": "figure", "id": "again", "monster": "classic:giant_rat", "sprite": "art:rat" }""");
+        modules.Write("house/nothing.json", """{ "type": "figure", "id": "nothing", "sprite": "art:rat" }""");
+        modules.Write("house/portrait.json", """{ "type": "figure", "id": "portrait", "class": "classic:thief", "sprite": "art:picture" }""");
+        Assert.Equal(
+            [("nothing.json", "figure.subject"), ("portrait.json", "reference.asset-kind"), ("rat.json", "figure.duplicate")],
+            ModuleLoader.Load(house, search).Diagnostics.Select(diagnostic => (Path.GetFileName(diagnostic.File!), diagnostic.Rule)).Order());
+    }
 }

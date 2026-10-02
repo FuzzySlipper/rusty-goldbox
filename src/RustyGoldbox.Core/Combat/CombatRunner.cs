@@ -399,7 +399,7 @@ public sealed class CombatRunner
                 }
 
                 value.Current = lowered;
-                Record(new DamageFact(who.Name, track.Name.ToLowerInvariant(), current - lowered, lowered), before);
+                Record(new DamageFact(who.Name, track, current - lowered, lowered), before);
                 break;
             }
 
@@ -411,7 +411,7 @@ public sealed class CombatRunner
                 decimal current = value.Current ?? 0;
                 decimal raised = Math.Max(current, Math.Min(_evaluator.TrackRestoreCap(who.Creature, track), current + amount));
                 value.Current = raised;
-                Record(new HealFact(who.Name, track.Name.ToLowerInvariant(), raised - current, raised), before);
+                Record(new HealFact(who.Name, track, raised - current, raised), before);
                 break;
             }
 

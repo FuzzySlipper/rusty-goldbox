@@ -1,5 +1,6 @@
 using System.Globalization;
 using RustyGoldbox.Core.Combat;
+using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Campaigns;
@@ -107,7 +108,16 @@ public enum FightOutcome
     Undecided,
 }
 
-public sealed record FightFact(string Encounter, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome) : PlayFact
+/// <summary>
+/// One combatant as the fight began: its side (0 is the party), the monster or
+/// class it is, and its value on the combat's track (its maximum when the
+/// ruleset gives one).
+/// </summary>
+public sealed record FightMember(string Name, int Side, Definition? Monster, Definition? Class, decimal Start, decimal? Max);
+
+/// <summary>A fight: who took part, what happened in order, and how it ended.</summary>
+/// <param name="Track">The combat's track (usually hit points) that <see cref="FightMember"/> values are on.</param>
+public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome) : PlayFact
 {
     public override string Kind => "combat";
 

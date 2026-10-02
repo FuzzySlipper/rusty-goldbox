@@ -77,7 +77,7 @@ public sealed class FirstPersonTests
             }
 
             session.Begin(engine);
-            using FirstPersonView view = new(engine, library);
+            using SceneView view = new(engine, library);
 
             // The start cell, then the cell with a backdrop, then the second area.
             view.Show(session);

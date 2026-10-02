@@ -19,6 +19,9 @@ internal enum Screen
 
     /// <summary>Play: the same text commands as <c>goldbox play</c> scripts.</summary>
     Play,
+
+    /// <summary>A fight the last command started, played back; continue returns to play.</summary>
+    Combat,
 }
 
 /// <summary>
@@ -55,6 +58,9 @@ internal sealed class GameSession(ModuleLibrary library)
     public List<Character> Party { get; } = [];
 
     public CampaignRunner? Runner { get; private set; }
+
+    /// <summary>The fight being played back on the combat screen.</summary>
+    public FightReplay? Fight { get; private set; }
 
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
@@ -188,6 +194,12 @@ internal sealed class GameSession(ModuleLibrary library)
     public void Execute(IEngineContext engine, string command)
     {
         Notes.Clear();
+        if (Screen == Screen.Combat)
+        {
+            Notes.Add("Continue past the fight first.");
+            return;
+        }
+
         if (Screen != Screen.Play)
         {
             return;
@@ -278,9 +290,35 @@ internal sealed class GameSession(ModuleLibrary library)
         Screen = Screen.Play;
     }
 
+    /// <summary>Lets time pass for the fight playback; returns whether anything new showed.</summary>
+    public bool Tick(double seconds)
+    {
+        return Screen == Screen.Combat && Fight!.Advance(seconds);
+    }
+
+    /// <summary>On the combat screen: shows the rest of the fight, or once it has all shown, returns to play.</summary>
+    public void Continue()
+    {
+        Notes.Clear();
+        if (Screen != Screen.Combat)
+        {
+            return;
+        }
+
+        if (!Fight!.Done)
+        {
+            Fight.Finish();
+            return;
+        }
+
+        Fight = null;
+        Screen = Screen.Play;
+    }
+
     public void Quit()
     {
         Notes.Clear();
+        Fight = null;
         Screen = Screen.Title;
         Runner = null;
         Set = null;
@@ -346,9 +384,11 @@ internal sealed class GameSession(ModuleLibrary library)
 
         foreach (PlayFact fact in facts)
         {
+            // A fight plays back on the combat screen; the log keeps its outcome.
             if (fact is FightFact fight)
             {
-                Log.AddRange(fight.Facts.Select(combatFact => $"    {combatFact.Describe()}"));
+                Fight = new FightReplay(fight);
+                Screen = Screen.Combat;
             }
 
             Log.Add(fact.Describe());

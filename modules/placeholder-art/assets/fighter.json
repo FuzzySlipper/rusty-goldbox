@@ -1,0 +1,29 @@
+{
+  "type": "asset",
+  "id": "fighter",
+  "kind": "sprite",
+  "file": "sprites/fighter.png",
+  "frame_size": [
+    32,
+    48
+  ],
+  "faces": "right",
+  "height": 0.9,
+  "animations": {
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "attack": {
+      "frames": [
+        2,
+        3
+      ],
+      "fps": 6,
+      "loop": false
+    }
+  }
+}

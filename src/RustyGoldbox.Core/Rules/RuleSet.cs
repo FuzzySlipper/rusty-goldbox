@@ -33,6 +33,9 @@ public sealed class RuleSet
     /// <summary>Tracks by ID. Expressions read each as &lt;id&gt; (current) and max_&lt;id&gt;.</summary>
     public Dictionary<string, Definition> Tracks { get; } = [];
 
+    /// <summary>The sprite asset each monster or class is drawn with, from figure definitions.</summary>
+    public Dictionary<Definition, Definition> Figures { get; } = [];
+
     /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
     public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
 

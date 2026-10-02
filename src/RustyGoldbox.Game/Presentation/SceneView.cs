@@ -9,13 +9,14 @@ using RustyGoldbox.Core.Rules;
 namespace RustyGoldbox.Game.Presentation;
 
 /// <summary>
-/// The first-person view: the area as one generated mesh textured from its
-/// wall set, a camera at the party's cell facing its way, and the cell's
-/// backdrop over the view when it has one. The view sits in a Gold Box-style
-/// window at the top left; the DOM panels go around it. The mesh is rebuilt
-/// only when the area changes; each publish sends the whole small snapshot.
+/// The Engine scene in the view window at the top left (the DOM panels go
+/// around it). While playing it is the first-person view: the area as one
+/// generated mesh textured from its wall set, a camera at the party's cell
+/// facing its way, and the cell's backdrop over the view when it has one; the
+/// mesh is rebuilt only when the area changes. On the combat screen it is the
+/// <see cref="CombatScene"/>. Each publish sends the whole small snapshot.
 /// </summary>
-internal sealed class FirstPersonView : IDisposable
+internal sealed class SceneView : IDisposable
 {
     /// <summary>The view window, as fractions of the screen from its top left.</summary>
     public static readonly (float X, float Y, float Width, float Height) Window = (0.01f, 0.02f, 0.47f, 0.62f);
@@ -32,45 +33,72 @@ internal sealed class FirstPersonView : IDisposable
     private readonly Camera _camera;
     private readonly Material _plain;
     private readonly Dictionary<string, Art> _art = [];
+    private readonly CombatScene _combat;
+    private bool _showingCombat;
     private string? _areaKey;
     private MeshResource? _mesh;
     private Appearance? _area;
 
-    public FirstPersonView(IEngineContext engine, ModuleLibrary library)
+    public SceneView(IEngineContext engine, ModuleLibrary library)
     {
         _engine = engine;
         _library = library;
-        _camera = engine.CameraView.CreateCamera(Camera(Vector3.Zero, 0));
+        _camera = engine.CameraView.CreateCamera(Camera(new CameraPose(Vector3.Zero, 0, 0)));
         engine.CameraView.SetActiveCamera(_camera);
         engine.CameraView.SetBackgroundColor(new SetBackgroundColorRequest(new Color(0.03f, 0.03f, 0.05f, 1)));
         _plain = engine.Graphics.CreateMaterial(new MaterialRequest(new Color(0.25f, 0.24f, 0.22f, 1), default, 0.95f, new Color(1, 1, 1, 1), Vector3.Zero, 0, false));
+        _combat = new CombatScene(engine.Graphics, _plain);
     }
 
-    /// <summary>Shows the session: the area around the party while playing, nothing otherwise.</summary>
+    /// <summary>Shows the session: the area around the party while playing, the fight on the combat screen, nothing otherwise.</summary>
     public void Show(GameSession session)
     {
         List<AppearanceFact> facts = [];
-        if (session.Screen == Screen.Play && session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
+        _showingCombat = false;
+        if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
         {
             CampaignState state = runner.State;
-            ShowArea(rules, session.Set, state.Area, facts);
-            Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
-            _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(eye, (int)state.Facing * 90)));
-            if (Backdrop(rules, state) is Definition backdrop && ArtFor(rules, session.Set, backdrop) is { Sprite: Appearance sprite })
+            if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
             {
-                facts.Add(new AppearanceFact(BackdropObject, false, 0, Placed, sprite, true, RenderLayer.Ui));
+                _showingCombat = true;
+                _combat.Show(fight, kind => SpriteFor(rules, session.Set, kind), Floor(rules, session.Set, state.Area), facts);
+                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(CombatScene.Pose, CombatScene.FieldOfView)));
+            }
+            else if (session.Screen == Screen.Play)
+            {
+                ShowArea(rules, session.Set, state.Area, facts);
+                Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
+                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
+                if (Backdrop(rules, state) is Definition backdrop && ArtFor(rules, session.Set, backdrop) is { Sprite: Appearance sprite })
+                {
+                    facts.Add(new AppearanceFact(BackdropObject, false, 0, Placed, sprite, true, RenderLayer.Ui));
+                }
             }
         }
 
         _engine.Graphics.PublishSnapshot(facts.ToArray());
+        _combat.ReleaseRetired();
+    }
+
+    /// <summary>Advances animations; call in every update.</summary>
+    public void Tick()
+    {
+        if (_showingCombat)
+        {
+            _combat.Tick();
+        }
     }
 
     public void Dispose()
     {
+        // Nothing may still be published when it is released.
+        _engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
+        _combat.Dispose();
         _area?.Dispose();
         _mesh?.Dispose();
         foreach (Art art in _art.Values)
         {
+            art.Figures?.Dispose();
             art.Sprite?.Dispose();
             art.Material.Dispose();
             art.Texture.Dispose();
@@ -165,7 +193,8 @@ internal sealed class FirstPersonView : IDisposable
 
     /// <summary>
     /// The asset's texture (and, for a wall set, its material; for a backdrop,
-    /// its sprite in the view window), admitted once per asset content.
+    /// its sprite in the view window; for a sprite, its atlas), admitted once
+    /// per asset content.
     /// </summary>
     private Art? ArtFor(RuleSet rules, ModuleSet set, Definition asset)
     {
@@ -201,21 +230,44 @@ internal sealed class FirstPersonView : IDisposable
                 sprite, true, Vector2.Zero, Vector2.One, new Vector2(0.5f, 0.5f), SpriteViewportFit.Contain));
         }
 
-        Art art = new(texture, material, sprite);
+        SpriteArt? figures = asset.Json.GetProperty("kind").GetString() == "sprite"
+            ? SpriteArt.Admit(_engine.Graphics, texture, asset, rules.ImageSizes[asset])
+            : null;
+        Art art = new(texture, material, sprite, figures);
         _art[key] = art;
         return art;
     }
 
-    private static CameraDescriptor Camera(Vector3 eye, double yaw)
+    private static CameraDescriptor Camera(CameraPose pose, double fieldOfView = FieldOfView)
     {
         return new CameraDescriptor(
-            new CameraPose(eye, 0, yaw),
+            pose,
             CameraBasisMode.Derived,
             default,
-            new CameraProjection(CameraProjectionKind.Perspective, FieldOfView, 0, 0.05, 64),
+            new CameraProjection(CameraProjectionKind.Perspective, fieldOfView, 0, 0.05, 64),
             // Camera viewports, like sprite placement, measure from the screen's lower left.
             new CameraViewport(Window.X, 1 - Window.Y - Window.Height, Window.Width, Window.Height));
     }
 
-    private sealed record Art(RenderResource Texture, Material Material, Appearance? Sprite);
+    /// <summary>The sprite a monster or class is drawn with, from the set's figures.</summary>
+    private SpriteArt? SpriteFor(RuleSet rules, ModuleSet set, Definition kind)
+    {
+        return rules.Figures.TryGetValue(kind, out Definition? sprite) ? ArtFor(rules, set, sprite)?.Figures : null;
+    }
+
+    /// <summary>The area's wall set floor, which combat in the area stands on.</summary>
+    private (Material Material, UvRect Frame)? Floor(RuleSet rules, ModuleSet set, Definition area)
+    {
+        if (!area.Json.TryGetProperty("wall_set", out _))
+        {
+            return null;
+        }
+
+        Definition wallSet = rules.Reference(area, "$.wall_set");
+        Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
+        return frames.TryGetValue("floor", out UvRect floor) && ArtFor(rules, set, wallSet) is Art art ? (art.Material, floor) : null;
+    }
+
+    /// <summary>An admitted asset: its texture and material, and its backdrop sprite or sprite atlas when it has one.</summary>
+    private sealed record Art(RenderResource Texture, Material Material, Appearance? Sprite, SpriteArt? Figures);
 }

@@ -299,6 +299,27 @@ public sealed class CampaignRunner
         return Next(evt, "$.next");
     }
 
+    /// <summary>Who is in a fight and where they start on its track, for presenting it.</summary>
+    private List<FightMember> Members(Definition combat, List<CombatSide> sides)
+    {
+        Definition track = _rules.Reference(combat, "$.track");
+        Evaluator evaluator = new(_rules, null);
+        List<FightMember> members = [];
+        for (int side = 0; side < sides.Count; side++)
+        {
+            foreach (Combatant member in sides[side].Members)
+            {
+                Creature creature = member.Creature;
+                decimal start = evaluator.TrackCurrent(creature, track);
+                decimal? max = creature.Track(track.Id).Max
+                    ?? (_rules.TryExpression(track, "$.max", out CompiledExpression? expression) ? evaluator.Evaluate(expression!, creature, null).Number : null);
+                members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max));
+            }
+        }
+
+        return members;
+    }
+
     private Definition? Fight(Definition evt, DiceRoller dice, List<PlayFact> facts)
     {
         Definition encounter = _rules.Reference(evt, "$.encounter");
@@ -311,6 +332,7 @@ public sealed class CampaignRunner
             new CombatSide("Party", party),
             new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, dice)),
         ]);
+        List<FightMember> members = Members(combat, sides);
         CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat));
 
         // The party keeps what the fight did to its tracks.
@@ -328,7 +350,7 @@ public sealed class CampaignRunner
             null => FightOutcome.Undecided,
             _ => FightOutcome.Lost,
         };
-        facts.Add(new FightFact(encounter.Name, result.Facts, outcome));
+        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome));
         if (outcome == FightOutcome.Won)
         {
             return Next(evt, "$.on_win");

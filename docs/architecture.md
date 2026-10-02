@@ -62,7 +62,9 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
-| `src/RustyGoldbox.Game/Presentation/FirstPersonView.cs` | The Engine scene: the view-window camera at the party, the area mesh and wall-set texture, a cell's backdrop as a sprite over the view |
+| `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
+| `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
+| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field, side-view figures as spherical billboards (party left facing right, foes right facing left), attack animations for the actor, defeated figures leaving |
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sprite asset as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
@@ -181,8 +183,11 @@ seen on the next open without a restart. A library container that doesn't
 open becomes a note on the title screen.
 A release (`rusty build --pack`) carries the same bundles inside its container.
 
-The product uses Engine's default `demand` lifecycle: updates run when there
-is input, not on a fixed clock, which suits a turn-based game. Input is the
+The product uses the Engine's `realtime` lifecycle at 30 steps a second, so
+sprite animations and fight playback move between inputs. Each step applies
+input, lets the fight playback advance, advances animations, and republishes
+only when something changed. Agent playtests can hold time with the Engine's
+`action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, equip, drop, begin,
 play, save, load, quit), plus digital intents mapped from keys: arrows and
@@ -197,8 +202,8 @@ scope `goldbox.character.<n>` and the game starts from the same seed, so a
 session replays from it. Play commands are the same text commands `goldbox
 play` scripts use.
 
-`FirstPersonView` draws play in a window at the top left of the screen
-(`FirstPersonView.Window`; the Engine measures camera viewports and sprite
+`SceneView` draws play in a window at the top left of the screen
+(`SceneView.Window`; the Engine measures camera viewports and sprite
 placement from the lower left, and a sprite's placement is within the
 camera's viewport). The area becomes one generated mesh: each wall, door or
 secret door on a cell edge is a quad facing into that cell (back faces are not
@@ -220,8 +225,17 @@ are unpublished before their atlas and texture are released. Textures are admitt
 container once per asset content. The Engine's default lights light the
 scene.
 
-After each update that applied input, and on `Start` and `Restart`, the
-product shows the view and publishes `rusty.goldbox.session`: the screen, status, notes,
+When a play command's facts include a fight (`FightFact`, which carries each
+combatant's side, monster or class, and start on the combat's track), the
+session switches to the combat screen and a `FightReplay` shows its facts one
+beat at a time. The scene draws each combatant with the sprite its monster or
+class has a `figure` for, under a camera straight on and 30 degrees down;
+figures are spherical billboards so they stay upright under that camera.
+Continue (a button, Enter or Space) skips to the end, then returns to play.
+Play commands wait until then.
+
+After each update that changed something, and on `Start` and `Restart`, the
+product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,
 campaigns, the party, and in play the position, the player-view map, the
 waiting menu and the latest log lines. The DOM renders it and holds no state.
 

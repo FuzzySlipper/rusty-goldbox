@@ -5,6 +5,7 @@ using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Game;
+using RustyGoldbox.Game.Presentation;
 
 namespace RustyGoldbox.Tests;
 
@@ -139,20 +140,88 @@ public sealed class GameTests
         Assert.Contains("The adventure ends.", output, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AFightPlaysBackOnTheCombatScreenAndShowsThroughTheEngine()
+    {
+        using TempModules scratch = new();
+        List<string> script = File.ReadAllLines(CampaignTests.Script("crypt.script"))
+            .Select(line => line.Split('#')[0].Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            Run(session, engine, """{ "action": "equip", "member": 0, "item": "classic:long_sword" }""");
+            Run(session, engine, """{ "action": "begin" }""");
+
+            // Through the barred door to the guards.
+            foreach (string command in script[..(script.IndexOf("choose 1") + 2)])
+            {
+                Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
+            }
+
+            Assert.Equal(Screen.Combat, session.Screen);
+            FightReplay fight = session.Fight!;
+            Assert.Equal(0, fight.Shown);
+            Assert.Contains(fight.Fight.Members, member => member.Side == 1 && member.Monster?.Id == "skeleton");
+
+            // Play waits; the scene shows the fight through the Engine.
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Assert.Equal("Continue past the fight first.", Assert.Single(session.Notes));
+            using SceneView view = new(engine, new ModuleLibrary(_ => Containers(scratch).Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+            view.Show(session);
+
+            Assert.True(session.Tick(1.0));
+            Assert.InRange(fight.Shown, 1, fight.Fight.Facts.Count - 1);
+
+            // Skipping shows the rest; the values end where the fight left them.
+            Run(session, engine, """{ "action": "continue" }""");
+            Assert.True(fight.Done);
+            List<Core.Combat.DamageFact> lasts = fight.Fight.Facts.OfType<Core.Combat.DamageFact>()
+                .Where(fact => fact.Track == fight.Fight.Track)
+                .GroupBy(fact => fact.Who)
+                .Select(group => group.Last())
+                .ToList();
+            Assert.NotEmpty(lasts);
+            foreach (Core.Combat.DamageFact damage in lasts)
+            {
+                Assert.Equal(damage.Left, fight.Values[damage.Who]);
+            }
+
+            view.Show(session);
+            Run(session, engine, """{ "action": "continue" }""");
+            Assert.Equal(Screen.Play, session.Screen);
+            Assert.Null(session.Fight);
+            view.Show(session);
+        });
+    }
+
     /// <summary>A session over the packed sample modules, with the sample campaign open on seed 11.</summary>
     private static GameSession OpenSession(TempModules scratch, IEngineContext engine)
     {
-        List<string> containers = SampleSet
-            .Select(id => File.Exists(Path.Combine(scratch.Root, id + ".rpak"))
-                ? Path.Combine(scratch.Root, id + ".rpak")
-                : EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
-            .ToList();
+        List<string> containers = Containers(scratch);
         GameSession session = new(new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
         session.Refresh();
         string campaign = Assert.Single(session.Campaigns).Bundle;
         Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = "11" }));
         Assert.Equal(Screen.Party, session.Screen);
         return session;
+    }
+
+    /// <summary>The sample modules packed into <paramref name="scratch"/>, packing them the first time.</summary>
+    private static List<string> Containers(TempModules scratch)
+    {
+        return SampleSet
+            .Select(id => File.Exists(Path.Combine(scratch.Root, id + ".rpak"))
+                ? Path.Combine(scratch.Root, id + ".rpak")
+                : EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+            .ToList();
     }
 
     private static void Run(GameSession session, IEngineContext engine, string payload)

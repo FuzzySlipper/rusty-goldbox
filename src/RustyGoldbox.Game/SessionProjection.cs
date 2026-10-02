@@ -48,6 +48,28 @@ internal static class SessionProjection
             projection["party"] = new JsonArray(session.Party.Select(character => (JsonNode)Member(rules, character)).ToArray());
         }
 
+        if (session.Screen == Screen.Combat)
+        {
+            FightReplay fight = session.Fight!;
+            projection["fight"] = new JsonObject
+            {
+                ["encounter"] = fight.Fight.Encounter,
+                ["track"] = fight.Fight.Track.Name,
+                ["done"] = fight.Done,
+                ["outcome"] = fight.Done ? fight.Fight.Describe() : null,
+                ["members"] = new JsonArray(fight.Fight.Members.Select(member => (JsonNode)new JsonObject
+                {
+                    ["name"] = member.Name,
+                    ["side"] = member.Side,
+                    ["value"] = (double)fight.Values[member.Name],
+                    ["max"] = member.Max is decimal max ? (double)max : null,
+                    ["defeated"] = fight.Defeated.Contains(member.Name),
+                    ["acting"] = fight.Acting.Who == member.Name,
+                }).ToArray()),
+                ["log"] = Strings(fight.Lines.TakeLast(14)),
+            };
+        }
+
         if (session.Screen == Screen.Play)
         {
             CampaignRunner runner = session.Runner!;
@@ -140,6 +162,9 @@ internal static class SessionProjection
         {
             Screen.Title => $"{session.Campaigns.Count} campaign(s) available",
             Screen.Party => $"{session.Campaign!.Name}: making a party ({session.Party.Count})",
+            Screen.Combat => session.Fight!.Done
+                ? $"{session.Campaign!.Name}: {session.Fight.Fight.Describe()}"
+                : $"{session.Campaign!.Name}: fighting {session.Fight.Fight.Encounter}",
             _ => session.Runner!.State.Ended
                 ? $"{session.Campaign!.Name}: the adventure is over"
                 : $"{session.Campaign!.Name}: {session.Runner.State.Area.Name} [{session.Runner.State.X}, {session.Runner.State.Y}] facing {Facings.Name(session.Runner.State.Facing)}",

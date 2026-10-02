@@ -44,6 +44,8 @@ export function mountProductUi(root, context) {
       body.replaceChildren(renderParty(view));
     } else if (view.screen === 'play') {
       body.replaceChildren(renderPlay(view));
+    } else if (view.screen === 'combat') {
+      body.replaceChildren(renderCombat(view));
     } else {
       body.replaceChildren();
     }
@@ -101,6 +103,23 @@ export function mountProductUi(root, context) {
       row(slot, button('Save', () => send({ action: 'save', slot: slot.value })), button('Quit', () => send({ action: 'quit' }))));
   };
 
+  // The fight plays back in the view window; Enter or Space (or this button) skips to the end, then returns to play.
+  const renderCombat = (view) => {
+    const fight = view.fight ?? { members: [], log: [] };
+    const side = (index) => element('ul', { style: 'padding-left:16px;margin:2px 0' },
+      ...fight.members.filter((member) => member.side === index).map((member) => element('li',
+        { style: member.defeated ? 'opacity:.45;text-decoration:line-through' : (member.acting ? 'color:#f6c177' : '') },
+        `${member.name}: ${fight.track} ${member.value}${member.max === null ? '' : '/' + member.max}`)));
+    return fragment(
+      element('h2', { style: HEADING_STYLE }, `Combat: ${fight.encounter ?? ''}`),
+      element('div', { style: 'display:flex;gap:16px' },
+        element('div', {}, element('strong', {}, 'Party'), side(0)),
+        element('div', {}, element('strong', {}, fight.encounter ?? 'Foes'), side(1))),
+      element('pre', { id: 'rusty-goldbox-fight', style: LOG_STYLE }, fight.log.join('\n')),
+      fight.done ? element('div', { style: 'margin:4px 0' }, fight.outcome ?? '') : '',
+      row(button(fight.done ? 'Continue' : 'Skip', () => send({ action: 'continue' }))));
+  };
+
   let unsubscribe;
   const projection = context?.projection;
   if (projection?.subscribe !== undefined) {
@@ -119,7 +138,7 @@ export function mountProductUi(root, context) {
   });
 }
 
-// The first-person view is drawn by the Engine in the top-left window (FirstPersonView.Window); the panel sits to its right.
+// The first-person view is drawn by the Engine in the top-left window (SceneView.Window); the panel sits to its right.
 const PANEL_STYLE = 'position:absolute;top:1%;left:49%;right:1%;max-height:98%;overflow:auto;'
   + 'padding:10px;background:rgba(16,16,24,.92);color:#e0def4;font:13px/1.35 ui-monospace,monospace;border-radius:6px';
 const HEADING_STYLE = 'font-size:14px;margin:8px 0 4px';

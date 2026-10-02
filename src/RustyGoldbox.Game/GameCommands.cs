@@ -38,10 +38,24 @@ internal static class GameCommands
         ["menu.choose-9"] = "choose 9",
     };
 
+    /// <summary>The key intent that continues past a fight on the combat screen.</summary>
+    public const string ContinueIntent = "combat.continue";
+
     /// <summary>Applies one input event; returns whether the session may have changed.</summary>
     public static bool Apply(GameSession session, IEngineContext engine, in ProductInputEvent input)
     {
         string intent = Encoding.UTF8.GetString(input.Intent.Span);
+        if (input.ValueKind == InputValueKind.Digital && intent == ContinueIntent)
+        {
+            if (IsPress(input) && session.Screen == Screen.Combat)
+            {
+                session.Continue();
+                return true;
+            }
+
+            return false;
+        }
+
         if (input.ValueKind == InputValueKind.Digital && KeyCommands.TryGetValue(intent, out string? command))
         {
             if (IsPress(input) && session.Screen == Screen.Play)
@@ -124,12 +138,15 @@ internal static class GameCommands
                 case "load":
                     session.Load(engine, Slot(payload));
                     break;
+                case "continue":
+                    session.Continue();
+                    break;
                 case "quit":
                     session.Quit();
                     session.Refresh();
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, begin, play, save, load and quit");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, begin, play, continue, save, load and quit");
             }
         }
         catch (PayloadException exception)

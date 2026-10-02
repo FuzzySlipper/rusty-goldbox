@@ -16,7 +16,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private readonly IEngineContext _engine;
     private readonly UiStream _uiStream;
     private readonly GameSession _session;
-    private readonly FirstPersonView _view;
+    private readonly SceneView _view;
     private ulong _uiSequence;
 
     public RustyGoldboxProduct(ProductCreateContext context)
@@ -25,7 +25,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         _engine = context.Engine;
         ModuleLibrary library = new(problems => OpenModules(context.Content, context.Engine.Content, problems));
         _session = new GameSession(library);
-        _view = new FirstPersonView(_engine, library);
+        _view = new SceneView(_engine, library);
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
@@ -43,10 +43,14 @@ public sealed class RustyGoldboxProduct : IEngineProduct
             changed |= GameCommands.Apply(_session, _engine, input);
         }
 
+        // Realtime steps: the fight playback moves on, and animations advance every step.
+        changed |= _session.Tick(update.Facts.AdmittedStepCount * update.Facts.FixedDeltaSeconds);
         if (changed)
         {
             Publish();
         }
+
+        _view.Tick();
 
         return ProductUpdateResult.None;
     }

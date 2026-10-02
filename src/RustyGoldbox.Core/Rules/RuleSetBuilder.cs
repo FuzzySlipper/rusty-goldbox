@@ -505,6 +505,10 @@ public sealed class RuleSetBuilder
                     CheckImage(definition, source, file);
                 }
             }
+            else if (definition.Type == DefinitionTypes.Figure)
+            {
+                CheckFigure(definition);
+            }
             else if (definition.Type == DefinitionTypes.Campaign)
             {
                 CheckEntry(definition, "$.start.area", definition.Json.GetProperty("start").GetProperty("entry").GetString()!, "$.start.entry");
@@ -610,6 +614,35 @@ public sealed class RuleSetBuilder
                 Error(asset, "asset.frames", at, $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
             }
         }
+    }
+
+    /// <summary>A figure draws exactly one monster or class, and nothing has two figures.</summary>
+    private void CheckFigure(Definition figure)
+    {
+        bool monster = figure.Json.TryGetProperty("monster", out _);
+        bool characterClass = figure.Json.TryGetProperty("class", out _);
+        if (monster == characterClass)
+        {
+            Error(figure, "figure.subject", "$", "A figure draws exactly one thing: give \"monster\" or \"class\", not both or neither.");
+            return;
+        }
+
+        string path = monster ? "$.monster" : "$.class";
+        if (!_rules.References.TryGetValue((figure, path), out Definition? subject) || !_rules.References.TryGetValue((figure, "$.sprite"), out Definition? sprite))
+        {
+            return;
+        }
+
+        Definition? earlier = _rules.OfType(DefinitionTypes.Figure)
+            .TakeWhile(other => other != figure)
+            .FirstOrDefault(other => _rules.References.TryGetValue((other, path), out Definition? drawn) && drawn == subject);
+        if (earlier is not null)
+        {
+            Error(figure, "figure.duplicate", path, $"{subject.QualifiedId} already has a figure ({earlier.QualifiedId}); a module set has one figure for each monster or class.");
+            return;
+        }
+
+        _rules.Figures[subject] = sprite;
     }
 
     private static bool Inside(int value, int size) => value >= 0 && value < size;

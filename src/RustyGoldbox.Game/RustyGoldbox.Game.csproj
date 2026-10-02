@@ -9,6 +9,12 @@
     <RustyEngineProductUiProjectionStream>rusty-goldbox</RustyEngineProductUiProjectionStream>
     <RustyEngineProductUiProjectionContract>rusty.goldbox.session</RustyEngineProductUiProjectionContract>
     <RustyEngineProductInputCursorMode>unlocked</RustyEngineProductInputCursorMode>
+    <!-- Realtime steps keep sprite animations and fight playback moving between
+         inputs; each step only advances them and publishes when something changed.
+         Agent playtests can hold time with the Engine's action-driven time mode. -->
+    <RustyEngineProductLifecycleMode>realtime</RustyEngineProductLifecycleMode>
+    <RustyEngineProductFixedStepHz>30</RustyEngineProductFixedStepHz>
+    <RustyEngineProductFixedStepMaxCatchUpSteps>2</RustyEngineProductFixedStepMaxCatchUpSteps>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,6 +51,9 @@
     <RustyEngineProductInputMapping Include="party.right.key-d" Intent="party.right" Trigger="key:key-d:pressed" />
     <RustyEngineProductInputMapping Include="party.around.key-x" Intent="party.around" Trigger="key:key-x:pressed" />
     <RustyEngineProductInputMapping Include="party.look.key-l" Intent="party.look" Trigger="key:key-l:pressed" />
+    <RustyEngineProductInputIntent Include="combat.continue" Value="digital" />
+    <RustyEngineProductInputMapping Include="combat.continue.enter" Intent="combat.continue" Trigger="key:enter:pressed" />
+    <RustyEngineProductInputMapping Include="combat.continue.space" Intent="combat.continue" Trigger="key:space:pressed" />
   </ItemGroup>
   <ItemGroup>
     <RustyEngineProductInputIntent Include="menu.choose-1" Value="digital" />

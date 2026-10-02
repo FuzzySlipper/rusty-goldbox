@@ -79,11 +79,16 @@ internal sealed class SpriteArt : IDisposable
         return art;
     }
 
-    /// <summary>A new figure showing frame 0, standing on its anchor.</summary>
-    public Appearance CreateFigure()
+    /// <summary>
+    /// A new figure showing frame 0, standing on its anchor. Cylindrical
+    /// figures turn to the camera around the vertical axis (for the level
+    /// camera); spherical ones face it fully, so they stay upright under a
+    /// camera looking down (combat).
+    /// </summary>
+    public Appearance CreateFigure(BillboardMode billboard = BillboardMode.Cylindrical)
     {
         return _graphics.CreateSpriteFromAtlas(new SpriteFromAtlasRequest(
-            Atlas, 0, Pivot, Vector2.One, BillboardMode.Cylindrical, SpriteSizeMode.World, 0, SpriteDepthPolicy.Default, new Color(1, 1, 1, 1)));
+            Atlas, 0, Pivot, Vector2.One, billboard, SpriteSizeMode.World, 0, SpriteDepthPolicy.Default, new Color(1, 1, 1, 1)));
     }
 
     /// <summary>

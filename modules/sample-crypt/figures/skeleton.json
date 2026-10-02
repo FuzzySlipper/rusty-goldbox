@@ -1,0 +1,6 @@
+{
+  "type": "figure",
+  "id": "skeleton",
+  "monster": "classic:skeleton",
+  "sprite": "placeholder-art:skeleton"
+}
