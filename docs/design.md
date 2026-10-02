@@ -384,7 +384,7 @@ path and the rule that failed. Module directories resolve through
 | `goldbox module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
 | `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
-| `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell. |
+| `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
 | `goldbox character new\|level …` | Create or advance a character under a ruleset and print the derived sheet. |
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |

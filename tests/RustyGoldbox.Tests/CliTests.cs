@@ -159,4 +159,20 @@ public sealed class CliTests
         int code = GoldboxCli.Run(args, output, modules.Root);
         return (code, output.ToString());
     }
+
+    [Fact]
+    public void EvalReadsACharacterFileAsSelfOrTarget()
+    {
+        using TempModules scratch = new();
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "dwarf", "--name", "Brom", "--attributes", "str=17,dex=10,con=14,int=9,wis=15,cha=10", "--out", "brom.json"],
+            ["eval", "self.thac0 + self.str_to_hit", "--module", Rules.ClassicPath, "--context", """{"self": "@brom.json"}"""],
+            ["eval", "--check", "save_spell", "--module", Rules.ClassicPath, "--context", """{"self": "@brom.json", "target": {"monster": "skeleton"}}""", "--seed", "2"],
+            ["eval", "self.level", "--module", Rules.ClassicPath, "--context", """{"self": "@missing.json"}"""]);
+
+        Assert.Contains("self.thac0 + self.str_to_hit = 21 (number)", transcript, StringComparison.Ordinal);
+        Assert.Contains("save_spell", transcript, StringComparison.Ordinal);
+        Assert.Contains("missing.json", transcript, StringComparison.Ordinal);
+        Assert.Contains("[exit 2]", transcript, StringComparison.Ordinal);
+    }
 }

@@ -32,7 +32,9 @@ internal static class GoldboxCli
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
               a creature is {"monster": id} or {"class": id, "race": id, "level": n, "<stat>": n,
-              "conditions": [ids], "equipment": [ids]}. Dice use Engine Random; the seed defaults to 1.
+              "conditions": [ids], "equipment": [ids]}, or "@<character file>" for a saved character,
+              for example {"self": "@brom.json", "target": {"monster": "skeleton"}}. Dice use Engine
+              Random; the seed defaults to 1.
 
           goldbox character new --module <path> --class <id> --race <id> [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]

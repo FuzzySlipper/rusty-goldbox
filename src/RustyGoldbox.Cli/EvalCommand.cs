@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -51,7 +52,7 @@ internal static class EvalCommand
         }
 
         RuleSet rules = set.Rules;
-        (Creature? self, Creature? target, string? contextError) = ReadContext(parsed.Single("--context"), rules, workingDirectory);
+        (Creature? self, Creature? target, string? contextError) = ReadContext(parsed.Single("--context"), set, workingDirectory);
         if (contextError is not null)
         {
             return output.UsageError(contextError);
@@ -129,8 +130,9 @@ internal static class EvalCommand
         return (result, rolls, failure);
     }
 
-    private static (Creature? Self, Creature? Target, string? Error) ReadContext(string? context, RuleSet rules, string workingDirectory)
+    private static (Creature? Self, Creature? Target, string? Error) ReadContext(string? context, ModuleSet set, string workingDirectory)
     {
+        RuleSet rules = set.Rules!;
         if (context is null)
         {
             return (null, null, null);
@@ -176,10 +178,10 @@ internal static class EvalCommand
                 switch (property.Name)
                 {
                     case "self":
-                        self = Creature.Read(property.Value, "self", rules, errors);
+                        self = ReadCreature(property.Value, "self", set, workingDirectory, errors);
                         break;
                     case "target":
-                        target = Creature.Read(property.Value, "target", rules, errors);
+                        target = ReadCreature(property.Value, "target", set, workingDirectory, errors);
                         break;
                     default:
                         errors.Add($"'{property.Name}' is not a context field. Fields: self, target.");
@@ -189,5 +191,36 @@ internal static class EvalCommand
 
             return errors.Count > 0 ? (null, null, "--context: " + string.Join(" ", errors)) : (self, target, null);
         }
+    }
+
+    /// <summary>
+    /// A context creature: an object read by <see cref="Creature.Read"/>, or
+    /// "@file" naming a character file (relative to the working directory),
+    /// read against the module set like any character file.
+    /// </summary>
+    private static Creature? ReadCreature(JsonElement value, string label, ModuleSet set, string workingDirectory, List<string> errors)
+    {
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            return Creature.Read(value, label, set.Rules!, errors);
+        }
+
+        string text = value.GetString()!;
+        if (!text.StartsWith('@') || text.Length == 1)
+        {
+            errors.Add($"{label} must be a creature object or \"@<character file>\", like \"@brom.json\".");
+            return null;
+        }
+
+        string path = Path.GetFullPath(text[1..], workingDirectory);
+        List<ModuleDiagnostic> problems = [];
+        Character? character = CharacterFile.Read(path, set, problems);
+        if (character is null)
+        {
+            errors.AddRange(problems.Select(problem => $"{label} {path}{(problem.JsonPath is null ? "" : $" {problem.JsonPath}")}: {problem.Message}"));
+            return null;
+        }
+
+        return character.ToCreature(label);
     }
 }
