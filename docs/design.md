@@ -140,8 +140,8 @@ plus a small **expression language**:
 - arithmetic, comparisons, boolean logic, `if`/`then`/`else`, `min`/`max`/
   `floor`, and dice (`2d6+1`, `1d20`);
 - reads of the evaluation context (`self.str`, `target.ac`, `self.level`,
-  `campaign.var.gate_open`) and table lookups (`table(thac0, self.class,
-  self.level)`);
+  `campaign.var.gate_open`, and in a class's modifiers `class.level`) and
+  table lookups (`table(thac0, self.class, self.level)`);
 - no assignment, loops, user-defined functions or side effects. Expressions
   are type-checked when a module loads, so an unknown stat or table fails
   validation, not play.
@@ -154,11 +154,23 @@ play (hit points, fatigue, magic points, a dying value): each has a maximum
 and starting value, and is read as `self.<id>` and `self.max_<id>`. No pool is
 built in; a ruleset declares its own, and one may be built from class level
 gains. Stat IDs form one namespace across the module
-set. **Modifiers** from races, conditions and equipped items add to a stat or
-to a check's roll. A **check** compares a roll, plus its modifiers, with a
-target. A **monster** names the class and level whose tables it uses, and its
-`stats` replace derived values. Attributes may declare a `default` for
+set. **Modifiers** from races, classes, conditions and equipped items add to
+a stat or to a check's roll. A **check** compares a roll, plus its modifiers,
+with a target. A **monster** names the class and level whose tables it uses,
+and its `stats` replace derived values. Attributes may declare a `default` for
 creatures that have none.
+
+A character records the class it took at each level and what the level track
+gained, so it can hold levels in several classes: `self.level` is the total
+and `self.class` the first class. Without an **advancement** definition each
+class has its own experience table and a character keeps its one class
+(first-edition style). An advancement with experience by character gives one
+table for total level, and each new level goes to a class the player picks,
+checked against the race and the class's requirements (3.5e style). A class's
+modifiers read `class.level`, the creature's level in that class, so
+per-class progressions such as base attack and base saves add up across
+classes. Classic split-experience multi-classing and dual-classing are not
+expressible yet.
 
 Each definition file holds one definition: `type`, `id` and the type's
 fields. Definition IDs use lowercase letters, digits and underscores, so they

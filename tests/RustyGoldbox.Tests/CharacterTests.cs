@@ -26,8 +26,9 @@ public sealed class CharacterTests
         Golden.Verify("ascend-character.txt", CliTranscript.Run(
             ["character", "new", "--module", Ascend, "--class", "warrior", "--race", "stoneborn", "--name", "Kara", "--priority", "might,grit,grace,wit", "--seed", "5", "--out", "kara.json"],
             ["character", "level", "kara.json", "--module", Ascend, "--xp", "3500", "--seed", "8"],
+            ["character", "level", "kara.json", "--module", Ascend, "--xp", "3000", "--class", "adept", "--seed", "9"],
             ["character", "new", "--module", Ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=10,wit=16", "--out", "ilse.json"],
-            ["character", "show", "ilse.json", "--module", Ascend],
+            ["character", "level", "ilse.json", "--module", Ascend, "--xp", "1000", "--class", "warrior", "--seed", "4"],
             ["character", "show", "ilse.json", "--module", Ascend, "--json"]));
     }
 
@@ -54,8 +55,38 @@ public sealed class CharacterTests
         Assert.Empty(problems);
         Assert.Equal([2, 3, 4, 5], gains!.Select(gain => gain.Level));
         Assert.Equal(5, character.Level);
-        Assert.Null(character.NextLevelExperience());
-        Assert.Equal(character.LevelGains.Sum(), character.Tracks["hit_points"].Max);
+        Assert.True(character.LevelWaiting(set.Rules!));
+        Assert.Equal(character.Levels.Sum(level => level.Gain), character.Tracks["hit_points"].Max);
+
+        // The waiting levels go to another class, up to the last character level.
+        gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 0, dice, problems, "adept"));
+        Assert.Empty(problems);
+        Assert.Equal([6, 7, 8], gains!.Select(gain => gain.Level));
+        Assert.Equal(new Dictionary<string, int> { ["warrior"] = 5, ["adept"] = 3 }, character.ClassLevels().ToDictionary(entry => entry.Key.Id, entry => entry.Value));
+        Assert.Null(character.NextLevelExperience(set.Rules!));
+    }
+
+    [Fact]
+    public void ANewClassMustAcceptTheCharacter()
+    {
+        ModuleSet set = ModuleLoader.Load(Ascend, []);
+        Character weak = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 10, 10, 9)))!;
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, weak, 1000, dice, problems, "adept")));
+        Assert.Equal("character.class", Assert.Single(problems).Rule);
+        Assert.Equal(1, weak.Level);
+    }
+
+    [Fact]
+    public void ClassExperienceKeepsOneClass()
+    {
+        ModuleSet set = ModuleLoader.Load(Rules.ClassicPath, []);
+        Character fighter = Create(set, new CreationRequest("x", "fighter", "human", Attributes: new Dictionary<string, decimal> { ["str"] = 15, ["dex"] = 12, ["con"] = 12, ["int"] = 12, ["wis"] = 12, ["cha"] = 12 }))!;
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, fighter, 5000, dice, problems, "thief")));
+        Assert.Equal("character.multiclass", Assert.Single(problems).Rule);
     }
 
     [Fact]
@@ -123,8 +154,8 @@ public sealed class CharacterTests
         ModuleSet set = ModuleLoader.Load(Ascend, []);
         string file = Path.Combine(modules.Root, "bad.json");
         File.WriteAllText(file, """
-            { "format": 1, "name": 5, "modules": ["ascend"], "race": "folk", "class": "warrior", "level": 2, "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "level_gains": "x", "gold": 0 }
+            { "format": 1, "name": 5, "modules": ["ascend"], "race": "folk", "levels": "x", "experience": -5,
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "gold": 0 }
             """);
         List<ModuleDiagnostic> problems = [];
 
@@ -134,8 +165,8 @@ public sealed class CharacterTests
         Assert.Contains(problems, problem => problem.JsonPath == "$.name");
         Assert.All(problems, problem => Assert.Equal("character.file", problem.Rule));
         File.WriteAllText(file, """
-            { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "class": "warrior", "level": 2, "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "level_gains": [5], "gold": 0 }
+            { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "levels": [ { "class": "warrior", "gain": 5 } ], "experience": -5,
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "gold": 0 }
             """);
         problems.Clear();
         Assert.Null(CharacterFile.Read(file, set, problems));

@@ -42,8 +42,10 @@ internal static class GoldboxCli
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range. --portrait gives the character a
               portrait asset from the module set.
-          goldbox character level <file> --module <path> --xp <n> [--seed <n>]
-              Adds experience, gains every level reached and saves the file.
+          goldbox character level <file> --module <path> --xp <n> [--class <id>] [--seed <n>]
+              Adds experience, gains every level reached and saves the file. Where the
+              advancement counts experience by character level, levels go to --class (a
+              new class must accept the character), else to the class of the latest level.
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 

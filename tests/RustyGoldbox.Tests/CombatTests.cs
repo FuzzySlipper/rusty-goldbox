@@ -36,9 +36,31 @@ public sealed class CombatTests
     {
         using TempModules scratch = new();
         WriteCharacter(scratch, Fixture("ascend"), "kara.json", new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 10))), "longsword");
+        WriteCharacter(scratch, Fixture("ascend"), "ilse.json", new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 12), ("wit", 16))));
 
+        // Ilse has no weapon, so she hexes: the brute saves against her difficulty class.
         Golden.Verify("ascend-combat.txt", CliTranscript.Run(scratch.Root,
-            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "brutes", "--seed", "11"]));
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json", "--encounter", "brutes", "--seed", "11"],
+            ["sim", "combat", "--module", Fixture("ascend"), "--party", "kara.json,ilse.json", "--encounter", "brutes", "--seed", "20"]));
+    }
+
+    [Fact]
+    public void AMulticlassCharacterHasEveryClassesActionsOnce()
+    {
+        ModuleSet set = ModuleLoader.Load(Fixture("ascend"), []);
+        List<ModuleDiagnostic> problems = [];
+        Character character = WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Kara", "warrior", "folk", Attributes: Scores(("might", 16), ("grace", 12), ("grit", 14), ("wit", 12))), dice, problems))!;
+        WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 3000, dice, problems, "adept"));
+        Assert.Empty(problems);
+
+        Combatant combatant = Combatant.FromCharacter(set.Rules!, character);
+
+        // Warrior's uses first; the adept's punch is the warrior's, so it appears once.
+        Assert.Equal(["Aim", "Punch", "Hex"], combatant.Uses.Select(use => use.Name));
+        Evaluator evaluator = new(set.Rules!, null);
+        // Warrior 1 and adept 2 each add their own progression.
+        Assert.Equal(2m, evaluator.Stat(combatant.Creature, "attack_bonus").Number);
+        Assert.Equal(3m, evaluator.Stat(combatant.Creature, "will_base").Number);
     }
 
     [Fact]

@@ -9,6 +9,7 @@ public static class DefinitionTypes
     private static readonly ExpressionKind CombatNumber = new(ExprType.Number, Roots.Self | Roots.Target);
     private static readonly ExpressionKind PlainNumber = new(ExprType.Number, Roots.None);
     private static readonly ModifierKind Modifier = new();
+    private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
     private static readonly UseKind Use = new();
 
     public static DefinitionType Attribute { get; } = new(
@@ -97,18 +98,19 @@ public static class DefinitionTypes
 
     public static DefinitionType Class { get; } = new(
         "class",
-        "A character class: requirements, hit points and experience per level, and spell slots.",
+        "A character class: requirements, hit points and experience per level, spell slots, actions, and modifiers that grow with the class's level. A character may hold levels in several classes when the advancement definition allows it.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("requirements", new MapKind(new StatKind(true), new IntegerKind()), false, "Minimum attribute scores."),
+            new("requirements", new MapKind(new StatKind(true), new IntegerKind()), false, "Minimum attribute scores, checked when a character first takes the class."),
             new("prime_requisites", new ListKind(new StatKind(true)), false, "Attributes that matter most for the class."),
             new("levels", new ListKind(new ObjectKind(
             [
-                new("xp", new IntegerKind(), true, "Experience needed for this level; the first level needs 0."),
+                new("xp", new IntegerKind(), false, "Experience needed for this level; the first level needs 0. Required when each class has its own experience (no advancement definition, or one with experience \"class\"); left out when the advancement definition sets experience by character level."),
                 new("hp", SelfNumber, true, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\"."),
-            ])), true, "One entry per level, starting at level 1."),
+            ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
+            new("modifiers", new ListKind(ClassModifier), false, "Modifiers a creature with levels in the class has. They may read class.level, its level in this class, so per-class progressions add up across classes: { \"stat\": \"base_attack\", \"value\": \"floor(class.level * 3 / 4)\" }."),
         ],
         """
         {
@@ -117,8 +119,21 @@ public static class DefinitionTypes
           "name": "Fighter",
           "requirements": { "str": 9, "con": 7 },
           "prime_requisites": ["str"],
-          "levels": [ { "xp": 0, "hp": "1d10" }, { "xp": 1900, "hp": "1d10" } ]
+          "levels": [ { "xp": 0, "hp": "1d10" }, { "xp": 1900, "hp": "1d10" } ],
+          "modifiers": [ { "stat": "base_attack", "value": "class.level" } ]
         }
+        """);
+
+    public static DefinitionType Advancement { get; } = new(
+        "advancement",
+        "How characters gain levels. Without one, each class has its own experience table (levels[].xp) and a character stays in one class. With experience \"character\", one table gives the experience for each total character level, and each new level is taken in a class of the player's choice, so a character can hold levels in several classes. A module set has at most one.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("experience", new EnumKind(["class", "character"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level."),
+            new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
+        ],
+        """
+        { "type": "advancement", "id": "standard", "name": "Character levels", "experience": "character", "levels": [0, 1000, 3000, 6000, 10000] }
         """);
 
     public static DefinitionType Check { get; } = new(
@@ -484,7 +499,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Advancement, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure,
     ];
 

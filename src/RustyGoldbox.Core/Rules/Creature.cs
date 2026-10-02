@@ -12,7 +12,7 @@ public sealed class TrackValue
 }
 
 /// <summary>
-/// A creature expressions can read: a character (class, race, level and
+/// A creature expressions can read: a character (classes, race, level and
 /// attributes) or a monster, plus any conditions and equipment it has.
 /// </summary>
 public sealed class Creature
@@ -25,13 +25,18 @@ public sealed class Creature
     /// <summary>How the creature is named in messages: "self" or "target".</summary>
     public string Label { get; }
 
+    /// <summary>What expressions read as class: a character's first class, or a monster's.</summary>
     public Definition? Class { get; set; }
 
     public Definition? Race { get; set; }
 
     public Definition? Monster { get; set; }
 
+    /// <summary>What expressions read as level: a character's total over its classes, or a monster's.</summary>
     public int? Level { get; set; }
+
+    /// <summary>The creature's level in each of its classes, in the order taken; each class's modifiers apply at that level.</summary>
+    public Dictionary<Definition, int> ClassLevels { get; } = [];
 
     /// <summary>Track values by track ID.</summary>
     public Dictionary<string, TrackValue> Tracks { get; } = [];
@@ -54,12 +59,17 @@ public sealed class Creature
 
     public List<Definition> Equipment { get; } = [];
 
-    /// <summary>The race, conditions and equipment whose modifiers apply to this creature.</summary>
+    /// <summary>The race, classes, conditions and equipment whose modifiers apply to this creature.</summary>
     public IEnumerable<Definition> ModifierSources()
     {
         if (Race is not null)
         {
             yield return Race;
+        }
+
+        foreach (Definition characterClass in ClassLevels.Keys)
+        {
+            yield return characterClass;
         }
 
         foreach (Definition condition in Conditions)
@@ -73,10 +83,24 @@ public sealed class Creature
         }
     }
 
+    /// <summary>Makes this creature the monster: its class and level, if it names them, count as one class level.</summary>
+    public void Become(RuleSet rules, Definition monster)
+    {
+        Monster = monster;
+        Class = monster.Json.TryGetProperty("class", out _) ? rules.Reference(monster, "$.class") : null;
+        Level = monster.Json.TryGetProperty("level", out JsonElement level) ? level.GetInt32() : null;
+        ClassLevels.Clear();
+        if (Class is not null && Level is int classLevel)
+        {
+            ClassLevels[Class] = classLevel;
+        }
+    }
+
     /// <summary>
     /// Reads a creature description:
-    /// <c>{ "monster": "skeleton" }</c> or
-    /// <c>{ "class": "fighter", "race": "dwarf", "level": 5, "str": 17, "conditions": [...], "equipment": [...] }</c>.
+    /// <c>{ "monster": "skeleton" }</c>,
+    /// <c>{ "class": "fighter", "race": "dwarf", "level": 5, "str": 17, "conditions": [...], "equipment": [...] }</c> or
+    /// <c>{ "classes": { "fighter": 3, "thief": 2 }, ... }</c> for several classes.
     /// Any other key is a stat value. Problems are added to <paramref name="errors"/>.
     /// </summary>
     public static Creature Read(JsonElement json, string label, RuleSet rules, List<string> errors)
@@ -90,12 +114,16 @@ public sealed class Creature
 
         if (json.TryGetProperty("monster", out JsonElement monster))
         {
-            creature.Monster = Find(rules, DefinitionTypes.Monster, monster, $"{label}.monster", errors);
-            if (creature.Monster is not null)
+            if (Find(rules, DefinitionTypes.Monster, monster, $"{label}.monster", errors) is Definition found)
             {
-                creature.Class = creature.Monster.Json.TryGetProperty("class", out _) ? rules.Reference(creature.Monster, "$.class") : null;
-                creature.Level = creature.Monster.Json.TryGetProperty("level", out JsonElement level) ? level.GetInt32() : null;
+                creature.Become(rules, found);
             }
+        }
+
+        if (json.TryGetProperty("classes", out _) && (json.TryGetProperty("class", out _) || json.TryGetProperty("level", out _)))
+        {
+            errors.Add($"{label} gives \"classes\" and \"class\" or \"level\"; use one. \"classes\" sets the class (the first) and the level (the total).");
+            return creature;
         }
 
         foreach (JsonProperty property in json.EnumerateObject())
@@ -104,6 +132,9 @@ public sealed class Creature
             switch (property.Name)
             {
                 case "monster":
+                    break;
+                case "classes":
+                    ReadClasses(rules, property.Value, at, creature, errors);
                     break;
                 case "class":
                     creature.Class = Find(rules, DefinitionTypes.Class, property.Value, at, errors) ?? creature.Class;
@@ -152,7 +183,46 @@ public sealed class Creature
             }
         }
 
+        if (!json.TryGetProperty("classes", out _))
+        {
+            creature.ClassLevels.Clear();
+            if (creature.Class is not null && creature.Level is int classLevel)
+            {
+                creature.ClassLevels[creature.Class] = classLevel;
+            }
+        }
+
         return creature;
+    }
+
+    private static void ReadClasses(RuleSet rules, JsonElement classes, string at, Creature creature, List<string> errors)
+    {
+        if (classes.ValueKind != JsonValueKind.Object || !classes.EnumerateObject().Any())
+        {
+            errors.Add($"{at} must be an object of class levels, like {{ \"fighter\": 3, \"thief\": 2 }}.");
+            return;
+        }
+
+        creature.ClassLevels.Clear();
+        foreach (JsonProperty entry in classes.EnumerateObject())
+        {
+            Definition? characterClass = rules.Find(DefinitionTypes.Class, entry.Name, out string? problem);
+            if (characterClass is null)
+            {
+                errors.Add($"{at}.{entry.Name}: {problem}");
+            }
+            else if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetInt32(out int level) || level < 1)
+            {
+                errors.Add($"{at}.{entry.Name} must be a level, a whole number 1 or more.");
+            }
+            else
+            {
+                creature.ClassLevels[characterClass] = level;
+            }
+        }
+
+        creature.Class = creature.ClassLevels.Keys.FirstOrDefault();
+        creature.Level = creature.ClassLevels.Count > 0 ? creature.ClassLevels.Values.Sum() : null;
     }
 
     private static void ReadStat(RuleSet rules, JsonProperty property, string at, Creature creature, List<string> errors)
@@ -161,7 +231,7 @@ public sealed class Creature
         {
             string stats = string.Join(", ", rules.Stats.Keys.Order(StringComparer.Ordinal));
             string tracks = string.Join(", ", rules.Tracks.Keys.SelectMany(id => new[] { id, $"max_{id}" }));
-            errors.Add($"{at}: '{property.Name}' is not a stat, track or creature field. Fields: monster, class, race, level, conditions, equipment. Tracks: {tracks}. Stats: {stats}.");
+            errors.Add($"{at}: '{property.Name}' is not a stat, track or creature field. Fields: monster, class, classes, race, level, conditions, equipment. Tracks: {tracks}. Stats: {stats}.");
         }
         else if (stat.Type != Expressions.ExprType.Number)
         {

@@ -18,8 +18,8 @@ public sealed record CreationRequest(
     IReadOnlyList<string>? Priority = null,
     string? Creation = null);
 
-/// <summary>A level gained: the level reached and the hit points it added.</summary>
-public sealed record LevelGain(int Level, decimal Amount);
+/// <summary>A level gained: the character level reached, the class it was taken in, and the hit points it added.</summary>
+public sealed record LevelGain(int Level, Definition Class, decimal Amount);
 
 /// <summary>
 /// Creates and advances characters from the rule set's character-creation,
@@ -60,14 +60,15 @@ public static class CharacterRules
         }
 
         Adjust(race, scores);
-        CheckRace(rules, race, characterClass, scores, problems);
+        CheckRaceClass(rules, race, characterClass, problems);
+        CheckRaceLimits(race, scores, problems);
         CheckClass(characterClass, scores, problems);
         if (problems.Count > 0)
         {
             return null;
         }
 
-        Character character = new() { Name = request.Name, Modules = modules, Race = race, Class = characterClass };
+        Character character = new() { Name = request.Name, Modules = modules, Race = race };
         foreach ((string id, decimal score) in scores)
         {
             character.Attributes[id] = score;
@@ -75,10 +76,9 @@ public static class CharacterRules
 
         try
         {
+            decimal gain = TakeLevel(rules, character, characterClass, evaluator);
             if (rules.LevelTrack is Definition levelTrack)
             {
-                decimal gain = HitPointsForLevel(rules, character, evaluator, 1);
-                character.LevelGains.Add(gain);
                 character.Tracks[levelTrack.Id] = new TrackValue { Max = gain };
             }
 
@@ -132,21 +132,40 @@ public static class CharacterRules
 
     /// <summary>
     /// Adds experience and gains every level it reaches, rolling hit points
-    /// for each. On a problem it returns null and the character may be partly
-    /// advanced; don't save it.
+    /// for each. Under an advancement by character, each level is taken in
+    /// <paramref name="nextClass"/> (a new class must accept the character),
+    /// otherwise in the class of the latest level; with experience by class
+    /// the character stays in its class. Levelling stops where that class has
+    /// no more levels. On a problem it returns null and the character may be
+    /// partly advanced; don't save it.
     /// </summary>
-    public static List<LevelGain>? AddExperience(RuleSet rules, Character character, decimal experience, DiceRoller dice, List<ModuleDiagnostic> problems)
+    public static List<LevelGain>? AddExperience(RuleSet rules, Character character, decimal experience, DiceRoller dice, List<ModuleDiagnostic> problems, string? nextClass = null)
     {
+        Definition? chosen = null;
+        if (nextClass is not null)
+        {
+            chosen = Find(rules, DefinitionTypes.Class, nextClass, "class", problems);
+            if (chosen is null || !CanTake(rules, character, chosen, problems))
+            {
+                return null;
+            }
+        }
+
         try
         {
             character.Experience = checked(character.Experience + experience);
             Evaluator evaluator = new(rules, dice);
             List<LevelGain> gains = [];
-            while (character.NextLevelExperience() is decimal needed && character.Experience >= needed)
+            while (character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
             {
-                character.Level++;
-                decimal gain = HitPointsForLevel(rules, character, evaluator, character.Level);
-                character.LevelGains.Add(gain);
+                // A class with no levels left stops here; the level waits for another class (see LevelWaiting).
+                Definition characterClass = chosen ?? character.LatestClass;
+                if (character.ClassLevels().GetValueOrDefault(characterClass) >= characterClass.Json.GetProperty("levels").GetArrayLength())
+                {
+                    break;
+                }
+
+                decimal gain = TakeLevel(rules, character, characterClass, evaluator);
                 if (rules.LevelTrack is Definition levelTrack)
                 {
                     TrackValue value = character.Tracks[levelTrack.Id];
@@ -154,7 +173,7 @@ public static class CharacterRules
                     value.Current = checked((value.Current ?? 0) + gain);
                 }
 
-                gains.Add(new LevelGain(character.Level, gain));
+                gains.Add(new LevelGain(character.Level, characterClass, gain));
             }
 
             return gains;
@@ -166,6 +185,45 @@ public static class CharacterRules
                 : new ModuleDiagnostic("character.number", "Experience or a track would become too large to be a number."));
             return null;
         }
+    }
+
+    /// <summary>
+    /// Whether the character's next levels may go to <paramref name="characterClass"/>:
+    /// its own classes always; a new class only under an advancement by
+    /// character, and only if the race allows it and the character meets its
+    /// requirements.
+    /// </summary>
+    private static bool CanTake(RuleSet rules, Character character, Definition characterClass, List<ModuleDiagnostic> problems)
+    {
+        if (character.ClassLevels().ContainsKey(characterClass))
+        {
+            return true;
+        }
+
+        if (!rules.ExperienceByCharacter)
+        {
+            string why = rules.Advancement is Definition advancement
+                ? $"{advancement.QualifiedId} counts experience by class"
+                : "the module set has no advancement definition with experience \"character\"";
+            problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't take a level in {characterClass.QualifiedId}: {why}, so a character keeps its one class."));
+            return false;
+        }
+
+        int before = problems.Count;
+        CheckRaceClass(rules, character.Race, characterClass, problems);
+        CheckClass(characterClass, character.Attributes, problems);
+        return problems.Count == before;
+    }
+
+    /// <summary>Adds a level in <paramref name="characterClass"/> and returns what the level track gains from it.</summary>
+    private static decimal TakeLevel(RuleSet rules, Character character, Definition characterClass, Evaluator evaluator)
+    {
+        // The gain is evaluated as the character is once it has the level.
+        character.Levels.Add(new LevelTaken(characterClass, 0));
+        int classLevel = character.ClassLevels()[characterClass];
+        decimal gain = Evaluate(rules, evaluator, characterClass, $"$.levels[{classLevel - 1}].hp", character.ToCreature());
+        character.Levels[^1] = new LevelTaken(characterClass, gain);
+        return gain;
     }
 
     /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>
@@ -196,11 +254,6 @@ public static class CharacterRules
         {
             throw new RuleFailure(new ModuleDiagnostic("character.evaluate", exception.Message, definition.Module, definition.File, path));
         }
-    }
-
-    private static decimal HitPointsForLevel(RuleSet rules, Character character, Evaluator evaluator, int level)
-    {
-        return Evaluate(rules, evaluator, character.Class, $"$.levels[{level - 1}].hp", character.ToCreature());
     }
 
     /// <summary>Evaluates a definition's expression; a failure names the definition, file and path.</summary>
@@ -342,7 +395,7 @@ public static class CharacterRules
         }
     }
 
-    private static void CheckRace(RuleSet rules, Definition race, Definition characterClass, Dictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
+    private static void CheckRaceClass(RuleSet rules, Definition race, Definition characterClass, List<ModuleDiagnostic> problems)
     {
         int index = 0;
         bool allowed = false;
@@ -357,7 +410,10 @@ public static class CharacterRules
             string classes = string.Join(", ", race.Json.GetProperty("classes").EnumerateArray().Select(entry => entry.GetString()));
             problems.Add(new ModuleDiagnostic("character.race", $"{race.QualifiedId} can't take the class {characterClass.QualifiedId}. Its classes: {classes}.", race.Module, race.File, "$.classes"));
         }
+    }
 
+    private static void CheckRaceLimits(Definition race, IReadOnlyDictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
+    {
         if (race.Json.TryGetProperty("ability_limits", out JsonElement limits))
         {
             foreach (JsonProperty limit in limits.EnumerateObject())
@@ -378,7 +434,7 @@ public static class CharacterRules
         }
     }
 
-    private static void CheckClass(Definition characterClass, Dictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
+    private static void CheckClass(Definition characterClass, IReadOnlyDictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
     {
         if (!characterClass.Json.TryGetProperty("requirements", out JsonElement requirements))
         {

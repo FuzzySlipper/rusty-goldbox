@@ -46,6 +46,11 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             Monster = Creature.Monster,
             Level = Creature.Level,
         };
+        foreach ((Definition characterClass, int level) in Creature.ClassLevels)
+        {
+            renamed.ClassLevels[characterClass] = level;
+        }
+
         foreach ((string id, TrackValue value) in Creature.Tracks)
         {
             renamed.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };
@@ -61,22 +66,26 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         return new Combatant(newName, renamed, Uses);
     }
 
-    /// <summary>A character as a combatant: its class's actions, with item parameters from its equipment.</summary>
+    /// <summary>
+    /// A character as a combatant: its classes' actions in the order the
+    /// classes were taken, with item parameters from its equipment. A use
+    /// another class already gives (the same action and name) is listed once.
+    /// </summary>
     public static Combatant FromCharacter(RuleSet rules, Character character)
     {
         Creature creature = character.ToCreature(character.Name);
-        return new Combatant(character.Name, creature, ReadUses(rules, character.Class, "$.actions", creature.Equipment));
+        List<UseOption> uses = creature.ClassLevels.Keys
+            .SelectMany(characterClass => ReadUses(rules, characterClass, "$.actions", creature.Equipment))
+            .DistinctBy(use => (use.Action, use.Name))
+            .ToList();
+        return new Combatant(character.Name, creature, uses);
     }
 
     /// <summary>A monster as a combatant: its track maxima rolled, every track at its start.</summary>
     public static Combatant FromMonster(RuleSet rules, Definition monster, string name, Evaluator evaluator)
     {
-        Creature creature = new(name)
-        {
-            Monster = monster,
-            Class = monster.Json.TryGetProperty("class", out _) ? rules.Reference(monster, "$.class") : null,
-            Level = monster.Json.TryGetProperty("level", out JsonElement level) ? level.GetInt32() : null,
-        };
+        Creature creature = new(name);
+        creature.Become(rules, monster);
         if (monster.Json.TryGetProperty("tracks", out JsonElement tracks))
         {
             foreach (JsonProperty entry in tracks.EnumerateObject())

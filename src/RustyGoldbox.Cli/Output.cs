@@ -415,24 +415,34 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 ok = true,
                 saved_to = path is null ? null : Display(path),
                 character = JsonDocument.Parse(CharacterFile.ToJson(character)).RootElement,
-                next_level_experience = character.NextLevelExperience(),
-                spell_slots = character.SpellSlots(),
+                next_level_experience = character.NextLevelExperience(rules),
+                level_waiting = character.LevelWaiting(rules),
+                spell_slots = character.SpellSlots().Select(entry => new { @class = entry.Class.QualifiedId, slots = entry.Slots }),
                 stats = stats.Select(stat => new { id = stat.Id, name = stat.Name, kind = stat.Kind, value = stat.Value is Value value ? ValueJson(value) : null, problem = stat.Problem }),
                 tracks = tracks.Select(track => new { id = track.Track.Id, name = track.Track.Name, current = track.Current, max = track.Max, problem = track.Problem }),
-                levels_gained = gains.Select(gain => new { level = gain.Level, gained = gain.Amount }),
+                levels_gained = gains.Select(gain => new { level = gain.Level, @class = gain.Class.QualifiedId, gained = gain.Amount }),
                 seed,
                 rolls = rolls.Select(RollJson),
             });
             return;
         }
 
+        // A character with one class reads as before; with several, each line says which class.
+        bool multiclass = character.ClassLevels().Count > 1;
         foreach (LevelGain gain in gains)
         {
-            writer.WriteLine($"Reached level {gain.Level}: +{gain.Amount} {levelTrack}.");
+            string taken = multiclass ? $" ({gain.Class.Name} {character.Levels.Take(gain.Level).Count(level => level.Class == gain.Class)})" : "";
+            writer.WriteLine($"Reached level {gain.Level}{taken}: +{gain.Amount} {levelTrack}.");
         }
 
-        string next = character.NextLevelExperience() is decimal needed ? $"next level at {needed}" : "highest level";
-        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.Class.Name} {character.Level} ({character.Experience} xp, {next})");
+        string next = character.NextLevelExperience(rules) is decimal needed ? $"next level at {needed}" : "highest level";
+        string total = multiclass ? $"level {character.Level}, " : "";
+        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.ClassText} ({total}{character.Experience} xp, {next})");
+        if (character.LevelWaiting(rules))
+        {
+            writer.WriteLine($"  level {character.Level + 1} is waiting: {character.LatestClass.Name} has no more levels, so take it in another class (character level --xp 0 --class <id>).");
+        }
+
         foreach (SheetTrack track in tracks)
         {
             string max = track.Max is decimal known ? N(known) : $"(can't compute: {track.Problem})";
@@ -444,10 +454,10 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             writer.WriteLine($"  portrait {portrait.QualifiedId}");
         }
-        IReadOnlyList<int> slots = character.SpellSlots();
-        if (slots.Count > 0)
+        foreach ((Core.Definitions.Definition spellClass, IReadOnlyList<int> slots) in character.SpellSlots())
         {
-            writer.WriteLine($"  spells per day by spell level: {string.Join(" / ", slots)}");
+            string whose = multiclass ? $"{spellClass.Name} " : "";
+            writer.WriteLine($"  {whose}spells per day by spell level: {string.Join(" / ", slots)}");
         }
 
         foreach (SheetStat stat in stats)

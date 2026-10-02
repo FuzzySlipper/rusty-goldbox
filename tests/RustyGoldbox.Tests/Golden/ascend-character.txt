@@ -7,10 +7,14 @@ Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
   grit           14     Grit
   wit            11     Wit
   ac             9      Armour class (higher is better)
-  attack_bonus   1      Attack bonus
+  attack_bonus   1      Base attack bonus (each class adds its own)
+  fort_base      2      Base Fortitude save (each class adds its own)
   grace_mod      -1     Grace modifier
   grit_mod       2      Grit modifier
   might_mod      4      Might modifier
+  reflex_base    0      Base Reflex save (each class adds its own)
+  save_dc        10     Difficulty class of the creature's hexes
+  will_base      0      Base Will save (each class adds its own)
   wit_mod        0      Wit modifier
 Saved to kara.json.
   seed 5: 4d6 keep 3: 4+6+1+1 = 11; 4d6 keep 3: 4+5+2+3 = 12; 4d6 keep 3: 2+1+4+5 = 11; 4d6 keep 3: 4+6+6+6 = 18; 4d4: 4+4+3+3 = 14
@@ -27,14 +31,24 @@ Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
   grit           14     Grit
   wit            11     Wit
   ac             9      Armour class (higher is better)
-  attack_bonus   3      Attack bonus
+  attack_bonus   3      Base attack bonus (each class adds its own)
+  fort_base      3      Base Fortitude save (each class adds its own)
   grace_mod      -1     Grace modifier
   grit_mod       2      Grit modifier
   might_mod      4      Might modifier
+  reflex_base    1      Base Reflex save (each class adds its own)
+  save_dc        11     Difficulty class of the creature's hexes
+  will_base      1      Base Will save (each class adds its own)
   wit_mod        0      Wit modifier
 Saved to kara.json.
   seed 8: 1d10: 7 = 7; 1d10: 7 = 7
 [exit 0]
+
+$ goldbox character level kara.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --xp 3000 --class adept --seed 9
+error[character.race] ascend tests/RustyGoldbox.Tests/Fixtures/ascend/races/stoneborn.json $.classes
+  ascend:stoneborn can't take the class ascend:adept. Its classes: warrior.
+1 error.
+[exit 1]
 
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/ascend --class adept --race folk --name Ilse --attributes might=9,grace=12,grit=10,wit=16 --out ilse.json
 Ilse: Folk Adept 1 (0 xp, next level at 1000)
@@ -46,30 +60,41 @@ Ilse: Folk Adept 1 (0 xp, next level at 1000)
   grit           10     Grit
   wit            16     Wit
   ac             11     Armour class (higher is better)
-  attack_bonus   0      Attack bonus
+  attack_bonus   0      Base attack bonus (each class adds its own)
+  fort_base      0      Base Fortitude save (each class adds its own)
   grace_mod      1      Grace modifier
   grit_mod       0      Grit modifier
   might_mod      -1     Might modifier
+  reflex_base    0      Base Reflex save (each class adds its own)
+  save_dc        13     Difficulty class of the creature's hexes
+  will_base      2      Base Will save (each class adds its own)
   wit_mod        3      Wit modifier
 Saved to ilse.json.
   seed 1: 3d4: 2+1+1 = 4
 [exit 0]
 
-$ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend
-Ilse: Folk Adept 1 (0 xp, next level at 1000)
-  hit points 6/6
+$ goldbox character level ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --xp 1000 --class warrior --seed 4
+Reached level 2 (Warrior 1): +3 hit points.
+Ilse: Folk Adept 1 / Warrior 1 (level 2, 1000 xp, next level at 3000)
+  hit points 9/9
   gold 40
-  spells per day by spell level: 1
+  Adept spells per day by spell level: 1
   might          9      Might
   grace          12     Grace
   grit           10     Grit
   wit            16     Wit
   ac             11     Armour class (higher is better)
-  attack_bonus   0      Attack bonus
+  attack_bonus   1      Base attack bonus (each class adds its own)
+  fort_base      2      Base Fortitude save (each class adds its own)
   grace_mod      1      Grace modifier
   grit_mod       0      Grit modifier
   might_mod      -1     Might modifier
+  reflex_base    0      Base Reflex save (each class adds its own)
+  save_dc        14     Difficulty class of the creature's hexes
+  will_base      2      Base Will save (each class adds its own)
   wit_mod        3      Wit modifier
+Saved to ilse.json.
+  seed 4: 1d10: 3 = 3
 [exit 0]
 
 $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/ascend --json
@@ -86,9 +111,17 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
       }
     ],
     "race": "ascend:folk",
-    "class": "ascend:adept",
-    "level": 1,
-    "experience": 0,
+    "levels": [
+      {
+        "class": "ascend:adept",
+        "gain": 6
+      },
+      {
+        "class": "ascend:warrior",
+        "gain": 3
+      }
+    ],
+    "experience": 1000,
     "attributes": {
       "might": 9,
       "grace": 12,
@@ -97,20 +130,23 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
     },
     "tracks": {
       "hit_points": {
-        "current": 6,
-        "max": 6
+        "current": 9,
+        "max": 9
       }
     },
-    "level_gains": [
-      6
-    ],
     "gold": 40,
     "equipment": [],
     "conditions": []
   },
-  "next_level_experience": 1000,
+  "next_level_experience": 3000,
+  "level_waiting": false,
   "spell_slots": [
-    1
+    {
+      "class": "ascend:adept",
+      "slots": [
+        1
+      ]
+    }
   ],
   "stats": [
     {
@@ -150,9 +186,16 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
     },
     {
       "id": "attack_bonus",
-      "name": "Attack bonus",
+      "name": "Base attack bonus (each class adds its own)",
       "kind": "derived",
-      "value": 0,
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "fort_base",
+      "name": "Base Fortitude save (each class adds its own)",
+      "kind": "derived",
+      "value": 2,
       "problem": null
     },
     {
@@ -177,6 +220,27 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
       "problem": null
     },
     {
+      "id": "reflex_base",
+      "name": "Base Reflex save (each class adds its own)",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "save_dc",
+      "name": "Difficulty class of the creature's hexes",
+      "kind": "derived",
+      "value": 14,
+      "problem": null
+    },
+    {
+      "id": "will_base",
+      "name": "Base Will save (each class adds its own)",
+      "kind": "derived",
+      "value": 2,
+      "problem": null
+    },
+    {
       "id": "wit_mod",
       "name": "Wit modifier",
       "kind": "derived",
@@ -188,8 +252,8 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 6,
-      "max": 6,
+      "current": 9,
+      "max": 9,
       "problem": null
     }
   ],

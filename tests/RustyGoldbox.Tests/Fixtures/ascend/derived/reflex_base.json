@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "reflex_base",
+  "name": "Base Reflex save (each class adds its own)",
+  "value": "0"
+}

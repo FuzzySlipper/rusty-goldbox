@@ -1,0 +1,15 @@
+{
+  "type": "condition",
+  "id": "shaken",
+  "name": "Shaken",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "-2"
+    },
+    {
+      "check": "save_will",
+      "value": "-2"
+    }
+  ]
+}

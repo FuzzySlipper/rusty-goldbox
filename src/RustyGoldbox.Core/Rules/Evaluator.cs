@@ -13,14 +13,16 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 
 /// <summary>
 /// What an expression can read: the creatures, the parameters of the action
-/// being used, and the check being resolved.
+/// being used, the check being resolved, and for a class's modifier the
+/// creature's level in that class.
 /// </summary>
 public sealed record Scope(
     Creature? Self,
     Creature? Target,
     IReadOnlyDictionary<string, CompiledExpression>? Use = null,
     CheckResult? Check = null,
-    IReadOnlyDictionary<string, Value>? Variables = null);
+    IReadOnlyDictionary<string, Value>? Variables = null,
+    int? ClassLevel = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -80,7 +82,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                     if (modifier.Stat == name)
                     {
                         _trail.Add($"modifier at {source.QualifiedId} {modifier.Path} ({source.File})");
-                        total = Add(total, Evaluate(modifier.Value, creature, null).Number, 1);
+                        total = Add(total, Evaluate(modifier.Value, ModifierScope(creature, source)).Number, 1);
                         _trail.RemoveAt(_trail.Count - 1);
                     }
                 }
@@ -108,7 +110,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             {
                 if (entry.Check == check)
                 {
-                    modifier = Add(modifier, Evaluate(entry.Value, self, null).Number, 1);
+                    modifier = Add(modifier, Evaluate(entry.Value, ModifierScope(self, source)).Number, 1);
                 }
             }
         }
@@ -135,6 +137,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         }
 
         return result;
+    }
+
+    /// <summary>What a modifier from <paramref name="source"/> reads: the creature, and its level in the source when that is a class.</summary>
+    private static Scope ModifierScope(Creature creature, Definition source)
+    {
+        int? classLevel = source.Type == DefinitionTypes.Class ? creature.ClassLevels[source] : null;
+        return new Scope(creature, null, ClassLevel: classLevel);
     }
 
     private Value BaseStat(Creature creature, string name)
@@ -301,6 +310,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return scope.Variables is not null && scope.Variables.TryGetValue(path.Name, out Value variable)
                     ? variable
                     : throw new ExpressionException($"campaign.var.{path.Name} has no value here: there is no campaign running.", path.Column);
+            }
+
+            if (path.Root == "class")
+            {
+                return scope.ClassLevel is int classLevel
+                    ? Value.Of(classLevel)
+                    : throw new ExpressionException("class.level has no value outside a class's modifiers.", path.Column);
             }
 
             if (path.Root == "check")

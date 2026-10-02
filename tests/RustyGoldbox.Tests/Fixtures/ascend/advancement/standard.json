@@ -1,0 +1,7 @@
+{
+  "type": "advancement",
+  "id": "standard",
+  "name": "Character levels",
+  "experience": "character",
+  "levels": [0, 1000, 3000, 6000, 10000, 15000, 21000, 28000]
+}

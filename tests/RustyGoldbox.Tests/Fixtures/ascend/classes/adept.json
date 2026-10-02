@@ -10,23 +10,18 @@
   ],
   "levels": [
     {
-      "xp": 0,
-      "hp": "6 + self.grit_mod"
+      "hp": "if self.level == 1 then 6 + self.grit_mod else max(1, 1d6 + self.grit_mod)"
     },
     {
-      "xp": 1000,
       "hp": "max(1, 1d6 + self.grit_mod)"
     },
     {
-      "xp": 3000,
       "hp": "max(1, 1d6 + self.grit_mod)"
     },
     {
-      "xp": 6000,
       "hp": "max(1, 1d6 + self.grit_mod)"
     },
     {
-      "xp": 10000,
       "hp": "max(1, 1d6 + self.grit_mod)"
     }
   ],
@@ -57,9 +52,30 @@
       "from_item": "weapon"
     },
     {
+      "action": "hex"
+    },
+    {
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d3"
+    }
+  ],
+  "modifiers": [
+    {
+      "stat": "attack_bonus",
+      "value": "floor(class.level / 2)"
+    },
+    {
+      "stat": "fort_base",
+      "value": "floor(class.level / 3)"
+    },
+    {
+      "stat": "reflex_base",
+      "value": "floor(class.level / 3)"
+    },
+    {
+      "stat": "will_base",
+      "value": "2 + floor(class.level / 2)"
     }
   ]
 }

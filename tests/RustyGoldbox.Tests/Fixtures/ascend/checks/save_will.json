@@ -1,0 +1,9 @@
+{
+  "type": "check",
+  "id": "save_will",
+  "name": "Will save",
+  "roll": "1d20",
+  "bonus": "self.will_base + self.wit_mod",
+  "target": "target.save_dc",
+  "succeeds": "at-least"
+}

@@ -56,11 +56,12 @@ internal sealed class ExpressionChecker(
             "use" => Roots.Use,
             "check" => Roots.Check,
             "campaign" => Roots.Campaign,
+            "class" => Roots.Class,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter>, check.<result> and campaign.var.<name>.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter>, check.<result>, campaign.var.<name> and class.level.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -95,6 +96,16 @@ internal sealed class ExpressionChecker(
 
             ExprTypes.TryParse(variable.Json.GetProperty("value_type").GetString()!, out ExprType variableType);
             return variableType;
+        }
+
+        if (root == Roots.Class)
+        {
+            if (path.Name != "level")
+            {
+                throw new ExpressionException($"'class.{path.Name}' is not something a class can give. A class modifier reads class.level, the creature's level in that class.", path.Column);
+            }
+
+            return ExprType.Number;
         }
 
         if (root == Roots.Check)

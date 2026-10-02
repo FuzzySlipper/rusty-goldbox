@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "save_dc",
+  "name": "Difficulty class of the creature's hexes",
+  "value": "10 + floor(self.level / 2) + self.wit_mod"
+}

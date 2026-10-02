@@ -18,6 +18,9 @@ public enum Roots
 
     /// <summary>campaign.var.&lt;name&gt;: campaign variables.</summary>
     Campaign = 16,
+
+    /// <summary>class.level: the creature's level in the class a modifier belongs to.</summary>
+    Class = 32,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -83,6 +86,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
             roots.Add("campaign.var");
         }
 
+        if (Roots.HasFlag(Roots.Class))
+        {
+            roots.Add("class.level");
+        }
+
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);
         return $"expression ({type}; {reads})";
     }
@@ -129,12 +137,16 @@ public sealed record ObjectKind(IReadOnlyList<Field> Fields) : FieldKind
     }
 }
 
-/// <summary>A stat or check modifier: <c>{ "stat": id, "value": expr }</c> or <c>{ "check": ref, "value": expr }</c>.</summary>
-public sealed record ModifierKind : FieldKind
+/// <summary>
+/// A stat or check modifier: <c>{ "stat": id, "value": expr }</c> or
+/// <c>{ "check": ref, "value": expr }</c>. Its value may read <see cref="Roots"/>.
+/// </summary>
+public sealed record ModifierKind(Roots Roots = Roots.Self) : FieldKind
 {
     public override string Describe()
     {
-        return "modifier { \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read self) }";
+        string reads = Roots.HasFlag(Roots.Class) ? "self, class.level" : "self";
+        return $"modifier {{ \"stat\": stat ID or \"check\": check reference, \"value\": number expression (may read {reads}) }}";
     }
 }
 

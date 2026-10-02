@@ -170,5 +170,37 @@ public sealed class DefinitionTests
         Assert.Contains("too large to be a number", Assert.Single(again.Diagnostics).Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AdvancementDecidesWhereLevelExperienceIsGiven()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "levels", "name": "Levels", "experience": "character", "levels": [0, 500, 400] }
+            """);
+        modules.Write("rules/second.json", """{ "type": "advancement", "id": "second", "name": "Second", "experience": "class" }""");
+        modules.Write("rules/rogue.json", """
+            { "type": "class", "id": "rogue", "name": "Rogue", "levels": [ { "hp": "1d6" } ],
+              "modifiers": [ { "stat": "hit", "value": "class.level" } ] }
+            """);
+        modules.Write("rules/sneaky.json", """{ "type": "condition", "id": "sneaky", "name": "Sneaky", "modifiers": [ { "stat": "hit", "value": "class.level" } ] }""");
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Equal(("definition.field-value", "$.levels[2]"), Assert.Single(set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!))));
+
+        // A set has one advancement; the small ruleset's warrior gives xp, which experience by character
+        // doesn't take; class.level is read only in a class's modifiers.
+        modules.Write("rules/advancement.json", """{ "type": "advancement", "id": "levels", "name": "Levels", "experience": "character", "levels": [0, 500] }""");
+        set = ModuleLoader.Load(root, []);
+        Assert.Equal(
+            [
+                ("advancement.duplicate", "$.id"),
+                ("class.xp", "$.levels[0].xp"),
+                ("expression.type", "$.modifiers[0].value"),
+            ],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+        Assert.Contains("isn't available here", Message(set, "expression.type"), StringComparison.Ordinal);
+    }
+
     private static string Message(ModuleSet set, string rule) => set.Diagnostics.First(diagnostic => diagnostic.Rule == rule).Message;
 }

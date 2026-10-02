@@ -39,6 +39,7 @@ public sealed class RuleSetBuilder
         builder.CompileModifiers();
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
+        builder.CheckAdvancement();
         builder.CheckActions();
         builder.CheckCampaigns();
         return builder._rules;
@@ -383,6 +384,52 @@ public sealed class RuleSetBuilder
                 {
                     Error(monster, "modifier.loop", path, $"This stat reads self.{stat.Name}, so it would depend on itself. Give it a value or read other stats.");
                 }
+            }
+        }
+    }
+
+    /// <summary>At most one advancement definition, and class experience that matches it.</summary>
+    private void CheckAdvancement()
+    {
+        List<Definition> all = _rules.OfType(DefinitionTypes.Advancement).ToList();
+        foreach (Definition extra in all.Skip(1))
+        {
+            Error(extra, "advancement.duplicate", "$.id", $"A module set has at most one advancement definition, and {all[0].QualifiedId} is already one. Patch that one instead.");
+        }
+
+        Definition? advancement = all.FirstOrDefault();
+        _rules.Advancement = advancement;
+        bool byCharacter = advancement?.Json.GetProperty("experience").GetString() == "character";
+        if (advancement is not null)
+        {
+            bool hasLevels = advancement.Json.TryGetProperty("levels", out _);
+            if (byCharacter && !hasLevels)
+            {
+                Error(advancement, "advancement.levels", "$", "With experience \"character\", give \"levels\": the experience needed for each character level, starting with 0.");
+            }
+            else if (!byCharacter && hasLevels)
+            {
+                Error(advancement, "advancement.levels", "$.levels", "With experience \"class\", each class's levels[].xp decide levels; remove \"levels\" or set experience to \"character\".");
+            }
+        }
+
+        foreach (Definition characterClass in _rules.OfType(DefinitionTypes.Class))
+        {
+            int index = 0;
+            foreach (JsonElement level in characterClass.Json.GetProperty("levels").EnumerateArray())
+            {
+                bool hasXp = level.TryGetProperty("xp", out _);
+                if (byCharacter && hasXp)
+                {
+                    Error(characterClass, "class.xp", $"$.levels[{index}].xp", $"{advancement!.QualifiedId} sets experience by character level, so class levels don't give \"xp\". Remove it.");
+                }
+                else if (!byCharacter && !hasXp)
+                {
+                    string why = advancement is null ? "Without an advancement definition" : $"With {advancement.QualifiedId}'s experience \"class\"";
+                    Error(characterClass, "class.xp", $"$.levels[{index}]", $"{why}, each class level needs \"xp\": the experience it takes.");
+                }
+
+                index++;
             }
         }
     }

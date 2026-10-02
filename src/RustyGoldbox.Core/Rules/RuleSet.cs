@@ -42,6 +42,12 @@ public sealed class RuleSet
     /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
     public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
 
+    /// <summary>The set's advancement definition, if it has one; without one each class has its own experience.</summary>
+    public Definition? Advancement { get; internal set; }
+
+    /// <summary>Whether experience is counted by character level, with each level taken in a chosen class.</summary>
+    public bool ExperienceByCharacter => Advancement?.Json.GetProperty("experience").GetString() == "character";
+
     /// <summary>The track characters' class level gains build, if the set has one.</summary>
     public Definition? LevelTrack => Tracks.Values.FirstOrDefault(track =>
         track.Json.TryGetProperty("from_levels", out System.Text.Json.JsonElement fromLevels) && fromLevels.GetBoolean());

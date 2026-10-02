@@ -1,0 +1,25 @@
+{
+  "type": "action",
+  "id": "hex",
+  "name": "Hex",
+  "cost": {
+    "standard": 1
+  },
+  "target": "enemy",
+  "always": [
+    {
+      "op": "check",
+      "check": "save_will",
+      "outcomes": {
+        "failure": [
+          {
+            "op": "apply_condition",
+            "condition": "shaken",
+            "rounds": "2",
+            "to": "target"
+          }
+        ]
+      }
+    }
+  ]
+}

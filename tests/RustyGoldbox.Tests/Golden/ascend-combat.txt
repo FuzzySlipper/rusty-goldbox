@@ -23,3 +23,51 @@ Party: Kara -1/12 (out)
 Brutes: Brute 1 17/17, Brute 2 -4/16 (out)
 [exit 0]
 
+$ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/ascend --party kara.json,ilse.json --encounter brutes --seed 20
+seed 20
+Round 1.
+  Kara rolls 20 for initiative.  [1d20: 19 = 19]
+  Ilse rolls 13 for initiative.  [1d20: 12 = 12]
+  Brute 1 rolls 9 for initiative.  [1d20: 9 = 9]
+  Brute 2 rolls 19 for initiative.  [1d20: 19 = 19]
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
+  Kara uses Melee attack (Longsword) on Brute 1.
+  Kara rolls Attack: 11 + 4 + 2 modifiers = 17 against 13: success.  [1d20: 11 = 11]
+  Brute 1 loses 6 hit points (15 left).  [1d8: 3 = 3]
+  Brute 2 uses Club on Ilse.
+  Brute 2 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
+  Ilse loses 5 hit points (2 left).  [1d8: 2 = 2]
+  Ilse uses Hex on Brute 1.
+  Brute 1 rolls Will save: 5 against 13: failure.  [1d20: 5 = 5]
+  Brute 1 is Shaken for 2 rounds.
+  Brute 1 uses Club on Ilse.
+  Brute 1 rolls Attack: 11 + 5 - 2 modifiers = 14 against 11: success.  [1d20: 11 = 11]
+  Ilse loses 10 hit points (-8 left).  [1d8: 7 = 7]
+  Ilse is out of the fight.
+Round 2.
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
+  Kara uses Melee attack (Longsword) on Brute 1.
+  Kara rolls Attack: 3 + 4 + 2 modifiers = 9 against 13: failure.  [1d20: 3 = 3]
+  Brute 2 uses Club on Kara.
+  Brute 2 rolls Attack: 15 + 5 = 20 against 11: success.  [1d20: 15 = 15]
+  Kara loses 10 hit points (2 left).  [1d8: 7 = 7]
+  Brute 1 uses Club on Kara.
+  Brute 1 rolls Attack: 6 + 5 - 2 modifiers = 9 against 11: failure.  [1d20: 6 = 6]
+  Brute 1 is no longer Shaken.
+Round 3.
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
+  Kara uses Melee attack (Longsword) on Brute 1.
+  Kara rolls Attack: 8 + 4 + 2 modifiers = 14 against 13: success.  [1d20: 8 = 8]
+  Brute 1 loses 10 hit points (5 left).  [1d8: 7 = 7]
+  Brute 2 uses Club on Kara.
+  Brute 2 rolls Attack: 18 + 5 = 23 against 11: success.  [1d20: 18 = 18]
+  Kara loses 4 hit points (-2 left).  [1d8: 1 = 1]
+  Kara is out of the fight.
+Brutes wins after 3 rounds.
+Party: Kara -2/12 (out), Ilse -8/7 (out)
+Brutes: Brute 1 5/21, Brute 2 22/22
+[exit 0]
+

@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "class", "level", "experience", "attributes", "tracks", "level_gains", "gold", "equipment", "conditions", "portrait",
+        "format", "name", "modules", "race", "levels", "experience", "attributes", "tracks", "gold", "equipment", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -56,8 +56,16 @@ public static class CharacterFile
 
             writer.WriteEndArray();
             writer.WriteString("race", character.Race.QualifiedId);
-            writer.WriteString("class", character.Class.QualifiedId);
-            writer.WriteNumber("level", character.Level);
+            writer.WriteStartArray("levels");
+            foreach (LevelTaken level in character.Levels)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("class", level.Class.QualifiedId);
+                writer.WriteNumber("gain", level.Gain);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
             writer.WriteNumber("experience", character.Experience);
             writer.WriteStartObject("attributes");
             foreach ((string id, decimal score) in character.Attributes)
@@ -84,13 +92,6 @@ public static class CharacterFile
             }
 
             writer.WriteEndObject();
-            writer.WriteStartArray("level_gains");
-            foreach (decimal gain in character.LevelGains)
-            {
-                writer.WriteNumberValue(gain);
-            }
-
-            writer.WriteEndArray();
             writer.WriteNumber("gold", character.Gold);
             WriteReferences(writer, "equipment", character.Equipment);
             WriteReferences(writer, "conditions", character.Conditions);
@@ -161,23 +162,19 @@ public static class CharacterFile
             List<ModuleStamp> modules = ReadModules(root);
             string? name = Text(root, "name");
             Definition? race = Reference(root, "race", DefinitionTypes.Race);
-            Definition? characterClass = Reference(root, "class", DefinitionTypes.Class);
-            decimal? level = Number(root, "level");
             decimal? experience = Number(root, "experience");
             decimal? gold = Number(root, "gold");
-            if (problems.Count > _before || name is null || race is null || characterClass is null)
+            if (problems.Count > _before || name is null || race is null)
             {
                 return null;
             }
 
-            int levels = characterClass.Json.GetProperty("levels").GetArrayLength();
-            if (level is not decimal whole || whole != decimal.Truncate(whole) || whole < 1 || whole > levels)
+            Character character = new() { Name = name, Modules = modules, Race = race };
+            if (!ReadLevels(root, character))
             {
-                Error("$.level", $"level must be a whole number from 1 to {levels} (the levels of {characterClass.QualifiedId}).");
                 return null;
             }
 
-            Character character = new() { Name = name, Modules = modules, Race = race, Class = characterClass, Level = (int)whole };
             character.Experience = experience ?? 0;
             character.Gold = gold ?? 0;
             ReadAttributes(root, character);
@@ -187,10 +184,6 @@ public static class CharacterFile
                 Error("$.experience", "experience can't be negative.");
             }
 
-            if (problems.Count == _before && character.LevelGains.Count != character.Level)
-            {
-                Error("$.level_gains", $"level_gains must have one entry per level: {character.Level} for level {character.Level}, but it has {character.LevelGains.Count}.");
-            }
             ReadList(root, "equipment", DefinitionTypes.Item, character.Equipment);
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
             if (root.TryGetProperty("portrait", out JsonElement portrait) && Resolve(portrait, "$.portrait", DefinitionTypes.Asset) is Definition asset)
@@ -204,6 +197,44 @@ public static class CharacterFile
             }
 
             return problems.Count > _before ? null : character;
+        }
+
+        /// <summary>Reads "levels": one { "class", "gain" } per character level, none past its class's last level.</summary>
+        private bool ReadLevels(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("levels", out JsonElement levels) || levels.ValueKind != JsonValueKind.Array || levels.GetArrayLength() == 0)
+            {
+                Error("$.levels", "\"levels\" must be an array with one { \"class\", \"gain\" } per character level, first to last, and at least one.");
+                return false;
+            }
+
+            int before = problems.Count;
+            int index = 0;
+            foreach (JsonElement level in levels.EnumerateArray())
+            {
+                string at = $"$.levels[{index}]";
+                index++;
+                if (level.ValueKind != JsonValueKind.Object)
+                {
+                    Error(at, "Each level must be an object { \"class\", \"gain\" }.");
+                    continue;
+                }
+
+                Definition? characterClass = Reference(level, "class", DefinitionTypes.Class, at);
+                if (Number(level, "gain", at) is not decimal gain || characterClass is null)
+                {
+                    continue;
+                }
+
+                character.Levels.Add(new LevelTaken(characterClass, gain));
+                int classLevels = characterClass.Json.GetProperty("levels").GetArrayLength();
+                if (character.ClassLevels()[characterClass] > classLevels)
+                {
+                    Error(at, $"This would be level {classLevels + 1} of {characterClass.QualifiedId}, which has {classLevels}.");
+                }
+            }
+
+            return problems.Count == before;
         }
 
         private List<ModuleStamp> ReadModules(JsonElement root)
@@ -335,25 +366,6 @@ public static class CharacterFile
             {
                 Error($"$.tracks.{levelTrack.Id}", $"{levelTrack.Id} is built from level gains, so it needs \"max\".");
             }
-
-            if (!root.TryGetProperty("level_gains", out JsonElement gains) || gains.ValueKind != JsonValueKind.Array)
-            {
-                Error("$.level_gains", "\"level_gains\" must be an array with what the level track gained at each level.");
-                return;
-            }
-
-            foreach (JsonElement gain in gains.EnumerateArray())
-            {
-                if (gain.ValueKind == JsonValueKind.Number && gain.TryGetDecimal(out decimal amount))
-                {
-                    character.LevelGains.Add(amount);
-                }
-                else
-                {
-                    Error("$.level_gains", "level_gains must be an array of numbers.");
-                    return;
-                }
-            }
         }
 
         private void ReadList(JsonElement root, string name, DefinitionType type, List<Definition> into)
@@ -381,15 +393,15 @@ public static class CharacterFile
             }
         }
 
-        private Definition? Reference(JsonElement root, string name, DefinitionType type)
+        private Definition? Reference(JsonElement root, string name, DefinitionType type, string at = "$")
         {
             if (!root.TryGetProperty(name, out JsonElement value))
             {
-                Error("$", $"Missing \"{name}\": a {type.Name} ID.");
+                Error(at, $"Missing \"{name}\": a {type.Name} ID.");
                 return null;
             }
 
-            return Resolve(value, $"$.{name}", type);
+            return Resolve(value, $"{at}.{name}", type);
         }
 
         private Definition? Resolve(JsonElement value, string at, DefinitionType type)

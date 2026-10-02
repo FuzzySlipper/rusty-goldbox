@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "fort_base",
+  "name": "Base Fortitude save (each class adds its own)",
+  "value": "0"
+}

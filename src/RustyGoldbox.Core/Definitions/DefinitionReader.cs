@@ -83,6 +83,11 @@ public static class DefinitionReader
                 CheckClassLevels(root);
             }
 
+            if (type == DefinitionTypes.Advancement && diagnostics.Count == _errorsBefore && root.TryGetProperty("levels", out JsonElement thresholds))
+            {
+                CheckThresholds(thresholds.EnumerateArray().Select(level => level.GetInt32()).ToList(), index => $"$.levels[{index}]", "$.levels");
+            }
+
             if (type == DefinitionTypes.Area && diagnostics.Count == _errorsBefore)
             {
                 CheckArea(root);
@@ -175,8 +180,8 @@ public static class DefinitionReader
                 case ObjectKind obj:
                     ReadObject(value, obj.Fields, path, "an entry");
                     break;
-                case ModifierKind:
-                    ReadModifier(value, path);
+                case ModifierKind modifier:
+                    ReadModifier(value, modifier, path);
                     break;
                 case TableRowsKind:
                     ExpectKind(value, JsonValueKind.Array, path, kind);
@@ -340,9 +345,9 @@ public static class DefinitionReader
             }
         }
 
-        private void ReadModifier(JsonElement value, string path)
+        private void ReadModifier(JsonElement value, ModifierKind kind, string path)
         {
-            if (!ExpectKind(value, JsonValueKind.Object, path, new ModifierKind()))
+            if (!ExpectKind(value, JsonValueKind.Object, path, kind))
             {
                 return;
             }
@@ -372,7 +377,7 @@ public static class DefinitionReader
 
             if (value.TryGetProperty("value", out JsonElement amount))
             {
-                ReadExpression(amount, new ExpressionKind(ExprType.Number, Roots.Self), $"{path}.value");
+                ReadExpression(amount, new ExpressionKind(ExprType.Number, kind.Roots), $"{path}.value");
             }
             else
             {
@@ -512,28 +517,38 @@ public static class DefinitionReader
                 return;
             }
 
-            int previous = -1;
-            int index = 0;
-            foreach (JsonElement level in levels.EnumerateArray())
+            // Classes leave xp out when the advancement counts experience by character; the rule set checks which applies.
+            if (levels.EnumerateArray().All(level => level.TryGetProperty("xp", out _)))
             {
-                int xp = level.GetProperty("xp").GetInt32();
-                if (index == 0 && xp != 0)
-                {
-                    Error("definition.field-value", "$.levels[0].xp", "The first level must need 0 experience.");
-                }
-                else if (xp <= previous)
-                {
-                    Error("definition.field-value", $"$.levels[{index}].xp", $"Experience must rise with each level, but {xp} is not more than {previous}.");
-                }
-
-                previous = xp;
-                index++;
+                CheckThresholds(levels.EnumerateArray().Select(level => level.GetProperty("xp").GetInt32()).ToList(), index => $"$.levels[{index}].xp", "$.levels");
             }
 
             if (root.TryGetProperty("spell_slots", out JsonElement slots) && slots.GetArrayLength() != levels.GetArrayLength())
             {
                 Error("definition.field-value", "$.spell_slots",
                     $"spell_slots needs one entry per level ({levels.GetArrayLength()}), but it has {slots.GetArrayLength()}. Use [] for levels without spells.");
+            }
+        }
+
+        /// <summary>Experience for each level: at least one, the first 0, each more than the one before.</summary>
+        private void CheckThresholds(List<int> thresholds, Func<int, string> path, string listPath)
+        {
+            if (thresholds.Count == 0)
+            {
+                Error("definition.field-value", listPath, "Give at least the first level, which needs 0 experience.");
+                return;
+            }
+
+            for (int index = 0; index < thresholds.Count; index++)
+            {
+                if (index == 0 && thresholds[0] != 0)
+                {
+                    Error("definition.field-value", path(0), "The first level must need 0 experience.");
+                }
+                else if (index > 0 && thresholds[index] <= thresholds[index - 1])
+                {
+                    Error("definition.field-value", path(index), $"Experience must rise with each level, but {thresholds[index]} is not more than {thresholds[index - 1]}.");
+                }
             }
         }
 
