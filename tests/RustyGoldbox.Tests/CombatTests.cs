@@ -214,6 +214,36 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ASideIsSurprisedByWhatItsLeadNotices()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/ambush.json", """
+            { "type": "combat", "id": "ambush", "name": "Ambush", "surprise": "if self.str > target.str then 0 else 1", "surprise_lead": "self.str",
+              "initiative": "self.str", "initiative_by": "side", "initiative_order": "highest-first", "initiative_each": "combat", "round_seconds": 6,
+              "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+        Definition hexer = rules.Find(DefinitionTypes.Monster, "hexer", out _)!;
+
+        // The watch's first member is a dummy, but its lead is the stronger hexer, who out-notices the lone dummy.
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Definition combat = rules.Find(DefinitionTypes.Combat, "ambush", out _)!;
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Watch", [Combatant.FromMonster(rules, dummy, "Sleepy", evaluator), Combatant.FromMonster(rules, hexer, "Sharp", evaluator)]),
+                new CombatSide("Lone", [Combatant.FromMonster(rules, dummy, "Dummy", evaluator)]),
+            ], dice, 1);
+        });
+
+        Assert.Equal("Lone is surprised for 1 round.", result.Facts[0].Describe());
+        Assert.DoesNotContain(result.Facts, fact => fact.Describe() == "Watch is surprised for 1 round.");
+    }
+
+    [Fact]
     public void DefeatIsCheckedAfterEveryOperation()
     {
         using TempModules modules = new();

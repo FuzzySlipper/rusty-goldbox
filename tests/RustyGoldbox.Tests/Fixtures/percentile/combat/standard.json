@@ -2,6 +2,8 @@
   "type": "combat",
   "id": "standard",
   "name": "Standard",
+  "surprise": "if 1d100 > self.mind * 5 then 1 else 0",
+  "surprise_lead": "self.mind",
   "initiative": "self.agility + 1d10",
   "initiative_by": "creature",
   "initiative_order": "highest-first",

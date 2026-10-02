@@ -307,7 +307,9 @@ public static class DefinitionTypes
         "Parameters of the fixed combat loop: surprise, initiative, round length, each turn's action budget, and when a creature is out of the fight.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("surprise", PlainNumber, false, "Rolled for each side at the start: whole rounds the side loses (0 for none)."),
+            new("surprise", CombatNumber, false, "Rolled at the start: whole rounds lost (0 for none). By side, self is the side's lead and target the other side's; by creature, self is the creature and target each enemy in turn, for example \"if 1d20 + target.stealth > self.perception then 1 else 0\"."),
+            new("surprise_by", new EnumKind(["side", "creature"]), false, "Whether a whole side is surprised together (the default) or each creature on its own, so only some may be."),
+            new("surprise_lead", SelfNumber, false, "By side: which member the side's surprise reads as self (and the other side as target), the highest, for example \"self.perception\" for the most alert or a scout."),
             new("initiative", SelfNumber, true, "Initiative roll each round. With initiative_by \"side\" it is rolled once per side and self is the side's first creature still fighting."),
             new("initiative_by", new EnumKind(["side", "creature"]), true, "Whether each side or each creature rolls initiative."),
             new("initiative_order", new EnumKind(["highest-first", "lowest-first"]), true, "Which result acts first; ties keep side and listing order."),

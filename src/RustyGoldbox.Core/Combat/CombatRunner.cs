@@ -117,6 +117,13 @@ public sealed class CombatRunner
         return new CombatResult(_facts, winner, round, _sides, _track);
     }
 
+    /// <summary>
+    /// Rolls surprise at the start. By side, once per side with self as the
+    /// side's lead (the member surprise_lead ranks highest, else the first)
+    /// and target as the next side's lead. By creature, each creature against
+    /// each enemy, losing the most rounds any enemy gives it, so only some may
+    /// be surprised.
+    /// </summary>
     private void RollSurprise()
     {
         if (!_combat.Json.TryGetProperty("surprise", out _))
@@ -124,10 +131,33 @@ public sealed class CombatRunner
             return;
         }
 
-        foreach (CombatSide side in _sides)
+        bool byCreature = _combat.Json.TryGetProperty("surprise_by", out JsonElement by) && by.GetString() == "creature";
+        if (byCreature)
         {
+            foreach (Combatant member in Everyone)
+            {
+                int before = _dice.Rolls.Count;
+                decimal rounds = Everyone.Where(enemy => enemy.Side != member.Side)
+                    .Select(enemy => Number(_combat, "$.surprise", new Scope(member.Creature, enemy.Creature)))
+                    .DefaultIfEmpty(0)
+                    .Max();
+                if (rounds > 0)
+                {
+                    member.SurprisedRounds = rounds;
+                    Record(new SurprisedFact(member.Name, rounds), before);
+                }
+            }
+
+            return;
+        }
+
+        for (int index = 0; index < _sides.Count; index++)
+        {
+            CombatSide side = _sides[index];
             int before = _dice.Rolls.Count;
-            decimal rounds = Number(_combat, "$.surprise", new Scope(null, null));
+            Combatant? lead = Lead(side);
+            Combatant? other = _sides.Count > 1 ? Lead(_sides[(index + 1) % _sides.Count]) : null;
+            decimal rounds = Number(_combat, "$.surprise", new Scope(lead?.Creature, other?.Creature));
             if (rounds > 0)
             {
                 foreach (Combatant member in side.Members)
@@ -138,6 +168,17 @@ public sealed class CombatRunner
                 Record(new SurprisedFact(side.Name, rounds), before);
             }
         }
+    }
+
+    /// <summary>The member of a side that surprise_lead ranks highest (the first on a tie), or its first member.</summary>
+    private Combatant? Lead(CombatSide side)
+    {
+        if (side.Members.Count == 0 || !_combat.Json.TryGetProperty("surprise_lead", out _))
+        {
+            return side.Members.FirstOrDefault();
+        }
+
+        return side.Members.OrderByDescending(member => Number(_combat, "$.surprise_lead", new Scope(member.Creature, null))).First();
     }
 
     /// <summary>

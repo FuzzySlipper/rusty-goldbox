@@ -2,6 +2,8 @@
   "type": "combat",
   "id": "standard",
   "name": "Three actions",
+  "surprise": "if 1d20 + target.finesse_mod > 15 + self.insight_mod then 1 else 0",
+  "surprise_by": "creature",
   "initiative": "1d20 + self.insight_mod",
   "initiative_by": "creature",
   "initiative_order": "highest-first",

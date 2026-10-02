@@ -119,7 +119,10 @@ maximum, the creature's own maximum. `Evaluator` resolves maxima, floors,
 restore caps and starting values. Engine `Track` was considered and not used:
 its maximum is a stored stat, while these are expressions.
 
-`CombatRunner` runs one fight between sides of `Combatant`s. Each round it
+`CombatRunner` runs one fight between sides of `Combatant`s. It first rolls
+surprise, by side (reading the side's lead, the member `surprise_lead` ranks
+highest, against the other side's) or by creature (each creature against
+each enemy, so only some may be surprised). Each round it
 rolls initiative (by side or by creature, from the combat definition), then
 each creature's turn: start-of-turn condition operations, a skip if a
 condition prevents actions, actions while the turn's budget (an expression,
