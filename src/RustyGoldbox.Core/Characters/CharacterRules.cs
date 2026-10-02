@@ -279,7 +279,8 @@ public static class CharacterRules
         character.Levels.Add(new LevelTaken(characterClass, 0, []));
         int classLevel = character.ClassLevels()[characterClass];
         Creature creature = character.ToCreature();
-        decimal kept = Evaluate(rules, evaluator, characterClass, $"$.levels[{classLevel - 1}].hp", creature);
+        string keptPath = $"$.levels[{classLevel - 1}].hp";
+        decimal kept = rules.TryExpression(characterClass, keptPath, out _) ? Evaluate(rules, evaluator, characterClass, keptPath, creature) : 0;
         string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
         decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? Evaluate(rules, evaluator, characterClass, bonusPath, creature) : 0;
         character.Levels[^1] = character.Levels[^1] with { Gain = kept };

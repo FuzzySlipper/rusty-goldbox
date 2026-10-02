@@ -29,7 +29,7 @@ public sealed class DefinitionTests
         using TempModules modules = new();
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/bad.json", """
-            { "type": "class", "id": "Bad-Id", "name": 3, "levels": [ { "xp": 5, "hp": "1d6" }, { "xp": 1 } ], "colour": "red" }
+            { "type": "class", "id": "Bad-Id", "name": 3, "levels": [ { "xp": 5, "hp": "1d6" }, { "xp": 1, "grants": [ {} ] } ], "colour": "red" }
             """);
 
         ModuleSet set = ModuleLoader.Load(root, []);
@@ -38,11 +38,11 @@ public sealed class DefinitionTests
             [
                 ("definition.unknown-field", "$.colour"),
                 ("definition.field-type", "$.name"),
-                ("definition.field-required", "$.levels[1]"),
+                ("definition.field-required", "$.levels[1].grants[0]"),
                 ("definition.id", "$.id"),
             ],
             set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)));
-        Assert.Contains("Missing required field \"hp\"", Message(set, "definition.field-required"), StringComparison.Ordinal);
+        Assert.Contains("Missing required field \"kind\"", Message(set, "definition.field-required"), StringComparison.Ordinal);
         Assert.Null(set.Rules);
     }
 

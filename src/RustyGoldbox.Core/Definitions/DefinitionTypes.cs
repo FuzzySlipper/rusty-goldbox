@@ -115,7 +115,7 @@ public static class DefinitionTypes
             new("levels", new ListKind(new ObjectKind(
             [
                 new("xp", new IntegerKind(), false, "Experience needed for this level; the first level needs 0. Required when each class has its own experience (no advancement definition, or one with experience \"class\"); left out when the advancement definition sets experience by character level."),
-                new("hp", SelfNumber, true, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept."),
+                new("hp", SelfNumber, false, "Gained on reaching this level by the track with from_levels (usually hit points), for example \"1d10\" or \"3\". Rolled once and kept. Required when a track has from_levels; left out when none does."),
                 new("hp_bonus", SelfNumber, false, "Added to this level's gain as the character is now, not as it was: recomputed whenever the stats it reads change, for example \"self.con_mod\" so a higher constitution raises every level's hit points. Without it, the whole gain is hp."),
                 new("grants", new ListKind(new ObjectKind([GrantKind, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
             ])), true, "One entry per level of the class, starting at level 1."),

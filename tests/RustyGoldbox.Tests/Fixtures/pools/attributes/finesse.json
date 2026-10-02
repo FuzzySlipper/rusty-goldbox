@@ -1,0 +1,8 @@
+{
+  "type": "attribute",
+  "id": "finesse",
+  "name": "Finesse",
+  "min": 1,
+  "max": 5,
+  "default": 2
+}

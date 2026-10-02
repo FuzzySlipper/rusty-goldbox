@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "attack_pool",
+  "name": "Attack pool",
+  "value": "self.power + self.brawl"
+}

@@ -1,0 +1,17 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Points",
+  "attributes": [
+    "power",
+    "finesse",
+    "resolve"
+  ],
+  "method": "point-buy",
+  "base": 1,
+  "budget": 6,
+  "costs": "dots",
+  "starting_gold": {
+    "bruiser": "10"
+  }
+}

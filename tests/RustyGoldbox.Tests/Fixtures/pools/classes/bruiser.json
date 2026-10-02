@@ -1,0 +1,21 @@
+{
+  "type": "class",
+  "id": "bruiser",
+  "name": "Bruiser",
+  "levels": [
+    {
+      "xp": 0
+    }
+  ],
+  "actions": [
+    {
+      "action": "strike",
+      "from_item": "weapon"
+    },
+    {
+      "action": "strike",
+      "name": "Fists",
+      "damage": "1"
+    }
+  ]
+}

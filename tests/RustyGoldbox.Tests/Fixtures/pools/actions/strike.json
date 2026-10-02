@@ -1,0 +1,28 @@
+{
+  "type": "action",
+  "id": "strike",
+  "name": "Strike",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage + check.margin"
+      }
+    ],
+    "botch": [
+      {
+        "op": "damage",
+        "amount": "1",
+        "to": "self"
+      }
+    ]
+  }
+}

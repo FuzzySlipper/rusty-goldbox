@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "health",
+  "name": "Health",
+  "max": "5 + self.resolve * 2"
+}

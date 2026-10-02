@@ -4,17 +4,21 @@ namespace RustyGoldbox.Core.Rules;
 
 /// <summary>
 /// One roll of a set of dice. <see cref="Kept"/> is how many of the highest
-/// faces count; with <see cref="AtLeast"/>, the total is how many faces reach it.
+/// faces count; with <see cref="AtLeast"/>, the total is how many faces reach
+/// it, less how many are <see cref="Cancel"/> or lower. With
+/// <see cref="Again"/>, every face of that or more rolled another die, so
+/// <see cref="Faces"/> holds more than <see cref="Count"/>.
 /// </summary>
-public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, int Kept, int? AtLeast = null)
+public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, int Kept, int? AtLeast = null, int? Again = null, int? Cancel = null)
 {
     public long Total => AtLeast is int threshold
-        ? Faces.Count(face => face >= threshold)
-        : Faces.OrderDescending().Take(Kept).Sum(face => (long)face);
+        ? Faces.Count(face => face >= threshold) - (Cancel is int cancel ? Faces.Count(face => face <= cancel) : 0)
+        : Again is null ? Faces.OrderDescending().Take(Kept).Sum(face => (long)face) : Faces.Sum(face => (long)face);
 
     public override string ToString()
     {
-        string mode = AtLeast is int threshold ? $" count {threshold}+" : Kept == Count ? "" : $" keep {Kept}";
+        string mode = AtLeast is int threshold ? $" count {threshold}+" : Kept == Count || Again is not null ? "" : $" keep {Kept}";
+        mode += (Again is int again ? $" again {again}+" : "") + (Cancel is int cancel ? $" cancel {cancel}-" : "");
         string faces = AtLeast is null ? string.Join("+", Faces) : string.Join(",", Faces);
         return $"{Count}d{Sides}{mode}: {faces} = {Total}";
     }
@@ -39,15 +43,34 @@ public sealed class DiceRoller(IRandomService random, Rng stream)
     /// <summary>Rolls <paramref name="count"/> dice and counts the faces of <paramref name="atLeast"/> or more.</summary>
     public long Count(int count, int sides, int atLeast) => Roll(count, sides, count, atLeast);
 
-    private long Roll(int count, int sides, int keep, int? atLeast)
+    /// <summary>
+    /// Rolls <paramref name="count"/> dice where each face of <paramref name="again"/>
+    /// or more rolls another (needs 2 or more), and adds every face.
+    /// </summary>
+    public long Explode(int count, int sides, int again) => Roll(count, sides, count, null, again, null);
+
+    /// <summary>
+    /// A dice pool: counts the faces of <paramref name="atLeast"/> or more, less those of
+    /// <paramref name="cancel"/> or lower; faces of <paramref name="again"/> or more roll another die.
+    /// </summary>
+    public long Pool(int count, int sides, int atLeast, int? again, int? cancel) => Roll(count, sides, count, atLeast, again, cancel);
+
+    private long Roll(int count, int sides, int keep, int? atLeast, int? again = null, int? cancel = null)
     {
-        int[] faces = new int[count];
-        for (int i = 0; i < count; i++)
+        List<int> faces = [];
+        int left = count;
+        while (left > 0)
         {
-            faces[i] = (int)random.NextBoundedU32(new ScopedRngBoundedRequest(stream, (uint)sides)).Value + 1;
+            int face = (int)random.NextBoundedU32(new ScopedRngBoundedRequest(stream, (uint)sides)).Value + 1;
+            faces.Add(face);
+            left--;
+            if (again is int threshold && face >= threshold)
+            {
+                left++;
+            }
         }
 
-        DiceRoll roll = new(count, sides, faces, keep, atLeast);
+        DiceRoll roll = new(count, sides, faces, keep, atLeast, again, cancel);
         _rolls.Add(roll);
         return roll.Total;
     }

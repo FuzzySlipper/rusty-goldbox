@@ -1,0 +1,18 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Turns",
+  "initiative": "1d10 + self.finesse",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 3,
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": "1"
+    }
+  ],
+  "track": "health",
+  "defeated": "self.health <= 0"
+}

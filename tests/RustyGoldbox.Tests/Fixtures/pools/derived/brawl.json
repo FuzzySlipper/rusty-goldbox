@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "brawl",
+  "name": "Brawl skill",
+  "value": "if self.class == 'bruiser' then 3 else 1"
+}

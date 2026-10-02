@@ -82,6 +82,17 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void PoolsFightCountsSuccessesWithRerollsAndCancels()
+    {
+        using TempModules scratch = new();
+        WriteCharacter(scratch, Fixture("pools"), "mags.json", new CreationRequest("Mags", "bruiser", "human", Attributes: Scores(("power", 4), ("finesse", 3), ("resolve", 2))), "club");
+
+        // Tens roll again and ones cancel successes (a thug botches below 0); the club's damage explodes on a 6.
+        Golden.Verify("pools-combat.txt", CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", Fixture("pools"), "--party", "mags.json", "--encounter", "thugs", "--seed", "3"]));
+    }
+
+    [Fact]
     public void PercentileFightRollsUnderAndParries()
     {
         using TempModules scratch = new();

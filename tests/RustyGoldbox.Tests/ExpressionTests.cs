@@ -61,6 +61,7 @@ public sealed class ExpressionTests
     [InlineData("self.condition.nope", "There is no condition 'nope'")]
     [InlineData("outer.margin", "'outer.margin' isn't available here")]
     [InlineData("self.rolled.nope", "There is no check 'nope'")]
+    [InlineData("roll_pool(5, 10, 8)", "takes 5 arguments")]
     [InlineData("target.str", "'target.str' isn't available here; this field is an expression (any type; may read self)")]
     [InlineData("table(nope, 1)", "no table 'nope' in module 'rules'")]
     [InlineData("table(bonus)", "has 1 key")]

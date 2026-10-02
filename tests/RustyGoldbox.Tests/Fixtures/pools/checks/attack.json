@@ -1,0 +1,14 @@
+{
+  "type": "check",
+  "id": "attack",
+  "name": "Attack",
+  "roll": "roll_pool(self.attack_pool, 10, 8, 10, 1)",
+  "target": "target.defence",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "botch",
+      "when": "check.roll < 0"
+    }
+  ]
+}

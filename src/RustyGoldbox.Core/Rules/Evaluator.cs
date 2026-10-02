@@ -496,6 +496,8 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 "abs" => Value.Of(Math.Abs(arguments[0])),
                 "roll_keep" => Value.Of(RollKeep(arguments[0], arguments[1], arguments[2], call.Column)),
                 "roll_count" => Value.Of(RollCount(arguments[0], arguments[1], arguments[2], call.Column)),
+                "roll_explode" => Value.Of(RollPool(call.Function, arguments[0], arguments[1], null, arguments[2], 0, call.Column)),
+                "roll_pool" => Value.Of(RollPool(call.Function, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], call.Column)),
                 _ => Value.Of(RollDynamic(arguments[0], arguments[1], call.Column)),
             };
         }
@@ -525,6 +527,33 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             }
 
             return count == 0 ? 0 : evaluator.Dice.Count((int)count, (int)sides, (int)atLeast);
+        }
+
+        /// <summary>roll_explode (no at_least: a sum) and roll_pool; again below 2 would never stop rolling.</summary>
+        private long RollPool(string function, decimal count, decimal sides, decimal? atLeast, decimal again, decimal cancel, int column)
+        {
+            decimal[] numbers = atLeast is decimal threshold ? [count, sides, threshold, again, cancel] : [count, sides, again];
+            if (numbers.Any(number => number != decimal.Truncate(number) || number < int.MinValue || number > int.MaxValue)
+                || count < 0 || sides < 1 || again < 2)
+            {
+                string arguments = string.Join(", ", numbers);
+                throw new ExpressionException($"{function}({arguments}) needs whole numbers: dice 0 or more, sides 1 or more, and again 2 or more (a face of 1 rerolling would never stop).", column);
+            }
+
+            if (evaluator.Dice is null)
+            {
+                throw new ExpressionException("This expression rolls dice, but no dice roller was given.", column);
+            }
+
+            if (count == 0)
+            {
+                return 0;
+            }
+
+            int? rerolls = again <= sides ? (int)again : null;
+            return atLeast is decimal at
+                ? evaluator.Dice.Pool((int)count, (int)sides, (int)at, rerolls, cancel > 0 ? (int)cancel : null)
+                : rerolls is int explode ? evaluator.Dice.Explode((int)count, (int)sides, explode) : evaluator.Dice.Roll((int)count, (int)sides);
         }
 
         private long RollKeep(decimal count, decimal sides, decimal keep, int column)

@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "pools",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Pools (test fixture)",
+  "requires": [],
+  "provenance": "Original test fixture shaped like a dice-pool ruleset: d10 pools counting successes, tens rerolled, ones cancelling, and open-ended damage. Contains no published rules text or tables."
+}

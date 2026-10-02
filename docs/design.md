@@ -261,7 +261,8 @@ Combat is built so that no die convention is assumed:
   target, rolled high or under, with ordered tiers that read the roll and
   margin. That expresses natural-20 criticals, degrees of success by margin,
   percentile specials and fumbles, and 3d6 roll-under; `roll_count` gives
-  dice-pool successes. Actions branch on tier names, not on hit or miss.
+  dice-pool successes, `roll_pool` adds dice that roll again and ones that
+  cancel successes, and `roll_explode` gives open-ended totals. Actions branch on tier names, not on hit or miss.
   An operation can make another check, such as a defender's parry.
 - **Pools are declared, not built in.** Damage and heal act on a named
   track, or the combat's default one; costs that spend a pool are operations

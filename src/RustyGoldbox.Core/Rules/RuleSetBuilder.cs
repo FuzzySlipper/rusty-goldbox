@@ -114,10 +114,28 @@ public sealed class RuleSetBuilder
             }
         }
 
-        foreach (Definition characterClass in _rules.OfType(DefinitionTypes.Class).Where(_ => levelTracks.Count == 0))
+        // Class levels give hp exactly when a track is built from level gains.
+        foreach (Definition characterClass in _rules.OfType(DefinitionTypes.Class))
         {
-            Error(characterClass, "track.from-levels", "$.levels",
-                "Class levels gain \"hp\", but no track has \"from_levels\": true to receive it. Add one, for example { \"type\": \"track\", \"id\": \"hit_points\", \"name\": \"Hit points\", \"from_levels\": true }.");
+            int index = 0;
+            foreach (JsonElement level in characterClass.Json.GetProperty("levels").EnumerateArray())
+            {
+                bool gains = level.TryGetProperty("hp", out _) || level.TryGetProperty("hp_bonus", out _);
+                if (gains && levelTracks.Count == 0)
+                {
+                    Error(characterClass, "track.from-levels", $"$.levels[{index}]",
+                        "Class levels gain \"hp\", but no track has \"from_levels\": true to receive it. Add one, for example { \"type\": \"track\", \"id\": \"hit_points\", \"name\": \"Hit points\", \"from_levels\": true }, or leave hp out.");
+                    break;
+                }
+
+                if (!level.TryGetProperty("hp", out _) && levelTracks.Count > 0)
+                {
+                    Error(characterClass, "track.from-levels", $"$.levels[{index}]",
+                        $"{levelTracks[0].QualifiedId} is built from class levels, so each level needs \"hp\": what it gains.");
+                }
+
+                index++;
+            }
         }
 
         foreach (Definition definition in _rules.Definitions)

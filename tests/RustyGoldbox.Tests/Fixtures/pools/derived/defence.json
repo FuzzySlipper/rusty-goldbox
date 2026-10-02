@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "defence",
+  "name": "Defence (successes needed)",
+  "value": "1 + floor(self.finesse / 3)"
+}

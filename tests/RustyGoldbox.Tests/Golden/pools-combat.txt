@@ -1,0 +1,38 @@
+$ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/pools --party mags.json --encounter thugs --seed 3
+seed 3
+Round 1.
+  Mags rolls 4 for initiative.  [1d10: 1 = 1]
+  Thug 1 rolls 11 for initiative.  [1d10: 9 = 9]
+  Thug 2 rolls 6 for initiative.  [1d10: 4 = 4]
+  Thug 1 uses Knife on Mags.
+  Thug 1 rolls Attack: 1 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 7,9,6,6 = 1]
+  Thug 2 uses Knife on Mags.
+  Thug 2 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 10,2,1,5,3 = 0]
+  Mags uses Strike (Club) on Thug 1.
+  Mags rolls Attack: 3 against 1: success.  [7d10 count 8+ again 10+ cancel 1-: 9,4,6,1,10,6,9,9 = 3]
+  Thug 1 loses 13 health (-6 left).  [1d6 again 6+: 6+5 = 11]
+  Thug 1 is out of the fight.
+Round 2.
+  Thug 2 uses Knife on Mags.
+  Thug 2 rolls Attack: -1 against 2: botch.  [4d10 count 8+ again 10+ cancel 1-: 7,7,1,2 = -1]
+  Thug 2 loses 1 health (6 left).
+  Mags uses Strike (Club) on Thug 2.
+  Mags rolls Attack: 0 against 1: failure.  [7d10 count 8+ again 10+ cancel 1-: 2,4,6,5,2,4,4 = 0]
+Round 3.
+  Thug 2 uses Knife on Mags.
+  Thug 2 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 9,5,5,1 = 0]
+  Mags uses Strike (Club) on Thug 2.
+  Mags rolls Attack: 3 against 1: success.  [7d10 count 8+ again 10+ cancel 1-: 9,4,3,4,6,9,10,6 = 3]
+  Thug 2 loses 4 health (2 left).  [1d6 again 6+: 2 = 2]
+Round 4.
+  Thug 2 uses Knife on Mags.
+  Thug 2 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 6,3,7,5 = 0]
+  Mags uses Strike (Club) on Thug 2.
+  Mags rolls Attack: 3 against 1: success.  [7d10 count 8+ again 10+ cancel 1-: 9,2,5,3,8,3,8 = 3]
+  Thug 2 loses 4 health (-2 left).  [1d6 again 6+: 2 = 2]
+  Thug 2 is out of the fight.
+Party wins after 4 rounds.
+Party: Mags 9/9
+Thugs: Thug 1 -6/7 (out), Thug 2 -2/7 (out)
+[exit 0]
+
