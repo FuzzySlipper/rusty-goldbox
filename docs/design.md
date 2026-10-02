@@ -209,7 +209,7 @@ path and the rule that failed. Module directories resolve through
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
 | `goldbox play --campaign … --seed N [--script file]` | Play from a command script or stdin and emit a transcript. |
-| `goldbox module pack <path>` | Export a module as an independent container. **Blocked on Engine.** See below. |
+| `goldbox module pack <path>` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
 
 Golden transcripts from `goldbox play` and `goldbox sim` are the main
 regression checks for module and rules behavior.
@@ -223,22 +223,18 @@ regression checks for module and rules behavior.
   `rusty dev` reloads bundle edits without a restart.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
   its content as one zstd-compressed `.rpak`.
-- **Independent module export: Engine gap.** An Engine container holds a
-  single whole Product, and bundles are declared when the
-  product is built. Two things are missing:
-  1. packing a standalone content collection (one module) into the Engine
-     container format;
-  2. opening an independently installed container at runtime as a bundle.
-
-  Distinct ruleset, asset and campaign exports depend on both (requested
-  upstream as rusty-engine Den task #9040). Without them, modules are
-  distributed as source directories and staged as bundles. Do not write a local container format or
-  archive reader as a substitute.
-- **The CLI and Engine services.** The CLI needs Engine `Random` (and later
-  content admission) outside a running host. `Rusty.Engine.Testing.EngineTestHost`
-  provides the Engine service set in process. The CLI uses it only if the
-  Engine supports that for tools rather than just test projects; otherwise it
-  uses an Engine-supported in-process host. Don't swap in a local RNG.
+- **Independent module export.** `rusty pack-content <module-dir> --output
+  <file> [--compress]` packs one module into an Engine content container.
+  An installed container opens at run time as an ordinary bundle with
+  `ProductContentBundle.OpenContainer`, so ruleset, asset and campaign modules
+  ship and install separately. Replace an installed container by renaming a
+  new file into place, never by rewriting it while open. Don't write a local
+  container format or archive reader.
+- **The CLI and Engine services.** The CLI sets `RustyEngineToolHost` and
+  creates the Engine service set in process with `EngineTestHost.Create()`:
+  no renderer, input or lifecycle, but the same `Random` (and content
+  container) services as the running product, so a seed and script reproduce
+  the same rolls in both. Don't swap in a local RNG.
 
 ## Non-goals
 

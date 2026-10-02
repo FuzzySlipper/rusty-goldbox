@@ -3,10 +3,14 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>goldbox</AssemblyName>
     <RootNamespace>RustyGoldbox.Cli</RootNamespace>
+    <!-- In-process Engine services (Random) for headless commands; the build
+         copies the pinned pair's host library beside the tool. -->
+    <RustyEngineToolHost>true</RustyEngineToolHost>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="RustyGoldbox.Tests" />
+    <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
     <ProjectReference Include="../RustyGoldbox.Core/RustyGoldbox.Core.csproj" />
   </ItemGroup>
 </Project>
