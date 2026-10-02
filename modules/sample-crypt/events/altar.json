@@ -1,0 +1,15 @@
+{
+  "type": "event",
+  "id": "altar",
+  "kind": "menu",
+  "text": "An altar glows faintly.",
+  "options": [
+    {
+      "label": "Lay the dagger on it",
+      "next": "rest"
+    },
+    {
+      "label": "Step away"
+    }
+  ]
+}

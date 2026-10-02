@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "guards",
+  "kind": "combat",
+  "encounter": "classic:crypt_guard",
+  "on_win": "guard_loot"
+}

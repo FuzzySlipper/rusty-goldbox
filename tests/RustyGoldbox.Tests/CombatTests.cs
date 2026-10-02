@@ -190,7 +190,7 @@ public sealed class CombatTests
             """);
         RuleSet rules = Rules.LoadValid(root);
 
-        CombatFailure failure = Assert.Throws<CombatFailure>(() => Fight(rules, "duel", "dummy", "dummy", maxRounds: 1));
+        RuleFailure failure = Assert.Throws<RuleFailure>(() => Fight(rules, "duel", "dummy", "dummy", maxRounds: 1));
 
         Assert.Equal(("combat.evaluate", "$.always[0].amount"), (failure.Diagnostic.Rule, failure.Diagnostic.JsonPath));
         Assert.EndsWith("smite.json", failure.Diagnostic.File, StringComparison.Ordinal);

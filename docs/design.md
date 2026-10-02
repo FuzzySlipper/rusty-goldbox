@@ -226,7 +226,15 @@ Combat is built so that no die convention is assumed:
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
   branch can be guarded by an expression.
 - **Variables** are global or area-scoped. Each is declared with a type and an
-  initial value; undeclared variables fail validation.
+  initial value; undeclared variables fail validation. Expressions read them
+  as `campaign.var.<name>`.
+
+An area's map is written as text that agents can read and diff, in the same
+notation `goldbox map render` prints: `+` corners, horizontal edges of two
+characters (`--` wall, two spaces open, `DD` door, `SS` secret door) and
+vertical edges of one (`|`, space, `D`, `S`). Cell features and entry points
+are listed by `[x, y]`, x running east and y south from 0. Each event is a
+definition whose `kind` picks its fields (`goldbox schema events`).
 - **Encounters** reference ruleset monsters, with counts, placements and
   surprise rules.
 
@@ -244,7 +252,9 @@ seed and a command script fully reproduce a run. A transcript records seeds,
 commands, rolls and outcomes.
 
 **Saves** record the resolved module set (ID, version and content identity for
-each) and the campaign state. Loading a save under a different module set is
+each, the identity being a hash of the module's files) and the campaign state.
+Command *n* of a campaign rolls on its own random scope, so a game saved and
+resumed rolls exactly as one played straight through. Loading a save under a different module set is
 refused with a message that names the differences. Save migration is out of
 scope until a real module release needs it.
 

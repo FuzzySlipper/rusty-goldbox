@@ -1,0 +1,211 @@
+$ goldbox map render entrance --module modules/sample-crypt
+Crypt entrance (sample-crypt:entrance), 4 x 3; x runs east, y south, from 0
++--+--+--+--+
+|!1         |
++  +--+--+DD+
+|  |   <S|!v|
++  +  +--+  +
+|^G   |   !1|
++--+--+--+--+
+Legend: '--' '|' wall, 'DD' 'D' door, 'SS' 'S' secret door; !1 once-only event, !<arrow> event when facing that way, <arrow><letter> entry.
+  [0, 0] event bones, once; zone hall; backdrop placeholder-art:hall
+  [3, 1] event barred_door, facing south; zone crypt; backdrop placeholder-art:crypt
+  [3, 2] event guards, once; zone crypt; backdrop placeholder-art:crypt
+  [2, 1] event stairs; zone crypt; backdrop placeholder-art:crypt
+  [0, 2] entry gate, facing north
+  [2, 1] entry stairs_up, facing west
+[exit 0]
+
+$ goldbox play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt.script
+seed 1
+  The party is in Crypt entrance at [0, 2], facing north.
+  Wind moans through the gate of an old crypt. Somewhere inside, bones shift.
+> look
+  Crypt entrance [0, 2], facing north. north: open; east: open; south: wall; west: wall.
+> left
+  The party faces west.
+> forward
+  Can't: a wall blocks the way west.
+> right
+  The party faces north.
+> forward
+  The party moves to [0, 1], facing north.
+> forward
+  The party moves to [0, 0], facing north.
+  Bones crunch underfoot. Scratches on the wall point east.
+> right
+  The party faces east.
+> forward
+  The party moves to [1, 0], facing east.
+> forward
+  The party moves to [2, 0], facing east.
+> forward
+  The party moves to [3, 0], facing east.
+> right
+  The party faces south.
+> forward
+  The party moves to [3, 1], facing south.
+  A heavy door, barred from this side. [1] Lift the bar  [2] Leave it
+> dance
+  Can't: choose an option first (choose <n>).
+> forward
+  Can't: choose an option first (choose <n>).
+> choose 1
+  The party chooses 1: Lift the bar.
+  door_forced is now true.
+  The bar scrapes free. Cold air seeps from beyond.
+> forward
+  The party moves to [3, 2], facing south.
+    Round 1.
+    Party rolls 6 for initiative.  [1d6: 6 = 6]
+    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+    Ada uses Melee attack (Long sword) on Skeleton 2.
+    Ada rolls Melee attack: 11 against 13: failure.  [1d20: 11 = 11]
+    Brom uses Melee attack (Heavy mace) on Skeleton 2.
+    Brom rolls Melee attack: 4 against 13: failure.  [1d20: 4 = 4]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 8 against 15: failure.  [1d20: 8 = 8]
+    Skeleton 2 uses claw on Ada.
+    Skeleton 2 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
+    Round 2.
+    Party rolls 5 for initiative.  [1d6: 5 = 5]
+    Crypt guard rolls 3 for initiative.  [1d6: 3 = 3]
+    Ada uses Melee attack (Long sword) on Skeleton 2.
+    Ada rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
+    Skeleton 2 loses 3 hit points (1 left).  [1d8: 2 = 2]
+    Brom uses Melee attack (Heavy mace) on Skeleton 2.
+    Brom rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
+    Skeleton 2 loses 4 hit points (-3 left).  [1d6: 3 = 3]
+    Skeleton 2 is out of the fight.
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 1 against 15: failure.  [1d20: 1 = 1]
+    Round 3.
+    Party rolls 5 for initiative.  [1d6: 5 = 5]
+    Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 8 against 15: failure.  [1d20: 8 = 8]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
+    Round 4.
+    Party rolls 5 for initiative.  [1d6: 5 = 5]
+    Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 7 against 13: failure.  [1d20: 7 = 7]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 18 against 13: success.  [1d20: 18 = 18]
+    Skeleton 1 loses 4 hit points (1 left).  [1d6: 3 = 3]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 16 against 15: success.  [1d20: 16 = 16]
+    Ada loses 4 hit points (4 left).  [1d6: 4 = 4]
+    Round 5.
+    Party rolls 4 for initiative.  [1d6: 4 = 4]
+    Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 2 against 13: failure.  [1d20: 2 = 2]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 2 against 13: failure.  [1d20: 2 = 2]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 9 against 15: failure.  [1d20: 9 = 9]
+    Round 6.
+    Party rolls 1 for initiative.  [1d6: 1 = 1]
+    Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 12 against 15: failure.  [1d20: 12 = 12]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 11 against 13: failure.  [1d20: 11 = 11]
+    Round 7.
+    Party rolls 4 for initiative.  [1d6: 4 = 4]
+    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+    Skeleton 1 uses claw on Ada.
+    Skeleton 1 rolls Melee attack: 2 against 15: failure.  [1d20: 2 = 2]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 10 against 13: failure.  [1d20: 10 = 10]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
+    Round 8.
+    Party rolls 6 for initiative.  [1d6: 6 = 6]
+    Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
+    Ada uses Melee attack (Long sword) on Skeleton 1.
+    Ada rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+    Brom uses Melee attack (Heavy mace) on Skeleton 1.
+    Brom rolls Melee attack: 13 against 13: success.  [1d20: 13 = 13]
+    Skeleton 1 loses 4 hit points (-3 left).  [1d6: 3 = 3]
+    Skeleton 1 is out of the fight.
+    Party wins after 8 rounds.
+  Combat with Crypt guard: the party wins.
+  The party finds 100 gold, Dagger.  [2d6: 6+4 = 10]
+  guards_defeated is now true.
+  The rattling stops. A draught rises from somewhere to the west.
+> status
+  Ada (hit points 4/8) | Brom (hit points 8/8) | gold 220 + 120 | carrying Dagger
+> around
+  The party faces north.
+> forward
+  The party moves to [3, 1], facing north.
+> forward
+  The party moves to [3, 0], facing north.
+> left
+  The party faces west.
+> forward
+  The party moves to [2, 0], facing west.
+> forward
+  The party moves to [1, 0], facing west.
+> forward
+  The party moves to [0, 0], facing west.
+> left
+  The party faces south.
+> forward
+  The party moves to [0, 1], facing south.
+> forward
+  The party moves to [0, 2], facing south.
+> left
+  The party faces east.
+> forward
+  The party moves to [1, 2], facing east.
+> left
+  The party faces north.
+> forward
+  The party moves to [1, 1], facing north.
+> right
+  The party faces east.
+> forward
+  The party moves to [2, 1], facing east.
+  The party is in Crypt depths at [0, 0], facing east.
+  The stairs end in a low vault. Candlelight flickers to the south-east.
+> forward
+  The party moves to [1, 0], facing east.
+> right
+  The party faces south.
+> forward
+  The party moves to [1, 1], facing south.
+  An altar glows faintly. [1] Lay the dagger on it  [2] Step away
+> choose 1
+  The party chooses 1: Lay the dagger on it.
+  The adventure ends. The glow fades and the crypt falls silent. Its dead rest at last.
+> forward
+  Can't: the adventure has ended.
+[exit 0]
+
+$ goldbox play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt-early-stairs.script
+seed 1
+  The party is in Crypt entrance at [0, 2], facing north.
+  Wind moans through the gate of an old crypt. Somewhere inside, bones shift.
+> right
+  The party faces east.
+> forward
+  The party moves to [1, 2], facing east.
+> left
+  The party faces north.
+> forward
+  The party moves to [1, 1], facing north.
+> right
+  The party faces east.
+> forward
+  The party moves to [2, 1], facing east.
+  Stairs lead down, but something still rattles nearby. You hold back.
+[exit 0]
+

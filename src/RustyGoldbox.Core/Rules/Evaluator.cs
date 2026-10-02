@@ -19,7 +19,8 @@ public sealed record Scope(
     Creature? Self,
     Creature? Target,
     IReadOnlyDictionary<string, CompiledExpression>? Use = null,
-    CheckResult? Check = null);
+    CheckResult? Check = null,
+    IReadOnlyDictionary<string, Value>? Variables = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -293,6 +294,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
                 // Parameters are evaluated where they're read, against the same creatures.
                 return evaluator.Evaluate(parameter, scope with { Use = null, Check = null });
+            }
+
+            if (path.Root == "campaign")
+            {
+                return scope.Variables is not null && scope.Variables.TryGetValue(path.Name, out Value variable)
+                    ? variable
+                    : throw new ExpressionException($"campaign.var.{path.Name} has no value here: there is no campaign running.", path.Column);
             }
 
             if (path.Root == "check")

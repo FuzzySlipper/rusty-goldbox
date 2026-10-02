@@ -1,0 +1,33 @@
+{
+  "type": "area",
+  "id": "depths",
+  "name": "Crypt depths",
+  "wall_set": "placeholder-art:stone_wall",
+  "map": [
+    "+--+--+",
+    "|  D  |",
+    "+  +  +",
+    "|     |",
+    "+--+--+"
+  ],
+  "cells": [
+    {
+      "at": [
+        1,
+        1
+      ],
+      "zone": "altar",
+      "backdrop": "placeholder-art:crypt",
+      "event": "altar"
+    }
+  ],
+  "entries": {
+    "stairs_down": {
+      "at": [
+        0,
+        0
+      ],
+      "facing": "east"
+    }
+  }
+}

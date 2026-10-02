@@ -1,0 +1,39 @@
+# The sample crypt, start to finish.
+look
+left          # face west: a wall
+forward
+right
+forward       # [0,1]
+forward       # [0,0]: bones
+right
+forward
+forward
+forward       # [3,0]
+right
+forward       # [3,1] facing south: the barred door
+dance         # not a command
+forward       # must choose first
+choose 1      # lift the bar
+forward       # [3,2]: the guards
+status
+around
+forward       # [3,1] facing north: the door doesn't ask
+forward
+left
+forward
+forward
+forward       # [0,0]: bones only once
+left
+forward
+forward       # [0,2]
+left
+forward       # [1,2]
+left
+forward       # [1,1]
+right
+forward       # [2,1]: stairs down
+forward       # through the door
+right
+forward       # [1,1]: the altar
+choose 1
+forward       # the adventure is over

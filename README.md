@@ -64,6 +64,13 @@ dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module 
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 ```
 
+Campaigns play from command scripts, and save and resume:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- map render entrance --module modules/sample-crypt
+dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt.script
+```
+
 Fights run headless from a seed; one run prints the transcript, more print
 distributions:
 
@@ -114,7 +121,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
 | `src/RustyGoldbox.Game/` | Engine product: lifecycle and projections |
 | `src/ui/main.js` | DOM debug readout |
-| `modules/` | First-party module sources; `modules/classic` is the first ruleset |
+| `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `content/` | Product content root; module bundles are staged from here |

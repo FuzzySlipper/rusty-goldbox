@@ -13,12 +13,6 @@ public sealed record CombatSide(string Name, IReadOnlyList<Combatant> Members);
 /// <param name="Track">The combat's track, which summaries show.</param>
 public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track);
 
-/// <summary>A rule expression that failed during a fight, located in its definition.</summary>
-public sealed class CombatFailure(ModuleDiagnostic diagnostic) : Exception(diagnostic.Message)
-{
-    public ModuleDiagnostic Diagnostic { get; } = diagnostic;
-}
-
 /// <summary>
 /// The fixed combat loop. Each round: initiative (every round or once, as the
 /// combat definition says), then each creature's turn: start-of-turn condition
@@ -28,7 +22,7 @@ public sealed class CombatFailure(ModuleDiagnostic diagnostic) : Exception(diagn
 /// policy: the first use in a creature's list it can afford and that has a
 /// target.
 /// </summary>
-/// <exception cref="CombatFailure">A rule expression failed during the fight.</exception>
+/// <exception cref="RuleFailure">A rule expression failed during the fight.</exception>
 public sealed class CombatRunner
 {
     private readonly RuleSet _rules;
@@ -55,6 +49,15 @@ public sealed class CombatRunner
                 member.Side = side;
             }
         }
+    }
+
+    /// <summary>Rounds a fight runs when its combat definition sets no round_limit.</summary>
+    public const int DefaultRoundLimit = 100;
+
+    /// <summary>The combat definition's round_limit, or the default.</summary>
+    public static int RoundLimit(Definition combat)
+    {
+        return combat.Json.TryGetProperty("round_limit", out JsonElement limit) ? limit.GetInt32() : DefaultRoundLimit;
     }
 
     public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds)
@@ -484,7 +487,7 @@ public sealed class CombatRunner
         catch (Exception exception) when (exception is ExpressionException or OverflowException)
         {
             string message = exception is OverflowException ? "A result is too large to be a number." : exception.Message;
-            throw new CombatFailure(new ModuleDiagnostic("combat.evaluate", message, owner.Module, owner.File, path));
+            throw new RuleFailure(new ModuleDiagnostic("combat.evaluate", message, owner.Module, owner.File, path));
         }
     }
 

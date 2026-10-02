@@ -187,12 +187,27 @@ public static class Parser
                     throw new ExpressionException($"Expected a name after '{token.Text}.', like '{token.Text}.level'.", name.Column);
                 }
 
+                if (token.Text == "campaign")
+                {
+                    // Campaign variables: campaign.var.<name>, read as PathExpr("campaign", name).
+                    if (name.Text != "var" || Peek() is not { Kind: TokenKind.Operator, Text: "." })
+                    {
+                        throw new ExpressionException("Read campaign variables as campaign.var.<name>.", token.Column);
+                    }
+
+                    _position++;
+                    Token variable = Next();
+                    if (variable.Kind != TokenKind.Name || Keywords.Contains(variable.Text))
+                    {
+                        throw new ExpressionException("Expected a variable name after 'campaign.var.'.", variable.Column);
+                    }
+
+                    name = variable;
+                }
+
                 if (Peek() is { Kind: TokenKind.Operator, Text: "." } after)
                 {
-                    string message = token.Text == "campaign"
-                        ? "Campaign variables (campaign.var.<name>) can't be read yet: they arrive with campaign modules."
-                        : $"Reads have one level, like {token.Text}.{name.Text}; there is nothing after it to read.";
-                    throw new ExpressionException(message, token.Text == "campaign" ? token.Column : after.Column);
+                    throw new ExpressionException($"Reads have one level, like {token.Text}.{name.Text}; there is nothing after it to read.", after.Column);
                 }
 
                 return new PathExpr(token.Column, token.Text, name.Text);

@@ -8,7 +8,7 @@ namespace RustyGoldbox.Core.Combat;
 public static class Encounters
 {
     /// <summary>Rolls an encounter's monster counts and hit points into combatants, numbering repeats.</summary>
-    /// <exception cref="CombatFailure">A count or hit point expression failed or isn't a usable number.</exception>
+    /// <exception cref="RuleFailure">A count or hit point expression failed or isn't a usable number.</exception>
     public static List<Combatant> Spawn(RuleSet rules, Definition encounter, DiceRoller dice)
     {
         Evaluator evaluator = new(rules, dice);
@@ -21,7 +21,7 @@ public static class Encounters
             decimal count = Evaluate(rules, encounter, $"{path}.count", () => evaluator.Evaluate(rules.Expression(encounter, $"{path}.count"), null, null).Number);
             if (count < 0 || count != decimal.Truncate(count) || count > int.MaxValue)
             {
-                throw new CombatFailure(new ModuleDiagnostic("combat.evaluate", $"The count came to {count}; it must be a whole number from 0 to {int.MaxValue}.", encounter.Module, encounter.File, $"{path}.count"));
+                throw new RuleFailure(new ModuleDiagnostic("combat.evaluate", $"The count came to {count}; it must be a whole number from 0 to {int.MaxValue}.", encounter.Module, encounter.File, $"{path}.count"));
             }
 
             for (int i = 1; i <= (int)count; i++)
@@ -74,7 +74,7 @@ public static class Encounters
         catch (Exception exception) when (exception is Expressions.ExpressionException or OverflowException)
         {
             string message = exception is OverflowException ? "A result is too large to be a number." : exception.Message;
-            throw new CombatFailure(new ModuleDiagnostic("combat.evaluate", message, owner.Module, owner.File, path));
+            throw new RuleFailure(new ModuleDiagnostic("combat.evaluate", message, owner.Module, owner.File, path));
         }
     }
 }

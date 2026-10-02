@@ -54,7 +54,17 @@ public static class DefinitionReader
         public Definition? Read(JsonElement root)
         {
             List<Field> fields = [.. DefinitionType.CommonFields, .. type.Fields];
-            ReadObject(root, fields, "$", $"a {type.Name}");
+            string what = $"a {type.Name}";
+            if (type == DefinitionTypes.Event
+                && root.TryGetProperty("kind", out JsonElement kindElement)
+                && kindElement.ValueKind == JsonValueKind.String
+                && EventTypes.Find(kindElement.GetString()!) is DefinitionType kind)
+            {
+                fields.AddRange(kind.Fields);
+                what = $"a {kind.Name} event";
+            }
+
+            ReadObject(root, fields, "$", what);
             string? id = root.TryGetProperty("id", out JsonElement idElement) && idElement.ValueKind == JsonValueKind.String
                 ? idElement.GetString()
                 : null;
@@ -71,6 +81,17 @@ public static class DefinitionReader
             if (type == DefinitionTypes.Class && diagnostics.Count == _errorsBefore)
             {
                 CheckClassLevels(root);
+            }
+
+            if (type == DefinitionTypes.Area && diagnostics.Count == _errorsBefore)
+            {
+                CheckArea(root);
+            }
+
+            if (type == DefinitionTypes.Event && diagnostics.Count == _errorsBefore && root.GetProperty("kind").GetString() == "menu"
+                && root.GetProperty("options").EnumerateArray().All(option => option.TryGetProperty("when", out _)))
+            {
+                Error("event.menu", "$.options", "Every option has a \"when\", so the menu could offer nothing and leave the party stuck. Give at least one option no \"when\".");
             }
 
             if (diagnostics.Count > _errorsBefore)
@@ -426,6 +447,59 @@ public static class DefinitionReader
             if (!ok)
             {
                 Error("definition.table-row", path, $"Table values are {valueType} (numbers no larger than {decimal.MaxValue}), but the cell is {Show(cell)}.");
+            }
+        }
+
+        private void CheckArea(JsonElement root)
+        {
+            List<string> rows = root.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList();
+            List<(int Row, int Column, string Message)> problems = [];
+            Campaigns.AreaMap? map = Campaigns.AreaMap.Parse(rows, problems);
+            foreach ((int row, int column, string message) in problems)
+            {
+                Error("area.map", $"$.map[{row}]", $"Column {column}: {message} The map format: {Campaigns.AreaMap.FormatDescription}");
+            }
+
+            if (map is null)
+            {
+                return;
+            }
+
+            if (root.TryGetProperty("cells", out JsonElement cells))
+            {
+                int index = 0;
+                HashSet<(int, int)> seen = [];
+                foreach (JsonElement cell in cells.EnumerateArray())
+                {
+                    (int x, int y) = (cell.GetProperty("at")[0].GetInt32(), cell.GetProperty("at")[1].GetInt32());
+                    CheckInside(map, x, y, $"$.cells[{index}].at");
+                    if (!seen.Add((x, y)))
+                    {
+                        Error("area.cell", $"$.cells[{index}].at", $"Cell [{x}, {y}] is listed more than once; put all its features in one entry.");
+                    }
+
+                    index++;
+                }
+            }
+
+            foreach (JsonProperty entry in root.GetProperty("entries").EnumerateObject())
+            {
+                if (entry.Name.Trim().Length == 0)
+                {
+                    Error("area.entry", "$.entries", "Entry names can't be empty; name each entry, for example \"gate\".");
+                    continue;
+                }
+
+                JsonElement at = entry.Value.GetProperty("at");
+                CheckInside(map, at[0].GetInt32(), at[1].GetInt32(), $"$.entries.{entry.Name}.at");
+            }
+        }
+
+        private void CheckInside(Campaigns.AreaMap map, int x, int y, string path)
+        {
+            if (!map.Contains(x, y))
+            {
+                Error("area.cell", path, $"[{x}, {y}] is outside the map, which is {map.Width} wide and {map.Height} high (x 0 to {map.Width - 1}, y 0 to {map.Height - 1}).");
             }
         }
 

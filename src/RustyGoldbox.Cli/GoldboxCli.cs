@@ -42,10 +42,18 @@ internal static class GoldboxCli
               Prints the derived sheet.
 
           goldbox sim combat --module <path> --party <file>,... --encounter <id> [--seed <n>]
-                [--runs <k>] [--max-rounds <n>] [--combat <id>]
+                [--runs <k>] [--max-rounds <n>] [--combat <id>]   (rounds default to the combat's round_limit)
               Fights the party against the encounter with the ruleset's combat loop. One run
               prints the transcript; more print outcomes and distributions. Run k uses the
               random scope goldbox.sim.<k>, so each run repeats for a seed.
+
+          goldbox map render <area> --module <path> [--player]
+              Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
+          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>]
+              Plays a campaign from a command script (or stdin), one command per line; # starts
+              a comment. Commands: forward, back, left, right, around, choose <n>, look, status.
+              --save writes the state at the end; --load continues a save exactly.
 
         Every command accepts --json for structured output.
 
@@ -76,6 +84,10 @@ internal static class GoldboxCli
                 return CharacterCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "sim":
                 return SimCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
+            case "map":
+                return MapCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
+            case "play":
+                return PlayCommand.Run(args.Skip(1), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:

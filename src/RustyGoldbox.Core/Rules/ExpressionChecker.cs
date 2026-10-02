@@ -55,11 +55,12 @@ internal sealed class ExpressionChecker(
             "target" => Roots.Target,
             "use" => Roots.Use,
             "check" => Roots.Check,
+            "campaign" => Roots.Campaign,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter> and check.<result>.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, use.<parameter>, check.<result> and campaign.var.<name>.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -77,6 +78,23 @@ internal sealed class ExpressionChecker(
             }
 
             return ExprType.Number;
+        }
+
+        if (root == Roots.Campaign)
+        {
+            if (!rules.Variables.TryGetValue(path.Name, out Definition? variable))
+            {
+                string known = rules.Variables.Count == 0 ? "No variables are declared." : $"Variables: {string.Join(", ", rules.Variables.Keys.Order(StringComparer.Ordinal))}.";
+                throw new ExpressionException($"'{path.Name}' is not a declared variable. {known} Declare it with a variable definition.", path.Column);
+            }
+
+            if (!rules.VisibleModules[module].Contains(variable.Module))
+            {
+                throw new ExpressionException($"Variable '{path.Name}' belongs to module '{variable.Module}', which '{module}' does not require. Add it to requires.", path.Column);
+            }
+
+            ExprTypes.TryParse(variable.Json.GetProperty("value_type").GetString()!, out ExprType variableType);
+            return variableType;
         }
 
         if (root == Roots.Check)

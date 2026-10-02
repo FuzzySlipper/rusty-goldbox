@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "descend",
+  "kind": "teleport",
+  "area": "depths",
+  "entry": "stairs_down",
+  "next": "depths_arrival"
+}

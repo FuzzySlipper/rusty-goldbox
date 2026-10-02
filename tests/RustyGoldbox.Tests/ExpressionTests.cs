@@ -105,7 +105,7 @@ public sealed class ExpressionTests
     }
 
     [Theory]
-    [InlineData("campaign.var.gate_open", "arrive with campaign modules")]
+    [InlineData("campaign.gate_open", "Read campaign variables as campaign.var.<name>")]
     [InlineData("self.str.x", "Reads have one level")]
     [InlineData("99999999999999999999999999999999", "too large to be a number")]
     public void UnsupportedReadsAndHugeNumbersAreSyntaxErrors(string text, string message)

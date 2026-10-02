@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "guards_down",
+  "kind": "set",
+  "variable": "guards_defeated",
+  "value": "true",
+  "next": "quiet"
+}

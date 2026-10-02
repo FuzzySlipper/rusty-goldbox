@@ -53,11 +53,16 @@ internal static class SchemaCommand
             return Operations(output);
         }
 
+        if (topic == "events")
+        {
+            return Events(output);
+        }
+
         DefinitionType? type = DefinitionTypes.Find(topic);
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events.");
         }
 
         return Type(output, type);
@@ -70,7 +75,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "module", "expressions", "operations" },
+                topics = new[] { "module", "expressions", "operations", "events" },
             });
             return GoldboxCli.Ok;
         }
@@ -89,6 +94,7 @@ internal static class SchemaCommand
         output.Line("  module              The module.json manifest.");
         output.Line("  expressions         The expression language and its functions.");
         output.Line("  operations          What actions and conditions can do: damage, heal, conditions, checks.");
+        output.Line("  events              Campaign event kinds and their fields.");
         return GoldboxCli.Ok;
     }
 
@@ -213,6 +219,36 @@ internal static class SchemaCommand
             output.Line($"{operation.Name}: {operation.Description}");
             WriteFields(output, operation.Fields, "  ");
             output.Line($"  Example: {operation.Example}");
+        }
+
+        return GoldboxCli.Ok;
+    }
+
+    private static int Events(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                kinds = EventTypes.All.Select(kind => new
+                {
+                    name = kind.Name,
+                    description = kind.Description,
+                    fields = kind.Fields.Select(FieldJson),
+                    example = System.Text.Json.JsonDocument.Parse(kind.Example).RootElement,
+                }),
+            });
+            return GoldboxCli.Ok;
+        }
+
+        output.Line("An event definition is { \"type\": \"event\", \"id\", \"kind\", ...the kind's fields }. Events chain by");
+        output.Line("naming the next event; cells and menus start chains. Expressions in events may read campaign.var.<name>.");
+        foreach (DefinitionType kind in EventTypes.All)
+        {
+            output.Line();
+            output.Line($"{kind.Name}: {kind.Description}");
+            WriteFields(output, kind.Fields, "  ");
+            output.Line($"  Example: {kind.Example}");
         }
 
         return GoldboxCli.Ok;

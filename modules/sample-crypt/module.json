@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "sample-crypt",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "The Sample Crypt",
+  "requires": [
+    {
+      "id": "classic",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "placeholder-art",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original content written for Rusty Goldbox."
+}

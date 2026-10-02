@@ -1,0 +1,425 @@
+using System.Globalization;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Expressions;
+using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Core.Rules;
+
+namespace RustyGoldbox.Core.Campaigns;
+
+/// <summary>
+/// A saved campaign: the resolved module set (ID, version and content
+/// identity for each), the campaign state and the party. Loading it under a
+/// different module set is refused, naming every difference.
+/// </summary>
+public static class SaveFile
+{
+    public const int CurrentFormat = 1;
+
+    private static readonly JsonWriterOptions WriterOptions = new()
+    {
+        Indented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private static readonly string[] Fields =
+    [
+        "format", "modules", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "inventory", "ended", "party",
+    ];
+
+    public static string ToJson(CampaignState state, ModuleSet set)
+    {
+        using MemoryStream stream = new();
+        using (Utf8JsonWriter writer = new(stream, WriterOptions))
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("format", CurrentFormat);
+            writer.WriteStartArray("modules");
+            foreach (LoadedModule loaded in set.LoadOrder)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", loaded.Manifest.Id);
+                writer.WriteString("version", loaded.Manifest.Version.ToString());
+                writer.WriteString("identity", ModuleIdentity.Of(loaded.Manifest));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteString("campaign", state.Campaign.QualifiedId);
+            writer.WriteString("seed", state.Seed.ToString(CultureInfo.InvariantCulture));
+            writer.WriteNumber("commands", state.Commands);
+            writer.WriteString("area", state.Area.QualifiedId);
+            writer.WriteNumber("x", state.X);
+            writer.WriteNumber("y", state.Y);
+            writer.WriteString("facing", Facings.Name(state.Facing));
+            writer.WriteStartObject("variables");
+            foreach ((string id, Value value) in state.Variables.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+            {
+                switch (value.Type)
+                {
+                    case ExprType.Number:
+                        writer.WriteNumber(id, value.Number);
+                        break;
+                    case ExprType.Boolean:
+                        writer.WriteBoolean(id, value.Boolean);
+                        break;
+                    default:
+                        writer.WriteString(id, value.Text);
+                        break;
+                }
+            }
+
+            writer.WriteEndObject();
+            writer.WriteStartArray("fired");
+            foreach (string fired in state.Fired.Order(StringComparer.Ordinal))
+            {
+                writer.WriteStringValue(fired);
+            }
+
+            writer.WriteEndArray();
+            if (state.PendingMenu is null)
+            {
+                writer.WriteNull("pending_menu");
+            }
+            else
+            {
+                writer.WriteString("pending_menu", state.PendingMenu.QualifiedId);
+            }
+
+            writer.WriteStartArray("inventory");
+            foreach (Definition item in state.Inventory)
+            {
+                writer.WriteStringValue(item.QualifiedId);
+            }
+
+            writer.WriteEndArray();
+            writer.WriteBoolean("ended", state.Ended);
+            writer.WriteStartArray("party");
+            foreach (Character character in state.Party)
+            {
+                CharacterFile.Write(writer, character);
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    /// <summary>Reads a save against the loaded module set; problems name the file and JSON path.</summary>
+    public static CampaignState? Read(string path, ModuleSet set, List<ModuleDiagnostic> problems)
+    {
+        using JsonDocument? document = JsonFiles.Parse(path, null, problems);
+        return document is null ? null : new Reader(path, set, problems).Read(document.RootElement);
+    }
+
+    private sealed class Reader(string path, ModuleSet set, List<ModuleDiagnostic> problems)
+    {
+        private readonly RuleSet _rules = set.Rules!;
+        private readonly int _before = problems.Count;
+
+        public CampaignState? Read(JsonElement root)
+        {
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                Error("$", "A save must be a JSON object, as written by `goldbox play --save`.");
+                return null;
+            }
+
+            foreach (JsonProperty property in root.EnumerateObject().Where(property => !Fields.Contains(property.Name)))
+            {
+                Error($"$.{property.Name}", $"'{property.Name}' is not a save field. Fields: {string.Join(", ", Fields)}.");
+            }
+
+            if (Integer(root, "format") is int format && format != CurrentFormat)
+            {
+                Error("$.format", $"Save format {format} is not supported; this goldbox reads format {CurrentFormat}.");
+            }
+
+            CheckModules(root);
+            if (problems.Count > _before)
+            {
+                return null;
+            }
+
+            Definition? campaign = Find(root, "campaign", DefinitionTypes.Campaign);
+            Definition? area = Find(root, "area", DefinitionTypes.Area);
+            ulong seed = 0;
+            if (Text(root, "seed") is string seedText && !ulong.TryParse(seedText, NumberStyles.None, CultureInfo.InvariantCulture, out seed))
+            {
+                Error("$.seed", "seed must be a whole number, written as text.");
+            }
+
+            int? commands = Integer(root, "commands");
+            int? x = Integer(root, "x");
+            int? y = Integer(root, "y");
+            Facing facing = Facing.North;
+            if (Text(root, "facing") is string facingText && !Facings.TryParse(facingText, out facing))
+            {
+                Error("$.facing", $"'{facingText}' is not a facing: {string.Join(", ", Facings.Names)}.");
+            }
+
+            if (campaign is null || area is null || commands is null || x is null || y is null || problems.Count > _before)
+            {
+                return null;
+            }
+
+            AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+            if (!map.Contains(x.Value, y.Value))
+            {
+                Error(x < 0 || x >= map.Width ? "$.x" : "$.y", $"[{x}, {y}] is outside {area.QualifiedId}, which is {map.Width} wide and {map.Height} high.");
+            }
+
+            if (commands < 0)
+            {
+                Error("$.commands", "commands can't be negative.");
+            }
+
+            if (problems.Count > _before)
+            {
+                return null;
+            }
+
+            CampaignState state = new() { Campaign = campaign, Seed = seed, Area = area, X = x.Value, Y = y.Value, Facing = facing, Commands = commands.Value };
+            ReadVariables(root, state);
+            ReadRest(root, state);
+            return problems.Count > _before ? null : state;
+        }
+
+        private void CheckModules(JsonElement root)
+        {
+            if (!root.TryGetProperty("modules", out JsonElement modules) || modules.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.modules", "Missing \"modules\": the module set the save was made under.");
+                return;
+            }
+
+            Dictionary<string, (string Version, string Identity)> saved = [];
+            foreach (JsonElement module in modules.EnumerateArray())
+            {
+                if (module.ValueKind == JsonValueKind.Object
+                    && module.TryGetProperty("id", out JsonElement id) && id.ValueKind == JsonValueKind.String
+                    && module.TryGetProperty("version", out JsonElement version) && version.ValueKind == JsonValueKind.String
+                    && module.TryGetProperty("identity", out JsonElement identity) && identity.ValueKind == JsonValueKind.String)
+                {
+                    saved[id.GetString()!] = (version.GetString()!, identity.GetString()!);
+                }
+                else
+                {
+                    Error("$.modules", "Each modules entry must be { \"id\", \"version\", \"identity\" }.");
+                    return;
+                }
+            }
+
+            List<string> differences = [];
+            foreach (LoadedModule loaded in set.LoadOrder)
+            {
+                ModuleManifest manifest = loaded.Manifest;
+                if (!saved.Remove(manifest.Id, out (string Version, string Identity) entry))
+                {
+                    differences.Add($"{manifest.Id} {manifest.Version} is loaded but wasn't in the saved set");
+                }
+                else if (entry.Version != manifest.Version.ToString())
+                {
+                    differences.Add($"{manifest.Id} is {manifest.Version}, but the save was made with {entry.Version}");
+                }
+                else if (entry.Identity != ModuleIdentity.Of(manifest))
+                {
+                    differences.Add($"{manifest.Id} {manifest.Version} has different content from when the save was made");
+                }
+            }
+
+            differences.AddRange(saved.Select(entry => $"{entry.Key} {entry.Value.Version} was in the saved set but isn't loaded"));
+            if (differences.Count > 0)
+            {
+                Error("$.modules", $"The save was made under a different module set: {string.Join("; ", differences)}. Load the exact modules it was saved with.");
+            }
+        }
+
+        private void ReadVariables(JsonElement root, CampaignState state)
+        {
+            if (!root.TryGetProperty("variables", out JsonElement variables) || variables.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.variables", "Missing \"variables\": the campaign variables and their values.");
+                return;
+            }
+
+            foreach (Definition variable in _rules.Variables.Values)
+            {
+                string at = $"$.variables.{variable.Id}";
+                if (!variables.TryGetProperty(variable.Id, out JsonElement value))
+                {
+                    Error("$.variables", $"Missing variable {variable.Id}.");
+                    continue;
+                }
+
+                string type = variable.Json.GetProperty("value_type").GetString()!;
+                Value? read = (type, value.ValueKind) switch
+                {
+                    ("number", JsonValueKind.Number) when value.TryGetDecimal(out decimal number) => Value.Of(number),
+                    ("boolean", JsonValueKind.True or JsonValueKind.False) => Value.Of(value.GetBoolean()),
+                    ("text", JsonValueKind.String) => Value.Of(value.GetString()!),
+                    _ => null,
+                };
+                if (read is null)
+                {
+                    Error(at, $"{variable.Id} is a {type} variable, but the saved value is {JsonFiles.Describe(value.ValueKind)}.");
+                }
+                else
+                {
+                    state.Variables[variable.Id] = read.Value;
+                }
+            }
+
+            foreach (JsonProperty extra in variables.EnumerateObject().Where(property => !_rules.Variables.ContainsKey(property.Name)))
+            {
+                Error($"$.variables.{extra.Name}", $"'{extra.Name}' is not a variable of this campaign.");
+            }
+        }
+
+        private void ReadRest(JsonElement root, CampaignState state)
+        {
+            if (root.TryGetProperty("fired", out JsonElement fired) && fired.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement entry in fired.EnumerateArray())
+                {
+                    if (entry.ValueKind == JsonValueKind.String)
+                    {
+                        state.Fired.Add(entry.GetString()!);
+                    }
+                    else
+                    {
+                        Error("$.fired", "fired must be an array of text.");
+                    }
+                }
+            }
+            else
+            {
+                Error("$.fired", "Missing \"fired\": the once-only triggers that have run.");
+            }
+
+            if (!root.TryGetProperty("pending_menu", out JsonElement pending) || pending.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
+            {
+                Error("$.pending_menu", "pending_menu must be a menu event ID, or null when no menu is waiting.");
+            }
+            else if (pending.ValueKind == JsonValueKind.String)
+            {
+                state.PendingMenu = Find(root, "pending_menu", DefinitionTypes.Event);
+                if (state.PendingMenu is not null && state.PendingMenu.Json.GetProperty("kind").GetString() != "menu")
+                {
+                    Error("$.pending_menu", $"{state.PendingMenu.QualifiedId} is not a menu event.");
+                }
+            }
+
+            if (root.TryGetProperty("inventory", out JsonElement inventory) && inventory.ValueKind == JsonValueKind.Array)
+            {
+                int index = 0;
+                foreach (JsonElement item in inventory.EnumerateArray())
+                {
+                    if (Resolve(item, $"$.inventory[{index}]", DefinitionTypes.Item) is Definition found)
+                    {
+                        state.Inventory.Add(found);
+                    }
+
+                    index++;
+                }
+            }
+            else
+            {
+                Error("$.inventory", "Missing \"inventory\": the items the party carries.");
+            }
+
+            state.Ended = root.TryGetProperty("ended", out JsonElement ended) && ended.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? ended.GetBoolean()
+                : Fail<bool>("$.ended", "ended must be true or false.");
+            if (!root.TryGetProperty("party", out JsonElement party) || party.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.party", "Missing \"party\": the characters.");
+                return;
+            }
+
+            int member = 0;
+            foreach (JsonElement character in party.EnumerateArray())
+            {
+                if (CharacterFile.Read(character, path, $"$.party[{member}]", set, problems) is Character read)
+                {
+                    state.Party.Add(read);
+                }
+
+                member++;
+            }
+
+            JsonElement size = state.Campaign.Json.GetProperty("party");
+            int min = size.GetProperty("min").GetInt32();
+            int max = size.GetProperty("max").GetInt32();
+            if (member < min || member > max)
+            {
+                Error("$.party", $"{state.Campaign.Name} takes a party of {min} to {max}; the save has {member}.");
+            }
+        }
+
+        private Definition? Find(JsonElement root, string name, DefinitionType type)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value))
+            {
+                Error("$", $"Missing \"{name}\": a {type.Name} ID.");
+                return null;
+            }
+
+            return Resolve(value, $"$.{name}", type);
+        }
+
+        private Definition? Resolve(JsonElement value, string at, DefinitionType type)
+        {
+            if (value.ValueKind != JsonValueKind.String)
+            {
+                Error(at, $"Expected a {type.Name} ID.");
+                return null;
+            }
+
+            Definition? found = _rules.Find(type, value.GetString()!, out string? problem);
+            if (found is null)
+            {
+                Error(at, problem!);
+            }
+
+            return found;
+        }
+
+        private int? Integer(JsonElement root, string name)
+        {
+            if (root.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number))
+            {
+                return number;
+            }
+
+            Error($"$.{name}", $"\"{name}\" must be a whole number.");
+            return null;
+        }
+
+        private string? Text(JsonElement root, string name)
+        {
+            if (root.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString();
+            }
+
+            Error($"$.{name}", $"\"{name}\" must be text.");
+            return null;
+        }
+
+        private T Fail<T>(string at, string message)
+        {
+            Error(at, message);
+            return default!;
+        }
+
+        private void Error(string jsonPath, string message)
+        {
+            problems.Add(new ModuleDiagnostic("save.file", message, File: path, JsonPath: jsonPath));
+        }
+    }
+}

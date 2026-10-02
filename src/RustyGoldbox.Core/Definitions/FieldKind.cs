@@ -15,6 +15,9 @@ public enum Roots
 
     /// <summary>check.roll, check.total, check.target, check.margin: the check being resolved.</summary>
     Check = 8,
+
+    /// <summary>campaign.var.&lt;name&gt;: campaign variables.</summary>
+    Campaign = 16,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -73,6 +76,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
         if (Roots.HasFlag(Roots.Check))
         {
             roots.Add("check");
+        }
+
+        if (Roots.HasFlag(Roots.Campaign))
+        {
+            roots.Add("campaign.var");
         }
 
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);

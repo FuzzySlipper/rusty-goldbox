@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "stairs",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.guards_defeated",
+      "next": "descend"
+    }
+  ],
+  "otherwise": "stairs_held"
+}

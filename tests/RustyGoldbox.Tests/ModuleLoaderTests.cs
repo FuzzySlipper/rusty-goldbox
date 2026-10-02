@@ -15,6 +15,8 @@ public sealed class ModuleLoaderTests
         modules.Module("house", "extension", requires: Require("classic", "^0.1.0"));
         string campaign = modules.Module("sample", "campaign",
             requires: $"{Require("house", "*")}, {Require("classic", "^0.1.0")}, {Require("crypt-art", "*")}");
+        modules.Write("sample/area.json", """{ "type": "area", "id": "start", "name": "Start", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "north" } } }""");
+        modules.Write("sample/campaign.json", """{ "type": "campaign", "id": "c", "name": "C", "start": { "area": "start", "entry": "in" }, "party": { "min": 1, "max": 6 } }""");
 
         ModuleSet set = ModuleLoader.Load(campaign, []);
 

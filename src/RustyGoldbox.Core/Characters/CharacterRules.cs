@@ -184,11 +184,6 @@ public static class CharacterRules
         }
     }
 
-    /// <summary>A rule expression that failed while making or advancing a character.</summary>
-    private sealed class RuleFailure(ModuleDiagnostic diagnostic) : Exception(diagnostic.Message)
-    {
-        public ModuleDiagnostic Diagnostic { get; } = diagnostic;
-    }
 
     private static decimal StartingGold(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
     {

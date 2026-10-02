@@ -1,0 +1,6 @@
+{
+  "type": "asset",
+  "id": "stone_wall",
+  "kind": "wall_set",
+  "file": "walls/stone.svg"
+}

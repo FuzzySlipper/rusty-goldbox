@@ -1,0 +1,72 @@
+{
+  "type": "area",
+  "id": "entrance",
+  "name": "Crypt entrance",
+  "wall_set": "placeholder-art:stone_wall",
+  "map": [
+    "+--+--+--+--+",
+    "|           |",
+    "+  +--+--+DD+",
+    "|  |     |  |",
+    "+  +  +--+  +",
+    "|     |     |",
+    "+--+--+--+--+"
+  ],
+  "cells": [
+    {
+      "at": [
+        0,
+        0
+      ],
+      "zone": "hall",
+      "backdrop": "placeholder-art:hall",
+      "event": "bones",
+      "once": true
+    },
+    {
+      "at": [
+        3,
+        1
+      ],
+      "zone": "crypt",
+      "backdrop": "placeholder-art:crypt",
+      "event": "barred_door",
+      "facing": "south"
+    },
+    {
+      "at": [
+        3,
+        2
+      ],
+      "zone": "crypt",
+      "backdrop": "placeholder-art:crypt",
+      "event": "guards",
+      "once": true
+    },
+    {
+      "at": [
+        2,
+        1
+      ],
+      "zone": "crypt",
+      "backdrop": "placeholder-art:crypt",
+      "event": "stairs"
+    }
+  ],
+  "entries": {
+    "gate": {
+      "at": [
+        0,
+        2
+      ],
+      "facing": "north"
+    },
+    "stairs_up": {
+      "at": [
+        2,
+        1
+      ],
+      "facing": "west"
+    }
+  }
+}

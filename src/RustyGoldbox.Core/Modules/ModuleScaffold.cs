@@ -88,5 +88,40 @@ public static class ModuleScaffold
             writer.Flush();
             stream.Write("\n"u8);
         }
+
+        if (kind == ModuleKind.Campaign)
+        {
+            WriteCampaignStart(directory, title);
+        }
+    }
+
+    /// <summary>A campaign needs a campaign definition and a starting area; write the smallest valid pair.</summary>
+    private static void WriteCampaignStart(string directory, string title)
+    {
+        Directory.CreateDirectory(Path.Combine(directory, "areas"));
+        File.WriteAllText(Path.Combine(directory, "areas", "start.json"), """
+            {
+              "type": "area",
+              "id": "start",
+              "name": "Start",
+              "map": [
+                "+--+",
+                "|  |",
+                "+--+"
+              ],
+              "entries": { "start": { "at": [0, 0], "facing": "north" } }
+            }
+
+            """);
+        File.WriteAllText(Path.Combine(directory, "campaign.json"), $$"""
+            {
+              "type": "campaign",
+              "id": "campaign",
+              "name": {{JsonSerializer.Serialize(title)}},
+              "start": { "area": "start", "entry": "start" },
+              "party": { "min": 1, "max": 6 }
+            }
+
+            """);
     }
 }

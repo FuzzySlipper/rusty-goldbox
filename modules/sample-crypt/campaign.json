@@ -1,0 +1,14 @@
+{
+  "type": "campaign",
+  "id": "crypt",
+  "name": "The Sample Crypt",
+  "start": {
+    "area": "entrance",
+    "entry": "gate"
+  },
+  "party": {
+    "min": 1,
+    "max": 4
+  },
+  "intro": "intro"
+}

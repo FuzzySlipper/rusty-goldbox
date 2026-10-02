@@ -247,6 +247,7 @@ public static class DefinitionTypes
             new("initiative_order", new EnumKind(["highest-first", "lowest-first"]), true, "Which result acts first; ties keep side and listing order."),
             new("initiative_each", new EnumKind(["round", "combat"]), true, "Whether initiative is rolled again every round or once for the whole combat."),
             new("round_seconds", new IntegerKind(), true, "Length of a round in seconds."),
+            new("round_limit", new IntegerKind(), false, $"Rounds before a fight nobody can finish is called undecided (at least 1); without it, {RustyGoldbox.Core.Combat.CombatRunner.DefaultRoundLimit}."),
             new("budget", new ListKind(new ObjectKind(
             [
                 new("id", new TextKind(), true, "Budget name that action costs use, for example \"action\", \"standard\" or \"actions\"."),
@@ -313,6 +314,95 @@ public static class DefinitionTypes
         { "type": "encounter", "id": "crypt_guard", "name": "Crypt guard", "monsters": [ { "monster": "skeleton", "count": "1d4 + 1" } ] }
         """);
 
+    public static DefinitionType Variable { get; } = new(
+        "variable",
+        "A campaign variable: declared with a type and an initial value, read as campaign.var.<id>, changed by set events. Undeclared variables are errors.",
+        [
+            new("value_type", new EnumKind(["number", "boolean", "text"]), true, "Its type."),
+            new("initial", new ExpressionKind(null, Roots.None), true, "Its value when the campaign starts, of its type, for example \"false\" or \"0\"."),
+            new("description", new TextKind(), false, "What it records."),
+        ],
+        """
+        { "type": "variable", "id": "gate_open", "value_type": "boolean", "initial": "false" }
+        """);
+
+    public static DefinitionType Asset { get; } = new(
+        "asset",
+        "A logical asset ID mapped to a file in the module: walls, backdrops, portraits, sounds. Other modules refer to it as module:id, never by path.",
+        [
+            new("kind", new TextKind(), true, "What sort of asset, for example \"wall_set\", \"backdrop\" or \"portrait\"."),
+            new("file", new TextKind(), true, "Path of the file inside this module, with forward slashes."),
+        ],
+        """
+        { "type": "asset", "id": "stone_wall", "kind": "wall_set", "file": "walls/stone.svg" }
+        """);
+
+    public static DefinitionType Area { get; } = new(
+        "area",
+        "A map: a grid of cells with walls, doors and openings on cell edges, plus cell features and named entry points.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("map", new ListKind(new TextKind()), true, "The grid as " + Campaigns.AreaMap.FormatDescription),
+            new("wall_set", new ReferenceKind("asset"), false, "Wall art for the area."),
+            new("cells", new ListKind(new ObjectKind(
+            [
+                new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell; x west to east and y north to south, from 0."),
+                new("zone", new TextKind(), false, "A zone tag for the cell."),
+                new("backdrop", new ReferenceKind("asset"), false, "Backdrop art."),
+                new("event", new ReferenceKind("event"), false, "The event that runs when the party enters the cell."),
+                new("facing", new EnumKind(["north", "east", "south", "west"]), false, "Run the event only when the party enters facing this way."),
+                new("once", new BooleanKind(), false, "If true, the event runs only the first time."),
+            ])), false, "Cells with features."),
+            new("entries", new MapKind(new TextKind(), new ObjectKind(
+            [
+                new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell."),
+                new("facing", new EnumKind(["north", "east", "south", "west"]), true, "Which way the party faces on arrival."),
+            ])), true, "Named places the party can arrive at (by starting or by teleport); arriving doesn't run the cell's event."),
+        ],
+        """
+        {
+          "type": "area",
+          "id": "hall",
+          "name": "Hall",
+          "map": [
+            "+--+--+",
+            "|     |",
+            "+  +DD+",
+            "|  |  |",
+            "+--+--+"
+          ],
+          "cells": [ { "at": [1, 1], "event": "gate", "once": true } ],
+          "entries": { "start": { "at": [0, 0], "facing": "east" } }
+        }
+        """);
+
+    public static DefinitionType Campaign { get; } = new(
+        "campaign",
+        "Where a campaign starts and who may play it. A campaign module has exactly one.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("start", new ObjectKind(
+            [
+                new("area", new ReferenceKind("area"), true, "The starting area."),
+                new("entry", new TextKind(), true, "The entry point there."),
+            ]), true, "Where the party begins."),
+            new("party", new ObjectKind(
+            [
+                new("min", new IntegerKind(), true, "Fewest characters."),
+                new("max", new IntegerKind(), true, "Most characters."),
+            ]), true, "Party size."),
+            new("intro", new ReferenceKind("event"), false, "An event that runs before the first command."),
+        ],
+        """
+        { "type": "campaign", "id": "crypt", "name": "The Crypt", "start": { "area": "hall", "entry": "start" }, "party": { "min": 1, "max": 6 } }
+        """);
+
+    public static DefinitionType Event { get; } = new(
+        "event",
+        "A step in an event chain. Its kind (" + string.Join(", ", EventTypes.All.Select(kind => kind.Name)) + ") decides its other fields; see `goldbox schema events`.",
+        [new("kind", new EnumKind(EventTypes.All.Select(kind => kind.Name).ToList()), true, "What the event does.")],
+        EventTypes.Text.Example);
+
     public static DefinitionType CharacterCreation { get; } = new(
         "character-creation",
         "How new characters are made: attribute rolls, whether they may be rearranged, and starting gold.",
@@ -338,6 +428,7 @@ public static class DefinitionTypes
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
         Attribute, Track, Derived, Table, Race, Class, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Variable, Asset, Area, Event, Campaign,
     ];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(type => type.Name == name);

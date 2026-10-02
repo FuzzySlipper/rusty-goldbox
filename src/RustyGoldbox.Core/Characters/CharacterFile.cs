@@ -32,6 +32,16 @@ public static class CharacterFile
         using MemoryStream stream = new();
         using (Utf8JsonWriter writer = new(stream, WriterOptions))
         {
+            Write(writer, character);
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    /// <summary>Writes the character as one JSON object, for a file of its own or inside a save.</summary>
+    public static void Write(Utf8JsonWriter writer, Character character)
+    {
+        {
             writer.WriteStartObject();
             writer.WriteNumber("format", CurrentFormat);
             writer.WriteString("name", character.Name);
@@ -86,8 +96,6 @@ public static class CharacterFile
             WriteReferences(writer, "conditions", character.Conditions);
             writer.WriteEndObject();
         }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
 
     /// <summary>Reads a character file against a loaded module set. Problems name the file and JSON path.</summary>
@@ -99,7 +107,13 @@ public static class CharacterFile
             return null;
         }
 
-        return new Reader(path, set, problems).Read(document.RootElement);
+        return new Reader(path, set, problems, "$").Read(document.RootElement);
+    }
+
+    /// <summary>Reads a character from JSON inside another file, such as a save; problems are located at <paramref name="at"/>.</summary>
+    public static Character? Read(JsonElement root, string file, string at, ModuleSet set, List<ModuleDiagnostic> problems)
+    {
+        return new Reader(file, set, problems, at).Read(root);
     }
 
     private static void WriteReferences(Utf8JsonWriter writer, string name, List<Definition> definitions)
@@ -113,7 +127,7 @@ public static class CharacterFile
         writer.WriteEndArray();
     }
 
-    private sealed class Reader(string path, ModuleSet set, List<ModuleDiagnostic> problems)
+    private sealed class Reader(string path, ModuleSet set, List<ModuleDiagnostic> problems, string prefix)
     {
         private readonly RuleSet _rules = set.Rules!;
         private readonly int _before = problems.Count;
@@ -410,7 +424,7 @@ public static class CharacterFile
 
         private void Error(string jsonPath, string message)
         {
-            problems.Add(new ModuleDiagnostic("character.file", message, File: path, JsonPath: jsonPath));
+            problems.Add(new ModuleDiagnostic("character.file", message, File: path, JsonPath: prefix + jsonPath[1..]));
         }
     }
 }

@@ -15,12 +15,14 @@ public sealed class RuleSetBuilder
     private readonly List<ModuleDiagnostic> _diagnostics;
     private readonly Dictionary<Definition, ExprType?> _derivedTypes = [];
     private readonly HashSet<Definition> _inferring = [];
+    private readonly Dictionary<string, ModuleManifest> _manifests = [];
 
     private RuleSetBuilder(IReadOnlyList<LoadedModule> modules, List<ModuleDiagnostic> diagnostics)
     {
         _diagnostics = diagnostics;
         foreach (LoadedModule module in modules)
         {
+            _manifests[module.Manifest.Id] = module.Manifest;
             HashSet<string> visible = [module.Manifest.Id];
             visible.UnionWith(module.Requires.Select(requirement => requirement.Id));
             _rules.VisibleModules[module.Manifest.Id] = visible;
@@ -38,6 +40,7 @@ public sealed class RuleSetBuilder
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
         builder.CheckActions();
+        builder.CheckCampaigns();
         return builder._rules;
     }
 
@@ -55,6 +58,14 @@ public sealed class RuleSetBuilder
 
             _rules.ByKey[key] = definition;
             _rules.Definitions.Add(definition);
+        }
+
+        foreach (Definition variable in _rules.OfType(DefinitionTypes.Variable))
+        {
+            if (!_rules.Variables.TryAdd(variable.Id, variable))
+            {
+                Error(variable, "variable.duplicate", "$.id", $"Variable '{variable.Id}' is already declared in {_rules.Variables[variable.Id].QualifiedId}. Variable names are shared by the module set.");
+            }
         }
 
         HashSet<string> trackNames = [];
@@ -387,6 +398,14 @@ public sealed class RuleSetBuilder
 
     private void CheckActions()
     {
+        foreach (Definition combat in _rules.OfType(DefinitionTypes.Combat))
+        {
+            if (combat.Json.TryGetProperty("round_limit", out JsonElement limit) && limit.GetInt32() < 1)
+            {
+                Error(combat, "combat.round-limit", "$.round_limit", "round_limit must be at least 1.");
+            }
+        }
+
         HashSet<string> budget = _rules.OfType(DefinitionTypes.Combat)
             .SelectMany(combat => combat.Json.GetProperty("budget").EnumerateArray().Select(entry => entry.GetProperty("id").GetString()!))
             .ToHashSet();
@@ -448,6 +467,111 @@ public sealed class RuleSetBuilder
             {
                 WalkOperations(definition, definition.Json, "$");
             }
+        }
+    }
+
+    private void CheckCampaigns()
+    {
+        foreach (Definition variable in _rules.Variables.Values)
+        {
+            CheckValueType(variable, "$.initial", variable);
+        }
+
+        foreach (Definition definition in _rules.Definitions)
+        {
+            if (definition.Type == DefinitionTypes.Event)
+            {
+                CheckEvent(definition);
+            }
+            else if (definition.Type == DefinitionTypes.Asset)
+            {
+                string file = definition.Json.GetProperty("file").GetString()!;
+                string root = _manifests[definition.Module].Directory;
+                string full = Path.GetFullPath(Path.Combine(root, file));
+                if (Path.IsPathRooted(file) || file.Contains('\\', StringComparison.Ordinal) || !full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                {
+                    Error(definition, "asset.file", "$.file", $"'{file}' must be a relative path inside the module, with forward slashes.");
+                }
+                else if (!File.Exists(full))
+                {
+                    Error(definition, "asset.file", "$.file", $"There is no file '{file}' in module '{definition.Module}' ({full}).");
+                }
+            }
+            else if (definition.Type == DefinitionTypes.Campaign)
+            {
+                CheckEntry(definition, "$.start.area", definition.Json.GetProperty("start").GetProperty("entry").GetString()!, "$.start.entry");
+                JsonElement party = definition.Json.GetProperty("party");
+                int min = party.GetProperty("min").GetInt32();
+                int max = party.GetProperty("max").GetInt32();
+                if (min < 1 || max < min)
+                {
+                    Error(definition, "campaign.party", "$.party", $"Party size needs 1 <= min <= max, but min is {min} and max is {max}.");
+                }
+            }
+        }
+
+        foreach (ModuleManifest module in _manifests.Values)
+        {
+            List<Definition> campaigns = _rules.OfType(DefinitionTypes.Campaign).Where(definition => definition.Module == module.Id).ToList();
+            if (module.Kind == ModuleKind.Campaign && campaigns.Count != 1)
+            {
+                _diagnostics.Add(new ModuleDiagnostic("campaign.definition", campaigns.Count == 0
+                    ? "A campaign module needs one campaign definition (see `goldbox schema campaign`)."
+                    : $"A campaign module has exactly one campaign definition, but this one has {campaigns.Count}.", module.Id, module.ManifestPath));
+            }
+            else if (module.Kind != ModuleKind.Campaign)
+            {
+                foreach (Definition campaign in campaigns)
+                {
+                    Error(campaign, "campaign.definition", "$", $"Only campaign modules can define a campaign; '{module.Id}' is a {ModuleKinds.Name(module.Kind)}.");
+                }
+            }
+        }
+    }
+
+    private void CheckEvent(Definition definition)
+    {
+        string kind = definition.Json.GetProperty("kind").GetString()!;
+        switch (kind)
+        {
+            case "set":
+                if (_rules.References.TryGetValue((definition, "$.variable"), out Definition? variable))
+                {
+                    CheckValueType(definition, "$.value", variable);
+                }
+
+                break;
+            case "teleport":
+                CheckEntry(definition, "$.area", definition.Json.GetProperty("entry").GetString()!, "$.entry");
+                break;
+            case "combat" when !definition.Json.TryGetProperty("combat", out _):
+                int combats = _rules.OfType(DefinitionTypes.Combat).Count();
+                if (combats != 1)
+                {
+                    Error(definition, "event.combat", "$", combats == 0
+                        ? "There is no combat definition in the module set to fight with."
+                        : "The module set has more than one combat definition; name one with \"combat\".");
+                }
+
+                break;
+        }
+    }
+
+    private void CheckValueType(Definition owner, string path, Definition variable)
+    {
+        ExprTypes.TryParse(variable.Json.GetProperty("value_type").GetString()!, out ExprType expected);
+        if (_rules.TryExpression(owner, path, out CompiledExpression? value) && value!.Type != expected)
+        {
+            Error(owner, "expression.type", path, $"In '{value.Text}': variable '{variable.Id}' is {ExprTypes.Name(expected)}, but this gives a {ExprTypes.Name(value.Type)}.");
+        }
+    }
+
+    private void CheckEntry(Definition owner, string areaPath, string entry, string entryPath)
+    {
+        if (_rules.References.TryGetValue((owner, areaPath), out Definition? area) && !area.Json.GetProperty("entries").TryGetProperty(entry, out _))
+        {
+            string known = string.Join(", ", area.Json.GetProperty("entries").EnumerateObject().Select(property => property.Name));
+            Error(owner, "area.entry", entryPath, $"Area {area.QualifiedId} has no entry '{entry}'. Its entries: {known}.");
         }
     }
 

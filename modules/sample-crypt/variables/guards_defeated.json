@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "guards_defeated",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "The skeleton guards are destroyed."
+}

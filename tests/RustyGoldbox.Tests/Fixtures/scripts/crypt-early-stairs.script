@@ -1,0 +1,7 @@
+# Straight to the stairs before the guards are dealt with.
+right
+forward       # [1,2]
+left
+forward       # [1,1]
+right
+forward       # [2,1]: the stairs, but something still rattles

@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
@@ -512,6 +513,56 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         foreach ((string name, int alive) in survived)
         {
             writer.WriteLine($"  {name} still fighting at the end: {alive} ({Percent(alive, count)})");
+        }
+    }
+
+    public void PlayTranscript(CampaignState state, IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(step => new
+                {
+                    command = step.Command,
+                    facts = step.Facts.Select(fact => new
+                    {
+                        kind = fact.Kind,
+                        text = fact.Describe(),
+                        rolls = fact.Rolls.Select(RollJson),
+                        combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
+                    }),
+                }),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+            });
+            return;
+        }
+
+        writer.WriteLine($"seed {state.Seed}");
+        foreach ((string? command, List<PlayFact> facts) in transcript)
+        {
+            if (command is not null)
+            {
+                writer.WriteLine($"> {command}");
+            }
+
+            foreach (PlayFact fact in facts)
+            {
+                if (fact is FightFact fight)
+                {
+                    foreach (CombatFact combatFact in fight.Facts)
+                    {
+                        string rolls = combatFact.Rolls.Count == 0 ? "" : $"  [{string.Join("; ", combatFact.Rolls)}]";
+                        writer.WriteLine($"    {combatFact.Describe()}{rolls}");
+                    }
+                }
+
+                string factRolls = fact.Rolls.Count == 0 ? "" : $"  [{string.Join("; ", fact.Rolls)}]";
+                writer.WriteLine($"  {fact.Describe()}{factRolls}");
+            }
         }
     }
 

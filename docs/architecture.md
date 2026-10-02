@@ -43,14 +43,21 @@ The Game does not use Core yet.
 | `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise, initiative, turns, budgets, the choice policy, checks and operations, condition durations, defeat |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
+| `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls: parsing the map text and drawing it |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, variables, fired triggers, pending menu, party, gold, inventory |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` | The play command surface: movement, triggers, event chains, fights, status |
+| `src/RustyGoldbox.Core/Campaigns/SaveFile.cs`, `ModuleIdentity.cs` | Saves, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source) |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks and the status projection |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, content/UI roots, projection identity and host defaults |
 | `src/ui/main.js` | DOM status readout and projection subscription |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
+| `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
+| `modules/sample-crypt/` | The sample campaign |
 | `content/` | Product-authored data |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
@@ -97,6 +104,18 @@ conditions count down at the end of the round. Every change is a
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope
 `goldbox.sim.<k>`, so any run repeats from its seed.
+
+## Campaigns
+
+`CampaignRunner` owns play: it takes one command at a time (`forward`,
+`back`, `left`, `right`, `around`, `choose <n>`, `look`, `status`) and
+returns `PlayFact`s. Moving checks the edge on that side; entering a cell
+runs its event if the facing and once-only rules allow. An event chain runs
+until a menu waits for a choice, the chain ends, or the adventure does. A
+combat event fights the party against an encounter with `CombatRunner`, and
+the party keeps the damage. `goldbox play` gives command *n* a dice stream
+scoped `goldbox.play.<n>` from the campaign's seed, which a save records with
+the command count; that is what makes a resumed save roll as an unbroken run.
 
 ## Characters
 

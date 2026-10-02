@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "lift_bar",
+  "kind": "set",
+  "variable": "door_forced",
+  "value": "true",
+  "next": "bar_lifted"
+}

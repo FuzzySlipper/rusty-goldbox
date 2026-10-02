@@ -30,10 +30,11 @@ internal static class SimCommand
 
         ulong seed = 1;
         int runs = 1;
-        int maxRounds = 100;
+        int? maxRounds = null;
         error ??= Whole(parsed.Single("--seed"), "--seed", value => seed = value, 0)
             ?? Whole(parsed.Single("--runs"), "--runs", value => runs = (int)value, 1)
             ?? Whole(parsed.Single("--max-rounds"), "--max-rounds", value => maxRounds = (int)value, 1);
+        // Without --max-rounds, the combat definition's round_limit (or the default) applies; set below.
         if (error is not null)
         {
             return output.UsageError(error);
@@ -72,6 +73,8 @@ internal static class SimCommand
             return output.Problems(problems);
         }
 
+        int roundLimit = maxRounds ?? CombatRunner.RoundLimit(combat);
+
         try
         {
             using EngineTestHost host = EngineTestHost.Create();
@@ -87,7 +90,7 @@ internal static class SimCommand
                         new("Party", party.Select(character => Combatant.FromCharacter(rules, character)).ToList()),
                         new(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
                     ]);
-                    all.Add(CombatRunner.Run(rules, combat, sides, dice, maxRounds));
+                    all.Add(CombatRunner.Run(rules, combat, sides, dice, roundLimit));
                 }
 
                 return all;
@@ -104,7 +107,7 @@ internal static class SimCommand
 
             return GoldboxCli.Ok;
         }
-        catch (CombatFailure failure)
+        catch (RuleFailure failure)
         {
             return output.Problems([failure.Diagnostic]);
         }
