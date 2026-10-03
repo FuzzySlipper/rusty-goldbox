@@ -44,7 +44,7 @@ public sealed partial class CampaignRunner
     private Expressions.Value EvaluateFor(Definition owner, string path, Character character, DiceRoller? dice)
     {
         Evaluator evaluator = new(_rules, dice);
-        return evaluator.Evaluate(_rules.Expression(owner, path), new Scope(character.ToCreature(), null, Variables: _state.Variables));
+        return evaluator.Evaluate(_rules.Expression(owner, path), new Scope(character.ToCreature(), null, Variables: _state.Variables, PartyItems: _state.CarriedItems));
     }
 
     private bool CanPay(Definition owner, string label, decimal price, List<PlayFact> facts)

@@ -107,6 +107,23 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "quest_done", "kind": "experience", "amount": "500", "text": "The abbot thanks you.", "next": "abbey" }""");
 
+    public static DefinitionType Give { get; } = new(
+        "give",
+        "Gives copies of an item to the party's carried inventory.",
+        [new("item", new ReferenceKind("item"), true, "The item."), new("count", new IntegerKind(), false, "How many copies, a positive whole number; defaults to 1."), Next],
+        """{ "type": "event", "id": "supplies", "kind": "give", "item": "classic:dagger", "count": 2, "next": "gate" }""");
+
+    public static DefinitionType Take { get; } = new(
+        "take",
+        "Takes copies of an item, from carried inventory first, then party members' equipment. If there aren't enough, takes nothing and follows on_refused.",
+        [
+            new("item", new ReferenceKind("item"), true, "The item."),
+            new("count", new IntegerKind(), false, "How many copies, a positive whole number; defaults to 1."),
+            Next,
+            new("on_refused", new ReferenceKind("event"), false, "The event when the party lacks the full count; without it, the chain ends."),
+        ],
+        """{ "type": "event", "id": "pay_toll", "kind": "take", "item": "classic:dagger", "next": "through", "on_refused": "gate" }""");
+
     public static DefinitionType Shop { get; } = new(
         "shop",
         "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
@@ -181,7 +198,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

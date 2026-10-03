@@ -366,6 +366,8 @@ public sealed partial class CampaignRunner
                 return Next(evt, "$.next");
             case "treasure":
                 return Treasure(evt, dice, facts);
+            case "give" or "take":
+                return ChangeItems(evt, facts);
             case "experience":
                 if (json.TryGetProperty("text", out JsonElement said))
                 {
@@ -642,7 +644,7 @@ public sealed partial class CampaignRunner
     public bool IsTrue(Definition owner, string path)
     {
         Evaluator evaluator = new(_rules, null);
-        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables))).Boolean;
+        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems))).Boolean;
     }
 
     /// <summary>The waiting menu's options, numbered as <c>choose</c> takes them; empty when no menu waits.</summary>
@@ -719,7 +721,7 @@ public sealed partial class CampaignRunner
     private Value Evaluate(Definition owner, string path, DiceRoller? dice)
     {
         Evaluator evaluator = new(_rules, dice);
-        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables)));
+        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems)));
     }
 
     private Definition? Next(Definition owner, string path)

@@ -117,6 +117,14 @@ join party inventory; selling equipped gear removes it from its wearer. The
 ruleset declares resale in `economy.sell_fraction` (`goldbox schema economy`),
 and `goldbox schema events` describes the shop format. Saves keep an open shop.
 
+Campaign `give` and `take` events name an `item` and an optional positive
+`count` (one by default). Giving adds carried copies. Taking removes carried
+copies first, then equipped ones; it follows `on_refused` and removes nothing
+if the party lacks the full count. Guards and menus can use
+`carried(item.id == 'dagger') > 0` for possession or `carried(item.kind == 'gear')`
+for a count. This includes the active party's equipment and excludes absent
+NPCs. The sample crypt's altar consumes its offered dagger.
+
 With `--store <dir>`, `--load` and `--save` name save slots in that Engine
 persistence root instead of files, such as the Game's under `rusty dev`:
 

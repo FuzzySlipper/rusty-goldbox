@@ -36,7 +36,8 @@ public sealed record Scope(
     CheckResult? Outer = null,
     IReadOnlyDictionary<string, decimal>? ConditionValues = null,
     Definition? Class = null,
-    Definition? Item = null);
+    Definition? Item = null,
+    IEnumerable<Definition>? PartyItems = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -589,6 +590,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             {
                 Creature self = scope.Self ?? throw new ExpressionException("equipped() needs a self creature, but none was given.", call.Column);
                 int count = self.Equipment.Count(item => new Run(evaluator, expression, scope with { Item = item }).Evaluate(call.Arguments[0]).Boolean);
+                return Value.Of(count);
+            }
+
+            if (call.Function == "carried")
+            {
+                IEnumerable<Definition> items = scope.PartyItems ?? throw new ExpressionException("carried() needs a running campaign's party items, but none were given.", call.Column);
+                int count = items.Count(item => new Run(evaluator, expression, scope with { Item = item }).Evaluate(call.Arguments[0]).Boolean);
                 return Value.Of(count);
             }
 

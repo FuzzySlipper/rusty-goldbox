@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "guard_dagger",
+  "kind": "give",
+  "item": "classic:dagger",
+  "next": "guards_down"
+}

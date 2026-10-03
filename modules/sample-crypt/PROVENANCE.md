@@ -11,3 +11,8 @@ content. Recovery uses Classic's licensed natural resting policy.
 
 The gate guide NPC and recruitment/dismissal events are original characters
 and sample content. Its character data uses the required Classic ruleset.
+
+The altar's dagger offering is original sample content. It is offered only
+while the party owns a dagger and consumes one copy before the rest event.
+The guards give the dagger through a separate inventory event after their
+money treasure.

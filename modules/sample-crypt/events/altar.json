@@ -6,7 +6,8 @@
   "options": [
     {
       "label": "Lay the dagger on it",
-      "next": "rest"
+      "when": "carried(item.id == 'dagger') > 0",
+      "next": "offer_dagger"
     },
     {
       "label": "Step away"

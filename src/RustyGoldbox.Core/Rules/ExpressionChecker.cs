@@ -289,7 +289,7 @@ internal sealed class ExpressionChecker(
             return CheckEachClass(call, function);
         }
 
-        if (function.Name == "equipped")
+        if (function.Name is "equipped" or "carried")
         {
             return CheckEquipped(call, function);
         }
@@ -335,7 +335,7 @@ internal sealed class ExpressionChecker(
         return ExprType.Number;
     }
 
-    /// <summary>equipped(): the argument is a boolean checked as if inside an item, reading item.id and the like.</summary>
+    /// <summary>Item counters check a boolean for each item, reading item.id and the like.</summary>
     private ExprType CheckEquipped(CallExpr call, ExpressionFunction function)
     {
         if (call.Arguments.Count != 1)
@@ -343,13 +343,16 @@ internal sealed class ExpressionChecker(
             throw new ExpressionException($"{function.Signature} takes {function.ArgumentCountText}, but got {call.Arguments.Count}.", call.Column);
         }
 
-        if (!roots.HasFlag(Roots.Self))
+        Roots needed = function.Name == "equipped" ? Roots.Self : Roots.Campaign;
+        if (!roots.HasFlag(needed))
         {
-            throw new ExpressionException("equipped() goes over self's equipment, but this field can't read self.", call.Column);
+            throw new ExpressionException(function.Name == "equipped"
+                ? "equipped() goes over self's equipment, but this field can't read self."
+                : "carried() reads the party's items, but this field isn't a campaign expression.", call.Column);
         }
 
         ExpressionChecker inner = new(rules, module, roots | Roots.Item, useParameters, conditionValues, derivedType, isInferring);
-        Expect(inner.Check(call.Arguments[0]), ExprType.Boolean, call.Arguments[0].Column, "equipped()");
+        Expect(inner.Check(call.Arguments[0]), ExprType.Boolean, call.Arguments[0].Column, $"{function.Name}()");
         foreach ((Expr expr, CompiledTable table) in inner.Tables)
         {
             Tables[expr] = table;

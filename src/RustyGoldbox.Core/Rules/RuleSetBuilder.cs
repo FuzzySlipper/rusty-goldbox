@@ -1202,6 +1202,13 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "give" or "take":
+                if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
+                {
+                    Error(definition, "event.items", "$.count", "An item count must be a positive whole number; omit count for one copy.");
+                }
+
+                break;
             case "rest":
                 bool timed = definition.Json.TryGetProperty("resting", out _);
                 if (timed && (!definition.Json.TryGetProperty("periods", out JsonElement count) || count.GetInt32() <= 0))

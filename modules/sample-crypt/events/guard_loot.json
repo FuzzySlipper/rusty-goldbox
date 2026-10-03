@@ -3,8 +3,5 @@
   "id": "guard_loot",
   "kind": "treasure",
   "gold": "2d6 * 10",
-  "items": [
-    "classic:dagger"
-  ],
-  "next": "guards_down"
+  "next": "guard_dagger"
 }

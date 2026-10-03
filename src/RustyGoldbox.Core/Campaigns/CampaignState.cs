@@ -27,6 +27,9 @@ public sealed class CampaignState
 
     public List<Definition> Inventory { get; } = [];
 
+    /// <summary>All items currently owned by the party, including equipped copies.</summary>
+    public IEnumerable<Definition> CarriedItems => Inventory.Concat(Party.SelectMany(character => character.Equipment));
+
     public Dictionary<string, Value> Variables { get; } = [];
 
     /// <summary>Once-only triggers that have run, as "module:area@x,y".</summary>

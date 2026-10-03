@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "offer_dagger",
+  "kind": "take",
+  "item": "classic:dagger",
+  "next": "rest",
+  "on_refused": "altar"
+}

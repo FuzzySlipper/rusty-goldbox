@@ -89,7 +89,8 @@ seed 1
     Party wins after 2 rounds.
   Combat with Crypt guard: the party wins.
   Experience: Ada 14, Brom 14.
-  The party finds 100 gold, Dagger.  [2d6: 5+5 = 10]
+  The party finds 100 gold.  [2d6: 5+5 = 10]
+  The party receives 1 × Dagger.
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
   Rest period 1/1 (days); campaign time: 1 days.
@@ -161,6 +162,7 @@ seed 1
   An altar glows faintly. [1] Lay the dagger on it  [2] Step away
 > choose 1
   The party chooses 1: Lay the dagger on it.
+  The party hands over 1 × Dagger.
   The adventure ends. The glow fades and the crypt falls silent. Its dead rest at last.
 > forward
   Can't: the adventure has ended.

@@ -97,6 +97,13 @@ public sealed record VariableFact(string Variable, Expressions.Value Value) : Pl
     public override string Describe() => $"{Variable} is now {Value}.";
 }
 
+public sealed record ItemsFact(bool Given, Definition Item, int Count) : PlayFact
+{
+    public override string Kind => Given ? "give" : "take";
+
+    public override string Describe() => $"The party {(Given ? "receives" : "hands over")} {Count} × {Item.Name}.";
+}
+
 public sealed record TreasureFact(decimal Gold, IReadOnlyList<string> Items) : PlayFact
 {
     public override string Kind => "treasure";

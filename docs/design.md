@@ -588,3 +588,9 @@ campaign's party maximum/minimum and never remove player characters.
 `AbsentNpcs`; rejoining preserves wounds, gold and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.
+
+Inventory events use the existing party inventory and character equipment.
+`give` adds item copies; `take` removes the full requested count or follows
+`on_refused` without taking any. `carried(predicate)` counts matching copies
+across those same stores for campaign guards, including equipped items and
+excluding NPCs outside the party.

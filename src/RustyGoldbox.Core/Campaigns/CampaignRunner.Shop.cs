@@ -51,10 +51,9 @@ public sealed partial class CampaignRunner
             }
         }
 
-        Add(_state.Inventory, null);
-        foreach (var character in _state.Party)
+        foreach ((List<Definition> items, string? holder) in ItemStores())
         {
-            Add(character.Equipment, character.Name);
+            Add(items, holder);
         }
 
         return carried;
