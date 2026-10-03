@@ -43,9 +43,12 @@ export function mountProductUi(root, context) {
   const name = element('input', { value: 'Ada', size: '10', 'aria-label': 'Character name' });
   const race = element('select', { 'aria-label': 'Race' });
   const characterClass = element('select', { 'aria-label': 'Class' });
+  const creation = element('select', { 'aria-label': 'Character creation' });
   const portrait = element('select', { 'aria-label': 'Portrait' });
   // Feature and boost choices, kept by slot so a choice survives re-renders.
   const choiceSelects = new Map();
+  // Skill amounts are a local draft until the player submits the Core action.
+  const skillDrafts = new Map();
   const choiceSelect = (key, label) => {
     if (!choiceSelects.has(key)) {
       const select = element('select', { 'aria-label': label });
@@ -62,6 +65,10 @@ export function mountProductUi(root, context) {
   };
   race.addEventListener('change', () => rerenderParty());
   characterClass.addEventListener('change', () => rerenderParty());
+  creation.addEventListener('change', () => {
+    choiceSelects.clear();
+    rerenderParty();
+  });
   portrait.addEventListener('change', () => rerenderParty());
   const command = element('input', { size: '14', placeholder: 'command', 'aria-label': 'Play command' });
   command.addEventListener('keydown', (event) => {
@@ -144,6 +151,17 @@ export function mountProductUi(root, context) {
   const renderParty = (view) => {
     fill(race, view.races ?? []);
     fill(characterClass, view.classes ?? []);
+    const creationChoices = view.creations?.length ? view.creations : (view.creation ? [view.creation] : []);
+    const currentCreation = creation.value;
+    fill(creation, creationChoices);
+    const creationId = creationChoices.some((choice) => choice.id === currentCreation)
+      ? currentCreation
+      : view.creation?.id ?? creationChoices[0]?.id;
+    if (creationId) {
+      creation.value = creationId;
+    }
+
+    const selectedCreation = creationChoices.find((choice) => choice.id === creation.value) ?? view.creation;
     fill(portrait, [{ id: '', name: '(no portrait)' }, ...(view.portraits ?? [])]);
     const members = element('ol', { style: 'padding-left:20px' });
     (view.party ?? []).forEach((member, index) => {
@@ -155,6 +173,7 @@ export function mountProductUi(root, context) {
           element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, ${formatBalances(member.balances)}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
+        ...renderSkillPoints(member, index),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
         ...renderSpells(member, index),
         ...renderMemorised(member, index),
@@ -163,17 +182,21 @@ export function mountProductUi(root, context) {
           button('Drop', () => send({ action: 'drop', member: index })))));
     });
     const size = view.partySize ?? { min: 1, max: 1 };
-    const choices = renderChoices(view);
+    const choices = renderChoices(view, selectedCreation);
     const chosen = (view.portraits ?? []).find((entry) => entry.id === portrait.value);
+    const creationControl = creationChoices.length > 1
+      ? [element('span', {}, 'Creation:'), creation]
+      : selectedCreation ? [element('span', {}, `Creation: ${selectedCreation.name}`)] : [];
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`),
       ...(view.extensions?.length ? [element('div', { style: 'opacity:.8' }, `Extensions: ${view.extensions.join(', ')}`)] : []),
       members,
-      row(name, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.picture, 'Chosen portrait', 32)),
+      row(name, ...creationControl, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.picture, 'Chosen portrait', 32)),
       choices.rows,
       row(button('Roll', () => send({
         action: 'roll',
         name: name.value,
+        ...(selectedCreation?.id ? { creation: selectedCreation.id } : {}),
         // A ruleset without races or classes has none to send.
         ...((view.races ?? []).length > 0 ? { race: race.value } : {}),
         ...((view.classes ?? []).length > 0 ? { class: characterClass.value } : {}),
@@ -190,8 +213,8 @@ export function mountProductUi(root, context) {
    * boosts) a boost for each choice the race, the creation features, the class
    * and the creation offer. Fixed boosts need no choice.
    */
-  const renderChoices = (view) => {
-    const creation = view.creation;
+  const renderChoices = (view, selectedCreation) => {
+    const creation = selectedCreation ?? view.creation;
     const chosenClass = (view.classes ?? []).find((entry) => entry.id === characterClass.value);
     const chosenRace = (view.races ?? []).find((entry) => entry.id === race.value);
     const features = view.features ?? [];
@@ -245,6 +268,58 @@ export function mountProductUi(root, context) {
       features: () => featureSlots.map((select) => select.value).filter((value) => value),
       boosts: () => boostSlots.map((select) => select.value),
     };
+  };
+
+  /**
+   * Shows the actual post-roll staged skill values and keeps only the numeric
+   * input draft in the DOM. Core owns budgets, profession limits and the final
+   * allocation check when the existing `skills` action is submitted.
+   */
+  const renderSkillPoints = (member, index) => {
+    const skillPoints = member.skillPoints;
+    if (!skillPoints?.skills?.length) {
+      return [];
+    }
+
+    const memberKey = `${index}:${member.name}:${(member.attributes ?? []).join('|')}`;
+    const committed = new Map((member.skillAllocations ?? []).map((allocation) => [allocation.id, allocation]));
+    const hasCommitted = committed.size > 0;
+    const fields = [];
+    const rows = skillPoints.skills.map((skill) => {
+      const saved = committed.get(skill.id) ?? {};
+      const professionKey = `${memberKey}:${skill.id}:profession`;
+      const personalKey = `${memberKey}:${skill.id}:personal`;
+      const profession = pointInput(professionKey, saved.profession ?? 0, skill.profession && !hasCommitted);
+      const personal = pointInput(personalKey, saved.personal ?? 0, !hasCommitted);
+      fields.push({ skill: skill.id, profession, personal });
+      return row(
+        element('span', { style: 'min-width:210px' }, `${skill.id}: base ${skill.base}, current ${skill.current}`),
+        element('label', {}, skill.profession ? 'Profession ' : 'Profession (not allowed) ', profession),
+        element('label', {}, 'Personal ', personal));
+    });
+
+    return [element('section', { style: 'margin:5px 0;padding:4px;background:var(--gb-inset)' },
+      element('strong', {}, `${member.name}'s staged skill points`),
+      element('div', { style: 'opacity:.85' }, `Profession budget: ${skillPoints.profession}; Personal budget: ${skillPoints.personal}. Base/current values are from this roll.`),
+      ...rows,
+      hasCommitted
+        ? element('div', { style: 'opacity:.85' }, 'Skill points committed.')
+        : row(button(`Spend ${member.name}'s skill points`, () => send({
+          action: 'skills',
+          member: index,
+          skills: fields.map((field) => ({
+            skill: field.skill,
+            profession: Number(field.profession.value),
+            personal: Number(field.personal.value),
+          })),
+        })))]
+
+    function pointInput(key, initial, allowed) {
+      const input = element('input', { type: 'number', min: '0', step: 'any', value: String(skillDrafts.get(key) ?? initial), size: '5' });
+      input.disabled = !allowed;
+      input.addEventListener('input', () => skillDrafts.set(key, input.value));
+      return input;
+    }
   };
 
   /** The party as a roster strip: each member's portrait, name and track values. */
