@@ -100,6 +100,8 @@ dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module 
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/sample-crypt --class fighter --race human --name Ada --portrait placeholder-art:fighter_portrait --out ada.json
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/universal-d100 --creation staged --feature staged_soldier --name Rook --seed 4 --out rook.json
+dotnet run --project src/RustyGoldbox.Cli -- character skills rook.json --module modules/universal-d100 --skill sword=profession:100+personal:90,shield=profession:50,dodge=profession:40,brawl=profession:30,bow=profession:30
 dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --module modules/fate-condensed --raise fight --feature deadeye
 dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
 ```

@@ -1,0 +1,41 @@
+{
+  "type": "character-creation",
+  "id": "staged",
+  "name": "Staged characteristics and skills",
+  "attributes": [
+    "str",
+    "con",
+    "siz",
+    "int",
+    "pow",
+    "dex",
+    "cha"
+  ],
+  "method": "roll",
+  "attribute_roll": "3d6",
+  "attribute_rolls": {
+    "siz": "2d6 + 6",
+    "int": "2d6 + 6"
+  },
+  "features": [
+    {
+      "kind": "staged-profession",
+      "count": 1
+    }
+  ],
+  "skill_points": {
+    "profession": "250",
+    "personal": "self.int * 10",
+    "skills": {
+      "axe": "15",
+      "bow": "10",
+      "brawl": "25",
+      "dagger": "25",
+      "dodge": "self.dex * 2",
+      "mace": "25",
+      "shield": "15",
+      "spear": "15",
+      "sword": "15"
+    }
+  }
+}

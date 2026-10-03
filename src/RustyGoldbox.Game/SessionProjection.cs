@@ -264,11 +264,13 @@ internal static class SessionProjection
 
         projection["creation"] = new JsonObject
         {
+            ["id"] = creation.QualifiedId,
             ["method"] = creation.Json.TryGetProperty("method", out JsonElement method) ? method.GetString() : "roll",
             ["attributes"] = new JsonArray(creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()),
             ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
             ["boosts"] = Boosts(creation),
         };
+        projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(CreationChoice).ToArray());
         foreach (JsonNode? entry in projection["classes"]!.AsArray())
         {
             Definition characterClass = rules.Find(DefinitionTypes.Class, entry!["id"]!.GetValue<string>(), out _)!;
@@ -291,6 +293,25 @@ internal static class SessionProjection
             ["kinds"] = new JsonArray(grant.Kinds.Select(kind => (JsonNode)JsonValue.Create(kind)!).ToArray()),
             ["count"] = grant.Count,
         }).ToArray());
+    }
+
+    private static JsonObject CreationChoice(Definition creation)
+    {
+        JsonObject choice = new()
+        {
+            ["id"] = creation.QualifiedId,
+            ["name"] = creation.Name,
+            ["method"] = creation.Json.TryGetProperty("method", out JsonElement method) ? method.GetString() : "roll",
+            ["attributes"] = new JsonArray(creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()),
+            ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
+            ["boosts"] = Boosts(creation),
+        };
+        if (creation.Json.TryGetProperty("skill_points", out JsonElement skillPoints))
+        {
+            choice["skillPoints"] = JsonNode.Parse(skillPoints.GetRawText());
+        }
+
+        return choice;
     }
 
     /// <summary>A definition's boosts as lists of the attributes each may raise; an empty list is any attribute.</summary>
@@ -373,6 +394,8 @@ internal static class SessionProjection
 
     private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl)
     {
+        List<ModuleDiagnostic> skillProblems = [];
+        SkillPointOptions? skillPoints = CharacterRules.GetSkillPointOptions(rules, character, skillProblems);
         return new JsonObject
         {
             ["name"] = character.Name,
@@ -382,6 +405,24 @@ internal static class SessionProjection
             ["level"] = character.Level,
             ["tracks"] = Strings(CharacterSheet.Tracks(rules, character).Select(track => $"{track.Track.Name} {Number(track.Current)}/{Number(track.Max)}")),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
+            ["skillPoints"] = skillPoints is null ? null : new JsonObject
+            {
+                ["profession"] = (double)skillPoints.Profession,
+                ["personal"] = (double)skillPoints.Personal,
+                ["skills"] = new JsonArray(skillPoints.Skills.Select(skill => (JsonNode)new JsonObject
+                {
+                    ["id"] = skill.Skill,
+                    ["base"] = (double)skill.Base,
+                    ["current"] = (double)skill.Current,
+                    ["profession"] = skill.ProfessionAllowed,
+                }).ToArray()),
+            },
+            ["skillAllocations"] = new JsonArray(character.SkillAllocations.Values.Select(allocation => (JsonNode)new JsonObject
+            {
+                ["id"] = allocation.Skill,
+                ["profession"] = (double)allocation.Profession,
+                ["personal"] = (double)allocation.Personal,
+            }).ToArray()),
             ["features"] = Strings(character.Features.Select(feature => feature.Name)),
             ["equipment"] = new JsonArray(character.Equipment.Select(item => (JsonNode)new JsonObject { ["id"] = item.QualifiedId, ["name"] = item.Name }).ToArray()),
             ["spells"] = new JsonArray(character.Spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),

@@ -492,6 +492,12 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             writer.WriteLine($"  features: {string.Join(", ", character.Features.Select(feature => $"{feature.Name} ({feature.Json.GetProperty("kind").GetString()})"))}");
         }
 
+        if (character.SkillAllocations.Count == 0 && StagedSkillPointData(rules, character) is { } skillPoints)
+        {
+            writer.WriteLine($"  skill points: profession {skillPoints.Profession}, personal {skillPoints.Personal}; allocate with character skills");
+            writer.WriteLine($"  staged skills: {string.Join(", ", skillPoints.Skills.Select(skill => $"{skill.Skill} {skill.Current} (base {skill.Base}{(skill.ProfessionAllowed ? ", profession" : "")})"))}");
+        }
+
         if (character.Portrait is Core.Definitions.Definition portrait)
         {
             writer.WriteLine($"  portrait {portrait.QualifiedId}");
@@ -518,6 +524,12 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             WriteRolls(used, rolls);
         }
+    }
+
+    private static SkillPointOptions? StagedSkillPointData(RuleSet rules, Character character)
+    {
+        List<ModuleDiagnostic> problems = [];
+        return CharacterRules.GetSkillPointOptions(rules, character, problems);
     }
 
     public void CombatTranscript(RuleSet rules, CombatResult result, ulong seed)

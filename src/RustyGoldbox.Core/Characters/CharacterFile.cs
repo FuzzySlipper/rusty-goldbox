@@ -39,6 +39,11 @@ public static class CharacterFile
         new("experience", new Definitions.NumberKind(), true, "Total experience."),
         new("attributes", new Definitions.MapKind(new Definitions.StatKind(true), new Definitions.NumberKind()), true, "Final attribute scores, including racial adjustments and boosts."),
         new("stat_bonuses", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.NumberKind()), false, "Persistent bonuses from staged creation, milestones or improvement checks."),
+        new("skill_allocations", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.ObjectKind(
+        [
+            new("profession", new Definitions.NumberKind(), true, "Profession points spent on the skill."),
+            new("personal", new Definitions.NumberKind(), true, "Personal points spent on the skill."),
+        ])), false, "Profession and personal points already committed by staged creation."),
         new("skill_marks", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.IntegerKind()), false, "Successful skill uses waiting for an improvement check."),
         new("milestone_features", new Definitions.ListKind(new Definitions.ReferenceKind("feature")), false, "Features granted by milestones outside class levels."),
         new("tracks", new Definitions.MapKind(new Definitions.TextKind(), new Definitions.ObjectKind(
@@ -157,6 +162,20 @@ public static class CharacterFile
                 foreach ((string id, decimal bonus) in character.StatBonuses)
                 {
                     writer.WriteNumber(id, bonus);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            if (character.SkillAllocations.Count > 0)
+            {
+                writer.WriteStartObject("skill_allocations");
+                foreach ((string id, SkillAllocation allocation) in character.SkillAllocations)
+                {
+                    writer.WriteStartObject(id);
+                    writer.WriteNumber("profession", allocation.Profession);
+                    writer.WriteNumber("personal", allocation.Personal);
+                    writer.WriteEndObject();
                 }
 
                 writer.WriteEndObject();
@@ -326,6 +345,7 @@ public static class CharacterFile
             }
             ReadAttributes(root, character);
             ReadStatBonuses(root, character);
+            ReadSkillAllocations(root, character);
             ReadSkillMarks(root, character);
             ReadList(root, "milestone_features", DefinitionTypes.Feature, character.MilestoneFeatures);
             ReadTracks(root, character);
@@ -697,6 +717,52 @@ public static class CharacterFile
                 }
 
                 character.StatBonuses[entry.Name] = bonus;
+            }
+        }
+
+        private void ReadSkillAllocations(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("skill_allocations", out JsonElement allocations))
+            {
+                return;
+            }
+
+            if (allocations.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.skill_allocations", "\"skill_allocations\" must be an object of stat IDs and profession/personal numbers.");
+                return;
+            }
+
+            foreach (JsonProperty entry in allocations.EnumerateObject())
+            {
+                string at = $"$.skill_allocations.{entry.Name}";
+                if (!_rules.Stats.TryGetValue(entry.Name, out Stat? stat))
+                {
+                    Error(at, $"'{entry.Name}' is not a stat of this module set.");
+                    continue;
+                }
+
+                if (stat.IsAttribute)
+                {
+                    Error(at, $"'{entry.Name}' is an attribute; staged allocations must name derived skills.");
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Object
+                    || !entry.Value.TryGetProperty("profession", out JsonElement profession)
+                    || !entry.Value.TryGetProperty("personal", out JsonElement personal)
+                    || profession.ValueKind != JsonValueKind.Number
+                    || personal.ValueKind != JsonValueKind.Number
+                    || !profession.TryGetDecimal(out decimal professionPoints)
+                    || !personal.TryGetDecimal(out decimal personalPoints)
+                    || professionPoints < 0
+                    || personalPoints < 0)
+                {
+                    Error(at, "A staged skill allocation needs nonnegative numeric profession and personal fields.");
+                    continue;
+                }
+
+                character.SkillAllocations[entry.Name] = new SkillAllocation(entry.Name, professionPoints, personalPoints);
             }
         }
 

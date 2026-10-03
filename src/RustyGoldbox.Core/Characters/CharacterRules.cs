@@ -13,6 +13,7 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
 /// <param name="AlsoClasses">Under experience split between classes: further classes to start with, as the race's multiclasses allow.</param>
 /// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
+/// <param name="SkillPoints">Under staged creation: profession and personal points to spend on the creation's listed skills.</param>
 /// <param name="Class">The class; null in a ruleset without classes.</param>
 /// <param name="Race">The race; null in a ruleset without races.</param>
 public sealed record CreationRequest(
@@ -24,7 +25,8 @@ public sealed record CreationRequest(
     string? Creation = null,
     IReadOnlyList<string>? Features = null,
     IReadOnlyList<string>? Boosts = null,
-    IReadOnlyList<string>? AlsoClasses = null);
+    IReadOnlyList<string>? AlsoClasses = null,
+    IReadOnlyList<SkillAllocation>? SkillPoints = null);
 
 /// <summary>A choice a character makes: <see cref="Count"/> features of any of <see cref="Kinds"/>, and what grants it, for messages.</summary>
 public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
@@ -48,6 +50,15 @@ public sealed record MilestoneChoices(
 
 /// <summary>The result of one marked-skill improvement check.</summary>
 public sealed record SkillImprovement(string Skill, int Marks, decimal Amount, bool Improved);
+
+/// <summary>Points spent from each staged creation budget on one skill.</summary>
+public sealed record SkillAllocation(string Skill, decimal Profession = 0, decimal Personal = 0);
+
+/// <summary>One derived skill offered by a staged creation definition.</summary>
+public sealed record SkillPointOption(string Skill, decimal Base, decimal Current, bool ProfessionAllowed);
+
+/// <summary>The budgets and actual base/current values shown before staged skill choices are committed.</summary>
+public sealed record SkillPointOptions(decimal Profession, decimal Personal, IReadOnlyList<SkillPointOption> Skills);
 
 /// <summary>
 /// Creates and advances characters from the rule set's character-creation,
@@ -176,6 +187,11 @@ public static class CharacterRules
                 return null;
             }
 
+            if (!SpendSkillPoints(rules, creation, character, request.SkillPoints, dice, problems))
+            {
+                return null;
+            }
+
             StartTracks(rules, character, evaluator);
             foreach ((string currency, decimal amount) in StartingBalances(rules, creation, character, evaluator, problems))
             {
@@ -188,6 +204,89 @@ public static class CharacterRules
         }
 
         return problems.Count > 0 ? null : character;
+    }
+
+    /// <summary>Commits the second staged-creation step to an existing draft.</summary>
+    public static bool ApplySkillPoints(RuleSet rules, Character character, IReadOnlyList<SkillAllocation> allocations, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        if (character.SkillAllocations.Count > 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} already has staged skill allocations; they can't be spent a second time."));
+            return false;
+        }
+
+        int before = problems.Count;
+        try
+        {
+            SpendSkillPoints(rules, character.Creation, character, allocations, dice, problems);
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+        }
+
+        return problems.Count == before;
+    }
+
+    /// <summary>
+    /// Reads a draft's actual staged budgets and skill values for a UI or CLI
+    /// choice screen. This uses the character's already rolled attributes and
+    /// feature modifiers, so the values are the same ones the commit step
+    /// validates.
+    /// </summary>
+    public static SkillPointOptions? GetSkillPointOptions(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        if (!character.Creation.Json.TryGetProperty("skill_points", out JsonElement config))
+        {
+            return null;
+        }
+
+        int before = problems.Count;
+        Evaluator evaluator = new(rules, null);
+        Creature creature = character.ToCreature();
+        decimal profession;
+        decimal personal;
+        try
+        {
+            profession = EvaluateValue(rules, evaluator, character.Creation, "$.skill_points.profession", creature).Number;
+            personal = EvaluateValue(rules, evaluator, character.Creation, "$.skill_points.personal", creature).Number;
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+            return null;
+        }
+
+        HashSet<string> professionSkills = character.Features
+            .Where(feature => feature.Json.TryGetProperty("skills", out _))
+            .SelectMany(feature => feature.Json.GetProperty("skills").EnumerateArray().Select(skill => skill.GetString()!))
+            .ToHashSet(StringComparer.Ordinal);
+        List<SkillPointOption> skills = [];
+        foreach (JsonProperty entry in config.GetProperty("skills").EnumerateObject())
+        {
+            if (!rules.Stats.TryGetValue(entry.Name, out Stat? stat) || stat.IsAttribute)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{entry.Name}' is not a derived skill in {character.Creation.QualifiedId}.", character.Creation.Module, character.Creation.File, $"$.skill_points.skills.{entry.Name}"));
+                continue;
+            }
+
+            try
+            {
+                decimal baseChance = EvaluateValue(rules, evaluator, character.Creation, $"$.skill_points.skills.{entry.Name}", creature).Number;
+                decimal current = evaluator.Stat(creature, entry.Name).Number;
+                skills.Add(new SkillPointOption(entry.Name, baseChance, current, professionSkills.Contains(entry.Name)));
+            }
+            catch (RuleFailure failure)
+            {
+                problems.Add(failure.Diagnostic);
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Can't read {entry.Name}: {exception.Message}", character.Creation.Module, character.Creation.File, $"$.skill_points.skills.{entry.Name}"));
+            }
+        }
+
+        return problems.Count == before ? new SkillPointOptions(profession, personal, skills) : null;
     }
 
     /// <summary>
@@ -1328,6 +1427,172 @@ public static class CharacterRules
     private static List<Grant> CreationGrants(Definition creation)
     {
         return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})");
+    }
+
+    /// <summary>
+    /// Applies the optional second creation step. The ruleset supplies the
+    /// budgets and each skill's base chance; the request supplies the points
+    /// spent from the two separate pools. The resulting difference from the
+    /// ordinary derived value, plus the points spent, is a persistent stat
+    /// bonus, so a saved character keeps the choice without another state
+    /// owner.
+    /// </summary>
+    private static bool SpendSkillPoints(
+        RuleSet rules,
+        Definition creation,
+        Character character,
+        IReadOnlyList<SkillAllocation>? requested,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems)
+    {
+        if (!creation.Json.TryGetProperty("skill_points", out JsonElement config))
+        {
+            if (requested is { Count: > 0 })
+            {
+                problems.Add(new ModuleDiagnostic(
+                    "character.skill-points",
+                    $"{creation.QualifiedId} has no staged skill-points step, so leave --skill choices out.",
+                    creation.Module,
+                    creation.File,
+                    "$.skill_points"));
+                return false;
+            }
+
+            return true;
+        }
+
+        int before = problems.Count;
+        Evaluator evaluator = new(rules, dice);
+        decimal professionBudget = EvaluateValue(rules, evaluator, creation, "$.skill_points.profession", character.ToCreature()).Number;
+        decimal personalBudget = EvaluateValue(rules, evaluator, creation, "$.skill_points.personal", character.ToCreature()).Number;
+        if (professionBudget < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Profession skill points evaluate to {professionBudget}; the budget must be nonnegative.", creation.Module, creation.File, "$.skill_points.profession"));
+        }
+
+        if (personalBudget < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Personal skill points evaluate to {personalBudget}; the budget must be nonnegative.", creation.Module, creation.File, "$.skill_points.personal"));
+        }
+
+        Dictionary<string, decimal> baselines = [];
+        Creature initial = character.ToCreature();
+        foreach (JsonProperty entry in config.GetProperty("skills").EnumerateObject())
+        {
+            string skill = entry.Name;
+            if (!rules.Stats.TryGetValue(skill, out Stat? stat))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{skill}' is not a declared stat; choose a derived skill from the creation's skill-points list.", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+                continue;
+            }
+
+            if (stat.IsAttribute)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{skill}' is an attribute, but staged skill points must be spent on derived skills.", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+                continue;
+            }
+
+            try
+            {
+                decimal baseChance = EvaluateValue(rules, evaluator, creation, $"$.skill_points.skills.{skill}", initial).Number;
+                decimal ordinary = evaluator.Stat(initial, skill).Number;
+                baselines[skill] = baseChance - ordinary;
+            }
+            catch (RuleFailure failure)
+            {
+                problems.Add(failure.Diagnostic);
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Can't read base chance for {skill}: {exception.Message}", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+            }
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        // A null request is the first stage: attributes and profession are
+        // now known and can be shown to the player before points are chosen.
+        // The explicit skills command or a request carrying allocations runs
+        // this method again to commit the second stage.
+        if (requested is null)
+        {
+            return true;
+        }
+
+        HashSet<string> professionSkills = character.Features
+            .Where(feature => feature.Json.TryGetProperty("skills", out _))
+            .SelectMany(feature => feature.Json.GetProperty("skills").EnumerateArray().Select(skill => skill.GetString()!))
+            .ToHashSet(StringComparer.Ordinal);
+        Dictionary<string, SkillAllocation> allocations = [];
+        foreach (SkillAllocation allocation in requested ?? [])
+        {
+            if (!baselines.ContainsKey(allocation.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{allocation.Skill}' is not one of the skills listed by {creation.QualifiedId}.", creation.Module, creation.File, "$.skill_points.skills"));
+                continue;
+            }
+
+            if (!allocations.TryAdd(allocation.Skill, allocation))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill '{allocation.Skill}' has more than one allocation; combine its profession and personal points.", creation.Module, creation.File, "$.skill_points"));
+                continue;
+            }
+
+            if (allocation.Profession < 0 || allocation.Personal < 0)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill '{allocation.Skill}' has a negative allocation; points must be nonnegative.", creation.Module, creation.File, "$.skill_points"));
+            }
+
+            if (allocation.Profession > 0 && !professionSkills.Contains(allocation.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Profession points cannot be spent on '{allocation.Skill}': the chosen profession does not list that skill.", creation.Module, creation.File, "$.skill_points"));
+            }
+        }
+
+        decimal usedProfession = allocations.Values.Sum(allocation => allocation.Profession);
+        decimal usedPersonal = allocations.Values.Sum(allocation => allocation.Personal);
+        if (usedProfession != professionBudget)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill choices spend {usedProfession} profession point(s), but the budget is {professionBudget}; spend the full profession budget.", creation.Module, creation.File, "$.skill_points.profession"));
+        }
+
+        if (usedPersonal != personalBudget)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill choices spend {usedPersonal} personal point(s), but the budget is {personalBudget}; spend the full personal budget.", creation.Module, creation.File, "$.skill_points.personal"));
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        foreach ((string skill, decimal baseline) in baselines)
+        {
+            SkillAllocation allocation = allocations.GetValueOrDefault(skill) ?? new SkillAllocation(skill);
+            decimal total = baseline + allocation.Profession + allocation.Personal;
+            if (total == 0)
+            {
+                character.StatBonuses.Remove(skill);
+            }
+            else
+            {
+                character.StatBonuses[skill] = total;
+            }
+        }
+
+        character.SkillAllocations.Clear();
+        foreach ((string skill, SkillAllocation allocation) in allocations)
+        {
+            if (allocation.Profession != 0 || allocation.Personal != 0)
+            {
+                character.SkillAllocations[skill] = allocation;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

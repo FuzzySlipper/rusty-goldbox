@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "staged_hunter",
+  "name": "Hunter",
+  "kind": "staged-profession",
+  "description": "A hunter's professional skills, allocated during staged creation.",
+  "skills": ["bow", "spear", "dodge", "dagger"]
+}

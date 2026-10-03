@@ -24,6 +24,7 @@ public sealed class GameTests
     [InlineData("""{ "action": "play", "command": null }""", "\"command\" must be non-empty text")]
     [InlineData("""{ "action": "roll", "name": " ", "race": "classic:human", "class": "classic:fighter" }""", "\"name\" must be non-empty text")]
     [InlineData("""{ "action": "roll", "name": "A", "race": "classic:human", "class": "classic:fighter", "features": [1] }""", "\"features\" must be an array of non-empty text")]
+    [InlineData("""{ "action": "roll", "name": "A", "skills": [1] }""", "Each \"skills\" entry must have a non-empty text \"skill\".")]
     [InlineData("""{ "action": "drop", "member": "0" }""", "\"member\" must be a whole number")]
     [InlineData("""{ "action": "open", "campaign": "x", "seed": 7 }""", "\"seed\" must be non-empty text")]
     [InlineData("""{ "action": "save", "slot": "../escape" }""", "isn't a save slot name")]
@@ -39,6 +40,78 @@ public sealed class GameTests
             Run(session, engine, payload);
             Assert.Contains(note, Assert.Single(session.Notes), StringComparison.Ordinal);
             Assert.Empty(session.Party);
+        });
+    }
+
+    [Fact]
+    public void GameRollPassesStagedCreationChoicesToCore()
+    {
+        using TempModules scratch = new();
+        string campaign = scratch.Module("staged-campaign", "campaign", requires: $"{TempModules.Require("universal-d100", "0.1.0")}, {TempModules.Require("placeholder-art", "0.1.0")}", directory: "staged-campaign");
+        scratch.Write("staged-campaign/campaign.json", """
+            {
+              "type": "campaign",
+              "id": "start",
+              "name": "Staged campaign",
+              "start": { "area": "hall", "entry": "start" },
+              "party": { "min": 1, "max": 4 }
+            }
+            """);
+        scratch.Write("staged-campaign/hall.json", """
+            {
+              "type": "area",
+              "id": "hall",
+              "name": "Hall",
+              "map": ["+--+", "|  |", "+--+"],
+              "entries": { "start": { "at": [0, 0], "facing": "east" } }
+            }
+            """);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            string ruleset = EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100"), scratch);
+            string art = EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art"), scratch);
+            string campaignBundle = EngineContentTests.Pack(campaign, scratch);
+            GameSession session = new(new ModuleLibrary(_ =>
+            [
+                ProductContentBundle.OpenContainer(engine.Content, ruleset),
+                ProductContentBundle.OpenContainer(engine.Content, art),
+                ProductContentBundle.OpenContainer(engine.Content, campaignBundle),
+            ]));
+            session.Refresh();
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign = Assert.Single(session.Campaigns).Bundle, seed = "4" }));
+            Run(session, engine, """
+                {
+                  "action": "roll",
+                  "name": "Rook",
+                  "creation": "staged",
+                  "features": ["staged_soldier"]
+                }
+                """);
+
+            Assert.Contains("Rolled Rook", Assert.Single(session.Notes), StringComparison.Ordinal);
+            JsonObject draft = SessionProjection.Build(session)["party"]![0]!.AsObject();
+            Assert.Equal(90, draft["skillPoints"]!["personal"]!.GetValue<double>());
+            Assert.Equal(24, draft["skillPoints"]!["skills"]!.AsArray().Single(skill => skill!["id"]!.GetValue<string>() == "dodge")!["current"]!.GetValue<double>());
+
+            Run(session, engine, """
+                {
+                  "action": "skills",
+                  "member": 0,
+                  "skills": [
+                    { "skill": "sword", "profession": 100, "personal": 90 },
+                    { "skill": "shield", "profession": 50 },
+                    { "skill": "dodge", "profession": 40 },
+                    { "skill": "brawl", "profession": 30 },
+                    { "skill": "bow", "profession": 30 }
+                  ]
+                }
+                """);
+
+            Assert.Contains("Committed staged skill points", Assert.Single(session.Notes), StringComparison.Ordinal);
+            Character character = Assert.Single(session.Party);
+            Assert.Equal(205, new Core.Rules.Evaluator(session.Set!.Rules!, null).Stat(character.ToCreature(), "sword").Number);
         });
     }
 

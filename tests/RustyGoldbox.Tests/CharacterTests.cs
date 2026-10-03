@@ -346,6 +346,65 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void UniversalD100CanSpendStagedProfessionAndPersonalSkills()
+    {
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Assert.Empty(set.Diagnostics);
+        IReadOnlyList<SkillAllocation> allocations =
+        [
+            new("sword", Profession: 100, Personal: 20),
+            new("shield", Profession: 50),
+            new("dodge", Profession: 40),
+            new("brawl", Profession: 30, Personal: 80),
+            new("bow", Profession: 30),
+        ];
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_soldier"], SkillPoints: allocations))!;
+
+        Assert.Equal(135, new Evaluator(set.Rules!, null).Stat(character.ToCreature(), "sword").Number);
+        Assert.Equal(64, new Evaluator(set.Rules!, null).Stat(character.ToCreature(), "dodge").Number);
+        Assert.Equal(120, character.StatBonuses["sword"]);
+        Assert.Contains("\"stat_bonuses\"", CharacterFile.ToJson(character), StringComparison.Ordinal);
+
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_soldier"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("sword", Personal: 100)]), dice, problems)));
+        Assert.Contains(problems, problem => problem.Rule == "character.skill-points" && problem.Message.Contains("does not list", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void StagedSkillChoicesAreAcceptedByTheCliAndSaved()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        (int code, string output) = CampaignTests.Run(scratch, "character", "new", "--module", module,
+            "--creation", "staged", "--name", "Rook", "--feature", "staged_soldier",
+            "--attributes", "str=12,con=12,siz=12,int=10,pow=12,dex=12,cha=12",
+            "--skill", "sword=profession:100+personal:20,shield=profession:50,dodge=profession:40,brawl=profession:30+personal:80,bow=profession:30",
+            "--out", "rook.json");
+        Assert.Equal(0, code);
+        Assert.Contains("sword", output, StringComparison.Ordinal);
+        Assert.Contains("135", output, StringComparison.Ordinal);
+        string path = Path.Combine(scratch.Root, "rook.json");
+        Assert.Contains("\"stat_bonuses\"", File.ReadAllText(path), StringComparison.Ordinal);
+        ModuleSet set = ModuleLoader.Load(module, []);
+        List<ModuleDiagnostic> problems = [];
+        Character saved = CharacterFile.Read(path, set, problems)!;
+        Assert.Empty(problems);
+        Assert.Equal(new SkillAllocation("sword", 100, 20), saved.SkillAllocations["sword"]);
+    }
+
+    [Fact]
     public void ToughnessRaisesTheMaximumEachTimeItIsTaken()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);

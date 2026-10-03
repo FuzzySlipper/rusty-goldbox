@@ -686,6 +686,7 @@ public sealed class RuleSetBuilder
             }
 
             CheckCreationMethod(creation, listed.Count);
+            CheckCreationSkillPoints(creation);
         }
 
         List<Definition> defaults = _rules.OfType(DefinitionTypes.CharacterCreation)
@@ -694,6 +695,25 @@ public sealed class RuleSetBuilder
         foreach (Definition extra in defaults.Skip(1))
         {
             Error(extra, "creation.default", "$.default", $"{defaults[0].QualifiedId} is already the default character creation; only one may be.");
+        }
+    }
+
+    private void CheckCreationSkillPoints(Definition creation)
+    {
+        if (!creation.Json.TryGetProperty("skill_points", out JsonElement config)
+            || !config.TryGetProperty("skills", out JsonElement skills)
+            || skills.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        foreach (JsonProperty entry in skills.EnumerateObject())
+        {
+            if (_rules.Stats.TryGetValue(entry.Name, out Stat? stat) && stat.IsAttribute)
+            {
+                Error(creation, "creation.skill-points", $"$.skill_points.skills.{entry.Name}",
+                    $"Staged skill points must name derived skills, but '{entry.Name}' is an attribute.");
+            }
         }
     }
 

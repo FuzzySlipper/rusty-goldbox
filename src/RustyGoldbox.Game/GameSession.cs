@@ -193,7 +193,7 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <param name="portrait">A portrait asset for the character, or null for none.</param>
     /// <param name="race">The race, or null in a ruleset without races.</param>
     /// <param name="characterClass">The class, or null in a ruleset without classes.</param>
-    public void Roll(IEngineContext engine, string name, string? race, string? characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null)
+    public void Roll(IEngineContext engine, string name, string? race, string? characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null, IReadOnlyList<SkillAllocation>? skillPoints = null, string? creation = null)
     {
         Notes.Clear();
         if (Screen != Screen.Party)
@@ -214,7 +214,7 @@ internal sealed class GameSession(ModuleLibrary library)
         int roll = ++_rolls;
         using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.{roll}"));
         DiceRoller dice = new(engine.Random, stream);
-        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Features: features, Boosts: boosts), dice, problems);
+        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Creation: creation, Features: features, Boosts: boosts, SkillPoints: skillPoints), dice, problems);
         if (character is null)
         {
             Notes.AddRange(problems.Select(problem => problem.Message));
@@ -235,6 +235,29 @@ internal sealed class GameSession(ModuleLibrary library)
         {
             Party.RemoveAt(member);
         }
+    }
+
+    /// <summary>Commits one party member's staged profession and personal skill choices.</summary>
+    public void SpendSkillPoints(IEngineContext engine, int member, IReadOnlyList<SkillAllocation> allocations)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Party || member < 0 || member >= Party.Count)
+        {
+            Notes.Add("Choose a party member after opening a campaign before spending skill points.");
+            return;
+        }
+
+        Character character = Party[member];
+        List<ModuleDiagnostic> problems = [];
+        using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.skills.{member}"));
+        DiceRoller dice = new(engine.Random, stream);
+        if (!CharacterRules.ApplySkillPoints(Set!.Rules!, character, allocations, dice, problems))
+        {
+            Notes.AddRange(problems.Select(problem => problem.Message));
+            return;
+        }
+
+        Notes.Add($"Committed staged skill points for {character.Name}.");
     }
 
     /// <summary>Gives a party member an item, or takes it back when they have it.</summary>

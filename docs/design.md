@@ -259,8 +259,14 @@ cost), or boosts. Under boosts every attribute starts at a base, and the race,
 the features creation grants (a background), the class and the creation
 definition each list boosts, fixed or a choice among attributes, that raise
 one attribute by the creation's boost; one source never boosts the same
-attribute twice. A ruleset may offer several creation definitions and mark
-one the default.
+attribute twice. A creation may then declare a staged `skill_points` step with
+profession and personal budget expressions and a map of derived-skill base
+expressions. After the attributes and profession features are known, the CLI
+and Game show those actual values and accept separate point allocations;
+profession points are accepted only for skills listed by the chosen profession,
+while personal points may use any listed skill. The committed allocation and
+the resulting stat bonus are saved with the character. A ruleset may offer
+several creation definitions and mark one the default.
 
 A condition may declare **values** with defaults (`{ "amount": 5 }`) that
 `apply_condition` sets when it applies the condition ("ongoing 5"); its
@@ -522,7 +528,7 @@ path and the rule that failed. Module directories resolve through
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
 | `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
 | `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
-| `goldbox character new\|level …` | Create or advance a character under an experience ruleset and print the derived sheet. |
+| `goldbox character new\|skills\|level …` | Create a character (including a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
 | `goldbox character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |

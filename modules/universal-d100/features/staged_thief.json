@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "staged_thief",
+  "name": "Thief",
+  "kind": "staged-profession",
+  "description": "A thief's professional skills, allocated during staged creation.",
+  "skills": ["dagger", "dodge", "brawl", "sword"]
+}

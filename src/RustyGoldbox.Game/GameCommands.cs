@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Characters;
 
 namespace RustyGoldbox.Game;
 
@@ -122,12 +123,17 @@ internal static class GameCommands
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
                     IReadOnlyList<string>? features = payload.TryGetProperty("features", out _) ? Texts(payload, "features") : null;
                     IReadOnlyList<string>? boosts = payload.TryGetProperty("boosts", out _) ? Texts(payload, "boosts") : null;
+                    IReadOnlyList<SkillAllocation>? skillPoints = payload.TryGetProperty("skills", out _) ? Skills(payload) : null;
                     string? race = payload.TryGetProperty("race", out _) ? Text(payload, "race") : null;
                     string? characterClass = payload.TryGetProperty("class", out _) ? Text(payload, "class") : null;
-                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts);
+                    string? creation = payload.TryGetProperty("creation", out _) ? Text(payload, "creation") : null;
+                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts, skillPoints, creation);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));
+                    break;
+                case "skills":
+                    session.SpendSkillPoints(engine, Integer(payload, "member"), Skills(payload));
                     break;
                 case "equip":
                     session.Equip(Integer(payload, "member"), Text(payload, "item"));
@@ -164,7 +170,7 @@ internal static class GameCommands
                     session.PickSkin(payload.TryGetProperty("skin", out JsonElement skin) && skin.ValueKind != JsonValueKind.Null ? Text(payload, "skin") : null);
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume and skin");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume and skin");
             }
         }
         catch (PayloadException exception)
@@ -202,6 +208,50 @@ internal static class GameCommands
         return value.ValueKind == JsonValueKind.Array && value.EnumerateArray().All(entry => entry.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(entry.GetString()))
             ? value.EnumerateArray().Select(entry => entry.GetString()!).ToList()
             : throw new PayloadException($"\"{field}\" must be an array of non-empty text");
+    }
+
+    private static List<SkillAllocation> Skills(JsonElement payload)
+    {
+        JsonElement value = payload.GetProperty("skills");
+        if (value.ValueKind != JsonValueKind.Array)
+        {
+            throw new PayloadException("\"skills\" must be an array of objects with skill, profession and personal numbers");
+        }
+
+        List<SkillAllocation> allocations = [];
+        foreach (JsonElement entry in value.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("skill", out JsonElement skill)
+                || skill.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(skill.GetString()))
+            {
+                throw new PayloadException("Each \"skills\" entry must have a non-empty text \"skill\".");
+            }
+
+            decimal profession = Amount(entry, "profession");
+            decimal personal = Amount(entry, "personal");
+            if (profession < 0 || personal < 0)
+            {
+                throw new PayloadException("Skill point allocations must be nonnegative numbers.");
+            }
+
+            allocations.Add(new SkillAllocation(skill.GetString()!, profession, personal));
+        }
+
+        return allocations;
+    }
+
+    private static decimal Amount(JsonElement value, string field)
+    {
+        if (!value.TryGetProperty(field, out JsonElement amount))
+        {
+            return 0;
+        }
+
+        return amount.ValueKind == JsonValueKind.Number && amount.TryGetDecimal(out decimal number)
+            ? number
+            : throw new PayloadException($"Skill \"{field}\" allocations must be numbers.");
     }
 
     private static int Integer(JsonElement payload, string field)

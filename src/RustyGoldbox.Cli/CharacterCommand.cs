@@ -6,13 +6,14 @@ using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Cli;
 
-/// <summary><c>goldbox character new | level | milestone | mark | improve | show</c>.</summary>
+/// <summary><c>goldbox character new | skills | level | milestone | mark | improve | show</c>.</summary>
 internal static class CharacterCommand
 {
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--skill <id>=profession:<n>+personal:<n>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        + "       goldbox character skills <file> --module <path> --skill <id>=profession:<n>+personal:<n>,... [--seed <n>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character milestone <file> --module <path> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...]\n"
@@ -33,6 +34,7 @@ internal static class CharacterCommand
         return args[0] switch
         {
             "new" => New(args.Skip(1), output, workingDirectory),
+            "skills" => Skills(args.Skip(1), output, workingDirectory),
             "level" => Level(args.Skip(1), output, workingDirectory),
             "milestone" => Milestone(args.Skip(1), output, workingDirectory),
             "mark" => Mark(args.Skip(1), output, workingDirectory),
@@ -41,7 +43,7 @@ internal static class CharacterCommand
             "spells" => Spells(args.Skip(1), output, workingDirectory),
             "npc" => Npc(args.Skip(1), output, workingDirectory),
             "former" => Former(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, milestone, mark, improve, spells, former, npc and show.\n{Usage}"),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, skills, level, milestone, mark, improve, spells, former, npc and show.\n{Usage}"),
         };
     }
 
@@ -216,7 +218,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--skill", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null))
         {
             error = Usage;
@@ -224,7 +226,8 @@ internal static class CharacterCommand
 
         ulong seed = 1;
         Dictionary<string, decimal>? attributes = null;
-        error ??= ParseSeed(parsed, ref seed) ?? ParseAttributes(parsed.Single("--attributes"), out attributes);
+        List<SkillAllocation>? skillPoints = null;
+        error ??= ParseSeed(parsed, ref seed) ?? ParseAttributes(parsed.Single("--attributes"), out attributes) ?? ParseSkillPoints(parsed, out skillPoints);
         if (error is not null)
         {
             return output.UsageError(error);
@@ -248,7 +251,8 @@ internal static class CharacterCommand
             parsed.Single("--creation"),
             Features(parsed),
             parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
-            classes.Skip(1).ToList());
+            classes.Skip(1).ToList(),
+            SkillPoints: skillPoints);
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));
@@ -266,6 +270,44 @@ internal static class CharacterCommand
         }
 
         output.CharacterSheet(set.Rules, character, outPath, seed, rolls, []);
+        return GoldboxCli.Ok;
+    }
+
+    private static int Skills(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--skill", "--seed"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.All("--skill").Count == 0))
+        {
+            error = Usage;
+        }
+
+        List<SkillAllocation>? allocations = null;
+        ulong seed = 1;
+        error ??= ParseSeed(parsed, ref seed) ?? ParseSkillPoints(parsed, out allocations);
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        (bool applied, _) = EngineDice.Run(seed, RandomScope, dice => CharacterRules.ApplySkillPoints(set.Rules!, character!, allocations!, dice, problems));
+        if (!applied || problems.Count > 0)
+        {
+            return output.Problems(problems.Select(problem => problem.File is null ? problem with { File = path } : problem).ToList());
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules!, character!, path, seed, [], []);
         return GoldboxCli.Ok;
     }
 
@@ -325,6 +367,60 @@ internal static class CharacterCommand
         return parsed.All(option)
             .SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
             .ToList();
+    }
+
+    /// <summary>
+    /// Parses staged creation spends. A value is
+    /// <c>skill=profession:n+personal:n</c>; a bare amount is personal
+    /// points for the short form <c>skill:n</c>.
+    /// </summary>
+    private static string? ParseSkillPoints(Arguments parsed, out List<SkillAllocation>? allocations)
+    {
+        allocations = null;
+        if (parsed.All("--skill").Count == 0)
+        {
+            return null;
+        }
+
+        List<SkillAllocation> parsedAllocations = [];
+        foreach (string value in parsed.All("--skill").SelectMany(entry => entry.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)))
+        {
+            string[] pair = value.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (pair.Length != 2 || string.IsNullOrWhiteSpace(pair[0]) || string.IsNullOrWhiteSpace(pair[1]))
+            {
+                return $"--skill values must be <id>=profession:<n>+personal:<n>, but '{value}' isn't.\n{Usage}";
+            }
+
+            decimal profession = 0;
+            decimal personal = 0;
+            foreach (string part in pair[1].Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                string[] amount = part.Split(':', 2, StringSplitOptions.TrimEntries);
+                string kind = amount.Length == 1 ? "personal" : amount[0].ToLowerInvariant();
+                string number = amount.Length == 1 ? amount[0] : amount[1];
+                if (!decimal.TryParse(number, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal points) || points < 0)
+                {
+                    return $"--skill amount '{number}' must be a nonnegative number in '{value}'.\n{Usage}";
+                }
+
+                switch (kind)
+                {
+                    case "profession":
+                        profession += points;
+                        break;
+                    case "personal":
+                        personal += points;
+                        break;
+                    default:
+                        return $"--skill allocation '{kind}' must be profession or personal in '{value}'.\n{Usage}";
+                }
+            }
+
+            parsedAllocations.Add(new SkillAllocation(pair[0], profession, personal));
+        }
+
+        allocations = parsedAllocations;
+        return null;
     }
 
     private static string[] List(string text) => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

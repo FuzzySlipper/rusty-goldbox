@@ -98,6 +98,9 @@ public sealed class Character
     /// <summary>Persistent bonuses added by staged creation, milestones or improvement checks.</summary>
     public Dictionary<string, decimal> StatBonuses { get; } = [];
 
+    /// <summary>Profession and personal points already committed during staged creation.</summary>
+    public Dictionary<string, SkillAllocation> SkillAllocations { get; } = [];
+
     /// <summary>Successful uses waiting for an improvement check, by skill ID.</summary>
     public Dictionary<string, int> SkillMarks { get; } = [];
 
@@ -166,6 +169,11 @@ public sealed class Character
         foreach (var entry in StatBonuses)
         {
             copy.StatBonuses.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in SkillAllocations)
+        {
+            copy.SkillAllocations.Add(entry.Key, entry.Value);
         }
 
         foreach (var entry in SkillMarks)

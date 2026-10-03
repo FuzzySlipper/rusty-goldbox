@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "staged_warrior",
+  "name": "Warrior",
+  "kind": "staged-profession",
+  "description": "A warrior's professional skills, allocated during staged creation.",
+  "skills": ["axe", "spear", "dodge", "brawl"]
+}

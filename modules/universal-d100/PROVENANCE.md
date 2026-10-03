@@ -37,7 +37,8 @@ None.
 
 | Definitions | Source (Basic Roleplaying ORC Content Document) |
 | --- | --- |
-| `attributes/`, `creation/standard` (3D6, SIZ and INT 2D6+6; human limits) | Ch. 2 Creating a Character: Step One, Characteristics |
+| `attributes/`, `creation/standard`, `creation/staged` (3D6, SIZ and INT 2D6+6; the staged profession and INT-based personal pools) | Ch. 2 Creating a Character: Step One, Characteristics; Ch. 2 Steps Seven and Eight, Profession and Skills |
+| `features/staged_*` (profession skill limits) | Ch. 2 Creating a Character: Step Seven, Profession and Skills |
 | `advancement/improvement`, `checks/` skill fields | Ch. 5 Character Improvement: successful skill use gives one experience check per adventure; the experience roll adds half INT (rounded up), succeeds when it rolls over the current skill, and a success adds 1D6 |
 | `tracks/hit_points`, `derived/major_wound`, `dm_d4`, `dm_d6` | Derived Characteristics: Hit Points, Major Wounds, Damage Modifier Table |
 | `derived/` skills (base chances: Sword, Axe and Spear 15%, Dagger and Mace 25%, Bow 10%, Brawl 25%, Dodge DEX×2, Shield 15%) | Skill list base chances; weapon and shield tables |
@@ -53,12 +54,17 @@ examples written for this module.
 
 ## Simplifications
 
-- Skill points aren't spent at creation: a profession grants a fixed,
-  combat-heavy spread of skill bonuses instead of the source's professional and
-  personal skill points. Skill category modifiers aren't used. Skill
-  improvement uses the source's experience-check procedure, expressed as one
-  data check per declared skill; campaign timing and easy-roll exclusions stay
-  outside this module's generic check metadata.
+- `creation/standard` and `features/{hunter,soldier,thief,warrior}` retain the
+  original compact fixed-spread examples used by the combat transcript.
+  `creation/staged` and `features/staged_*` expose the source's second creation
+  step: 250 professional points limited by the selected profession, followed by
+  INT×10 personal points over the listed derived skills. The normal power level
+  is represented by the budget expression; another module or creation may use a
+  different expression. Skill category modifiers, caps above the configured
+  budgets and setting-specific profession tables aren't used. Skill improvement
+  uses the source's experience-check procedure, expressed as one data check per
+  declared skill; campaign timing and easy-roll exclusions stay outside this
+  module's generic check metadata.
 - The Attack and Defense Matrix is reduced to levels: the defence's level
   (critical 3, special 2, success 1) is taken from the attack's; a difference
   of 3 is a critical (maximum damage, armour ignored), 1 or 2 a normal hit.

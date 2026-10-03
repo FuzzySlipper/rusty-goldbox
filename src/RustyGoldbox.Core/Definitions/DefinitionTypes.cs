@@ -22,6 +22,12 @@ public static class DefinitionTypes
     private static readonly Field GrantKind = new("kind", new TextKind(), false, "The kind of feature chosen, as features name it, for example \"feat\" or \"background\". Give kind or kinds.");
     private static readonly Field GrantKinds = new("kinds", new ListKind(new TextKind()), false, "Kinds any of which may be chosen, for example [\"feat\", \"combat feat\"] for a general slot that also takes combat feats.");
     private static readonly Field GrantCount = new("count", new IntegerKind(), false, "How many to choose; without it, 1.");
+    private static readonly ObjectKind SkillPoints = new(
+    [
+        new("profession", SelfNumber, true, "Points available for skills allowed by the chosen profession, evaluated after attributes and features are chosen."),
+        new("personal", SelfNumber, true, "Points available for any listed skill, evaluated after attributes and features are chosen."),
+        new("skills", new MapKind(new StatKind(false), SelfNumber), true, "Base chance for each skill that may receive points, evaluated after attributes and features are chosen."),
+    ]);
 
     public static DefinitionType Attribute { get; } = new(
         "attribute",
@@ -248,6 +254,7 @@ public static class DefinitionTypes
             new("description", new TextKind(), false, "What the feature means in play."),
             new("requirements", new ExpressionKind(ExprType.Boolean, Roots.Self), false, "What the character must be to choose it, read with the level that grants it, for example \"self.might >= 13\" or \"self.race == 'dwarf'\"."),
             new("repeatable", new BooleanKind(), false, "If true, a character may choose it more than once, and its modifiers add each time (ability increases)."),
+            new("skills", new ListKind(new StatKind(false)), false, "Skills to which a staged character-creation profession may spend its profession points. Omit when the feature is not a profession or imposes no limit."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers a character with the feature has."),
             new("actions", new ListKind(Use), false, "Actions the feature lets a character take in combat, after its classes' actions."),
             new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
@@ -694,7 +701,7 @@ public static class DefinitionTypes
 
     public static DefinitionType CharacterCreation { get; } = new(
         "character-creation",
-        "How new characters are made: how attribute scores are made (rolled, an arranged array, point buy or boosts), the features every character chooses, and starting balances. A ruleset may offer several; one marked default is used when none is named.",
+        "How new characters are made: how attribute scores are made (rolled, an arranged array, point buy or boosts), staged profession and personal skill points, the features every character chooses, and starting balances. A ruleset may offer several; one marked default is used when none is named.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("attributes", new ListKind(new StatKind(true)), true, "Every attribute once, in the order rolls are taken and sheets show them."),
@@ -711,6 +718,7 @@ public static class DefinitionTypes
             new("boosts", Boosts.Kind, false, "Method boosts: boosts every new character has besides those of its race, creation features and class; usually free ones ({})."),
             new("starting", new MapKind(new ReferenceKind("class"), new MapKind(new ReferenceKind("currency"), SelfNumber)), false, "Starting balances for each class it names, by currency; a class it doesn't name uses its own \"starting\" map. Without either, characters start with none."),
             new("features", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
+            new("skill_points", SkillPoints, false, "Optional second creation step: after attributes and feature choices, spend the profession and personal budgets on the listed derived skills. Profession points are limited by the selected profession's `skills`; personal points may use any listed skill."),
         ],
         """
         {
@@ -720,7 +728,12 @@ public static class DefinitionTypes
           "attributes": ["str", "dex", "con", "int", "wis", "cha"],
           "attribute_roll": "3d6",
           "assignment": "in-order",
-          "starting": { "fighter": { "gold": "(3d6 + 2) * 10" } }
+          "starting": { "fighter": { "gold": "(3d6 + 2) * 10" } },
+          "skill_points": {
+            "profession": "250",
+            "personal": "self.int * 10",
+            "skills": { "sword": "15", "dodge": "self.dex * 2" }
+          }
         }
         """);
 

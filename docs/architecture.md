@@ -40,8 +40,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
 | `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, and the creature view expressions read |
-| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances), giving them a portrait asset, and gaining levels in one class or several, from character-creation, advancement, race and class data |
-| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances and staged profession/personal skill choices), giving them a portrait asset, and gaining levels in one class or several, from character-creation, advancement, race and class data |
+| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, staged skill-choice progress, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
 | `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
@@ -200,10 +200,14 @@ other's saves.
 ## Characters
 
 `CharacterRules` reads everything from data: the character-creation
-definition's attribute order, roll and assignment, the race's adjustments,
-limits and classes, the class's requirements and per-level `hp` expressions
-(which build the track marked `from_levels`), and starting gold. Every other
-track starts at its `start` or maximum. Levels come from the advancement
+definition's attribute order, roll and assignment, optional staged skill-point
+budgets/base expressions, the race's adjustments, limits and classes, the
+class's requirements and per-level `hp` expressions (which build the track
+marked `from_levels`), and starting gold. A staged creation is a two-step
+flow: the first command saves the actual rolled attributes and chosen
+profession, then CLI or Game choices spend the evaluated profession and
+personal budgets over the listed derived skills. Every other track starts at
+its `start` or maximum. Levels come from the advancement
 definition when there is one (experience by character, each level in a chosen
 class) and otherwise from the class's own `xp` table; a class with no levels
 left leaves the next level waiting for another class. Features fill the
@@ -240,7 +244,7 @@ input, lets the fight playback advance, advances animations, and republishes
 only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
-claims (`{ "action": ..., fields }`: refresh, open, roll, equip, spells, memorise, drop,
+claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
 begin, play, continue, save, load, quit), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
@@ -252,6 +256,13 @@ clock: roll *n* of character creation uses
 scope `goldbox.character.<n>` and the game starts from the same seed, so a
 session replays from it. Play commands are the same text commands `goldbox
 play` scripts use.
+
+The party screen exposes every available creation in `creations`. A staged
+creation is rolled with `roll` first; the party member then carries its actual
+attributes and `skillPoints` budgets/base values in the projection. The DOM
+submits a second `skills` action with profession and personal allocations, and
+`GameSession` sends that choice to `CharacterRules` before the character can
+enter the campaign. The character file persists the committed allocation.
 
 `SceneView` draws play in a window at the top left of the screen
 (`SceneView.Window`; the Engine measures camera viewports and sprite
