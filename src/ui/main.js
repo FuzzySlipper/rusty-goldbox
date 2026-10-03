@@ -350,10 +350,10 @@ function element(tag, attributes = {}, ...children) {
 }
 
 /**
- * Any picture the projection carries ({ url, width, height, frame }), drawn
- * pixel-sharp within a size-pixel square: an image whole, a sheet's first
- * frame cropped from it. Nothing without one. Every panel picture goes
- * through here, so a new kind of media is drawn in one place.
+ * Any picture the projection carries ({ url, width, height, frame, animation }),
+ * drawn pixel-sharp within a size-pixel square: an image whole, a sheet's
+ * frame cropped from it, playing its animation. Nothing without one. Every
+ * panel picture goes through here, so a new kind of media is drawn in one place.
  */
 function picture(media, label, size) {
   if (!media?.url) {
@@ -366,12 +366,59 @@ function picture(media, label, size) {
 
   const [frameWidth, frameHeight] = media.frame;
   const scale = size / Math.max(frameWidth, frameHeight);
-  return [element('div', {
+  const node = element('div', {
     role: 'img',
     'aria-label': label,
     style: `width:${frameWidth * scale}px;height:${frameHeight * scale}px;image-rendering:pixelated;`
       + `background:url("${media.url}") 0 0 / ${media.width * scale}px ${media.height * scale}px no-repeat`,
-  })];
+  });
+  if (media.animation?.frames?.length) {
+    // Re-renders keep a picture's clock, so the animation runs on instead of restarting.
+    const key = `${media.url}|${label}`;
+    if (!started.has(key)) {
+      started.set(key, performance.now());
+    }
+
+    animated.set(node, { media, scale, start: started.get(key) });
+    startAnimating();
+  }
+
+  return [node];
+}
+
+// Animated panel pictures and what each plays; one ticker steps them all while any is on the page.
+const animated = new Map();
+const started = new Map();
+let ticking = false;
+
+function startAnimating() {
+  if (ticking) {
+    return;
+  }
+
+  ticking = true;
+  const step = (now) => {
+    for (const [node, { media, scale, start }] of animated) {
+      if (!node.isConnected) {
+        animated.delete(node);
+        continue;
+      }
+
+      const { frames, fps, loop } = media.animation;
+      const played = Math.floor(((now - start) / 1000) * fps);
+      const frame = frames[loop ? played % frames.length : Math.min(played, frames.length - 1)];
+      const [frameWidth, frameHeight] = media.frame;
+      const columns = Math.floor(media.width / frameWidth);
+      node.style.backgroundPosition = `${-(frame % columns) * frameWidth * scale}px ${-Math.floor(frame / columns) * frameHeight * scale}px`;
+    }
+
+    if (animated.size > 0) {
+      requestAnimationFrame(step);
+    } else {
+      ticking = false;
+    }
+  };
+  requestAnimationFrame(step);
 }
 
 function fragment(...children) {

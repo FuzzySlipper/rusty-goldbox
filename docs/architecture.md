@@ -67,6 +67,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
 | `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
 | `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
+| `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
+| `src/RustyGoldbox.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
@@ -241,8 +243,11 @@ drawn), and each cell has a floor and a ceiling, textured from the area's
 wall set's regions or a plain material. The mesh is rebuilt only when the area
 (or its module's content) changes. The camera stands at the party's cell
 centre, half a cell up, at the facing's yaw (north is the Engine's zero yaw).
-When the party's cell has a backdrop, it shows over the view as a sprite
-fitted to the window: an image whole, a sheet's first frame. A cell's prop stands at the cell's centre as a
+A picture covers the view while there is one: the latest event's
+(`CampaignState.Picture`, until the party moves), else the cell's backdrop.
+`PictureArt` makes any picture-slot asset a pixel-sized atlas sprite fitted
+to the window (an image as one frame, a sheet with every frame) and plays a
+sheet's first animation from the start each time a different picture shows. A cell's prop stands at the cell's centre as a
 cylindrical billboard playing its idle animation; while its `hidden`
 condition holds (`CampaignRunner.IsTrue` against the campaign variables) it is
 published invisible. The area mesh and props are released only after a
@@ -254,7 +259,10 @@ size), and the pivot is the anchor pixel's bottom edge. Art faces one way, and
 a negative X scale on the published transform mirrors a figure to face the
 other; the Engine refuses mirrored atlas UVs. Playback advances only during
 an Engine update; in the `demand` lifecycle steps come only on input, so
-animated sprites need the `realtime` lifecycle. Figures
+animated sprites need the `realtime` lifecycle. The renderer shows a
+playback's frame as of the latest published snapshot, so each update
+`PlaybackFrames` advances the playbacks showing (picture, props, combat
+figures) and the scene publishes the same snapshot again when a frame changed. Figures
 are unpublished before their atlas and texture are released. Textures are admitted from the module's bundle or
 container once per asset content. The Engine's default lights light the
 scene.
@@ -273,8 +281,8 @@ asset's PNG from its module bundle once (`Ui.OpenImage`) and keeps the image for
 the product's life. The projection carries any panel picture as one media
 object beside the asset ID (`{ url, width, height, frame }`: a party member's
 `portraitPicture`, the portrait chooser's `picture`, a combatant's
-`iconPicture`), so a sheet shows its first frame, and the UI's one `picture`
-function draws every kind. The panels never see image bytes.
+`iconPicture`, with a sheet's frame size and first animation), and the UI's
+one `picture` function draws every kind, one ticker stepping the animated ones. The panels never see image bytes.
 
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,

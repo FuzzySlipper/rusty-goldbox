@@ -486,8 +486,8 @@ regression checks for module and rules behavior.
   easily:
   - Navigation is real 3D: each area becomes one generated mesh textured
     from its wall set (the textures are effectively sprites on geometry),
-    with a perspective camera at the party. A cell's backdrop shows as a
-    picture over the view window.
+    with a perspective camera at the party. An event's picture, else the
+    cell's backdrop, shows over the view window, animated when it is a sheet.
   - Everything else is a billboard sprite: props such as chests and pillars,
     and monsters, standing in the 3D view, and every combatant in combat. A
     cell's `prop` names a sprite and, optionally, a campaign condition that

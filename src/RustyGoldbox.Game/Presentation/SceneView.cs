@@ -13,7 +13,8 @@ namespace RustyGoldbox.Game.Presentation;
 /// The Engine scene in the view window at the top left (the DOM panels go
 /// around it). While playing it is the first-person view: the area as one
 /// generated mesh textured from its wall set, a camera at the party's cell
-/// facing its way, and the cell's backdrop over the view when it has one; the
+/// facing its way, and a picture over the view (the latest event's, else the
+/// cell's backdrop) through <see cref="PictureArt"/>, animated if it is; the
 /// mesh is rebuilt only when the area changes. On the combat screen it is the
 /// <see cref="CombatScene"/>. Each publish sends the whole small snapshot.
 /// </summary>
@@ -43,6 +44,10 @@ internal sealed class SceneView : IDisposable
     private string? _areaKey;
     private MeshResource? _mesh;
     private Appearance? _area;
+    private Definition? _shownPicture;
+    private SpritePlayback? _picturePlayback;
+    private readonly PlaybackFrames _frames;
+    private AppearanceFact[] _published = [];
 
     public SceneView(IEngineContext engine, ModuleLibrary library)
     {
@@ -53,6 +58,7 @@ internal sealed class SceneView : IDisposable
         engine.CameraView.SetBackgroundColor(new SetBackgroundColorRequest(new Color(0.03f, 0.03f, 0.05f, 1)));
         _plain = engine.Graphics.CreateMaterial(new MaterialRequest(new Color(0.25f, 0.24f, 0.22f, 1), default, 0.95f, new Color(1, 1, 1, 1), Vector3.Zero, 0, false));
         _combat = new CombatScene(engine.Graphics, _plain);
+        _frames = new PlaybackFrames(engine.Graphics);
     }
 
     /// <summary>Shows the session: the area around the party while playing, the fight on the combat screen, nothing otherwise.</summary>
@@ -82,35 +88,70 @@ internal sealed class SceneView : IDisposable
                 ShowProps(runner, state.Area, facts);
                 Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
                 _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
-                if (Backdrop(rules, state) is Definition backdrop && BackdropOf(rules, session.Set, backdrop) is Appearance sprite)
+                // An event's picture covers the view until the party moves; otherwise the cell's backdrop shows.
+                Definition? shown = state.Picture ?? Backdrop(rules, state);
+                if (shown is not null && PictureOf(rules, session.Set, shown) is PictureArt picture)
                 {
-                    facts.Add(new AppearanceFact(BackdropObject, false, 0, Placed, sprite, true, RenderLayer.Ui));
+                    if (shown != _shownPicture)
+                    {
+                        StopPicture();
+                        _shownPicture = shown;
+                        _picturePlayback = picture.Play();
+                    }
+
+                    facts.Add(new AppearanceFact(BackdropObject, false, 0, Placed, picture.Sprite, true, RenderLayer.Ui));
+                }
+                else
+                {
+                    StopPicture();
                 }
             }
         }
 
-        _engine.Graphics.PublishSnapshot(facts.ToArray());
+        if (!_showingArea)
+        {
+            StopPicture();
+        }
+
+        _published = facts.ToArray();
+        _engine.Graphics.PublishSnapshot(_published);
+        _frames.Published();
         _combat.ReleaseRetired();
         ReleaseRetired();
     }
 
-    /// <summary>Advances animations; call in every update.</summary>
+    /// <summary>
+    /// Advances animations; call in every update. The renderer shows a
+    /// playback's frame as of the latest snapshot, so when any frame changes
+    /// the same snapshot is published again.
+    /// </summary>
     public void Tick()
     {
+        bool changed = false;
         if (_showingCombat)
         {
-            _combat.Tick();
+            changed |= _combat.Tick(_frames);
         }
 
         if (_showingArea)
         {
+            if (_picturePlayback is SpritePlayback picture)
+            {
+                changed |= _frames.Advance(picture);
+            }
+
             foreach (Prop prop in _props)
             {
                 if (prop.Playback is SpritePlayback playback)
                 {
-                    _engine.Graphics.AdvanceSpritePlayback(new SpritePlaybackAdvanceRequest(playback));
+                    changed |= _frames.Advance(playback);
                 }
             }
+        }
+
+        if (changed)
+        {
+            _engine.Graphics.PublishSnapshot(_published);
         }
     }
 
@@ -119,12 +160,13 @@ internal sealed class SceneView : IDisposable
         // Nothing may still be published when it is released.
         _engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
         _combat.Dispose();
+        StopPicture();
         RetireArea();
         ReleaseRetired();
         foreach (Art art in _art.Values)
         {
             art.Figures?.Dispose();
-            art.Backdrop?.Dispose();
+            art.Picture?.Dispose();
             art.Material.Dispose();
             art.Texture.Dispose();
         }
@@ -311,38 +353,24 @@ internal sealed class SceneView : IDisposable
         return art;
     }
 
-    /// <summary>
-    /// A picture filling the view window, made once per asset: an image
-    /// whole, or a sheet's first frame.
-    /// </summary>
-    private Appearance? BackdropOf(RuleSet rules, ModuleSet set, Definition asset)
+    /// <summary>The asset as a picture over the view window, admitted once per asset content.</summary>
+    private PictureArt? PictureOf(RuleSet rules, ModuleSet set, Definition asset)
     {
         if (ArtFor(set, asset) is not Art art)
         {
             return null;
         }
 
-        if (art.Backdrop is null)
-        {
-            (int width, int height) = rules.ImageSizes[asset];
-            Vector2 uvMax = Vector2.One;
-            if (Media.MediaOf(asset) == "sheet")
-            {
-                JsonElement frame = asset.Json.GetProperty("frame_size");
-                uvMax = new Vector2((float)frame[0].GetInt32() / width, (float)frame[1].GetInt32() / height);
-                (width, height) = (frame[0].GetInt32(), frame[1].GetInt32());
-            }
+        art.Picture ??= PictureArt.Admit(_engine.Graphics, art.Texture, asset, rules.ImageSizes[asset]);
+        return art.Picture;
+    }
 
-            art.Backdrop = _engine.Graphics.CreateSprite(new SpriteAppearanceRequest(
-                art.Texture, Vector2.Zero, uvMax, new Vector2(0.5f, 0.5f), new Vector2(width, height),
-                BillboardMode.None, SpriteSizeMode.Pixel, 100, SpriteDepthPolicy.DepthTestOff, new Color(1, 1, 1, 1)));
-
-            // Sprite placement is a rectangle within the camera's viewport: this fills the view window.
-            _engine.Graphics.SetSpriteViewport(new SpriteViewportUpdateRequest(
-                art.Backdrop, true, Vector2.Zero, Vector2.One, new Vector2(0.5f, 0.5f), SpriteViewportFit.Contain));
-        }
-
-        return art.Backdrop;
+    /// <summary>Ends the shown picture's animation; the next picture shown starts its own.</summary>
+    private void StopPicture()
+    {
+        _picturePlayback?.Dispose();
+        _picturePlayback = null;
+        _shownPicture = null;
     }
 
     private static CameraDescriptor Camera(CameraPose pose, double fieldOfView = FieldOfView)
@@ -390,14 +418,14 @@ internal sealed class SceneView : IDisposable
     /// <summary>A cell's prop: its figure and animation, where it stands, and the condition that hides it.</summary>
     private sealed record Prop(Appearance Figure, SpritePlayback? Playback, Transform Placement, string? HiddenPath);
 
-    /// <summary>An admitted asset: its texture and material, and the backdrop or figure frames made from it once something shows it so.</summary>
+    /// <summary>An admitted asset: its texture and material, and the picture or figure frames made from it once something shows it so.</summary>
     private sealed class Art(RenderResource texture, Material material)
     {
         public RenderResource Texture { get; } = texture;
 
         public Material Material { get; } = material;
 
-        public Appearance? Backdrop { get; set; }
+        public PictureArt? Picture { get; set; }
 
         public SpriteArt? Figures { get; set; }
     }

@@ -100,16 +100,19 @@ internal sealed class CombatScene : IDisposable
         }
     }
 
-    /// <summary>Advances the figures' animations; call in every update while the scene shows.</summary>
-    public void Tick()
+    /// <summary>Advances the figures' animations; call in every update while the scene shows. True when a figure's frame changed.</summary>
+    public bool Tick(PlaybackFrames frames)
     {
+        bool changed = false;
         foreach (Figure figure in _figures.Values)
         {
             if (figure.Playback is SpritePlayback playback)
             {
-                _graphics.AdvanceSpritePlayback(new SpritePlaybackAdvanceRequest(playback));
+                changed |= frames.Advance(playback);
             }
         }
+
+        return changed;
     }
 
     /// <summary>Releases what earlier fights showed, once a publish has stopped showing it.</summary>

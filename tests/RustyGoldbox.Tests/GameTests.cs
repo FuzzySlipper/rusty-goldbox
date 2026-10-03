@@ -213,6 +213,7 @@ public sealed class GameTests
             JsonNode party = SessionProjection.Build(session, _ => "url")["party"]!;
             Assert.Null(party[0]!["portraitPicture"]!["frame"]);
             Assert.Equal("[32,48]", party[1]!["portraitPicture"]!["frame"]!.ToJsonString());
+            Assert.Equal("""{"frames":[0,1,2,3],"fps":4,"loop":true}""", party[1]!["portraitPicture"]!["animation"]!.ToJsonString());
         });
     }
 

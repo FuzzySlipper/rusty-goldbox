@@ -185,6 +185,31 @@ public sealed class AssetTests
     }
 
     [Fact]
+    public void AnyPictureBecomesAViewWindowSpriteAndASheetPlaysItsFirstAnimation()
+    {
+        ModuleSet set = ModuleLoader.Load(Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art"), []);
+        string root = Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art");
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            foreach ((string id, string file, bool animated) in new[] { ("altar", "pictures/altar.png", true), ("crypt", "backdrops/crypt.png", false) })
+            {
+                Definition asset = set.Rules!.Find(Core.Definitions.DefinitionTypes.Asset, id, out _)!;
+                using ContentReference reference = engine.Content.AdmitReference(new ContentAdmissionRequest(file, File.ReadAllBytes(Path.Combine(root, file)), Array.Empty<ContentSourceFile>()));
+                using RenderResource texture = engine.Graphics.OpenResourceFromContent(new RenderResourceContentRequest(reference, TextureFilter.Nearest, TextureWrap.Clamp)).Handle;
+                using Game.Presentation.PictureArt picture = Game.Presentation.PictureArt.Admit(engine.Graphics, texture, asset, set.Rules.ImageSizes[asset]);
+                using SpritePlayback? playback = picture.Play();
+
+                Assert.Equal(animated, picture.Animated);
+                Assert.Equal(animated, playback is not null);
+                engine.Graphics.PublishSnapshot(new[] { new AppearanceFact(1, false, 0, new Transform(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity, System.Numerics.Vector3.One), picture.Sprite, true, RenderLayer.Ui) });
+                engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
+            }
+        });
+    }
+
+    [Fact]
     public void AFigureDrawsOneMonsterOrClassWithASheet()
     {
         using TempModules modules = new();

@@ -27,8 +27,10 @@ creation). Core checks the roll; its notes say what to fix.
 Portraits and icons are media objects the projection carries
 (`portraitPicture`, the portrait chooser's `picture`, `iconPicture`: an Engine
 UI image `url`, the image's `width` and `height`, and a sheet's `frame` size),
-all drawn by one `picture` function: an image as an `<img>`, a sheet's first
-frame cropped from it, pixel-sharp. They show on party members and the chosen
+all drawn by one `picture` function: an image as an `<img>`, a sheet's frame
+cropped from it, pixel-sharp, playing the `animation` the projection names
+(its frames, fps and loop) on one page-wide ticker that keeps each picture's
+clock across re-renders. They show on party members and the chosen
 portrait on the party screen, a roster strip (portrait, name, tracks,
 experience) in play, and icons in the combat lists. A missing picture draws
 nothing. The portrait chooser offers assets tagged `portrait`.

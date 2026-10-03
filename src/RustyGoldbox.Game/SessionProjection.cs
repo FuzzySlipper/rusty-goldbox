@@ -259,8 +259,8 @@ internal static class SessionProjection
 
     /// <summary>
     /// How the panels show an asset in a picture slot, whatever its media: the
-    /// image URL, the image's pixel size, and for a sheet the size of the
-    /// frame shown. Null when the image can't be shown.
+    /// image URL, the image's pixel size, and for a sheet the size of a frame
+    /// and the first animation it plays. Null when the image can't be shown.
     /// </summary>
     private static JsonObject? Picture(RuleSet rules, Definition asset, Func<Definition, string?> imageUrl)
     {
@@ -273,7 +273,18 @@ internal static class SessionProjection
         JsonArray? frame = Media.MediaOf(asset) == "sheet" && asset.Json.GetProperty("frame_size") is JsonElement size
             ? new JsonArray(size[0].GetInt32(), size[1].GetInt32())
             : null;
-        return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame };
+        JsonObject? animation = null;
+        if (frame is not null && asset.Json.TryGetProperty("animations", out JsonElement animations) && animations.EnumerateObject().FirstOrDefault() is { Value.ValueKind: JsonValueKind.Object } first)
+        {
+            animation = new JsonObject
+            {
+                ["frames"] = new JsonArray(first.Value.GetProperty("frames").EnumerateArray().Select(played => (JsonNode)played.GetInt32()).ToArray()),
+                ["fps"] = first.Value.GetProperty("fps").GetDouble(),
+                ["loop"] = !first.Value.TryGetProperty("loop", out JsonElement repeat) || repeat.GetBoolean(),
+            };
+        }
+
+        return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame, ["animation"] = animation };
     }
 
     private static JsonArray Spells(IEnumerable<Definition> spells)
