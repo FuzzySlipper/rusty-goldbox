@@ -251,7 +251,7 @@ export function mountProductUi(root, context) {
       const selected = (view.lifepath.careers ?? []).find((career) => career.id === lifepathCareer.value);
       const tableChoices = (selected?.skillTables ?? []).map((table) => typeof table === 'string' ? { id: table, name: table } : table);
       fill(lifepathTables, tableChoices);
-      const benefitChoices = (view.lifepath.benefitKinds ?? [
+      const benefitChoices = (selected?.benefitKinds ?? view.lifepath.benefitKinds ?? [
         { id: 'cash', name: 'Cash' },
         { id: 'material', name: 'Material' },
       ]).map((benefit) => typeof benefit === 'string' ? { id: benefit, name: benefit } : benefit);

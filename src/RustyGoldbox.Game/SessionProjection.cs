@@ -285,6 +285,7 @@ internal static class SessionProjection
                     ["id"] = career.Id,
                     ["name"] = career.Name,
                     ["skillTables"] = new JsonArray(career.SkillTables.Select(table => (JsonNode)table).ToArray()),
+                    ["benefitKinds"] = new JsonArray(career.BenefitKinds.Select(kind => (JsonNode)kind).ToArray()),
                 }).ToArray()),
             };
         }

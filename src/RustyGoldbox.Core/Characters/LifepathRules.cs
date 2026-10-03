@@ -9,7 +9,11 @@ namespace RustyGoldbox.Core.Characters;
 public static partial class CharacterRules
 {
     /// <summary>One career offered by a lifepath, for CLI and Game projections.</summary>
-    public sealed record LifepathCareerChoice(string Id, string Name, IReadOnlyList<string> SkillTables);
+    public sealed record LifepathCareerChoice(
+        string Id,
+        string Name,
+        IReadOnlyList<string> SkillTables,
+        IReadOnlyList<string> BenefitKinds);
 
     /// <summary>Finds a lifepath and reports an actionable reference diagnostic.</summary>
     public static Definition? FindLifepath(RuleSet rules, string reference, List<ModuleDiagnostic> problems)
@@ -24,7 +28,8 @@ public static partial class CharacterRules
             new LifepathCareerChoice(
                 career.GetProperty("id").GetString()!,
                 career.GetProperty("name").GetString()!,
-                career.GetProperty("skills").EnumerateArray().Select(table => table.GetProperty("id").GetString()!).ToList())).ToList();
+                career.GetProperty("skills").EnumerateArray().Select(table => table.GetProperty("id").GetString()!).ToList(),
+                new[] { "cash", "material" }.Where(kind => career.GetProperty("benefits").TryGetProperty(kind, out _)).ToList())).ToList();
     }
 
     private static bool RunLifepath(
