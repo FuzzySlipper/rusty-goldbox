@@ -48,9 +48,10 @@ leaves out what needs a table to decide:
   with style), standing in for an aspect with free invokes.
 - Turn order uses Notice (the Fate Core way) rather than the default elective
   ("popcorn") order, which needs players choosing who goes next.
-- Conflicts have no zones: everyone can reach everyone. Ties and success with
-  style give no boost. Defending is always with Athletics (physical) or Will
-  (mental).
+- Conflicts use three shared zones in the combat field; everyone in one zone
+  can reach everyone there (distance 0), and moving between zones is part of a
+  movement action. Ties and success with style give no boost. Defending is
+  always with Athletics (physical) or Will (mental).
 - A hit is absorbed with stress first, then the smallest consequence (or pair)
   that covers the rest. The extra mild consequence at Superb Physique or Will
   is not modelled.

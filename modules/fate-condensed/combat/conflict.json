@@ -7,6 +7,11 @@
   "initiative_order": "highest-first",
   "initiative_each": "combat",
   "round_seconds": 6,
+  "field": {
+    "width": 3,
+    "height": 1,
+    "mode": "zones"
+  },
   "budget": [
     {
       "id": "action",

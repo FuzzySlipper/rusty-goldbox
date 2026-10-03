@@ -520,6 +520,28 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ZonesShareCellsAndDistanceZeroWithinOne()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/zones.json", """
+            { "type": "combat", "id": "zones", "name": "Zones", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "field": { "width": 3, "height": 1, "mode": "zones" }, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        CombatField fixture = CombatField.Of(rules.Find(DefinitionTypes.Combat, "zones", out _)!)!;
+        Assert.True(fixture.Zones);
+        Assert.Equal([new Cell(0, 0), new Cell(0, 0), new Cell(0, 0)], fixture.Deploy(0, 3));
+        Assert.Equal(0, fixture.Distance(new Cell(0, 0), new Cell(0, 0)));
+        Assert.Equal(2, fixture.Distance(new Cell(0, 0), new Cell(2, 0)));
+
+        RuleSet fate = Rules.LoadValid(Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed"));
+        CombatField fateField = CombatField.Of(fate.Find(DefinitionTypes.Combat, "conflict", out _)!)!;
+        Assert.True(fateField.Zones);
+        Assert.Equal([new Cell(0, 0), new Cell(0, 0)], fateField.Deploy(0, 2));
+    }
+
+    [Fact]
     public void AnEncounterCanChooseStartingCellsAndForceSurprise()
     {
         using TempModules modules = new();

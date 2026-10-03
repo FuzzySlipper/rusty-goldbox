@@ -409,6 +409,7 @@ public static class DefinitionTypes
             [
                 new("width", new IntegerKind(), true, "Cells across; the first side starts on the left edge and the second on the right."),
                 new("height", new IntegerKind(), true, "Cells down."),
+                new("mode", new EnumKind(["grid", "zones"]), false, "A grid (the default), where one creature occupies a cell, or zones, where a cell is a shared zone and several creatures may stand together."),
                 new("metric", new EnumKind(["chebyshev", "manhattan"]), false, "How distance counts: a diagonal step is 1 (chebyshev, the default) or there are only straight steps (manhattan)."),
                 new("terrain", new MapKind(new TextKind(), new ObjectKind(
                 [
@@ -417,7 +418,7 @@ public static class DefinitionTypes
                     new("cost", new IntegerKind(), false, "Movement it takes to enter, for example 2 for rubble; without it, 1."),
                     new("blocks_sight", new BooleanKind(), false, "Whether it blocks line of sight: an action with a range can't target a creature behind it. Without it, false."),
                 ])), false, "Kinds of ground an encounter's terrain rows may use, each by a one-character key other than \".\" (open ground), for example { \"#\": { \"name\": \"Pillar\", \"passable\": false, \"blocks_sight\": true }, \"~\": { \"name\": \"Mud\", \"cost\": 2 } }."),
-            ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells within which they need line of sight to their target, and the move operation moves them, round obstacles. Creatures have no facing. Without it, fights have no positions and everyone is in reach (combat.distance is 1)."),
+            ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells within which they need line of sight to their target, and the move operation moves them, round obstacles. In zones mode, cells are shared zones and several creatures may stand together; without a field, fights have no positions and everyone is in reach (combat.distance is 1)."),
             new("rolled", new EnumKind(["turn", "round"]), false, "What self.rolled.<check> counts: checks made since the creature's own turn began (\"turn\", the default; a multiple attack penalty) or since the round began (\"round\"; a penalty for each defence after the first in a round)."),
             new("actions", new ListKind(Use), false, "Actions every creature in these fights can take, after its own, such as attacking with any skill where a system lets anyone try anything; uses as in classes and monsters."),
             new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down each round, though it takes no actions (bleeding out, a save to stabilise). It does so at its place in the turn order; with initiative each round a defeated creature isn't rolled for, so it does so at the round's end, as does one out of the fight from the start. Without it, a defeated creature's conditions wait."),

@@ -976,9 +976,11 @@ public sealed class CombatRunner
         decimal? beyond = operation.TryGetProperty("beyond", out _) ? Number(owner, $"{path}.beyond", scope) : null;
         bool provokes = !operation.TryGetProperty("provokes", out JsonElement provoking) || provoking.GetBoolean();
         bool escape = away && operation.TryGetProperty("escape", out JsonElement escaping) && escaping.GetBoolean();
-        HashSet<Cell> blocked = Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
-            .Select(member => member.Creature.Position!.Value)
-            .ToHashSet();
+        HashSet<Cell> blocked = _field.Zones
+            ? []
+            : Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
+                .Select(member => member.Creature.Position!.Value)
+                .ToHashSet();
         Dictionary<Cell, int>? toGoal = away ? null : CostsToReach(goal, within, blocked);
         Cell here = start;
         decimal spent = 0;

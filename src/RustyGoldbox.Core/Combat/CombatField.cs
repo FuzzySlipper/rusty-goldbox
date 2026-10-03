@@ -23,11 +23,12 @@ public sealed class CombatField
 
     private readonly Dictionary<Cell, Terrain> _terrain;
 
-    private CombatField(Definition combat, int width, int height, bool diagonal, Dictionary<Cell, Terrain> terrain)
+    private CombatField(Definition combat, int width, int height, bool zones, bool diagonal, Dictionary<Cell, Terrain> terrain)
     {
         Combat = combat;
         Width = width;
         Height = height;
+        Zones = zones;
         Diagonal = diagonal;
         _terrain = terrain;
     }
@@ -38,6 +39,9 @@ public sealed class CombatField
     public int Width { get; }
 
     public int Height { get; }
+
+    /// <summary>Whether cells are shared zones rather than single-occupant grid squares.</summary>
+    public bool Zones { get; }
 
     /// <summary>Whether a diagonal step counts as one (chebyshev) rather than not existing (manhattan).</summary>
     public bool Diagonal { get; }
@@ -57,6 +61,7 @@ public sealed class CombatField
             return null;
         }
 
+        bool zones = field.TryGetProperty("mode", out JsonElement mode) && mode.GetString() == "zones";
         bool diagonal = !field.TryGetProperty("metric", out JsonElement metric) || metric.GetString() == "chebyshev";
         Dictionary<char, Terrain> kinds = Kinds(field);
         Dictionary<Cell, Terrain> terrain = [];
@@ -78,7 +83,7 @@ public sealed class CombatField
             }
         }
 
-        return new CombatField(combat, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), diagonal, terrain);
+        return new CombatField(combat, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), zones, diagonal, terrain);
     }
 
     /// <summary>The terrain kinds a combat definition's field declares, by key.</summary>
@@ -199,6 +204,12 @@ public sealed class CombatField
         if (open.Count == 0)
         {
             open.Add(new Cell(side % 2 == 0 ? 0 : Width - 1, rows[0]));
+        }
+
+        if (Zones)
+        {
+            Cell zone = anchor ?? open[0];
+            return Enumerable.Repeat(zone, count).ToList();
         }
 
         List<Cell> cells = [];
