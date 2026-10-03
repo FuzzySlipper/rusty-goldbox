@@ -277,7 +277,7 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("kind", new TextKind(), true, "What sort of item it is, in the ruleset's own words, for example \"weapon\" or \"armour\". Uses with from_item match it."),
-            new("cost", new NumberKind(), true, "Price, in the ruleset's money."),
+            new("cost", new NumberKind(), true, "Price, at least 0, in the ruleset's money. Shops charge this and buy back at the economy's sell_fraction of it."),
             new("weight", new NumberKind(), true, "Weight, in the ruleset's unit."),
             new("parameters", new MapKind(new TextKind(), CombatNumber), false, "Values the item gives actions used with it (uses with from_item), for example { \"damage\": \"1d8\" }. May read target, for example to deal more against large creatures."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers while equipped, for example armour lowering \"ac\"."),
@@ -285,6 +285,12 @@ public static class DefinitionTypes
         """
         { "type": "item", "id": "long_sword", "name": "Long sword", "kind": "weapon", "cost": 15, "weight": 7, "parameters": { "damage": "if target.size == 'large' then 1d12 else 1d8" } }
         """);
+
+    public static DefinitionType Economy { get; } = new(
+        "economy",
+        "The ruleset's shop resale policy. A module set has at most one; shop events need one. Purchases use item cost and pooled character gold; proceeds are shared evenly, with the remainder to the first character.",
+        [new("sell_fraction", new NumberKind(), true, "The fraction of item cost paid for a carried item, from 0 to 1. Prices keep fractional gold without rounding.")],
+        """{ "type": "economy", "id": "standard", "sell_fraction": 0.5 }""");
 
     public static DefinitionType Spell { get; } = new(
         "spell",
@@ -660,7 +666,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Reaction, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure, Skin,
     ];
 

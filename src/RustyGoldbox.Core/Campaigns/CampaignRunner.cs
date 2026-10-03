@@ -18,10 +18,10 @@ namespace RustyGoldbox.Core.Campaigns;
 /// game resume exactly.
 /// </summary>
 /// <exception cref="RuleFailure">A rule expression failed; it names the definition, file and path.</exception>
-public sealed class CampaignRunner
+public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -108,6 +108,12 @@ public sealed class CampaignRunner
             return facts;
         }
 
+        if (_state.PendingShop is not null && verb is not ("buy" or "sell" or "leave" or "look" or "status"))
+        {
+            facts.Add(new RefusedFact("leave the shop first, or trade with buy <n> or sell <n>."));
+            return facts;
+        }
+
         switch (verb)
         {
             case "forward" or "back" when words.Length == 1:
@@ -121,11 +127,25 @@ public sealed class CampaignRunner
             case "choose" when words.Length == 2 && int.TryParse(words[1], out int number):
                 Choose(number, dice, facts);
                 break;
+            case "buy" when words.Length == 2 && int.TryParse(words[1], out int stock):
+                Buy(stock, facts);
+                break;
+            case "sell" when words.Length == 2 && int.TryParse(words[1], out int carried):
+                Sell(carried, facts);
+                break;
+            case "leave" when words.Length == 1:
+                LeaveShop(dice, facts);
+                break;
             case "look" when words.Length == 1:
                 facts.Add(Look());
                 break;
             case "status" when words.Length == 1:
                 facts.Add(Status());
+                if (Shop() is ShopFact shop)
+                {
+                    facts.Add(shop);
+                }
+
                 break;
             case "level" when words.Length >= 2 && int.TryParse(words[1], out int member):
                 Level(member, words[2..], dice, facts);
@@ -261,6 +281,10 @@ public sealed class CampaignRunner
                 List<(int Number, string Label, int Index)> offered = Offered(evt);
                 facts.Add(new MenuFact(json.GetProperty("text").GetString()!, offered.Select(option => (option.Number, option.Label)).ToList()));
                 _state.PendingMenu = evt;
+                return null;
+            case "shop":
+                _state.PendingShop = evt;
+                facts.Add(Shop()!);
                 return null;
             case "set":
                 Definition variable = _rules.Reference(evt, "$.variable");

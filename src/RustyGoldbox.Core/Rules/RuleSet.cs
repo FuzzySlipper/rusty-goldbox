@@ -50,6 +50,9 @@ public sealed class RuleSet
     /// <summary>The set's advancement definition, if it has one; without one each class has its own experience.</summary>
     public Definition? Advancement { get; internal set; }
 
+    /// <summary>The ruleset's shop resale policy, when it declares one.</summary>
+    public Definition? Economy { get; internal set; }
+
     /// <summary>Whether experience is divided between a character's classes, each advancing on its own table.</summary>
     public bool ExperienceSplit => Advancement?.Json.GetProperty("experience").GetString() == "split";
 

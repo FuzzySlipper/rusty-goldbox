@@ -97,3 +97,5 @@ small:
   still standing. Experience for treasure brought home (p. 124) and the
   bonus for a high prime requisite are not awarded yet.
 - Armour movement limits, thief skills and turning undead are not modelled yet.
+- Shops buy carried gear at half its listed cost (`economy/standard.json`).
+  This is an original sample resale policy, not a rule adapted from the source.

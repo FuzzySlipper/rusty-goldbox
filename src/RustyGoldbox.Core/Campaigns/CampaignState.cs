@@ -32,6 +32,9 @@ public sealed class CampaignState
     /// <summary>A menu waiting for a choice.</summary>
     public Definition? PendingMenu { get; set; }
 
+    /// <summary>A shop waiting for buy, sell or leave.</summary>
+    public Definition? PendingShop { get; set; }
+
     /// <summary>The picture the latest event showed, until the party moves or another replaces it.</summary>
     public Definition? Picture { get; set; }
 

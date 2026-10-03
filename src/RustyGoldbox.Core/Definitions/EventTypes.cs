@@ -107,6 +107,23 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "quest_done", "kind": "experience", "amount": "500", "text": "The abbot thanks you.", "next": "abbey" }""");
 
+    public static DefinitionType Shop { get; } = new(
+        "shop",
+        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
+        [
+            new("text", new TextKind(), true, "The shopkeeper's greeting."),
+            new("items", new ListKind(new ObjectKind(
+            [
+                new("item", new ReferenceKind("item"), true, "An item for sale, at its cost."),
+                new("when", Guard, false, "Offered only when this campaign condition holds."),
+            ])), true, "Stock in order; buy takes the number shown. An empty list is a shop that only buys."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "next": "farewell" }""");
+
     public static DefinitionType End { get; } = new(
         "end",
         "Ends the adventure.",
@@ -124,7 +141,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

@@ -610,6 +610,13 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                         rolls = fact.Rolls.Select(RollJson),
                         combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
                         media = fact is MediaFact shown ? new { picture = shown.Picture?.QualifiedId, sound = shown.Sound?.QualifiedId, music = shown.Music?.QualifiedId } : null,
+                        shop = fact is ShopFact shop ? new
+                        {
+                            text = shop.Text,
+                            gold = shop.Gold,
+                            stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price }),
+                            carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, holder = offer.Holder }),
+                        } : null,
                     }),
                 }),
                 position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },

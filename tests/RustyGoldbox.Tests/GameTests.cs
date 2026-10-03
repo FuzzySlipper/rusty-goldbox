@@ -523,6 +523,47 @@ public sealed class GameTests
     }
 
     /// <summary>A session over the packed sample modules, with the sample campaign open on seed 11.</summary>
+    [Fact]
+    public void ShopCommandsPricesAndSavedTradesReachTheGameProjection()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = Path.Combine(scratch.Root, "persistence") });
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            Assert.Single(session.Party).Gold = 2;
+            Run(session, engine, """{ "action": "begin" }""");
+            Run(session, engine, """{ "action": "play", "command": "right" }""");
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            JsonObject Projected() => SessionProjection.Build(session);
+            JsonNode shop = Projected()["shop"]!;
+            Assert.Equal(2m, shop["gold"]!.GetValue<decimal>());
+            Assert.Equal("classic:dagger", Assert.Single(shop["stock"]!.AsArray())!["id"]!.GetValue<string>());
+            Assert.Equal(2m, shop["stock"]![0]!["price"]!.GetValue<decimal>());
+
+            Run(session, engine, """{ "action": "play", "command": "buy 1" }""");
+            shop = Projected()["shop"]!;
+            Assert.Equal(0m, shop["gold"]!.GetValue<decimal>());
+            Assert.Equal(1m, Assert.Single(shop["carried"]!.AsArray())!["price"]!.GetValue<decimal>());
+            Run(session, engine, """{ "action": "save", "slot": "shop" }""");
+            session.Quit();
+            Run(session, engine, """{ "action": "load", "slot": "shop" }""");
+            Assert.NotNull(session.Runner!.State.PendingShop);
+            Assert.Single(Projected()["shop"]!["carried"]!.AsArray());
+            Run(session, engine, """{ "action": "play", "command": "sell 1" }""");
+            Assert.Empty(Projected()["shop"]!["carried"]!.AsArray());
+            Assert.Equal(1m, Projected()["shop"]!["gold"]!.GetValue<decimal>());
+            Run(session, engine, """{ "action": "play", "command": "leave" }""");
+            Assert.Null(Projected()["shop"]);
+            Assert.Contains("The outfitter wishes you safe travels.", session.Log);
+        });
+    }
+
     private static GameSession OpenSession(TempModules scratch, IEngineContext engine)
     {
         List<string> containers = Containers(scratch);

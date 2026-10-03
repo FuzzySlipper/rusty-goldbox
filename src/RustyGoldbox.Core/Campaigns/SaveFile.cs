@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "picture", "music", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "picture", "music", "inventory", "ended", "party",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -95,6 +95,7 @@ public static class SaveFile
                 writer.WriteString("pending_menu", state.PendingMenu.QualifiedId);
             }
 
+            writer.WriteString("pending_shop", state.PendingShop?.QualifiedId);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);
             writer.WriteStartArray("inventory");
@@ -349,6 +350,24 @@ public static class SaveFile
                 if (state.PendingMenu is not null && state.PendingMenu.Json.GetProperty("kind").GetString() != "menu")
                 {
                     Error("$.pending_menu", $"{state.PendingMenu.QualifiedId} is not a menu event.");
+                }
+            }
+
+            if (!root.TryGetProperty("pending_shop", out JsonElement shop) || shop.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
+            {
+                Error("$.pending_shop", "pending_shop must be a shop event ID, or null when no shop is open.");
+            }
+            else if (shop.ValueKind == JsonValueKind.String)
+            {
+                state.PendingShop = Find(root, "pending_shop", DefinitionTypes.Event);
+                if (state.PendingShop is not null && state.PendingShop.Json.GetProperty("kind").GetString() != "shop")
+                {
+                    Error("$.pending_shop", $"{state.PendingShop.QualifiedId} is not a shop event.");
+                }
+
+                if (state.PendingMenu is not null)
+                {
+                    Error("$.pending_shop", "A save cannot wait at a menu and a shop at the same time; clear one pending event.");
                 }
             }
 

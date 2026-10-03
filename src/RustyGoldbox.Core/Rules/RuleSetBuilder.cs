@@ -41,6 +41,7 @@ public sealed class RuleSetBuilder
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
         builder.CheckAdvancement();
+        builder.CheckEconomy();
         builder.CheckGrants();
         builder.CheckActions();
         builder.CheckCampaigns();
@@ -1163,11 +1164,29 @@ public sealed class RuleSetBuilder
         }
     }
 
+    private void CheckEconomy()
+    {
+        List<Definition> economies = _rules.OfType(DefinitionTypes.Economy).ToList();
+        _rules.Economy = economies.FirstOrDefault();
+        foreach (Definition extra in economies.Skip(1))
+        {
+            Error(extra, "economy.duplicate", "$.id", $"A module set has at most one economy; {economies[0].QualifiedId} already defines it. Patch that one instead.");
+        }
+
+        foreach (Definition economy in economies.Where(economy => _manifests[economy.Module].Kind != ModuleKind.Ruleset))
+        {
+            Error(economy, "economy.module", "$", "The economy belongs in the ruleset. Extensions and campaigns can patch its sell_fraction.");
+        }
+    }
+
     private void CheckEvent(Definition definition)
     {
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "shop" when _rules.Economy is null:
+                Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
+                break;
             case "set":
                 if (_rules.References.TryGetValue((definition, "$.variable"), out Definition? variable))
                 {

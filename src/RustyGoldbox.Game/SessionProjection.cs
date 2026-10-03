@@ -110,6 +110,13 @@ internal static class SessionProjection
                 ["label"] = option.Label,
             }).ToArray());
             projection["commands"] = CampaignRunner.CommandList;
+            projection["shop"] = runner.Shop() is ShopFact shop ? new JsonObject
+            {
+                ["text"] = shop.Text,
+                ["gold"] = shop.Gold,
+                ["stock"] = Offers(shop.Stock),
+                ["carried"] = Offers(shop.Carried),
+            } : null;
             projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
@@ -195,6 +202,18 @@ internal static class SessionProjection
     }
 
     private static JsonArray Strings(IEnumerable<string> lines) => new(lines.Select(line => (JsonNode)line).ToArray());
+
+    private static JsonArray Offers(IReadOnlyList<ShopOffer> offers)
+    {
+        return new JsonArray(offers.Select(offer => (JsonNode)new JsonObject
+        {
+            ["number"] = offer.Number,
+            ["id"] = offer.Item.QualifiedId,
+            ["name"] = offer.Item.Name,
+            ["price"] = offer.Price,
+            ["holder"] = offer.Holder,
+        }).ToArray());
+    }
 
     private static JsonArray Choices(RuleSet rules, DefinitionType type)
     {

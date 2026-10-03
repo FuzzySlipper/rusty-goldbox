@@ -93,6 +93,16 @@ public static class DefinitionReader
                 CheckArea(root);
             }
 
+            if (type == DefinitionTypes.Item && diagnostics.Count == _errorsBefore && root.GetProperty("cost").GetDecimal() < 0)
+            {
+                Error("item.cost", "$.cost", "Item cost must be at least 0; shops cannot buy or sell at a negative price.");
+            }
+
+            if (type == DefinitionTypes.Economy && diagnostics.Count == _errorsBefore && root.GetProperty("sell_fraction").GetDecimal() is < 0 or > 1)
+            {
+                Error("economy.sell-fraction", "$.sell_fraction", "sell_fraction must be from 0 to 1, for example 0.5 for half the item's cost.");
+            }
+
             if (type == DefinitionTypes.Event && diagnostics.Count == _errorsBefore && root.GetProperty("kind").GetString() == "menu"
                 && root.GetProperty("options").EnumerateArray().All(option => option.TryGetProperty("when", out _)))
             {

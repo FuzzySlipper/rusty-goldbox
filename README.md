@@ -110,6 +110,13 @@ dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-cryp
 dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --load game.json --script more.script
 ```
 
+The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
+stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
+scripts and the Game's shop buttons. Gold stays on characters and purchases
+join party inventory; selling equipped gear removes it from its wearer. The
+ruleset declares resale in `economy.sell_fraction` (`goldbox schema economy`),
+and `goldbox schema events` describes the shop format. Saves keep an open shop.
+
 With `--store <dir>`, `--load` and `--save` name save slots in that Engine
 persistence root instead of files, such as the Game's under `rusty dev`:
 

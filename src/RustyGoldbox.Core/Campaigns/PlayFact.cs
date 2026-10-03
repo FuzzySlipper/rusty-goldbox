@@ -114,6 +114,28 @@ public sealed record TreasureFact(decimal Gold, IReadOnlyList<string> Items) : P
     }
 }
 
+/// <summary>A numbered item at its purchase or resale price; Holder names equipped gear.</summary>
+public sealed record ShopOffer(int Number, Definition Item, decimal Price, string? Holder = null);
+
+public sealed record ShopFact(string Text, decimal Gold, IReadOnlyList<ShopOffer> Stock, IReadOnlyList<ShopOffer> Carried) : PlayFact
+{
+    public override string Kind => "shop";
+
+    public override string Describe()
+    {
+        string Offers(IReadOnlyList<ShopOffer> offers) => offers.Count == 0 ? "none" : string.Join("  ", offers.Select(offer =>
+            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")} {N(offer.Price)} gold"));
+        return $"{Text} Gold: {N(Gold)}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
+    }
+}
+
+public sealed record TradeFact(bool Bought, string Item, decimal Gold) : PlayFact
+{
+    public override string Kind => Bought ? "bought" : "sold";
+
+    public override string Describe() => $"The party {(Bought ? "buys" : "sells")} {Item} for {N(Gold)} gold.";
+}
+
 public enum FightOutcome
 {
     Won,

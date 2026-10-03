@@ -396,10 +396,18 @@ Combat is built so that no die convention is assumed:
   temple, training, rest, NPC join/leave, set/test variable, teleport, a
   conditional branch, chain-to, and end adventure. Each event names its
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
-  branch can be guarded by an expression. Text, menu and combat events may
+  branch can be guarded by an expression. Text, menu, shop and combat events may
   bring a `picture` (shown until the party moves or another event shows one),
   a `sound` (played once) and `music` (looping until another event's music);
   the play transcript names them, and saves keep the picture and music.
+- **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
+  an item and an optional campaign guard; stock is unlimited and offered at
+  the item's cost. A ruleset's single `economy` definition declares
+  `sell_fraction` (0 to 1). Carried items, including equipped gear, sell at
+  cost times that fraction, keeping fractional gold. Purchases spend character
+  gold in party order; proceeds use the treasure split (whole-gold shares,
+  remainder to the first member). Bought items join party inventory. Leaving
+  follows the event's `next`, and saves retain an open shop.
 - **Experience** comes from felled monsters and experience events, shared
   among the survivors (or the whole party, or given whole to each character,
   as the ruleset says). A level that

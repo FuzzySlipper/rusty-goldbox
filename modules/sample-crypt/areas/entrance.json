@@ -58,6 +58,10 @@
       "zone": "crypt",
       "backdrop": "placeholder-art:crypt",
       "event": "stairs"
+    },
+    {
+      "at": [1, 2],
+      "event": "outfitter"
     }
   ],
   "entries": {

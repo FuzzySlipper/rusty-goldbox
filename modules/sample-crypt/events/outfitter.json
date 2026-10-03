@@ -1,0 +1,11 @@
+{
+  "type": "event",
+  "id": "outfitter",
+  "kind": "shop",
+  "text": "A travelling outfitter offers supplies by the crypt gate.",
+  "items": [
+    { "item": "classic:dagger" },
+    { "item": "classic:long_sword", "when": "campaign.var.guards_defeated" }
+  ],
+  "next": "farewell"
+}

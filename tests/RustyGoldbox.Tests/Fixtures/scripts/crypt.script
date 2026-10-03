@@ -28,6 +28,9 @@ forward
 forward       # [0,2]
 left
 forward       # [1,2]
+buy 1         # a dagger at its listed cost
+sell 1        # sell one carried item at half cost
+leave         # the shop's farewell, then movement resumes
 left
 forward       # [1,1]
 right

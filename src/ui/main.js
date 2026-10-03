@@ -308,13 +308,23 @@ export function mountProductUi(root, context) {
   const renderPlay = (view) => {
     const menu = row(...(view.menu ?? []).map((option) =>
       button(`${option.number}. ${option.label}`, () => send({ action: 'play', command: `choose ${option.number}` }))));
-    const moves = row(...['left', 'forward', 'right', 'back', 'around', 'look', 'status'].map((move) =>
+    const moves = row(...(view.shop ? ['look', 'status'] : ['left', 'forward', 'right', 'back', 'around', 'look', 'status']).map((move) =>
       button(move, () => send({ action: 'play', command: move }))));
+    const shop = view.shop ? fragment(
+      element('h2', { style: HEADING_STYLE }, view.shop.text),
+      element('div', {}, `Party gold: ${view.shop.gold}`),
+      element('div', {}, 'Buy'),
+      row(...view.shop.stock.map((offer) => button(`${offer.number}. ${offer.name} — ${offer.price} gold`,
+        () => send({ action: 'play', command: `buy ${offer.number}` })))),
+      element('div', {}, 'Sell'),
+      row(...view.shop.carried.map((offer) => button(`${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''} — ${offer.price} gold`,
+        () => send({ action: 'play', command: `sell ${offer.number}` })))),
+      row(button('Leave shop', () => send({ action: 'play', command: 'leave' })))) : '';
     const log = element('pre', { id: 'rusty-goldbox-log', style: LOG_STYLE }, (view.log ?? []).join('\n'));
     queueMicrotask(() => { log.scrollTop = log.scrollHeight; });
     return fragment(
       element('pre', { id: 'rusty-goldbox-map', style: 'margin:0 0 6px;line-height:1.05' }, view.map ?? ''),
-      menu, moves, row(command),
+      menu, shop, moves, row(command),
       log,
       renderRoster(view.party ?? []),
       ...(view.party ?? []).flatMap((member, index) => [...renderSpells(member, index), ...renderMemorised(member, index)]),

@@ -5,13 +5,14 @@ Crypt entrance (sample-crypt:entrance), 4 x 3; x runs east, y south, from 0
 +  +--+--+DD+
 |  |   <S|!v|
 +  +  +--+  +
-|^G   |   !1|
+|^G ! |   !1|
 +--+--+--+--+
 Legend: '--' '|' wall, 'DD' 'D' door, 'SS' 'S' secret door; !1 once-only event, !<arrow> event when facing that way, <arrow><letter> entry.
   [0, 0] event bones, once; zone hall; backdrop placeholder-art:hall
   [3, 1] event barred_door, facing south; zone crypt; backdrop placeholder-art:crypt
   [3, 2] event guards, once; zone crypt; backdrop placeholder-art:crypt
   [2, 1] event stairs; zone crypt; backdrop placeholder-art:crypt
+  [1, 2] event outfitter
   [0, 2] entry gate, facing north
   [2, 1] entry stairs_up, facing west
 [exit 0]
@@ -117,6 +118,16 @@ seed 1
   The party faces east.
 > forward
   The party moves to [1, 2], facing east.
+  A travelling outfitter offers supplies by the crypt gate. Gold: 340. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+> buy 1
+  The party buys Dagger for 2 gold.
+  A travelling outfitter offers supplies by the crypt gate. Gold: 338. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Dagger 1 gold  [3] Long sword (Ada) 7.5 gold  [4] Chain mail (Ada) 37.5 gold  [5] Shield (Ada) 6 gold  [6] Heavy mace (Brom) 5 gold  [7] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+> sell 1
+  The party sells Dagger for 1 gold.
+  A travelling outfitter offers supplies by the crypt gate. Gold: 339. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+> leave
+  The party leaves the shop.
+  The outfitter wishes you safe travels.
 > left
   The party faces north.
 > forward
@@ -151,6 +162,10 @@ seed 1
   The party faces east.
 > forward
   The party moves to [1, 2], facing east.
+  A travelling outfitter offers supplies by the crypt gate. Gold: 240. Buy: [1] Dagger 2 gold. Sell: [1] Long sword (Ada) 7.5 gold  [2] Chain mail (Ada) 37.5 gold  [3] Shield (Ada) 6 gold  [4] Heavy mace (Brom) 5 gold  [5] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+> leave
+  The party leaves the shop.
+  The outfitter wishes you safe travels.
 > left
   The party faces north.
 > forward
