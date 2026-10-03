@@ -2,6 +2,7 @@
   "type": "check",
   "id": "dagger",
   "name": "Melee Weapon (Dagger)",
+  "skill": "dagger",
   "roll": "1d100",
   "target": "self.dagger",
   "succeeds": "at-most",

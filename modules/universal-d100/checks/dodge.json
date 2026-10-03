@@ -2,6 +2,7 @@
   "type": "check",
   "id": "dodge",
   "name": "Dodge",
+  "skill": "dodge",
   "roll": "1d100",
   "target": "self.dodge - 30 * self.rolled.dodge",
   "succeeds": "at-most",

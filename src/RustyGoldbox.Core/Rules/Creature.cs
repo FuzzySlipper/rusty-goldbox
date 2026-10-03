@@ -71,6 +71,9 @@ public sealed class Creature
     /// <summary>Attribute scores and stat values given directly; they replace computed values.</summary>
     public Dictionary<string, decimal> Values { get; } = [];
 
+    /// <summary>Persistent character advancement bonuses added after authored modifiers.</summary>
+    public Dictionary<string, decimal> AdvancementBonuses { get; } = [];
+
     public List<Definition> Conditions { get; } = [];
 
     /// <summary>Values conditions were applied with, by condition; a condition without an entry has its defaults.</summary>

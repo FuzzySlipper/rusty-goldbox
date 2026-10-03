@@ -38,6 +38,7 @@ None.
 | Definitions | Source (Basic Roleplaying ORC Content Document) |
 | --- | --- |
 | `attributes/`, `creation/standard` (3D6, SIZ and INT 2D6+6; human limits) | Ch. 2 Creating a Character: Step One, Characteristics |
+| `advancement/improvement`, `checks/` skill fields | Ch. 5 Character Improvement: successful skill use gives one experience check per adventure; the experience roll adds half INT (rounded up), succeeds when it rolls over the current skill, and a success adds 1D6 |
 | `tracks/hit_points`, `derived/major_wound`, `dm_d4`, `dm_d6` | Derived Characteristics: Hit Points, Major Wounds, Damage Modifier Table |
 | `derived/` skills (base chances: Sword, Axe and Spear 15%, Dagger and Mace 25%, Bow 10%, Brawl 25%, Dodge DEX×2, Shield 15%) | Skill list base chances; weapon and shield tables |
 | `checks/` (d100 at or under the skill; critical at 1/20, special at 1/5, fumble at the highest 1/20 of the failure chance) | Ch. 6 Combat: Levels of Success and Failure |
@@ -54,7 +55,10 @@ examples written for this module.
 
 - Skill points aren't spent at creation: a profession grants a fixed,
   combat-heavy spread of skill bonuses instead of the source's professional and
-  personal skill points. Skill category modifiers aren't used.
+  personal skill points. Skill category modifiers aren't used. Skill
+  improvement uses the source's experience-check procedure, expressed as one
+  data check per declared skill; campaign timing and easy-roll exclusions stay
+  outside this module's generic check metadata.
 - The Attack and Defense Matrix is reduced to levels: the defence's level
   (critical 3, special 2, success 1) is taken from the attack's; a difference
   of 3 is a critical (maximum damage, armour ignored), 1 or 2 a normal hit.
@@ -63,4 +67,5 @@ examples written for this module.
 - A major wound puts the creature in shock instead of rolling on the Major
   Wound Table; there is no Luck roll or characteristic loss.
 - Everyone acts once a round in DEX order; movement, engagement and hit
-  locations aren't used. There is no experience or skill improvement.
+  locations aren't used. There is no class experience or level advancement;
+  skill improvement uses the ruleset's marked-skill checks.

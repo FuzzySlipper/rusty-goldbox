@@ -2,6 +2,7 @@
   "type": "check",
   "id": "sword",
   "name": "Melee Weapon (Sword)",
+  "skill": "sword",
   "roll": "1d100",
   "target": "self.sword",
   "succeeds": "at-most",

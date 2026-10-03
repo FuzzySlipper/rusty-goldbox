@@ -37,6 +37,18 @@ public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
 /// <summary>A level gained: the character level reached, the class it was taken in, and the hit points it added.</summary>
 public sealed record LevelGain(int Level, Definition Class, decimal Amount);
 
+/// <summary>A skill moved by a milestone. IDs are ruleset stat IDs, not display names.</summary>
+public sealed record SkillSwap(string From, string To);
+
+/// <summary>The choices supplied when a milestone grants raises, swaps or features.</summary>
+public sealed record MilestoneChoices(
+    IReadOnlyDictionary<string, decimal>? Raises = null,
+    IReadOnlyList<SkillSwap>? Swaps = null,
+    IReadOnlyList<string>? Features = null);
+
+/// <summary>The result of one marked-skill improvement check.</summary>
+public sealed record SkillImprovement(string Skill, int Marks, decimal Amount, bool Improved);
+
 /// <summary>
 /// Creates and advances characters from the rule set's character-creation,
 /// race and class definitions. Problems are rule diagnostics, not exceptions.
@@ -687,6 +699,253 @@ public static class CharacterRules
     /// level waits.
     /// </summary>
     public static bool RequiresTraining(RuleSet rules) => rules.Advancement?.Json.TryGetProperty("training", out _) == true;
+
+    /// <summary>
+    /// Records one successful use of a skill for an improvement advancement.
+    /// Combat checks call this through the character attached to their party
+    /// combatant; a ruleset without improvement advancement simply has no mark
+    /// to record.
+    /// </summary>
+    public static bool MarkSkillUse(RuleSet rules, Character character, string skill, List<ModuleDiagnostic> problems)
+    {
+        if (rules.AdvancementKind != "improvement")
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "This ruleset does not select improvement advancement."));
+            return false;
+        }
+
+        if (!rules.Stats.ContainsKey(skill))
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", $"'{skill}' is not a stat in this ruleset; a successful check can only mark a declared skill."));
+            return false;
+        }
+
+        if (ImprovementCheck(rules, skill) is null)
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", $"The advancement has no improvement check for skill '{skill}'; add it to advancement.improvement.checks or remove the check's skill."));
+            return false;
+        }
+
+        // BRP grants one experience check per skill per adventure; repeated
+        // successful uses keep that check rather than creating a queue of
+        // identical rolls.
+        character.SkillMarks[skill] = 1;
+        return true;
+    }
+
+    /// <summary>
+    /// Runs the ruleset-selected improvement check for every marked skill. A
+    /// mark is consumed after a successful or failed check; a malformed
+    /// expression leaves it in place so a caller can report and fix the
+    /// authored rule without silently losing progress.
+    /// </summary>
+    public static List<SkillImprovement> ImproveMarkedSkills(RuleSet rules, Character character, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        List<SkillImprovement> results = [];
+        if (rules.AdvancementKind != "improvement")
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "This ruleset does not select improvement advancement."));
+            return results;
+        }
+
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("improvement", out _))
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "The improvement advancement has no improvement rules."));
+            return results;
+        }
+
+        Evaluator evaluator = new(rules, dice);
+        foreach ((string skill, int marks) in character.SkillMarks.ToList())
+        {
+            if (marks <= 0)
+            {
+                character.SkillMarks.Remove(skill);
+                continue;
+            }
+
+            if (ImprovementCheck(rules, skill) is not (JsonElement check, string path))
+            {
+                problems.Add(new ModuleDiagnostic("character.improvement", $"The advancement has no improvement check for marked skill '{skill}'.", advancement.Module, advancement.File, "$.improvement.checks"));
+                continue;
+            }
+
+            try
+            {
+                Creature creature = character.ToCreature();
+                bool improved = EvaluateValue(rules, evaluator, advancement, $"{path}.when", creature).Boolean;
+                decimal amount = improved ? EvaluateValue(rules, evaluator, advancement, $"{path}.amount", creature).Number : 0;
+                if (improved && amount <= 0)
+                {
+                    problems.Add(new ModuleDiagnostic("character.improvement", $"Improvement check for {skill} succeeded with an empty gain ({amount}); amount must be greater than 0.", advancement.Module, advancement.File, $"{path}.amount"));
+                    continue;
+                }
+
+                if (improved)
+                {
+                    character.StatBonuses[skill] = checked(character.StatBonuses.GetValueOrDefault(skill) + amount);
+                }
+
+                character.SkillMarks.Remove(skill);
+                results.Add(new SkillImprovement(skill, marks, amount, improved));
+            }
+            catch (RuleFailure failure)
+            {
+                problems.Add(failure.Diagnostic);
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>Applies a ruleset milestone choice, atomically when every choice is valid.</summary>
+    public static bool ApplyMilestone(RuleSet rules, Character character, MilestoneChoices choices, List<ModuleDiagnostic> problems)
+    {
+        if (rules.AdvancementKind != "milestone")
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", "This ruleset does not select milestone advancement."));
+            return false;
+        }
+
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("milestones", out JsonElement config))
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", "The milestone advancement has no milestone choices."));
+            return false;
+        }
+
+        int before = problems.Count;
+        Dictionary<string, decimal> attributes = new(character.Attributes);
+        Dictionary<string, decimal> bonuses = new(character.StatBonuses);
+        List<Definition> features = [.. character.MilestoneFeatures];
+        Dictionary<string, decimal> raises = choices.Raises is IReadOnlyDictionary<string, decimal> givenRaises ? new(givenRaises) : [];
+        List<SkillSwap> swaps = [.. choices.Swaps ?? []];
+        List<string> featureChoices = [.. choices.Features ?? []];
+
+        int raiseCount = config.TryGetProperty("skill_raise", out JsonElement raiseConfig) ? raiseConfig.GetProperty("count").GetInt32() : 0;
+        decimal raiseAmount = config.TryGetProperty("skill_raise", out _) ? raiseConfig.GetProperty("amount").GetDecimal() : 0;
+        int swapCount = config.TryGetProperty("skill_swap", out JsonElement swapConfig) ? swapConfig.GetProperty("count").GetInt32() : 0;
+        int featureCount = config.TryGetProperty("feature", out JsonElement featureConfig) ? featureConfig.GetProperty("count").GetInt32() : 0;
+        string featureKind = config.TryGetProperty("feature", out _) ? featureConfig.GetProperty("kind").GetString()! : "";
+
+        if (raises.Count > raiseCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {raiseCount} skill raise(s), but {raises.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.skill_raise"));
+        }
+
+        Evaluator evaluator = new(rules, null);
+        Creature currentCreature = character.ToCreature();
+        Dictionary<string, decimal> current = [];
+        foreach (string skill in raises.Keys.Concat(swaps.SelectMany(swap => new[] { swap.From, swap.To })).Distinct())
+        {
+            if (!rules.Stats.ContainsKey(skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"'{skill}' is not a stat in this ruleset; choose a declared skill."));
+                continue;
+            }
+
+            try
+            {
+                current[skill] = evaluator.Stat(currentCreature, skill).Number;
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Can't read {skill} for {character.Name}: {exception.Message}"));
+            }
+        }
+
+        HashSet<string> touched = [];
+        foreach ((string skill, decimal amount) in raises)
+        {
+            if (!touched.Add(skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone choices use {skill} more than once."));
+            }
+            if (amount != raiseAmount)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone raises must use amount {raiseAmount}, but {skill} was given {amount}.", advancement.Module, advancement.File, "$.milestones.skill_raise.amount"));
+            }
+            if (!current.TryGetValue(skill, out decimal score))
+            {
+                continue;
+            }
+            if (rules.Stats[skill].IsAttribute && rules.Stats[skill].Definition.Json.TryGetProperty("max", out JsonElement max) && score + amount > max.GetDecimal())
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Raising {skill} would exceed its maximum {max.GetDecimal()}.", rules.Stats[skill].Definition.Module, rules.Stats[skill].Definition.File, "$.max"));
+            }
+        }
+
+        if (swaps.Count > swapCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {swapCount} skill swap(s), but {swaps.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.skill_swap"));
+        }
+
+        Dictionary<string, decimal> desired = [];
+        foreach (SkillSwap swap in swaps)
+        {
+            if (!touched.Add(swap.From) || !touched.Add(swap.To) || swap.From == swap.To)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone swap {swap.From}={swap.To} must name two skills not used by another choice."));
+                continue;
+            }
+            if (current.ContainsKey(swap.From) && current.ContainsKey(swap.To))
+            {
+                desired[swap.From] = current[swap.To];
+                desired[swap.To] = current[swap.From];
+            }
+        }
+
+        if (featureChoices.Count > featureCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {featureCount} {featureKind} feature(s), but {featureChoices.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.feature"));
+        }
+
+        List<Definition> chosenFeatures = [];
+        foreach (string reference in featureChoices)
+        {
+            if (Find(rules, DefinitionTypes.Feature, reference, "feature", problems) is not Definition feature)
+            {
+                continue;
+            }
+            if (feature.Json.GetProperty("kind").GetString() != featureKind)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"{feature.QualifiedId} is a {feature.Json.GetProperty("kind").GetString()} feature, but this milestone grants {featureKind}."));
+                continue;
+            }
+            if (Problem(rules, character, feature, evaluator) is ModuleDiagnostic problem)
+            {
+                problems.Add(problem);
+                continue;
+            }
+            chosenFeatures.Add(feature);
+        }
+
+        if (problems.Count == before)
+        {
+            foreach ((string skill, decimal amount) in raises)
+            {
+                AddStatBonus(rules, character, skill, amount);
+            }
+            foreach ((string skill, decimal value) in desired)
+            {
+                SetStatValue(rules, character, skill, value);
+            }
+            character.MilestoneFeatures.AddRange(chosenFeatures);
+            return true;
+        }
+
+        character.Attributes.Clear();
+        foreach ((string id, decimal score) in attributes)
+        {
+            character.Attributes[id] = score;
+        }
+        character.StatBonuses.Clear();
+        foreach ((string id, decimal bonus) in bonuses)
+        {
+            character.StatBonuses[id] = bonus;
+        }
+        character.MilestoneFeatures.Clear();
+        character.MilestoneFeatures.AddRange(features);
+        return false;
+    }
 
     public static List<LevelGain> Award(RuleSet rules, Character character, decimal experience, DiceRoller dice)
     {
@@ -1830,5 +2089,62 @@ public static class CharacterRules
         }
 
         return found;
+    }
+
+    private static (JsonElement Element, string Path)? ImprovementCheck(RuleSet rules, string skill)
+    {
+        if (rules.Advancement is not Definition advancement
+            || !advancement.Json.TryGetProperty("improvement", out JsonElement improvement)
+            || !improvement.TryGetProperty("checks", out JsonElement checks))
+        {
+            return null;
+        }
+
+        for (int index = 0; index < checks.GetArrayLength(); index++)
+        {
+            string path = $"$.improvement.checks[{index}]";
+            if (checks[index].GetProperty("skill").GetString() == skill)
+            {
+                return (checks[index], path);
+            }
+        }
+
+        return null;
+    }
+
+    private static void AddStatBonus(RuleSet rules, Character character, string skill, decimal amount)
+    {
+        if (rules.Stats[skill].IsAttribute)
+        {
+            character.Attributes[skill] = character.Attributes.GetValueOrDefault(skill) + amount;
+        }
+        else
+        {
+            character.StatBonuses[skill] = character.StatBonuses.GetValueOrDefault(skill) + amount;
+        }
+    }
+
+    private static void SetStatValue(RuleSet rules, Character character, string skill, decimal desired)
+    {
+        if (rules.Stats[skill].IsAttribute)
+        {
+            character.Attributes[skill] = desired;
+            character.StatBonuses.Remove(skill);
+            return;
+        }
+
+        Creature baseline = character.ToCreature();
+        baseline.AdvancementBonuses.Remove(skill);
+        Evaluator evaluator = new(rules, null);
+        decimal baseValue = evaluator.Stat(baseline, skill).Number;
+        decimal bonus = desired - baseValue;
+        if (bonus == 0)
+        {
+            character.StatBonuses.Remove(skill);
+        }
+        else
+        {
+            character.StatBonuses[skill] = bonus;
+        }
     }
 }

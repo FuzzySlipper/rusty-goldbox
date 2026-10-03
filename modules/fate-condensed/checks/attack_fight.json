@@ -2,6 +2,7 @@
   "type": "check",
   "id": "attack_fight",
   "name": "Fight",
+  "skill": "fight",
   "roll": "roll_fudge(4)",
   "bonus": "self.fight",
   "target": "target.athletics + roll_fudge(4)",

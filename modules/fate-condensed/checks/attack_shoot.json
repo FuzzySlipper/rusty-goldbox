@@ -2,6 +2,7 @@
   "type": "check",
   "id": "attack_shoot",
   "name": "Shoot",
+  "skill": "shoot",
   "roll": "roll_fudge(4)",
   "bonus": "self.shoot",
   "target": "target.athletics + roll_fudge(4)",

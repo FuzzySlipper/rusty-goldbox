@@ -1,11 +1,12 @@
 using System.Globalization;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Cli;
 
-/// <summary><c>goldbox character new | level | show</c>.</summary>
+/// <summary><c>goldbox character new | level | milestone | mark | improve | show</c>.</summary>
 internal static class CharacterCommand
 {
     private const string RandomScope = "goldbox.character";
@@ -14,6 +15,9 @@ internal static class CharacterCommand
         "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
+        + "       goldbox character milestone <file> --module <path> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...]\n"
+        + "       goldbox character mark <file> --module <path> --skill <id>\n"
+        + "       goldbox character improve <file> --module <path> [--seed <n>]\n"
         + "       goldbox character former <file> --module <path> on|off\n"
         + "       goldbox character npc <file> --module <path> --id <id> --out <npc.json>\n"
         + "       goldbox character show <file> --module <path>\n"
@@ -30,12 +34,143 @@ internal static class CharacterCommand
         {
             "new" => New(args.Skip(1), output, workingDirectory),
             "level" => Level(args.Skip(1), output, workingDirectory),
+            "milestone" => Milestone(args.Skip(1), output, workingDirectory),
+            "mark" => Mark(args.Skip(1), output, workingDirectory),
+            "improve" => Improve(args.Skip(1), output, workingDirectory),
             "show" => Show(args.Skip(1), output, workingDirectory),
             "spells" => Spells(args.Skip(1), output, workingDirectory),
             "npc" => Npc(args.Skip(1), output, workingDirectory),
             "former" => Former(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells, former, npc and show.\n{Usage}"),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, milestone, mark, improve, spells, former, npc and show.\n{Usage}"),
         };
+    }
+
+    private static int Milestone(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--raise", "--swap", "--feature"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null))
+        {
+            error = Usage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        decimal amount = set.Rules!.Advancement is Definition advancement
+            && advancement.Json.TryGetProperty("milestones", out System.Text.Json.JsonElement milestones)
+            && milestones.TryGetProperty("skill_raise", out System.Text.Json.JsonElement skillRaise)
+            ? skillRaise.GetProperty("amount").GetDecimal()
+            : 0;
+        Dictionary<string, decimal> raises = [];
+        foreach (string skill in Values(parsed, "--raise"))
+        {
+            raises[skill] = amount;
+        }
+
+        List<SkillSwap> swaps = [];
+        foreach (string value in Values(parsed, "--swap"))
+        {
+            string[] pair = value.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (pair.Length != 2 || pair.Any(string.IsNullOrWhiteSpace))
+            {
+                return output.UsageError($"--swap values must be <from>=<to>, but '{value}' isn't.\n{Usage}");
+            }
+
+            swaps.Add(new SkillSwap(pair[0], pair[1]));
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.ApplyMilestone(set.Rules, character!, new MilestoneChoices(raises, swaps, Values(parsed, "--feature")), problems))
+        {
+            return output.Problems(problems.Select(problem => problem.File is null ? problem with { File = path } : problem).ToList());
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules, character!, path, null, [], []);
+        return GoldboxCli.Ok;
+    }
+
+    private static int Mark(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--skill"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--skill") is null))
+        {
+            error = Usage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.MarkSkillUse(set.Rules!, character!, parsed.Single("--skill")!, problems))
+        {
+            return output.Problems(problems.Select(problem => problem.File is null ? problem with { File = path } : problem).ToList());
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules!, character!, path, null, [], []);
+        return GoldboxCli.Ok;
+    }
+
+    private static int Improve(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--seed"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null))
+        {
+            error = Usage;
+        }
+
+        ulong seed = 1;
+        error ??= ParseSeed(parsed, ref seed);
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        (List<SkillImprovement> results, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice => CharacterRules.ImproveMarkedSkills(set.Rules!, character!, dice, problems));
+        if (problems.Count > 0)
+        {
+            return output.Problems(problems.Select(problem => problem.File is null ? problem with { File = path } : problem).ToList());
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules!, character!, path, seed, rolls, []);
+        return GoldboxCli.Ok;
     }
 
     private static int Npc(IEnumerable<string> args, Output output, string workingDirectory)
@@ -183,6 +318,13 @@ internal static class CharacterCommand
     private static IReadOnlyList<string> Features(Arguments parsed)
     {
         return parsed.Single("--feature")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+    }
+
+    private static List<string> Values(Arguments parsed, string option)
+    {
+        return parsed.All(option)
+            .SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .ToList();
     }
 
     private static string[] List(string text) => text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

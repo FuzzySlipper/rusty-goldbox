@@ -2,6 +2,7 @@
   "type": "check",
   "id": "parry",
   "name": "Shield parry",
+  "skill": "shield",
   "roll": "1d100",
   "target": "self.shield - 30 * self.rolled.parry",
   "succeeds": "at-most",

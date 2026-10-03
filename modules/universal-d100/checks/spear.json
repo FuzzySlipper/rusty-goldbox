@@ -2,6 +2,7 @@
   "type": "check",
   "id": "spear",
   "name": "Melee Weapon (Spear)",
+  "skill": "spear",
   "roll": "1d100",
   "target": "self.spear",
   "succeeds": "at-most",

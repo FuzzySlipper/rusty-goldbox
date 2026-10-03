@@ -228,6 +228,111 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ImprovementAdvancementMarksSuccessfulSkillsAndPersistsThem()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/craft.json", """{ "type": "derived", "id": "craft", "name": "Craft", "value": "self.str" }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "10", "default": true }""");
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "improving", "name": "Improving skills", "kind": "improvement",
+              "improvement": { "checks": [ { "skill": "craft", "when": "self.craft >= 10", "amount": "1" } ] } }
+            """);
+        modules.Write("rules/craft_check.json", """{ "type": "check", "id": "craft_check", "name": "Craft check", "roll": "1", "skill": "craft", "target": "1", "succeeds": "at-least" }""");
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        Character character = Create(set, new CreationRequest("Ada", "warrior", null, Attributes: new Dictionary<string, decimal> { ["str"] = 10 }))!;
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.True(CharacterRules.MarkSkillUse(set.Rules!, character, "craft", problems));
+        Assert.Empty(problems);
+        Assert.Equal(1, character.SkillMarks["craft"]);
+
+        string file = Path.Combine(modules.Root, "ada.json");
+        File.WriteAllText(file, CharacterFile.ToJson(character));
+        Character loaded = CharacterFile.Read(file, set, problems)!;
+        Assert.Empty(problems);
+        Assert.Equal(1, loaded.SkillMarks["craft"]);
+
+        List<SkillImprovement> improvements = WithDice(dice => CharacterRules.ImproveMarkedSkills(set.Rules!, loaded, dice, problems));
+        Assert.Empty(problems);
+        Assert.Equal(new SkillImprovement("craft", 1, 1, true), Assert.Single(improvements));
+        Assert.Equal(1, loaded.StatBonuses["craft"]);
+        Assert.Empty(loaded.SkillMarks);
+    }
+
+    [Fact]
+    public void MilestoneAdvancementRaisesSkillsAndAddsStunts()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/craft.json", """{ "type": "derived", "id": "craft", "name": "Craft", "value": "self.str" }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "10", "default": true }""");
+        modules.Write("rules/stunt.json", """{ "type": "feature", "id": "stunt", "name": "Stunt", "kind": "stunt" }""");
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "milestones", "name": "Milestones", "kind": "milestone",
+              "milestones": { "skill_raise": { "count": 1, "amount": 1 }, "skill_swap": { "count": 0 }, "feature": { "kind": "stunt", "count": 1 } } }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        Character character = Create(set, new CreationRequest("Ada", "warrior", null, Attributes: new Dictionary<string, decimal> { ["str"] = 10 }))!;
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.True(CharacterRules.ApplyMilestone(set.Rules!, character,
+            new MilestoneChoices(new Dictionary<string, decimal> { ["craft"] = 1 }, Features: ["stunt"]), problems));
+        Assert.Empty(problems);
+        Assert.Equal(1, character.StatBonuses["craft"]);
+        Assert.Equal("stunt", Assert.Single(character.MilestoneFeatures).Id);
+
+        string file = Path.Combine(modules.Root, "ada.json");
+        File.WriteAllText(file, CharacterFile.ToJson(character));
+        Character loaded = CharacterFile.Read(file, set, problems)!;
+        Assert.Empty(problems);
+        Assert.Equal(1, loaded.StatBonuses["craft"]);
+        Assert.Equal("stunt", Assert.Single(loaded.MilestoneFeatures).Id);
+    }
+
+    [Fact]
+    public void FateModuleUsesMilestoneChoices()
+    {
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Assert.Empty(set.Diagnostics);
+        Character character = Create(set, new CreationRequest("Ruth", null, null, Features: ["quick_feet", "heavy_hitter", "iron_will"]))!;
+        List<ModuleDiagnostic> problems = [];
+
+        decimal before = character.Attributes["fight"];
+        Assert.True(CharacterRules.ApplyMilestone(set.Rules!, character,
+            new MilestoneChoices(new Dictionary<string, decimal> { ["fight"] = 1 }, Features: ["deadeye"]), problems));
+        Assert.Empty(problems);
+        Assert.Equal(before + 1, character.Attributes["fight"]);
+        Assert.Contains(character.MilestoneFeatures, feature => feature.Id == "deadeye");
+    }
+
+    [Fact]
+    public void UniversalD100ModuleMarksAndImprovesADeclaredSkill()
+    {
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Assert.Empty(set.Diagnostics);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 18, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            }, Features: ["warrior"]))!;
+        List<ModuleDiagnostic> problems = [];
+
+        Assert.True(CharacterRules.MarkSkillUse(set.Rules!, character, "sword", problems));
+        Assert.Empty(problems);
+        List<SkillImprovement> results = WithDice(dice => CharacterRules.ImproveMarkedSkills(set.Rules!, character, dice, problems));
+        Assert.Empty(problems);
+        Assert.Equal("sword", Assert.Single(results).Skill);
+        Assert.Empty(character.SkillMarks);
+    }
+
+    [Fact]
     public void ToughnessRaisesTheMaximumEachTimeItIsTaken()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);

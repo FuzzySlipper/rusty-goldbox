@@ -131,6 +131,38 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "pay_toll", "kind": "take", "item": "classic:dagger", "next": "through", "on_refused": "gate" }""");
 
+    public static DefinitionType Milestone { get; } = new(
+        "milestone",
+        "Applies a ruleset milestone to one party member or every member. Choices are data, so Fate swaps, raises and new stunts use the same campaign hook.",
+        [
+            new("text", new TextKind(), true, "What the party sees first."),
+            new("member", new IntegerKind(), false, "Party member number; omit to apply the milestone to every member."),
+            new("raises", new MapKind(new StatKind(false), new IntegerKind()), false, "Skills to raise; the configured milestone amount is used."),
+            new("swaps", new ListKind(new ObjectKind([
+                new("from", new StatKind(false), true, "Skill to give up."),
+                new("to", new StatKind(false), true, "Skill to receive the rating."),
+            ])), false, "Pairs of skills whose ratings are exchanged."),
+            new("features", new ListKind(new ReferenceKind("feature")), false, "New features, such as Fate stunts."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "milestone", "kind": "milestone", "text": "The journey changes you.", "member": 1, "raises": { "craft": 1 }, "features": ["rules:stunt"], "next": "road" }""");
+
+    public static DefinitionType Improve { get; } = new(
+        "improve",
+        "Runs the ruleset's marked-skill improvement checks for one party member or every member.",
+        [
+            new("text", new TextKind(), true, "What the party sees first."),
+            new("member", new IntegerKind(), false, "Party member number; omit to improve every member."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "study", "kind": "improve", "text": "You reflect on what you learned.", "next": "road" }""");
+
     public static DefinitionType Shop { get; } = new(
         "shop",
         "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
@@ -206,7 +238,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

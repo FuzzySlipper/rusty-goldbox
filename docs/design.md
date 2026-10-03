@@ -241,6 +241,17 @@ refuses a choice no level granted, a requirement missed at the level it was
 taken, or a wrong number of boosts. When a level raises a track's maximum
 (its gain, a toughness feat, a boosted stat), the current value rises with it.
 
+An **advancement** may select another procedure instead of experience levels.
+`kind: "milestone"` gives a campaign or `goldbox character milestone` hook for
+ruleset-owned skill raises, skill swaps and feature choices. `kind:
+"improvement"` declares one check and gain expression for each marked skill;
+combat checks with `skill` mark a party character once per adventure, and
+`goldbox character improve` or an `improve` campaign event rolls those checks.
+The persistent `stat_bonuses`, `skill_marks` and `milestone_features` fields in
+a character file preserve these choices between commands and saves. An
+experience advancement remains the default when the legacy `experience` field
+is present.
+
 A **character-creation** definition makes attribute scores by one method:
 rolled (in order or arranged by the player's priority), a fixed array the
 player arranges, point buy (a base, a budget and a table of each score's
@@ -502,7 +513,8 @@ path and the rule that failed. Module directories resolve through
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
 | `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
 | `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
-| `goldbox character new\|level …` | Create or advance a character under a ruleset and print the derived sheet. |
+| `goldbox character new\|level …` | Create or advance a character under an experience ruleset and print the derived sheet. |
+| `goldbox character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
 | `goldbox play --campaign … --seed N [--script file]` | Play from a command script or stdin and emit a transcript. |

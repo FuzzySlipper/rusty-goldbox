@@ -28,6 +28,7 @@ adapted into data; no text was copied beyond skill names and short game terms.
 | --- | --- |
 | `attributes/` (the 19 skills, rated 0 to +8 on the ladder) | Skills, Skill List, The Adjective Ladder |
 | `creation/pyramid` (one Great, two Good, three Fair, four Average, the rest Mediocre; three stunts) | Skills, Stunts |
+| `advancement/milestones`, `checks/` skill fields | Advancement: a milestone can switch skill ranks or add a stunt; a breakthrough also raises a skill by one step |
 | `tracks/` (three stress boxes, one more at Physique or Will Average/Fair, three more at Good/Great) | Stress and Consequences |
 | `conditions/mild`, `moderate`, `severe`, `physical_hit`, `mental_hit`, `taken_out` (stress absorbs one shift a box; consequences absorb 2, 4 and 6; a hit that can't be absorbed takes you out) | Taking Harm, Stress, Consequences, Getting Taken Out |
 | `checks/` (4dF plus a skill against the defender's 4dF plus a skill; fail, tie, success, success with style at three shifts or more) | Taking Action, Rolling the Dice; Outcomes |
@@ -59,5 +60,8 @@ leaves out what needs a table to decide:
 - A hit is absorbed with stress first, then the smallest consequence (or pair)
   that covers the rest. The extra mild consequence at Superb Physique or Will
   is not modelled.
-- There is no advancement (milestones), no concession, and consequences don't
-  recover on their own.
+- Milestone advancement is represented by the generic campaign choices: a
+  module may permit one skill swap, one skill raise and one new stunt. Aspect
+  rewrites, refresh and consequence recovery remain authored narrative
+  decisions outside this data format. There is no concession, and
+  consequences don't recover on their own.

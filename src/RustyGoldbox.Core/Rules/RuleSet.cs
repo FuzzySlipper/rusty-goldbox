@@ -58,11 +58,16 @@ public sealed class RuleSet
     /// <summary>The ruleset's shop resale policy, when it declares one.</summary>
     public Definition? Economy { get; internal set; }
 
+    /// <summary>The selected advancement procedure, or experience when the legacy field is used.</summary>
+    public string AdvancementKind => Advancement?.Json.TryGetProperty("kind", out System.Text.Json.JsonElement kind) == true
+        ? kind.GetString()!
+        : Advancement?.Json.TryGetProperty("experience", out _) == true ? "experience" : "experience";
+
     /// <summary>Whether experience is divided between a character's classes, each advancing on its own table.</summary>
-    public bool ExperienceSplit => Advancement?.Json.GetProperty("experience").GetString() == "split";
+    public bool ExperienceSplit => AdvancementKind == "experience" && Advancement?.Json.TryGetProperty("experience", out System.Text.Json.JsonElement experience) == true && experience.GetString() == "split";
 
     /// <summary>Whether experience is counted by character level, with each level taken in a chosen class.</summary>
-    public bool ExperienceByCharacter => Advancement?.Json.GetProperty("experience").GetString() == "character";
+    public bool ExperienceByCharacter => AdvancementKind == "experience" && Advancement?.Json.TryGetProperty("experience", out System.Text.Json.JsonElement experience) == true && experience.GetString() == "character";
 
     /// <summary>The track characters' class level gains build, if the set has one.</summary>
     public Definition? LevelTrack => Tracks.Values.FirstOrDefault(track =>

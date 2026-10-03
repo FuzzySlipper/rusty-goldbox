@@ -106,6 +106,11 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 }
             }
 
+            if (creature.AdvancementBonuses.TryGetValue(name, out decimal advancementBonus))
+            {
+                total = Add(total, advancementBonus, 1);
+            }
+
             return Value.Of(total);
         }
         finally

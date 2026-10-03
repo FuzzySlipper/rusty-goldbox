@@ -2,6 +2,7 @@
   "type": "check",
   "id": "axe",
   "name": "Melee Weapon (Axe)",
+  "skill": "axe",
   "roll": "1d100",
   "target": "self.axe",
   "succeeds": "at-most",

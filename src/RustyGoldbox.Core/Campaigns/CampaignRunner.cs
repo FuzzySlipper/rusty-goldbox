@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -193,6 +193,12 @@ public sealed partial class CampaignRunner
                 break;
             case "level" when words.Length >= 2 && int.TryParse(words[1], out int member):
                 Level(member, words[2..], dice, facts);
+                break;
+            case "milestone" when words.Length >= 2 && int.TryParse(words[1], out int milestoneMember):
+                MilestoneCommand(milestoneMember, words[2..], dice, facts);
+                break;
+            case "improve" when words.Length >= 2 && int.TryParse(words[1], out int improveMember):
+                ImproveCommand(improveMember, dice, facts);
                 break;
             case "former" when words.Length == 3 && int.TryParse(words[1], out int caller) && words[2] is "on" or "off":
                 Former(caller, words[2] == "on", facts);
@@ -378,6 +384,10 @@ public sealed partial class CampaignRunner
                 bool each = json.TryGetProperty("each", out JsonElement everyone) && everyone.GetBoolean();
                 Award(evt, "$.amount", amount, each, _state.Party.Select(_ => true).ToList(), dice, facts);
                 return Next(evt, "$.next");
+            case "milestone":
+                return Milestone(evt, dice, facts);
+            case "improve":
+                return Improve(evt, dice, facts);
             case "rest":
                 return Rest(evt, dice, facts);
             case "combat":

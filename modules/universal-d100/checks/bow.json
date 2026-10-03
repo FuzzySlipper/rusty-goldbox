@@ -2,6 +2,7 @@
   "type": "check",
   "id": "bow",
   "name": "Missile Weapon (Bow)",
+  "skill": "bow",
   "roll": "1d100",
   "target": "self.bow",
   "succeeds": "at-most",

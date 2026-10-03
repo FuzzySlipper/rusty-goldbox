@@ -38,6 +38,9 @@ public static class CharacterFile
         new("left_classes", new Definitions.ListKind(new Definitions.ReferenceKind("class")), false, "Classes left by a class change."),
         new("experience", new Definitions.NumberKind(), true, "Total experience."),
         new("attributes", new Definitions.MapKind(new Definitions.StatKind(true), new Definitions.NumberKind()), true, "Final attribute scores, including racial adjustments and boosts."),
+        new("stat_bonuses", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.NumberKind()), false, "Persistent bonuses from staged creation, milestones or improvement checks."),
+        new("skill_marks", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.IntegerKind()), false, "Successful skill uses waiting for an improvement check."),
+        new("milestone_features", new Definitions.ListKind(new Definitions.ReferenceKind("feature")), false, "Features granted by milestones outside class levels."),
         new("tracks", new Definitions.MapKind(new Definitions.TextKind(), new Definitions.ObjectKind(
         [
             new("current", new Definitions.NumberKind(), true, "Current track value."),
@@ -148,6 +151,33 @@ public static class CharacterFile
             }
 
             writer.WriteEndObject();
+            if (character.StatBonuses.Count > 0)
+            {
+                writer.WriteStartObject("stat_bonuses");
+                foreach ((string id, decimal bonus) in character.StatBonuses)
+                {
+                    writer.WriteNumber(id, bonus);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            if (character.SkillMarks.Count > 0)
+            {
+                writer.WriteStartObject("skill_marks");
+                foreach ((string id, int marks) in character.SkillMarks)
+                {
+                    writer.WriteNumber(id, marks);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            if (character.MilestoneFeatures.Count > 0)
+            {
+                WriteReferences(writer, "milestone_features", character.MilestoneFeatures);
+            }
+
             writer.WriteStartObject("tracks");
             foreach ((string id, TrackValue value) in character.Tracks)
             {
@@ -295,6 +325,9 @@ public static class CharacterFile
                 character.Balances[currency] = amount;
             }
             ReadAttributes(root, character);
+            ReadStatBonuses(root, character);
+            ReadSkillMarks(root, character);
+            ReadList(root, "milestone_features", DefinitionTypes.Feature, character.MilestoneFeatures);
             ReadTracks(root, character);
             if (character.Experience < 0)
             {
@@ -633,6 +666,70 @@ public static class CharacterFile
             }
 
             return balances;
+        }
+
+        private void ReadStatBonuses(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("stat_bonuses", out JsonElement bonuses))
+            {
+                return;
+            }
+
+            if (bonuses.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.stat_bonuses", "\"stat_bonuses\" must be an object of stat IDs and numbers.");
+                return;
+            }
+
+            foreach (JsonProperty entry in bonuses.EnumerateObject())
+            {
+                string at = $"$.stat_bonuses.{entry.Name}";
+                if (!_rules.Stats.ContainsKey(entry.Name))
+                {
+                    Error(at, $"'{entry.Name}' is not a stat of this module set.");
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetDecimal(out decimal bonus))
+                {
+                    Error(at, "A stat bonus must be a number.");
+                    continue;
+                }
+
+                character.StatBonuses[entry.Name] = bonus;
+            }
+        }
+
+        private void ReadSkillMarks(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("skill_marks", out JsonElement marks))
+            {
+                return;
+            }
+
+            if (marks.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.skill_marks", "\"skill_marks\" must be an object of stat IDs and whole numbers.");
+                return;
+            }
+
+            foreach (JsonProperty entry in marks.EnumerateObject())
+            {
+                string at = $"$.skill_marks.{entry.Name}";
+                if (!_rules.Stats.ContainsKey(entry.Name))
+                {
+                    Error(at, $"'{entry.Name}' is not a stat of this module set.");
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetInt32(out int count) || count < 0)
+                {
+                    Error(at, "A skill mark count must be a nonnegative whole number.");
+                    continue;
+                }
+
+                character.SkillMarks[entry.Name] = count;
+            }
         }
 
         private void ReadList(JsonElement root, string name, DefinitionType type, List<Definition> into, string at = "$")

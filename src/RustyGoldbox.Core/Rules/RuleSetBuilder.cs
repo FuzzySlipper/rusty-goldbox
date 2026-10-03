@@ -458,13 +458,51 @@ public sealed class RuleSetBuilder
 
         Definition? advancement = all.FirstOrDefault();
         _rules.Advancement = advancement;
-        bool byCharacter = advancement?.Json.GetProperty("experience").GetString() == "character";
-        if (advancement is not null && advancement.Json.TryGetProperty("class_change", out _) && advancement.Json.GetProperty("experience").GetString() != "split")
+        string kind = advancement?.Json.TryGetProperty("kind", out JsonElement declaredKind) == true
+            ? declaredKind.GetString()!
+            : advancement?.Json.TryGetProperty("experience", out _) == true ? "experience" : "experience";
+        bool experience = kind == "experience";
+        bool byCharacter = experience && advancement?.Json.TryGetProperty("experience", out JsonElement experienceMode) == true && experienceMode.GetString() == "character";
+        if (advancement is not null && !advancement.Json.TryGetProperty("experience", out _) && experience)
+        {
+            Error(advancement, "advancement.experience", "$.experience", "An experience advancement needs experience \"class\", \"character\" or \"split\"; give it the field or choose kind milestone or improvement.");
+        }
+
+        if (advancement is not null && advancement.Json.TryGetProperty("class_change", out _) && (!experience || advancement.Json.GetProperty("experience").GetString() != "split"))
         {
             Error(advancement, "advancement.class-change", "$.class_change", "class_change applies to experience \"split\", where a character advances in its own classes; remove it or change the experience.");
         }
         if (advancement is not null)
         {
+            if (kind != "experience" && advancement.Json.TryGetProperty("experience", out _))
+            {
+                Error(advancement, "advancement.experience", "$.experience", $"Kind {kind} does not use experience levels; remove \"experience\" or choose kind experience.");
+            }
+
+            if (kind == "milestone")
+            {
+                if (!advancement.Json.TryGetProperty("milestones", out JsonElement milestones))
+                {
+                    Error(advancement, "advancement.milestones", "$.milestones", "A milestone advancement needs milestone choices for its skill raises, swaps or features.");
+                }
+                else
+                {
+                    CheckMilestones(advancement, milestones);
+                }
+            }
+
+            if (kind == "improvement")
+            {
+                if (!advancement.Json.TryGetProperty("improvement", out JsonElement improvement))
+                {
+                    Error(advancement, "advancement.improvement", "$.improvement", "An improvement advancement needs improvement checks for marked skills.");
+                }
+                else
+                {
+                    CheckImprovement(advancement, improvement);
+                }
+            }
+
             bool hasLevels = advancement.Json.TryGetProperty("levels", out _);
             if (byCharacter && !hasLevels)
             {
@@ -491,10 +529,15 @@ public sealed class RuleSetBuilder
                 }
             }
 
-            if (!byCharacter && hasLevels)
+            if (experience && !byCharacter && hasLevels)
             {
                 Error(advancement, "advancement.levels", "$.levels", "With experience \"class\", each class's levels[].xp decide levels; remove \"levels\" or set experience to \"character\".");
             }
+        }
+
+        if (!experience)
+        {
+            return;
         }
 
         foreach (Definition characterClass in _rules.OfType(DefinitionTypes.Class))
@@ -514,6 +557,54 @@ public sealed class RuleSetBuilder
                 }
 
                 index++;
+            }
+        }
+    }
+
+    private void CheckMilestones(Definition advancement, JsonElement milestones)
+    {
+        if (milestones.TryGetProperty("skill_raise", out JsonElement raise))
+        {
+            if (raise.GetProperty("count").GetInt32() < 0)
+            {
+                Error(advancement, "advancement.milestones", "$.milestones.skill_raise.count", "A milestone raise count can't be negative.");
+            }
+            if (raise.GetProperty("amount").GetInt32() <= 0)
+            {
+                Error(advancement, "advancement.milestones", "$.milestones.skill_raise.amount", "A milestone raise amount must be greater than 0.");
+            }
+        }
+
+        if (milestones.TryGetProperty("skill_swap", out JsonElement swap) && swap.GetProperty("count").GetInt32() < 0)
+        {
+            Error(advancement, "advancement.milestones", "$.milestones.skill_swap.count", "A milestone swap count can't be negative.");
+        }
+
+        if (milestones.TryGetProperty("feature", out JsonElement feature) && feature.GetProperty("count").GetInt32() < 0)
+        {
+            Error(advancement, "advancement.milestones", "$.milestones.feature.count", "A milestone feature count can't be negative.");
+        }
+    }
+
+    private void CheckImprovement(Definition advancement, JsonElement improvement)
+    {
+        if (!improvement.TryGetProperty("checks", out JsonElement checks) || checks.GetArrayLength() == 0)
+        {
+            Error(advancement, "advancement.improvement", "$.improvement.checks", "An improvement advancement needs at least one skill check.");
+            return;
+        }
+
+        HashSet<string> skills = [];
+        for (int index = 0; index < checks.GetArrayLength(); index++)
+        {
+            string skill = checks[index].GetProperty("skill").GetString()!;
+            if (!_rules.Stats.ContainsKey(skill))
+            {
+                Error(advancement, "advancement.improvement", $"$.improvement.checks[{index}].skill", $"'{skill}' is not a stat in this module set.");
+            }
+            else if (!skills.Add(skill))
+            {
+                Error(advancement, "advancement.improvement", $"$.improvement.checks[{index}].skill", $"Skill {skill} has more than one improvement check; give each skill one check.");
             }
         }
     }

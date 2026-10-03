@@ -2,6 +2,7 @@
   "type": "check",
   "id": "advantage_athletics",
   "name": "Create an advantage",
+  "skill": "athletics",
   "roll": "roll_fudge(4)",
   "bonus": "self.athletics",
   "target": "target.notice + roll_fudge(4)",

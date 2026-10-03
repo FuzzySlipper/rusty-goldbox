@@ -177,10 +177,11 @@ public static class DefinitionTypes
 
     public static DefinitionType Advancement { get; } = new(
         "advancement",
-        "How characters gain levels. Without one, each class has its own experience table (levels[].xp) and a character stays in one class. With experience \"character\", one table gives the experience for each total character level, and each new level is taken in a class of the player's choice, so a character can hold levels in several classes. A module set has at most one.",
+        "How characters advance. The default kind is experience, which uses class or character levels; milestone and improvement kinds provide ruleset-owned advancement without experience levels. A module set has at most one.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("experience", new EnumKind(["class", "character", "split"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level. \"split\": a character may start with several classes (as its race's multiclasses allow); experience is divided evenly between the classes it advances in, each on its own levels[].xp, and class_change may let it leave its class for a new one."),
+            new("kind", new EnumKind(["experience", "milestone", "improvement"]), false, "The advancement procedure. Without it, an advancement with experience uses the experience procedure."),
+            new("experience", new EnumKind(["class", "character", "split"]), false, "For kind experience: \"class\": each class's levels[].xp, one class per character; \"character\": the levels below, by total level, with a class chosen for each level; \"split\": experience is divided between starting classes."),
             new("class_change", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Class), false, "With experience \"split\": whether a character may leave its classes for a new one (dual-classing), read with class.id as the new class, for example \"self.race == 'human' and self.classes == 1\". The classes left stop advancing and their modifiers and actions wait until the new class's level is higher; self.former_level is the highest of them. Without it, no class change."),
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
             new("training", new ObjectKind(
@@ -203,6 +204,27 @@ public static class DefinitionTypes
                 new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "At which character levels, for example \"self.level % 5 == 0\"."),
                 new("amounts", new ReferenceKind("table"), true, "A table from an attribute's score to how much a boost raises it, for example [\"1-17\", 2], [\"18+\", 1]."),
             ])), false, "Boosts characters choose as their total level rises (PF2e-style), raising attribute scores for good."),
+            new("milestones", new ObjectKind(
+            [
+                new("skill_raise", new ObjectKind([
+                    new("count", new IntegerKind(), true, "How many skills a milestone may raise."),
+                    new("amount", new IntegerKind(), true, "The amount each selected skill rises."),
+                ]), false, "A milestone's selected skill raises."),
+                new("skill_swap", new ObjectKind([
+                    new("count", new IntegerKind(), true, "How many skill levels may move from one skill to another."),
+                ]), false, "A milestone's selected skill swaps."),
+                new("feature", new ObjectKind([
+                    new("kind", new TextKind(), true, "The feature kind granted by the milestone."),
+                    new("count", new IntegerKind(), true, "How many features of that kind may be chosen."),
+                ]), false, "New stunt or other feature choices."),
+            ]), false, "Rules for a milestone grant. Choices are supplied by a campaign event or the character CLI."),
+            new("improvement", new ObjectKind([
+                new("checks", new ListKind(new ObjectKind([
+                    new("skill", new StatKind(false), true, "The marked skill this check improves."),
+                    new("when", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "The improvement check, evaluated after a successful use."),
+                    new("amount", new ExpressionKind(ExprType.Number, Roots.Self), true, "The amount added when the check succeeds."),
+                ])), true, "The improvement check for each marked skill."),
+            ]), false, "Rules for improving skills marked by successful use."),
         ],
         """
         {
@@ -264,6 +286,7 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("roll", CombatNumber, true, "The dice, for example \"1d20\", \"1d100\", \"3d6\" or \"roll_count(self.pool, 10, 8)\". Tiers read it as check.roll."),
             new("bonus", CombatNumber, false, "Added to the roll, for example \"self.str_to_hit\". Modifiers for the check add too."),
+            new("skill", new StatKind(false), false, "The skill this check uses. A successful use marks it for a ruleset's improvement procedure."),
             new("target", CombatNumber, true, "The number the total is compared with."),
             new("succeeds", new EnumKind(["at-least", "at-most"]), true, "Whether the total must be at least the target (roll high) or at most it (roll under)."),
             new("tiers", new ListKind(new ObjectKind(

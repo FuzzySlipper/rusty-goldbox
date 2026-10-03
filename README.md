@@ -100,6 +100,8 @@ dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module 
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/sample-crypt --class fighter --race human --name Ada --portrait placeholder-art:fighter_portrait --out ada.json
+dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --module modules/fate-condensed --raise fight --feature deadeye
+dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
 ```
 
 Campaigns play from command scripts, and save and resume:

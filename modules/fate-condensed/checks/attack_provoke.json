@@ -2,6 +2,7 @@
   "type": "check",
   "id": "attack_provoke",
   "name": "Provoke",
+  "skill": "provoke",
   "roll": "roll_fudge(4)",
   "bonus": "self.provoke",
   "target": "target.will + roll_fudge(4)",

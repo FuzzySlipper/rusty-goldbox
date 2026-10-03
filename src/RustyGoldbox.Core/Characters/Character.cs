@@ -82,7 +82,7 @@ public sealed class Character
     }
 
     /// <summary>Every feature the character has chosen, in the order chosen; a repeatable one may appear more than once.</summary>
-    public IEnumerable<Definition> Features => Levels.SelectMany(level => level.Features);
+    public IEnumerable<Definition> Features => Levels.SelectMany(level => level.Features).Concat(MilestoneFeatures);
 
     /// <summary>The class of the latest level: where the next level goes unless the player picks another.</summary>
     public Definition? LatestClass => Levels[^1].Class;
@@ -94,6 +94,15 @@ public sealed class Character
 
     /// <summary>Attribute scores in the ruleset's attribute order, after racial adjustments.</summary>
     public Dictionary<string, decimal> Attributes { get; } = [];
+
+    /// <summary>Persistent bonuses added by staged creation, milestones or improvement checks.</summary>
+    public Dictionary<string, decimal> StatBonuses { get; } = [];
+
+    /// <summary>Successful uses waiting for an improvement check, by skill ID.</summary>
+    public Dictionary<string, int> SkillMarks { get; } = [];
+
+    /// <summary>Features granted outside a class level, such as a milestone stunt.</summary>
+    public List<Definition> MilestoneFeatures { get; } = [];
 
     /// <summary>
     /// Track values by track ID: every track's current value, and the maximum
@@ -138,6 +147,7 @@ public sealed class Character
         copy.Spells.AddRange(Spells);
         copy.Memorised.AddRange(Memorised);
         copy.Conditions.AddRange(Conditions);
+        copy.MilestoneFeatures.AddRange(MilestoneFeatures);
         foreach (var entry in ClassExperience)
         {
             copy.ClassExperience.Add(entry.Key, entry.Value);
@@ -151,6 +161,16 @@ public sealed class Character
         foreach (var entry in Balances)
         {
             copy.Balances.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in StatBonuses)
+        {
+            copy.StatBonuses.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in SkillMarks)
+        {
+            copy.SkillMarks.Add(entry.Key, entry.Value);
         }
 
         foreach (var entry in Tracks)
@@ -197,6 +217,11 @@ public sealed class Character
         foreach ((string id, decimal score) in Attributes)
         {
             creature.Values[id] = score;
+        }
+
+        foreach ((string id, decimal bonus) in StatBonuses)
+        {
+            creature.AdvancementBonuses[id] = bonus;
         }
 
         creature.Features.AddRange(Features);

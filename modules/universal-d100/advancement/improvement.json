@@ -1,0 +1,19 @@
+{
+  "type": "advancement",
+  "id": "improvement",
+  "name": "Skill improvement",
+  "kind": "improvement",
+  "improvement": {
+    "checks": [
+      { "skill": "axe", "when": "1d100 + ceil(self.int / 2) > self.axe", "amount": "1d6" },
+      { "skill": "bow", "when": "1d100 + ceil(self.int / 2) > self.bow", "amount": "1d6" },
+      { "skill": "brawl", "when": "1d100 + ceil(self.int / 2) > self.brawl", "amount": "1d6" },
+      { "skill": "dagger", "when": "1d100 + ceil(self.int / 2) > self.dagger", "amount": "1d6" },
+      { "skill": "dodge", "when": "1d100 + ceil(self.int / 2) > self.dodge", "amount": "1d6" },
+      { "skill": "mace", "when": "1d100 + ceil(self.int / 2) > self.mace", "amount": "1d6" },
+      { "skill": "shield", "when": "1d100 + ceil(self.int / 2) > self.shield", "amount": "1d6" },
+      { "skill": "spear", "when": "1d100 + ceil(self.int / 2) > self.spear", "amount": "1d6" },
+      { "skill": "sword", "when": "1d100 + ceil(self.int / 2) > self.sword", "amount": "1d6" }
+    ]
+  }
+}

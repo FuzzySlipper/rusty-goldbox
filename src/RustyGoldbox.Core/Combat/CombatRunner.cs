@@ -1,4 +1,5 @@
 using System.Text.Json;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -810,6 +811,11 @@ public sealed class CombatRunner
         int before = _dice.Rolls.Count;
         CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
         by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
+        if (result.Success && by.Character is Character character && check.Json.TryGetProperty("skill", out _))
+        {
+            CharacterRules.MarkSkillUse(_rules, character, check.Json.GetProperty("skill").GetString()!, []);
+        }
+
         Record(new CheckFact(by.Name, check.Name, result), before);
         return result;
     }

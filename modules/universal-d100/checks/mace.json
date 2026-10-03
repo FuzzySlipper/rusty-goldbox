@@ -2,6 +2,7 @@
   "type": "check",
   "id": "mace",
   "name": "Melee Weapon (Mace)",
+  "skill": "mace",
   "roll": "1d100",
   "target": "self.mace",
   "succeeds": "at-most",

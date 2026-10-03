@@ -16,6 +16,9 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     public Creature Creature { get; } = creature;
 
+    /// <summary>The persistent character behind this combatant, when it is a party member.</summary>
+    public Character? Character { get; init; }
+
     /// <summary>What it can take, in order of preference; the fight adds its combat definition's actions every creature has.</summary>
     public List<UseOption> Uses { get; } = uses.ToList();
 
@@ -103,7 +106,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
         renamed.Conditions.AddRange(Creature.Conditions);
         renamed.Equipment.AddRange(Creature.Equipment);
-        Combatant copy = new(newName, renamed, Uses);
+        Combatant copy = new(newName, renamed, Uses) { Character = Character };
         copy.Reactions.AddRange(Reactions);
         copy.Preparing.UnionWith(Preparing);
         copy.Prepared.AddRange(Prepared);
@@ -134,7 +137,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             .Concat(creature.Features.Distinct())
             .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment)));
         uses = uses.DistinctBy(use => (use.Action, use.Name)).ToList();
-        Combatant combatant = new(character.Name, creature, uses);
+        Combatant combatant = new(character.Name, creature, uses) { Character = character };
         combatant.AddReactions(rules, creature.ClassLevels.Keys.Concat(creature.Features.Distinct()));
         combatant.Preparing.UnionWith(character.Spells.Where(spell => CharacterRules.NeedsPreparing(rules, character, spell)));
         combatant.Prepared.AddRange(CharacterRules.PreparedLeft(rules, character));

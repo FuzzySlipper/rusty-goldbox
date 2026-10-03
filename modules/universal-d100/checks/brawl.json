@@ -2,6 +2,7 @@
   "type": "check",
   "id": "brawl",
   "name": "Brawl",
+  "skill": "brawl",
   "roll": "1d100",
   "target": "self.brawl",
   "succeeds": "at-most",
