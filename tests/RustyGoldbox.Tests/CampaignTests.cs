@@ -221,6 +221,39 @@ public sealed class CampaignTests
     }
 
     [Fact]
+    public void CallingOnAFormerClassForfeitsTheAdventuresExperience()
+    {
+        using TempModules modules = new();
+        string campaign = modules.Module("trial", "campaign", requires: $"{Require("classic", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("trial/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+--+", "|        |", "+--+--+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } }, "cells": [ { "at": [1, 0], "event": "guards" }, { "at": [2, 0], "event": "praise" } ] }""");
+        modules.Write("trial/campaign.json", """{ "type": "campaign", "id": "trial", "name": "Trial", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+        modules.Write("trial/guards.json", """{ "type": "event", "id": "guards", "kind": "combat", "encounter": "classic:crypt_guard" }""");
+        modules.Write("trial/praise.json", """{ "type": "event", "id": "praise", "kind": "experience", "amount": "100", "each": true }""");
+        using TempModules scratch = new();
+        string classic = Rules.ClassicPath;
+        Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Aldo", "--attributes", "str=16,dex=12,con=13,int=17,wis=10,cha=10", "--out", "aldo.json");
+        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "4500", "--seed", "2");
+        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "0", "--class", "magic_user", "--seed", "5");
+        Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Ada", "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--seed", "2", "--out", "ada.json");
+        Equip(scratch, "aldo.json", "classic:dagger");
+        Equip(scratch, "ada.json", "classic:long_sword", "classic:chain_mail", "classic:shield");
+        File.WriteAllText(Path.Combine(scratch.Root, "trial.script"), string.Join("\n",
+            "status",
+            "former 2 on",      // Ada has no former class
+            "former 1 on",      // the fighter's sword arm, at a price
+            "forward",          // the guards: Aldo fights as a fighter and forfeits his share
+            "former 1 off",
+            "forward",          // still forfeited: the rest of the adventure
+            "status") + "\n");
+
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "aldo.json,ada.json", "--script", "trial.script", "--seed", "3",
+            "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+
+        Assert.Equal(0, code);
+        Golden.Verify("classic-dual-class-play.txt", output.Replace(scratch.Root, "<scratch>", StringComparison.Ordinal).Replace(modules.Root, "<modules>", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void HandEditedSavesAreRefusedWithTheirPath()
     {
         using TempModules scratch = new();

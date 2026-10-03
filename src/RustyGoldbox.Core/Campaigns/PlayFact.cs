@@ -131,13 +131,14 @@ public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList
 }
 
 /// <summary>Experience the party earned, and each character's share.</summary>
-public sealed record ExperienceFact(IReadOnlyList<(string Who, decimal Amount)> Shares) : PlayFact
+/// <param name="Shares">Each share, forfeited when the character called on a former class this adventure.</param>
+public sealed record ExperienceFact(IReadOnlyList<(string Who, decimal Amount, bool Forfeited)> Shares) : PlayFact
 {
     public override string Kind => "experience";
 
     public override string Describe() => Shares.Count == 0
         ? "No one is standing to share the experience."
-        : $"Experience: {string.Join(", ", Shares.Select(share => $"{share.Who} {N(share.Amount)}"))}.";
+        : $"Experience: {string.Join(", ", Shares.Select(share => $"{share.Who} {N(share.Amount)}{(share.Forfeited ? " (forfeited: called on a former class)" : "")}"))}.";
 }
 
 /// <summary>A level a character gained in play, or one it has the experience for but needs choices to take.</summary>

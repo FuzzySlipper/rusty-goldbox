@@ -49,9 +49,11 @@ small:
   Dwarves follow the more restrictive class's armour and weapon limits and
   elves and halflings the less restrictive; the source's narrower rule that
   thieving abilities only work in thief armour is not modelled.
-- A dual-classed character's old class doesn't work at all until the new
-  class passes its level, rather than working at the cost of the adventure's
-  experience. Starting money for a multi-classed character is the wealthiest
+- A dual-classed character may call on its old class before the new class
+  passes its level (`former <member> on` in play); from then until the
+  adventure ends it earns no experience. Experience it earned earlier in the
+  adventure is kept rather than forfeited, and the whole campaign counts as
+  one adventure. Starting money for a multi-classed character is the wealthiest
   of its classes', as the source says (p. 30).
 - The dwarf and halfling constitution bonus applies to saves against spells
   and wands, but not to saves against poison (which share the death,

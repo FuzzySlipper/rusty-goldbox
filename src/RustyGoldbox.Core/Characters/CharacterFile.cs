@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "memorised", "prepared", "conditions", "portrait",
+        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "memorised", "prepared", "uses_former_classes", "forfeits_experience", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -132,6 +132,16 @@ public static class CharacterFile
                 WriteReferences(writer, "spells", character.Spells);
             }
 
+            if (character.UsesFormerClasses)
+            {
+                writer.WriteBoolean("uses_former_classes", true);
+            }
+
+            if (character.ForfeitsExperience)
+            {
+                writer.WriteBoolean("forfeits_experience", true);
+            }
+
             if (character.Memorised.Count > 0)
             {
                 WriteReferences(writer, "memorised", character.Memorised);
@@ -237,6 +247,14 @@ public static class CharacterFile
             if (character.Experience < 0)
             {
                 Error("$.experience", "experience can't be negative.");
+            }
+
+            // Before equipment: a character calling on a former class may hold what that class allows.
+            character.UsesFormerClasses = Flag(root, "uses_former_classes");
+            character.ForfeitsExperience = Flag(root, "forfeits_experience");
+            if (character.UsesFormerClasses && !character.HasDormantClasses())
+            {
+                Error("$.uses_former_classes", $"{character.Name} has no class waiting for its new class to pass it, so it can't call on one. Leave the field out.");
             }
 
             ReadList(root, "equipment", DefinitionTypes.Item, character.Equipment);
@@ -602,6 +620,23 @@ public static class CharacterFile
 
             Error($"{at}.{name}", $"\"{name}\" must be a number.");
             return null;
+        }
+
+        /// <summary>An optional true/false field; false when it is left out.</summary>
+        private bool Flag(JsonElement root, string name)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value))
+            {
+                return false;
+            }
+
+            if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            {
+                Error($"$.{name}", $"\"{name}\" must be true or false.");
+                return false;
+            }
+
+            return value.GetBoolean();
         }
 
         private void Error(string jsonPath, string message)

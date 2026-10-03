@@ -48,6 +48,24 @@ public sealed class Character
     /// <summary>The classes the character still advances in, in the order taken.</summary>
     public List<Definition> AdvancingClasses() => ClassLevels().Keys.Where(characterClass => !LeftClasses.Contains(characterClass)).ToList();
 
+    /// <summary>
+    /// Whether a class left by changing class still waits for the new classes
+    /// to pass its level (its abilities work only if the character calls on
+    /// them, <see cref="UsesFormerClasses"/>).
+    /// </summary>
+    public bool HasDormantClasses()
+    {
+        Dictionary<Definition, int> levels = ClassLevels();
+        int advancing = levels.Where(entry => !LeftClasses.Contains(entry.Key)).Select(entry => entry.Value).DefaultIfEmpty(0).Max();
+        return levels.Any(entry => LeftClasses.Contains(entry.Key) && entry.Value >= advancing);
+    }
+
+    /// <summary>Whether the character calls on its dormant classes' abilities anyway, at the cost of its experience (see <see cref="ForfeitsExperience"/>).</summary>
+    public bool UsesFormerClasses { get; set; }
+
+    /// <summary>Whether the character has called on a dormant class this adventure, so it earns no experience until the adventure ends.</summary>
+    public bool ForfeitsExperience { get; set; }
+
     /// <summary>The character's level in each of its classes, in the order it took them.</summary>
     public Dictionary<Definition, int> ClassLevels()
     {
@@ -117,7 +135,7 @@ public sealed class Character
         int advancing = reached.Where(entry => !LeftClasses.Contains(entry.Key)).Select(entry => entry.Value).DefaultIfEmpty(0).Max();
         foreach ((Definition characterClass, int level) in reached)
         {
-            if (!LeftClasses.Contains(characterClass) || level < advancing)
+            if (!LeftClasses.Contains(characterClass) || level < advancing || UsesFormerClasses)
             {
                 creature.ClassLevels[characterClass] = level;
             }

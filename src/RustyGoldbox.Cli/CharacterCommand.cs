@@ -14,6 +14,7 @@ internal static class CharacterCommand
         "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
+        + "       goldbox character former <file> --module <path> on|off\n"
         + "       goldbox character show <file> --module <path>";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
@@ -29,7 +30,8 @@ internal static class CharacterCommand
             "level" => Level(args.Skip(1), output, workingDirectory),
             "show" => Show(args.Skip(1), output, workingDirectory),
             "spells" => Spells(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells and show.\n{Usage}"),
+            "former" => Former(args.Skip(1), output, workingDirectory),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells, former and show.\n{Usage}"),
         };
     }
 
@@ -163,6 +165,41 @@ internal static class CharacterCommand
         List<ModuleDiagnostic> problems = [];
         if ((parsed.Single("--set") is string known && !CharacterRules.SetSpells(set.Rules!, character!, List(known), problems))
             || (parsed.Single("--memorise") is string memorised && !CharacterRules.SetMemorised(set.Rules!, character!, List(memorised), problems)))
+        {
+            return output.Problems(problems);
+        }
+
+        if (Save(path, character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        output.CharacterSheet(set.Rules!, character!, path, null, [], []);
+        return GoldboxCli.Ok;
+    }
+
+    /// <summary><c>character former</c>: a dual-classed character calls on its dormant classes (forfeiting experience) or stops.</summary>
+    private static int Former(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules"], []);
+        if (error is null && (parsed.Positionals.Count != 2 || parsed.Single("--module") is null || parsed.Positionals[1] is not ("on" or "off")))
+        {
+            error = Usage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        (ModuleSet set, Character? character, string path, int? failure) = LoadCharacter(parsed, output, workingDirectory);
+        if (failure is int code)
+        {
+            return code;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.UseFormerClasses(set.Rules!, character!, parsed.Positionals[1] == "on", problems))
         {
             return output.Problems(problems);
         }

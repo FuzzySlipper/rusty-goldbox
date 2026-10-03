@@ -36,7 +36,11 @@ public sealed class CharacterTests
             // A dual-classed fighter starts magic user at level 1, gains no hit points until passing fighter 3,
             // and fights with the magic user's table until then.
             ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "0", "--class", "magic_user", "--seed", "5"],
+            // Calling on the fighter brings back its table (and, in play, costs the adventure's experience).
+            ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "on"],
+            ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "off"],
             ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "20000", "--seed", "6"],
+            ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "on"],
             ["character", "show", "aldo.json", "--module", Rules.ClassicPath, "--json"]));
     }
 

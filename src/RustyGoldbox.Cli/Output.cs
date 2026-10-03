@@ -450,6 +450,14 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             : character.NextLevelExperience(rules) is decimal needed ? $"next level at {needed}" : "highest level";
         string total = multiclass ? $"level {character.Level}, " : "";
         writer.WriteLine($"{character.Name}: {character.Race.Name} {character.ClassText} ({total}{character.Experience} xp, {next}{left})");
+        if (character.HasDormantClasses())
+        {
+            string former = string.Join(" and ", character.LeftClasses.Select(left => left.Name));
+            writer.WriteLine(character.UsesFormerClasses
+                ? $"  calling on its former class ({former}), forfeiting experience"
+                : $"  former class ({former}) waits for the new class to pass it (character former <file> on to call on it)");
+        }
+
         if (character.LevelWaiting(rules))
         {
             writer.WriteLine($"  level {character.Level + 1} is waiting: {character.LatestClass.Name} has no more levels, so take it in another class (character level --xp 0 --class <id>).");

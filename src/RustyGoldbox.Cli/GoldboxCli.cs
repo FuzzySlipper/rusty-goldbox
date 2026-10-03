@@ -62,6 +62,11 @@ internal static class GoldboxCli
               payable from its tracks. Combat casts them first while it can pay. For classes
               that prepare spells, --memorise lists the copies it readies each day (repeat an ID
               for two), all payable together; without it, its known spells in order fill its slots.
+          goldbox character former <file> --module <path> on|off
+              A dual-classed character whose old class waits for the new one to pass it calls
+              on the old class's abilities anyway (on), or stops (off). While it does, the old
+              class works in fights, and in play it earns no experience for the rest of the
+              adventure; stopping doesn't give that back.
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 

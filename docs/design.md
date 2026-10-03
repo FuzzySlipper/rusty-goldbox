@@ -359,7 +359,10 @@ Combat is built so that no die convention is assumed:
 - **Experience** comes from felled monsters and experience events, shared
   among the survivors (or the whole party, as the ruleset says). A level that
   needs no choice is taken at once; one that does (a feat, a boost, the class
-  of the next level) waits until the player takes it with its choices.
+  of the next level) waits until the player takes it with its choices. A
+  dual-classed character may call on its former class before the new one
+  passes it (`former <member> on`), and earns no more experience that
+  adventure.
 - **Variables** are global or area-scoped. Each is declared with a type and an
   initial value; undeclared variables fail validation. Expressions read them
   as `campaign.var.<name>`.

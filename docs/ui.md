@@ -25,7 +25,8 @@ action, which Core checks. In play each member shows its experience; one with
 a level waiting (`levelReady`) gets a Level up button that sends the play
 command `level <n>`, and a level that needs choices is taken by typing them in
 the command box (`level 2 --feature weapon_focus`), the refusal listing what
-is open.
+is open. A dual-classed member whose former class waits (`formerClasses`) gets
+a button to call on it or set it aside (`former <n> on|off`).
 
 Keep only browser assets in `src/ui/`. The host admits every staged file by its
 content type; documentation belongs under `docs/`.

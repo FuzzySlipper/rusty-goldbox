@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...]";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -43,6 +43,12 @@ public sealed class CampaignRunner
         Definition area = rules.Reference(campaign, "$.start.area");
         CampaignState state = new() { Campaign = campaign, Seed = seed, Area = area };
         state.Party.AddRange(party);
+        foreach (Character character in state.Party)
+        {
+            // A new adventure: only a character already calling on a former class forfeits its experience.
+            character.ForfeitsExperience = character.UsesFormerClasses;
+        }
+
         Evaluator evaluator = new(rules, null);
         foreach (Definition variable in rules.Variables.Values)
         {
@@ -122,6 +128,9 @@ public sealed class CampaignRunner
                 break;
             case "level" when words.Length >= 2 && int.TryParse(words[1], out int member):
                 Level(member, words[2..], dice, facts);
+                break;
+            case "former" when words.Length == 3 && int.TryParse(words[1], out int caller) && words[2] is "on" or "off":
+                Former(caller, words[2] == "on", facts);
                 break;
             default:
                 facts.Add(new RefusedFact($"'{command}' is not a command. Commands: {CommandList}."));
@@ -353,7 +362,7 @@ public sealed class CampaignRunner
         }
 
         decimal share = each ? amount : decimal.Floor(amount / sharing.Count);
-        facts.Add(new ExperienceFact(sharing.Select(index => (_state.Party[index].Name, share)).ToList()));
+        facts.Add(new ExperienceFact(sharing.Select(index => (_state.Party[index].Name, share, _state.Party[index].ForfeitsExperience)).ToList()));
         foreach (int index in sharing)
         {
             Character character = _state.Party[index];
@@ -402,6 +411,28 @@ public sealed class CampaignRunner
         }
 
         ReportLevels(character, member, gains, before, dice, facts);
+    }
+
+    /// <summary>The former command: a dual-classed character calls on its dormant classes (forfeiting the adventure's experience) or stops.</summary>
+    private void Former(int member, bool use, List<PlayFact> facts)
+    {
+        if (member < 1 || member > _state.Party.Count)
+        {
+            facts.Add(new RefusedFact($"{member} is not a party member; members are 1 to {_state.Party.Count}."));
+            return;
+        }
+
+        Character character = _state.Party[member - 1];
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.UseFormerClasses(_rules, character, use, problems))
+        {
+            facts.Add(new RefusedFact(problems[0].Message));
+            return;
+        }
+
+        facts.Add(new TextFact(use
+            ? $"{character.Name} calls on the old ways, and will earn no experience for the rest of this adventure."
+            : $"{character.Name} sets the old ways aside."));
     }
 
     /// <summary>A fact for each level gained, then one if another level still waits for choices.</summary>
@@ -576,7 +607,8 @@ public sealed class CampaignRunner
                 .Select(track => (Track: track, Max: evaluator.TrackMax(creature, track)))
                 .Where(entry => entry.Max != 0)
                 .Select(entry => $"{entry.Track.Name.ToLowerInvariant()} {Fact(creature.Track(entry.Track.Id).Current ?? 0)}/{Fact(entry.Max)}"));
-            string ready = CharacterRules.ReadyToLevel(_rules, character) ? ", level ready" : "";
+            string ready = (CharacterRules.ReadyToLevel(_rules, character) ? ", level ready" : "")
+                + (character.UsesFormerClasses ? ", calling on former classes" : character.ForfeitsExperience ? ", forfeiting experience" : "");
             lines.Add($"{character.Name} ({tracks}, {Fact(character.Experience)} xp{ready})");
         }
 

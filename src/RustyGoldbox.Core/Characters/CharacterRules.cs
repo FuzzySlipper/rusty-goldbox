@@ -662,6 +662,11 @@ public static class CharacterRules
     /// </summary>
     public static List<LevelGain> Award(RuleSet rules, Character character, decimal experience, DiceRoller dice)
     {
+        if (character.ForfeitsExperience)
+        {
+            return [];
+        }
+
         bool classChosen = rules.Advancement?.Json.GetProperty("experience").GetString() == "character";
         if (!classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
         {
@@ -675,6 +680,33 @@ public static class CharacterRules
         }
 
         return [];
+    }
+
+    /// <summary>
+    /// Calls on the character's dormant classes or stops: while it does, their
+    /// abilities work as if it had never left them, and it earns no experience
+    /// for the rest of the adventure (stopping doesn't give it back).
+    /// </summary>
+    public static bool UseFormerClasses(RuleSet rules, Character character, bool use, List<ModuleDiagnostic> problems)
+    {
+        if (use && !character.HasDormantClasses())
+        {
+            problems.Add(new ModuleDiagnostic("character.class", $"{character.Name} has no class waiting for its new class to pass it, so there is nothing to call on."));
+            return false;
+        }
+
+        bool was = character.UsesFormerClasses;
+        character.UsesFormerClasses = use;
+        List<Definition> refused = character.Equipment.Where(item => EquipmentProblem(rules, character, item) is not null).ToList();
+        if (refused.Count > 0)
+        {
+            character.UsesFormerClasses = was;
+            problems.Add(new ModuleDiagnostic("character.class", $"{character.Name} holds {string.Join(", ", refused.Select(item => item.Name))}, which only a former class allows; put it away first."));
+            return false;
+        }
+
+        character.ForfeitsExperience |= use;
+        return true;
     }
 
     /// <summary>Whether the character has the experience for a level it hasn't taken.</summary>

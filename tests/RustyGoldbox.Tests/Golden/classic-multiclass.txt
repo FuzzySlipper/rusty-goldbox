@@ -118,6 +118,7 @@ Saved to aldo.json.
 $ goldbox character level aldo.json --module modules/classic --xp 0 --class magic_user --seed 5
 Reached level 4 (Magic user 1): +0 hit points.
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
+  former class (Fighter) waits for the new class to pass it (character former <file> on to call on it)
   hit points 14/14
   1st level spells 1/1
   gold 120
@@ -141,6 +142,60 @@ Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, le
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
   seed 5: no dice rolled
+[exit 0]
+
+$ goldbox character former aldo.json --module modules/classic on
+Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
+  calling on its former class (Fighter), forfeiting experience
+  hit points 14/14
+  1st level spells 1/1
+  gold 120
+  Magic user spells per day by spell level: 1
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          18     Roll needed to hit armour class 0
+  undead         false  Undead
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
+[exit 0]
+
+$ goldbox character former aldo.json --module modules/classic off
+Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
+  former class (Fighter) waits for the new class to pass it (character former <file> on to call on it)
+  hit points 14/14
+  1st level spells 1/1
+  gold 120
+  Magic user spells per day by spell level: 1
+  str            16     Strength
+  dex            12     Dexterity
+  con            13     Constitution
+  int            17     Intelligence
+  wis            10     Wisdom
+  cha            10     Charisma
+  ac             10     Armour class (lower is better)
+  con_hp         0      Constitution hit point bonus per die
+  dex_ac         0      Dexterity armour class adjustment
+  dex_missile    0      Dexterity missile bonus to hit
+  movement       120    Movement rate (ft per round)
+  size           medium Size: small, medium or large
+  str_damage     1      Strength damage adjustment
+  str_to_hit     0      Strength bonus to hit
+  thac0          21     Roll needed to hit armour class 0
+  undead         false  Undead
+  wis_save       0      Wisdom mental saving throw bonus
+Saved to aldo.json.
 [exit 0]
 
 $ goldbox character level aldo.json --module modules/classic --xp 20000 --seed 6
@@ -173,6 +228,12 @@ Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 220
 Saved to aldo.json.
   seed 6: 1d4: 1 = 1
 [exit 0]
+
+$ goldbox character former aldo.json --module modules/classic on
+error[character.class] 
+  Aldo has no class waiting for its new class to pass it, so there is nothing to call on.
+1 error.
+[exit 1]
 
 $ goldbox character show aldo.json --module modules/classic --json
 {
@@ -258,6 +319,7 @@ $ goldbox character show aldo.json --module modules/classic --json
     },
     "gold": 120,
     "equipment": [],
+    "forfeits_experience": true,
     "conditions": []
   },
   "next_level_experience": null,

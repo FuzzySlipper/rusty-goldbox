@@ -226,6 +226,12 @@ export function mountProductUi(root, context) {
       row(...(view.party ?? []).flatMap((member, index) => member.levelReady
         ? [button(`Level up ${member.name}`, () => send({ action: 'play', command: `level ${index + 1}` }))]
         : [])),
+      // A dual-classed member may call on its waiting former class, forfeiting the adventure's experience.
+      row(...(view.party ?? []).flatMap((member, index) => member.formerClasses === 'waiting'
+        ? [button(`${member.name}: call on former class`, () => send({ action: 'play', command: `former ${index + 1} on` }))]
+        : member.formerClasses === 'called'
+          ? [button(`${member.name}: set former class aside`, () => send({ action: 'play', command: `former ${index + 1} off` }))]
+          : [])),
       row(slot, button('Save', () => send({ action: 'save', slot: slot.value })), button('Quit', () => send({ action: 'quit' }))));
   };
 

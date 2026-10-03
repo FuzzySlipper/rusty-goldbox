@@ -151,7 +151,7 @@ and runs the fight inside the Engine tool host; run k uses random scope
 
 `CampaignRunner` owns play: it takes one command at a time (`forward`,
 `back`, `left`, `right`, `around`, `choose <n>`, `look`, `status`,
-`level <member>`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
+`level <member>`, `former <member> on|off`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu waits for a choice, the chain ends, or the adventure does. A
 combat event fights the party against an encounter with `CombatRunner`, and

@@ -262,6 +262,7 @@ internal static class SessionProjection
             ["gold"] = (double)character.Gold,
             ["experience"] = (double)character.Experience,
             ["levelReady"] = CharacterRules.ReadyToLevel(rules, character),
+            ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
         };
     }
