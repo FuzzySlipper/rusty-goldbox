@@ -458,6 +458,7 @@ public static class CharacterFile
 
             List<ModuleStamp> loaded = Character.StampsOf(set).ToList();
             List<string> differences = [];
+            List<string> missing = [];
             foreach (ModuleStamp stamp in stamps)
             {
                 ModuleStamp? match = loaded.FirstOrDefault(module => module.Id == stamp.Id);
@@ -465,6 +466,7 @@ public static class CharacterFile
                 if (match is null)
                 {
                     differences.Add($"{stamp.Id} {stamp.Version} is not loaded");
+                    missing.Add(stamp.Id);
                 }
                 else if (!compatible!.Contains(match.Version))
                 {
@@ -474,7 +476,7 @@ public static class CharacterFile
 
             if (differences.Count > 0)
             {
-                Error("$.modules", $"The character needs modules that aren't loaded: {string.Join("; ", differences)}. Load the modules it lists, or a set that requires them.");
+                Error("$.modules", $"The character needs modules that aren't loaded: {string.Join("; ", differences)}. Load the modules it lists: a set that requires them{(missing.Count > 0 ? $", or add extensions with --extension {string.Join(",", missing)}" : "")}.");
             }
 
             return stamps;

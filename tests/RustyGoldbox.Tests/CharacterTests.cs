@@ -311,6 +311,37 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void AnAddedExtensionsClassBringsItsOwnStartingGoldAndIsStamped()
+    {
+        using TempModules modules = new();
+        string degrees = Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "degrees");
+        modules.Module("blades", "extension", requires: TempModules.Require("degrees", "^0.1.0"));
+        string level = """{ "hp": "if self.level == 1 then 8 + self.ancestry_hp else 8", "hp_bonus": "self.stamina_mod" }""";
+        string levels = string.Join(", ", Enumerable.Repeat(level, 5));
+        modules.Write("blades/classes/duelist.json", $$"""{ "type": "class", "id": "duelist", "name": "Duelist", "levels": [ {{levels}} ], "boosts": [ { "from": ["finesse"] } ], "starting_gold": "20" }""");
+        modules.Write("blades/classes/drifter.json", $$"""{ "type": "class", "id": "drifter", "name": "Drifter", "levels": [ {{levels}} ], "boosts": [ { "from": ["finesse"] } ] }""");
+        ModuleSet set = ModuleLoader.Load(degrees, [modules.Root, Path.GetDirectoryName(degrees)!], extensions: ["blades"]);
+        Assert.Empty(set.Diagnostics);
+
+        // The creation's starting_gold names only the fixture's own classes; the extension's class pays its own.
+        string[] boosts = ["presence", "insight", "stamina", "finesse", "stamina", "insight", "brawn"];
+        Character duelist = Create(set, new CreationRequest("Vex", "duelist", "sylvan", Features: ["duskwood", "scribe", "sylvan_step"], Boosts: boosts))!;
+        Assert.Equal(20, duelist.Gold);
+        Assert.Equal(["degrees", "blades"], duelist.Modules.Select(module => module.Id));
+
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Rook", "drifter", "sylvan", Features: ["duskwood", "scribe", "sylvan_step"], Boosts: boosts), dice, problems)));
+        Assert.Contains(problems, problem => problem.Rule == "character.gold" && problem.Message.Contains("Give the class a \"starting_gold\"", StringComparison.Ordinal));
+
+        // Read back without the extension, the character is refused with the ID to add.
+        string file = Path.Combine(modules.Root, "vex.json");
+        File.WriteAllText(file, CharacterFile.ToJson(duelist));
+        problems.Clear();
+        Assert.Null(CharacterFile.Read(file, ModuleLoader.Load(degrees, []), problems));
+        Assert.Contains(problems, problem => problem.Message.Contains("--extension blades", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void FailingRuleExpressionsNameTheirDefinition()
     {
         using TempModules modules = new();

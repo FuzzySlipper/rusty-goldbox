@@ -18,13 +18,13 @@ namespace RustyGoldbox.Cli;
 internal static class PlayCommand
 {
     private const string Usage =
-        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--store <dir>] [--modules <dir>]...\n"
+        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
         + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--store <dir>]\n"
         + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--party", "--seed", "--script", "--save", "--load", "--store"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store"], []);
         bool loading = parsed.Single("--load") is not null;
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || loading == (parsed.Single("--party") is not null)))
         {
@@ -59,7 +59,8 @@ internal static class PlayCommand
 
         ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--campaign")!, workingDirectory),
-            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
+            ModuleSets.Extensions(parsed));
         if (set.Rules is null || !set.IsValid)
         {
             return output.ModuleErrors(set);

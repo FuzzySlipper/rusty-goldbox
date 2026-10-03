@@ -31,12 +31,19 @@ internal static class SessionProjection
                 ["id"] = campaign.Id,
                 ["title"] = campaign.Title,
                 ["version"] = campaign.Version.ToString(),
+                ["extensions"] = new JsonArray(campaign.Extensions.Select(extension => (JsonNode)new JsonObject
+                {
+                    ["id"] = extension.Id,
+                    ["title"] = extension.Title,
+                    ["version"] = extension.Version.ToString(),
+                }).ToArray()),
             }).ToArray()),
         };
 
         if (session.Screen != Screen.Title)
         {
             projection["seed"] = session.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            projection["extensions"] = new JsonArray(session.Set!.Extensions.Select(id => (JsonNode)id).ToArray());
         }
 
         if (session.Screen == Screen.Party)

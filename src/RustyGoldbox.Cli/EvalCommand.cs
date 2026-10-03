@@ -15,14 +15,14 @@ namespace RustyGoldbox.Cli;
 internal static class EvalCommand
 {
     public const string Usage =
-        "Usage: goldbox eval <expression> --module <path> [--context <json> | --context @<file>] [--seed <n>] [--modules <dir>]...\n"
+        "Usage: goldbox eval <expression> --module <path> [--context <json> | --context @<file>] [--seed <n>] [--modules <dir>]... [--extension <id>]...\n"
         + "       goldbox eval --check <check-id> --module <path> [--context ...] [--seed <n>]";
 
     private const string RandomScope = "goldbox.eval";
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--context", "--seed", "--check"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--context", "--seed", "--check"], []);
         string? checkId = parsed.Single("--check");
         string? modulePath = parsed.Single("--module");
         int expected = checkId is null ? 1 : 0;
@@ -45,7 +45,8 @@ internal static class EvalCommand
 
         ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(modulePath!, workingDirectory),
-            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
+            ModuleSets.Extensions(parsed));
         if (set.Rules is null || !set.IsValid)
         {
             return output.ModuleErrors(set);

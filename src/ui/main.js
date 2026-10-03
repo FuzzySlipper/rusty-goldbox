@@ -75,9 +75,21 @@ export function mountProductUi(root, context) {
   const renderTitle = (view) => {
     const list = element('ul', { style: 'padding-left:16px' });
     for (const campaign of view.campaigns ?? []) {
+      // Extensions the player may add: drop-in content built on the campaign's ruleset.
+      const choices = (campaign.extensions ?? []).map((extension) => {
+        const box = element('input', { type: 'checkbox', 'aria-label': `Add ${extension.title} to ${campaign.title}` });
+        return { extension, box };
+      });
       list.append(element('li', {},
         `${campaign.title} (${campaign.id} ${campaign.version}) `,
-        button('Open', () => send({ action: 'open', campaign: campaign.bundle }))));
+        button('Open', () => send({
+          action: 'open',
+          campaign: campaign.bundle,
+          extensions: choices.filter((choice) => choice.box.checked).map((choice) => choice.extension.id),
+        })),
+        ...(choices.length ? [element('div', { style: 'opacity:.8' }, 'Extensions: ',
+          ...choices.map((choice) => element('label', { style: 'margin-right:8px' }, choice.box,
+            ` ${choice.extension.title} (${choice.extension.id} ${choice.extension.version})`)))] : [])));
     }
     return fragment(
       element('h2', { style: HEADING_STYLE }, 'Campaigns'), list,
@@ -111,7 +123,9 @@ export function mountProductUi(root, context) {
     const choices = renderChoices(view);
     const chosen = (view.portraits ?? []).find((entry) => entry.id === portrait.value);
     return fragment(
-      element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`), members,
+      element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`),
+      ...(view.extensions?.length ? [element('div', { style: 'opacity:.8' }, `Extensions: ${view.extensions.join(', ')}`)] : []),
+      members,
       row(name, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.url, 'Chosen portrait', 32)),
       choices.rows,
       row(button('Roll', () => send({

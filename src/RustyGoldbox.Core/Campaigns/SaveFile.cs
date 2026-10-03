@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "inventory", "ended", "party",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -44,6 +44,13 @@ public static class SaveFile
                 writer.WriteString("version", loaded.Manifest.Version.ToString());
                 writer.WriteString("identity", loaded.Manifest.Source.Identity);
                 writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("extensions");
+            foreach (string extension in set.Extensions)
+            {
+                writer.WriteStringValue(extension);
             }
 
             writer.WriteEndArray();
@@ -239,11 +246,33 @@ public static class SaveFile
                 }
             }
 
-            differences.AddRange(saved.Select(entry => $"{entry.Key} {entry.Value.Version} was in the saved set but isn't loaded"));
+            List<string> extensions = Extensions(root);
+            differences.AddRange(saved.Select(entry => extensions.Contains(entry.Key)
+                ? $"{entry.Key} {entry.Value.Version} was added to the saved set as an extension but isn't loaded (add it with --extension {entry.Key})"
+                : $"{entry.Key} {entry.Value.Version} was in the saved set but isn't loaded"));
             if (differences.Count > 0)
             {
                 Error("$.modules", $"The save was made under a different module set: {string.Join("; ", differences)}. Load the exact modules it was saved with.");
             }
+        }
+
+        /// <summary>The extensions the save's set added (none when it names none).</summary>
+        private List<string> Extensions(JsonElement root)
+        {
+            List<string> extensions = [];
+            if (!root.TryGetProperty("extensions", out JsonElement added))
+            {
+                return extensions;
+            }
+
+            if (added.ValueKind != JsonValueKind.Array || added.EnumerateArray().Any(entry => entry.ValueKind != JsonValueKind.String))
+            {
+                Error("$.extensions", "\"extensions\" must be a list of the module IDs added to the set as extensions.");
+                return extensions;
+            }
+
+            extensions.AddRange(added.EnumerateArray().Select(entry => entry.GetString()!));
+            return extensions;
         }
 
         private void ReadVariables(JsonElement root, CampaignState state)

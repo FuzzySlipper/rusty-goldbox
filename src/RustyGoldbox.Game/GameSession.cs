@@ -78,16 +78,25 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
-    public void Open(string bundle, ulong seed)
+    /// <param name="extensions">Extension IDs to add to the campaign's module set, from those it offers.</param>
+    public void Open(string bundle, ulong seed, IReadOnlyList<string>? extensions = null)
     {
         Notes.Clear();
-        if (Campaigns.All(campaign => campaign.Bundle != bundle))
+        if (Campaigns.FirstOrDefault(campaign => campaign.Bundle == bundle) is not CampaignChoice choice)
         {
             Notes.Add($"'{bundle}' is not one of the campaigns offered.");
             return;
         }
 
-        if (LoadSet(bundle) is not ModuleSet set)
+        extensions ??= [];
+        if (extensions.FirstOrDefault(id => choice.Extensions.All(offered => offered.Id != id)) is string unknown)
+        {
+            string offered = choice.Extensions.Count == 0 ? "none" : string.Join(", ", choice.Extensions.Select(offered => offered.Id));
+            Notes.Add($"'{unknown}' is not an extension {choice.Title} offers (it offers {offered}).");
+            return;
+        }
+
+        if (LoadSet(bundle, extensions) is not ModuleSet set)
         {
             return;
         }
@@ -328,7 +337,7 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (CampaignModule(json) is not (string module, string version, string identity))
+        if (CampaignModule(json) is not (string module, string version, string identity, List<string> extensions))
         {
             Notes.Add($"{SaveSlots.Location(slot)} isn't a campaign save.");
             return;
@@ -340,7 +349,7 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (LoadSet(bundle) is not ModuleSet set)
+        if (LoadSet(bundle, extensions) is not ModuleSet set)
         {
             return;
         }
@@ -398,9 +407,9 @@ internal sealed class GameSession(ModuleLibrary library)
         Log.Clear();
     }
 
-    private ModuleSet? LoadSet(string bundle)
+    private ModuleSet? LoadSet(string bundle, IReadOnlyList<string> extensions)
     {
-        ModuleSet set = library.Load(bundle);
+        ModuleSet set = library.Load(bundle, extensions);
         if (set.Rules is null || !set.IsValid)
         {
             Notes.AddRange(set.Diagnostics.Select(Describe));
@@ -410,8 +419,8 @@ internal sealed class GameSession(ModuleLibrary library)
         return set;
     }
 
-    /// <summary>The campaign module (ID, version and identity) a save names, without trusting the rest of it yet.</summary>
-    private static (string Id, string Version, string Identity)? CampaignModule(byte[] json)
+    /// <summary>The campaign module (ID, version and identity) a save names and the extensions it added, without trusting the rest of it yet.</summary>
+    private static (string Id, string Version, string Identity, List<string> Extensions)? CampaignModule(byte[] json)
     {
         try
         {
@@ -434,7 +443,10 @@ internal sealed class GameSession(ModuleLibrary library)
                     && entry.TryGetProperty("version", out JsonElement version) && version.ValueKind == JsonValueKind.String
                     && entry.TryGetProperty("identity", out JsonElement identity) && identity.ValueKind == JsonValueKind.String)
                 {
-                    return (module, version.GetString()!, identity.GetString()!);
+                    List<string> extensions = root.TryGetProperty("extensions", out JsonElement added) && added.ValueKind == JsonValueKind.Array
+                        ? added.EnumerateArray().Where(entry => entry.ValueKind == JsonValueKind.String).Select(entry => entry.GetString()!).ToList()
+                        : [];
+                    return (module, version.GetString()!, identity.GetString()!, extensions);
                 }
             }
 

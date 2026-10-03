@@ -91,6 +91,16 @@ No module may require a campaign, and a resolved module set contains at most
 one ruleset. A kind tells the validator what is allowed. It does not
 create a different loader.
 
+A set is a module plus what it requires, and may also take **added
+extensions**: extension modules nothing in it requires, such as a user's own
+class book for a ruleset, which load after the module (`--extension <id>` in
+the CLI; a checkbox per installed extension built on a campaign's ruleset in
+the Game). They resolve like requirements, and their ruleset must be the
+set's. Character files stamp every module of the set they were made under and
+saves record the added extensions, so loading either without them is refused
+with the IDs to add. A class can carry its own `starting_gold`, so an added
+class needs no patch to the ruleset's character creation.
+
 ### Identity and references
 
 - Each definition has an ID that is local to its module (`fighter`), with

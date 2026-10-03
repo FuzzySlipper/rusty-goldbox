@@ -14,7 +14,8 @@ public static class ModuleLoader
     /// containers: the module path when it is one, and every <c>.rpak</c> in
     /// the search directories. Without it only module directories are searched.
     /// </param>
-    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IContentService? content = null)
+    /// <param name="extensions">IDs of extension modules to add to the set, found where requirements are.</param>
+    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IContentService? content = null, IReadOnlyList<string>? extensions = null)
     {
         // "house/" and "house" are the same module; the parent lookup for
         // sibling search needs the form without the trailing separator.
@@ -36,7 +37,7 @@ public static class ModuleLoader
             List<ModuleSource> available = ModuleCatalog.Sources(directories, modulePath, content, opened, unreadable, diagnostics);
             string howToAdd = "Add the directory that holds it (a module directory or an installed .rpak) with --modules <dir> or to the \"modules\" list in goldbox.json.";
             ModuleCatalog catalog = ModuleCatalog.Read(available, root, directories, howToAdd, unreadable);
-            return Load(root, catalog, directories, diagnostics);
+            return Load(root, catalog, directories, extensions ?? [], diagnostics);
         }
         finally
         {
@@ -75,7 +76,8 @@ public static class ModuleLoader
     /// </summary>
     /// <param name="searched">Where the sources came from, named in messages about missing modules.</param>
     /// <param name="howToAdd">How to make a missing module available, for the same messages.</param>
-    public static ModuleSet Load(ModuleSource root, IReadOnlyList<ModuleSource> available, IReadOnlyList<string> searched, string howToAdd)
+    /// <param name="extensions">IDs of extension modules to add to the set from <paramref name="available"/>.</param>
+    public static ModuleSet Load(ModuleSource root, IReadOnlyList<ModuleSource> available, IReadOnlyList<string> searched, string howToAdd, IReadOnlyList<string>? extensions = null)
     {
         List<ModuleDiagnostic> diagnostics = [];
         ModuleManifest? manifest = ManifestReader.Read(root, diagnostics);
@@ -84,12 +86,13 @@ public static class ModuleLoader
             return new ModuleSet(null, searched, [], null, diagnostics);
         }
 
-        return Load(manifest, ModuleCatalog.Read(available, manifest, searched, howToAdd, []), searched, diagnostics);
+        return Load(manifest, ModuleCatalog.Read(available, manifest, searched, howToAdd, []), searched, extensions ?? [], diagnostics);
     }
 
-    private static ModuleSet Load(ModuleManifest root, ModuleCatalog catalog, IReadOnlyList<string> searched, List<ModuleDiagnostic> diagnostics)
+    private static ModuleSet Load(ModuleManifest root, ModuleCatalog catalog, IReadOnlyList<string> searched, IReadOnlyList<string> extensions, List<ModuleDiagnostic> diagnostics)
     {
-        List<LoadedModule> order = new ModuleResolver(catalog, diagnostics).Resolve(root);
+        ModuleResolver resolver = new(catalog, diagnostics);
+        List<LoadedModule> order = resolver.Resolve(root, extensions);
         List<Definition> definitions = [];
         foreach (LoadedModule loaded in order)
         {
@@ -104,6 +107,6 @@ public static class ModuleLoader
             rules = RuleSetBuilder.Build(order, definitions, diagnostics);
         }
 
-        return new ModuleSet(root, searched, order, rules, diagnostics);
+        return new ModuleSet(root, searched, order, rules, diagnostics) { Extensions = resolver.Added.Select(added => added.Id).ToList() };
     }
 }

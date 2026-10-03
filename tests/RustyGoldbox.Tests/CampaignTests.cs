@@ -52,6 +52,30 @@ public sealed class CampaignTests
     }
 
     [Fact]
+    public void ASaveRecordsItsAddedExtensionsAndNeedsThemToLoad()
+    {
+        using TempModules modules = new();
+        modules.Module("house", "extension", requires: Require("classic", "^0.1.0"));
+        using TempModules scratch = new();
+        WriteParty(scratch, Rules.ClassicPath);
+        File.WriteAllText(Path.Combine(scratch.Root, "look.script"), "status\n");
+        string library = Path.Combine(Rules.RepositoryRoot, "modules");
+
+        (int played, _) = Run(scratch, "play", "--campaign", SampleCrypt, "--party", "ada.json,brom.json", "--script", "look.script", "--save", "s.json",
+            "--modules", library, "--modules", modules.Root, "--extension", "house");
+        using JsonDocument save = JsonDocument.Parse(File.ReadAllText(Path.Combine(scratch.Root, "s.json")));
+        (int without, string refused) = Run(scratch, "play", "--campaign", SampleCrypt, "--load", "s.json", "--script", "look.script", "--modules", library);
+        (int with, _) = Run(scratch, "play", "--campaign", SampleCrypt, "--load", "s.json", "--script", "look.script",
+            "--modules", library, "--modules", modules.Root, "--extension", "house");
+
+        Assert.Equal(0, played);
+        Assert.Equal(["house"], save.RootElement.GetProperty("extensions").EnumerateArray().Select(entry => entry.GetString()));
+        Assert.NotEqual(0, without);
+        Assert.Contains("added to the saved set as an extension but isn't loaded (add it with --extension house)", refused, StringComparison.Ordinal);
+        Assert.Equal(0, with);
+    }
+
+    [Fact]
     public void SaveSlotsInEnginePersistenceCarryGamesBothWays()
     {
         using TempModules scratch = new();

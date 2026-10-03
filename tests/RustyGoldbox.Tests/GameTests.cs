@@ -216,6 +216,54 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void ACampaignOffersInstalledExtensionsAndASaveLoadsThemAgain()
+    {
+        using TempModules scratch = new();
+        using TempModules modules = new();
+        string house = modules.Module("house", "extension", requires: TempModules.Require("classic", "^0.1.0"));
+        modules.Module("elsewhere", "extension", requires: TempModules.Require("three-action", "^0.1.0"));
+        string Pack(string directory)
+        {
+            string output = Path.Combine(scratch.Root, Path.GetFileName(directory) + ".rpak");
+            (int code, string printed) = CampaignTests.Run(scratch, "module", "pack", directory, "--output", output, "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+            Assert.True(code == 0, printed);
+            return output;
+        }
+
+        List<string> containers = [.. Containers(scratch), Pack(house), Pack(Path.Combine(modules.Root, "elsewhere")),
+            Pack(Path.Combine(Rules.RepositoryRoot, "modules", "three-action"))];
+        string store = Path.Combine(scratch.Root, "persistence");
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
+        host.Call(engine =>
+        {
+            GameSession session = new(new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+            session.Refresh();
+
+            // Only the extension built on the campaign's ruleset is offered.
+            JsonNode offered = SessionProjection.Build(session)["campaigns"]![0]!["extensions"]!;
+            Assert.Equal("house", Assert.Single(offered.AsArray())!["id"]!.GetValue<string>());
+            string campaign = Assert.Single(session.Campaigns).Bundle;
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = "11", extensions = new[] { "elsewhere" } }));
+            Assert.Contains("'elsewhere' is not an extension", Assert.Single(session.Notes), StringComparison.Ordinal);
+
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = "11", extensions = new[] { "house" } }));
+            Assert.Equal(["house"], session.Set!.Extensions);
+            Assert.Equal("house", SessionProjection.Build(session)["extensions"]![0]!.GetValue<string>());
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            Run(session, engine, """{ "action": "begin" }""");
+            Run(session, engine, """{ "action": "save", "slot": "with-house" }""");
+            session.Quit();
+            Run(session, engine, """{ "action": "load", "slot": "with-house" }""");
+            Assert.Equal(Screen.Play, session.Screen);
+            Assert.Equal(["house"], session.Set!.Extensions);
+        });
+    }
+
+    [Fact]
     public void ThePartyPlaysSavesAndLoadsThroughCommands()
     {
         using TempModules scratch = new();

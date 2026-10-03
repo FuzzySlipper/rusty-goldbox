@@ -25,6 +25,45 @@ public sealed class ModuleLoaderTests
     }
 
     [Fact]
+    public void AddedExtensionsLoadAfterTheModuleWithWhatTheyRequire()
+    {
+        using TempModules modules = new();
+        string classic = modules.Module("classic", "ruleset");
+        modules.Module("book-art", "assets");
+        modules.Module("blades", "extension", "0.1.0", requires: Require("classic", "^0.1.0"), directory: "blades-0.1");
+        modules.Module("blades", "extension", "0.2.0", requires: $"{Require("classic", "^0.1.0")}, {Require("book-art", "*")}", directory: "blades-0.2");
+        modules.Module("beasts", "extension", requires: Require("classic", "^0.1.0"));
+
+        ModuleSet set = ModuleLoader.Load(classic, [], extensions: ["blades", "beasts", "blades"]);
+
+        // The highest version, after the ruleset and its own requirement; each added once.
+        Assert.Empty(set.Diagnostics);
+        Assert.Equal(["classic", "book-art", "blades", "beasts"], set.LoadOrder.Select(loaded => loaded.Manifest.Id));
+        Assert.Equal(new ModuleVersion(0, 2, 0), set.LoadOrder[2].Manifest.Version);
+        Assert.Equal(["blades", "beasts"], set.Extensions);
+    }
+
+    [Fact]
+    public void AddedExtensionsMustExistBeExtensionsAndShareTheRuleset()
+    {
+        using TempModules modules = new();
+        string classic = modules.Module("classic", "ruleset");
+        modules.Module("other", "ruleset");
+        modules.Module("art", "assets");
+        modules.Module("elsewhere", "extension", requires: Require("other", "*"));
+
+        ModuleDiagnostic missing = Assert.Single(ModuleLoader.Load(classic, [], extensions: ["nope"]).Diagnostics);
+        ModuleDiagnostic kind = Assert.Single(ModuleLoader.Load(classic, [], extensions: ["art"]).Diagnostics);
+        ModuleDiagnostic ruleset = Assert.Single(ModuleLoader.Load(classic, [], extensions: ["elsewhere"]).Diagnostics);
+
+        Assert.Equal("extension.not-found", missing.Rule);
+        Assert.Contains(modules.Root, missing.Message, StringComparison.Ordinal);
+        Assert.Equal("extension.kind", kind.Rule);
+        Assert.Contains("'art' is a module of kind assets", kind.Message, StringComparison.Ordinal);
+        Assert.Equal("resolve.rulesets", ruleset.Rule);
+    }
+
+    [Fact]
     public void PicksTheHighestMatchingVersion()
     {
         using TempModules modules = new();

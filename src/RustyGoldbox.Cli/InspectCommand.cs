@@ -9,10 +9,10 @@ internal static class InspectCommand
 {
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules", "--extension"], []);
         if (error is null && parsed.Positionals.Count is < 1 or > 2)
         {
-            error = "Usage: goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]...";
+            error = "Usage: goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]... [--extension <id>]...";
         }
 
         if (error is not null)
@@ -22,7 +22,8 @@ internal static class InspectCommand
 
         ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Positionals[0], workingDirectory),
-            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
+            ModuleSets.Extensions(parsed));
         if (set.Rules is null || !set.IsValid)
         {
             return output.ModuleErrors(set);

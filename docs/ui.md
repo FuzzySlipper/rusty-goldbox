@@ -11,6 +11,12 @@ the first-person view in a window at the top left
 not cover it. The product project selects this directory and module for SDK
 staging.
 
+Each campaign on the title screen lists the extensions the player may add
+(`extensions`: installed extension modules built on its ruleset that it
+doesn't require), each with a checkbox; Open sends the checked IDs with the
+`open` action. The party screen names the extensions loaded, and a save
+records them, so loading it adds them again.
+
 The party screen asks for what a roll needs from the projection's `creation`
 (the default creation's method, attributes, grants and boosts), each class's
 first-level `grants`, and every feature's kind and boosts: a select for each

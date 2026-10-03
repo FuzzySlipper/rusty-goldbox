@@ -1332,38 +1332,45 @@ public static class CharacterRules
         }
     }
 
-    /// <summary>The creation's starting gold for the character's class; with several classes, the wealthiest of them.</summary>
+    /// <summary>
+    /// The starting gold for the character's class: the creation's entry for
+    /// it, else the class's own; with several classes, the wealthiest of them.
+    /// </summary>
     private static decimal StartingGold(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
     {
         List<decimal> amounts = [];
+        bool creationGold = creation.Json.TryGetProperty("starting_gold", out JsonElement golds);
         foreach (Definition characterClass in character.ClassLevels().Keys)
         {
             string? found = null;
-            if (!creation.Json.TryGetProperty("starting_gold", out JsonElement golds))
+            if (creationGold)
             {
-                break;
-            }
-
-            foreach (JsonProperty entry in golds.EnumerateObject())
-            {
-                if (rules.Reference(creation, $"$.starting_gold.{entry.Name}") == characterClass)
+                foreach (JsonProperty entry in golds.EnumerateObject())
                 {
-                    found = $"$.starting_gold.{entry.Name}";
+                    if (rules.Reference(creation, $"$.starting_gold.{entry.Name}") == characterClass)
+                    {
+                        found = $"$.starting_gold.{entry.Name}";
+                    }
                 }
             }
 
-            if (found is null)
+            if (found is not null)
+            {
+                amounts.Add(Evaluate(rules, evaluator, creation, found, character.ToCreature()));
+            }
+            else if (characterClass.Json.TryGetProperty("starting_gold", out _))
+            {
+                amounts.Add(Evaluate(rules, evaluator, characterClass, "$.starting_gold", character.ToCreature()));
+            }
+            else if (creationGold)
             {
                 problems.Add(new ModuleDiagnostic(
                     "character.gold",
-                    $"{creation.QualifiedId} has no starting_gold for {characterClass.QualifiedId}. Add \"{characterClass.Id}\" to its starting_gold.",
+                    $"{creation.QualifiedId} has no starting_gold for {characterClass.QualifiedId}, and the class has none of its own. Give the class a \"starting_gold\", or add \"{characterClass.Id}\" to the creation's.",
                     creation.Module,
                     creation.File,
                     "$.starting_gold"));
-                continue;
             }
-
-            amounts.Add(Evaluate(rules, evaluator, creation, found, character.ToCreature()));
         }
 
         return amounts.DefaultIfEmpty(0).Max();

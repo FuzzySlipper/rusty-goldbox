@@ -19,12 +19,6 @@
     {},
     {}
   ],
-  "starting_gold": {
-    "fighter": "15",
-    "rogue": "15",
-    "cleric": "15",
-    "wizard": "15"
-  },
   "features": [
     {
       "kind": "heritage"

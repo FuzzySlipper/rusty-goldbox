@@ -59,7 +59,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
-| `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns and loading a module set from them |
+| `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
 | `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL |
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
@@ -85,7 +85,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 ## Module loading
 
 `ModuleLoader.Load` reads the root manifest, finds search directories, scans
-them for candidate modules, resolves one version per required ID, orders the
+them for candidate modules, resolves one version per required ID (then any
+added extensions, `ModuleSet.Extensions`, and what they require), orders the
 set so each module follows what it requires, checks kind rules and then checks
 every definition file. It reads files through a `ModuleSource`: module
 directories, and Engine bundles and containers (`BundleModuleSource`). Given

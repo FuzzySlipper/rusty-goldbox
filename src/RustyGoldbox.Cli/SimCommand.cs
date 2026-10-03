@@ -13,7 +13,7 @@ namespace RustyGoldbox.Cli;
 internal static class SimCommand
 {
     private const string Usage =
-        "Usage: goldbox sim combat --module <path> --party <file>[,<file>...] --encounter <id> [--combat <id>] [--seed <n>] [--runs <k>] [--max-rounds <n>] [--modules <dir>]...";
+        "Usage: goldbox sim combat --module <path> --party <file>[,<file>...] --encounter <id> [--combat <id>] [--seed <n>] [--runs <k>] [--max-rounds <n>] [--modules <dir>]... [--extension <id>]...";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
     {
@@ -22,7 +22,7 @@ internal static class SimCommand
             return output.UsageError(Usage);
         }
 
-        (Arguments parsed, string? error) = Arguments.Parse(args.Skip(1), ["--module", "--modules", "--party", "--encounter", "--combat", "--seed", "--runs", "--max-rounds"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args.Skip(1), ["--module", "--modules", "--extension", "--party", "--encounter", "--combat", "--seed", "--runs", "--max-rounds"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--party") is null || parsed.Single("--encounter") is null))
         {
             error = Usage;
@@ -42,7 +42,8 @@ internal static class SimCommand
 
         ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--module")!, workingDirectory),
-            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
+            ModuleSets.Extensions(parsed));
         if (set.Rules is null || !set.IsValid)
         {
             return output.ModuleErrors(set);

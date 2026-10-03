@@ -115,7 +115,8 @@ internal static class GameCommands
                 case "open":
                     // A new campaign gets one seed; everything after replays from it.
                     ulong seed = payload.TryGetProperty("seed", out _) ? Seed(payload) : (ulong)DateTime.UtcNow.Ticks;
-                    session.Open(Text(payload, "campaign"), seed);
+                    IReadOnlyList<string>? extensions = payload.TryGetProperty("extensions", out _) ? Texts(payload, "extensions") : null;
+                    session.Open(Text(payload, "campaign"), seed, extensions);
                     break;
                 case "roll":
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;

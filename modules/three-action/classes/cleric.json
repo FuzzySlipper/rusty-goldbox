@@ -46,6 +46,7 @@
       ]
     }
   ],
+  "starting_gold": "15",
   "modifiers": [
     {
       "stat": "simple_rank",

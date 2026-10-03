@@ -15,7 +15,8 @@ internal static class CharacterCommand
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character former <file> --module <path> on|off\n"
-        + "       goldbox character show <file> --module <path>";
+        + "       goldbox character show <file> --module <path>\n"
+        + "Each also takes [--modules <dir>]... and [--extension <id>,...] (extension modules added to the set).";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
     {
@@ -37,7 +38,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null))
         {
             error = Usage;
@@ -92,7 +93,7 @@ internal static class CharacterCommand
 
     private static int Level(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--xp", "--class", "--feature", "--boosts", "--seed"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--xp", "--class", "--feature", "--boosts", "--seed"], []);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--xp") is null))
         {
             error = Usage;
@@ -146,7 +147,7 @@ internal static class CharacterCommand
     /// <summary><c>character spells</c>: sets the spells a character knows, checked against its classes and tracks.</summary>
     private static int Spells(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--set", "--memorise"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--set", "--memorise"], []);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || (parsed.Single("--set") is null && parsed.Single("--memorise") is null)))
         {
             error = Usage;
@@ -182,7 +183,7 @@ internal static class CharacterCommand
     /// <summary><c>character former</c>: a dual-classed character calls on its dormant classes (forfeiting experience) or stops.</summary>
     private static int Former(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension"], []);
         if (error is null && (parsed.Positionals.Count != 2 || parsed.Single("--module") is null || parsed.Positionals[1] is not ("on" or "off")))
         {
             error = Usage;
@@ -216,7 +217,7 @@ internal static class CharacterCommand
 
     private static int Show(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension"], []);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null))
         {
             error = Usage;
@@ -255,7 +256,8 @@ internal static class CharacterCommand
     {
         return ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--module")!, workingDirectory),
-            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList());
+            parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
+            ModuleSets.Extensions(parsed));
     }
 
     private static int? Save(string path, Character character, Output output)

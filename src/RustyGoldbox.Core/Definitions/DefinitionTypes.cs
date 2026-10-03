@@ -128,6 +128,7 @@ public static class DefinitionTypes
             new("prepares_spells", new BooleanKind(), false, "If true, its spells are memorised each day: the character casts only the copies it prepared (as many as its tracks pay for), each copy once, until a rest that prepares spells; a spell that costs nothing (a cantrip) is always ready. Without it, the character casts any spell it knows while it can pay."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
             new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
+            new("starting_gold", SelfNumber, false, "Starting gold pieces for a new character of the class, for example \"5d4 * 10\", when the character creation's starting_gold doesn't name the class. A class an extension adds brings its own this way."),
             new("equipment", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Item), false, "Which items members of the class may equip, reading item.id, item.kind, item.weight and item.cost, for example \"item.kind != 'armour' or item.id == 'leather_armour'\". Without it, any item."),
             new("modifiers", new ListKind(ClassModifier), false, "Modifiers a creature with levels in the class has. They may read class.level, its level in this class, so per-class progressions add up across classes: { \"stat\": \"base_attack\", \"value\": \"floor(class.level * 3 / 4)\" }."),
             Boosts,
@@ -615,7 +616,7 @@ public static class DefinitionTypes
             new("costs", new ReferenceKind("table"), false, "Method point-buy: a table from a score to its total cost from the base, for example rows [8, 0], [9, 1], ..., [18, 16]."),
             new("boost", new IntegerKind(), false, "Method boosts: how much each boost raises an attribute."),
             new("boosts", Boosts.Kind, false, "Method boosts: boosts every new character has besides those of its race, creation features and class; usually free ones ({})."),
-            new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), false, "Starting gold pieces for each class. Without it, characters start with none."),
+            new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), false, "Starting gold pieces for each class it names; a class it doesn't name uses its own starting_gold. Without either, characters start with none."),
             new("features", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
         ],
         """

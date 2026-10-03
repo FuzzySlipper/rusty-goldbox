@@ -93,6 +93,11 @@ internal static class GoldboxCli
         of the nearest goldbox.json, or (with neither) the module's siblings: module
         directories, and installed .rpak containers directly in those directories.
         A <path> may be an installed .rpak as well as a module directory.
+        Commands that load a module set (module validate, deps and inspect, eval,
+        character, sim and play) take --extension <id>,...: extension modules to add
+        to the set though nothing in it requires them, such as your own class book
+        for a ruleset, found where required modules are. Character files and saves
+        record them, and refuse a set without them.
 
         Exit codes: 0 ok, 1 the module has errors or evaluation failed, 2 bad arguments.
         """;
@@ -214,10 +219,10 @@ internal static class GoldboxCli
     private static ModuleSet? LoadModule(IEnumerable<string> args, string command, Output printer, string workingDirectory, out int exitCode)
     {
         exitCode = Ok;
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules", "--extension"], []);
         if (error is null && parsed.Positionals.Count != 1)
         {
-            error = $"Usage: goldbox module {command} <path> [--modules <dir>]...";
+            error = $"Usage: goldbox module {command} <path> [--modules <dir>]... [--extension <id>]...";
         }
 
         if (error is not null)
@@ -228,7 +233,7 @@ internal static class GoldboxCli
 
         string path = Path.GetFullPath(parsed.Positionals[0], workingDirectory);
         List<string> searchDirectories = parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList();
-        return ModuleSets.Load(path, searchDirectories);
+        return ModuleSets.Load(path, searchDirectories, ModuleSets.Extensions(parsed));
     }
 
     private static int Print(TextWriter output, string text)

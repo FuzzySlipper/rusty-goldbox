@@ -31,8 +31,11 @@ public sealed class ModuleSet
     /// <summary>Where requirements were looked for: search directories, or the bundles a product offered.</summary>
     public IReadOnlyList<string> Searched { get; }
 
-    /// <summary>Resolved modules, each after everything it requires. The root is last.</summary>
+    /// <summary>Resolved modules, each after everything it requires: the root after its requirements, then the added extensions after theirs.</summary>
     public IReadOnlyList<LoadedModule> LoadOrder { get; }
+
+    /// <summary>IDs of the extensions added to the set though nothing in it requires them (a user's own class book), in the order given.</summary>
+    public IReadOnlyList<string> Extensions { get; init; } = [];
 
     /// <summary>Every definition of the set, checked; null when earlier problems stopped the checks.</summary>
     public RuleSet? Rules { get; }

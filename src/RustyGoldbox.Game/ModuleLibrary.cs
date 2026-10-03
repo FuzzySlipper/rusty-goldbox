@@ -4,7 +4,11 @@ using RustyGoldbox.Core.Modules;
 namespace RustyGoldbox.Game;
 
 /// <summary>A campaign module the product can start, found in a content bundle.</summary>
-internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version, string Identity);
+/// <param name="Extensions">Extensions the player may add: installed ones built on the campaign's ruleset that it doesn't already require.</param>
+internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version, string Identity, IReadOnlyList<ExtensionChoice> Extensions);
+
+/// <summary>An extension module the player may add to a campaign's module set.</summary>
+internal sealed record ExtensionChoice(string Id, string Title, ModuleVersion Version);
 
 /// <summary>
 /// The modules the product can load: its own content bundles (one per module
@@ -31,30 +35,45 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
         List<CampaignChoice> campaigns = [];
         WithBundles(problems, sources =>
         {
-            foreach (ModuleSource source in sources)
+            List<(ModuleSource Source, ModuleManifest Manifest)> manifests = sources
+                .Select(source => (source, ManifestReader.Read(source, [])))
+                .Where(entry => entry.Item2 is not null)
+                .Select(entry => (entry.source, entry.Item2!))
+                .ToList();
+            HashSet<string> rulesets = manifests.Where(entry => entry.Manifest.Kind == ModuleKind.Ruleset).Select(entry => entry.Manifest.Id).ToHashSet();
+            foreach ((ModuleSource source, ModuleManifest manifest) in manifests)
             {
-                ModuleManifest? manifest = ManifestReader.Read(source, []);
                 // A campaign the product ships and also has installed, with the
                 // same content, is one campaign; list its first copy.
-                if (manifest is { Kind: ModuleKind.Campaign }
+                if (manifest.Kind == ModuleKind.Campaign
                     && !campaigns.Any(campaign => campaign.Id == manifest.Id && campaign.Version == manifest.Version && campaign.Identity == source.Identity))
                 {
-                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version, source.Identity));
+                    List<string> ruleset = manifest.Requires.Select(requirement => requirement.Id).Where(rulesets.Contains).ToList();
+                    List<ExtensionChoice> extensions = manifests
+                        .Select(entry => entry.Manifest)
+                        .Where(extension => extension.Kind == ModuleKind.Extension
+                            && manifest.Requires.All(requirement => requirement.Id != extension.Id)
+                            && extension.Requires.Any(requirement => ruleset.Contains(requirement.Id)))
+                        .GroupBy(extension => extension.Id)
+                        .Select(versions => versions.MaxBy(extension => extension.Version)!)
+                        .Select(extension => new ExtensionChoice(extension.Id, extension.Title, extension.Version))
+                        .ToList();
+                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version, source.Identity, extensions));
                 }
             }
         });
         return campaigns;
     }
 
-    /// <summary>Loads the module in <paramref name="bundle"/> and its requirements from the other bundles.</summary>
-    public ModuleSet Load(string bundle)
+    /// <summary>Loads the module in <paramref name="bundle"/> and its requirements from the other bundles, with the extensions added.</summary>
+    public ModuleSet Load(string bundle, IReadOnlyList<string> extensions)
     {
         ModuleSet? set = null;
         WithBundles([], sources =>
         {
             ModuleSource root = sources.FirstOrDefault(source => source.Location == bundle)
                 ?? throw new InvalidOperationException($"There is no content bundle '{bundle}'.");
-            set = ModuleLoader.Load(root, sources, sources.Select(source => source.Location).ToList(), HowToAdd);
+            set = ModuleLoader.Load(root, sources, sources.Select(source => source.Location).ToList(), HowToAdd, extensions);
         });
         return set!;
     }

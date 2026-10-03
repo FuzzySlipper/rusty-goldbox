@@ -8,19 +8,43 @@ namespace RustyGoldbox.Core.Modules;
 /// Modules are visited breadth-first from the root. Each ID gets the highest
 /// available version that satisfies every range known when it is first
 /// required. A range seen later that excludes that version is a conflict; the
-/// resolver does not backtrack.
+/// resolver does not backtrack. Extensions added to the set (that nothing in
+/// it requires) are visited the same way once the root's requirements are,
+/// and load after the root.
 /// </remarks>
 internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnostic> diagnostics)
 {
     private readonly Dictionary<string, ModuleManifest> _selected = [];
     private readonly Dictionary<string, List<(ModuleManifest By, ModuleRequirement Requirement)>> _constraints = [];
+    private readonly List<ModuleManifest> _added = [];
     private ModuleManifest _root = null!;
 
-    public List<LoadedModule> Resolve(ModuleManifest root)
+    /// <param name="extensions">IDs of extension modules to add to the set though nothing in it requires them.</param>
+    public List<LoadedModule> Resolve(ModuleManifest root, IReadOnlyList<string> extensions)
     {
         _root = root;
         _selected[root.Id] = root;
         Queue<ModuleManifest> pending = new([root]);
+        RequireAll(pending);
+        foreach (string id in extensions)
+        {
+            if (Add(id) is ModuleManifest added)
+            {
+                pending.Enqueue(added);
+                RequireAll(pending);
+            }
+        }
+
+        List<LoadedModule> order = Order();
+        CheckKinds(order);
+        return order;
+    }
+
+    /// <summary>The extensions added to the set that weren't already in it, in the order given.</summary>
+    public IReadOnlyList<ModuleManifest> Added => _added;
+
+    private void RequireAll(Queue<ModuleManifest> pending)
+    {
         while (pending.Count > 0)
         {
             ModuleManifest module = pending.Dequeue();
@@ -33,10 +57,44 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
                 }
             }
         }
+    }
 
-        List<LoadedModule> order = Order();
-        CheckKinds(order);
-        return order;
+    /// <summary>Selects an added extension, its highest available version; returns it when it is new to the set.</summary>
+    private ModuleManifest? Add(string id)
+    {
+        if (_selected.ContainsKey(id))
+        {
+            return null;
+        }
+
+        List<ModuleManifest> candidates = catalog.Find(id).OrderByDescending(candidate => candidate.Version).ToList();
+        if (candidates.Count == 0)
+        {
+            string searched = catalog.Searched.Count == 0 ? "(there are none)" : string.Join(", ", catalog.Searched);
+            diagnostics.Add(new ModuleDiagnostic("extension.not-found",
+                $"The extension '{id}' was asked for, but no module with that ID is in the places searched: {searched}. {catalog.HowToAdd}", _root.Id));
+            return null;
+        }
+
+        ModuleManifest picked = candidates[0];
+        if (picked.Kind != ModuleKind.Extension)
+        {
+            Error(picked, "extension.kind", "$.kind",
+                $"'{id}' is a module of kind {ModuleKinds.Name(picked.Kind)}; only extension modules can be added to a set. Modules of other kinds load when a module in the set requires them.");
+            return null;
+        }
+
+        List<ModuleManifest> copies = candidates.Where(candidate => candidate.Version == picked.Version).ToList();
+        if (copies.Select(copy => copy.Source.Identity).Distinct().Count() > 1)
+        {
+            Error(picked, "resolve.ambiguous", "$.id",
+                $"{picked.Id} {picked.Version} is in more than one place: {string.Join(", ", copies.Select(copy => copy.Source.Location))}. They have different content: remove one copy or give it a different version.");
+            return null;
+        }
+
+        _selected[picked.Id] = picked;
+        _added.Add(picked);
+        return picked;
     }
 
     /// <summary>Records a requirement; returns a newly selected module to visit.</summary>
@@ -105,6 +163,11 @@ internal sealed class ModuleResolver(ModuleCatalog catalog, List<ModuleDiagnosti
         Dictionary<string, bool> finished = [];
         List<string> path = [];
         Visit(_root, order, finished, path);
+        foreach (ModuleManifest added in _added.Where(added => !finished.ContainsKey(added.Id)))
+        {
+            Visit(added, order, finished, path);
+        }
+
         return order;
     }
 
