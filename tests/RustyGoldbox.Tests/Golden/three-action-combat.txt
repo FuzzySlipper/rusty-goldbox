@@ -475,17 +475,15 @@ Round 1.
   Ruffian uses Stride on Pip.
   Ruffian moves 5 cells to (6, 4).
   Ruffian uses Sling on Ilsa.
-  Ilsa reacts to Ruffian: Shield Block.
-  Ilsa uses Shield Block on Ilsa.
-  Ilsa is Shield Block for 1 round.
   Ruffian rolls Strike: 20 + 3 modifiers = 23 against 17: critical_success.  [1d20: 20 = 20]
-  Ilsa loses 12 hit points (0 left).  [1d6: 5 = 5]
+  Ilsa reacts to Ruffian: Shield Block.  [1d6: 5 = 5]
+  Ilsa uses Shield Block on Ilsa.
+  Ilsa is no longer Shield.
+  Ilsa is Shield spent for 100 rounds.
+  Ilsa loses 12 hit points (0 left).
   Ilsa is out of the fight.
   Ilsa regains 2 dying (2).
   Ilsa is Dying.
-  Ilsa is no longer Shield Block.
-  Ilsa is no longer Shield.
-  Ilsa is Shield spent for 100 rounds.
 Round 2.
   Bram is no longer Flourished.
   Bram rolls Recovery check: 17 against 11: success.  [1d20: 17 = 17]
@@ -636,6 +634,7 @@ Reached level 5: +12 hit points.
 Bram: Human Fighter 5 (4000 xp, highest level)
   dying 0/4
   hit points 78/78
+  shield hit points 0/20
   wounded 0/4
   gold 15
   features: Skilled Human (heritage), Warrior (background), Sudden Charge (fighter feat), Vicious Swing (fighter feat), Toughness (general feat), Snagging Strike (fighter feat)

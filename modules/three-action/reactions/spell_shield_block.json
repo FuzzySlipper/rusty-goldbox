@@ -2,11 +2,11 @@
   "type": "reaction",
   "id": "spell_shield_block",
   "name": "Shield Block",
-  "trigger": "targeted",
+  "trigger": "hit",
   "cost": {
     "reaction": 1
   },
-  "when": "self.condition.shield_spell and not self.condition.blocking",
+  "when": "self.condition.shield_spell",
   "use": {
     "action": "block"
   }

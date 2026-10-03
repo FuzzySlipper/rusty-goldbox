@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "uncanny_dodge",
+  "name": "Uncanny Dodge",
+  "cost": {
+    "reaction": 0
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "reduce_damage",
+      "fraction": "0.5",
+      "to": "self"
+    }
+  ]
+}

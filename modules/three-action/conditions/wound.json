@@ -7,7 +7,8 @@
   "instant": true,
   "values": {
     "amount": 0,
-    "critical": 0
+    "critical": 0,
+    "physical": 0
   },
   "on_apply": [
     {

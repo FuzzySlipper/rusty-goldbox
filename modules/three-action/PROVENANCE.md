@@ -53,7 +53,7 @@ None.
 | `features/` (Sudden Charge, Vicious Swing, Snagging Strike; the Thief racket; Warpriest; Toughness, Shield Block, Fleet; heritages and backgrounds) | Player Core: Classes, Feats, Ancestries and Backgrounds |
 | `races/`, `tables/ancestry_hp` (Human, Dwarf, Elf, Halfling: Hit Points, Speed, boosts and flaws) | Player Core: Ancestries |
 | `spells/` and their actions (Ignition, Divine Lance, Shield, Force Barrage, Bless, Heal, Blazing Bolt, Spiritual Armament, Fireball, Heroism) | Player Core: Spells |
-| `items/` (weapons with damage dice, agile, deadly and categories; armor with AC bonus and Dexterity cap; wooden and steel shields with Hardness) | Player Core: Equipment |
+| `items/`, `tracks/shield_points` (weapons with damage dice, agile, deadly and categories; armor with AC bonus and Dexterity cap; wooden shields with Hardness 3, HP 12 and BT 6; steel shields with Hardness 5, HP 20 and BT 10) | Player Core: Equipment |
 | `currencies/gold` | Player Core: Equipment prices |
 | `monsters/wolf`, `zombie_shambler`, `giant_centipede`, `boar` | Monster Core |
 | `monsters/bandit`, `ruffian` | NPC Core |
@@ -72,10 +72,10 @@ short description of our own and marked "not modelled".
   doesn't move when a character is knocked out. Range increments have no
   penalty; diagonals cost one square. Armor Strength, check penalties and
   Speed penalties aren't modelled.
-- Shield Block is taken when an enemy targets the creature, before the attack
-  is rolled, and reduces the next physical damage from that Strike by the
-  shield's Hardness; the shield itself takes no damage. Reactive Strike answers
-  only a creature leaving reach.
+- Shield Block answers a confirmed physical hit, reduces the pending damage by
+  the shield's Hardness, and applies the remaining damage to the shield's
+  material hit points and to the creature. Reactive Strike answers only a
+  creature leaving reach.
 - The wolf's Knockdown follows a hitting Strike as one two-action use; Pack
   Attack counts allies adjacent to the target. The zombie's Grab and bite,
   resistances and immunities, the boar's Ferocity and Charge, and the bandit's

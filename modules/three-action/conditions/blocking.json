@@ -1,8 +1,0 @@
-{
-  "type": "condition",
-  "id": "blocking",
-  "name": "Shield Block",
-  "description": "Ready to block: the next physical damage from a Strike is reduced by the shield's Hardness.",
-  "modifiers": [],
-  "rounds_end": "turn_start"
-}

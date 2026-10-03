@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "shield_broken",
+  "name": "Shield broken",
+  "description": "The shield is broken and cannot be raised or Shield Block.",
+  "modifiers": []
+}

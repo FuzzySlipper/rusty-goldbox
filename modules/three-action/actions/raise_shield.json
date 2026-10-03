@@ -6,7 +6,7 @@
     "action": 1
   },
   "target": "self",
-  "available": "equipped(item.kind == 'shield') > 0 and not self.condition.shield_raised",
+  "available": "equipped(item.kind == 'shield') > 0 and self.shield_points > (if self.shield_hardness >= 5 then 10 else 6) and not self.condition.shield_raised and not self.condition.shield_broken",
   "score": "5",
   "always": [
     {

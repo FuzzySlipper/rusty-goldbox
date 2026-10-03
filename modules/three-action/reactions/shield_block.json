@@ -2,11 +2,12 @@
   "type": "reaction",
   "id": "shield_block",
   "name": "Shield Block",
-  "trigger": "targeted",
+  "trigger": "hit",
+  "physical": true,
   "cost": {
     "reaction": 1
   },
-  "when": "self.condition.shield_raised and self.shield_hardness > 0 and not self.condition.blocking",
+  "when": "self.condition.shield_raised and self.shield_hardness > 0 and self.shield_points > (if self.shield_hardness >= 5 then 10 else 6) and not self.condition.shield_broken",
   "use": {
     "action": "block"
   }

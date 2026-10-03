@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "uncanny_dodge",
+  "name": "Uncanny Dodge",
+  "trigger": "hit",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "self.rogue_level >= 5 and combat.sight",
+  "use": {
+    "action": "uncanny_dodge"
+  }
+}

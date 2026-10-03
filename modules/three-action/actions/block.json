@@ -3,15 +3,61 @@
   "id": "block",
   "name": "Shield Block",
   "cost": {
-    "reaction": 1
+    "reaction": 0
   },
   "target": "self",
   "always": [
     {
-      "op": "apply_condition",
-      "condition": "blocking",
-      "rounds": "1",
-      "to": "self"
+      "op": "if",
+      "when": "self.condition.shield_raised",
+      "then": [
+        {
+          "op": "reduce_damage",
+          "amount": "self.shield_hardness",
+          "shield_track": "shield_points",
+          "to": "self"
+        }
+      ],
+      "else": [
+        {
+          "op": "reduce_damage",
+          "amount": "5",
+          "to": "self"
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "when": "self.condition.shield_spell",
+      "then": [
+        {
+          "op": "remove_condition",
+          "condition": "shield_spell",
+          "to": "self"
+        },
+        {
+          "op": "apply_condition",
+          "condition": "shield_spent",
+          "rounds": "100",
+          "to": "self"
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "when": "self.condition.shield_raised and self.shield_points <= (if self.shield_hardness >= 5 then 10 else 6)",
+      "then": [
+        {
+          "op": "remove_condition",
+          "condition": "shield_raised",
+          "to": "self"
+        },
+        {
+          "op": "apply_condition",
+          "condition": "shield_broken",
+          "to": "self"
+        }
+      ]
     }
   ]
 }

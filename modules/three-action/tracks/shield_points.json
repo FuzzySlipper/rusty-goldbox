@@ -1,0 +1,9 @@
+{
+  "type": "track",
+  "id": "shield_points",
+  "name": "Shield hit points",
+  "max": "if self.shield_hardness >= 5 then 20 else if self.shield_hardness >= 3 then 12 else 0",
+  "start": "self.max_shield_points",
+  "start_on_combat": "not self.condition.shield_broken",
+  "min": "0"
+}
