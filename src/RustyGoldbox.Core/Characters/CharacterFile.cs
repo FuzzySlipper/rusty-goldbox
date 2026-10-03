@@ -641,6 +641,7 @@ public static class CharacterFile
                 return;
             }
 
+            int? recordedAge = null;
             if (!hasAge || age.ValueKind != JsonValueKind.Number || !age.TryGetInt32(out int years) || years < 0)
             {
                 Error("$.age", "A lifepath character needs a nonnegative whole-number age.");
@@ -648,6 +649,7 @@ public static class CharacterFile
             else
             {
                 character.Age = years;
+                recordedAge = years;
             }
 
             if (!hasTerms || terms.ValueKind != JsonValueKind.Array)
@@ -657,9 +659,14 @@ public static class CharacterFile
             }
 
             int index = 0;
+            int? previousAgeAfter = null;
+            int startAge = character.Lifepath.Json.TryGetProperty("start_age", out JsonElement declaredStart)
+                ? declaredStart.GetInt32()
+                : 18;
             foreach (JsonElement term in terms.EnumerateArray())
             {
                 string at = $"$.career_terms[{index}]";
+                int expectedNumber = index + 1;
                 index++;
                 if (term.ValueKind != JsonValueKind.Object)
                 {
@@ -684,19 +691,45 @@ public static class CharacterFile
                     Error($"{at}.career", $"'{career}' is not a career in {character.Lifepath.QualifiedId}; the term ledger must use one of {string.Join(", ", character.Lifepath.Json.GetProperty("careers").EnumerateArray().Select(candidate => candidate.GetProperty("id").GetString()))}.");
                 }
 
-                if (number < 1 || number != decimal.Truncate(number))
+                bool numberValid = TryWholeInt(number, 1, out int termNumber);
+                if (!numberValid)
                 {
                     Error($"{at}.number", "A career term number must be a positive whole number.");
                 }
 
-                if (ageBefore < 0 || ageBefore != decimal.Truncate(ageBefore) || ageAfter < 0 || ageAfter != decimal.Truncate(ageAfter) || ageAfter < ageBefore)
+                bool ageBeforeValid = TryWholeInt(ageBefore, 0, out int termAgeBefore);
+                bool ageAfterValid = TryWholeInt(ageAfter, 0, out int termAgeAfter);
+                bool agesValid = ageBeforeValid && ageAfterValid;
+                if (!agesValid || (ageAfterValid && termAgeAfter < termAgeBefore))
                 {
                     Error(at, "A career term must have nonnegative whole-number ages, with age_after no less than age_before.");
                 }
 
-                if (rankBefore < 0 || rankBefore != decimal.Truncate(rankBefore) || rankAfter < 0 || rankAfter != decimal.Truncate(rankAfter))
+                bool rankBeforeValid = TryWholeInt(rankBefore, 0, out int termRankBefore);
+                bool rankAfterValid = TryWholeInt(rankAfter, 0, out int termRankAfter);
+                bool ranksValid = rankBeforeValid && rankAfterValid;
+                if (!ranksValid)
                 {
                     Error(at, "A career term must have nonnegative whole-number ranks.");
+                }
+
+                if (numberValid && termNumber != expectedNumber)
+                {
+                    Error($"{at}.number", $"Career term numbers must be sequential starting at 1; this term is numbered {termNumber}, expected {expectedNumber}.");
+                }
+
+                if (agesValid)
+                {
+                    if (expectedNumber == 1 && termAgeBefore != startAge)
+                    {
+                        Error($"{at}.age_before", $"The first career term must start at the lifepath start age {startAge}, not {termAgeBefore}.");
+                    }
+                    else if (previousAgeAfter is int previous && termAgeBefore != previous)
+                    {
+                        Error($"{at}.age_before", $"This career term starts at age {termAgeBefore}, but the previous term ends at age {previous}; term ages must be continuous.");
+                    }
+
+                    previousAgeAfter = termAgeAfter;
                 }
 
                 List<string> choices = Strings(term, "choices", at);
@@ -706,7 +739,15 @@ public static class CharacterFile
                 LifepathRoll? commission = ReadLifepathRoll(term, "commission", at);
                 LifepathRoll? advancement = ReadLifepathRoll(term, "advancement", at);
                 LifepathRoll? aging = ReadLifepathRoll(term, "aging", at);
-                character.CareerTerms.Add(new LifepathTerm(career, (int)number, (int)ageBefore, (int)ageAfter, (int)rankBefore, (int)rankAfter, qualification, survival, commission, advancement, aging, ended, benefitsLost, choices, results));
+                if (numberValid && agesValid && ranksValid)
+                {
+                    character.CareerTerms.Add(new LifepathTerm(career, termNumber, termAgeBefore, termAgeAfter, termRankBefore, termRankAfter, qualification, survival, commission, advancement, aging, ended, benefitsLost, choices, results));
+                }
+            }
+
+            if (previousAgeAfter is int lastAge && recordedAge is int actualAge && actualAge != lastAge)
+            {
+                Error("$.age", $"The character age {actualAge} must equal the last career term's age_after {lastAge}.");
             }
 
             character.LifepathEnded = character.CareerTerms.Any(term => term.Ended) || character.CareerTerms.Count > 0;
@@ -732,7 +773,32 @@ public static class CharacterFile
                 return null;
             }
 
+            try
+            {
+                decimal expectedTotal = checked(raw + modifier);
+                if (expectedTotal != total)
+                {
+                    Error($"{path}.total", $"A lifepath roll total must equal roll + modifier ({raw} + {modifier} = {expectedTotal}), but it is {total}.");
+                }
+            }
+            catch (OverflowException)
+            {
+                Error($"{path}.total", "A lifepath roll's roll plus modifier is too large to calculate safely.");
+            }
+
             return new LifepathRoll(kind, raw, modifier, total, target, success);
+        }
+
+        private static bool TryWholeInt(decimal value, int minimum, out int result)
+        {
+            if (value < minimum || value > int.MaxValue || value != decimal.Truncate(value))
+            {
+                result = 0;
+                return false;
+            }
+
+            result = (int)value;
+            return true;
         }
 
         private List<string> Strings(JsonElement root, string name, string at)
