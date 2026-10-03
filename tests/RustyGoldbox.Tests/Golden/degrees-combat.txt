@@ -43,15 +43,14 @@ Round 3.
   Raider 1 is out of the fight.
   Raider 2 reacts to Tor: Avenge.
   Raider 2 uses Avenging spear on Tor.
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
   Raider 2 rolls Strike: 12 - 3 = 9 against 19: critical_failure.  [1d20: 12 = 12]
   Tor uses Strike (Longblade) on Raider 2.
   Tor rolls Strike: 14 + 1 = 15 against 15: success.  [1d20: 14 = 14]
   Raider 2 loses 5 hit points (13 left).  [1d8: 2 = 2]
-  Tor is no longer Braced.
   Raider 2 uses Spear on Tor.
-  Tor reacts to Raider 2: Raise shield.
-  Tor uses Raise shield on Tor.
-  Tor is Braced for 1 round.
   Raider 2 rolls Strike: 15 + 7 = 22 against 19: success.  [1d20: 15 = 15]
   Tor loses 6 hit points (17 left).  [1d6: 4 = 4]
   Raider 2 uses Spear on Tor.
@@ -113,7 +112,10 @@ Round 2.
   Raider 1 is out of the fight.
   Raider 2 reacts to Tor: Avenge.
   Raider 2 uses Avenging spear on Tor.
-  Raider 2 rolls Strike: 15 + 7 = 22 against 17: success.  [1d20: 15 = 15]
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 15 + 7 = 22 against 19: success.  [1d20: 15 = 15]
   Tor loses 4 hit points (19 left).  [1d6: 2 = 2]
   Tor uses Strike (Longblade) on Raider 2.
   Tor rolls Strike: 19 + 1 = 20 against 15: success.  [1d20: 19 = 19]
@@ -133,6 +135,7 @@ Round 3.
   Tor rolls Strike: 18 + 6 = 24 against 15: success.  [1d20: 18 = 18]
   Raider 2 loses 12 hit points (-5 left).  [1d8: 5 = 5; 1d8: 4 = 4]
   Raider 2 is out of the fight.
+  Tor is no longer Braced.
 Party wins after 3 rounds.
 Party: Tor 19/23, Wren 6/12
 Raiders: Raider 1 0/18 (out), Raider 2 -5/18 (out)

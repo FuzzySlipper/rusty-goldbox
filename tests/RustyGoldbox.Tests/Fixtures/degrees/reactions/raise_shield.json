@@ -9,5 +9,6 @@
   "use": {
     "action": "brace"
   },
-  "when": "equipped(item.kind == 'shield') > 0"
+  "when": "equipped(item.kind == 'shield') > 0",
+  "counter": true
 }

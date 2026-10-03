@@ -550,6 +550,42 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ACounterReactionAnswersAReactionButNothingAnswersIt()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/brawl.json", """
+            { "type": "combat", "id": "brawl", "name": "Brawl", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "round",
+              "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 }, { "id": "reaction", "per_turn": 2 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/spite.json", """
+            { "type": "reaction", "id": "spite", "name": "Spite", "trigger": "damaged", "cost": { "reaction": 1 }, "counter": true, "use": { "action": "smite", "damage": "2" } }
+            """);
+        modules.Write("rules/brawler.json", """
+            { "type": "monster", "id": "brawler", "name": "Brawler", "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
+              "actions": [ { "action": "smite", "damage": "1" } ], "reactions": ["spite"], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        List<string> lines = Fight(rules, "brawl", "brawler", "brawler", maxRounds: 1);
+
+        // The first smite sets off a spite, which (a counter) sets off one spite back; that one sets off nothing, though budget is left.
+        Assert.Equal(
+            [
+                "Brawler uses Smite on Brawler (2).",
+                "Brawler (2) loses 1 hit points (19 left).",
+                "Brawler (2) reacts to Brawler: Spite.",
+                "Brawler (2) uses Smite on Brawler.",
+                "Brawler loses 2 hit points (18 left).",
+                "Brawler reacts to Brawler (2): Spite.",
+                "Brawler uses Smite on Brawler (2).",
+                "Brawler (2) loses 2 hit points (17 left).",
+                "Brawler (2) uses Smite on Brawler.",
+            ],
+            lines.SkipWhile(line => !line.Contains("uses", StringComparison.Ordinal)).Take(9));
+    }
+
+    [Fact]
     public void ASideIsSurprisedByWhatItsLeadNotices()
     {
         using TempModules modules = new();

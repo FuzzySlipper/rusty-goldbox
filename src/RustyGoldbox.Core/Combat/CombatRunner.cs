@@ -34,7 +34,8 @@ public sealed class CombatRunner
     private readonly Definition _track;
     private readonly CombatField? _field;
     private Combatant? _turn;
-    private bool _reacting;
+    /// <summary>How many reactions are resolving: 0 on a turn, 1 in a reaction, 2 in a counter-reaction.</summary>
+    private int _reactions;
 
     private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter)
     {
@@ -286,12 +287,13 @@ public sealed class CombatRunner
     /// Lets <paramref name="reactor"/> react to <paramref name="source"/>: the
     /// first of its reactions to the trigger that it can afford, that
     /// <paramref name="fits"/> and whose "when" holds. A creature out of the
-    /// fight, or one a condition stops acting, doesn't react, and reactions
-    /// don't set off further reactions.
+    /// fight, or one a condition stops acting, doesn't react. During a
+    /// reaction only counter-reactions can be taken, and nothing reacts to a
+    /// counter-reaction.
     /// </summary>
     private void React(string trigger, Combatant reactor, Combatant source, Func<Definition, bool>? fits = null)
     {
-        if (_reacting || reactor.Defeated || reactor == source
+        if (_reactions > 1 || reactor.Defeated || reactor == source
             || reactor.Creature.Conditions.Any(condition => condition.Json.TryGetProperty("prevents_actions", out JsonElement prevents) && prevents.GetBoolean()))
         {
             return;
@@ -299,7 +301,8 @@ public sealed class CombatRunner
 
         foreach ((Definition reaction, UseOption use) in reactor.Reactions)
         {
-            if (reaction.Json.GetProperty("trigger").GetString() != trigger || !Affordable(reactor, reaction) || (fits is not null && !fits(reaction))
+            bool counter = reaction.Json.TryGetProperty("counter", out JsonElement counters) && counters.GetBoolean();
+            if (reaction.Json.GetProperty("trigger").GetString() != trigger || (_reactions == 1 && !counter) || !Affordable(reactor, reaction) || (fits is not null && !fits(reaction))
                 || (reaction.Json.TryGetProperty("when", out _) && !Evaluate(reaction, "$.when", new Scope(reactor.Creature, source.Creature)).Boolean))
             {
                 continue;
@@ -307,14 +310,14 @@ public sealed class CombatRunner
 
             Spend(reactor, reaction);
             Record(new ReactionFact(reactor.Name, reaction.Name, source.Name));
-            _reacting = true;
+            _reactions++;
             try
             {
                 Act(reactor, use, [use.Action.Json.GetProperty("target").GetString() == "self" ? reactor : source]);
             }
             finally
             {
-                _reacting = false;
+                _reactions--;
             }
 
             return;

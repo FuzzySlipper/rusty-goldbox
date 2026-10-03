@@ -203,13 +203,14 @@ public static class DefinitionTypes
 
     public static DefinitionType Reaction { get; } = new(
         "reaction",
-        "Something a creature does out of turn when a trigger happens: an attack of opportunity, a shield raised before a blow lands, a riposte after a wound. It spends a combat budget, usually one refilled each turn (\"reaction\": 1), and resolves its use against the creature that triggered it. Classes, monsters and features list the reactions they give; reactions don't trigger further reactions.",
+        "Something a creature does out of turn when a trigger happens: an attack of opportunity, a shield raised before a blow lands, a riposte after a wound. It spends a combat budget, usually one refilled each turn (\"reaction\": 1), and resolves its use against the creature that triggered it. Classes, monsters and features list the reactions they give. Reactions don't trigger further reactions, except counter-reactions, one level deep.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("trigger", new EnumKind(["leaves_reach", "targeted", "damaged", "ally_defeated"]), true, "\"leaves_reach\": an enemy steps from within its reach to outside it (before the step). \"targeted\": an enemy's action is about to resolve against it, before any check (an interrupt). \"damaged\": an enemy's operation lowered its track. \"ally_defeated\": an enemy's operation put one of its allies out of the fight; the enemy is the one it reacts against (avenge), or it acts on itself (rage, rally)."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"reaction\": 1 }."),
             new("reach", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Combat), false, "With leaves_reach, how many cells it watches; without it, 1."),
             new("when", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Combat), false, "Whether it reacts, with target as the creature that triggered it."),
+            new("counter", new BooleanKind(), false, "If true, it may also be taken against an enemy's reaction (a shield raised against an attack of opportunity, a counterspell), though nothing reacts to it in turn. Without it, it only answers actions on a turn."),
             new("use", Use, true, "The action it takes against the creature that triggered it (or itself, for an action targeting self), with its parameters or from_item."),
         ],
         """

@@ -253,7 +253,10 @@ budget refilled each turn) and resolves its use against whoever triggered it.
 Classes, monsters and features list the reactions they give. A `targeted`
 reaction is an interrupt: it resolves before the action's check (a raised
 shield), and an attacker it defeats doesn't act. Reactions don't set off
-further reactions, and budgets start full so a creature can react before its
+further reactions, except that a reaction marked `counter` may answer an
+enemy's reaction (a shield raised against an attack of opportunity, a
+counterspell); nothing answers a counter, so chains stop one level down.
+Budgets start full so a creature can react before its
 first turn.
 
 A combat budget's `per_turn` is an expression, so a condition that lowers a
