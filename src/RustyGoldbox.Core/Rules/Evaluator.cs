@@ -155,6 +155,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         }
 
         decimal needed = targetOverride ?? Evaluate(rules.Expression(check, "$.target"), self, target).Number;
+        return ResolveCheck(check, self, target, roll, bonus, modifier, needed);
+    }
+
+    /// <summary>Classifies a check from components already resolved, such as a post-roll result.</summary>
+    public CheckResult ResolveCheck(Definition check, Creature self, Creature? target, decimal roll, decimal bonus, decimal modifier, decimal needed)
+    {
         decimal total = Add(Add(roll, bonus, 1), modifier, 1);
         bool atLeast = check.Json.GetProperty("succeeds").GetString() == "at-least";
         bool success = atLeast ? total >= needed : total <= needed;

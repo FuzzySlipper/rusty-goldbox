@@ -88,6 +88,22 @@ public sealed class CombatRollTests
     }
 
     [Fact]
+    public void APostRollRerollKeepsRandomizedBonusAndModifier()
+    {
+        using TempModules modules = new();
+        string root = RollRuleset(modules, "1", "100", "1d6");
+        RuleSet rules = Rules.LoadValid(root);
+        Definition lucky = rules.Find(DefinitionTypes.Condition, "lucky", out _)!;
+        CombatResult result = Fight(rules, "attacker", "dummy", lucky);
+
+        CheckFact check = Assert.Single(result.Facts.OfType<CheckFact>());
+        Assert.Equal("reroll", Assert.Single(result.Facts.OfType<PostRollFact>()).Effect);
+        Assert.Equal(2, check.Rolls.Count);
+        Assert.NotEqual(0, check.Result.Bonus);
+        Assert.NotEqual(0, check.Result.Modifier);
+    }
+
+    [Fact]
     public void QuickenedAddsToTheCurrentTurnBudgetInTheOriginalFixture()
     {
         RuleSet rules = Rules.LoadValid(Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "degrees"));
@@ -171,18 +187,22 @@ public sealed class CombatRollTests
         Assert.Contains(set.Diagnostics, diagnostic => diagnostic.Rule == "operation.reduce-damage" && diagnostic.JsonPath == "$.always[0]");
     }
 
-    private static string RollRuleset(TempModules modules, string roll, string target = "10")
+    private static string RollRuleset(TempModules modules, string roll, string target = "10", string? bonus = null)
     {
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/luck.json", """
             { "type": "track", "id": "luck", "name": "Luck", "max": "1", "start": "1", "min": "0" }
             """);
+        modules.Write("rules/lucky.json", """
+            { "type": "condition", "id": "lucky", "name": "Lucky", "modifiers": [ { "check": "strike", "value": "1d6" } ] }
+            """);
         modules.Write("rules/combat.json", """
             { "type": "combat", "id": "duel", "name": "Duel", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
               "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
             """);
+        string bonusField = bonus is null ? "" : $", \"bonus\": \"{bonus}\"";
         modules.Write("rules/check.json", $$"""
-            { "type": "check", "id": "strike", "name": "Strike", "roll": "{{roll}}", "target": "{{target}}", "succeeds": "at-least",
+            { "type": "check", "id": "strike", "name": "Strike", "roll": "{{roll}}"{{bonusField}}, "target": "{{target}}", "succeeds": "at-least",
               "post_roll": [
                 { "name": "Luck +2", "track": "luck", "cost": "1", "bonus": "2", "score": "if check.margin < 0 then 2 else -1" },
                 { "name": "Luck reroll", "track": "luck", "cost": "1", "reroll": true, "score": "if check.margin < -2 then 3 else -1" }
@@ -242,7 +262,7 @@ public sealed class CombatRollTests
         return root;
     }
 
-    private static CombatResult Fight(RuleSet rules, string first, string second)
+    private static CombatResult Fight(RuleSet rules, string first, string second, Definition? firstCondition = null)
     {
         Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
         Definition one = rules.Find(DefinitionTypes.Monster, first, out _)!;
@@ -250,9 +270,15 @@ public sealed class CombatRollTests
         return WithDice(dice =>
         {
             Evaluator evaluator = new(rules, dice);
+            Combatant actor = Combatant.FromMonster(rules, one, one.Name, evaluator);
+            if (firstCondition is not null)
+            {
+                actor.Creature.Conditions.Add(firstCondition);
+            }
+
             return CombatRunner.Run(rules, combat,
             [
-                new CombatSide("First", [Combatant.FromMonster(rules, one, one.Name, evaluator)]),
+                new CombatSide("First", [actor]),
                 new CombatSide("Second", [Combatant.FromMonster(rules, two, two.Name, evaluator)]),
             ], dice, maxRounds: 1);
         });

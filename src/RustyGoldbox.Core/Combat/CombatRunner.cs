@@ -844,7 +844,7 @@ public sealed class CombatRunner
         CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
         by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
         Record(new CheckFact(by.Name, check.Name, result), before);
-        result = PostRoll(check, by, against, extra, result);
+        result = PostRoll(check, by, against, result);
         if (result.Success && by.Character is Character character && check.Json.TryGetProperty("skill", out _))
         {
             CharacterRules.MarkSkillUse(_rules, character, check.Json.GetProperty("skill").GetString()!, []);
@@ -858,7 +858,7 @@ public sealed class CombatRunner
     /// The check fact keeps the final result while a separate fact records the
     /// resource and effect, so a transcript can explain why the result changed.
     /// </summary>
-    private CheckResult PostRoll(Definition check, Combatant by, Combatant against, decimal extra, CheckResult result)
+    private CheckResult PostRoll(Definition check, Combatant by, Combatant against, CheckResult result)
     {
         if (!check.Json.TryGetProperty("post_roll", out JsonElement options))
         {
@@ -906,14 +906,14 @@ public sealed class CombatRunner
             changed = Located(check, $"$.post_roll[{bestIndex}]", () =>
             {
                 decimal roll = _evaluator.Roll(check, by.Creature, against.Creature);
-                return _evaluator.CheckWithRoll(check, by.Creature, against.Creature, roll, extra, result.Target);
+                return _evaluator.ResolveCheck(check, by.Creature, against.Creature, roll, result.Bonus, result.Modifier, result.Target);
             });
             effect = "reroll";
         }
         else
         {
             decimal bonus = Number(check, $"$.post_roll[{bestIndex}].bonus", new Scope(by.Creature, against.Creature, Check: result));
-            changed = Located(check, $"$.post_roll[{bestIndex}].bonus", () => _evaluator.CheckWithRoll(check, by.Creature, against.Creature, result.Roll, extra + bonus, result.Target));
+            changed = Located(check, $"$.post_roll[{bestIndex}].bonus", () => _evaluator.ResolveCheck(check, by.Creature, against.Creature, result.Roll, result.Bonus, result.Modifier + bonus, result.Target));
             effect = $"+{bonus.ToString("0.############", CultureInfo.InvariantCulture)}";
         }
 
