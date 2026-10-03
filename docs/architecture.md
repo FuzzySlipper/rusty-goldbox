@@ -44,17 +44,17 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
-| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
-| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise, initiative, turns, budgets, the choice policy, checks and operations, condition durations, defeat |
+| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
+| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, flee rules and actions, checks and operations, condition durations, defeat |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls: parsing the map text and drawing it |
 | `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, variables, fired triggers, pending menu or shop, party and inventory; characters own gold and equipment |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and `CampaignRunner.Shop.cs` | The play command surface: movement, triggers, event chains, fights, status and shops; trading changes the existing character gold, party inventory and equipment |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and `CampaignRunner.Shop.cs` | The play command surface: movement, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character gold, party inventory and equipment |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
-| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source) |
+| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
 | `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
@@ -131,28 +131,43 @@ maximum, the creature's own maximum. `Evaluator` resolves maxima, floors,
 restore caps and starting values. Engine `Track` was considered and not used:
 its maximum is a stored stat, while these are expressions.
 
-`CombatRunner` runs one fight between sides of `Combatant`s. It first rolls
-surprise, by side (reading the side's lead, the member `surprise_lead` ranks
-highest, against the other side's) or by creature (each creature against
-each enemy, so only some may be surprised). Each round it
-rolls initiative (by side or by creature, from the combat definition), then
-each creature's turn: start-of-turn condition operations, a skip if a
-condition prevents actions, actions while the turn's budget (an expression,
-worked out at the turn's start) lasts, then end-of-turn condition operations
-and durations. The choice is a deterministic policy: the first use in the
-creature's list it can afford and that has a target its `valid_target`
-accepts, aimed at the candidate its `prefer` ranks highest, or by default the
-enemy with the least left on the combat's track, the ally missing the most of
-it, or the first fallen ally. Where a creature's uses carry a `score`, it
-scores every such option against its target and takes the highest instead.
-An action's check gives a tier; the action's
-operations for that tier run, then its `always` operations. Defeated
-creatures take no turns; with the combat's `downed_conditions`, they still
-run their conditions and count them down at their place in the order, or at
-the round's end when they have none (initiative rolled each round leaves them
-out). Reactions resolve where their triggers happen: as a mover
-leaves a reach, before an action's check against the reactor, after an
-operation wounds it, and after an enemy's operation fells an ally. Every change is a `CombatFact`, with the dice that produced it.
+`CombatRunner` runs one fight between sides of `Combatant`s. It deploys each
+side on the combat field, using the side's default edge or an encounter
+event's `[x, y]` anchor. A field in `mode: "zones"` permits several creatures
+to occupy one cell, making their distance 0; the ordinary grid keeps one
+occupant per cell. It first rolls surprise, by side (reading the side's lead,
+the member `surprise_lead` ranks highest, against the other side's) or by
+creature (each creature against each enemy, so only some may be surprised),
+unless the event forces `party` or `monsters` surprise for its configured
+number of rounds.
+
+Each round normally rolls initiative (by side or by creature, from the combat
+definition). An `initiative_mode: "elective"` definition uses deterministic
+popcorn order instead: the first listing member acts first, then the previous
+actor chooses the next unacted member by the optional `initiative_score`
+expression (highest score, listing order for ties), recording an
+`initiative_choice` fact. A creature's turn runs start-of-turn condition
+operations, a flee rule when one matches, a skip if a condition prevents
+actions, actions while the turn's budget (an expression, worked out at the
+turn's start) lasts, then end-of-turn condition operations and durations. The
+choice is a deterministic policy: the first use in the creature's list it can
+afford and that has a target its `valid_target` accepts, aimed at the candidate
+its `prefer` ranks highest, or by default the enemy with the least left on the
+combat's track, the ally missing the most of it, or the first fallen ally.
+Where a creature's uses carry a `score`, it scores every such option against
+its target and takes the highest instead. An explicit `flee` operation has the
+same escaped result as a matching flee rule. A side is fled when all its
+members have escaped; the event receives that outcome through `on_flee`, and
+may treat a round-limit draw as flee with `flee_on_draw`.
+
+An action's check gives a tier; the action's operations for that tier run, then
+its `always` operations. Defeated creatures take no turns; with the combat's
+`downed_conditions`, they still run their conditions and count them down at
+their place in the order, or at the round's end when they have none (initiative
+rolled each round leaves them out). Reactions resolve where their triggers
+happen: as a mover leaves a reach, before an action's check against the
+reactor, after an operation wounds it, and after an enemy's operation fells an
+ally. Every change is a `CombatFact`, with the dice that produced it.
 
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope
@@ -166,8 +181,10 @@ and runs the fight inside the Engine tool host; run k uses random scope
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu waits for a choice, the chain ends, or the adventure does. A
 combat event fights the party against an encounter with `CombatRunner`, and
-the party keeps the damage. Felled monsters' experience, and an experience
-event's, go to the party through `CharacterRules.Award`: shared among the
+the party keeps the damage. A combat event can select its combat definition,
+anchor both sides, force the surprised side, and route a flee outcome through
+`on_flee` (including a round-limit draw when `flee_on_draw` is true). Felled
+monsters' experience, and an experience event's, go to the party through `CharacterRules.Award`: shared among the
 survivors or the whole party as the advancement's `experience_to` says,
 taking levels that need no choice at once and leaving the rest for the
 `level` command, whose choices `CharacterRules.AddExperience` takes all or

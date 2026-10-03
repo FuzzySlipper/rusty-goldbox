@@ -140,6 +140,16 @@ dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --runs 200
 ```
 
+Combat definitions can use the default grid or shared `field.mode: "zones"`
+cells, where several creatures may share a zone and same-zone distance is
+zero. Combat events can anchor each side with `party_start` and
+`monsters_start`, force a side's opening surprise with `surprise`, and route a
+fleeing side through `on_flee` (with `flee_on_draw` for round-limit draws).
+Rulesets that use Fate-style popcorn order set
+`initiative_mode: "elective"` and may provide an `initiative_score` expression;
+the schema command documents these fields and the resulting transcript records
+each actor's next-choice fact.
+
 ## Tests
 
 ```bash

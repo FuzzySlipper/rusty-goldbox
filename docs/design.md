@@ -278,6 +278,36 @@ block or slab. Creatures have no facing: Gold Box fights didn't
 turn on it, and a rule about flanking or rear attacks can read positions.
 Without a field everyone is in reach.
 
+A field with `mode: "zones"` keeps the same cell and distance model but lets
+several creatures share one cell: that is a zone, and creatures in one zone
+have distance 0. A move between zone cells remains an operation owned by an
+action, so a ruleset can combine movement with its action budget.
+
+An encounter event can override the field's default deployment with
+`party_start` and `monsters_start` `[x, y]` anchors; each side's members deploy
+from its anchor in deterministic distance, row and column order. It can also
+set `surprise` to `party` or `monsters` and optionally `surprise_rounds` to
+force the opening surprise instead of rolling the combat definition's rule.
+The event validator checks that these coordinates belong to the combat field.
+
+Combat normally rolls the initiative fields (`initiative`, `initiative_by`,
+`initiative_order` and `initiative_each`). A definition may instead set
+`initiative_mode: "elective"` for Fate-style popcorn order: the first actor is
+the first unacted creature in listing order, and each later actor chooses the
+next unacted creature. Headless runs use the optional `initiative_score`
+expression with the current actor as `self` and each candidate as `target`,
+choosing the highest score and retaining listing order for ties. The choice is
+recorded as an `initiative_choice` combat fact, so a transcript exposes the
+policy's result.
+
+A combat can declare `flee` rules that test at the start of a creature's turn,
+and an action can use the `flee` operation. Escaping marks the creature out of
+the fight without treating it as felled; when every member of a side has
+escaped, the event is a `flee` outcome. Its `on_flee` branch handles that
+outcome, and `flee_on_draw` optionally treats a round-limit draw as the same
+branch. Other combat outcomes keep their existing `on_win`, `on_lose` and
+`on_draw` routing.
+
 **Reactions** happen out of turn: a reaction names a trigger (an enemy
 leaving its reach, an enemy's action about to resolve against it, an
 enemy's operation wounding it, or an enemy felling one of its allies), spends a combat budget (usually a `reaction`
@@ -427,7 +457,9 @@ vertical edges of one (`|`, space, `D`, `S`). Cell features and entry points
 are listed by `[x, y]`, x running east and y south from 0. Each event is a
 definition whose `kind` picks its fields (`goldbox schema events`).
 - **Encounters** reference ruleset monsters, with counts, placements and
-  surprise rules.
+  surprise rules. A combat event can choose starting anchors and a forced
+  surprised side; its outcome branches include `on_flee`, and `flee_on_draw`
+  can route an otherwise undecided round-limit fight there.
 
 ## Runtime
 

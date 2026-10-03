@@ -34,6 +34,7 @@ adapted into data; no text was copied beyond skill names and short game terms.
 | `actions/` (attack with Fight, Shoot or Provoke; create an advantage) | The Four Actions |
 | `monsters/` (minor NPCs with a few stress boxes and no consequences; a supporting NPC with consequences) | Running the Game: NPCs |
 | `features/` (stunts: +2 to an action with a skill, or an extra stress box) | Stunts |
+| `combat/conflict` (three shared zones, adjacent-zone movement, and elective/popcorn turn order) | [Challenges, Conflicts, and Contests](https://fate-srd.com/fate-condensed/challenges-conflicts-and-contests), “Zones” and “Turn Order” |
 
 The NPCs, their names and the stunts are original examples written for this
 module in the shape the source describes.
