@@ -316,11 +316,11 @@ public sealed class CampaignRunner
     }
 
     /// <summary>Who is in a fight and where they start on its track, for presenting it.</summary>
-    private List<FightMember> Members(Definition combat, List<CombatSide> sides)
+    private List<FightMember> Members(Definition combat, Definition encounter, List<CombatSide> sides)
     {
         Definition track = _rules.Reference(combat, "$.track");
         Evaluator evaluator = new(_rules, null);
-        CombatField? field = CombatField.Of(combat);
+        CombatField? field = CombatField.Of(combat, encounter);
         List<FightMember> members = [];
         for (int side = 0; side < sides.Count; side++)
         {
@@ -351,8 +351,8 @@ public sealed class CampaignRunner
             new CombatSide("Party", party),
             new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, dice)),
         ]);
-        List<FightMember> members = Members(combat, sides);
-        CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat));
+        List<FightMember> members = Members(combat, encounter, sides);
+        CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat), encounter);
 
         // The party keeps what the fight did to its tracks.
         for (int i = 0; i < _state.Party.Count; i++)
@@ -369,7 +369,7 @@ public sealed class CampaignRunner
             null => FightOutcome.Undecided,
             _ => FightOutcome.Lost,
         };
-        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat)));
+        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter)));
         if (outcome == FightOutcome.Won)
         {
             return Next(evt, "$.on_win");

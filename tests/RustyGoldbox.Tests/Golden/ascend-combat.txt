@@ -76,7 +76,7 @@ Round 1.
   Cinder imp 1 rolls 2 for initiative.  [1d20: 2 = 2]
   Cinder imp 2 rolls 8 for initiative.  [1d20: 8 = 8]
   Cinder imp 2 uses Advance on Kara.
-  Cinder imp 2 moves 6 cells to (1, 2).
+  Cinder imp 2 moves 6 cells to (1, 0).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 18 + 3 = 21 against 11: success.  [1d20: 18 = 18]
   Kara loses 1 hit points (11 left).
@@ -98,7 +98,7 @@ Round 2.
   Kara reacts to Cinder imp 2: Attack of opportunity.
   Kara uses Melee attack (Longsword) on Cinder imp 2.
   Kara rolls Attack: 2 + 4 + 2 modifiers = 8 against 14: failure.  [1d20: 2 = 2]
-  Cinder imp 2 moves 2 cells to (3, 2).
+  Cinder imp 2 moves 2 cells to (3, 0).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 14 + 3 = 17 against 11: success.  [1d20: 14 = 14]
   Kara loses 1 hit points (6 left).
@@ -121,7 +121,7 @@ Round 3.
   Cinder imp 2 rolls Attack: 8 + 3 = 11 against 11: success.  [1d20: 8 = 8]
   Kara loses 1 hit points (4 left).  [1d6: 1 = 1]
   Cinder imp 2 uses Advance on Kara.
-  Cinder imp 2 moves 2 cells to (1, 2).
+  Cinder imp 2 moves 2 cells to (1, 0).
   Kara loses 1 hit points (3 left).
   Kara uses Melee attack (Longsword) on Cinder imp 2.
   Kara rolls Attack: 5 + 4 + 2 modifiers = 11 against 14: failure.  [1d20: 5 = 5]
@@ -134,7 +134,7 @@ Round 4.
   Kara reacts to Cinder imp 2: Attack of opportunity.
   Kara uses Melee attack (Longsword) on Cinder imp 2.
   Kara rolls Attack: 6 + 4 + 2 modifiers = 12 against 14: failure.  [1d20: 6 = 6]
-  Cinder imp 2 moves 2 cells to (3, 2).
+  Cinder imp 2 moves 2 cells to (3, 0).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 6 + 3 = 9 against 11: failure.  [1d20: 6 = 6]
   Kara uses Advance on Cinder imp 2.

@@ -44,7 +44,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
-| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field: cells, distance, neighbours and where each side starts |
+| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
 | `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise, initiative, turns, budgets, the choice policy, checks and operations, condition durations, defeat |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |

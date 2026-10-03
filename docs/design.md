@@ -235,7 +235,14 @@ sides start at opposite edges; an action's `range` limits its targets to that
 many cells, `combat.distance` and `combat.nearest` read how far apart
 creatures are, and the `move` operation steps the actor toward or away from
 its target through free cells, so movement costs whatever budget the moving
-action costs. Without a field everyone is in reach.
+action costs. The field declares kinds of **terrain** by one-character keys
+(impassable, costing more movement to enter, blocking sight) and an
+encounter lays them out as rows of text, so the same field can be a corridor
+or a pillared hall. Movement takes the cheapest way round obstacles; an
+action with a `range` also needs line of sight, while one without (moving
+toward an enemy) doesn't. Creatures have no facing: Gold Box fights didn't
+turn on it, and a rule about flanking or rear attacks can read positions.
+Without a field everyone is in reach.
 
 **Reactions** happen out of turn: a reaction names a trigger (an enemy
 leaving its reach, an enemy's action about to resolve against it, or an

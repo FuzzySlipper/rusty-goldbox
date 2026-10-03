@@ -36,7 +36,7 @@ public sealed class CombatRunner
     private Combatant? _turn;
     private bool _reacting;
 
-    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice)
+    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter)
     {
         _rules = rules;
         _combat = combat;
@@ -44,7 +44,7 @@ public sealed class CombatRunner
         _evaluator = new Evaluator(rules, dice);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
-        _field = CombatField.Of(combat);
+        _field = CombatField.Of(combat, encounter);
         for (int side = 0; side < _sides.Count; side++)
         {
             IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count);
@@ -82,9 +82,10 @@ public sealed class CombatRunner
         return combat.Json.TryGetProperty("round_limit", out JsonElement limit) ? limit.GetInt32() : DefaultRoundLimit;
     }
 
-    public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds)
+    /// <summary>Fights the sides under the combat definition, on the encounter's terrain when it has some.</summary>
+    public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds, Definition? encounter = null)
     {
-        return new CombatRunner(rules, combat, sides, dice).Fight(maxRounds);
+        return new CombatRunner(rules, combat, sides, dice, encounter).Fight(maxRounds);
     }
 
     private IEnumerable<Combatant> Everyone => _sides.SelectMany(side => side.Members);
@@ -518,10 +519,11 @@ public sealed class CombatRunner
             "fallen_ally" => Everyone.Where(member => member.Defeated && member.Side == actor.Side && member != actor).ToList(),
             _ => allies.Where(member => Missing(member) > 0).ToList(),
         };
+        // A range is how far it reaches and needs line of sight; without one, it reaches anyone (moving toward an enemy out of sight).
         if (_field is not null && kind != "self" && action.Json.TryGetProperty("range", out _))
         {
             decimal range = Number(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
-            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range).ToList();
+            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range && Sees(actor, candidate)).ToList();
         }
 
         if (action.Json.TryGetProperty("valid_target", out _))
@@ -546,6 +548,12 @@ public sealed class CombatRunner
             "hurt_ally" => [candidates.OrderByDescending(Missing).First()],
             _ => [candidates[0]],
         };
+    }
+
+    /// <summary>Whether nothing on the field blocks the line of sight between two creatures.</summary>
+    private bool Sees(Combatant from, Combatant to)
+    {
+        return _field is null || from.Creature.Position is not Cell a || to.Creature.Position is not Cell b || _field.CanSee(a, b);
     }
 
     /// <summary>What a creature has left on the combat's track.</summary>
@@ -770,10 +778,12 @@ public sealed class CombatRunner
     }
 
     /// <summary>
-    /// The move operation: the actor steps cell by cell, up to the distance,
-    /// toward its target (stopping once within 1) or away from it, each step to
-    /// the free neighbouring cell that most changes the distance. Creatures
-    /// still fighting block cells. Without a field it does nothing.
+    /// The move operation: the actor spends up to the distance in movement
+    /// (1 a cell, or the terrain's cost) stepping toward its target along the
+    /// cheapest way round obstacles, stopping once within 1, or away from it,
+    /// each step to the open cell that most increases the distance. Creatures
+    /// still fighting and impassable terrain block cells. Without a field it
+    /// does nothing.
     /// </summary>
     private void Move(Definition owner, JsonElement operation, string path, Scope scope, Combatant actor, Combatant? target)
     {
@@ -787,19 +797,14 @@ public sealed class CombatRunner
         HashSet<Cell> blocked = Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
             .Select(member => member.Creature.Position!.Value)
             .ToHashSet();
+        Dictionary<Cell, int>? toGoal = away ? null : CostsToReach(goal, blocked);
         Cell here = start;
+        decimal spent = 0;
         int steps = 0;
-        while (steps < allowed && (away || _field.Distance(here, goal) > 1))
+        while (away || _field.Distance(here, goal) > 1)
         {
-            int now = _field.Distance(here, goal);
-            Cell? next = _field.Neighbours(here)
-                .Where(cell => !blocked.Contains(cell))
-                .Select(cell => (Cell: cell, Distance: _field.Distance(cell, goal)))
-                .Where(entry => away ? entry.Distance > now : entry.Distance < now)
-                .OrderBy(entry => away ? -entry.Distance : entry.Distance)
-                .Select(entry => (Cell?)entry.Cell)
-                .FirstOrDefault();
-            if (next is not Cell step)
+            Cell? next = away ? StepAway(here, goal, blocked) : StepToward(here, toGoal!);
+            if (next is not Cell step || spent + _field.Cost(step) > allowed)
             {
                 break;
             }
@@ -822,6 +827,7 @@ public sealed class CombatRunner
             }
 
             here = step;
+            spent += _field.Cost(step);
             steps++;
         }
 
@@ -830,6 +836,75 @@ public sealed class CombatRunner
             actor.Creature.Position = here;
             Record(new MoveFact(actor.Name, start, here, steps));
         }
+    }
+
+    /// <summary>
+    /// The least movement from each open cell to a cell within 1 of the goal
+    /// (0 there), going round impassable terrain and <paramref name="blocked"/> cells.
+    /// </summary>
+    private Dictionary<Cell, int> CostsToReach(Cell goal, HashSet<Cell> blocked)
+    {
+        Dictionary<Cell, int> costs = [];
+        PriorityQueue<Cell, int> frontier = new();
+        for (int x = 0; x < _field!.Width; x++)
+        {
+            for (int y = 0; y < _field.Height; y++)
+            {
+                Cell cell = new(x, y);
+                if (_field.Distance(cell, goal) <= 1 && cell != goal && _field.Passable(cell) && !blocked.Contains(cell))
+                {
+                    costs[cell] = 0;
+                    frontier.Enqueue(cell, 0);
+                }
+            }
+        }
+
+        while (frontier.TryDequeue(out Cell cell, out int cost))
+        {
+            if (cost > costs[cell])
+            {
+                continue;
+            }
+
+            // Stepping from a neighbour into this cell costs this cell's terrain.
+            foreach (Cell neighbour in _field.Neighbours(cell).Where(neighbour => _field.Passable(neighbour) && !blocked.Contains(neighbour)))
+            {
+                int through = cost + _field.Cost(cell);
+                if (!costs.TryGetValue(neighbour, out int known) || through < known)
+                {
+                    costs[neighbour] = through;
+                    frontier.Enqueue(neighbour, through);
+                }
+            }
+        }
+
+        return costs;
+    }
+
+    /// <summary>The neighbouring cell on the cheapest way to the goal, the first in neighbour order on a tie, or null if none gets closer.</summary>
+    private Cell? StepToward(Cell here, Dictionary<Cell, int> toGoal)
+    {
+        int now = toGoal.TryGetValue(here, out int cost) ? cost : int.MaxValue;
+        return _field!.Neighbours(here)
+            .Where(cell => toGoal.ContainsKey(cell))
+            .Select(cell => (Cell: cell, Total: _field.Cost(cell) + toGoal[cell]))
+            .Where(entry => entry.Total <= now && toGoal[entry.Cell] < now)
+            .OrderBy(entry => entry.Total)
+            .Select(entry => (Cell?)entry.Cell)
+            .FirstOrDefault();
+    }
+
+    /// <summary>The open neighbouring cell that most increases the distance from the goal, or null if none does.</summary>
+    private Cell? StepAway(Cell here, Cell goal, HashSet<Cell> blocked)
+    {
+        int now = _field!.Distance(here, goal);
+        return _field.Neighbours(here)
+            .Where(cell => !blocked.Contains(cell) && _field.Passable(cell))
+            .Select(cell => (Cell: cell, Distance: _field.Distance(cell, goal)))
+            .Where(entry => entry.Distance > now)
+            .OrderByDescending(entry => entry.Distance)
+            .Select(entry => (Cell?)entry.Cell)
+            .FirstOrDefault();
     }
 
     /// <summary>What a condition's own operations read: its holder as self, and the values it was applied with.</summary>

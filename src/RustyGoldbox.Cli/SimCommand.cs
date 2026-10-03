@@ -90,7 +90,7 @@ internal static class SimCommand
                         new("Party", party.Select(character => Combatant.FromCharacter(rules, character)).ToList()),
                         new(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
                     ]);
-                    all.Add(CombatRunner.Run(rules, combat, sides, dice, roundLimit));
+                    all.Add(CombatRunner.Run(rules, combat, sides, dice, roundLimit, encounter));
                 }
 
                 return all;

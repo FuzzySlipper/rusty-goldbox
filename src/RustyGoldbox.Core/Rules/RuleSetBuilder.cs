@@ -1,4 +1,5 @@
 using System.Text.Json;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -617,8 +618,72 @@ public sealed class RuleSetBuilder
 
 
 
+    /// <summary>A field's terrain keys are single characters with a cost of 1 or more; an encounter's rows fit every field and use its keys.</summary>
+    private void CheckTerrain()
+    {
+        List<Definition> fielded = _rules.OfType(DefinitionTypes.Combat).Where(combat => combat.Json.TryGetProperty("field", out _)).ToList();
+        foreach (Definition combat in fielded)
+        {
+            if (!combat.Json.GetProperty("field").TryGetProperty("terrain", out JsonElement terrain))
+            {
+                continue;
+            }
+
+            foreach (JsonProperty entry in terrain.EnumerateObject())
+            {
+                if (entry.Name.Length != 1 || entry.Name[0] == CombatField.Open || char.IsWhiteSpace(entry.Name[0]))
+                {
+                    Error(combat, "combat.terrain", $"$.field.terrain.{entry.Name}", $"Terrain keys are one character other than '{CombatField.Open}' (open ground) and spaces, but '{entry.Name}' isn't.");
+                }
+
+                if (entry.Value.TryGetProperty("cost", out JsonElement cost) && cost.GetInt32() < 1)
+                {
+                    Error(combat, "combat.terrain", $"$.field.terrain.{entry.Name}.cost", "A terrain's cost must be at least 1.");
+                }
+            }
+        }
+
+        foreach (Definition encounter in _rules.OfType(DefinitionTypes.Encounter))
+        {
+            if (!encounter.Json.TryGetProperty("terrain", out JsonElement rows))
+            {
+                continue;
+            }
+
+            if (fielded.Count == 0)
+            {
+                Error(encounter, "encounter.terrain", "$.terrain", "Terrain needs a combat field to lie on, but no combat definition has a \"field\".");
+                continue;
+            }
+
+            List<string> lines = rows.EnumerateArray().Select(row => row.GetString()!).ToList();
+            foreach (Definition combat in fielded)
+            {
+                JsonElement field = combat.Json.GetProperty("field");
+                int width = field.GetProperty("width").GetInt32();
+                int height = field.GetProperty("height").GetInt32();
+                if (lines.Count != height || lines.Any(line => line.Length != width))
+                {
+                    Error(encounter, "encounter.terrain", "$.terrain", $"Combat '{combat.Id}' has a {width} by {height} field, so terrain needs {height} rows of {width} characters, but it has {lines.Count} rows of {string.Join(", ", lines.Select(line => line.Length).Distinct())}.");
+                    continue;
+                }
+
+                Dictionary<char, Terrain> kinds = CombatField.Kinds(field);
+                for (int y = 0; y < lines.Count; y++)
+                {
+                    foreach (char key in lines[y].Where(key => key != CombatField.Open && !kinds.ContainsKey(key)).Distinct())
+                    {
+                        string known = kinds.Count == 0 ? "It declares no terrain." : $"Its terrain: {string.Join(", ", kinds.Keys.Select(k => $"'{k}'"))}.";
+                        Error(encounter, "encounter.terrain", $"$.terrain[{y}]", $"'{key}' is not open ground ('{CombatField.Open}') or terrain the field of combat '{combat.Id}' declares. {known}");
+                    }
+                }
+            }
+        }
+    }
+
     private void CheckActions()
     {
+        CheckTerrain();
         foreach (Definition combat in _rules.OfType(DefinitionTypes.Combat))
         {
             if (combat.Json.TryGetProperty("round_limit", out JsonElement limit) && limit.GetInt32() < 1)

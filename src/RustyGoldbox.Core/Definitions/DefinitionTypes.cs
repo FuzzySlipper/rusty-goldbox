@@ -361,7 +361,14 @@ public static class DefinitionTypes
                 new("width", new IntegerKind(), true, "Cells across; the first side starts on the left edge and the second on the right."),
                 new("height", new IntegerKind(), true, "Cells down."),
                 new("metric", new EnumKind(["chebyshev", "manhattan"]), false, "How distance counts: a diagonal step is 1 (chebyshev, the default) or there are only straight steps (manhattan)."),
-            ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells, and the move operation moves them. Without it, fights have no positions and everyone is in reach (combat.distance is 1)."),
+                new("terrain", new MapKind(new TextKind(), new ObjectKind(
+                [
+                    new("name", new TextKind(), true, "Display name, for example \"Pillar\"."),
+                    new("passable", new BooleanKind(), false, "Whether creatures can enter it; without it, true."),
+                    new("cost", new IntegerKind(), false, "Movement it takes to enter, for example 2 for rubble; without it, 1."),
+                    new("blocks_sight", new BooleanKind(), false, "Whether it blocks line of sight: an action with a range can't target a creature behind it. Without it, false."),
+                ])), false, "Kinds of ground an encounter's terrain rows may use, each by a one-character key other than \".\" (open ground), for example { \"#\": { \"name\": \"Pillar\", \"passable\": false, \"blocks_sight\": true }, \"~\": { \"name\": \"Mud\", \"cost\": 2 } }."),
+            ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells within which they need line of sight to their target, and the move operation moves them, round obstacles. Creatures have no facing. Without it, fights have no positions and everyone is in reach (combat.distance is 1)."),
             new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down each round, though it takes no actions (bleeding out, a save to stabilise). It does so at its place in the turn order; with initiative each round a defeated creature isn't rolled for, so it does so at the round's end, as does one out of the fight from the start. Without it, a defeated creature's conditions wait."),
         ],
         """
@@ -389,7 +396,7 @@ public static class DefinitionTypes
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
             new("target", new EnumKind(["enemy", "ally", "hurt_ally", "fallen_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (by default the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, an ally out of the fight (to bring back), itself, or everyone on a side."),
             new("max_targets", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "For all_enemies or all_allies, the most creatures it affects, worked out when it is taken, for example \"2d4\"; those prefer ranks highest are chosen."),
-            new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; without it, any distance."),
+            new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; a target in range must also be in sight. Without it, any distance, seen or not (for moving toward an enemy)."),
             new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
             new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),
             new("score", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "How much the creature wants to take it now, against the target it would pick (the first, for a whole side). When any of a creature's uses has a score, it takes the highest-scoring use it can (a use without one scores 0; the first in its list on a tie) instead of the first, for example \"if target.hit_points * 2 < target.max_hit_points then 10 else -1\" to heal only the badly hurt."),
@@ -422,6 +429,7 @@ public static class DefinitionTypes
                 new("monster", new ReferenceKind("monster"), true, "The monster."),
                 new("count", PlainNumber, true, "How many, for example \"2\" or \"1d4 + 1\"."),
             ])), true, "The monsters and how many of each."),
+            new("terrain", new ListKind(new TextKind()), false, "On a combat field, the ground it is fought on: one row of text per row of cells, \".\" for open ground and the field's terrain keys elsewhere, for example [\"..#..\", \".....\", \"..~..\"]. Its size must match every field it can be fought on. Without it, open ground."),
         ],
         """
         { "type": "encounter", "id": "crypt_guard", "name": "Crypt guard", "monsters": [ { "monster": "skeleton", "count": "1d4 + 1" } ] }

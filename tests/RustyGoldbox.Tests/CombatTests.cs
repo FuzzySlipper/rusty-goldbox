@@ -358,6 +358,126 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void MovementGoesRoundObstaclesAndPaysForRoughGround()
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/walled.json", """
+            { "type": "encounter", "id": "walled", "name": "Walled", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["..#..", "..#..", "....."] }
+            """);
+        modules.Write("rules/muddy.json", """
+            { "type": "encounter", "id": "muddy", "name": "Muddy", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["..#..", "..#..", "..~.."] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        // The wall leaves only the bottom row: five cells round it to stand next to the dummy.
+        Assert.Contains("Walker moves 5 cells to (4, 2).", FightOn(rules, "walled", "walker"));
+        // Mud costs 3 to enter, so 6 movement gets one cell short.
+        Assert.Contains("Walker moves 4 cells to (3, 2).", FightOn(rules, "muddy", "walker"));
+    }
+
+    [Fact]
+    public void RangedActionsNeedLineOfSight()
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/screened.json", """
+            { "type": "encounter", "id": "screened", "name": "Screened", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["..#..", "..#..", "..#.."] }
+            """);
+        modules.Write("rules/fenced.json", """
+            { "type": "encounter", "id": "fenced", "name": "Fenced", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["..=..", "..=..", "..=.."] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        // A wall blocks the shot; a fence stops movement but not sight.
+        Assert.Contains("Archer doesn't act (no action it can take).", FightOn(rules, "screened", "archer"));
+        Assert.Contains("Archer uses Shoot on Dummy.", FightOn(rules, "fenced", "archer"));
+        CombatField field = CombatField.Of(rules.Find(DefinitionTypes.Combat, "maze", out _)!, rules.Find(DefinitionTypes.Encounter, "screened", out _)!)!;
+        Assert.False(field.CanSee(new Cell(0, 1), new Cell(4, 1)));
+        Assert.True(field.CanSee(new Cell(0, 1), new Cell(1, 2)));
+        Assert.Equal([new Cell(0, 1), new Cell(0, 0), new Cell(0, 2), new Cell(1, 1)], field.Deploy(0, 4));
+    }
+
+    [Fact]
+    public void TerrainIsCheckedAgainstTheField()
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/bad_key.json", """
+            { "type": "combat", "id": "bad_key", "name": "Bad key", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "round",
+              "round_seconds": 6, "field": { "width": 5, "height": 3, "terrain": { "##": { "name": "Double" }, "~": { "name": "Mud", "cost": 0 } } },
+              "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/short.json", """
+            { "type": "encounter", "id": "short", "name": "Short", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["....", "....."] }
+            """);
+        modules.Write("rules/odd.json", """
+            { "type": "encounter", "id": "odd", "name": "Odd", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": [".....", "..?..", "....."] }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [
+                ("combat.terrain", "bad_key.json", "$.field.terrain.##"),
+                ("combat.terrain", "bad_key.json", "$.field.terrain.~.cost"),
+                ("encounter.terrain", "odd.json", "$.terrain[1]"),
+                ("encounter.terrain", "odd.json", "$.terrain[1]"),
+                ("encounter.terrain", "short.json", "$.terrain"),
+                ("encounter.terrain", "short.json", "$.terrain"),
+            ],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!), diagnostic.JsonPath!)).Order());
+    }
+
+    /// <summary>The duel ruleset on a 5 by 3 manhattan field with walls, fences and mud, a walker that closes to jab and an archer that shoots from where it stands.</summary>
+    private static string TerrainRuleset(TempModules modules)
+    {
+        string root = DuelRuleset(modules);
+        modules.Write("rules/maze.json", """
+            { "type": "combat", "id": "maze", "name": "Maze", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "round",
+              "round_seconds": 6, "field": { "width": 5, "height": 3, "metric": "manhattan", "terrain": {
+                "#": { "name": "Wall", "passable": false, "blocks_sight": true },
+                "=": { "name": "Fence", "passable": false },
+                "~": { "name": "Mud", "cost": 3 } } },
+              "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/walk.json", """
+            { "type": "action", "id": "walk", "name": "Walk", "cost": { "turn": 1 }, "target": "enemy", "valid_target": "combat.nearest > 1", "always": [ { "op": "move", "distance": "6" } ] }
+            """);
+        modules.Write("rules/jab.json", """
+            { "type": "action", "id": "jab", "name": "Jab", "cost": { "turn": 1 }, "target": "enemy", "range": "1", "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        modules.Write("rules/shoot.json", """
+            { "type": "action", "id": "shoot", "name": "Shoot", "cost": { "turn": 1 }, "target": "enemy", "range": "10", "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        modules.Write("rules/walker.json", """
+            { "type": "monster", "id": "walker", "name": "Walker", "tracks": { "hit_points": "50" }, "stats": { "str": "15" }, "actions": [ { "action": "jab" }, { "action": "walk" } ], "xp": 0 }
+            """);
+        modules.Write("rules/archer.json", """
+            { "type": "monster", "id": "archer", "name": "Archer", "tracks": { "hit_points": "50" }, "stats": { "str": "15" }, "actions": [ { "action": "shoot" } ], "xp": 0 }
+            """);
+        return root;
+    }
+
+    /// <summary>One round of the maze combat: the monster against the encounter, on its terrain.</summary>
+    private static List<string> FightOn(RuleSet rules, string encounterId, string monster)
+    {
+        Definition combat = rules.Find(DefinitionTypes.Combat, "maze", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, encounterId, out _)!;
+        Definition fighter = rules.Find(DefinitionTypes.Monster, monster, out _)!;
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Them", [Combatant.FromMonster(rules, fighter, fighter.Name, evaluator)]),
+                new CombatSide("Dummies", Encounters.Spawn(rules, encounter, dice)),
+            ], dice, 1, encounter);
+        });
+        return result.Facts.Select(fact => fact.Describe()).ToList();
+    }
+
+    [Fact]
     public void AWoundedCreatureStrikesBackOnceAndReactionsDontChain()
     {
         using TempModules modules = new();

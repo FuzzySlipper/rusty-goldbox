@@ -10,7 +10,18 @@
   "field": {
     "width": 8,
     "height": 4,
-    "metric": "chebyshev"
+    "metric": "chebyshev",
+    "terrain": {
+      "#": {
+        "name": "Pillar",
+        "passable": false,
+        "blocks_sight": true
+      },
+      "~": {
+        "name": "Rubble",
+        "cost": 2
+      }
+    }
   },
   "budget": [
     {
