@@ -446,6 +446,12 @@ public static partial class CharacterRules
     {
         Creature baseline = character.ToCreature();
         baseline.AdvancementBonuses.Clear();
+        // Staged values are evaluated immediately after creation, before the
+        // character can acquire equipment or conditions. Those sources remain
+        // live character state and must not be treated as creation context at
+        // a later save boundary.
+        baseline.Equipment.Clear();
+        baseline.Conditions.Clear();
         Evaluator evaluator = new(rules, null);
         try
         {

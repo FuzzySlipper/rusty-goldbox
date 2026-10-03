@@ -613,6 +613,31 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void CommittedStagedCharacterCanSaveEquipmentModifiers()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("brawl", Personal: 100)]))!;
+        character.Equipment.Add(set.Rules!.Find(Core.Definitions.DefinitionTypes.Item, "ring_armour", out _)!);
+
+        string path = Path.Combine(scratch.Root, "equipped.json");
+        File.WriteAllText(path, CharacterFile.ToJson(character));
+        List<ModuleDiagnostic> problems = [];
+        Character? loaded = CharacterFile.Read(path, set, problems);
+
+        Assert.NotNull(loaded);
+        Assert.Empty(problems);
+        Assert.Equal(14, new Evaluator(set.Rules!, null).Stat(loaded!.ToCreature(), "dodge").Number);
+    }
+
+    [Fact]
     public void CharacterNewJsonIncludesStagedOptions()
     {
         using TempModules scratch = new();
