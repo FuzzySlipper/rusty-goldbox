@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "spiritual_armament",
+  "name": "Spiritual Armament",
+  "lists": {
+    "cleric": 2
+  },
+  "range": "120 feet",
+  "duration": "Sustained up to 1 minute",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "spiritual_armament"
+  },
+  "description": "A spell attack with a ghostly weapon for 2d8 damage (double on a critical hit).",
+  "cost": {
+    "spells_2": "1"
+  }
+}

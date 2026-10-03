@@ -1,0 +1,25 @@
+{
+  "type": "action",
+  "id": "force_barrage",
+  "name": "Force Barrage",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "range": "24",
+  "portions": "2",
+  "score": "14",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "hit",
+      "values": {
+        "amount": "1d4 + 1",
+        "critical": "0",
+        "physical": "0",
+        "slashing": "0",
+        "vitality": "0"
+      }
+    }
+  ]
+}

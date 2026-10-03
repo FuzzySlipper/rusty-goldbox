@@ -1,0 +1,23 @@
+{
+  "type": "item",
+  "id": "shortbow",
+  "name": "Shortbow",
+  "kind": "ranged weapon",
+  "cost": 3,
+  "weight": 1,
+  "parameters": {
+    "damage": "1d6",
+    "die": "1d6",
+    "deadly": "1d10",
+    "map": "5",
+    "martial": "1",
+    "slashing": "0",
+    "range": "12"
+  },
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "5"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "ac",
+  "name": "Armor Class",
+  "value": "10 + min(self.dex_mod, self.dex_cap) + self.armor_prof + self.armor_bonus + self.circumstance_ac - (if self.off_guard then 2 else 0)"
+}

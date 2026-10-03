@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "raise_shield",
+  "name": "Raise a Shield",
+  "cost": {
+    "action": 1
+  },
+  "target": "self",
+  "available": "equipped(item.kind == 'shield') > 0 and not self.condition.shield_raised",
+  "score": "5",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "shield_raised",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

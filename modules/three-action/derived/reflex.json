@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "reflex",
+  "name": "Reflex save",
+  "value": "self.dex_mod + self.ref_prof"
+}

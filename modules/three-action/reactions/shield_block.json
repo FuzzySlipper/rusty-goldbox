@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "shield_block",
+  "name": "Shield Block",
+  "trigger": "targeted",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "self.condition.shield_raised and self.shield_hardness > 0 and not self.condition.blocking",
+  "use": {
+    "action": "block"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "spell",
+  "id": "shield",
+  "name": "Shield",
+  "lists": {
+    "wizard": 0,
+    "cleric": 0
+  },
+  "range": "Self",
+  "duration": "Until the start of your next turn",
+  "area": "",
+  "casting_time": "1 actions",
+  "effect": {
+    "action": "shield_cantrip"
+  },
+  "description": "+1 circumstance bonus to AC until the start of your next turn; Shield Block with Hardness 5 ends it for 10 minutes."
+}

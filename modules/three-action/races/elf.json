@@ -1,0 +1,27 @@
+{
+  "type": "race",
+  "id": "elf",
+  "name": "Elf",
+  "boosts": [
+    {
+      "from": [
+        "dex"
+      ]
+    },
+    {
+      "from": [
+        "int"
+      ]
+    },
+    {}
+  ],
+  "ability_adjustments": {
+    "con": -2
+  },
+  "modifiers": [
+    {
+      "stat": "speed",
+      "value": "5"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "will_save",
+  "name": "Will save",
+  "value": "self.wis_mod + self.will_prof"
+}

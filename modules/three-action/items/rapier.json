@@ -1,0 +1,16 @@
+{
+  "type": "item",
+  "id": "rapier",
+  "name": "Rapier",
+  "kind": "finesse weapon",
+  "cost": 2,
+  "weight": 1,
+  "parameters": {
+    "damage": "1d6",
+    "die": "1d6",
+    "deadly": "1d8",
+    "map": "5",
+    "martial": "1",
+    "slashing": "0"
+  }
+}

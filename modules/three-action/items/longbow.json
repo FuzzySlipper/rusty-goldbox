@@ -1,0 +1,23 @@
+{
+  "type": "item",
+  "id": "longbow",
+  "name": "Longbow",
+  "kind": "ranged weapon",
+  "cost": 6,
+  "weight": 2,
+  "parameters": {
+    "damage": "1d8",
+    "die": "1d8",
+    "deadly": "1d10",
+    "map": "5",
+    "martial": "1",
+    "slashing": "0",
+    "range": "20"
+  },
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "5"
+    }
+  ]
+}

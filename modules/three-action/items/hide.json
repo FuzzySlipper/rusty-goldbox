@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "hide",
+  "name": "Hide Armor",
+  "kind": "medium armor",
+  "cost": 2,
+  "weight": 2,
+  "modifiers": [
+    {
+      "stat": "armor_bonus",
+      "value": "3"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-8"
+    }
+  ]
+}

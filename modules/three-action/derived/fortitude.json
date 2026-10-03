@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "fortitude",
+  "name": "Fortitude save",
+  "value": "self.con_mod + self.fort_prof"
+}

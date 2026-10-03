@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "full_plate",
+  "name": "Full Plate",
+  "kind": "heavy armor",
+  "cost": 30,
+  "weight": 4,
+  "modifiers": [
+    {
+      "stat": "armor_bonus",
+      "value": "6"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-10"
+    }
+  ]
+}

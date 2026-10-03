@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "hunter",
+  "name": "Hunter",
+  "kind": "background",
+  "description": "Stalked and trapped game in the wild. One boost to DEX or WIS, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "dex",
+        "wis"
+      ]
+    },
+    {}
+  ]
+}

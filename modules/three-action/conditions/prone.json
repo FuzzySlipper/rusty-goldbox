@@ -1,0 +1,16 @@
+{
+  "type": "condition",
+  "id": "prone",
+  "name": "Prone",
+  "description": "Off-guard, and -2 circumstance penalty to attack rolls; it must Stand before it can Stride.",
+  "modifiers": [
+    {
+      "stat": "off_guard_sources",
+      "value": "1"
+    },
+    {
+      "stat": "prone_penalty",
+      "value": "2"
+    }
+  ]
+}

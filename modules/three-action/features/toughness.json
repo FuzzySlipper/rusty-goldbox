@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "toughness",
+  "name": "Toughness",
+  "kind": "general feat",
+  "description": "Maximum Hit Points increase by your level; recovery checks are 1 easier.",
+  "modifiers": [
+    {
+      "track": "hit_points",
+      "value": "self.level"
+    },
+    {
+      "stat": "recovery_dc",
+      "value": "-1"
+    }
+  ]
+}

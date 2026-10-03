@@ -219,6 +219,7 @@ Round 1.
   Bram moves 4 cells to (4, 3).
   Bram uses Attack (Longsword) on Goblin Warrior 3.
   Bram rolls Melee attack: 2 + 5 = 7 against 15: failure.  [1d20: 2 = 2]
+  Ilsa is no longer Shielded.
   Ilsa uses Magic Missile on Goblin Warrior 1.
   Ilsa spends 1 level 1 spell slots (0 left).
   Magic Missile 1 of 3 goes to Goblin Warrior 1.
@@ -229,7 +230,6 @@ Round 1.
   Goblin Warrior 1 loses 4 hit points (2 left).  [1d4: 3 = 3]
   Ilsa uses Move on Goblin Warrior 1.
   Ilsa moves 5 cells to (5, 6).
-  Ilsa is no longer Shielded.
   Pip uses Shoot (Shortbow) on Goblin Warrior 1.
   Pip rolls Ranged attack: 7 + 5 = 12 against 15: failure.  [1d20: 7 = 7]
   Pip uses Move on Goblin Warrior 1.
@@ -427,9 +427,9 @@ Round 1.
   Hild uses Move on Wolf 2.
   Hild moves 3 cells to (3, 2).
 Round 2.
+  Ilsa is no longer Shielded.
   Ilsa uses Attack (Dagger) on Wolf 2.
   Ilsa rolls Finesse attack: 3 + 4 = 7 against 12: failure.  [1d20: 3 = 3]
-  Ilsa is no longer Shielded.
   Ilsa is no longer Prone.
   Wolf 3 uses Bite on Ilsa.
   Wolf 3 rolls Attack: 11 + 4 modifiers = 15 against 12: success.  [2d20 keep 1: 7+11 = 11]
@@ -668,6 +668,7 @@ Round 1.
   Attack (Longsword) 2 of 2 goes to Skeleton 1.
   Bram rolls Melee attack: 14 + 7 = 21 against 14: success.  [1d20: 14 = 14]
   Skeleton 1 loses 5 hit points (8 left).  [1d8: 1 = 1]
+  Ilsa is no longer Shielded.
   Ilsa uses Fireball on Skeleton 1, Skeleton 2, Zombie 1, Zombie 2.
   Ilsa spends 1 level 3 spell slots (1 left).
   Skeleton 1 rolls Dexterity saving throw: 10 + 3 = 13 against 15: failure.  [1d20: 10 = 10]
@@ -684,7 +685,6 @@ Round 1.
   Zombie 2 rolls Constitution saving throw: 16 + 3 - 28 modifiers = -9 against 5: failure.  [8d6: 3+1+6+5+5+2+4+2 = 28; 1d20: 16 = 16]
   Zombie 2 loses 15 hit points (0 left).
   Zombie 2 is out of the fight.
-  Ilsa is no longer Shielded.
 Party wins after 1 round.
 Party: Bram 44/44, Ilsa 28/32
 Restless dead: Skeleton 1 0/13 (out), Skeleton 2 0/13 (out), Zombie 1 0/15 (out), Zombie 2 0/15 (out)

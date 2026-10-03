@@ -1,0 +1,12 @@
+{
+  "type": "condition",
+  "id": "off_guard",
+  "name": "Off-guard",
+  "description": "-2 circumstance penalty to AC.",
+  "modifiers": [
+    {
+      "stat": "off_guard_sources",
+      "value": "1"
+    }
+  ]
+}

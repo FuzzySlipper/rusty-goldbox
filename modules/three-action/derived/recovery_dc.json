@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "recovery_dc",
+  "name": "Recovery check DC adjustment",
+  "value": "0"
+}

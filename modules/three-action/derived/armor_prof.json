@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "armor_prof",
+  "name": "Proficiency with the armor worn",
+  "value": "if equipped(item.kind == 'heavy armor') > 0 then self.heavy_armor_prof else if equipped(item.kind == 'medium armor') > 0 then self.medium_armor_prof else if equipped(item.kind == 'light armor') > 0 then self.light_armor_prof else self.unarmored_prof"
+}

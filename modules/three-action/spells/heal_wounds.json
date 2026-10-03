@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "heal_wounds",
+  "name": "Heal (wounds)",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "30 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "heal_hurt"
+  },
+  "description": "Heal cast on a badly hurt ally who is still standing.",
+  "cost": {
+    "font": "1"
+  }
+}

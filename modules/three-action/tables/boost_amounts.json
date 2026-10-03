@@ -1,0 +1,22 @@
+{
+  "type": "table",
+  "id": "boost_amounts",
+  "name": "What a boost adds to a score (a partial boost at 18 or more)",
+  "keys": [
+    {
+      "name": "score",
+      "type": "number"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [
+      "2-17",
+      2
+    ],
+    [
+      "18+",
+      1
+    ]
+  ]
+}

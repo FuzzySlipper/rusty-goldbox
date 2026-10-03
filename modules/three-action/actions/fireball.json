@@ -1,0 +1,59 @@
+{
+  "type": "action",
+  "id": "fireball",
+  "name": "Fireball",
+  "cost": {
+    "action": 2
+  },
+  "target": "all_enemies",
+  "range": "100",
+  "score": "16",
+  "always": [
+    {
+      "op": "check",
+      "check": "reflex_save",
+      "outcomes": {
+        "critical_success": [],
+        "success": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "floor((6d6) / 2)",
+              "critical": "0",
+              "physical": "0",
+              "slashing": "0",
+              "vitality": "0"
+            }
+          }
+        ],
+        "failure": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "6d6",
+              "critical": "0",
+              "physical": "0",
+              "slashing": "0",
+              "vitality": "0"
+            }
+          }
+        ],
+        "critical_failure": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "(6d6) * 2",
+              "critical": "0",
+              "physical": "0",
+              "slashing": "0",
+              "vitality": "0"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

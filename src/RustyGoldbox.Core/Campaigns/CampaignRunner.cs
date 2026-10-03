@@ -346,14 +346,17 @@ public sealed class CampaignRunner
     }
 
     /// <summary>
-    /// Gives experience to the party: the whole amount to each, or an even
-    /// share (rounding down) to those the ruleset's experience_to names
+    /// Gives experience to the party: the whole amount to each (an event's
+    /// each, or experience_to "each"), or an even share (rounding down) to
+    /// those the ruleset's experience_to names
     /// (<paramref name="standing"/> for survivors). Levels that need no
     /// choice come at once; the others wait for a level command.
     /// </summary>
     private void Award(Definition owner, string path, decimal amount, bool each, List<bool> standing, DiceRoller dice, List<PlayFact> facts)
     {
-        bool toParty = _rules.Advancement?.Json.TryGetProperty("experience_to", out JsonElement to) == true && to.GetString() == "party";
+        string? to = _rules.Advancement?.Json.TryGetProperty("experience_to", out JsonElement split) == true ? split.GetString() : null;
+        each = each || to == "each";
+        bool toParty = to == "party";
         List<int> sharing = Enumerable.Range(0, _state.Party.Count).Where(index => each || toParty || standing[index]).ToList();
         if (sharing.Count == 0)
         {

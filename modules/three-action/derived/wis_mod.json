@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "wis_mod",
+  "name": "Wisdom modifier",
+  "value": "floor((self.wis - 10) / 2)"
+}

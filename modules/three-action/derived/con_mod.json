@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "con_mod",
+  "name": "Constitution modifier",
+  "value": "floor((self.con - 10) / 2)"
+}

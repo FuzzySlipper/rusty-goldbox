@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_rank",
+  "name": "Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)",
+  "value": "0"
+}

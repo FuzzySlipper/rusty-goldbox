@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "scoundrel",
+  "name": "Scoundrel",
+  "kind": "racket",
+  "description": "Feints leave the target off-guard for longer (not modelled)."
+}

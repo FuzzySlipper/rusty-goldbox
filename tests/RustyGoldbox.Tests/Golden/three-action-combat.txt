@@ -1,0 +1,942 @@
+$ goldbox character new --module modules/three-action --class fighter --race human --name Bram --feature skilled_human,warrior,sudden_charge --boosts str,con,str,dex,str,str,con,dex,wis --out bram.json
+Bram: Human Fighter 1 (0 xp, next level at 1000)
+  dying 0/4
+  hit points 20/20
+  wounded 0/4
+  gold 15
+  features: Skilled Human (heritage), Warrior (background), Sudden Charge (fighter feat)
+  str               18     Strength
+  dex               14     Dexterity
+  con               14     Constitution
+  int               10     Intelligence
+  wis               12     Wisdom
+  cha               10     Charisma
+  ac                15     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       8      Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        3      Proficiency with the armor worn
+  cantrip_rank      1      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           2      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           2      Dexterity modifier
+  engage_range      1      Distance it fights from (squares)
+  fighter_level     1      Fighter level
+  finesse_damage    4      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         5      Fortitude proficiency bonus
+  fort_rank         2      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         7      Fortitude save
+  heavy_armor_prof  3      Heavy armor proficiency bonus
+  heavy_armor_rank  1      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           0      Intelligence modifier
+  is_character      true   Player character
+  key_mod           -5     Spellcasting attribute modifier
+  light_armor_prof  3      Light armor proficiency bonus
+  light_armor_rank  1      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      5      Martial weapons proficiency bonus
+  martial_rank      2      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 3      Medium armor proficiency bonus
+  medium_armor_rank 1      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        6      Perception
+  perception_prof   5      Perception proficiency bonus
+  perception_rank   2      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       0      Recovery check DC adjustment
+  ref_prof          5      Reflex proficiency bonus
+  ref_rank          2      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            7      Reflex save
+  rogue_level       0      Rogue level
+  save_dc           5      DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       5      Simple weapons proficiency bonus
+  simple_rank       2      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             25     Speed (ft)
+  spell_attack      -5     Spell attack modifier
+  spell_dc          5      Spell DC
+  spell_prof        0      Spell attack and DC proficiency bonus
+  spell_rank        0      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           4      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    3      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         3      Will proficiency bonus
+  will_rank         1      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         4      Will save
+  wis_mod           1      Wisdom modifier
+Saved to bram.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/three-action --class rogue --race halfling --name Pip --feature gutsy_halfling,criminal,thief,nimble_dodge --boosts con,dex,wis,dex,con,wis,int --out pip.json
+Pip: Halfling Rogue 1 (0 xp, next level at 1000)
+  dying 0/4
+  hit points 16/16
+  wounded 0/4
+  gold 15
+  features: Gutsy Halfling (heritage), Criminal (background), Nimble Dodge (rogue feat), Thief (racket)
+  str               8      Strength
+  dex               18     Dexterity
+  con               14     Constitution
+  int               12     Intelligence
+  wis               16     Wisdom
+  cha               10     Charisma
+  ac                17     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       6      Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        3      Proficiency with the armor worn
+  cantrip_rank      1      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           2      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           4      Dexterity modifier
+  engage_range      1      Distance it fights from (squares)
+  fighter_level     0      Fighter level
+  finesse_damage    4      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         3      Fortitude proficiency bonus
+  fort_rank         1      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         5      Fortitude save
+  heavy_armor_prof  0      Heavy armor proficiency bonus
+  heavy_armor_rank  0      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           1      Intelligence modifier
+  is_character      true   Player character
+  key_mod           -5     Spellcasting attribute modifier
+  light_armor_prof  3      Light armor proficiency bonus
+  light_armor_rank  1      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      3      Martial weapons proficiency bonus
+  martial_rank      1      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 0      Medium armor proficiency bonus
+  medium_armor_rank 0      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        8      Perception
+  perception_prof   5      Perception proficiency bonus
+  perception_rank   2      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       0      Recovery check DC adjustment
+  ref_prof          5      Reflex proficiency bonus
+  ref_rank          2      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            9      Reflex save
+  rogue_level       1      Rogue level
+  save_dc           5      DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       3      Simple weapons proficiency bonus
+  simple_rank       1      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        1      Sneak attack dice
+  speed             25     Speed (ft)
+  spell_attack      -5     Spell attack modifier
+  spell_dc          5      Spell DC
+  spell_prof        0      Spell attack and DC proficiency bonus
+  spell_rank        0      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           -1     Strength modifier
+  thief             1      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    3      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         5      Will proficiency bonus
+  will_rank         2      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         8      Will save
+  wis_mod           3      Wisdom modifier
+Saved to pip.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/three-action --class cleric --race dwarf --name Hild --feature rock_dwarf,acolyte,warpriest --boosts str,wis,con,wis,con,str,dex --spells heal,heal_wounds,bless,divine_lance,shield --out hild.json
+Hild: Dwarf Cleric 1 (0 xp, next level at 1000)
+  dying 0/4
+  divine font heals 4/4
+  hit points 21/21
+  rank 1 spell slots 2/2
+  wounded 0/4
+  gold 15
+  spells: Heal, Heal (wounds), Bless, Divine Lance, Shield
+  memorised: Heal x2, Heal (wounds) x2, Bless x2 (known spells in order; all left)
+  features: Rock Dwarf (heritage), Acolyte (background), Warpriest (doctrine)
+  spells per day by spell level: 2
+  str               14     Strength
+  dex               12     Dexterity
+  con               16     Constitution
+  int               10     Intelligence
+  wis               18     Wisdom
+  cha               8      Charisma
+  ac                14     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       10     Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        3      Proficiency with the armor worn
+  cantrip_rank      1      Cantrip rank (half level, rounded up)
+  cha_mod           -1     Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      1      Cleric level
+  con_mod           3      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           1      Dexterity modifier
+  engage_range      3      Distance it fights from (squares)
+  fighter_level     0      Fighter level
+  finesse_damage    2      Ability modifier to finesse weapon damage
+  font_rank         1      Highest spell rank
+  fort_prof         5      Fortitude proficiency bonus
+  fort_rank         2      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         8      Fortitude save
+  heavy_armor_prof  0      Heavy armor proficiency bonus
+  heavy_armor_rank  0      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           0      Intelligence modifier
+  is_character      true   Player character
+  key_mod           4      Spellcasting attribute modifier
+  light_armor_prof  3      Light armor proficiency bonus
+  light_armor_rank  1      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      0      Martial weapons proficiency bonus
+  martial_rank      0      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 3      Medium armor proficiency bonus
+  medium_armor_rank 1      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        7      Perception
+  perception_prof   3      Perception proficiency bonus
+  perception_rank   1      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       0      Recovery check DC adjustment
+  ref_prof          3      Reflex proficiency bonus
+  ref_rank          1      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            4      Reflex save
+  rogue_level       0      Rogue level
+  save_dc           17     DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       3      Simple weapons proficiency bonus
+  simple_rank       1      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             20     Speed (ft)
+  spell_attack      7      Spell attack modifier
+  spell_dc          17     Spell DC
+  spell_prof        3      Spell attack and DC proficiency bonus
+  spell_rank        1      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           2      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    3      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         5      Will proficiency bonus
+  will_rank         2      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         9      Will save
+  wis_mod           4      Wisdom modifier
+Saved to hild.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/three-action --class wizard --race elf --name Ilsa --feature ancient_elf,scholar --boosts wis,int,dex,int,dex,con,wis --spells force_barrage,ignition,shield --out ilsa.json
+Ilsa: Elf Wizard 1 (0 xp, next level at 1000)
+  dying 0/4
+  hit points 12/12
+  rank 1 spell slots 2/2
+  wounded 0/4
+  gold 15
+  spells: Force Barrage, Ignition, Shield
+  memorised: Force Barrage x2 (known spells in order; all left)
+  features: Ancient Elf (heritage), Scholar (background)
+  spells per day by spell level: 2
+  str               10     Strength
+  dex               16     Dexterity
+  con               10     Constitution
+  int               18     Intelligence
+  wis               14     Wisdom
+  cha               10     Charisma
+  ac                16     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       6      Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        3      Proficiency with the armor worn
+  cantrip_rank      1      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           0      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           3      Dexterity modifier
+  engage_range      6      Distance it fights from (squares)
+  fighter_level     0      Fighter level
+  finesse_damage    0      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         3      Fortitude proficiency bonus
+  fort_rank         1      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         3      Fortitude save
+  heavy_armor_prof  0      Heavy armor proficiency bonus
+  heavy_armor_rank  0      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           4      Intelligence modifier
+  is_character      true   Player character
+  key_mod           4      Spellcasting attribute modifier
+  light_armor_prof  0      Light armor proficiency bonus
+  light_armor_rank  0      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      0      Martial weapons proficiency bonus
+  martial_rank      0      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 0      Medium armor proficiency bonus
+  medium_armor_rank 0      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        5      Perception
+  perception_prof   3      Perception proficiency bonus
+  perception_rank   1      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       0      Recovery check DC adjustment
+  ref_prof          3      Reflex proficiency bonus
+  ref_rank          1      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            6      Reflex save
+  rogue_level       0      Rogue level
+  save_dc           17     DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       3      Simple weapons proficiency bonus
+  simple_rank       1      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             30     Speed (ft)
+  spell_attack      7      Spell attack modifier
+  spell_dc          17     Spell DC
+  spell_prof        3      Spell attack and DC proficiency bonus
+  spell_rank        1      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           0      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    3      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         5      Will proficiency bonus
+  will_rank         2      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         7      Will save
+  wis_mod           2      Wisdom modifier
+Saved to ilsa.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox sim combat --module modules/three-action --party bram.json,pip.json,hild.json,ilsa.json --encounter wolf_pack --seed 5
+seed 5
+Round 1.
+  Bram rolls 15 for initiative.  [1d20: 9 = 9]
+  Pip rolls 11 for initiative.  [1d20: 3 = 3]
+  Hild rolls 11 for initiative.  [1d20: 4 = 4]
+  Ilsa rolls 20 for initiative.  [1d20: 15 = 15]
+  Wolf 1 rolls 19 for initiative.  [1d20: 12 = 12]
+  Wolf 2 rolls 15 for initiative.  [1d20: 8 = 8]
+  Ilsa uses Force Barrage on Wolf 1.
+  Ilsa spends 1 rank 1 spell slots (1 left).
+  Force Barrage 1 of 2 goes to Wolf 1.
+  Wolf 1 loses 4 hit points (20 left).  [1d4: 3 = 3]
+  Force Barrage 2 of 2 goes to Wolf 1.
+  Wolf 1 loses 5 hit points (15 left).  [1d4: 4 = 4]
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
+  Wolf 1 uses Stride on Bram.
+  Wolf 1 moves 7 cells to (4, 3).
+  Wolf 1 uses Stride on Bram.
+  Wolf 1 moves 3 cells to (1, 3).
+  Wolf 1 uses Jaws on Pip.
+  Wolf 1 rolls Strike: 2 + 9 modifiers = 11 against 18: failure.  [1d20: 2 = 2]
+  Bram uses Sudden Charge (Longsword) on Wolf 2.
+  Bram is Flourished for 1 round.
+  Bram moves 10 cells to (10, 4).
+  Bram rolls Melee Strike: 9 + 4 + 5 modifiers = 18 against 15: success.  [1d20: 9 = 9]
+  Wolf 2 loses 6 hit points (18 left).  [1d8: 2 = 2]
+  Bram uses Strike (Longsword) on Wolf 2.
+  Bram rolls Melee Strike: 1 + 4 = 5 against 15: critical_failure.  [1d20: 1 = 1]
+  Wolf 2 uses Jaws on Bram.
+  Wolf 2 rolls Strike: 20 + 9 modifiers = 29 against 18: critical_success.  [1d20: 20 = 20]
+  Bram loses 10 hit points (10 left).  [1d6: 3 = 3]
+  Bram is Prone.
+  Wolf 2 uses Jaws on Bram.
+  Wolf 2 rolls Strike: 13 + 4 modifiers = 17 against 16: success.  [1d20: 13 = 13]
+  Bram loses 8 hit points (2 left).  [1d6: 6 = 6]
+  Pip uses Strike (Rapier) on Wolf 1.
+  Pip rolls Finesse Strike: 5 + 4 + 3 modifiers = 12 against 13: failure.  [1d20: 5 = 5]
+  Pip uses Strike (Rapier) on Wolf 1.
+  Pip rolls Finesse Strike: 3 + 4 - 2 modifiers = 5 against 13: failure.  [1d20: 3 = 3]
+  Pip uses Strike (Rapier) on Wolf 1.
+  Pip rolls Finesse Strike: 19 + 4 - 7 modifiers = 16 against 13: success.  [1d20: 19 = 19]
+  Wolf 1 loses 15 hit points (0 left).  [1d6: 5 = 5; 1d6: 6 = 6]
+  Wolf 1 is out of the fight.
+  Hild uses Bless on Bram, Pip, Hild, Ilsa.
+  Hild spends 1 rank 1 spell slots (1 left).
+  Bram is Blessed for 10 rounds.
+  Pip is Blessed for 10 rounds.
+  Hild is Blessed for 10 rounds.
+  Ilsa is Blessed for 10 rounds.
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+Round 2.
+  Ilsa is no longer Shield.
+  Ilsa uses Force Barrage on Wolf 2.
+  Ilsa spends 1 rank 1 spell slots (0 left).
+  Force Barrage 1 of 2 goes to Wolf 2.
+  Wolf 2 loses 4 hit points (14 left).  [1d4: 3 = 3]
+  Force Barrage 2 of 2 goes to Wolf 2.
+  Wolf 2 loses 5 hit points (9 left).  [1d4: 4 = 4]
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
+  Bram is no longer Flourished.
+  Bram uses Stand on Bram.
+  Bram is no longer Prone.
+  Bram uses Strike (Longsword) on Wolf 2.
+  Bram rolls Melee Strike: 2 + 5 + 5 modifiers = 12 against 15: failure.  [1d20: 2 = 2]
+  Bram uses Strike (Longsword) on Wolf 2.
+  Bram rolls Melee Strike: 18 + 5 = 23 against 15: success.  [1d20: 18 = 18]
+  Wolf 2 loses 7 hit points (2 left).  [1d8: 3 = 3]
+  Wolf 2 uses Jaws on Bram.
+  Wolf 2 rolls Strike: 7 + 9 modifiers = 16 against 18: failure.  [1d20: 7 = 7]
+  Wolf 2 uses Jaws on Bram.
+  Wolf 2 rolls Strike: 11 + 4 modifiers = 15 against 18: failure.  [1d20: 11 = 11]
+  Pip uses Strike (Shortbow) on Wolf 2.
+  Pip rolls Ranged Strike: 13 + 5 + 3 modifiers = 21 against 15: success.  [1d20: 13 = 13]
+  Wolf 2 loses 2 hit points (0 left).  [1d6: 5 = 5]
+  Wolf 2 is out of the fight.
+Party wins after 2 rounds.
+Party: Bram 2/20, Pip 16/16, Hild 21/21, Ilsa 12/12
+Wolf pack: Wolf 1 0/24 (out), Wolf 2 0/24 (out)
+[exit 0]
+
+$ goldbox sim combat --module modules/three-action --party bram.json,pip.json,hild.json,ilsa.json --encounter highway_robbery --seed 4
+seed 4
+Round 1.
+  Bram rolls 19 for initiative.  [1d20: 13 = 13]
+  Pip rolls 13 for initiative.  [1d20: 5 = 5]
+  Hild rolls 11 for initiative.  [1d20: 4 = 4]
+  Ilsa rolls 13 for initiative.  [1d20: 8 = 8]
+  Bandit rolls 10 for initiative.  [1d20: 4 = 4]
+  Ruffian rolls 10 for initiative.  [1d20: 2 = 2]
+  Bram uses Sudden Charge (Longsword) on Bandit.
+  Bram is Flourished for 1 round.
+  Bram moves 10 cells to (10, 3).
+  Bram rolls Melee Strike: 14 + 4 + 5 modifiers = 23 against 19: success.  [1d20: 14 = 14]
+  Bandit loses 11 hit points (19 left).  [1d8: 7 = 7]
+  Bram uses Strike (Longsword) on Bandit.
+  Bram rolls Melee Strike: 14 + 4 = 18 against 19: failure.  [1d20: 14 = 14]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 17 + 4 + 3 modifiers = 24 against 19: success.  [1d20: 17 = 17]
+  Bandit loses 6 hit points (13 left).  [1d6: 6 = 6]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 2 + 4 - 2 modifiers = 4 against 19: critical_failure.  [1d20: 2 = 2]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 13 + 4 - 7 modifiers = 10 against 19: failure.  [1d20: 13 = 13]
+  Ilsa uses Force Barrage on Bandit.
+  Ilsa spends 1 rank 1 spell slots (1 left).
+  Force Barrage 1 of 2 goes to Bandit.
+  Bandit loses 2 hit points (11 left).  [1d4: 1 = 1]
+  Force Barrage 2 of 2 goes to Bandit.
+  Bandit loses 4 hit points (7 left).  [1d4: 3 = 3]
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
+  Hild uses Bless on Bram, Pip, Hild, Ilsa.
+  Hild spends 1 rank 1 spell slots (1 left).
+  Bram is Blessed for 10 rounds.
+  Pip is Blessed for 10 rounds.
+  Hild is Blessed for 10 rounds.
+  Ilsa is Blessed for 10 rounds.
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 7 + 9 modifiers = 16 against 16: success.  [1d20: 7 = 7]
+  Bram loses 11 hit points (9 left).  [1d6: 6 = 6]
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 17 + 4 modifiers = 21 against 16: success.  [1d20: 17 = 17]
+  Bram loses 6 hit points (3 left).  [1d6: 1 = 1]
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 4 - 1 modifiers = 3 against 16: critical_failure.  [1d20: 4 = 4]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 8 + 9 modifiers = 17 against 16: success.  [1d20: 8 = 8]
+  Bram loses 3 hit points (0 left).  [1d6: 2 = 2; 1d6: 4 = 4]
+  Bram is out of the fight.
+  Bram regains 1 dying (1).
+  Bram is Dying.
+  Ruffian uses Stride on Pip.
+  Ruffian moves 5 cells to (6, 4).
+  Ruffian uses Sling on Ilsa.
+  Ilsa reacts to Ruffian: Shield Block.
+  Ilsa uses Shield Block on Ilsa.
+  Ilsa is Shield Block for 1 round.
+  Ruffian rolls Strike: 20 + 3 modifiers = 23 against 17: critical_success.  [1d20: 20 = 20]
+  Ilsa loses 12 hit points (0 left).  [1d6: 5 = 5]
+  Ilsa is out of the fight.
+  Ilsa regains 2 dying (2).
+  Ilsa is Dying.
+  Ilsa is no longer Shield Block.
+  Ilsa is no longer Shield.
+  Ilsa is Shield spent for 100 rounds.
+Round 2.
+  Bram is no longer Flourished.
+  Bram rolls Recovery check: 17 against 11: success.  [1d20: 17 = 17]
+  Bram loses 1 dying (0 left).
+  Bram is no longer Dying.
+  Bram is Unconscious.
+  Bram regains 1 wounded (1).
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 7 + 5 + 3 modifiers = 15 against 19: failure.  [1d20: 7 = 7]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 11 + 5 - 2 modifiers = 14 against 19: failure.  [1d20: 11 = 11]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 15 + 5 - 7 modifiers = 13 against 19: failure.  [1d20: 15 = 15]
+  Ilsa rolls Recovery check: 8 against 12: failure.  [1d20: 8 = 8]
+  Ilsa regains 1 dying (3).
+  Hild is no longer Shield.
+  Hild uses Heal on Ilsa.
+  Hild spends 1 divine font heals (3 left).
+  Ilsa regains 12 hit points (12).  [1d8: 4 = 4]
+  Ilsa is back in the fight.
+  Ilsa regains 1 wounded (1).
+  Ilsa loses 3 dying (0 left).
+  Ilsa is no longer Dying.
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+  Bandit uses Stride on Pip.
+  Bandit moves 5 cells to (6, 3).
+  Bandit uses Sling on Ilsa.
+  Bandit rolls Strike: 2 + 9 modifiers = 11 against 16: failure.  [1d20: 2 = 2]
+  Bandit uses Sling on Ilsa.
+  Bandit rolls Strike: 12 + 4 modifiers = 16 against 16: success.  [1d20: 12 = 12]
+  Ilsa loses 7 hit points (5 left).  [1d6: 4 = 4]
+  Ruffian uses Sling on Ilsa.
+  Ruffian rolls Strike: 3 + 8 modifiers = 11 against 16: failure.  [1d20: 3 = 3]
+  Ruffian uses Sling on Ilsa.
+  Ruffian rolls Strike: 18 + 3 modifiers = 21 against 16: success.  [1d20: 18 = 18]
+  Ilsa loses 5 hit points (0 left).  [1d6: 6 = 6]
+  Ilsa is out of the fight.
+  Ilsa regains 2 dying (2).
+  Ilsa is Dying.
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 17 - 2 modifiers = 15 against 18: failure.  [1d20: 17 = 17]
+Round 3.
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 13 + 5 + 3 modifiers = 21 against 19: success.  [1d20: 13 = 13]
+  Bandit loses 3 hit points (4 left).  [1d6: 3 = 3]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 3 + 5 - 2 modifiers = 6 against 19: critical_failure.  [1d20: 3 = 3]
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 5 + 5 - 7 modifiers = 3 against 19: critical_failure.  [1d20: 5 = 5]
+  Ilsa rolls Recovery check: 16 against 12: success.  [1d20: 16 = 16]
+  Ilsa loses 1 dying (1 left).
+  Hild is no longer Shield.
+  Hild uses Heal on Ilsa.
+  Hild spends 1 divine font heals (2 left).
+  Ilsa regains 11 hit points (11).  [1d8: 3 = 3]
+  Ilsa is back in the fight.
+  Ilsa regains 1 wounded (2).
+  Ilsa loses 1 dying (0 left).
+  Ilsa is no longer Dying.
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+  Bandit uses Sling on Ilsa.
+  Bandit rolls Strike: 20 + 9 modifiers = 29 against 16: critical_success.  [1d20: 20 = 20]
+  Ilsa loses 11 hit points (0 left).  [1d6: 3 = 3]
+  Ilsa is out of the fight.
+  Ilsa regains 4 dying (4).
+  Ilsa is Dying.
+  Ilsa is no longer Dying.
+  Ilsa is Dead.
+  Bandit uses Sling on Pip.
+  Bandit rolls Strike: 13 + 4 modifiers = 17 against 18: failure.  [1d20: 13 = 13]
+  Bandit uses Sling on Pip.
+  Bandit rolls Strike: 17 - 1 modifiers = 16 against 18: failure.  [1d20: 17 = 17]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 13 + 8 modifiers = 21 against 18: success.  [1d20: 13 = 13]
+  Pip loses 10 hit points (6 left).  [1d6: 5 = 5]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 5 + 3 modifiers = 8 against 18: critical_failure.  [1d20: 5 = 5]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 12 - 2 modifiers = 10 against 18: failure.  [1d20: 12 = 12]
+Round 4.
+  Pip uses Strike (Shortbow) on Bandit.
+  Pip rolls Ranged Strike: 19 + 5 + 3 modifiers = 27 against 19: success.  [1d20: 19 = 19]
+  Bandit loses 4 hit points (0 left).  [1d6: 6 = 6]
+  Bandit is out of the fight.
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 16 + 5 - 2 modifiers = 19 against 18: success.  [1d20: 16 = 16]
+  Ruffian loses 1 hit points (29 left).  [1d6: 1 = 1]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 1 + 5 - 7 modifiers = -1 against 18: critical_failure.  [1d20: 1 = 1]
+  Hild is no longer Shield.
+  Hild uses Heal (wounds) on Pip.
+  Hild spends 1 divine font heals (1 left).
+  Pip regains 10 hit points (16).  [1d8: 3 = 3]
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 6 + 8 modifiers = 14 against 18: failure.  [1d20: 6 = 6]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 10 + 3 modifiers = 13 against 18: failure.  [1d20: 10 = 10]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 11 - 2 modifiers = 9 against 18: failure.  [1d20: 11 = 11]
+Round 5.
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 8 + 5 + 3 modifiers = 16 against 18: failure.  [1d20: 8 = 8]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 18 + 5 - 2 modifiers = 21 against 18: success.  [1d20: 18 = 18]
+  Ruffian loses 1 hit points (28 left).  [1d6: 1 = 1]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 12 + 5 - 7 modifiers = 10 against 18: failure.  [1d20: 12 = 12]
+  Hild is no longer Shield.
+  Hild uses Divine Lance on Ruffian.
+  Hild rolls Spell attack: 5 + 8 = 13 against 18: failure.  [1d20: 5 = 5]
+  Hild uses Shield on Hild.
+  Hild is Shield for 1 round.
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 1 + 8 modifiers = 9 against 18: critical_failure.  [1d20: 1 = 1]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 5 + 3 modifiers = 8 against 18: critical_failure.  [1d20: 5 = 5]
+  Ruffian uses Sling on Pip.
+  Ruffian rolls Strike: 8 - 2 modifiers = 6 against 18: critical_failure.  [1d20: 8 = 8]
+Round 6.
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 15 + 5 + 3 modifiers = 23 against 18: success.  [1d20: 15 = 15]
+  Ruffian loses 4 hit points (24 left).  [1d6: 4 = 4]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 17 + 5 - 2 modifiers = 20 against 18: success.  [1d20: 17 = 17]
+  Ruffian loses 6 hit points (18 left).  [1d6: 6 = 6]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 20 + 5 - 7 modifiers = 18 against 18: critical_success.  [1d20: 20 = 20]
+  Ruffian loses 15 hit points (3 left).  [1d6: 5 = 5; 1d10: 5 = 5]
+  Hild is no longer Shield.
+  Hild uses Divine Lance on Ruffian.
+  Hild rolls Spell attack: 11 + 8 = 19 against 18: success.  [1d20: 11 = 11]
+  Ruffian loses 3 hit points (0 left).  [2d4: 1+3 = 4]
+  Ruffian is out of the fight.
+Party wins after 6 rounds.
+Party: Bram 0/20 (out), Pip 16/16, Hild 21/21, Ilsa 0/12 (out)
+Highway robbery: Bandit 0/30 (out), Ruffian 0/30 (out)
+[exit 0]
+
+$ goldbox character level bram.json --module modules/three-action --xp 4000 --class fighter --feature vicious_swing,toughness,snagging_strike --boosts str,con,dex,wis
+Reached level 2: +12 hit points.
+Reached level 3: +12 hit points.
+Reached level 4: +12 hit points.
+Reached level 5: +12 hit points.
+Bram: Human Fighter 5 (4000 xp, highest level)
+  dying 0/4
+  hit points 78/78
+  wounded 0/4
+  gold 15
+  features: Skilled Human (heritage), Warrior (background), Sudden Charge (fighter feat), Vicious Swing (fighter feat), Toughness (general feat), Snagging Strike (fighter feat)
+  str               19     Strength
+  dex               16     Dexterity
+  con               16     Constitution
+  int               10     Intelligence
+  wis               14     Wisdom
+  cha               10     Charisma
+  ac                22     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       8      Ancestry Hit Points
+  armor_bonus       4      Armor item bonus
+  armor_prof        7      Proficiency with the armor worn
+  cantrip_rank      3      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           3      Constitution modifier
+  dex_cap           1      Dexterity cap on AC
+  dex_mod           3      Dexterity modifier
+  engage_range      1      Distance it fights from (squares)
+  fighter_level     5      Fighter level
+  finesse_damage    4      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         9      Fortitude proficiency bonus
+  fort_rank         2      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         12     Fortitude save
+  heavy_armor_prof  7      Heavy armor proficiency bonus
+  heavy_armor_rank  1      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           0      Intelligence modifier
+  is_character      true   Player character
+  key_mod           -5     Spellcasting attribute modifier
+  light_armor_prof  7      Light armor proficiency bonus
+  light_armor_rank  1      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      11     Martial weapons proficiency bonus
+  martial_rank      3      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 7      Medium armor proficiency bonus
+  medium_armor_rank 1      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        11     Perception
+  perception_prof   9      Perception proficiency bonus
+  perception_rank   2      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       -1     Recovery check DC adjustment
+  ref_prof          9      Reflex proficiency bonus
+  ref_rank          2      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            12     Reflex save
+  rogue_level       0      Rogue level
+  save_dc           5      DC its harmful effects set
+  shield_hardness   5      Hardness of the shield carried
+  simple_prof       11     Simple weapons proficiency bonus
+  simple_rank       3      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             25     Speed (ft)
+  spell_attack      -5     Spell attack modifier
+  spell_dc          5      Spell DC
+  spell_prof        0      Spell attack and DC proficiency bonus
+  spell_rank        0      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           4      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    7      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         7      Will proficiency bonus
+  will_rank         1      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         9      Will save
+  wis_mod           2      Wisdom modifier
+Saved to bram.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character level ilsa.json --module modules/three-action --xp 4000 --class wizard --feature widen_spell,toughness,counterspell --boosts int,con,dex,wis
+Reached level 2: +6 hit points.
+Reached level 3: +6 hit points.
+Reached level 4: +6 hit points.
+Reached level 5: +6 hit points.
+Ilsa: Elf Wizard 5 (4000 xp, highest level)
+  dying 0/4
+  hit points 46/46
+  rank 1 spell slots 3/3
+  rank 2 spell slots 3/3
+  rank 3 spell slots 2/2
+  wounded 0/4
+  gold 15
+  spells: Force Barrage, Ignition, Shield
+  memorised: Force Barrage x3 (known spells in order; all left)
+  features: Ancient Elf (heritage), Scholar (background), Widen Spell (wizard feat), Toughness (general feat), Counterspell (wizard feat)
+  spells per day by spell level: 3 / 3 / 2
+  str               10     Strength
+  dex               18     Dexterity
+  con               12     Constitution
+  int               19     Intelligence
+  wis               16     Wisdom
+  cha               10     Charisma
+  ac                21     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       6      Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        7      Proficiency with the armor worn
+  cantrip_rank      3      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           1      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           4      Dexterity modifier
+  engage_range      6      Distance it fights from (squares)
+  fighter_level     0      Fighter level
+  finesse_damage    0      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         7      Fortitude proficiency bonus
+  fort_rank         1      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         8      Fortitude save
+  heavy_armor_prof  0      Heavy armor proficiency bonus
+  heavy_armor_rank  0      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           4      Intelligence modifier
+  is_character      true   Player character
+  key_mod           4      Spellcasting attribute modifier
+  light_armor_prof  0      Light armor proficiency bonus
+  light_armor_rank  0      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      0      Martial weapons proficiency bonus
+  martial_rank      0      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 0      Medium armor proficiency bonus
+  medium_armor_rank 0      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        10     Perception
+  perception_prof   7      Perception proficiency bonus
+  perception_rank   1      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       -1     Recovery check DC adjustment
+  ref_prof          9      Reflex proficiency bonus
+  ref_rank          2      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            13     Reflex save
+  rogue_level       0      Rogue level
+  save_dc           21     DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       7      Simple weapons proficiency bonus
+  simple_rank       1      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             30     Speed (ft)
+  spell_attack      11     Spell attack modifier
+  spell_dc          21     Spell DC
+  spell_prof        7      Spell attack and DC proficiency bonus
+  spell_rank        1      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           0      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    7      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         9      Will proficiency bonus
+  will_rank         2      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         12     Will save
+  wis_mod           3      Wisdom modifier
+Saved to ilsa.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character spells ilsa.json --module modules/three-action --set fireball,blazing_bolt,force_barrage,ignition,shield
+Ilsa: Elf Wizard 5 (4000 xp, highest level)
+  dying 0/4
+  hit points 46/46
+  rank 1 spell slots 3/3
+  rank 2 spell slots 3/3
+  rank 3 spell slots 2/2
+  wounded 0/4
+  gold 15
+  spells: Fireball, Blazing Bolt, Force Barrage, Ignition, Shield
+  memorised: Fireball x2, Blazing Bolt x3, Force Barrage x3 (known spells in order; all left)
+  features: Ancient Elf (heritage), Scholar (background), Widen Spell (wizard feat), Toughness (general feat), Counterspell (wizard feat)
+  spells per day by spell level: 3 / 3 / 2
+  str               10     Strength
+  dex               18     Dexterity
+  con               12     Constitution
+  int               19     Intelligence
+  wis               16     Wisdom
+  cha               10     Charisma
+  ac                21     Armor Class
+  actions           3      Actions each turn
+  ancestry_hp       6      Ancestry Hit Points
+  armor_bonus       0      Armor item bonus
+  armor_prof        7      Proficiency with the armor worn
+  cantrip_rank      3      Cantrip rank (half level, rounded up)
+  cha_mod           0      Charisma modifier
+  circumstance_ac   0      Circumstance bonus to AC (a raised shield)
+  cleric_level      0      Cleric level
+  con_mod           1      Constitution modifier
+  dex_cap           10     Dexterity cap on AC
+  dex_mod           4      Dexterity modifier
+  engage_range      6      Distance it fights from (squares)
+  fighter_level     0      Fighter level
+  finesse_damage    0      Ability modifier to finesse weapon damage
+  font_rank         0      Highest spell rank
+  fort_prof         7      Fortitude proficiency bonus
+  fort_rank         1      Fortitude rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  fortitude         8      Fortitude save
+  heavy_armor_prof  0      Heavy armor proficiency bonus
+  heavy_armor_rank  0      Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  int_mod           4      Intelligence modifier
+  is_character      true   Player character
+  key_mod           4      Spellcasting attribute modifier
+  light_armor_prof  0      Light armor proficiency bonus
+  light_armor_rank  0      Light armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  martial_prof      0      Martial weapons proficiency bonus
+  martial_rank      0      Martial weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  medium_armor_prof 0      Medium armor proficiency bonus
+  medium_armor_rank 0      Medium armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  off_guard         false  Off-guard (-2 circumstance to AC)
+  off_guard_sources 0      Effects making it off-guard
+  pack_attack       false  Pack Attack
+  perception        10     Perception
+  perception_prof   7      Perception proficiency bonus
+  perception_rank   1      Perception rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  prone_penalty     0      Circumstance penalty to attack rolls (prone)
+  recovery_dc       -1     Recovery check DC adjustment
+  ref_prof          9      Reflex proficiency bonus
+  ref_rank          2      Reflex rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  reflex            13     Reflex save
+  rogue_level       0      Rogue level
+  save_dc           21     DC its harmful effects set
+  shield_hardness   0      Hardness of the shield carried
+  simple_prof       7      Simple weapons proficiency bonus
+  simple_rank       1      Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  sneak_dice        0      Sneak attack dice
+  speed             30     Speed (ft)
+  spell_attack      11     Spell attack modifier
+  spell_dc          21     Spell DC
+  spell_prof        7      Spell attack and DC proficiency bonus
+  spell_rank        1      Spell attack and DC rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  status_attack     0      Status bonus to attack rolls
+  status_sources    0      Status bonuses to attack rolls
+  str_mod           0      Strength modifier
+  thief             0      Thief racket (Dexterity to finesse damage; 1 with it)
+  unarmored_prof    7      Unarmored defense proficiency bonus
+  unarmored_rank    1      Unarmored defense rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  undead            false  Undead
+  weak_slashing     0      Weakness to slashing damage
+  weak_vitality     0      Weakness to vitality damage
+  will_prof         9      Will proficiency bonus
+  will_rank         2      Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)
+  will_save         12     Will save
+  wis_mod           3      Wisdom modifier
+Saved to ilsa.json.
+[exit 0]
+
+$ goldbox sim combat --module modules/three-action --party bram.json,ilsa.json --encounter shambling_dead --seed 2
+seed 2
+Round 1.
+  Bram rolls 25 for initiative.  [1d20: 14 = 14]
+  Ilsa rolls 12 for initiative.  [1d20: 2 = 2]
+  Zombie Shambler 1 rolls 1 for initiative.  [1d20: 1 = 1]
+  Zombie Shambler 2 rolls 8 for initiative.  [1d20: 8 = 8]
+  Zombie Shambler 3 rolls 20 for initiative.  [1d20: 20 = 20]
+  Zombie Shambler 4 rolls 6 for initiative.  [1d20: 6 = 6]
+  Bram uses Sudden Charge (Longsword) on Zombie Shambler 1.
+  Bram is Flourished for 1 round.
+  Bram moves 10 cells to (10, 3).
+  Bram rolls Melee Strike: 19 + 4 + 11 modifiers = 34 against 12: critical_success.  [1d20: 19 = 19]
+  Zombie Shambler 1 loses 19 hit points (1 left).  [1d8: 3 = 3]
+  Bram uses Strike (Longsword) on Zombie Shambler 1.
+  Bram rolls Melee Strike: 6 + 4 + 6 modifiers = 16 against 12: success.  [1d20: 6 = 6]
+  Zombie Shambler 1 loses 1 hit points (0 left).  [1d8: 3 = 3]
+  Zombie Shambler 1 is out of the fight.
+  Zombie Shambler 3 uses Fist on Bram.
+  Zombie Shambler 3 rolls Strike: 10 + 7 modifiers = 17 against 20: failure.  [1d20: 10 = 10]
+  Zombie Shambler 3 uses Fist on Bram.
+  Zombie Shambler 3 rolls Strike: 5 + 2 modifiers = 7 against 20: critical_failure.  [1d20: 5 = 5]
+  Ilsa uses Fireball on Zombie Shambler 2, Zombie Shambler 3, Zombie Shambler 4.
+  Ilsa spends 1 rank 3 spell slots (1 left).
+  Zombie Shambler 2 rolls Reflex save: 8 against 21: critical_failure.  [1d20: 8 = 8]
+  Zombie Shambler 2 loses 20 hit points (0 left).  [6d6: 3+4+4+6+6+1 = 24]
+  Zombie Shambler 2 is out of the fight.
+  Zombie Shambler 3 rolls Reflex save: 15 against 21: failure.  [1d20: 15 = 15]
+  Zombie Shambler 3 loses 13 hit points (7 left).  [6d6: 2+1+2+6+1+1 = 13]
+  Zombie Shambler 4 rolls Reflex save: 9 against 21: critical_failure.  [1d20: 9 = 9]
+  Zombie Shambler 4 loses 20 hit points (0 left).  [6d6: 6+3+4+4+3+2 = 22]
+  Zombie Shambler 4 is out of the fight.
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
+Round 2.
+  Bram is no longer Flourished.
+  Bram uses Vicious Swing (Longsword) on Zombie Shambler 3.
+  Bram rolls Melee Strike: 13 + 4 + 11 modifiers = 28 against 12: critical_success.  [1d20: 13 = 13]
+  Zombie Shambler 3 loses 7 hit points (0 left).  [1d8: 6 = 6; 1d8: 7 = 7]
+  Zombie Shambler 3 is out of the fight.
+  Bram is Flourished for 1 round.
+  Bram is Vicious Swing for 1 round.
+Party wins after 2 rounds.
+Party: Bram 78/78, Ilsa 46/46
+Shambling dead: Zombie Shambler 1 0/20 (out), Zombie Shambler 2 0/20 (out), Zombie Shambler 3 0/20 (out), Zombie Shambler 4 0/20 (out)
+[exit 0]
+

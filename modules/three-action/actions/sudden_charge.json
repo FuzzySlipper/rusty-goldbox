@@ -1,0 +1,74 @@
+{
+  "type": "action",
+  "id": "sudden_charge",
+  "name": "Sudden Charge",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage",
+    "die",
+    "deadly",
+    "map",
+    "martial",
+    "slashing"
+  ],
+  "available": "not self.condition.flourished and not self.condition.prone",
+  "valid_target": "combat.distance > 1 and combat.distance <= 2 * floor(self.speed / 5) + 1",
+  "prefer": "0 - combat.distance",
+  "score": "15",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "flourished",
+      "rounds": "1",
+      "to": "self"
+    },
+    {
+      "op": "move",
+      "distance": "2 * floor(self.speed / 5)",
+      "within": "1"
+    },
+    {
+      "op": "if",
+      "when": "combat.distance <= 1",
+      "then": [
+        {
+          "op": "check",
+          "check": "melee_strike",
+          "by": "self",
+          "bonus": "(if use.martial > 0 then self.martial_prof else self.simple_prof) - min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0)) * use.map",
+          "outcomes": {
+            "success": [
+              {
+                "op": "apply_condition",
+                "condition": "hit",
+                "values": {
+                  "amount": "use.damage + self.str_mod",
+                  "critical": "0",
+                  "physical": "1",
+                  "slashing": "use.slashing",
+                  "vitality": "0"
+                }
+              }
+            ],
+            "critical_success": [
+              {
+                "op": "apply_condition",
+                "condition": "hit",
+                "values": {
+                  "amount": "(use.damage + self.str_mod) * 2 + use.deadly",
+                  "critical": "1",
+                  "physical": "1",
+                  "slashing": "use.slashing",
+                  "vitality": "0"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

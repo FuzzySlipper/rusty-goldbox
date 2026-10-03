@@ -1,0 +1,16 @@
+{
+  "type": "item",
+  "id": "shortsword",
+  "name": "Shortsword",
+  "kind": "finesse weapon",
+  "cost": 0.9,
+  "weight": 0.1,
+  "parameters": {
+    "damage": "1d6",
+    "die": "1d6",
+    "deadly": "0",
+    "map": "4",
+    "martial": "1",
+    "slashing": "0"
+  }
+}

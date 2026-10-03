@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "reactive_finesse",
+  "name": "Reactive Strike",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "reactive_finesse",
+    "from_item": "finesse weapon"
+  }
+}

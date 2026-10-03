@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "rock_dwarf",
+  "name": "Rock Dwarf",
+  "kind": "heritage",
+  "description": "Hard to Shove or Trip, and moved only half as far by forced movement (not modelled).",
+  "requirements": "self.race == 'dwarf'"
+}

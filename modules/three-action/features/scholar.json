@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "scholar",
+  "name": "Scholar",
+  "kind": "background",
+  "description": "Studied at an academy or under a master. One boost to INT or WIS, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "int",
+        "wis"
+      ]
+    },
+    {}
+  ]
+}

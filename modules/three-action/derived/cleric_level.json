@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "cleric_level",
+  "name": "Cleric level",
+  "value": "class_sum(if class.id == 'cleric' then class.level else 0)"
+}

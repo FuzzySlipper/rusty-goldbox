@@ -1,0 +1,9 @@
+{
+  "type": "race",
+  "id": "human",
+  "name": "Human",
+  "boosts": [
+    {},
+    {}
+  ]
+}

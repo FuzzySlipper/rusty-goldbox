@@ -221,6 +221,32 @@ public sealed class CampaignTests
     }
 
     [Fact]
+    public void ExperienceToEachGivesEveryCharacterTheWholeAward()
+    {
+        using TempModules modules = new();
+        string campaign = modules.Module("hunt", "campaign", requires: $"{Require("three-action", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("hunt/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|     |", "+--+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } }, "cells": [ { "at": [1, 0], "event": "wolves" } ] }""");
+        modules.Write("hunt/campaign.json", """{ "type": "campaign", "id": "hunt", "name": "Hunt", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+        modules.Write("hunt/wolves.json", """{ "type": "event", "id": "wolves", "kind": "combat", "encounter": "three-action:wolf_pack" }""");
+        using TempModules scratch = new();
+        string three = Path.Combine(Rules.RepositoryRoot, "modules", "three-action");
+        Run(scratch, "character", "new", "--module", three, "--class", "fighter", "--race", "human", "--name", "Bram", "--feature", "skilled_human,warrior,sudden_charge",
+            "--boosts", "str,con,str,dex,str,str,con,dex,wis", "--out", "bram.json");
+        Run(scratch, "character", "new", "--module", three, "--class", "fighter", "--race", "dwarf", "--name", "Dagna", "--feature", "rock_dwarf,guard,vicious_swing",
+            "--boosts", "str,str,con,str,str,dex,con,wis", "--out", "dagna.json");
+        Equip(scratch, "bram.json", "three-action:longsword", "three-action:chain_mail", "three-action:steel_shield");
+        Equip(scratch, "dagna.json", "three-action:greatsword", "three-action:full_plate");
+        File.WriteAllText(Path.Combine(scratch.Root, "hunt.script"), "forward\nstatus\n");
+
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "bram.json,dagna.json", "--script", "hunt.script", "--seed", "1",
+            "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+
+        // Two wolves at 40 each: 80 to each character, not 80 shared.
+        Assert.Equal(0, code);
+        Assert.Contains("Experience: Bram 80, Dagna 80.", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void CallingOnAFormerClassForfeitsTheAdventuresExperience()
     {
         using TempModules modules = new();

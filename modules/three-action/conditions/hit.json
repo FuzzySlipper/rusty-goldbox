@@ -1,0 +1,65 @@
+{
+  "type": "condition",
+  "id": "hit",
+  "name": "Hit",
+  "description": "Damage from an attack or spell.",
+  "modifiers": [],
+  "instant": true,
+  "values": {
+    "amount": 0,
+    "critical": 0,
+    "physical": 0,
+    "slashing": 0,
+    "vitality": 0
+  },
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "condition.physical > 0 and self.condition.blocking",
+      "then": [
+        {
+          "op": "apply_condition",
+          "condition": "wound",
+          "to": "self",
+          "values": {
+            "amount": "max(0, condition.amount + (if condition.slashing > 0 then self.weak_slashing else 0) + (if condition.vitality > 0 then self.weak_vitality else 0) - (if self.condition.shield_spell then 5 else self.shield_hardness))",
+            "critical": "condition.critical"
+          }
+        },
+        {
+          "op": "remove_condition",
+          "condition": "blocking",
+          "to": "self"
+        },
+        {
+          "op": "if",
+          "when": "self.condition.shield_spell",
+          "then": [
+            {
+              "op": "remove_condition",
+              "condition": "shield_spell",
+              "to": "self"
+            },
+            {
+              "op": "apply_condition",
+              "condition": "shield_spent",
+              "rounds": "100",
+              "to": "self"
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "op": "apply_condition",
+          "condition": "wound",
+          "to": "self",
+          "values": {
+            "amount": "condition.amount + (if condition.slashing > 0 then self.weak_slashing else 0) + (if condition.vitality > 0 then self.weak_vitality else 0)",
+            "critical": "condition.critical"
+          }
+        }
+      ]
+    }
+  ]
+}

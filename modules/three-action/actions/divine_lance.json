@@ -1,0 +1,41 @@
+{
+  "type": "action",
+  "id": "divine_lance",
+  "name": "Divine Lance",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "range": "12",
+  "check": "spell_attack",
+  "check_bonus": "0 - min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0)) * 5",
+  "score": "12 - 4 * min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0))",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "roll(self.cantrip_rank + 1, 4)",
+          "critical": "0",
+          "physical": "0",
+          "slashing": "0",
+          "vitality": "0"
+        }
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "(roll(self.cantrip_rank + 1, 4)) * 2",
+          "critical": "1",
+          "physical": "0",
+          "slashing": "0",
+          "vitality": "0"
+        }
+      }
+    ]
+  }
+}

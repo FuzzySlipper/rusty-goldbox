@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "acolyte",
+  "name": "Acolyte",
+  "kind": "background",
+  "description": "Spent early days in a religious community. One boost to INT or WIS, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "int",
+        "wis"
+      ]
+    },
+    {}
+  ]
+}

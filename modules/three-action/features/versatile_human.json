@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "versatile_human",
+  "name": "Versatile Human",
+  "kind": "heritage",
+  "description": "A general feat at 1st level (not modelled).",
+  "requirements": "self.race == 'human'"
+}

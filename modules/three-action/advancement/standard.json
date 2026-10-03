@@ -1,0 +1,27 @@
+{
+  "type": "advancement",
+  "id": "standard",
+  "name": "Character levels",
+  "experience": "character",
+  "levels": [
+    0,
+    1000,
+    2000,
+    3000,
+    4000
+  ],
+  "experience_to": "each",
+  "grants": [
+    {
+      "kind": "general feat",
+      "when": "self.level == 3"
+    }
+  ],
+  "level_boosts": [
+    {
+      "count": 4,
+      "when": "self.level % 5 == 0",
+      "amounts": "boost_amounts"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "trap_finder",
+  "name": "Trap Finder",
+  "kind": "rogue feat",
+  "description": "A bonus to find and resist traps (not modelled)."
+}

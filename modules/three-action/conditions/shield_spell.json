@@ -1,0 +1,13 @@
+{
+  "type": "condition",
+  "id": "shield_spell",
+  "name": "Shield",
+  "description": "The shield cantrip: +1 circumstance bonus to AC, and a Shield Block with Hardness 5.",
+  "modifiers": [
+    {
+      "stat": "circumstance_ac",
+      "value": "1"
+    }
+  ],
+  "rounds_end": "turn_start"
+}

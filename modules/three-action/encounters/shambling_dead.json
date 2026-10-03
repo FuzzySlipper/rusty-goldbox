@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "shambling_dead",
+  "name": "Shambling dead",
+  "monsters": [
+    {
+      "monster": "zombie_shambler",
+      "count": "4"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "heal_hurt",
+  "name": "Heal",
+  "cost": {
+    "action": 2
+  },
+  "target": "hurt_ally",
+  "range": "6",
+  "score": "if target.hit_points * 2 < target.max_hit_points then 13 else -1",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "roll(self.font_rank, 8) + 8 * self.font_rank"
+    }
+  ]
+}

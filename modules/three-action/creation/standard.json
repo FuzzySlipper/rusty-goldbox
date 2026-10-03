@@ -1,0 +1,36 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Attribute boosts",
+  "attributes": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+  ],
+  "method": "boosts",
+  "base": 10,
+  "boost": 2,
+  "boosts": [
+    {},
+    {},
+    {},
+    {}
+  ],
+  "starting_gold": {
+    "fighter": "15",
+    "rogue": "15",
+    "cleric": "15",
+    "wizard": "15"
+  },
+  "features": [
+    {
+      "kind": "heritage"
+    },
+    {
+      "kind": "background"
+    }
+  ]
+}

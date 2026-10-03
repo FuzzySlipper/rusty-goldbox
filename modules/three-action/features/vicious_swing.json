@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "vicious_swing",
+  "name": "Vicious Swing",
+  "kind": "fighter feat",
+  "description": "Flourish, two actions: a melee Strike with an extra weapon damage die that counts as two attacks.",
+  "actions": [
+    {
+      "action": "vicious_swing",
+      "from_item": "melee weapon"
+    }
+  ]
+}

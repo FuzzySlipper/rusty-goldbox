@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "shield_hardness",
+  "name": "Hardness of the shield carried",
+  "value": "0"
+}

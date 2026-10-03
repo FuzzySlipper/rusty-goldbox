@@ -1,0 +1,49 @@
+{
+  "type": "action",
+  "id": "creature_ranged",
+  "name": "Strike",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "use.range",
+  "parameters": [
+    "to_hit",
+    "damage",
+    "deadly",
+    "map",
+    "slashing",
+    "range"
+  ],
+  "check": "creature_strike",
+  "check_bonus": "use.to_hit - min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0)) * use.map",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + (if self.pack_attack and combat.allies_near >= 2 then 1d4 else 0) + (if self.sneak_dice > 0 and (target.off_guard or combat.distance <= 1 and combat.allies_near > 0) then roll(self.sneak_dice, 6) else 0)",
+          "critical": "0",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "(use.damage + (if self.pack_attack and combat.allies_near >= 2 then 1d4 else 0) + (if self.sneak_dice > 0 and (target.off_guard or combat.distance <= 1 and combat.allies_near > 0) then roll(self.sneak_dice, 6) else 0)) * 2 + use.deadly",
+          "critical": "1",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ]
+  },
+  "score": "10 - 4 * min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0))"
+}

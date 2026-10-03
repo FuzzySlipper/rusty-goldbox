@@ -1,0 +1,16 @@
+{
+  "type": "spell",
+  "id": "ignition",
+  "name": "Ignition",
+  "lists": {
+    "wizard": 0
+  },
+  "range": "30 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "ignition"
+  },
+  "description": "A spell attack for 2d4 fire damage, heightening with level (double on a critical hit)."
+}

@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "thief",
+  "name": "Thief",
+  "kind": "racket",
+  "description": "Adds Dexterity instead of Strength to damage with finesse melee weapons.",
+  "modifiers": [
+    {
+      "stat": "thief",
+      "value": "1"
+    }
+  ]
+}

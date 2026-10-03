@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "guard",
+  "name": "Guard",
+  "kind": "background",
+  "description": "Served in the guard, out of patriotism or for the pay. One boost to STR or CHA, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "str",
+        "cha"
+      ]
+    },
+    {}
+  ]
+}

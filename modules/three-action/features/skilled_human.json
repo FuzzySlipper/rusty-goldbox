@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "skilled_human",
+  "name": "Skilled Human",
+  "kind": "heritage",
+  "description": "Trained in one more skill, expert at 5th level (skills aren't modelled).",
+  "requirements": "self.race == 'human'"
+}

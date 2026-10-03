@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "perception",
+  "name": "Perception",
+  "value": "self.wis_mod + self.perception_prof"
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "simple_rank",
+  "name": "Simple weapons rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)",
+  "value": "0"
+}

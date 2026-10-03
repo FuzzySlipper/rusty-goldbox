@@ -1,0 +1,13 @@
+{
+  "type": "condition",
+  "id": "shield_raised",
+  "name": "Shield raised",
+  "description": "A raised shield: its circumstance bonus to AC until the start of its next turn.",
+  "modifiers": [
+    {
+      "stat": "circumstance_ac",
+      "value": "2"
+    }
+  ],
+  "rounds_end": "turn_start"
+}

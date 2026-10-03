@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "will_rank",
+  "name": "Will rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)",
+  "value": "0"
+}

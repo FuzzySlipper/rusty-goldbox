@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "three-action",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Three-Action Fantasy",
+  "requires": [],
+  "provenance": "Game mechanics adapted from Pathfinder Player Core, GM Core, Monster Core and NPC Core (Paizo Inc.) under the ORC License; see PROVENANCE.md and LICENSE-ORC.txt"
+}

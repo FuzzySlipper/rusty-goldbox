@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "nimble_dodge",
+  "name": "Nimble Dodge",
+  "kind": "rogue feat",
+  "description": "A reaction against an attack (not modelled)."
+}

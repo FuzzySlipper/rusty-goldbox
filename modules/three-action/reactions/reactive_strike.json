@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "reactive_strike",
+  "name": "Reactive Strike",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "reactive_strike",
+    "from_item": "melee weapon"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "criminal",
+  "name": "Criminal",
+  "kind": "background",
+  "description": "An unscrupulous independent or a member of an underworld organization. One boost to DEX or INT, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "dex",
+        "int"
+      ]
+    },
+    {}
+  ]
+}

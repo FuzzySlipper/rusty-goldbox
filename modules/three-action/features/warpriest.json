@@ -1,0 +1,24 @@
+{
+  "type": "feature",
+  "id": "warpriest",
+  "name": "Warpriest",
+  "kind": "doctrine",
+  "description": "Trained in light and medium armor, expert in Fortitude saves, and Shield Block.",
+  "modifiers": [
+    {
+      "stat": "light_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "medium_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "fort_rank",
+      "value": "1"
+    }
+  ],
+  "reactions": [
+    "shield_block"
+  ]
+}

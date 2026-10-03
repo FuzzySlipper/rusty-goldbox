@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "hillock_halfling",
+  "name": "Hillock Halfling",
+  "kind": "heritage",
+  "description": "Adds its level to Hit Points regained overnight and from Treat Wounds (not modelled).",
+  "requirements": "self.race == 'halfling'"
+}

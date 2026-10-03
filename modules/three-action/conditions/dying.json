@@ -1,0 +1,92 @@
+{
+  "type": "condition",
+  "id": "dying",
+  "name": "Dying",
+  "description": "At 0 Hit Points: a recovery check at the start of each turn, flat DC 10 + the dying value; dying 4 is death.",
+  "modifiers": [],
+  "each_turn": [
+    {
+      "op": "if",
+      "when": "not self.condition.dead",
+      "then": [
+        {
+          "op": "check",
+          "check": "recovery",
+          "by": "self",
+          "outcomes": {
+            "critical_success": [
+              {
+                "op": "damage",
+                "track": "dying",
+                "amount": "2",
+                "to": "self"
+              }
+            ],
+            "success": [
+              {
+                "op": "damage",
+                "track": "dying",
+                "amount": "1",
+                "to": "self"
+              }
+            ],
+            "failure": [
+              {
+                "op": "heal",
+                "track": "dying",
+                "amount": "1 + self.wounded",
+                "to": "self"
+              }
+            ],
+            "critical_failure": [
+              {
+                "op": "heal",
+                "track": "dying",
+                "amount": "2 + self.wounded",
+                "to": "self"
+              }
+            ]
+          }
+        },
+        {
+          "op": "if",
+          "when": "self.dying >= 4",
+          "then": [
+            {
+              "op": "remove_condition",
+              "condition": "dying",
+              "to": "self"
+            },
+            {
+              "op": "apply_condition",
+              "condition": "dead",
+              "to": "self"
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "when": "self.dying <= 0 and not self.condition.dead",
+          "then": [
+            {
+              "op": "remove_condition",
+              "condition": "dying",
+              "to": "self"
+            },
+            {
+              "op": "apply_condition",
+              "condition": "unconscious",
+              "to": "self"
+            },
+            {
+              "op": "heal",
+              "track": "wounded",
+              "amount": "1",
+              "to": "self"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

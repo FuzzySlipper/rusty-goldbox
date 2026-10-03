@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "ref_prof",
+  "name": "Reflex proficiency bonus",
+  "value": "if self.ref_rank > 0 then self.ref_rank * 2 + self.level else 0"
+}

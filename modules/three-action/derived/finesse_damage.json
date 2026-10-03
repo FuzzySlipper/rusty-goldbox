@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "finesse_damage",
+  "name": "Ability modifier to finesse weapon damage",
+  "value": "if self.thief > 0 then max(self.str_mod, self.dex_mod) else self.str_mod"
+}

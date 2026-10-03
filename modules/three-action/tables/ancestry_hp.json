@@ -1,0 +1,30 @@
+{
+  "type": "table",
+  "id": "ancestry_hp",
+  "name": "Ancestry Hit Points",
+  "keys": [
+    {
+      "name": "ancestry",
+      "type": "text"
+    }
+  ],
+  "value": "number",
+  "rows": [
+    [
+      "human",
+      8
+    ],
+    [
+      "dwarf",
+      10
+    ],
+    [
+      "elf",
+      6
+    ],
+    [
+      "halfling",
+      6
+    ]
+  ]
+}

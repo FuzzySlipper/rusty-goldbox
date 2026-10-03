@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "counterspell",
+  "name": "Counterspell",
+  "kind": "wizard feat",
+  "description": "Counteracts a spell being cast (not modelled)."
+}

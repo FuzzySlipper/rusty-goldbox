@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "heroism",
+  "name": "Heroism",
+  "lists": {
+    "cleric": 3
+  },
+  "range": "Touch",
+  "duration": "10 minutes",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "heroism"
+  },
+  "description": "+1 status bonus to attack rolls (and Perception, saves and skills).",
+  "cost": {
+    "spells_3": "1"
+  }
+}

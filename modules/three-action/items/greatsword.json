@@ -1,0 +1,16 @@
+{
+  "type": "item",
+  "id": "greatsword",
+  "name": "Greatsword",
+  "kind": "melee weapon",
+  "cost": 2,
+  "weight": 2,
+  "parameters": {
+    "damage": "1d12",
+    "die": "1d12",
+    "deadly": "0",
+    "map": "5",
+    "martial": "1",
+    "slashing": "1"
+  }
+}

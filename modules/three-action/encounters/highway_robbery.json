@@ -1,0 +1,15 @@
+{
+  "type": "encounter",
+  "id": "highway_robbery",
+  "name": "Highway robbery",
+  "monsters": [
+    {
+      "monster": "bandit",
+      "count": "1"
+    },
+    {
+      "monster": "ruffian",
+      "count": "1"
+    }
+  ]
+}

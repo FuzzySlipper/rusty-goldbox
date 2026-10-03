@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "reach_spell_arcane",
+  "name": "Reach Spell",
+  "kind": "wizard feat",
+  "description": "Extends a spell's range by 30 feet (not modelled)."
+}

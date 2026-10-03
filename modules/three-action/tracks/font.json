@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "font",
+  "name": "Divine font heals",
+  "max": "if self.cleric_level >= 5 then 5 else if self.cleric_level >= 1 then 4 else 0"
+}

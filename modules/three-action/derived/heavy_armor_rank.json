@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "heavy_armor_rank",
+  "name": "Heavy armor rank (0 untrained, 1 trained, 2 expert, 3 master, 4 legendary)",
+  "value": "0"
+}

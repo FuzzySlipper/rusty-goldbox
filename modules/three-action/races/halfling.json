@@ -1,0 +1,21 @@
+{
+  "type": "race",
+  "id": "halfling",
+  "name": "Halfling",
+  "boosts": [
+    {
+      "from": [
+        "dex"
+      ]
+    },
+    {
+      "from": [
+        "wis"
+      ]
+    },
+    {}
+  ],
+  "ability_adjustments": {
+    "str": -2
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "cloistered_cleric",
+  "name": "Cloistered Cleric",
+  "kind": "doctrine",
+  "description": "A domain initiate feat (not modelled)."
+}

@@ -1,0 +1,61 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Encounter",
+  "initiative": "1d20 + self.perception",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "field": {
+    "width": 12,
+    "height": 8,
+    "metric": "chebyshev"
+  },
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": "self.actions"
+    },
+    {
+      "id": "reaction",
+      "per_turn": 1
+    }
+  ],
+  "track": "hit_points",
+  "defeated": "self.hit_points <= 0",
+  "downed_conditions": true,
+  "actions": [
+    {
+      "action": "melee_strike",
+      "from_item": "melee weapon"
+    },
+    {
+      "action": "finesse_strike",
+      "from_item": "finesse weapon"
+    },
+    {
+      "action": "ranged_strike",
+      "from_item": "ranged weapon"
+    },
+    {
+      "action": "finesse_strike",
+      "name": "Fist",
+      "damage": "1d4",
+      "die": "1d4",
+      "deadly": "0",
+      "map": "4",
+      "martial": "0",
+      "slashing": "0"
+    },
+    {
+      "action": "raise_shield"
+    },
+    {
+      "action": "stride"
+    },
+    {
+      "action": "stand"
+    }
+  ]
+}

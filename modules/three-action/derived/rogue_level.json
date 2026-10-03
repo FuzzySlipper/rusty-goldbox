@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "rogue_level",
+  "name": "Rogue level",
+  "value": "class_sum(if class.id == 'rogue' then class.level else 0)"
+}

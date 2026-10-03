@@ -1,0 +1,86 @@
+{
+  "type": "class",
+  "id": "rogue",
+  "name": "Rogue",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 8 + self.ancestry_hp else 8",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "rogue feat"
+        },
+        {
+          "kind": "racket"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 + self.ancestry_hp else 8",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "rogue feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 + self.ancestry_hp else 8",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 8 + self.ancestry_hp else 8",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "rogue feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 + self.ancestry_hp else 8",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "boosts": [
+    {
+      "from": [
+        "dex"
+      ]
+    }
+  ],
+  "modifiers": [
+    {
+      "stat": "simple_rank",
+      "value": "1"
+    },
+    {
+      "stat": "martial_rank",
+      "value": "1"
+    },
+    {
+      "stat": "light_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "unarmored_rank",
+      "value": "1"
+    },
+    {
+      "stat": "fort_rank",
+      "value": "1"
+    },
+    {
+      "stat": "ref_rank",
+      "value": "2"
+    },
+    {
+      "stat": "will_rank",
+      "value": "2"
+    },
+    {
+      "stat": "perception_rank",
+      "value": "2"
+    }
+  ]
+}

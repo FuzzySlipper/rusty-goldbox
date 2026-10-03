@@ -1,0 +1,16 @@
+{
+  "type": "feature",
+  "id": "warrior",
+  "name": "Warrior",
+  "kind": "background",
+  "description": "Fought in the ranks or as a mercenary. One boost to STR or CON, and one free boost (its skills aren't modelled).",
+  "boosts": [
+    {
+      "from": [
+        "str",
+        "con"
+      ]
+    },
+    {}
+  ]
+}

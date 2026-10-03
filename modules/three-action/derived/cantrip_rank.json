@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "cantrip_rank",
+  "name": "Cantrip rank (half level, rounded up)",
+  "value": "ceil(self.level / 2)"
+}

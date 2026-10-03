@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "chain_mail",
+  "name": "Chain Mail",
+  "kind": "medium armor",
+  "cost": 6,
+  "weight": 2,
+  "modifiers": [
+    {
+      "stat": "armor_bonus",
+      "value": "4"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-9"
+    }
+  ]
+}

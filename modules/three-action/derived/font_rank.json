@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "font_rank",
+  "name": "Highest spell rank",
+  "value": "ceil(self.cleric_level / 2)"
+}

@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "scale_mail",
+  "name": "Scale Mail",
+  "kind": "medium armor",
+  "cost": 4,
+  "weight": 2,
+  "modifiers": [
+    {
+      "stat": "armor_bonus",
+      "value": "3"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-8"
+    }
+  ]
+}

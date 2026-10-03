@@ -1,0 +1,97 @@
+{
+  "type": "class",
+  "id": "fighter",
+  "name": "Fighter",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 10 + self.ancestry_hp else 10",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "fighter feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 + self.ancestry_hp else 10",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "fighter feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 + self.ancestry_hp else 10",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 10 + self.ancestry_hp else 10",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "fighter feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 + self.ancestry_hp else 10",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "boosts": [
+    {
+      "from": [
+        "str",
+        "dex"
+      ]
+    }
+  ],
+  "modifiers": [
+    {
+      "stat": "simple_rank",
+      "value": "if class.level >= 5 then 3 else 2"
+    },
+    {
+      "stat": "martial_rank",
+      "value": "if class.level >= 5 then 3 else 2"
+    },
+    {
+      "stat": "light_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "medium_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "heavy_armor_rank",
+      "value": "1"
+    },
+    {
+      "stat": "unarmored_rank",
+      "value": "1"
+    },
+    {
+      "stat": "fort_rank",
+      "value": "2"
+    },
+    {
+      "stat": "ref_rank",
+      "value": "2"
+    },
+    {
+      "stat": "will_rank",
+      "value": "1"
+    },
+    {
+      "stat": "perception_rank",
+      "value": "2"
+    }
+  ],
+  "reactions": [
+    "reactive_strike",
+    "reactive_finesse",
+    "shield_block"
+  ]
+}

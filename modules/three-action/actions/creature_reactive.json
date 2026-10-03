@@ -1,0 +1,47 @@
+{
+  "type": "action",
+  "id": "creature_reactive",
+  "name": "Reactive Strike",
+  "cost": {
+    "reaction": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "to_hit",
+    "damage",
+    "deadly",
+    "map",
+    "slashing"
+  ],
+  "check": "creature_strike",
+  "check_bonus": "use.to_hit",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + (if self.pack_attack and combat.allies_near >= 2 then 1d4 else 0) + (if self.sneak_dice > 0 and (target.off_guard or combat.distance <= 1 and combat.allies_near > 0) then roll(self.sneak_dice, 6) else 0)",
+          "critical": "0",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "(use.damage + (if self.pack_attack and combat.allies_near >= 2 then 1d4 else 0) + (if self.sneak_dice > 0 and (target.off_guard or combat.distance <= 1 and combat.allies_near > 0) then roll(self.sneak_dice, 6) else 0)) * 2 + use.deadly",
+          "critical": "1",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ]
+  }
+}

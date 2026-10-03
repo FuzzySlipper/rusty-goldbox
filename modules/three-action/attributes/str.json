@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "str",
+  "name": "Strength",
+  "min": 2,
+  "max": 24
+}

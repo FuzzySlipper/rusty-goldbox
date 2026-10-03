@@ -1,0 +1,16 @@
+{
+  "type": "spell",
+  "id": "divine_lance",
+  "name": "Divine Lance",
+  "lists": {
+    "cleric": 0
+  },
+  "range": "60 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "divine_lance"
+  },
+  "description": "A spell attack for 2d4 spirit damage, heightening with level (double on a critical hit)."
+}

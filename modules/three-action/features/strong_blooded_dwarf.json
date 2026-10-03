@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "strong_blooded_dwarf",
+  "name": "Strong-Blooded Dwarf",
+  "kind": "heritage",
+  "description": "Poison resistance and faster recovery from poisons (not modelled).",
+  "requirements": "self.race == 'dwarf'"
+}

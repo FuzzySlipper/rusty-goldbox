@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "deadly_simplicity",
+  "name": "Deadly Simplicity",
+  "kind": "cleric feat",
+  "description": "A larger damage die with your deity's simple weapon (not modelled)."
+}

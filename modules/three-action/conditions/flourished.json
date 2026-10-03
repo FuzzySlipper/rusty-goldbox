@@ -1,0 +1,8 @@
+{
+  "type": "condition",
+  "id": "flourished",
+  "name": "Flourished",
+  "description": "Used a flourish action this turn; it can't use another.",
+  "modifiers": [],
+  "rounds_end": "turn_start"
+}

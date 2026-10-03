@@ -1,0 +1,67 @@
+{
+  "type": "monster",
+  "id": "wolf",
+  "name": "Wolf",
+  "level": 1,
+  "tracks": {
+    "hit_points": "24",
+    "dying": "0",
+    "wounded": "0",
+    "font": "0",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0"
+  },
+  "stats": {
+    "is_character": "false",
+    "ac": "15",
+    "fortitude": "6",
+    "reflex": "9",
+    "will_save": "5",
+    "perception": "7",
+    "speed": "35",
+    "actions": "3",
+    "save_dc": "10",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "cleric_level": "0",
+    "sneak_dice": "0",
+    "key_mod": "0",
+    "font_rank": "0",
+    "cantrip_rank": "0",
+    "str": "14",
+    "dex": "18",
+    "con": "12",
+    "int": "2",
+    "wis": "14",
+    "cha": "6",
+    "pack_attack": "true"
+  },
+  "actions": [
+    {
+      "action": "strike_knockdown",
+      "name": "Jaws",
+      "to_hit": "9",
+      "damage": "1d6 + 2",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0"
+    },
+    {
+      "action": "creature_strike",
+      "name": "Jaws",
+      "to_hit": "9",
+      "damage": "1d6 + 2",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0"
+    },
+    {
+      "action": "stride"
+    },
+    {
+      "action": "stand"
+    }
+  ],
+  "xp": 40
+}

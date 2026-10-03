@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "circumstance_ac",
+  "name": "Circumstance bonus to AC (a raised shield)",
+  "value": "0"
+}

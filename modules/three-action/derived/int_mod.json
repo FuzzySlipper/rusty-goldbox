@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "int_mod",
+  "name": "Intelligence modifier",
+  "value": "floor((self.int - 10) / 2)"
+}

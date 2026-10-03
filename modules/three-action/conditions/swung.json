@@ -1,0 +1,8 @@
+{
+  "type": "condition",
+  "id": "swung",
+  "name": "Vicious Swing",
+  "description": "Its Vicious Swing counts as two attacks for the multiple attack penalty.",
+  "modifiers": [],
+  "rounds_end": "turn_start"
+}

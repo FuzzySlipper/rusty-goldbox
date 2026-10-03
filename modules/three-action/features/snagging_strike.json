@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "snagging_strike",
+  "name": "Snagging Strike",
+  "kind": "fighter feat",
+  "description": "With a hand free, a Strike that leaves the target off-guard until the start of your next turn.",
+  "actions": [
+    {
+      "action": "snagging_strike",
+      "from_item": "melee weapon"
+    }
+  ]
+}

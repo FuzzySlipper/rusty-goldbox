@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "spells_1",
+  "name": "Rank 1 spell slots",
+  "max": "spell_slots(1)"
+}

@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "block",
+  "name": "Shield Block",
+  "cost": {
+    "reaction": 1
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "blocking",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

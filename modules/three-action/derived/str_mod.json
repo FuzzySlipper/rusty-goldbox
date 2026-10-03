@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "str_mod",
+  "name": "Strength modifier",
+  "value": "floor((self.str - 10) / 2)"
+}

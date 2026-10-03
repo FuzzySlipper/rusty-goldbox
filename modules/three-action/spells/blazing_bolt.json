@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "blazing_bolt",
+  "name": "Blazing Bolt",
+  "lists": {
+    "wizard": 2
+  },
+  "range": "60 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "blazing_bolt"
+  },
+  "description": "Two actions: a spell attack for 4d6 fire damage (double on a critical hit).",
+  "cost": {
+    "spells_2": "1"
+  }
+}

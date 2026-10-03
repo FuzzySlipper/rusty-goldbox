@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "force_barrage",
+  "name": "Force Barrage",
+  "lists": {
+    "wizard": 1
+  },
+  "range": "120 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "force_barrage"
+  },
+  "description": "Two shards (two actions) that automatically hit for 1d4+1 force damage each.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

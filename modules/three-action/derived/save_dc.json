@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "save_dc",
+  "name": "DC its harmful effects set",
+  "value": "self.spell_dc"
+}

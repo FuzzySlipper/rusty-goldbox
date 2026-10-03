@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "poisoned",
+  "name": "Giant centipede venom",
+  "description": "Took venom damage.",
+  "modifiers": []
+}

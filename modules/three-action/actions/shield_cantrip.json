@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "shield_cantrip",
+  "name": "Shield",
+  "cost": {
+    "action": 1
+  },
+  "target": "self",
+  "score": "7",
+  "available": "not self.condition.shield_spell and not self.condition.shield_spent and not self.condition.shield_raised",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "shield_spell",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "off_guard",
+  "name": "Off-guard (-2 circumstance to AC)",
+  "value": "self.off_guard_sources > 0"
+}

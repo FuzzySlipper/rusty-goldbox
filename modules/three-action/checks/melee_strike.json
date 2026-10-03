@@ -1,0 +1,27 @@
+{
+  "type": "check",
+  "id": "melee_strike",
+  "name": "Melee Strike",
+  "roll": "1d20",
+  "bonus": "self.str_mod + self.status_attack - self.prone_penalty",
+  "target": "target.ac - (if not target.off_guard and combat.distance <= 1 and combat.allies_near > 0 then 2 else 0)",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "critical_success",
+      "when": "(check.margin >= 10 and check.roll != 1) or (check.roll == 20 and check.margin >= 0)"
+    },
+    {
+      "name": "critical_failure",
+      "when": "(check.margin <= -10 and check.roll != 20) or (check.roll == 1 and check.margin < 0)"
+    },
+    {
+      "name": "success",
+      "when": "check.roll == 20 and check.margin > -10"
+    },
+    {
+      "name": "failure",
+      "when": "check.roll == 1 and check.margin < 10"
+    }
+  ]
+}

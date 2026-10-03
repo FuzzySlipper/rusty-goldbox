@@ -1,0 +1,42 @@
+{
+  "type": "action",
+  "id": "heal_fallen",
+  "name": "Heal",
+  "cost": {
+    "action": 2
+  },
+  "target": "fallen_ally",
+  "range": "6",
+  "valid_target": "not target.condition.dead",
+  "score": "20",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "roll(self.font_rank, 8) + 8 * self.font_rank"
+    },
+    {
+      "op": "if",
+      "when": "target.condition.dying",
+      "then": [
+        {
+          "op": "heal",
+          "track": "wounded",
+          "amount": "1"
+        },
+        {
+          "op": "damage",
+          "track": "dying",
+          "amount": "4"
+        },
+        {
+          "op": "remove_condition",
+          "condition": "dying"
+        }
+      ]
+    },
+    {
+      "op": "remove_condition",
+      "condition": "unconscious"
+    }
+  ]
+}

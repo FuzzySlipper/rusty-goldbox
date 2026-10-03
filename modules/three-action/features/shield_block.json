@@ -1,0 +1,10 @@
+{
+  "type": "feature",
+  "id": "shield_block",
+  "name": "Shield Block",
+  "kind": "general feat",
+  "description": "A reaction to reduce damage with a raised shield by its Hardness.",
+  "reactions": [
+    "shield_block"
+  ]
+}

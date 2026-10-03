@@ -257,6 +257,40 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ThreeActionPartiesFightWithDegreesDyingAndShields()
+    {
+        using TempModules scratch = new();
+        string three = Path.Combine(Rules.RepositoryRoot, "modules", "three-action");
+        string[] New(string file, string name, string cls, string race, string features, string boosts, string? spells = null) =>
+            ["character", "new", "--module", three, "--class", cls, "--race", race, "--name", name, "--feature", features, "--boosts", boosts,
+                .. (spells is null ? Array.Empty<string>() : ["--spells", spells]), "--out", file];
+
+        // Boosts from ancestry, background, class and four free; a heritage, a background and the level 1 class choices.
+        string transcript = CliTranscript.Run(scratch.Root,
+            New("bram.json", "Bram", "fighter", "human", "skilled_human,warrior,sudden_charge", "str,con,str,dex,str,str,con,dex,wis"),
+            New("pip.json", "Pip", "rogue", "halfling", "gutsy_halfling,criminal,thief,nimble_dodge", "con,dex,wis,dex,con,wis,int"),
+            New("hild.json", "Hild", "cleric", "dwarf", "rock_dwarf,acolyte,warpriest", "str,wis,con,wis,con,str,dex", "heal,heal_wounds,bless,divine_lance,shield"),
+            New("ilsa.json", "Ilsa", "wizard", "elf", "ancient_elf,scholar", "wis,int,dex,int,dex,con,wis", "force_barrage,ignition,shield"));
+        Equip(scratch, "bram.json", "three-action", "longsword", "chain_mail", "steel_shield");
+        Equip(scratch, "pip.json", "three-action", "rapier", "shortbow", "studded_leather");
+        Equip(scratch, "hild.json", "three-action", "mace", "scale_mail", "wooden_shield");
+        Equip(scratch, "ilsa.json", "three-action", "staff");
+
+        // Three actions and the multiple attack penalty, flanking and sneak attack, Knockdown and Stand, raised shields
+        // that last until the holder's next turn starts; bandits drop characters to dying, wounded makes it worse.
+        transcript += CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", three, "--party", "bram.json,pip.json,hild.json,ilsa.json", "--encounter", "wolf_pack", "--seed", "5"],
+            ["sim", "combat", "--module", three, "--party", "bram.json,pip.json,hild.json,ilsa.json", "--encounter", "highway_robbery", "--seed", "4"],
+            ["character", "level", "bram.json", "--module", three, "--xp", "4000", "--class", "fighter", "--feature", "vicious_swing,toughness,snagging_strike", "--boosts", "str,con,dex,wis"],
+            ["character", "level", "ilsa.json", "--module", three, "--xp", "4000", "--class", "wizard", "--feature", "widen_spell,toughness,counterspell", "--boosts", "int,con,dex,wis"],
+            ["character", "spells", "ilsa.json", "--module", three, "--set", "fireball,blazing_bolt,force_barrage,ignition,shield"]);
+
+        // At level 5: master proficiency, Vicious Swing, Fireball's basic Reflex save; zombies are weak to slashing.
+        Golden.Verify("three-action-combat.txt", transcript + CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", three, "--party", "bram.json,ilsa.json", "--encounter", "shambling_dead", "--seed", "2"]));
+    }
+
+    [Fact]
     public void PoolsFightCountsSuccessesWithRerollsAndCancels()
     {
         using TempModules scratch = new();

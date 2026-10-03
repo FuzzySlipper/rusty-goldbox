@@ -1,0 +1,133 @@
+{
+  "type": "condition",
+  "id": "wound",
+  "name": "Wound",
+  "description": "Damage after weaknesses and blocks.",
+  "modifiers": [],
+  "instant": true,
+  "values": {
+    "amount": 0,
+    "critical": 0
+  },
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "self.is_character and self.hit_points <= 0",
+      "then": [
+        {
+          "op": "if",
+          "when": "condition.amount > 0 and not self.condition.dead",
+          "then": [
+            {
+              "op": "if",
+              "when": "self.condition.dying",
+              "then": [
+                {
+                  "op": "heal",
+                  "track": "dying",
+                  "amount": "1 + condition.critical",
+                  "to": "self"
+                },
+                {
+                  "op": "if",
+                  "when": "self.dying >= 4",
+                  "then": [
+                    {
+                      "op": "remove_condition",
+                      "condition": "dying",
+                      "to": "self"
+                    },
+                    {
+                      "op": "apply_condition",
+                      "condition": "dead",
+                      "to": "self"
+                    }
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "op": "heal",
+                  "track": "dying",
+                  "amount": "1 + condition.critical + self.wounded",
+                  "to": "self"
+                },
+                {
+                  "op": "remove_condition",
+                  "condition": "unconscious",
+                  "to": "self"
+                },
+                {
+                  "op": "apply_condition",
+                  "condition": "dying",
+                  "to": "self"
+                },
+                {
+                  "op": "if",
+                  "when": "self.dying >= 4",
+                  "then": [
+                    {
+                      "op": "remove_condition",
+                      "condition": "dying",
+                      "to": "self"
+                    },
+                    {
+                      "op": "apply_condition",
+                      "condition": "dead",
+                      "to": "self"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "op": "damage",
+          "amount": "condition.amount",
+          "to": "self"
+        },
+        {
+          "op": "if",
+          "when": "self.is_character and self.hit_points <= 0",
+          "then": [
+            {
+              "op": "heal",
+              "track": "dying",
+              "amount": "1 + condition.critical + self.wounded",
+              "to": "self"
+            },
+            {
+              "op": "remove_condition",
+              "condition": "unconscious",
+              "to": "self"
+            },
+            {
+              "op": "apply_condition",
+              "condition": "dying",
+              "to": "self"
+            },
+            {
+              "op": "if",
+              "when": "self.dying >= 4",
+              "then": [
+                {
+                  "op": "remove_condition",
+                  "condition": "dying",
+                  "to": "self"
+                },
+                {
+                  "op": "apply_condition",
+                  "condition": "dead",
+                  "to": "self"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "spell_shield_block",
+  "name": "Shield Block",
+  "trigger": "targeted",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "self.condition.shield_spell and not self.condition.blocking",
+  "use": {
+    "action": "block"
+  }
+}

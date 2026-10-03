@@ -1,0 +1,18 @@
+{
+  "type": "reaction",
+  "id": "ruffian_reactive_strike",
+  "name": "Reactive Strike",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "creature_reactive",
+    "name": "Club",
+    "to_hit": "9",
+    "damage": "1d6 + 5",
+    "deadly": "0",
+    "map": "5",
+    "slashing": "0"
+  }
+}

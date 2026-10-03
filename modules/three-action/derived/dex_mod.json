@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dex_mod",
+  "name": "Dexterity modifier",
+  "value": "floor((self.dex - 10) / 2)"
+}

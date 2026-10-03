@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "fort_prof",
+  "name": "Fortitude proficiency bonus",
+  "value": "if self.fort_rank > 0 then self.fort_rank * 2 + self.level else 0"
+}

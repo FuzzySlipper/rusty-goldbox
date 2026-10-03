@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "status_attack",
+  "name": "Status bonus to attack rolls",
+  "value": "min(1, self.status_sources)"
+}

@@ -1,0 +1,18 @@
+{
+  "type": "action",
+  "id": "heroism",
+  "name": "Heroism",
+  "cost": {
+    "action": 2
+  },
+  "target": "ally",
+  "score": "if combat.round == 1 then 12 else -1",
+  "valid_target": "not target.condition.heroic",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "heroic",
+      "rounds": "100"
+    }
+  ]
+}

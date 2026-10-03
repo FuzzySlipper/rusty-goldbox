@@ -376,6 +376,7 @@ public sealed class CombatRunner
     private void DownedTurn(Combatant downed)
     {
         _turn = downed;
+        CountDown(downed, atStart: true);
         foreach (Definition condition in downed.Creature.Conditions.ToList())
         {
             if (condition.Json.TryGetProperty("each_turn", out JsonElement operations))
@@ -390,6 +391,7 @@ public sealed class CombatRunner
 
     private void ActOnTurn(Combatant actor)
     {
+        CountDown(actor, atStart: true);
         if (actor.SurprisedRounds > 0)
         {
             Record(new TurnSkippedFact(actor.Name, "surprised"));
@@ -435,7 +437,8 @@ public sealed class CombatRunner
     /// <summary>
     /// Durations count down at the end of the holder's own turn, so a
     /// condition lasting 1 round always covers the holder's next turn,
-    /// whatever the initiative order.
+    /// whatever the initiative order (unless its rounds_end is turn_start:
+    /// those count down as the holder's turn begins).
     /// </summary>
     private void EndTurn(Combatant combatant, bool downed = false)
     {
@@ -452,9 +455,22 @@ public sealed class CombatRunner
             }
         }
 
+        CountDown(combatant, atStart: false);
+        combatant.AppliedThisTurn.Clear();
+        CheckDefeated(combatant);
+    }
+
+    /// <summary>
+    /// Counts down the creature's timed conditions that end at this point of
+    /// its turn (a condition's rounds_end), removing those that run out. At
+    /// the end of a turn, one applied during it isn't counted yet.
+    /// </summary>
+    private void CountDown(Combatant combatant, bool atStart)
+    {
         foreach (Definition condition in combatant.ConditionRounds.Keys.ToList())
         {
-            if (combatant.AppliedThisTurn.Contains(condition))
+            bool endsAtStart = condition.Json.TryGetProperty("rounds_end", out JsonElement end) && end.GetString() == "turn_start";
+            if (endsAtStart != atStart || (!atStart && combatant.AppliedThisTurn.Contains(condition)))
             {
                 continue;
             }
@@ -471,9 +487,6 @@ public sealed class CombatRunner
             combatant.Creature.ConditionValues.Remove(condition);
             Record(new ConditionFact(combatant.Name, condition.Name, false, null));
         }
-
-        combatant.AppliedThisTurn.Clear();
-        CheckDefeated(combatant);
     }
 
     /// <summary>

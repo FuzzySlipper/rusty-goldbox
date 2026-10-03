@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_attack",
+  "name": "Spell attack modifier",
+  "value": "self.key_mod + self.spell_prof"
+}

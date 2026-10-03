@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "centipede_nest",
+  "name": "Centipede nest",
+  "monsters": [
+    {
+      "monster": "giant_centipede",
+      "count": "4"
+    }
+  ]
+}

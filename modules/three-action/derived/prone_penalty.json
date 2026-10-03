@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "prone_penalty",
+  "name": "Circumstance penalty to attack rolls (prone)",
+  "value": "0"
+}

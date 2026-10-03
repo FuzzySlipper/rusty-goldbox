@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "you_re_next",
+  "name": "You're Next",
+  "kind": "rogue feat",
+  "description": "Demoralize after dropping a foe (not modelled)."
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "status_sources",
+  "name": "Status bonuses to attack rolls",
+  "value": "0"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "heal",
+  "name": "Heal",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "30 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "heal_fallen"
+  },
+  "description": "Two actions: restores 1d8 + 8 Hit Points (per rank; divine font slots at your highest rank).",
+  "cost": {
+    "font": "1"
+  }
+}

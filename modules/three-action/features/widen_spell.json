@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "widen_spell",
+  "name": "Widen Spell",
+  "kind": "wizard feat",
+  "description": "Enlarges a spell's area (not modelled)."
+}

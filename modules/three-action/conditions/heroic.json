@@ -1,0 +1,12 @@
+{
+  "type": "condition",
+  "id": "heroic",
+  "name": "Heroism",
+  "description": "+1 status bonus to attack rolls.",
+  "modifiers": [
+    {
+      "stat": "status_sources",
+      "value": "1"
+    }
+  ]
+}

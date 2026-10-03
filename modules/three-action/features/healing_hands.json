@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "healing_hands",
+  "name": "Healing Hands",
+  "kind": "cleric feat",
+  "description": "Heal restores d10s instead of d8s (not modelled)."
+}

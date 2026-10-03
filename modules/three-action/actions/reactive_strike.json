@@ -1,0 +1,48 @@
+{
+  "type": "action",
+  "id": "reactive_strike",
+  "name": "Reactive Strike",
+  "cost": {
+    "reaction": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "damage",
+    "die",
+    "deadly",
+    "map",
+    "martial",
+    "slashing"
+  ],
+  "check": "melee_strike",
+  "check_bonus": "(if use.martial > 0 then self.martial_prof else self.simple_prof)",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + self.str_mod",
+          "critical": "0",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "(use.damage + self.str_mod) * 2 + use.deadly",
+          "critical": "1",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ]
+  }
+}

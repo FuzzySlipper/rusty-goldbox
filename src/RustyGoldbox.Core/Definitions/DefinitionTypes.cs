@@ -152,7 +152,7 @@ public static class DefinitionTypes
             new("experience", new EnumKind(["class", "character", "split"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level. \"split\": a character may start with several classes (as its race's multiclasses allow); experience is divided evenly between the classes it advances in, each on its own levels[].xp, and class_change may let it leave its class for a new one."),
             new("class_change", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Class), false, "With experience \"split\": whether a character may leave its classes for a new one (dual-classing), read with class.id as the new class, for example \"self.race == 'human' and self.classes == 1\". The classes left stop advancing and their modifiers and actions wait until the new class's level is higher; self.former_level is the highest of them. Without it, no class change."),
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
-            new("experience_to", new EnumKind(["survivors", "party"]), false, "Who shares experience a fight or an experience event awards in play: the characters still standing (\"survivors\", the default, also without an advancement definition) or the whole party. Shares are even, rounding down."),
+            new("experience_to", new EnumKind(["survivors", "party", "each"]), false, "Who gets the experience a fight or an experience event awards in play: an even share (rounding down) to the characters still standing (\"survivors\", the default, also without an advancement definition) or to the whole party, or the whole amount to each member (\"each\")."),
             new("grants", new ListKind(new ObjectKind(
             [
                 GrantKind,
@@ -258,6 +258,7 @@ public static class DefinitionTypes
             new("each_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition | Roots.Combat)), false, "Operations at the start of each of the creature's turns, for example ongoing damage (\"to\" must be self)."),
             new("end_of_turn", new ListKind(new OperationKind(Roots.Self | Roots.Condition | Roots.Combat)), false, "Operations at the end of each of the creature's turns, for example a save that ends the condition."),
             new("on_apply", new ListKind(new OperationKind(Roots.Self | Roots.Condition | Roots.Combat)), false, "Operations when the condition is applied, on its holder (\"to\" must be self), reading the values it was applied with."),
+            new("rounds_end", new EnumKind(["turn_end", "turn_start"]), false, "When its rounds count down: at the end of each of the holder's turns (\"turn_end\", the default; 1 round covers the holder's next turn) or at the start (\"turn_start\"; 1 round lasts until the holder's next turn begins, as a raised shield or a dodge does)."),
             new("instant", new BooleanKind(), false, "If true, applying it only runs its on_apply operations: the creature never has it, and no one sees it come and go. A shared procedure such as absorbing a hit, applied with values like { \"shifts\": \"check.margin\" }."),
         ],
         """

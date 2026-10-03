@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "shield_spent",
+  "name": "Shield spent",
+  "description": "Shield Blocked with the shield cantrip: it can't be cast again for 10 minutes.",
+  "modifiers": []
+}

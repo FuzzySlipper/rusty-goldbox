@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "fleet",
+  "name": "Fleet",
+  "kind": "general feat",
+  "description": "Your Speed increases by 5 feet.",
+  "modifiers": [
+    {
+      "stat": "speed",
+      "value": "5"
+    }
+  ]
+}

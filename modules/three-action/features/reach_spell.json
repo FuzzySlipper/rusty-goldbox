@@ -1,0 +1,7 @@
+{
+  "type": "feature",
+  "id": "reach_spell",
+  "name": "Reach Spell",
+  "kind": "cleric feat",
+  "description": "Extends a spell's range by 30 feet (not modelled)."
+}

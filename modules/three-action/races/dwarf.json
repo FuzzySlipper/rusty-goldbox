@@ -1,0 +1,27 @@
+{
+  "type": "race",
+  "id": "dwarf",
+  "name": "Dwarf",
+  "boosts": [
+    {
+      "from": [
+        "con"
+      ]
+    },
+    {
+      "from": [
+        "wis"
+      ]
+    },
+    {}
+  ],
+  "ability_adjustments": {
+    "cha": -2
+  },
+  "modifiers": [
+    {
+      "stat": "speed",
+      "value": "-5"
+    }
+  ]
+}

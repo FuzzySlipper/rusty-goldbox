@@ -1,0 +1,64 @@
+{
+  "type": "action",
+  "id": "vicious_swing",
+  "name": "Vicious Swing",
+  "cost": {
+    "action": 2
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "damage",
+    "die",
+    "deadly",
+    "map",
+    "martial",
+    "slashing"
+  ],
+  "available": "not self.condition.flourished",
+  "check": "melee_strike",
+  "check_bonus": "(if use.martial > 0 then self.martial_prof else self.simple_prof) - min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0)) * use.map",
+  "score": "11 - 4 * min(2, self.rolled.melee_strike + self.rolled.finesse_strike + self.rolled.ranged_strike + self.rolled.spell_attack + self.rolled.creature_strike + (if self.condition.swung then 1 else 0))",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.die + self.str_mod",
+          "critical": "0",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ],
+    "critical_success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "(use.damage + use.die + self.str_mod) * 2 + use.deadly",
+          "critical": "1",
+          "physical": "1",
+          "slashing": "use.slashing",
+          "vitality": "0"
+        }
+      }
+    ]
+  },
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "flourished",
+      "rounds": "1",
+      "to": "self"
+    },
+    {
+      "op": "apply_condition",
+      "condition": "swung",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "unconscious",
+  "name": "Unconscious",
+  "description": "At 0 Hit Points and no longer dying; out of the fight until healed.",
+  "modifiers": []
+}

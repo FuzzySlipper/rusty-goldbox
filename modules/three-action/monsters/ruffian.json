@@ -1,0 +1,70 @@
+{
+  "type": "monster",
+  "id": "ruffian",
+  "name": "Ruffian",
+  "level": 2,
+  "tracks": {
+    "hit_points": "30",
+    "dying": "0",
+    "wounded": "0",
+    "font": "0",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0"
+  },
+  "stats": {
+    "is_character": "false",
+    "ac": "18",
+    "fortitude": "9",
+    "reflex": "8",
+    "will_save": "6",
+    "perception": "8",
+    "speed": "25",
+    "actions": "3",
+    "save_dc": "10",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "cleric_level": "0",
+    "sneak_dice": "1",
+    "key_mod": "0",
+    "font_rank": "0",
+    "cantrip_rank": "0",
+    "str": "16",
+    "dex": "14",
+    "con": "16",
+    "int": "8",
+    "wis": "14",
+    "cha": "10"
+  },
+  "actions": [
+    {
+      "action": "creature_strike",
+      "name": "Club",
+      "to_hit": "9",
+      "damage": "1d6 + 5",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0"
+    },
+    {
+      "action": "creature_ranged",
+      "name": "Sling",
+      "to_hit": "8",
+      "damage": "1d6 + 5",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0",
+      "range": "10"
+    },
+    {
+      "action": "stride"
+    },
+    {
+      "action": "stand"
+    }
+  ],
+  "xp": 60,
+  "reactions": [
+    "ruffian_reactive_strike"
+  ]
+}

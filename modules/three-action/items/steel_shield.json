@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "steel_shield",
+  "name": "Steel Shield",
+  "kind": "shield",
+  "cost": 2,
+  "weight": 1,
+  "modifiers": [
+    {
+      "stat": "shield_hardness",
+      "value": "5"
+    }
+  ]
+}

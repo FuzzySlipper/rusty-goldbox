@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "gutsy_halfling",
+  "name": "Gutsy Halfling",
+  "kind": "heritage",
+  "description": "A success on a save against emotion effects is a critical success (not modelled).",
+  "requirements": "self.race == 'halfling'"
+}

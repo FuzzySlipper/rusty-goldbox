@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "bless",
+  "name": "Bless",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "15-foot emanation",
+  "duration": "1 minute",
+  "area": "",
+  "casting_time": "2 actions",
+  "effect": {
+    "action": "bless"
+  },
+  "description": "You and your allies gain a +1 status bonus to attack rolls.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

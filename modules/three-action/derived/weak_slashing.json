@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "weak_slashing",
+  "name": "Weakness to slashing damage",
+  "value": "0"
+}
