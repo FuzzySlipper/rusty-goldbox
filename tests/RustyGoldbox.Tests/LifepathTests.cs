@@ -122,6 +122,45 @@ public sealed class LifepathTests
     }
 
     [Fact]
+    public void ChangingCareerSkipsTheOldCareerReenlistment()
+    {
+        using TempModules scratch = new();
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", Fixture, "--name", "Changer", "--lifepath", "careers", "--career", "switcher,maker",
+                "--terms", "2", "--skill-table", "personal", "--benefit", "cash", "--seed", "2", "--out", "changer.json", "--json"]);
+
+        Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
+        ModuleSet set = ModuleLoader.Load(Fixture, []);
+        List<ModuleDiagnostic> problems = [];
+        Character character = CharacterFile.Read(Path.Combine(scratch.Root, "changer.json"), set, problems)!;
+
+        Assert.Empty(problems);
+        Assert.Equal(["switcher", "maker"], character.CareerTerms.Select(term => term.Career));
+        Assert.All(character.CareerTerms, term => Assert.False(term.Ended));
+        Assert.NotNull(character.CareerTerms[1].Qualification);
+        Assert.DoesNotContain("reenlistment failed; career ended", character.CareerTerms[0].Results);
+    }
+
+    [Fact]
+    public void SameCareerStillEndsWhenReenlistmentFails()
+    {
+        using TempModules scratch = new();
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", Fixture, "--name", "Stays", "--lifepath", "careers", "--career", "switcher",
+                "--terms", "2", "--skill-table", "personal", "--benefit", "cash", "--seed", "2", "--out", "stays.json", "--json"]);
+
+        Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
+        ModuleSet set = ModuleLoader.Load(Fixture, []);
+        List<ModuleDiagnostic> problems = [];
+        Character character = CharacterFile.Read(Path.Combine(scratch.Root, "stays.json"), set, problems)!;
+
+        Assert.Empty(problems);
+        LifepathTerm term = Assert.Single(character.CareerTerms);
+        Assert.True(term.Ended);
+        Assert.Contains("reenlistment failed; career ended", term.Results);
+    }
+
+    [Fact]
     public void LifepathSchemaAndMissingChoiceExplainTheCliSurface()
     {
         (int code, string output) = RunInRepository("schema", "lifepath", "--json");

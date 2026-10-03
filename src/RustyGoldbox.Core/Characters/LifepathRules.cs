@@ -230,7 +230,8 @@ public static partial class CharacterRules
                         character.LifepathEnded = true;
                     }
 
-                    if (!ended && number < careers.Count)
+                    bool continuingSameCareer = number < careers.Count && careers[number] == careerId;
+                    if (!ended && continuingSameCareer)
                     {
                         LifepathRoll reenlistment = ResolveThrow(rules, lifepath, careerData.GetProperty("reenlistment"), $"$.careers[{CareerIndex(lifepath, careerId)}].reenlistment", evaluator, character, dice, careerDice, "reenlistment");
                         bool naturalSuccess = lifepath.Json.TryGetProperty("reenlistment_natural_success", out JsonElement naturalReenlistment)

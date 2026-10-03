@@ -75,6 +75,40 @@
           { "roll": 6, "kind": "item", "item": "toolkit" }
         ]
       }
+    },
+    {
+      "id": "switcher",
+      "name": "Switcher",
+      "qualification": { "stat": "body", "target": 1 },
+      "survival": { "stat": "mind", "target": 1 },
+      "reenlistment": { "target": 7 },
+      "skill_rolls": { "base": 1, "no_commission": 1, "commission": 1, "advancement": 1 },
+      "skills": [
+        {
+          "id": "personal",
+          "name": "Personal",
+          "entries": [
+            { "roll": 1, "kind": "skill", "stat": "craft" },
+            { "roll": 2, "kind": "skill", "stat": "craft" },
+            { "roll": 3, "kind": "skill", "stat": "craft" },
+            { "roll": 4, "kind": "skill", "stat": "craft" },
+            { "roll": 5, "kind": "skill", "stat": "craft" },
+            { "roll": 6, "kind": "skill", "stat": "craft" }
+          ]
+        }
+      ],
+      "benefits": {
+        "per_term": 1,
+        "rank_benefits": [],
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 10 },
+          { "roll": 2, "currency": "credits", "amount": 20 },
+          { "roll": 3, "currency": "credits", "amount": 30 },
+          { "roll": 4, "currency": "credits", "amount": 40 },
+          { "roll": 5, "currency": "credits", "amount": 50 },
+          { "roll": 6, "currency": "credits", "amount": 60 }
+        ]
+      }
     }
   ]
 }
