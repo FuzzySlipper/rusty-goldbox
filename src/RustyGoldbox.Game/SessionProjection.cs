@@ -5,6 +5,7 @@ using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Game;
@@ -16,15 +17,19 @@ namespace RustyGoldbox.Game;
 /// </summary>
 internal static class SessionProjection
 {
-    /// <param name="imageUrl">Where the panels can show an image asset, when it can be shown.</param>
-    public static JsonObject Build(GameSession session, Func<Definition, string?>? imageUrl = null)
+    /// <param name="imageUrls">Where the panels can show an image asset of a module set, when it can be shown.</param>
+    public static JsonObject Build(GameSession session, Func<ModuleSet, Definition, string?>? imageUrls = null)
     {
-        imageUrl ??= _ => null;
+        imageUrls ??= (_, _) => null;
+        Func<Definition, string?> imageUrl = asset => session.Set is ModuleSet set ? imageUrls(set, asset) : null;
         JsonObject projection = new()
         {
             ["screen"] = session.Screen.ToString().ToLowerInvariant(),
             ["status"] = Status(session),
             ["notes"] = Strings(session.Notes),
+            ["skin"] = session.ActiveSkin is var (skinSet, skin) ? Skin(skinSet, skin, asset => imageUrls(skinSet, asset)) : null,
+            ["skins"] = new JsonArray(session.Skins.Select(choice => (JsonNode)new JsonObject { ["id"] = choice.Id, ["name"] = choice.Name }).ToArray()),
+            ["skinPicked"] = session.PickedSkin?.Choice.Id,
             ["volumes"] = new JsonObject { ["music"] = session.MusicVolume, ["sound"] = session.SoundVolume },
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
@@ -256,6 +261,35 @@ internal static class SessionProjection
             boost.TryGetProperty("from", out JsonElement from)
                 ? from.EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()
                 : [])).ToArray());
+    }
+
+    /// <summary>A skin as the panels apply it: its colours, and its pictures as media objects with their slices.</summary>
+    private static JsonObject Skin(ModuleSet set, Definition skin, Func<Definition, string?> imageUrl)
+    {
+        RuleSet rules = set.Rules!;
+        JsonObject colors = [];
+        if (skin.Json.TryGetProperty("colors", out JsonElement given))
+        {
+            foreach (JsonProperty color in given.EnumerateObject())
+            {
+                colors[color.Name] = color.Value.GetString();
+            }
+        }
+
+        JsonObject? Nine(string part) => skin.Json.TryGetProperty(part, out JsonElement nine)
+            ? new JsonObject { ["picture"] = Picture(rules, rules.Reference(skin, $"$.{part}.picture"), imageUrl), ["slice"] = nine.GetProperty("slice").GetInt32() }
+            : null;
+        JsonObject? Whole(string part) => skin.Json.TryGetProperty(part, out _) ? Picture(rules, rules.Reference(skin, $"$.{part}"), imageUrl) : null;
+        return new JsonObject
+        {
+            ["id"] = skin.QualifiedId,
+            ["name"] = skin.Json.GetProperty("name").GetString(),
+            ["colors"] = colors,
+            ["panel"] = Whole("panel"),
+            ["frame"] = Nine("frame"),
+            ["button"] = Nine("button"),
+            ["title"] = Whole("title"),
+        };
     }
 
     /// <summary>

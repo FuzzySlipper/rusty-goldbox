@@ -499,7 +499,12 @@ regression checks for module and rules behavior.
     sprite may be an animated strip of frames.
   - Event sounds and music play through Engine audio on its Sfx and Music
     buses, with player volumes for each.
-  - The DOM draws text, menus and panels around the view. Module images reach
+  - The DOM draws text, menus and panels around the view. A **skin** (an
+    assets- or campaign-module definition) restyles them: named theme colours,
+    a tiled panel picture, a frame and button faces cut into nine by a slice,
+    and title art. A campaign names its skin and the player may pick any
+    installed one. Skins change the look only, not layout or behaviour, and
+    can't set fonts until the Engine grants UI fonts as it grants images. Module images reach
     it as Engine UI image URLs (portraits, icons), and pictures over the view
     are renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine

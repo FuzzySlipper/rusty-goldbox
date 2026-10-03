@@ -141,7 +141,7 @@ public sealed class GameTests
                 Run(session, engine, """{ "action": "roll", "name": "Brom", "race": "classic:human", "class": "classic:cleric", "portrait": "placeholder-art:cleric_portrait" }""");
             }
 
-            JsonObject projection = SessionProjection.Build(session, asset => images.Url(session.Set!, asset));
+            JsonObject projection = SessionProjection.Build(session, (set, asset) => images.Url(set, asset));
             string url = projection["party"]![0]!["portraitPicture"]!["url"]!.GetValue<string>();
             Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
             // One image per asset: the chooser and the member share it.
@@ -210,7 +210,7 @@ public sealed class GameTests
                 Run(session, engine, """{ "action": "roll", "name": "Bones", "race": "classic:human", "class": "classic:cleric", "portrait": "placeholder-art:skeleton" }""");
             }
 
-            JsonNode party = SessionProjection.Build(session, _ => "url")["party"]!;
+            JsonNode party = SessionProjection.Build(session, (_, _) => "url")["party"]!;
             Assert.Null(party[0]!["portraitPicture"]!["frame"]);
             Assert.Equal("[32,48]", party[1]!["portraitPicture"]!["frame"]!.ToJsonString());
             Assert.Equal("""{"frames":[0,1,2,3],"fps":4,"loop":true}""", party[1]!["portraitPicture"]!["animation"]!.ToJsonString());
@@ -252,6 +252,37 @@ public sealed class GameTests
             session.Quit();
             audio.Update(session);
             Assert.Equal(0u, engine.Audio.Read().ActiveVoices);
+        });
+    }
+
+    [Fact]
+    public void TheCampaignsSkinDressesThePanelsUntilThePlayerPicksAnother()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            JsonObject Projected() => SessionProjection.Build(session, (_, asset) => $"url:{asset.QualifiedId}");
+
+            Assert.Equal(["placeholder-art:parchment", "placeholder-art:stone"], session.Skins.Select(skin => skin.Id).Order());
+            JsonNode stone = Projected()["skin"]!;
+            Assert.Equal("placeholder-art:stone", stone["id"]!.GetValue<string>());
+            Assert.Equal("#e8b04a", stone["colors"]!["accent"]!.GetValue<string>());
+            Assert.Equal("url:placeholder-art:stone_frame", stone["frame"]!["picture"]!["url"]!.GetValue<string>());
+            Assert.Equal(8, stone["frame"]!["slice"]!.GetValue<int>());
+
+            Run(session, engine, """{ "action": "skin", "skin": "placeholder-art:parchment" }""");
+            Assert.Equal("placeholder-art:parchment", Projected()["skin"]!["id"]!.GetValue<string>());
+            Assert.Equal("placeholder-art:parchment", Projected()["skinPicked"]!.GetValue<string>());
+            Run(session, engine, """{ "action": "skin", "skin": "placeholder-art:velvet" }""");
+            Assert.Contains("'placeholder-art:velvet' is not an installed skin", Assert.Single(session.Notes), StringComparison.Ordinal);
+            Run(session, engine, """{ "action": "skin", "skin": null }""");
+            Assert.Equal("placeholder-art:stone", Projected()["skin"]!["id"]!.GetValue<string>());
+
+            // The title screen has no campaign: no skin unless the player picks one.
+            session.Quit();
+            Assert.Null(Projected()["skin"]);
         });
     }
 

@@ -580,6 +580,7 @@ public static class DefinitionTypes
                 new("max", new IntegerKind(), true, "Most characters."),
             ]), true, "Party size."),
             new("intro", new ReferenceKind("event"), false, "An event that runs before the first command."),
+            new("skin", new ReferenceKind("skin"), false, "How the Game's panels look while this campaign plays, unless the player picks another skin."),
         ],
         """
         { "type": "campaign", "id": "crypt", "name": "The Crypt", "start": { "area": "hall", "entry": "start" }, "party": { "min": 1, "max": 6 } }
@@ -623,10 +624,44 @@ public static class DefinitionTypes
         }
         """);
 
+    /// <summary>The theme colours a skin may set.</summary>
+    public static IReadOnlyList<string> SkinColors { get; } = ["background", "text", "muted", "accent", "border", "inset", "button", "button_text"];
+
+    private static readonly ObjectKind NineSlice = new(
+    [
+        new("picture", new ReferenceKind("asset", "border"), true, "The image, cut into nine: corners stay as drawn, edges and middle stretch."),
+        new("slice", new IntegerKind(), true, "How many pixels in from each edge the cuts are; under half the image's width and height."),
+    ]);
+
+    public static DefinitionType Skin { get; } = new(
+        "skin",
+        "How the Game's panels look: theme colours and pictures, in an assets or campaign module. A campaign names its skin; "
+        + "the player may pick any installed one instead. Skins restyle the panels; they don't change their layout or behaviour.",
+        [
+            new("name", new TextKind(), true, "Display name in the skin chooser."),
+            new("colors", new MapKind(new TextKind(), new TextKind()), false,
+                "Theme colours as #rgb, #rrggbb or #rrggbbaa, by name: " + string.Join(", ", SkinColors) + ". Any left out keep the Game's own."),
+            new("panel", new ReferenceKind("asset", "picture"), false, "A picture tiled behind the panels."),
+            new("frame", NineSlice, false, "A border drawn around the panels."),
+            new("button", NineSlice, false, "The face of every button."),
+            new("title", new ReferenceKind("asset", "picture"), false, "Art shown at the top of the panels in place of the product's name."),
+        ],
+        """
+        {
+          "type": "skin",
+          "id": "stone",
+          "name": "Crypt stone",
+          "colors": { "background": "#141318e8", "text": "#e6e0d4", "accent": "#e8b04a" },
+          "panel": "crypt-art:stone_tile",
+          "frame": { "picture": "crypt-art:stone_frame", "slice": 8 },
+          "button": { "picture": "crypt-art:stone_button", "slice": 4 }
+        }
+        """);
+
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
         Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Reaction, Check, Condition, Item, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
-        Variable, Asset, Area, Event, Campaign, Figure,
+        Variable, Asset, Area, Event, Campaign, Figure, Skin,
     ];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(type => type.Name == name);

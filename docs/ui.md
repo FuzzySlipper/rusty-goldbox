@@ -63,3 +63,13 @@ Music and sound volume sliders sit under every screen. They are made once,
 so a drag isn't interrupted by re-renders, take their values from the
 projection's `volumes` when not being dragged, and send a `volume` action
 (`bus` music or sound, `volume` from 0 to 1) on change.
+
+The look is a stylesheet of theme variables (`--gb-background`, `--gb-text`,
+`--gb-muted`, `--gb-accent`, `--gb-border`, `--gb-inset`, `--gb-button`,
+`--gb-button-text`) on the `[data-goldbox-panel]` element. The projection's
+`skin` (the player's pick, else the open campaign's) overrides them and adds
+its panel tile under the background colour, its frame and button faces as
+nine-slice `border-image`s and its title art in place of the heading; the
+stylesheet is rewritten only when the skin changes. A Skin select beside the
+volume sliders lists the projection's `skins` and sends a `skin` action (an
+ID, or null for the campaign's own).

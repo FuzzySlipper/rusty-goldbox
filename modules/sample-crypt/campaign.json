@@ -10,5 +10,6 @@
     "min": 1,
     "max": 4
   },
-  "intro": "intro"
+  "intro": "intro",
+  "skin": "placeholder-art:stone"
 }

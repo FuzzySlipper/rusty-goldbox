@@ -850,6 +850,12 @@ public sealed class RuleSetBuilder
             }
         }
 
+        // After the loop above, so every asset's image size is known.
+        foreach (Definition skin in _rules.OfType(DefinitionTypes.Skin))
+        {
+            CheckSkin(skin);
+        }
+
         foreach (ModuleManifest module in _manifests.Values)
         {
             List<Definition> campaigns = _rules.OfType(DefinitionTypes.Campaign).Where(definition => definition.Module == module.Id).ToList();
@@ -867,6 +873,54 @@ public sealed class RuleSetBuilder
                 }
             }
         }
+    }
+
+    /// <summary>A skin is art: it lives in an assets or campaign module, its colours parse, and its slices fit their images.</summary>
+    private void CheckSkin(Definition skin)
+    {
+        ModuleKind kind = _manifests[skin.Module].Kind;
+        if (kind is not (ModuleKind.Assets or ModuleKind.Campaign))
+        {
+            Error(skin, "skin.module", "$", $"Skins are art, so they live in assets or campaign modules; '{skin.Module}' is a {ModuleKinds.Name(kind)}.");
+        }
+
+        if (skin.Json.TryGetProperty("colors", out JsonElement colors))
+        {
+            foreach (JsonProperty color in colors.EnumerateObject())
+            {
+                string at = $"$.colors.{color.Name}";
+                if (!DefinitionTypes.SkinColors.Contains(color.Name))
+                {
+                    Error(skin, "skin.color", at, $"'{color.Name}' is not a skin colour; colours are {string.Join(", ", DefinitionTypes.SkinColors)}.");
+                }
+                else if (!IsColor(color.Value.GetString()!))
+                {
+                    Error(skin, "skin.color", at, $"'{color.Value.GetString()}' is not a colour; write #rgb, #rrggbb or #rrggbbaa.");
+                }
+            }
+        }
+
+        foreach (string part in new[] { "frame", "button" })
+        {
+            string path = $"$.{part}.picture";
+            if (!skin.Json.TryGetProperty(part, out JsonElement nine)
+                || !_rules.References.TryGetValue((skin, path), out Definition? picture)
+                || !_rules.ImageSizes.TryGetValue(picture, out (int Width, int Height) size))
+            {
+                continue;
+            }
+
+            int slice = nine.GetProperty("slice").GetInt32();
+            if (slice < 1 || slice * 2 >= size.Width || slice * 2 >= size.Height)
+            {
+                Error(skin, "skin.slice", $"$.{part}.slice", $"A slice of {slice} doesn't cut the {size.Width} x {size.Height} image into nine; it must be at least 1 and under half of each side.");
+            }
+        }
+    }
+
+    private static bool IsColor(string text)
+    {
+        return text.Length is 4 or 7 or 9 && text[0] == '#' && text[1..].All(Uri.IsHexDigit);
     }
 
     /// <summary>An audio asset's file is one the Engine decodes, and it has no picture fields.</summary>

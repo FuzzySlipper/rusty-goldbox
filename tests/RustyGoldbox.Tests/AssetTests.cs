@@ -85,6 +85,30 @@ public sealed class AssetTests
     }
 
     [Fact]
+    public void ASkinIsArtWithThemeColoursAndNineSliceBorders()
+    {
+        using TempModules modules = new();
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/edge.json", """{ "type": "asset", "id": "edge", "media": "image", "file": "a.png" }""");
+        modules.Write("art/strip.json", """{ "type": "asset", "id": "strip", "media": "sheet", "file": "a.png", "frame_size": [32, 48] }""");
+        modules.Write("art/good.json", """{ "type": "skin", "id": "good", "name": "Good", "colors": { "text": "#fff", "background": "#10101880" }, "panel": "strip", "frame": { "picture": "edge", "slice": 15 } }""");
+        Assert.Empty(ModuleLoader.Load(art, []).Diagnostics);
+
+        // Colours must be named theme colours in hex; a slice must leave a middle; a border is an image.
+        modules.Write("art/bad.json", """{ "type": "skin", "id": "bad", "name": "Bad", "colors": { "text": "white", "glow": "#fff" }, "frame": { "picture": "edge", "slice": 16 }, "button": { "picture": "strip", "slice": 2 } }""");
+        Assert.Equal(
+            [("reference.media", "$.button.picture"), ("skin.color", "$.colors.glow"), ("skin.color", "$.colors.text"), ("skin.slice", "$.frame.slice")],
+            ModuleLoader.Load(art, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+
+        // Rulesets carry no art.
+        File.Delete(Path.Combine(art, "bad.json"));
+        string rules = modules.Module("rules", "ruleset", requires: TempModules.Require("art", "*"));
+        modules.Write("rules/look.json", """{ "type": "skin", "id": "look", "name": "Look" }""");
+        Assert.Equal("skin.module", Assert.Single(ModuleLoader.Load(rules, []).Diagnostics).Rule);
+    }
+
+    [Fact]
     public void ImagesMustBeRgbaPngs()
     {
         using TempModules modules = new();

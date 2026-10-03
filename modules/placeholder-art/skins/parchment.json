@@ -1,0 +1,24 @@
+{
+  "type": "skin",
+  "id": "parchment",
+  "name": "Parchment",
+  "colors": {
+    "background": "#d6c49cf0",
+    "text": "#2a1c0e",
+    "muted": "#5c4630",
+    "accent": "#8a2a12",
+    "border": "#6a4a26",
+    "inset": "#00000012",
+    "button": "#b8a07000",
+    "button_text": "#2a1c0e"
+  },
+  "panel": "parchment_tile",
+  "frame": {
+    "picture": "parchment_frame",
+    "slice": 8
+  },
+  "button": {
+    "picture": "parchment_button",
+    "slice": 4
+  }
+}

@@ -112,7 +112,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private void Publish()
     {
         _view.Show(_session);
-        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session, asset => _images.Url(_session.Set!, asset)));
+        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session, (set, asset) => _images.Url(set, asset)));
         _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
     }
 }

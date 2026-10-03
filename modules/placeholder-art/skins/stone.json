@@ -1,0 +1,25 @@
+{
+  "type": "skin",
+  "id": "stone",
+  "name": "Crypt stone",
+  "colors": {
+    "background": "#141318e8",
+    "text": "#e6e0d4",
+    "muted": "#a49d8e",
+    "accent": "#e8b04a",
+    "border": "#4a4652",
+    "inset": "#ffffff10",
+    "button": "#46425000",
+    "button_text": "#f0e8d8"
+  },
+  "panel": "stone_tile",
+  "frame": {
+    "picture": "stone_frame",
+    "slice": 8
+  },
+  "button": {
+    "picture": "stone_button",
+    "slice": 4
+  },
+  "title": "stone_title"
+}

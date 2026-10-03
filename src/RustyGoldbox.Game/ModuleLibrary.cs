@@ -1,4 +1,5 @@
 using Rusty.Engine;
+using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 
 namespace RustyGoldbox.Game;
@@ -6,6 +7,9 @@ namespace RustyGoldbox.Game;
 /// <summary>A campaign module the product can start, found in a content bundle.</summary>
 /// <param name="Extensions">Extensions the player may add: installed ones built on the campaign's ruleset that it doesn't already require.</param>
 internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version, string Identity, IReadOnlyList<ExtensionChoice> Extensions);
+
+/// <summary>A skin the player may pick, from an installed assets module.</summary>
+internal sealed record SkinChoice(string Bundle, string Id, string Name);
 
 /// <summary>An extension module the player may add to a campaign's module set.</summary>
 internal sealed record ExtensionChoice(string Id, string Title, ModuleVersion Version);
@@ -63,6 +67,35 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
             }
         });
         return campaigns;
+    }
+
+    /// <summary>
+    /// Every skin in a valid assets module, by qualified ID, first copy of
+    /// each. A campaign's own skin comes with the campaign instead.
+    /// </summary>
+    public List<SkinChoice> Skins()
+    {
+        List<SkinChoice> skins = [];
+        WithBundles([], sources =>
+        {
+            foreach (ModuleSource source in sources)
+            {
+                if (ManifestReader.Read(source, []) is not { Kind: ModuleKind.Assets })
+                {
+                    continue;
+                }
+
+                ModuleSet set = ModuleLoader.Load(source, sources, sources.Select(each => each.Location).ToList(), HowToAdd);
+                foreach (Definition skin in set.Rules?.OfType(DefinitionTypes.Skin).Where(skin => skin.Module == set.Root!.Id) ?? [])
+                {
+                    if (skins.All(known => known.Id != skin.QualifiedId))
+                    {
+                        skins.Add(new SkinChoice(source.Location, skin.QualifiedId, skin.Json.GetProperty("name").GetString()!));
+                    }
+                }
+            }
+        });
+        return skins;
     }
 
     /// <summary>Loads the module in <paramref name="bundle"/> and its requirements from the other bundles, with the extensions added.</summary>

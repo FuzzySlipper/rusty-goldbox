@@ -21,3 +21,8 @@ format the Engine renderer admits; sounds are 16-bit mono 22,050 Hz WAV.
 | `bones_crunch` | `sounds/bones.wav` | Three short cracks, 0.6 seconds |
 | `crypt_music` | `music/crypt.wav` | A 4-second low drone that loops without a seam |
 | `battle_music` | `music/battle.wav` | A 2-second pulsing chord that loops without a seam |
+| `stone_tile`, `stone_frame`, `stone_button`, `stone_title` | `skins/stone_*.png` | The `stone` skin's pictures: a 32 x 32 dark block tile, a 24 x 24 bevelled frame with corner studs (slice 8), a 12 x 12 button face (slice 4), and a 240 x 40 crest between two torches |
+| `parchment_tile`, `parchment_frame`, `parchment_button` | `skins/parchment_*.png` | The `parchment` skin's pictures: a 32 x 32 speckled parchment tile, a 24 x 24 leather frame (slice 8) and a 12 x 12 button face (slice 4) |
+
+`skins/stone.json` and `skins/parchment.json` are the two skins; the sample
+crypt names `stone`.

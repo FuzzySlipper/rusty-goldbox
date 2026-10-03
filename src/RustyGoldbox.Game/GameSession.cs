@@ -108,9 +108,48 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>What the last command produced that isn't play: problems and confirmations.</summary>
     public List<string> Notes { get; } = [];
 
+    /// <summary>The skins the player may pick from.</summary>
+    public List<SkinChoice> Skins { get; private set; } = [];
+
+    /// <summary>The skin the player picked, with the module set it was loaded from; null for the campaign's own (or none).</summary>
+    public (SkinChoice Choice, ModuleSet Set, Definition Skin)? PickedSkin { get; private set; }
+
+    /// <summary>The skin the panels wear: the player's pick, else the open campaign's, else none.</summary>
+    public (ModuleSet Set, Definition Skin)? ActiveSkin =>
+        PickedSkin is var (_, set, skin) ? (set, skin)
+        : Set?.Rules is RuleSet rules && Campaign is Definition campaign && campaign.Json.TryGetProperty("skin", out _) ? (Set, rules.Reference(campaign, "$.skin"))
+        : null;
+
+    /// <summary>Picks an installed skin by ID, or with null goes back to the campaign's own.</summary>
+    public void PickSkin(string? id)
+    {
+        Notes.Clear();
+        if (id is null)
+        {
+            PickedSkin = null;
+            return;
+        }
+
+        if (Skins.FirstOrDefault(skin => skin.Id == id) is not SkinChoice choice)
+        {
+            Notes.Add($"'{id}' is not an installed skin; skins are {(Skins.Count == 0 ? "none" : string.Join(", ", Skins.Select(skin => skin.Id)))}.");
+            return;
+        }
+
+        ModuleSet set = library.Load(choice.Bundle, []);
+        if (set.Rules?.Find(DefinitionTypes.Skin, choice.Id, out _) is not Definition skin)
+        {
+            Notes.AddRange(set.Diagnostics.Select(Describe));
+            return;
+        }
+
+        PickedSkin = (choice, set, skin);
+    }
+
     public void Refresh()
     {
         Notes.Clear();
+        Skins = library.Skins();
         Campaigns = library.Campaigns(Notes);
         if (Campaigns.Count == 0)
         {

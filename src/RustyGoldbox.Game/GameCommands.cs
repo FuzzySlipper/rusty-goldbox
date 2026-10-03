@@ -160,8 +160,11 @@ internal static class GameCommands
                 case "volume":
                     session.SetVolume(Text(payload, "bus"), Volume(payload));
                     break;
+                case "skin":
+                    session.PickSkin(payload.TryGetProperty("skin", out JsonElement skin) && skin.ValueKind != JsonValueKind.Null ? Text(payload, "skin") : null);
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load, quit and volume");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume and skin");
             }
         }
         catch (PayloadException exception)

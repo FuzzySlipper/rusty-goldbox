@@ -13,10 +13,23 @@ export function mountProductUi(root, context) {
     context?.intents?.claim(COMMAND_INTENT, { kind: 'product-payload', contract: COMMAND_CONTRACT, data });
   };
 
-  const panel = element('aside', { 'aria-label': 'Rusty Goldbox', style: PANEL_STYLE });
+  const panel = element('aside', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '', style: PANEL_STYLE });
   const title = element('h1', { style: 'margin:0 0 4px;font-size:16px' }, 'Rusty Goldbox');
+  // The look lives in a stylesheet of theme variables, so a skin restyles every panel at once.
+  const skinStyle = element('style', {}, BASE_LOOK);
+  let appliedSkin = null;
+  const applySkin = (skin) => {
+    const key = JSON.stringify(skin ?? null);
+    if (key === appliedSkin) {
+      return;
+    }
+
+    appliedSkin = key;
+    skinStyle.textContent = BASE_LOOK + skinLook(skin);
+    title.replaceChildren(...(skin?.title?.url ? picture(skin.title, 'Rusty Goldbox', 480) : ['Rusty Goldbox']));
+  };
   const status = element('output', { id: 'rusty-goldbox-status', 'aria-live': 'polite', style: 'display:block;margin-bottom:6px' });
-  const notes = element('ul', { id: 'rusty-goldbox-notes', style: 'color:#f6c177;margin:0 0 6px;padding-left:16px' });
+  const notes = element('ul', { id: 'rusty-goldbox-notes', style: 'color:var(--gb-accent);margin:0 0 6px;padding-left:16px' });
   const body = element('div');
 
   // Inputs live outside the re-rendered body so typing survives updates.
@@ -60,16 +73,24 @@ export function mountProductUi(root, context) {
   };
   const musicVolume = slider('music', 'Music');
   const soundVolume = slider('sound', 'Sound');
+  const skinPick = element('select', { 'aria-label': 'Skin' });
+  skinPick.addEventListener('change', () => send({ action: 'skin', skin: skinPick.value || null }));
   const volumes = element('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px;opacity:.8' },
-    'Music', musicVolume, 'Sound', soundVolume);
+    'Music', musicVolume, 'Sound', soundVolume, 'Skin', skinPick);
 
   panel.append(title, status, notes, body, volumes);
-  root.append(panel);
+  root.append(skinStyle, panel);
 
   const render = (view) => {
     lastView = view;
     status.textContent = view.status ?? '';
     notes.replaceChildren(...(view.notes ?? []).map((note) => element('li', {}, note)));
+    applySkin(view.skin);
+    if (document.activeElement !== skinPick) {
+      fill(skinPick, [{ id: '', name: "(the campaign's own)" }, ...(view.skins ?? [])]);
+      skinPick.value = view.skinPicked ?? '';
+    }
+
     for (const [input, value] of [[musicVolume, view.volumes?.music], [soundVolume, view.volumes?.sound]]) {
       if (value !== undefined && document.activeElement !== input) {
         input.value = String(value);
@@ -222,7 +243,7 @@ export function mountProductUi(root, context) {
 
   /** The party as a roster strip: each member's portrait, name and track values. */
   const renderRoster = (party) => element('div', { id: 'rusty-goldbox-roster', style: 'display:flex;flex-wrap:wrap;gap:8px;margin:6px 0' },
-    ...party.map((member) => element('div', { style: 'display:flex;gap:6px;align-items:center;padding:3px 6px;background:rgba(255,255,255,.05);border-radius:4px' },
+    ...party.map((member) => element('div', { style: 'display:flex;gap:6px;align-items:center;padding:3px 6px;background:var(--gb-inset);border-radius:4px' },
       ...picture(member.portraitPicture, `${member.name}'s portrait`, 48),
       element('div', {},
         element('strong', {}, member.name),
@@ -315,7 +336,7 @@ export function mountProductUi(root, context) {
     const fight = view.fight ?? { members: [], log: [] };
     const side = (index) => element('ul', { style: 'padding-left:16px;margin:2px 0' },
       ...fight.members.filter((member) => member.side === index).map((member) => element('li',
-        { style: member.defeated ? 'opacity:.45;text-decoration:line-through' : (member.acting ? 'color:#f6c177' : '') },
+        { style: member.defeated ? 'opacity:.45;text-decoration:line-through' : (member.acting ? 'color:var(--gb-accent)' : '') },
         ...picture(member.iconPicture, '', 16),
         ` ${member.name}: ${fight.track} ${member.value}${member.max === null ? '' : '/' + member.max}`)));
     return fragment(
@@ -348,9 +369,46 @@ export function mountProductUi(root, context) {
 
 // The first-person view is drawn by the Engine in the top-left window (SceneView.Window); the panel sits to its right.
 const PANEL_STYLE = 'position:absolute;top:1%;left:49%;right:1%;max-height:98%;overflow:auto;'
-  + 'padding:10px;background:rgba(16,16,24,.92);color:#e0def4;font:13px/1.35 ui-monospace,monospace;border-radius:6px';
+  + 'padding:10px;font:13px/1.35 ui-monospace,monospace';
+
+// The Game's own look, as theme variables a skin's colours override.
+const BASE_LOOK = '[data-goldbox-panel]{--gb-background:rgba(16,16,24,.92);--gb-text:#e0def4;--gb-muted:#908caa;'
+  + '--gb-accent:#f6c177;--gb-border:transparent;--gb-inset:rgba(255,255,255,.05);'
+  + 'background:var(--gb-background);color:var(--gb-text);border:1px solid var(--gb-border);border-radius:6px}';
+
+/** A skin's stylesheet: its colours as theme variables, its panel tile under them, its frame and button faces cut into nine. */
+function skinLook(skin) {
+  if (!skin) {
+    return '';
+  }
+
+  const colors = Object.entries(skin.colors ?? {}).map(([name, value]) => `--gb-${name.replace('_', '-')}:${value};`).join('');
+  let css = `[data-goldbox-panel]{${colors}}`;
+  if (skin.panel?.url) {
+    css += '[data-goldbox-panel]{background:linear-gradient(var(--gb-background),var(--gb-background)),'
+      + `url("${skin.panel.url}") 0 0 / ${skin.panel.width * 2}px ${skin.panel.height * 2}px repeat;image-rendering:pixelated}`;
+  }
+
+  if (skin.frame?.picture?.url) {
+    const width = skin.frame.slice * 2;
+    css += `[data-goldbox-panel]{border:${width}px solid transparent;border-radius:0;`
+      + `border-image:url("${skin.frame.picture.url}") ${skin.frame.slice} / ${width}px stretch}`;
+  }
+
+  if (skin.colors?.button || skin.colors?.button_text || skin.button) {
+    css += '[data-goldbox-panel] button{background:var(--gb-button,buttonface);color:var(--gb-button-text,buttontext);font:inherit;padding:1px 6px';
+    if (skin.button?.picture?.url) {
+      const width = skin.button.slice;
+      css += `;border:${width}px solid transparent;border-image:url("${skin.button.picture.url}") ${skin.button.slice} fill / ${width}px stretch;image-rendering:pixelated`;
+    }
+
+    css += '}';
+  }
+
+  return css;
+}
 const HEADING_STYLE = 'font-size:14px;margin:8px 0 4px';
-const LOG_STYLE = 'max-height:220px;overflow:auto;white-space:pre-wrap;margin:6px 0;padding:4px;background:rgba(255,255,255,.05)';
+const LOG_STYLE = 'max-height:220px;overflow:auto;white-space:pre-wrap;margin:6px 0;padding:4px;background:var(--gb-inset)';
 
 function element(tag, attributes = {}, ...children) {
   const node = document.createElement(tag);
@@ -377,7 +435,11 @@ function picture(media, label, size) {
   }
 
   if (!media.frame) {
-    return [element('img', { src: media.url, alt: label, width: size, height: size, style: 'image-rendering:pixelated;object-fit:contain' })];
+    // Within a size-pixel square, keeping the image's shape.
+    const fit = media.width && media.height ? size / Math.max(media.width, media.height) : 1;
+    const width = media.width ? Math.round(media.width * fit) : size;
+    const height = media.height ? Math.round(media.height * fit) : size;
+    return [element('img', { src: media.url, alt: label, width, height, style: 'image-rendering:pixelated;object-fit:contain;max-width:100%;height:auto' })];
   }
 
   const [frameWidth, frameHeight] = media.frame;
