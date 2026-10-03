@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "shield",
+  "name": "Shield",
+  "trigger": "targeted",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "self.spells_1 > 0 and not self.condition.shielded",
+  "use": {
+    "action": "cast_shield"
+  }
+}

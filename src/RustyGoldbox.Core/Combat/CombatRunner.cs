@@ -73,6 +73,14 @@ public sealed class CombatRunner
         return _field is null || from.Position is not Cell a || to.Position is not Cell b || _field.CanSee(a, b);
     }
 
+    /// <summary>How many of a creature's allies still fighting, other than itself, stand within 1 cell of a target (without a field, all of them are).</summary>
+    private decimal AlliesNear(Creature creature, Creature target)
+    {
+        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature);
+        return Everyone.Count(member => self is not null && member != self && member.Side == self.Side && !member.Defeated
+            && member.Creature != target && Distance(member.Creature, target) <= 1);
+    }
+
     /// <summary>How far a creature is from its nearest enemy still fighting (0 with none).</summary>
     private decimal Nearest(Creature creature)
     {
@@ -110,7 +118,7 @@ public sealed class CombatRunner
         RollSurprise();
 
         // Budgets start full, so reactions can be taken before a creature's first turn.
-        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest, CanSee);
+        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest, CanSee, AlliesNear);
         foreach (Combatant member in Everyone)
         {
             Refill(member);
@@ -123,7 +131,7 @@ public sealed class CombatRunner
         while (winner is null && StandingSides() > 1 && round < maxRounds)
         {
             round++;
-            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest, CanSee);
+            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest, CanSee, AlliesNear);
             Record(new RoundFact(round));
             if (RolledByRound)
             {
@@ -615,7 +623,7 @@ public sealed class CombatRunner
 
         if (action.Json.TryGetProperty("portions", out _))
         {
-            Divide(actor, use);
+            Divide(actor, use, targets.FirstOrDefault());
             return;
         }
 
@@ -635,23 +643,29 @@ public sealed class CombatRunner
 
     /// <summary>
     /// An action with portions (missiles, shared damage): its effect resolves
-    /// once per portion, each on the target it would choose now, so a target
-    /// a portion felled passes its share to the next. It stops when no target
-    /// is left or the actor falls.
+    /// once per portion, the first on the target it was taken against (a
+    /// reaction's provoker, or the one chosen), each after that on the target
+    /// it would choose now, so a target a portion felled passes its share to
+    /// the next. It stops when no target is left or the actor falls.
     /// </summary>
-    private void Divide(Combatant actor, UseOption use)
+    private void Divide(Combatant actor, UseOption use, Combatant? first)
     {
         Definition action = use.Action;
         int before = _dice.Rolls.Count;
         int count = (int)Math.Clamp(decimal.Floor(Number(action, "$.portions", new Scope(actor.Creature, null, use.Parameters))), 0, int.MaxValue);
         for (int portion = 1; portion <= count; portion++)
         {
-            if (Targets(actor, use).FirstOrDefault() is not Combatant target)
+            Combatant? chosen = portion == 1 && first is not null && !first.Defeated ? first : Targets(actor, use).FirstOrDefault();
+            if (chosen is not Combatant target)
             {
                 return;
             }
 
-            Record(new PortionFact(use.Name, portion, count, target.Name), portion == 1 ? before : null);
+            // A single portion is just the action; only several say where each goes.
+            if (count > 1)
+            {
+                Record(new PortionFact(use.Name, portion, count, target.Name), portion == 1 ? before : null);
+            }
             if (!Resolve(actor, use, target))
             {
                 return;

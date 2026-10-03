@@ -242,7 +242,7 @@ modifiers and its start- and end-of-turn operations read them as
 A combat definition may put its fights on a **field**: a grid of cells with
 a distance metric (diagonal steps counting 1, or only straight steps). The
 sides start at opposite edges; an action's `range` limits its targets to that
-many cells, `combat.distance` and `combat.nearest` read how far apart
+many cells, `combat.distance`, `combat.nearest` and `combat.allies_near` (allies flanking a target) read how far apart
 creatures are and `combat.sight` whether one sees the other, and the `move`
 operation steps the actor toward its target (until `within` range and in
 sight, so a caster stops at casting range) or away from it (until `beyond`

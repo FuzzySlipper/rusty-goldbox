@@ -1,0 +1,19 @@
+{
+  "type": "item",
+  "id": "shortbow",
+  "name": "Shortbow",
+  "kind": "ranged weapon",
+  "cost": 25,
+  "weight": 2,
+  "parameters": {
+    "damage": "1d6",
+    "dice": "1d6",
+    "range": "16"
+  },
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "5"
+    }
+  ]
+}

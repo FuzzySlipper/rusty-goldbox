@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "fireball",
+  "name": "Fireball",
+  "lists": {
+    "wizard": 3
+  },
+  "range": "150 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "fireball"
+  },
+  "description": "Each creature in the blast makes a Dexterity save: 8d6 Fire damage, half on a success.",
+  "cost": {
+    "spells_3": "1"
+  }
+}

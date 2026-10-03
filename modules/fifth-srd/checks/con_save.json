@@ -1,0 +1,10 @@
+{
+  "type": "check",
+  "id": "con_save",
+  "name": "Constitution saving throw",
+  "roll": "1d20",
+  "bonus": "self.con_save",
+  "target": "5",
+  "succeeds": "at-least",
+  "tiers": []
+}

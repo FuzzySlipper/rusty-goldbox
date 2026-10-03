@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "evoker",
+  "name": "Evoker",
+  "kind": "wizard subclass",
+  "description": "Evocation Savant and Potent Cantrip (not modelled).",
+  "modifiers": []
+}

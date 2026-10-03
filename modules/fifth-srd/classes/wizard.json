@@ -1,0 +1,70 @@
+{
+  "type": "class",
+  "id": "wizard",
+  "name": "Wizard",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 6 else 4",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 6 else 4",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 6 else 4",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "wizard subclass"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 6 else 4",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 6 else 4",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "spell_slots": [
+    [
+      2
+    ],
+    [
+      3
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      3,
+      2
+    ]
+  ],
+  "prepares_spells": true,
+  "reactions": [
+    "shield",
+    "opportunity_finesse"
+  ],
+  "equipment": "item.kind != 'armor' and item.kind != 'shield' and (item.id == 'dagger' or item.id == 'quarterstaff' or item.id == 'light_crossbow' or item.kind == 'gear')",
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "5"
+    }
+  ]
+}

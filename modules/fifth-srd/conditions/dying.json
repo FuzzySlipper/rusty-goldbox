@@ -1,0 +1,120 @@
+{
+  "type": "condition",
+  "id": "dying",
+  "name": "Dying",
+  "description": "At 0 Hit Points: a death saving throw at the start of each turn.",
+  "modifiers": [],
+  "each_turn": [
+    {
+      "op": "if",
+      "when": "self.hit_points <= 0 and not self.condition.stable and not self.condition.dead",
+      "then": [
+        {
+          "op": "check",
+          "check": "death_save",
+          "by": "self",
+          "outcomes": {
+            "success": [
+              {
+                "op": "heal",
+                "track": "death_successes",
+                "amount": "1",
+                "to": "self"
+              },
+              {
+                "op": "if",
+                "when": "self.death_successes >= 3",
+                "then": [
+                  {
+                    "op": "apply_condition",
+                    "condition": "stable",
+                    "to": "self"
+                  }
+                ]
+              }
+            ],
+            "failure": [
+              {
+                "op": "heal",
+                "track": "death_failures",
+                "amount": "1",
+                "to": "self"
+              },
+              {
+                "op": "if",
+                "when": "self.death_failures >= 3",
+                "then": [
+                  {
+                    "op": "apply_condition",
+                    "condition": "dead",
+                    "to": "self"
+                  }
+                ]
+              }
+            ],
+            "double": [
+              {
+                "op": "heal",
+                "track": "death_failures",
+                "amount": "2",
+                "to": "self"
+              },
+              {
+                "op": "if",
+                "when": "self.death_failures >= 3",
+                "then": [
+                  {
+                    "op": "apply_condition",
+                    "condition": "dead",
+                    "to": "self"
+                  }
+                ]
+              }
+            ],
+            "revive": [
+              {
+                "op": "heal",
+                "amount": "1",
+                "to": "self"
+              },
+              {
+                "op": "if",
+                "when": "self.death_successes > 0",
+                "then": [
+                  {
+                    "op": "damage",
+                    "track": "death_successes",
+                    "amount": "3",
+                    "to": "self"
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "when": "self.death_failures > 0",
+                "then": [
+                  {
+                    "op": "damage",
+                    "track": "death_failures",
+                    "amount": "3",
+                    "to": "self"
+                  }
+                ]
+              },
+              {
+                "op": "remove_condition",
+                "condition": "dying",
+                "to": "self"
+              },
+              {
+                "op": "remove_condition",
+                "condition": "stable",
+                "to": "self"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

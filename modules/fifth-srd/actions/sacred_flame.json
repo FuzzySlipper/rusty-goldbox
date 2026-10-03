@@ -1,0 +1,28 @@
+{
+  "type": "action",
+  "id": "sacred_flame",
+  "name": "Sacred Flame",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "12",
+  "always": [
+    {
+      "op": "check",
+      "check": "dex_save",
+      "outcomes": {
+        "failure": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "roll(self.cantrip_dice, 8)",
+              "critical": "0"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

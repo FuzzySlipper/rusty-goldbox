@@ -191,21 +191,13 @@ public sealed class CombatTests
     {
         using TempModules scratch = new();
         string d100 = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
-        string Equip(string file, params string[] items)
-        {
-            string path = Path.Combine(scratch.Root, file);
-            System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
-            node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"universal-d100:{item}"!).ToArray());
-            File.WriteAllText(path, node.ToJsonString());
-            return file;
-        }
 
         // Characteristics are rolled (SIZ and INT at 2D6+6), a profession gives the skills, and gear brings armour and its penalties.
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", d100, "--name", "Aldric", "--feature", "soldier", "--seed", "4", "--out", "aldric.json"],
             ["character", "new", "--module", d100, "--name", "Mira", "--feature", "hunter", "--seed", "9", "--out", "mira.json"]);
-        Equip("aldric.json", "broadsword", "heater_shield", "ring_armour");
-        Equip("mira.json", "self_bow", "dagger", "soft_leather");
+        Equip(scratch, "aldric.json", "universal-d100", "broadsword", "heater_shield", "ring_armour");
+        Equip(scratch, "mira.json", "universal-d100", "self_bow", "dagger", "soft_leather");
 
         // Each takes its best weapon; defences after the first in a round are at -30%; a major wound puts Mira in shock.
         Golden.Verify("universal-d100-combat.txt", transcript + CliTranscript.Run(scratch.Root,
@@ -222,18 +214,46 @@ public sealed class CombatTests
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", scifi, "--name", "Vance", "--feature", "marine", "--priority", "end,dex,str,int,edu,soc", "--seed", "3", "--out", "vance.json"],
             ["character", "new", "--module", scifi, "--name", "Kira", "--feature", "mercenary", "--priority", "str,dex,end,int,edu,soc", "--seed", "5", "--out", "kira.json"]);
-        foreach ((string file, string[] items) in new[] { ("vance.json", new[] { "rifle", "mesh" }), ("kira.json", new[] { "cutlass", "jack" }) })
-        {
-            string path = Path.Combine(scratch.Root, file);
-            System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
-            node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"scifi-2d6:{item}"!).ToArray());
-            File.WriteAllText(path, node.ToJsonString());
-        }
+        Equip(scratch, "vance.json", "scifi-2d6", "rifle", "mesh");
+        Equip(scratch, "kira.json", "scifi-2d6", "cutlass", "jack");
 
         // 2D6 + skill + DM against 8; damage is weapon dice + Effect - armour, off Endurance, then Strength or Dexterity;
         // the DMs fall with them, and two characteristics at 0 is unconscious. Pirates dodge (attacker -1).
         Golden.Verify("scifi-2d6-combat.txt", transcript + CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", scifi, "--party", "vance.json,kira.json", "--encounter", "boarders", "--seed", "1"]));
+    }
+
+    [Fact]
+    public void FifthEditionPartiesFightWithDeathSavesAndSpells()
+    {
+        using TempModules scratch = new();
+        string fifth = Path.Combine(Rules.RepositoryRoot, "modules", "fifth-srd");
+        string[] New(string file, string name, string cls, string race, string priority, string features, string? spells = null) =>
+            ["character", "new", "--module", fifth, "--class", cls, "--race", race, "--name", name, "--priority", priority, "--feature", features,
+                .. (spells is null ? Array.Empty<string>() : ["--spells", spells]), "--out", file];
+
+        // Level 1: a background and origin feat, a fighting style; level 5 by experience with a subclass at 3 and an Ability Score Improvement at 4.
+        string transcript = CliTranscript.Run(scratch.Root,
+            New("bram.json", "Bram", "fighter", "human", "str,con,dex,wis,cha,int", "soldier,savage_attacker,defense"),
+            New("pip.json", "Pip", "rogue", "halfling", "dex,con,wis,int,cha,str", "criminal,alert"),
+            New("hild.json", "Hild", "cleric", "dwarf", "wis,con,str,dex,cha,int", "acolyte,tough", "healing_word,cure_wounds,guiding_bolt,sacred_flame"),
+            New("ilsa.json", "Ilsa", "wizard", "elf", "int,dex,con,wis,cha,str", "sage,alert", "magic_missile,fire_bolt"));
+        Equip(scratch, "bram.json", "fifth-srd", "longsword", "chain_mail", "shield");
+        Equip(scratch, "pip.json", "fifth-srd", "rapier", "shortbow", "leather");
+        Equip(scratch, "hild.json", "fifth-srd", "mace", "scale_mail", "shield");
+        Equip(scratch, "ilsa.json", "fifth-srd", "dagger");
+
+        // At level 1 goblins drop characters to 0: death saves, Healing Word, Opportunity Attacks and the wizard's Shield.
+        transcript += CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", fifth, "--party", "bram.json,pip.json,hild.json,ilsa.json", "--encounter", "goblin_ambush", "--seed", "4"],
+            ["sim", "combat", "--module", fifth, "--party", "bram.json,pip.json,hild.json,ilsa.json", "--encounter", "wolf_pack", "--seed", "5"],
+            ["character", "level", "bram.json", "--module", fifth, "--xp", "6500", "--class", "fighter", "--feature", "champion,asi_str"],
+            ["character", "level", "ilsa.json", "--module", fifth, "--xp", "6500", "--class", "wizard", "--feature", "evoker,asi_int"],
+            ["character", "spells", "ilsa.json", "--module", fifth, "--set", "fireball,scorching_ray,magic_missile,fire_bolt"]);
+
+        // At level 5: two attacks, criticals on 19, Fireball and Scorching Ray; Undead Fortitude keeps zombies standing.
+        Golden.Verify("fifth-srd-combat.txt", transcript + CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", fifth, "--party", "bram.json,ilsa.json", "--encounter", "restless_dead", "--seed", "1"]));
     }
 
     [Fact]
@@ -1029,6 +1049,15 @@ public sealed class CombatTests
         Assert.Empty(problems);
         character.Equipment.AddRange(equipment.Select(id => set.Rules!.Find(DefinitionTypes.Item, id, out _)!));
         File.WriteAllText(Path.Combine(scratch.Root, file), CharacterFile.ToJson(character));
+    }
+
+    /// <summary>Gives a saved character these items of the module, replacing what it carries.</summary>
+    private static void Equip(TempModules scratch, string file, string module, params string[] items)
+    {
+        string path = Path.Combine(scratch.Root, file);
+        System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+        node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"{module}:{item}"!).ToArray());
+        File.WriteAllText(path, node.ToJsonString());
     }
 
     private static Dictionary<string, decimal> Scores(params (string Id, decimal Score)[] scores) => scores.ToDictionary(score => score.Id, score => score.Score);

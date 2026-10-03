@@ -1,0 +1,14 @@
+{
+  "type": "advancement",
+  "id": "standard",
+  "name": "Character advancement",
+  "experience": "character",
+  "levels": [
+    0,
+    300,
+    900,
+    2700,
+    6500
+  ],
+  "experience_to": "party"
+}

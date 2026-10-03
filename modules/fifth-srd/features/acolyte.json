@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "acolyte",
+  "name": "Acolyte",
+  "kind": "background",
+  "description": "Wisdom +2, Intelligence +1. Origin feat: Magic Initiate (Cleric).",
+  "modifiers": [
+    {
+      "stat": "wis",
+      "value": "2"
+    },
+    {
+      "stat": "int",
+      "value": "1"
+    }
+  ]
+}

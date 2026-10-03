@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "melee_attack",
+  "name": "Melee attack",
+  "roll": "if target.condition.prone or target.condition.glowing or (self.pack_tactics and combat.allies_near > 0) then roll_keep(2, 20, 1) else if target.condition.dodging then 21 - roll_keep(2, 20, 1) else 1d20",
+  "bonus": "self.str_mod + self.proficiency",
+  "target": "target.ac",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "critical",
+      "when": "check.roll >= self.crit_range"
+    },
+    {
+      "name": "miss",
+      "when": "check.roll == 1"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "type": "monster",
+  "id": "wolf",
+  "name": "Wolf",
+  "tracks": {
+    "hit_points": "11",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0",
+    "second_wind": "0",
+    "death_successes": "0",
+    "death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "10",
+    "crit_range": "20",
+    "ac": "12",
+    "initiative_bonus": "2",
+    "dex_save": "2",
+    "con_save": "0",
+    "speed": "40",
+    "str": "14",
+    "dex": "15",
+    "con": "12",
+    "int": "3",
+    "wis": "12",
+    "cha": "6",
+    "pack_tactics": "true"
+  },
+  "actions": [
+    {
+      "action": "bite_prone",
+      "name": "Bite",
+      "to_hit": "4",
+      "damage": "1d6 + 2",
+      "dice": "1d6"
+    },
+    {
+      "action": "move"
+    }
+  ],
+  "xp": 50,
+  "reactions": [
+    "wolf_opportunity"
+  ]
+}

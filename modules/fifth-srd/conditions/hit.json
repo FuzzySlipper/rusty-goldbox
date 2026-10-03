@@ -1,0 +1,96 @@
+{
+  "type": "condition",
+  "id": "hit",
+  "name": "Hit",
+  "description": "Damage from a hit.",
+  "modifiers": [],
+  "instant": true,
+  "values": {
+    "amount": 0,
+    "critical": 0
+  },
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "self.is_character and self.hit_points <= 0 and condition.amount > 0",
+      "then": [
+        {
+          "op": "heal",
+          "track": "death_failures",
+          "amount": "if condition.critical > 0 then 2 else 1",
+          "to": "self"
+        },
+        {
+          "op": "if",
+          "when": "self.death_failures >= 3",
+          "then": [
+            {
+              "op": "apply_condition",
+              "condition": "dead",
+              "to": "self"
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "op": "if",
+          "when": "self.is_character and condition.amount - self.hit_points >= self.max_hit_points",
+          "then": [
+            {
+              "op": "apply_condition",
+              "condition": "dead",
+              "to": "self"
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "when": "self.undead_fortitude and condition.critical == 0 and condition.amount >= self.hit_points and self.hit_points > 0",
+          "then": [
+            {
+              "op": "check",
+              "check": "con_save",
+              "by": "self",
+              "bonus": "0 - condition.amount",
+              "outcomes": {
+                "success": [
+                  {
+                    "op": "damage",
+                    "amount": "self.hit_points - 1",
+                    "to": "self"
+                  }
+                ],
+                "failure": [
+                  {
+                    "op": "damage",
+                    "amount": "condition.amount",
+                    "to": "self"
+                  }
+                ]
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "damage",
+              "amount": "condition.amount",
+              "to": "self"
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "when": "self.is_character and self.hit_points <= 0 and not self.condition.dead",
+          "then": [
+            {
+              "op": "apply_condition",
+              "condition": "dying",
+              "to": "self"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

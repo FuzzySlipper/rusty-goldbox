@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "stable",
+  "name": "Stable",
+  "description": "Stopped dying; out of the fight until healed.",
+  "modifiers": []
+}

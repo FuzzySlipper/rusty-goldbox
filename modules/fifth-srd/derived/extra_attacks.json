@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "extra_attacks",
+  "name": "Extra attacks",
+  "value": "if self.fighter_level >= 5 then 1 else 0"
+}

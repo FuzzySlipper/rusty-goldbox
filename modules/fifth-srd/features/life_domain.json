@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "life_domain",
+  "name": "Life Domain",
+  "kind": "cleric subclass",
+  "description": "Disciple of Life: healing spells restore 2 + the slot's level more (level 1 slots here).",
+  "modifiers": [
+    {
+      "stat": "life_bonus",
+      "value": "3"
+    }
+  ]
+}

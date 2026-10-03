@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "tough",
+  "name": "Tough",
+  "kind": "origin feat",
+  "description": "Your Hit Point maximum increases by twice your level.",
+  "modifiers": [
+    {
+      "track": "hit_points",
+      "value": "2 * self.level"
+    }
+  ]
+}

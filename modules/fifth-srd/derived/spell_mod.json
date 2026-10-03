@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_mod",
+  "name": "Spellcasting modifier",
+  "value": "class_max(if class.id == 'cleric' then self.wis_mod else if class.id == 'wizard' then self.int_mod else -5)"
+}

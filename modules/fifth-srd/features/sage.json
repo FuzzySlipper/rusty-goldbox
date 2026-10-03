@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "sage",
+  "name": "Sage",
+  "kind": "background",
+  "description": "Intelligence +2, Constitution +1. Origin feat: Magic Initiate (Wizard).",
+  "modifiers": [
+    {
+      "stat": "int",
+      "value": "2"
+    },
+    {
+      "stat": "con",
+      "value": "1"
+    }
+  ]
+}

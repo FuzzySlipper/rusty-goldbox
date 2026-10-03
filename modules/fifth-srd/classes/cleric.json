@@ -1,0 +1,69 @@
+{
+  "type": "class",
+  "id": "cleric",
+  "name": "Cleric",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "cleric subclass"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "spell_slots": [
+    [
+      2
+    ],
+    [
+      3
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      3,
+      2
+    ]
+  ],
+  "prepares_spells": true,
+  "reactions": [
+    "opportunity_attack"
+  ],
+  "equipment": "item.id != 'chain_mail' and item.id != 'plate' and item.id != 'longsword' and item.id != 'greatsword' and item.id != 'rapier' and item.id != 'shortsword' and item.id != 'scimitar' and item.id != 'longbow'",
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "if self.spells_1 > 0 then 2 else 0"
+    }
+  ]
+}

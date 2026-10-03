@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "engage_range",
+  "name": "Distance it fights from (squares)",
+  "value": "1"
+}

@@ -1,0 +1,23 @@
+{
+  "type": "action",
+  "id": "cast_shield",
+  "name": "Shield",
+  "cost": {
+    "reaction": 1
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "damage",
+      "track": "spells_1",
+      "amount": "1",
+      "to": "self"
+    },
+    {
+      "op": "apply_condition",
+      "condition": "shielded",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

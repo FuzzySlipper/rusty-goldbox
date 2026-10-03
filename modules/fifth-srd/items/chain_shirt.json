@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "chain_shirt",
+  "name": "Chain Shirt",
+  "kind": "armor",
+  "cost": 50,
+  "weight": 20,
+  "modifiers": [
+    {
+      "stat": "armor_base",
+      "value": "3"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-8"
+    }
+  ]
+}

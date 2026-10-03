@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "con",
+  "name": "Constitution",
+  "min": 3,
+  "max": 20
+}

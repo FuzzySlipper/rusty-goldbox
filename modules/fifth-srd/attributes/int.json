@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "int",
+  "name": "Intelligence",
+  "min": 3,
+  "max": 20
+}

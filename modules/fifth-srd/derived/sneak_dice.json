@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "sneak_dice",
+  "name": "Sneak Attack dice",
+  "value": "ceil(self.rogue_level / 2)"
+}

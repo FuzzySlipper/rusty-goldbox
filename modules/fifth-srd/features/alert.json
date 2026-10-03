@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "alert",
+  "name": "Alert",
+  "kind": "origin feat",
+  "description": "Add your Proficiency Bonus to Initiative.",
+  "modifiers": [
+    {
+      "stat": "initiative_bonus",
+      "value": "self.proficiency"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "type": "check",
+  "id": "dex_save",
+  "name": "Dexterity saving throw",
+  "roll": "1d20",
+  "bonus": "self.dex_save",
+  "target": "target.spell_dc",
+  "succeeds": "at-least",
+  "tiers": []
+}

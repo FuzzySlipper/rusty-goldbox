@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "studded_leather",
+  "name": "Studded Leather Armor",
+  "kind": "armor",
+  "cost": 45,
+  "weight": 13,
+  "modifiers": [
+    {
+      "stat": "armor_base",
+      "value": "2"
+    }
+  ]
+}

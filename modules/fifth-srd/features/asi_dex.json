@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_dex",
+  "name": "Ability Score Improvement (Dexterity)",
+  "kind": "feat",
+  "description": "Dexterity +2.",
+  "modifiers": [
+    {
+      "stat": "dex",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

@@ -1,0 +1,43 @@
+{
+  "type": "action",
+  "id": "guiding_bolt",
+  "name": "Guiding Bolt",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "24",
+  "check": "spell_attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "4d6",
+          "critical": "0"
+        }
+      },
+      {
+        "op": "apply_condition",
+        "condition": "glowing",
+        "rounds": "1"
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "8d6",
+          "critical": "1"
+        }
+      },
+      {
+        "op": "apply_condition",
+        "condition": "glowing",
+        "rounds": "1"
+      }
+    ]
+  }
+}

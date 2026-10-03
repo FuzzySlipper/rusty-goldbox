@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "prone",
+  "name": "Prone",
+  "description": "Melee attacks against it have Advantage.",
+  "modifiers": []
+}

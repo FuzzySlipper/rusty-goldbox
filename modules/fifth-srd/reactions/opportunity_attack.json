@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "opportunity_attack",
+  "name": "Opportunity Attack",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "melee_weapon",
+    "from_item": "melee weapon"
+  }
+}

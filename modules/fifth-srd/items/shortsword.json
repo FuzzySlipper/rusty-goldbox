@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "shortsword",
+  "name": "Shortsword",
+  "kind": "finesse weapon",
+  "cost": 10,
+  "weight": 2,
+  "parameters": {
+    "damage": "1d6",
+    "dice": "1d6"
+  }
+}

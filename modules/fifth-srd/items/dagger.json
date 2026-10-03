@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "dagger",
+  "name": "Dagger",
+  "kind": "finesse weapon",
+  "cost": 2,
+  "weight": 1,
+  "parameters": {
+    "damage": "1d4",
+    "dice": "1d4"
+  }
+}

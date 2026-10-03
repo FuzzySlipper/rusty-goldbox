@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "cantrip_dice",
+  "name": "Cantrip dice",
+  "value": "if self.level >= 5 then 2 else 1"
+}

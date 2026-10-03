@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "archery",
+  "name": "Archery",
+  "kind": "fighting style",
+  "description": "+2 to ranged weapon attack rolls.",
+  "modifiers": [
+    {
+      "check": "ranged_attack",
+      "value": "2"
+    }
+  ]
+}

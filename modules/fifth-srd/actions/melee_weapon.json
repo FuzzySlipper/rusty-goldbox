@@ -1,0 +1,39 @@
+{
+  "type": "action",
+  "id": "melee_weapon",
+  "name": "Attack",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "damage",
+    "dice"
+  ],
+  "portions": "1 + self.extra_attacks",
+  "check": "melee_attack",
+  "score": "self.str_mod + 1",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + self.str_mod + self.dueling",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice + self.str_mod",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

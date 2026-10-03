@@ -1,0 +1,23 @@
+{
+  "type": "action",
+  "id": "second_wind",
+  "name": "Second Wind",
+  "cost": {
+    "bonus": 1
+  },
+  "target": "self",
+  "available": "self.second_wind > 0 and self.hit_points * 2 < self.max_hit_points",
+  "always": [
+    {
+      "op": "damage",
+      "track": "second_wind",
+      "amount": "1",
+      "to": "self"
+    },
+    {
+      "op": "heal",
+      "amount": "1d10 + self.fighter_level",
+      "to": "self"
+    }
+  ]
+}

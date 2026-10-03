@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dex_save",
+  "name": "Dexterity saving throw",
+  "value": "self.dex_mod + class_max(if class.id == 'rogue' then self.proficiency else 0)"
+}

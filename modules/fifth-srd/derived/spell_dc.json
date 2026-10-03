@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "spell_dc",
+  "name": "Spell save DC",
+  "value": "8 + self.proficiency + self.spell_mod"
+}

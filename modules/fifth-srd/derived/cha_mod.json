@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "cha_mod",
+  "name": "Charisma modifier",
+  "value": "floor((self.cha - 10) / 2)"
+}

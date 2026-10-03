@@ -1,0 +1,59 @@
+{
+  "type": "monster",
+  "id": "skeleton",
+  "name": "Skeleton",
+  "tracks": {
+    "hit_points": "13",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0",
+    "second_wind": "0",
+    "death_successes": "0",
+    "death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "10",
+    "crit_range": "20",
+    "ac": "14",
+    "initiative_bonus": "3",
+    "dex_save": "3",
+    "con_save": "0",
+    "speed": "30",
+    "str": "10",
+    "dex": "16",
+    "con": "15",
+    "int": "6",
+    "wis": "8",
+    "cha": "5"
+  },
+  "actions": [
+    {
+      "action": "monster_melee",
+      "name": "Shortsword",
+      "to_hit": "5",
+      "damage": "1d6 + 3",
+      "dice": "1d6"
+    },
+    {
+      "action": "monster_ranged",
+      "name": "Shortbow",
+      "to_hit": "5",
+      "damage": "1d6 + 3",
+      "dice": "1d6",
+      "range": "16"
+    },
+    {
+      "action": "move"
+    }
+  ],
+  "xp": 50,
+  "reactions": [
+    "skeleton_opportunity"
+  ]
+}

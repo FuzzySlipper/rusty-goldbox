@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "dodging",
+  "name": "Dodging",
+  "description": "Attacks against it have Disadvantage.",
+  "modifiers": []
+}

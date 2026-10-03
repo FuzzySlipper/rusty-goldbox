@@ -1,0 +1,38 @@
+{
+  "type": "action",
+  "id": "spell_bolt",
+  "name": "Spell bolt",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "use.range",
+  "parameters": [
+    "range",
+    "damage",
+    "dice"
+  ],
+  "check": "spell_attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

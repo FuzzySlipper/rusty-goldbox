@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "magic_missile",
+  "name": "Magic Missile",
+  "lists": {
+    "wizard": 1
+  },
+  "range": "120 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "magic_missile"
+  },
+  "description": "Three darts of 1d4 + 1 Force damage that never miss.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

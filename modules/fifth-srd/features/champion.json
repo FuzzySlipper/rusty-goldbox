@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "champion",
+  "name": "Champion",
+  "kind": "fighter subclass",
+  "description": "Improved Critical: a Critical Hit on a 19 or 20.",
+  "modifiers": [
+    {
+      "stat": "crit_range",
+      "value": "-1"
+    }
+  ]
+}

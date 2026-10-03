@@ -1,0 +1,12 @@
+{
+  "type": "condition",
+  "id": "shielded",
+  "name": "Shielded",
+  "description": "Shield: +5 AC, and Magic Missile does it no harm.",
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "5"
+    }
+  ]
+}

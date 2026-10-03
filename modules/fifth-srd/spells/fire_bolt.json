@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "fire_bolt",
+  "name": "Fire Bolt",
+  "lists": {
+    "wizard": 0
+  },
+  "range": "120 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "spell_bolt",
+    "range": "24",
+    "damage": "roll(self.cantrip_dice, 10)",
+    "dice": "roll(self.cantrip_dice, 10)"
+  },
+  "description": "A ranged spell attack for 1d10 Fire damage (2d10 from level 5)."
+}

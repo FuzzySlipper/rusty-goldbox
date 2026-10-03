@@ -1,0 +1,39 @@
+{
+  "type": "action",
+  "id": "finesse_weapon",
+  "name": "Attack",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "damage",
+    "dice"
+  ],
+  "portions": "1 + self.extra_attacks",
+  "check": "finesse_attack",
+  "score": "max(self.str_mod, self.dex_mod) + 1",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + max(self.str_mod, self.dex_mod) + (if self.sneak_dice > 0 and self.rolled.finesse_attack <= 1 and combat.allies_near > 0 then roll(1 * self.sneak_dice, 6) else 0)",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice + max(self.str_mod, self.dex_mod) + (if self.sneak_dice > 0 and self.rolled.finesse_attack <= 1 and combat.allies_near > 0 then roll(2 * self.sneak_dice, 6) else 0)",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

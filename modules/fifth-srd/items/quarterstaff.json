@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "quarterstaff",
+  "name": "Quarterstaff",
+  "kind": "melee weapon",
+  "cost": 0.2,
+  "weight": 4,
+  "parameters": {
+    "damage": "1d6",
+    "dice": "1d6"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dex_cap",
+  "name": "Dexterity cap on AC",
+  "value": "10"
+}

@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "shield",
+  "name": "Shield",
+  "kind": "shield",
+  "cost": 10,
+  "weight": 6,
+  "modifiers": [
+    {
+      "stat": "ac_bonus",
+      "value": "2"
+    }
+  ]
+}

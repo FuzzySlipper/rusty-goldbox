@@ -1,0 +1,15 @@
+{
+  "type": "encounter",
+  "id": "restless_dead",
+  "name": "Restless dead",
+  "monsters": [
+    {
+      "monster": "skeleton",
+      "count": "2"
+    },
+    {
+      "monster": "zombie",
+      "count": "2"
+    }
+  ]
+}

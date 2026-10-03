@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "con_save",
+  "name": "Constitution saving throw",
+  "value": "self.con_mod + class_max(if class.id == 'fighter' then self.proficiency else 0)"
+}

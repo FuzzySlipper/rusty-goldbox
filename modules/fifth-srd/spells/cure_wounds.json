@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "cure_wounds",
+  "name": "Cure Wounds",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "Touch",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "cure_wounds"
+  },
+  "description": "Restores 2d8 + spellcasting modifier Hit Points.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

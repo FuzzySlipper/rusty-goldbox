@@ -1,0 +1,15 @@
+{
+  "type": "encounter",
+  "id": "ogre_raid",
+  "name": "Ogre raid",
+  "monsters": [
+    {
+      "monster": "ogre",
+      "count": "1"
+    },
+    {
+      "monster": "goblin_warrior",
+      "count": "2"
+    }
+  ]
+}

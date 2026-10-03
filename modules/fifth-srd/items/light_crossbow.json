@@ -1,0 +1,19 @@
+{
+  "type": "item",
+  "id": "light_crossbow",
+  "name": "Light Crossbow",
+  "kind": "ranged weapon",
+  "cost": 25,
+  "weight": 5,
+  "parameters": {
+    "damage": "1d8",
+    "dice": "1d8",
+    "range": "16"
+  },
+  "modifiers": [
+    {
+      "stat": "engage_range",
+      "value": "5"
+    }
+  ]
+}

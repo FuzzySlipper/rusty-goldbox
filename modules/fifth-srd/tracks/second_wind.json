@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "second_wind",
+  "name": "Second Wind uses",
+  "max": "if self.fighter_level >= 4 then 3 else if self.fighter_level >= 1 then 2 else 0"
+}

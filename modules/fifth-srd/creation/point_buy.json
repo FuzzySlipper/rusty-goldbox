@@ -1,0 +1,27 @@
+{
+  "type": "character-creation",
+  "id": "point_buy",
+  "name": "Point cost",
+  "attributes": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+  ],
+  "method": "point-buy",
+  "base": 8,
+  "budget": 27,
+  "costs": "point_costs",
+  "features": [
+    {
+      "kind": "background",
+      "count": 1
+    },
+    {
+      "kind": "origin feat",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "proficiency",
+  "name": "Proficiency bonus",
+  "value": "2 + floor((self.level - 1) / 4)"
+}

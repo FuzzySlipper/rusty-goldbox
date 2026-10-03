@@ -1,0 +1,8 @@
+{
+  "type": "track",
+  "id": "death_failures",
+  "name": "Death save failures",
+  "max": "3",
+  "start": "0",
+  "min": "0"
+}

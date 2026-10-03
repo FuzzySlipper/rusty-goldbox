@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "soldier",
+  "name": "Soldier",
+  "kind": "background",
+  "description": "Strength +2, Constitution +1. Origin feat: Savage Attacker.",
+  "modifiers": [
+    {
+      "stat": "str",
+      "value": "2"
+    },
+    {
+      "stat": "con",
+      "value": "1"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "opportunity_finesse",
+  "name": "Opportunity Attack",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "finesse_weapon",
+    "from_item": "finesse weapon"
+  }
+}

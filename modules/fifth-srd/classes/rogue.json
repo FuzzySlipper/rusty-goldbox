@@ -1,0 +1,42 @@
+{
+  "type": "class",
+  "id": "rogue",
+  "name": "Rogue",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "rogue subclass"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 8 else 5",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "reactions": [
+    "opportunity_finesse",
+    "opportunity_attack"
+  ],
+  "equipment": "item.kind != 'shield' and item.id != 'chain_mail' and item.id != 'plate' and item.id != 'scale_mail' and item.id != 'chain_shirt' and item.id != 'greatsword'"
+}

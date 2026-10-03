@@ -1,0 +1,33 @@
+{
+  "type": "character-creation",
+  "id": "standard_array",
+  "name": "Standard array",
+  "attributes": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+  ],
+  "method": "array",
+  "array": [
+    15,
+    14,
+    13,
+    12,
+    10,
+    8
+  ],
+  "default": true,
+  "features": [
+    {
+      "kind": "background",
+      "count": 1
+    },
+    {
+      "kind": "origin feat",
+      "count": 1
+    }
+  ]
+}

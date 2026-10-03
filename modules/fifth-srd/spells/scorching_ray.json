@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "scorching_ray",
+  "name": "Scorching Ray",
+  "lists": {
+    "wizard": 2
+  },
+  "range": "120 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "scorching_ray"
+  },
+  "description": "Three rays, each a ranged spell attack for 2d6 Fire damage.",
+  "cost": {
+    "spells_2": "1"
+  }
+}

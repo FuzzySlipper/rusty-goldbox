@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_wis",
+  "name": "Ability Score Improvement (Wisdom)",
+  "kind": "feat",
+  "description": "Wisdom +2.",
+  "modifiers": [
+    {
+      "stat": "wis",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

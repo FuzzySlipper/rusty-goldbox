@@ -1,0 +1,48 @@
+{
+  "type": "action",
+  "id": "healing_word",
+  "name": "Healing Word",
+  "cost": {
+    "bonus": 1
+  },
+  "target": "fallen_ally",
+  "range": "12",
+  "valid_target": "not target.condition.dead",
+  "score": "20",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "2d4 + self.spell_mod + self.life_bonus"
+    },
+    {
+      "op": "remove_condition",
+      "condition": "dying"
+    },
+    {
+      "op": "remove_condition",
+      "condition": "stable"
+    },
+    {
+      "op": "if",
+      "when": "target.death_successes > 0",
+      "then": [
+        {
+          "op": "damage",
+          "track": "death_successes",
+          "amount": "3"
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "when": "target.death_failures > 0",
+      "then": [
+        {
+          "op": "damage",
+          "track": "death_failures",
+          "amount": "3"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "scimitar",
+  "name": "Scimitar",
+  "kind": "finesse weapon",
+  "cost": 25,
+  "weight": 3,
+  "parameters": {
+    "damage": "1d6",
+    "dice": "1d6"
+  }
+}

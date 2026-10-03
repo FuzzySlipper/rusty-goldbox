@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "spells_3",
+  "name": "Level 3 spell slots",
+  "max": "spell_slots(3)"
+}

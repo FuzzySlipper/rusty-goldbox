@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "guiding_bolt",
+  "name": "Guiding Bolt",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "120 feet",
+  "duration": "1 round",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "guiding_bolt"
+  },
+  "description": "A ranged spell attack for 4d6 Radiant damage; the next attack against the target has Advantage.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

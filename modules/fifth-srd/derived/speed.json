@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "speed",
+  "name": "Speed (ft)",
+  "value": "30"
+}

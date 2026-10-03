@@ -179,7 +179,6 @@ Round 1.
   Ada is out of the fight.
   Mira uses Magic missile on Skeleton 1.
   Mira spends 1 1st level spells (0 left).
-  Magic missile 1 of 1 goes to Skeleton 1.
   Skeleton 1 loses 2 hit points (-1 left).  [1d4: 1 = 1]
   Skeleton 1 is out of the fight.
 Round 2.

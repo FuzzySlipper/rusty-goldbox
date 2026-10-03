@@ -1,0 +1,40 @@
+{
+  "type": "action",
+  "id": "monster_melee",
+  "name": "Attack",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "to_hit",
+    "damage",
+    "dice"
+  ],
+  "check": "monster_attack",
+  "check_bonus": "use.to_hit",
+  "score": "use.to_hit",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

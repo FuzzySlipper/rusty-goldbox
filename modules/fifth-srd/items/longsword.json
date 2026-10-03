@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "longsword",
+  "name": "Longsword",
+  "kind": "melee weapon",
+  "cost": 15,
+  "weight": 3,
+  "parameters": {
+    "damage": "1d8",
+    "dice": "1d8"
+  }
+}

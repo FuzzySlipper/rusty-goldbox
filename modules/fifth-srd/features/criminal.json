@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "criminal",
+  "name": "Criminal",
+  "kind": "background",
+  "description": "Dexterity +2, Constitution +1. Origin feat: Alert.",
+  "modifiers": [
+    {
+      "stat": "dex",
+      "value": "2"
+    },
+    {
+      "stat": "con",
+      "value": "1"
+    }
+  ]
+}

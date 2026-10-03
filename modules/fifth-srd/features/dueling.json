@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "dueling",
+  "name": "Dueling",
+  "kind": "fighting style",
+  "description": "+2 damage with a melee weapon in one hand.",
+  "modifiers": [
+    {
+      "stat": "dueling",
+      "value": "2"
+    }
+  ]
+}

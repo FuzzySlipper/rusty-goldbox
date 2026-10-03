@@ -1,0 +1,8 @@
+{
+  "type": "feature",
+  "id": "thief",
+  "name": "Thief",
+  "kind": "rogue subclass",
+  "description": "Fast Hands and Second-Story Work (not used in combat here).",
+  "modifiers": []
+}

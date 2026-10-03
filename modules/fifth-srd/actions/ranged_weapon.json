@@ -1,0 +1,40 @@
+{
+  "type": "action",
+  "id": "ranged_weapon",
+  "name": "Shoot",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "use.range",
+  "parameters": [
+    "damage",
+    "dice",
+    "range"
+  ],
+  "portions": "1 + self.extra_attacks",
+  "check": "ranged_attack",
+  "score": "self.dex_mod + 1",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + self.dex_mod + (if self.sneak_dice > 0 and self.rolled.ranged_attack <= 1 and combat.allies_near > 0 then roll(1 * self.sneak_dice, 6) else 0)",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice + self.dex_mod + (if self.sneak_dice > 0 and self.rolled.ranged_attack <= 1 and combat.allies_near > 0 then roll(2 * self.sneak_dice, 6) else 0)",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

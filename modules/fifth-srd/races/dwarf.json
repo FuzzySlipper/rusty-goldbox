@@ -1,0 +1,11 @@
+{
+  "type": "race",
+  "id": "dwarf",
+  "name": "Dwarf",
+  "modifiers": [
+    {
+      "track": "hit_points",
+      "value": "self.level"
+    }
+  ]
+}

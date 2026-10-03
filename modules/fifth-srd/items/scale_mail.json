@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "scale_mail",
+  "name": "Scale Mail",
+  "kind": "armor",
+  "cost": 50,
+  "weight": 45,
+  "modifiers": [
+    {
+      "stat": "armor_base",
+      "value": "4"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-8"
+    }
+  ]
+}

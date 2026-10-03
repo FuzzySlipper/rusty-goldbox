@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "dead",
+  "name": "Dead",
+  "description": "Three failed death saving throws, or massive damage.",
+  "modifiers": []
+}

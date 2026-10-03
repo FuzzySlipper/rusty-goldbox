@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "goblin_ambush",
+  "name": "Goblin ambush",
+  "monsters": [
+    {
+      "monster": "goblin_warrior",
+      "count": "4"
+    }
+  ]
+}

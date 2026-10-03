@@ -373,10 +373,15 @@ public static class CharacterRules
         return null;
     }
 
-    /// <summary>Whether casting the spell needs a prepared copy: it is on the list of one of the character's classes that prepares spells.</summary>
+    /// <summary>
+    /// Whether casting the spell needs a prepared copy: it is on the list of
+    /// one of the character's classes that prepares spells, and costs
+    /// something (a spell that costs nothing, a cantrip, is always ready).
+    /// </summary>
     public static bool NeedsPreparing(RuleSet rules, Character character, Definition spell)
     {
-        if (!spell.Json.TryGetProperty("lists", out JsonElement lists))
+        if (!spell.Json.TryGetProperty("lists", out JsonElement lists)
+            || !spell.Json.TryGetProperty("cost", out JsonElement cost) || !cost.EnumerateObject().Any())
         {
             return false;
         }

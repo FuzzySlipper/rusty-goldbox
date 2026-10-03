@@ -1,0 +1,59 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Combat",
+  "initiative": "1d20 + self.initiative_bonus",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "field": {
+    "width": 12,
+    "height": 8,
+    "metric": "chebyshev"
+  },
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": 1
+    },
+    {
+      "id": "bonus",
+      "per_turn": 1
+    },
+    {
+      "id": "move",
+      "per_turn": 1
+    },
+    {
+      "id": "reaction",
+      "per_turn": 1
+    }
+  ],
+  "track": "hit_points",
+  "defeated": "self.hit_points <= 0",
+  "downed_conditions": true,
+  "actions": [
+    {
+      "action": "melee_weapon",
+      "from_item": "melee weapon"
+    },
+    {
+      "action": "finesse_weapon",
+      "from_item": "finesse weapon"
+    },
+    {
+      "action": "ranged_weapon",
+      "from_item": "ranged weapon"
+    },
+    {
+      "action": "melee_weapon",
+      "name": "Unarmed Strike",
+      "damage": "1",
+      "dice": "0"
+    },
+    {
+      "action": "move"
+    }
+  ]
+}

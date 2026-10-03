@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "greatsword",
+  "name": "Greatsword",
+  "kind": "melee weapon",
+  "cost": 50,
+  "weight": 6,
+  "parameters": {
+    "damage": "2d6",
+    "dice": "2d6"
+  }
+}

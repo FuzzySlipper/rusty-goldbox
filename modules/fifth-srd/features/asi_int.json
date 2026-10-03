@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_int",
+  "name": "Ability Score Improvement (Intelligence)",
+  "kind": "feat",
+  "description": "Intelligence +2.",
+  "modifiers": [
+    {
+      "stat": "int",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "plate",
+  "name": "Plate Armor",
+  "kind": "armor",
+  "cost": 1500,
+  "weight": 65,
+  "modifiers": [
+    {
+      "stat": "armor_base",
+      "value": "8"
+    },
+    {
+      "stat": "dex_cap",
+      "value": "-10"
+    }
+  ]
+}

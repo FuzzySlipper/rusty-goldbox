@@ -1,0 +1,27 @@
+{
+  "type": "action",
+  "id": "magic_missile",
+  "name": "Magic Missile",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "24",
+  "portions": "3",
+  "always": [
+    {
+      "op": "if",
+      "when": "not target.condition.shielded",
+      "then": [
+        {
+          "op": "apply_condition",
+          "condition": "hit",
+          "values": {
+            "amount": "1d4 + 1",
+            "critical": "0"
+          }
+        }
+      ]
+    }
+  ]
+}

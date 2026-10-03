@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "defense",
+  "name": "Defense",
+  "kind": "fighting style",
+  "description": "+1 AC while wearing armor.",
+  "modifiers": [
+    {
+      "stat": "ac_bonus",
+      "value": "1"
+    }
+  ]
+}

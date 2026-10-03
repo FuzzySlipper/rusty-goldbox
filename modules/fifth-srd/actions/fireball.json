@@ -1,0 +1,38 @@
+{
+  "type": "action",
+  "id": "fireball",
+  "name": "Fireball",
+  "cost": {
+    "action": 1
+  },
+  "target": "all_enemies",
+  "range": "30",
+  "always": [
+    {
+      "op": "check",
+      "check": "dex_save",
+      "outcomes": {
+        "failure": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "8d6",
+              "critical": "0"
+            }
+          }
+        ],
+        "success": [
+          {
+            "op": "apply_condition",
+            "condition": "hit",
+            "values": {
+              "amount": "floor(8d6 / 2)",
+              "critical": "0"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

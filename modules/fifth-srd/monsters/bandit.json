@@ -1,0 +1,59 @@
+{
+  "type": "monster",
+  "id": "bandit",
+  "name": "Bandit",
+  "tracks": {
+    "hit_points": "11",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0",
+    "second_wind": "0",
+    "death_successes": "0",
+    "death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "10",
+    "crit_range": "20",
+    "ac": "12",
+    "initiative_bonus": "1",
+    "dex_save": "1",
+    "con_save": "0",
+    "speed": "30",
+    "str": "11",
+    "dex": "12",
+    "con": "12",
+    "int": "10",
+    "wis": "10",
+    "cha": "10"
+  },
+  "actions": [
+    {
+      "action": "monster_melee",
+      "name": "Scimitar",
+      "to_hit": "3",
+      "damage": "1d6 + 1",
+      "dice": "1d6"
+    },
+    {
+      "action": "monster_ranged",
+      "name": "Light Crossbow",
+      "to_hit": "3",
+      "damage": "1d8 + 1",
+      "dice": "1d8",
+      "range": "16"
+    },
+    {
+      "action": "move"
+    }
+  ],
+  "xp": 25,
+  "reactions": [
+    "bandit_opportunity"
+  ]
+}

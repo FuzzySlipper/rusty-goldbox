@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "is_character",
+  "name": "Player character",
+  "value": "true"
+}

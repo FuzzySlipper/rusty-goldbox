@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_str",
+  "name": "Ability Score Improvement (Strength)",
+  "kind": "feat",
+  "description": "Strength +2.",
+  "modifiers": [
+    {
+      "stat": "str",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

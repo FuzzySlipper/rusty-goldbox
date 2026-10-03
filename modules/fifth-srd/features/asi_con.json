@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_con",
+  "name": "Ability Score Improvement (Constitution)",
+  "kind": "feat",
+  "description": "Constitution +2.",
+  "modifiers": [
+    {
+      "stat": "con",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "glowing",
+  "name": "Glowing",
+  "description": "Struck by Guiding Bolt: the next attack against it has Advantage.",
+  "modifiers": []
+}

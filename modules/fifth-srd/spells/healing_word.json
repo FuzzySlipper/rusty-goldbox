@@ -1,0 +1,19 @@
+{
+  "type": "spell",
+  "id": "healing_word",
+  "name": "Healing Word",
+  "lists": {
+    "cleric": 1
+  },
+  "range": "60 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Bonus Action",
+  "effect": {
+    "action": "healing_word"
+  },
+  "description": "Restores 2d4 + spellcasting modifier Hit Points.",
+  "cost": {
+    "spells_1": "1"
+  }
+}

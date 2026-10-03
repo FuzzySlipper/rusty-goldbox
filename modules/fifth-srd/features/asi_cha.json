@@ -1,0 +1,14 @@
+{
+  "type": "feature",
+  "id": "asi_cha",
+  "name": "Ability Score Improvement (Charisma)",
+  "kind": "feat",
+  "description": "Charisma +2.",
+  "modifiers": [
+    {
+      "stat": "cha",
+      "value": "2"
+    }
+  ],
+  "repeatable": true
+}

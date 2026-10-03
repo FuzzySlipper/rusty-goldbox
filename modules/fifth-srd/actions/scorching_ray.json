@@ -1,0 +1,34 @@
+{
+  "type": "action",
+  "id": "scorching_ray",
+  "name": "Scorching Ray",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "24",
+  "portions": "3",
+  "check": "spell_attack",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "2d6",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "4d6",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

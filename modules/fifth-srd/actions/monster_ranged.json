@@ -1,0 +1,41 @@
+{
+  "type": "action",
+  "id": "monster_ranged",
+  "name": "Attack",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "use.range",
+  "parameters": [
+    "to_hit",
+    "damage",
+    "dice",
+    "range"
+  ],
+  "check": "monster_attack",
+  "check_bonus": "use.to_hit",
+  "score": "use.to_hit - 1",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage",
+          "critical": "0"
+        }
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "hit",
+        "values": {
+          "amount": "use.damage + use.dice",
+          "critical": "1"
+        }
+      }
+    ]
+  }
+}

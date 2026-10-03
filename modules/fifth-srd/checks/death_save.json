@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "death_save",
+  "name": "Death saving throw",
+  "roll": "1d20",
+  "bonus": "0",
+  "target": "10",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "revive",
+      "when": "check.roll == 20"
+    },
+    {
+      "name": "double",
+      "when": "check.roll == 1"
+    }
+  ]
+}

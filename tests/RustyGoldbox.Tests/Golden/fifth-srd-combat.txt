@@ -1,0 +1,692 @@
+$ goldbox character new --module modules/fifth-srd --class fighter --race human --name Bram --priority str,con,dex,wis,cha,int --feature soldier,savage_attacker,defense --out bram.json
+Bram: Human Fighter 1 (0 xp, next level at 300)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 12/12
+  second wind uses 2/2
+  gold 0
+  features: Soldier (background), Savage Attacker (origin feat), Defense (fighting style)
+  str              17     Strength
+  dex              13     Dexterity
+  con              15     Constitution
+  int              8      Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               12     Armor Class
+  ac_bonus         1      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     1      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         4      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          1      Dexterity modifier
+  dex_save         1      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     1      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    1      Fighter level
+  initiative_bonus 1      Initiative bonus
+  int_mod          -1     Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      2      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         5      Spell save DC
+  spell_mod        -5     Spellcasting modifier
+  str_mod          3      Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to bram.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/fifth-srd --class rogue --race halfling --name Pip --priority dex,con,wis,int,cha,str --feature criminal,alert --out pip.json
+Pip: Halfling Rogue 1 (0 xp, next level at 300)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 10/10
+  gold 0
+  features: Criminal (background), Alert (origin feat)
+  str              8      Strength
+  dex              17     Dexterity
+  con              15     Constitution
+  int              12     Intelligence
+  wis              13     Wisdom
+  cha              10     Charisma
+  ac               13     Armor Class
+  ac_bonus         0      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     1      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         2      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          3      Dexterity modifier
+  dex_save         5      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     1      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    0      Fighter level
+  initiative_bonus 5      Initiative bonus
+  int_mod          1      Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      2      Proficiency bonus
+  rogue_level      1      Rogue level
+  sneak_dice       1      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         5      Spell save DC
+  spell_mod        -5     Spellcasting modifier
+  str_mod          -1     Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to pip.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/fifth-srd --class cleric --race dwarf --name Hild --priority wis,con,str,dex,cha,int --feature acolyte,tough --spells healing_word,cure_wounds,guiding_bolt,sacred_flame --out hild.json
+Hild: Dwarf Cleric 1 (0 xp, next level at 300)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 13/13
+  level 1 spell slots 2/2
+  gold 0
+  spells: Healing Word, Cure Wounds, Guiding Bolt, Sacred Flame
+  memorised: Healing Word, Cure Wounds (known spells in order; all left)
+  features: Acolyte (background), Tough (origin feat)
+  spells per day by spell level: 2
+  str              13     Strength
+  dex              12     Dexterity
+  con              14     Constitution
+  int              9      Intelligence
+  wis              17     Wisdom
+  cha              10     Charisma
+  ac               11     Armor Class
+  ac_bonus         0      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     1      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         2      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          1      Dexterity modifier
+  dex_save         1      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     3      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    0      Fighter level
+  initiative_bonus 1      Initiative bonus
+  int_mod          -1     Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      2      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         13     Spell save DC
+  spell_mod        3      Spellcasting modifier
+  str_mod          1      Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          3      Wisdom modifier
+Saved to hild.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character new --module modules/fifth-srd --class wizard --race elf --name Ilsa --priority int,dex,con,wis,cha,str --feature sage,alert --spells magic_missile,fire_bolt --out ilsa.json
+Ilsa: Elf Wizard 1 (0 xp, next level at 300)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 8/8
+  level 1 spell slots 2/2
+  gold 0
+  spells: Magic Missile, Fire Bolt
+  memorised: Magic Missile x2 (known spells in order; all left)
+  features: Sage (background), Alert (origin feat)
+  spells per day by spell level: 2
+  str              8      Strength
+  dex              14     Dexterity
+  con              14     Constitution
+  int              17     Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               12     Armor Class
+  ac_bonus         0      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     1      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         2      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          2      Dexterity modifier
+  dex_save         2      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     6      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    0      Fighter level
+  initiative_bonus 4      Initiative bonus
+  int_mod          3      Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      2      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         13     Spell save DC
+  spell_mod        3      Spellcasting modifier
+  str_mod          -1     Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to ilsa.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox sim combat --module modules/fifth-srd --party bram.json,pip.json,hild.json,ilsa.json --encounter goblin_ambush --seed 4
+seed 4
+Round 1.
+  Bram rolls 14 for initiative.  [1d20: 13 = 13]
+  Pip rolls 10 for initiative.  [1d20: 5 = 5]
+  Hild rolls 5 for initiative.  [1d20: 4 = 4]
+  Ilsa rolls 12 for initiative.  [1d20: 8 = 8]
+  Goblin Warrior 1 rolls 6 for initiative.  [1d20: 4 = 4]
+  Goblin Warrior 2 rolls 4 for initiative.  [1d20: 2 = 2]
+  Goblin Warrior 3 rolls 16 for initiative.  [1d20: 14 = 14]
+  Goblin Warrior 4 rolls 21 for initiative.  [1d20: 19 = 19]
+  Goblin Warrior 4 uses Shortbow on Ilsa.
+  Ilsa reacts to Goblin Warrior 4: Shield.
+  Ilsa uses Shield on Ilsa.
+  Ilsa loses 1 level 1 spell slots (1 left).
+  Ilsa is Shielded for 1 round.
+  Goblin Warrior 4 rolls Attack: 14 + 4 modifiers = 18 against 17: success.  [1d20: 14 = 14]
+  Ilsa loses 7 hit points (1 left).  [1d6: 5 = 5]
+  Goblin Warrior 4 uses Move on Bram.
+  Goblin Warrior 4 moves 6 cells to (5, 5).
+  Goblin Warrior 3 uses Shortbow on Ilsa.
+  Goblin Warrior 3 rolls Attack: 8 + 4 modifiers = 12 against 17: failure.  [1d20: 8 = 8]
+  Goblin Warrior 3 uses Move on Bram.
+  Goblin Warrior 3 moves 6 cells to (5, 2).
+  Bram uses Move on Goblin Warrior 3.
+  Bram moves 4 cells to (4, 3).
+  Bram uses Attack (Longsword) on Goblin Warrior 3.
+  Bram rolls Melee attack: 2 + 5 = 7 against 15: failure.  [1d20: 2 = 2]
+  Ilsa uses Magic Missile on Goblin Warrior 1.
+  Ilsa spends 1 level 1 spell slots (0 left).
+  Magic Missile 1 of 3 goes to Goblin Warrior 1.
+  Goblin Warrior 1 loses 2 hit points (8 left).  [1d4: 1 = 1]
+  Magic Missile 2 of 3 goes to Goblin Warrior 1.
+  Goblin Warrior 1 loses 2 hit points (6 left).  [1d4: 1 = 1]
+  Magic Missile 3 of 3 goes to Goblin Warrior 1.
+  Goblin Warrior 1 loses 4 hit points (2 left).  [1d4: 3 = 3]
+  Ilsa uses Move on Goblin Warrior 1.
+  Ilsa moves 5 cells to (5, 6).
+  Ilsa is no longer Shielded.
+  Pip uses Shoot (Shortbow) on Goblin Warrior 1.
+  Pip rolls Ranged attack: 7 + 5 = 12 against 15: failure.  [1d20: 7 = 7]
+  Pip uses Move on Goblin Warrior 1.
+  Pip moves 5 cells to (5, 4).
+  Goblin Warrior 1 uses Shortbow on Ilsa.
+  Goblin Warrior 1 rolls Attack: 12 + 4 modifiers = 16 against 12: success.  [1d20: 12 = 12]
+  Ilsa loses 1 hit points (0 left).  [1d6: 3 = 3]
+  Ilsa is out of the fight.
+  Ilsa is Dying.
+  Goblin Warrior 1 uses Move on Pip.
+  Goblin Warrior 1 moves 5 cells to (6, 3).
+  Hild uses Healing Word on Ilsa.
+  Hild spends 1 level 1 spell slots (1 left).
+  Ilsa regains 8 hit points (8).  [2d4: 1+4 = 5]
+  Ilsa is back in the fight.
+  Ilsa is no longer Dying.
+  Hild uses Sacred Flame on Goblin Warrior 1.
+  Goblin Warrior 1 rolls Dexterity saving throw: 8 + 2 = 10 against 13: failure.  [1d20: 8 = 8]
+  Goblin Warrior 1 loses 2 hit points (0 left).  [1d8: 2 = 2]
+  Goblin Warrior 1 is out of the fight.
+  Hild uses Move on Goblin Warrior 3.
+  Hild moves 2 cells to (2, 2).
+  Goblin Warrior 2 uses Shortbow on Ilsa.
+  Goblin Warrior 2 rolls Attack: 18 + 4 modifiers = 22 against 12: success.  [1d20: 18 = 18]
+  Ilsa loses 6 hit points (2 left).  [1d6: 4 = 4]
+  Goblin Warrior 2 uses Move on Pip.
+  Goblin Warrior 2 moves 5 cells to (6, 4).
+Round 2.
+  Goblin Warrior 4 uses Scimitar on Ilsa.
+  Goblin Warrior 4 rolls Attack: 19 + 4 modifiers = 23 against 12: success.  [1d20: 19 = 19]
+  Ilsa loses 2 hit points (0 left).  [1d6: 5 = 5]
+  Ilsa is out of the fight.
+  Ilsa is Dying.
+  Goblin Warrior 4 uses Move on Bram.
+  Goblin Warrior 4 moves 1 cell to (4, 4).
+  Goblin Warrior 3 uses Scimitar on Bram.
+  Goblin Warrior 3 rolls Attack: 7 + 4 modifiers = 11 against 19: failure.  [1d20: 7 = 7]
+  Goblin Warrior 3 uses Move on Pip.
+  Goblin Warrior 3 moves 1 cell to (5, 3).
+  Bram uses Attack (Longsword) on Goblin Warrior 3.
+  Bram rolls Melee attack: 11 + 5 = 16 against 15: success.  [1d20: 11 = 11]
+  Goblin Warrior 3 loses 6 hit points (4 left).  [1d8: 3 = 3]
+  Bram uses Move on Goblin Warrior 2.
+  Goblin Warrior 4 reacts to Bram: Opportunity Attack.
+  Goblin Warrior 4 uses Scimitar on Bram.
+  Goblin Warrior 4 rolls Attack: 8 + 4 modifiers = 12 against 19: failure.  [1d20: 8 = 8]
+  Bram moves 2 cells to (6, 3).
+  Ilsa rolls Death saving throw: 8 against 10: failure.  [1d20: 8 = 8]
+  Ilsa regains 1 death save failures (1).
+  Pip uses Attack (Rapier) on Goblin Warrior 3.
+  Pip rolls Finesse attack: 2 + 5 = 7 against 15: failure.  [1d20: 2 = 2]
+  Hild uses Sacred Flame on Goblin Warrior 3.
+  Goblin Warrior 3 rolls Dexterity saving throw: 12 + 2 = 14 against 13: success.  [1d20: 12 = 12]
+  Hild uses Move on Goblin Warrior 2.
+  Hild moves 1 cell to (3, 2).
+  Goblin Warrior 2 uses Scimitar on Pip.
+  Goblin Warrior 2 rolls Attack: 8 + 4 modifiers = 12 against 14: failure.  [1d20: 8 = 8]
+  Goblin Warrior 2 uses Move on Hild.
+  Pip reacts to Goblin Warrior 2: Opportunity Attack.
+  Pip uses Attack (Rapier) on Goblin Warrior 2.
+  Pip rolls Finesse attack: 3 + 5 = 8 against 15: failure.  [1d20: 3 = 3]
+  Bram reacts to Goblin Warrior 2: Opportunity Attack.
+  Bram uses Attack (Longsword) on Goblin Warrior 2.
+  Bram rolls Melee attack: 18 + 5 = 23 against 15: success.  [1d20: 18 = 18]
+  Goblin Warrior 2 loses 5 hit points (5 left).  [1d8: 2 = 2]
+  Goblin Warrior 2 moves 4 cells to (4, 2).
+Round 3.
+  Goblin Warrior 4 uses Scimitar on Pip.
+  Goblin Warrior 4 rolls Attack: 17 + 4 modifiers = 21 against 14: success.  [1d20: 17 = 17]
+  Pip loses 3 hit points (7 left).  [1d6: 1 = 1]
+  Goblin Warrior 4 uses Move on Bram.
+  Hild reacts to Goblin Warrior 4: Opportunity Attack.
+  Hild uses Attack (Mace) on Goblin Warrior 4.
+  Hild rolls Melee attack: 5 + 3 = 8 against 15: failure.  [1d20: 5 = 5]
+  Goblin Warrior 4 moves 2 cells to (5, 2).
+  Goblin Warrior 3 uses Scimitar on Pip.
+  Goblin Warrior 3 rolls Attack: 3 + 4 modifiers = 7 against 14: failure.  [1d20: 3 = 3]
+  Goblin Warrior 3 uses Move on Hild.
+  Goblin Warrior 3 moves 1 cell to (4, 3).
+  Bram uses Attack (Longsword) on Goblin Warrior 4.
+  Bram rolls Melee attack: 5 + 5 = 10 against 15: failure.  [1d20: 5 = 5]
+  Bram uses Move on Goblin Warrior 2.
+  Bram moves 1 cell to (5, 3).
+  Ilsa rolls Death saving throw: 16 against 10: success.  [1d20: 16 = 16]
+  Ilsa regains 1 death save successes (1).
+  Pip uses Attack (Rapier) on Goblin Warrior 3.
+  Pip rolls Finesse attack: 11 + 5 = 16 against 15: success.  [1d20: 11 = 11]
+  Goblin Warrior 3 loses 4 hit points (0 left).  [1d8: 8 = 8; 1d6: 3 = 3]
+  Goblin Warrior 3 is out of the fight.
+  Hild uses Attack (Mace) on Goblin Warrior 2.
+  Hild rolls Melee attack: 13 + 3 = 16 against 15: success.  [1d20: 13 = 13]
+  Goblin Warrior 2 loses 2 hit points (3 left).  [1d6: 1 = 1]
+  Goblin Warrior 2 uses Scimitar on Bram.
+  Goblin Warrior 2 rolls Attack: 13 + 4 modifiers = 17 against 19: failure.  [1d20: 13 = 13]
+  Goblin Warrior 2 uses Move on Pip.
+  Goblin Warrior 2 moves 1 cell to (4, 3).
+Round 4.
+  Goblin Warrior 4 uses Scimitar on Bram.
+  Goblin Warrior 4 rolls Attack: 11 + 4 modifiers = 15 against 19: failure.  [1d20: 11 = 11]
+  Goblin Warrior 4 uses Move on Pip.
+  Goblin Warrior 4 moves 1 cell to (6, 3).
+  Bram uses Attack (Longsword) on Goblin Warrior 2.
+  Bram rolls Melee attack: 5 + 5 = 10 against 15: failure.  [1d20: 5 = 5]
+  Ilsa rolls Death saving throw: 12 against 10: success.  [1d20: 12 = 12]
+  Ilsa regains 1 death save successes (2).
+  Pip uses Attack (Rapier) on Goblin Warrior 2.
+  Pip rolls Finesse attack: 19 + 5 = 24 against 15: success.  [1d20: 19 = 19]
+  Goblin Warrior 2 loses 3 hit points (0 left).  [1d8: 6 = 6; 1d6: 2 = 2]
+  Goblin Warrior 2 is out of the fight.
+  Hild uses Sacred Flame on Goblin Warrior 4.
+  Goblin Warrior 4 rolls Dexterity saving throw: 5 + 2 = 7 against 13: failure.  [1d20: 5 = 5]
+  Goblin Warrior 4 loses 1 hit points (9 left).  [1d8: 1 = 1]
+Round 5.
+  Goblin Warrior 4 uses Scimitar on Pip.
+  Goblin Warrior 4 rolls Attack: 15 + 4 modifiers = 19 against 14: success.  [1d20: 15 = 15]
+  Pip loses 4 hit points (3 left).  [1d6: 2 = 2]
+  Goblin Warrior 4 uses Move on Hild.
+  Pip reacts to Goblin Warrior 4: Opportunity Attack.
+  Pip uses Attack (Rapier) on Goblin Warrior 4.
+  Pip rolls Finesse attack: 10 + 5 = 15 against 15: success.  [1d20: 10 = 10]
+  Goblin Warrior 4 loses 6 hit points (3 left).  [1d8: 3 = 3]
+  Goblin Warrior 4 moves 2 cells to (4, 2).
+  Bram uses Attack (Longsword) on Goblin Warrior 4.
+  Bram rolls Melee attack: 8 + 5 = 13 against 15: failure.  [1d20: 8 = 8]
+  Ilsa rolls Death saving throw: 18 against 10: success.  [1d20: 18 = 18]
+  Ilsa regains 1 death save successes (3).
+  Ilsa is Stable.
+  Pip uses Shoot (Shortbow) on Goblin Warrior 4.
+  Pip rolls Ranged attack: 13 + 5 = 18 against 15: success.  [1d20: 13 = 13]
+  Goblin Warrior 4 loses 3 hit points (0 left).  [1d6: 2 = 2; 1d6: 3 = 3]
+  Goblin Warrior 4 is out of the fight.
+Party wins after 5 rounds.
+Party: Bram 12/12, Pip 3/10, Hild 13/13, Ilsa 0/8 (out)
+Goblin ambush: Goblin Warrior 1 0/10 (out), Goblin Warrior 2 0/10 (out), Goblin Warrior 3 0/10 (out), Goblin Warrior 4 0/10 (out)
+[exit 0]
+
+$ goldbox sim combat --module modules/fifth-srd --party bram.json,pip.json,hild.json,ilsa.json --encounter wolf_pack --seed 5
+seed 5
+Round 1.
+  Bram rolls 10 for initiative.  [1d20: 9 = 9]
+  Pip rolls 8 for initiative.  [1d20: 3 = 3]
+  Hild rolls 5 for initiative.  [1d20: 4 = 4]
+  Ilsa rolls 19 for initiative.  [1d20: 15 = 15]
+  Wolf 1 rolls 14 for initiative.  [1d20: 12 = 12]
+  Wolf 2 rolls 10 for initiative.  [1d20: 8 = 8]
+  Wolf 3 rolls 13 for initiative.  [1d20: 11 = 11]
+  Ilsa uses Magic Missile on Wolf 1.
+  Ilsa spends 1 level 1 spell slots (1 left).
+  Magic Missile 1 of 3 goes to Wolf 1.
+  Wolf 1 loses 5 hit points (6 left).  [1d4: 4 = 4]
+  Magic Missile 2 of 3 goes to Wolf 1.
+  Wolf 1 loses 3 hit points (3 left).  [1d4: 2 = 2]
+  Magic Missile 3 of 3 goes to Wolf 1.
+  Wolf 1 loses 2 hit points (1 left).  [1d4: 1 = 1]
+  Ilsa uses Move on Wolf 1.
+  Ilsa moves 5 cells to (5, 5).
+  Wolf 1 uses Move on Ilsa.
+  Ilsa reacts to Wolf 1: Shield.
+  Ilsa uses Shield on Ilsa.
+  Ilsa loses 1 level 1 spell slots (0 left).
+  Ilsa is Shielded for 1 round.
+  Wolf 1 moves 5 cells to (6, 4).
+  Wolf 1 uses Bite on Ilsa.
+  Wolf 1 rolls Attack: 6 + 4 modifiers = 10 against 17: failure.  [1d20: 6 = 6]
+  Wolf 3 uses Move on Ilsa.
+  Wolf 3 moves 5 cells to (6, 5).
+  Wolf 3 uses Bite on Ilsa.
+  Wolf 3 rolls Attack: 20 + 4 modifiers = 24 against 17: critical.  [2d20 keep 1: 1+20 = 20]
+  Ilsa loses 6 hit points (2 left).  [1d6: 3 = 3; 1d6: 1 = 1]
+  Ilsa is Prone for 1 round.
+  Bram uses Move on Wolf 1.
+  Bram moves 5 cells to (5, 3).
+  Bram uses Attack (Longsword) on Wolf 1.
+  Bram rolls Melee attack: 12 + 5 = 17 against 12: success.  [1d20: 12 = 12]
+  Wolf 1 loses 1 hit points (0 left).  [1d8: 5 = 5]
+  Wolf 1 is out of the fight.
+  Wolf 2 uses Move on Bram.
+  Wolf 2 moves 5 cells to (6, 4).
+  Wolf 2 uses Bite on Ilsa.
+  Wolf 2 rolls Attack: 19 + 4 modifiers = 23 against 17: success.  [2d20 keep 1: 3+19 = 19]
+  Ilsa loses 2 hit points (0 left).  [1d6: 5 = 5]
+  Ilsa is out of the fight.
+  Ilsa is Dying.
+  Ilsa is Prone for 1 round.
+  Pip uses Shoot (Shortbow) on Wolf 2.
+  Pip rolls Ranged attack: 6 + 5 = 11 against 12: failure.  [1d20: 6 = 6]
+  Hild uses Healing Word on Ilsa.
+  Hild spends 1 level 1 spell slots (1 left).
+  Ilsa regains 8 hit points (8).  [2d4: 3+4 = 7]
+  Ilsa is back in the fight.
+  Ilsa is no longer Dying.
+  Hild uses Sacred Flame on Wolf 2.
+  Wolf 2 rolls Dexterity saving throw: 2 + 2 = 4 against 13: failure.  [1d20: 2 = 2]
+  Wolf 2 loses 6 hit points (5 left).  [1d8: 6 = 6]
+  Hild uses Move on Wolf 2.
+  Hild moves 3 cells to (3, 2).
+Round 2.
+  Ilsa uses Attack (Dagger) on Wolf 2.
+  Ilsa rolls Finesse attack: 3 + 4 = 7 against 12: failure.  [1d20: 3 = 3]
+  Ilsa is no longer Shielded.
+  Ilsa is no longer Prone.
+  Wolf 3 uses Bite on Ilsa.
+  Wolf 3 rolls Attack: 11 + 4 modifiers = 15 against 12: success.  [2d20 keep 1: 7+11 = 11]
+  Ilsa loses 7 hit points (1 left).  [1d6: 5 = 5]
+  Ilsa is Prone for 1 round.
+  Wolf 3 uses Move on Bram.
+  Wolf 3 moves 1 cell to (5, 4).
+  Bram uses Attack (Longsword) on Wolf 2.
+  Bram rolls Melee attack: 1 + 5 = 6 against 12: miss.  [1d20: 1 = 1]
+  Wolf 2 uses Bite on Ilsa.
+  Wolf 2 rolls Attack: 19 + 4 modifiers = 23 against 12: success.  [2d20 keep 1: 19+3 = 19]
+  Ilsa loses 1 hit points (0 left).  [1d6: 1 = 1]
+  Ilsa is out of the fight.
+  Ilsa is Dying.
+  Ilsa is Prone for 1 round.
+  Wolf 2 uses Move on Hild.
+  Wolf 2 moves 3 cells to (4, 2).
+  Pip uses Shoot (Shortbow) on Wolf 2.
+  Pip rolls Ranged attack: 16 + 5 = 21 against 12: success.  [1d20: 16 = 16]
+  Wolf 2 loses 5 hit points (0 left).  [1d6: 4 = 4; 1d6: 1 = 1]
+  Wolf 2 is out of the fight.
+  Hild uses Sacred Flame on Wolf 3.
+  Wolf 3 rolls Dexterity saving throw: 5 + 2 = 7 against 13: failure.  [1d20: 5 = 5]
+  Wolf 3 loses 5 hit points (6 left).  [1d8: 5 = 5]
+Round 3.
+  Ilsa rolls Death saving throw: 4 against 10: failure.  [1d20: 4 = 4]
+  Ilsa regains 1 death save failures (1).
+  Ilsa is no longer Prone.
+  Wolf 3 uses Bite on Bram.
+  Wolf 3 rolls Attack: 9 + 4 modifiers = 13 against 19: failure.  [1d20: 9 = 9]
+  Wolf 3 uses Move on Hild.
+  Wolf 3 moves 1 cell to (4, 3).
+  Bram uses Attack (Longsword) on Wolf 3.
+  Bram rolls Melee attack: 18 + 5 = 23 against 12: success.  [1d20: 18 = 18]
+  Wolf 3 loses 5 hit points (1 left).  [1d8: 2 = 2]
+  Pip uses Shoot (Shortbow) on Wolf 3.
+  Pip rolls Ranged attack: 5 + 5 = 10 against 12: failure.  [1d20: 5 = 5]
+  Hild uses Attack (Mace) on Wolf 3.
+  Hild rolls Melee attack: 19 + 3 = 22 against 12: success.  [1d20: 19 = 19]
+  Wolf 3 loses 1 hit points (0 left).  [1d6: 3 = 3]
+  Wolf 3 is out of the fight.
+Party wins after 3 rounds.
+Party: Bram 12/12, Pip 10/10, Hild 13/13, Ilsa 0/8 (out)
+Wolf pack: Wolf 1 0/11 (out), Wolf 2 0/11 (out), Wolf 3 0/11 (out)
+[exit 0]
+
+$ goldbox character level bram.json --module modules/fifth-srd --xp 6500 --class fighter --feature champion,asi_str
+Reached level 2: +8 hit points.
+Reached level 3: +8 hit points.
+Reached level 4: +8 hit points.
+Reached level 5: +8 hit points.
+Bram: Human Fighter 5 (6500 xp, highest level)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 44/44
+  second wind uses 3/3
+  gold 0
+  features: Soldier (background), Savage Attacker (origin feat), Defense (fighting style), Champion (fighter subclass), Ability Score Improvement (Strength) (feat)
+  str              19     Strength
+  dex              13     Dexterity
+  con              15     Constitution
+  int              8      Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               19     Armor Class
+  ac_bonus         3      AC bonus
+  armor_base       16     Armor base
+  cantrip_dice     2      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         5      Constitution saving throw
+  crit_range       19     Lowest critical roll
+  dex_cap          0      Dexterity cap on AC
+  dex_mod          1      Dexterity modifier
+  dex_save         1      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     1      Distance it fights from (squares)
+  extra_attacks    1      Extra attacks
+  fighter_level    5      Fighter level
+  initiative_bonus 1      Initiative bonus
+  int_mod          -1     Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      3      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         6      Spell save DC
+  spell_mod        -5     Spellcasting modifier
+  str_mod          4      Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to bram.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character level ilsa.json --module modules/fifth-srd --xp 6500 --class wizard --feature evoker,asi_int
+Reached level 2: +6 hit points.
+Reached level 3: +6 hit points.
+Reached level 4: +6 hit points.
+Reached level 5: +6 hit points.
+Ilsa: Elf Wizard 5 (6500 xp, highest level)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 32/32
+  level 1 spell slots 4/4
+  level 2 spell slots 3/3
+  level 3 spell slots 2/2
+  gold 0
+  spells: Magic Missile, Fire Bolt
+  memorised: Magic Missile x4 (known spells in order; all left)
+  features: Sage (background), Alert (origin feat), Evoker (wizard subclass), Ability Score Improvement (Intelligence) (feat)
+  spells per day by spell level: 4 / 3 / 2
+  str              8      Strength
+  dex              14     Dexterity
+  con              14     Constitution
+  int              19     Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               12     Armor Class
+  ac_bonus         0      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     2      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         2      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          2      Dexterity modifier
+  dex_save         2      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     6      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    0      Fighter level
+  initiative_bonus 5      Initiative bonus
+  int_mod          4      Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      3      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         15     Spell save DC
+  spell_mod        4      Spellcasting modifier
+  str_mod          -1     Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to ilsa.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox character spells ilsa.json --module modules/fifth-srd --set fireball,scorching_ray,magic_missile,fire_bolt
+Ilsa: Elf Wizard 5 (6500 xp, highest level)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 32/32
+  level 1 spell slots 4/4
+  level 2 spell slots 3/3
+  level 3 spell slots 2/2
+  gold 0
+  spells: Fireball, Scorching Ray, Magic Missile, Fire Bolt
+  memorised: Fireball x2, Scorching Ray x3, Magic Missile x4 (known spells in order; all left)
+  features: Sage (background), Alert (origin feat), Evoker (wizard subclass), Ability Score Improvement (Intelligence) (feat)
+  spells per day by spell level: 4 / 3 / 2
+  str              8      Strength
+  dex              14     Dexterity
+  con              14     Constitution
+  int              19     Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               12     Armor Class
+  ac_bonus         0      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     2      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         2      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          2      Dexterity modifier
+  dex_save         2      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     6      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    0      Fighter level
+  initiative_bonus 5      Initiative bonus
+  int_mod          4      Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      3      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         15     Spell save DC
+  spell_mod        4      Spellcasting modifier
+  str_mod          -1     Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to ilsa.json.
+[exit 0]
+
+$ goldbox sim combat --module modules/fifth-srd --party bram.json,ilsa.json --encounter restless_dead --seed 1
+seed 1
+Round 1.
+  Bram rolls 7 for initiative.  [1d20: 6 = 6]
+  Ilsa rolls 7 for initiative.  [1d20: 2 = 2]
+  Skeleton 1 rolls 11 for initiative.  [1d20: 8 = 8]
+  Skeleton 2 rolls 21 for initiative.  [1d20: 18 = 18]
+  Zombie 1 rolls 10 for initiative.  [1d20: 12 = 12]
+  Zombie 2 rolls 9 for initiative.  [1d20: 11 = 11]
+  Skeleton 2 uses Shortbow on Ilsa.
+  Ilsa reacts to Skeleton 2: Shield.
+  Ilsa uses Shield on Ilsa.
+  Ilsa loses 1 level 1 spell slots (3 left).
+  Ilsa is Shielded for 1 round.
+  Skeleton 2 rolls Attack: 11 + 5 modifiers = 16 against 17: failure.  [1d20: 11 = 11]
+  Skeleton 2 uses Move on Bram.
+  Skeleton 2 moves 6 cells to (5, 4).
+  Skeleton 1 uses Shortbow on Ilsa.
+  Skeleton 1 rolls Attack: 15 + 5 modifiers = 20 against 17: success.  [1d20: 15 = 15]
+  Ilsa loses 4 hit points (28 left).  [1d6: 1 = 1]
+  Skeleton 1 uses Move on Bram.
+  Skeleton 1 moves 6 cells to (5, 3).
+  Zombie 1 uses Move on Bram.
+  Zombie 1 moves 4 cells to (7, 2).
+  Zombie 2 uses Move on Bram.
+  Zombie 2 moves 4 cells to (7, 5).
+  Bram uses Move on Skeleton 1.
+  Bram moves 4 cells to (4, 3).
+  Bram uses Attack (Longsword) on Skeleton 1.
+  Attack (Longsword) 1 of 2 goes to Skeleton 1.
+  Bram rolls Melee attack: 2 + 7 = 9 against 14: failure.  [1d20: 2 = 2]
+  Attack (Longsword) 2 of 2 goes to Skeleton 1.
+  Bram rolls Melee attack: 14 + 7 = 21 against 14: success.  [1d20: 14 = 14]
+  Skeleton 1 loses 5 hit points (8 left).  [1d8: 1 = 1]
+  Ilsa uses Fireball on Skeleton 1, Skeleton 2, Zombie 1, Zombie 2.
+  Ilsa spends 1 level 3 spell slots (1 left).
+  Skeleton 1 rolls Dexterity saving throw: 10 + 3 = 13 against 15: failure.  [1d20: 10 = 10]
+  Skeleton 1 loses 8 hit points (0 left).  [8d6: 6+4+2+3+4+1+3+6 = 29]
+  Skeleton 1 is out of the fight.
+  Skeleton 2 rolls Dexterity saving throw: 6 + 3 = 9 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 2 loses 13 hit points (0 left).  [8d6: 2+2+1+1+5+1+1+1 = 14]
+  Skeleton 2 is out of the fight.
+  Zombie 1 rolls Dexterity saving throw: 11 - 2 = 9 against 15: failure.  [1d20: 11 = 11]
+  Zombie 1 rolls Constitution saving throw: 20 + 3 - 30 modifiers = -7 against 5: failure.  [8d6: 6+3+2+3+6+2+4+4 = 30; 1d20: 20 = 20]
+  Zombie 1 loses 15 hit points (0 left).
+  Zombie 1 is out of the fight.
+  Zombie 2 rolls Dexterity saving throw: 14 - 2 = 12 against 15: failure.  [1d20: 14 = 14]
+  Zombie 2 rolls Constitution saving throw: 16 + 3 - 28 modifiers = -9 against 5: failure.  [8d6: 3+1+6+5+5+2+4+2 = 28; 1d20: 16 = 16]
+  Zombie 2 loses 15 hit points (0 left).
+  Zombie 2 is out of the fight.
+  Ilsa is no longer Shielded.
+Party wins after 1 round.
+Party: Bram 44/44, Ilsa 28/32
+Restless dead: Skeleton 1 0/13 (out), Skeleton 2 0/13 (out), Zombie 1 0/15 (out), Zombie 2 0/15 (out)
+[exit 0]
+

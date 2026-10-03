@@ -1,0 +1,16 @@
+{
+  "type": "reaction",
+  "id": "goblin_warrior_opportunity",
+  "name": "Opportunity Attack",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "monster_melee",
+    "name": "Scimitar",
+    "to_hit": "4",
+    "damage": "1d6 + 2",
+    "dice": "1d6"
+  }
+}

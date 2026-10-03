@@ -1,0 +1,51 @@
+{
+  "type": "class",
+  "id": "fighter",
+  "name": "Fighter",
+  "levels": [
+    {
+      "hp": "if class.level == 1 then 10 else 6",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "fighting style"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 else 6",
+      "hp_bonus": "self.con_mod"
+    },
+    {
+      "hp": "if class.level == 1 then 10 else 6",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "fighter subclass"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 else 6",
+      "hp_bonus": "self.con_mod",
+      "grants": [
+        {
+          "kind": "feat"
+        }
+      ]
+    },
+    {
+      "hp": "if class.level == 1 then 10 else 6",
+      "hp_bonus": "self.con_mod"
+    }
+  ],
+  "actions": [
+    {
+      "action": "second_wind"
+    }
+  ],
+  "reactions": [
+    "opportunity_attack",
+    "opportunity_finesse"
+  ]
+}

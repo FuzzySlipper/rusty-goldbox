@@ -1,0 +1,16 @@
+{
+  "type": "reaction",
+  "id": "zombie_opportunity",
+  "name": "Opportunity Attack",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "monster_melee",
+    "name": "Slam",
+    "to_hit": "3",
+    "damage": "1d8 + 1",
+    "dice": "1d8"
+  }
+}

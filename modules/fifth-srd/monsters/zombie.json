@@ -1,0 +1,52 @@
+{
+  "type": "monster",
+  "id": "zombie",
+  "name": "Zombie",
+  "tracks": {
+    "hit_points": "15",
+    "spells_1": "0",
+    "spells_2": "0",
+    "spells_3": "0",
+    "second_wind": "0",
+    "death_successes": "0",
+    "death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "10",
+    "crit_range": "20",
+    "ac": "8",
+    "initiative_bonus": "-2",
+    "dex_save": "-2",
+    "con_save": "3",
+    "speed": "20",
+    "str": "13",
+    "dex": "6",
+    "con": "16",
+    "int": "3",
+    "wis": "6",
+    "cha": "5",
+    "undead_fortitude": "true"
+  },
+  "actions": [
+    {
+      "action": "monster_melee",
+      "name": "Slam",
+      "to_hit": "3",
+      "damage": "1d8 + 1",
+      "dice": "1d8"
+    },
+    {
+      "action": "move"
+    }
+  ],
+  "xp": 50,
+  "reactions": [
+    "zombie_opportunity"
+  ]
+}

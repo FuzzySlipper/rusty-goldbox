@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "mace",
+  "name": "Mace",
+  "kind": "melee weapon",
+  "cost": 5,
+  "weight": 4,
+  "parameters": {
+    "damage": "1d6",
+    "dice": "1d6"
+  }
+}

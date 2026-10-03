@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "crit_range",
+  "name": "Lowest critical roll",
+  "value": "20"
+}

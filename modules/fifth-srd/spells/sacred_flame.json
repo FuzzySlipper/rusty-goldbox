@@ -1,0 +1,16 @@
+{
+  "type": "spell",
+  "id": "sacred_flame",
+  "name": "Sacred Flame",
+  "lists": {
+    "cleric": 0
+  },
+  "range": "60 feet",
+  "duration": "Instantaneous",
+  "area": "",
+  "casting_time": "Action",
+  "effect": {
+    "action": "sacred_flame"
+  },
+  "description": "A Dexterity save or 1d8 Radiant damage (2d8 from level 5)."
+}
