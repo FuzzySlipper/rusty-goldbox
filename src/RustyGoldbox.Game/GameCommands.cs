@@ -157,14 +157,24 @@ internal static class GameCommands
                     session.Quit();
                     session.Refresh();
                     break;
+                case "volume":
+                    session.SetVolume(Text(payload, "bus"), Volume(payload));
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load and quit");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load, quit and volume");
             }
         }
         catch (PayloadException exception)
         {
             Refuse(session, $"Ignored a {CommandContract} payload: {exception.Message}.");
         }
+    }
+
+    private static float Volume(JsonElement payload)
+    {
+        return payload.TryGetProperty("volume", out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.GetDouble() is >= 0 and <= 1
+            ? (float)value.GetDouble()
+            : throw new PayloadException("\"volume\" must be a number from 0 to 1");
     }
 
     private static string Slot(JsonElement payload)

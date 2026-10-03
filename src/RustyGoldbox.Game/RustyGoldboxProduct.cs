@@ -18,6 +18,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private readonly GameSession _session;
     private readonly SceneView _view;
     private readonly UiImages _images;
+    private readonly GameAudio _audio;
     private ulong _uiSequence;
 
     public RustyGoldboxProduct(ProductCreateContext context)
@@ -28,6 +29,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         _session = new GameSession(library);
         _view = new SceneView(_engine, library);
         _images = new UiImages(_engine, library);
+        _audio = new GameAudio(_engine, library);
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
@@ -53,6 +55,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         }
 
         _view.Tick();
+        _audio.Update(_session);
 
         return ProductUpdateResult.None;
     }
@@ -79,6 +82,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     public void Dispose()
     {
         _view.Dispose();
+        _audio.Dispose();
         _images.Dispose();
         _uiStream.Dispose();
     }

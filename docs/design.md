@@ -497,6 +497,8 @@ regression checks for module and rules behavior.
   - Sprites are drawn facing one way and flipped horizontally for the other.
     There are no directional sprite sets and no meshes or mesh animation. A
     sprite may be an animated strip of frames.
+  - Event sounds and music play through Engine audio on its Sfx and Music
+    buses, with player volumes for each.
   - The DOM draws text, menus and panels around the view. Module images reach
     it as Engine UI image URLs (portraits, icons), and pictures over the view
     are renderer sprites.

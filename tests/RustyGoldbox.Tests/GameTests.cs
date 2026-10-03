@@ -218,6 +218,44 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void EventMusicLoopsAndSoundsPlayOnceThroughEngineAudio()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            List<string> containers = Containers(scratch);
+            ModuleLibrary library = new(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList());
+            GameSession session = OpenSession(scratch, engine);
+            using GameAudio audio = new(engine, library);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            // The crypt's intro starts its music; walking onto the bones plays their crunch once.
+            Run(session, engine, """{ "action": "begin" }""");
+            audio.Update(session);
+            AudioResult started = engine.Audio.Read();
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Run(session, engine, """{ "action": "volume", "bus": "music", "volume": 0.25 }""");
+            Run(session, engine, """{ "action": "volume", "bus": "drums", "volume": 0.5 }""");
+            Assert.Contains("'drums' is not a volume", Assert.Single(session.Notes), StringComparison.Ordinal);
+            audio.Update(session);
+
+            Assert.Equal(0.25f, engine.Audio.ReadBus(new AudioBusReadRequest(AudioBus.Music)).Volume);
+            Assert.Empty(engine.Audio.Read().Diagnostics.ToArray());
+            Assert.Equal(1u, started.ActiveVoices);
+            Assert.Equal(1ul, engine.Audio.Read().EmittedSignals);
+            Assert.Empty(session.TakeSounds());
+            session.Quit();
+            audio.Update(session);
+            Assert.Equal(0u, engine.Audio.Read().ActiveVoices);
+        });
+    }
+
+    [Fact]
     public void KeyIntentsActOnPressesOnly()
     {
         Assert.True(GameCommands.IsPress(Digital(InputProvenance.DirectUi, InputEdge.None, 1)));

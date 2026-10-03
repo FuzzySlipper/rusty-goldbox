@@ -67,6 +67,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
 | `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
 | `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
+| `src/RustyGoldbox.Game/Presentation/GameAudio.cs` | Event sounds and music through Engine audio: clips opened once per asset, one-shot sounds on the Sfx bus, one looping Music voice following the campaign's music, bus volumes |
 | `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
 | `src/RustyGoldbox.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
@@ -283,6 +284,14 @@ object beside the asset ID (`{ url, width, height, frame }`: a party member's
 `portraitPicture`, the portrait chooser's `picture`, a combatant's
 `iconPicture`, with a sheet's frame size and first animation), and the UI's
 one `picture` function draws every kind, one ticker stepping the animated ones. The panels never see image bytes.
+
+Audio goes through Engine audio (`GameAudio`), which the product host plays
+natively. Each update it emits the sounds the latest play facts brought
+(`MediaFact`) once each on the Sfx bus, keeps one looping voice on the Music
+bus for the campaign's current music (replaced when it changes, stopped on
+quit), and applies the session's music and sound volumes to their buses. A
+clip is released only once its one-shot sounds have finished, as the Engine's
+realization facts report.
 
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,

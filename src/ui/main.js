@@ -52,13 +52,29 @@ export function mountProductUi(root, context) {
     }
   });
 
-  panel.append(title, status, notes, body);
+  // Volume sliders stay put across renders, so dragging one isn't interrupted; the projection sets them when idle.
+  const slider = (bus, label) => {
+    const input = element('input', { type: 'range', min: '0', max: '1', step: '0.05', 'aria-label': `${label} volume` });
+    input.addEventListener('change', () => send({ action: 'volume', bus, volume: Number(input.value) }));
+    return input;
+  };
+  const musicVolume = slider('music', 'Music');
+  const soundVolume = slider('sound', 'Sound');
+  const volumes = element('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px;opacity:.8' },
+    'Music', musicVolume, 'Sound', soundVolume);
+
+  panel.append(title, status, notes, body, volumes);
   root.append(panel);
 
   const render = (view) => {
     lastView = view;
     status.textContent = view.status ?? '';
     notes.replaceChildren(...(view.notes ?? []).map((note) => element('li', {}, note)));
+    for (const [input, value] of [[musicVolume, view.volumes?.music], [soundVolume, view.volumes?.sound]]) {
+      if (value !== undefined && document.activeElement !== input) {
+        input.value = String(value);
+      }
+    }
     if (view.screen === 'title') {
       body.replaceChildren(renderTitle(view));
     } else if (view.screen === 'party') {

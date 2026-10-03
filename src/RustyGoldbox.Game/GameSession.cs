@@ -57,6 +57,8 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The party being made, before play starts.</summary>
     public List<Character> Party { get; } = [];
 
+    private readonly List<Definition> _sounds = [];
+
     public CampaignRunner? Runner { get; private set; }
 
     /// <summary>The fight being played back on the combat screen.</summary>
@@ -64,6 +66,44 @@ internal sealed class GameSession(ModuleLibrary library)
 
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
+
+    /// <summary>The Music bus volume, from 0 (silent) to 1.</summary>
+    public float MusicVolume { get; private set; } = 1;
+
+    /// <summary>The Sfx bus volume (event sounds), from 0 (silent) to 1.</summary>
+    public float SoundVolume { get; private set; } = 1;
+
+    /// <summary>Sets a bus volume: "music" or "sound", from 0 to 1.</summary>
+    public void SetVolume(string bus, float volume)
+    {
+        Notes.Clear();
+        if (volume is < 0 or > 1 || float.IsNaN(volume))
+        {
+            Notes.Add($"A volume is from 0 to 1, not {volume}.");
+            return;
+        }
+
+        switch (bus)
+        {
+            case "music":
+                MusicVolume = volume;
+                break;
+            case "sound":
+                SoundVolume = volume;
+                break;
+            default:
+                Notes.Add($"'{bus}' is not a volume; volumes are music and sound.");
+                break;
+        }
+    }
+
+    /// <summary>The sounds play brought since the last call, in order, to be played once each.</summary>
+    public List<Definition> TakeSounds()
+    {
+        List<Definition> sounds = [.. _sounds];
+        _sounds.Clear();
+        return sounds;
+    }
 
     /// <summary>What the last command produced that isn't play: problems and confirmations.</summary>
     public List<string> Notes { get; } = [];
@@ -405,6 +445,7 @@ internal sealed class GameSession(ModuleLibrary library)
         Campaign = null;
         Party.Clear();
         Log.Clear();
+        _sounds.Clear();
     }
 
     private ModuleSet? LoadSet(string bundle, IReadOnlyList<string> extensions)
@@ -467,6 +508,11 @@ internal sealed class GameSession(ModuleLibrary library)
 
         foreach (PlayFact fact in facts)
         {
+            if (fact is MediaFact { Sound: Definition sound })
+            {
+                _sounds.Add(sound);
+            }
+
             // A fight plays back on the combat screen; the log keeps its outcome.
             if (fact is FightFact fight)
             {

@@ -58,3 +58,8 @@ rendering belong to Engine. Intents are declared in the product project; keep
 the C# (`RustyGoldboxProduct`) and DOM callers aligned when an action or field
 changes. Dispose event listeners and subscriptions when the host unmounts the
 UI.
+
+Music and sound volume sliders sit under every screen. They are made once,
+so a drag isn't interrupted by re-renders, take their values from the
+projection's `volumes` when not being dragged, and send a `volume` action
+(`bus` music or sound, `volume` from 0 to 1) on change.

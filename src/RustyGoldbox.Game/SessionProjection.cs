@@ -25,6 +25,7 @@ internal static class SessionProjection
             ["screen"] = session.Screen.ToString().ToLowerInvariant(),
             ["status"] = Status(session),
             ["notes"] = Strings(session.Notes),
+            ["volumes"] = new JsonObject { ["music"] = session.MusicVolume, ["sound"] = session.SoundVolume },
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
                 ["bundle"] = campaign.Bundle,
