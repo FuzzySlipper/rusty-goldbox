@@ -116,6 +116,9 @@
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d2"
+    },
+    {
+      "action": "close"
     }
   ],
   "equipment": "(item.kind != 'weapon' and item.kind != 'ammunition') or item.id == 'heavy_mace'"

@@ -8,6 +8,18 @@
   "initiative_order": "highest-first",
   "initiative_each": "round",
   "round_seconds": 60,
+  "field": {
+    "width": 10,
+    "height": 6,
+    "metric": "chebyshev",
+    "terrain": {
+      "#": {
+        "name": "Pillar",
+        "passable": false,
+        "blocks_sight": true
+      }
+    }
+  },
   "budget": [
     {
       "id": "action",

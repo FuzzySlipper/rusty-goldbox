@@ -3,65 +3,53 @@ seed 3
 Round 1.
   Party rolls 5 for initiative.  [1d6: 5 = 5]
   Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-  Skeleton 1 uses claw on Ada.
-  Skeleton 1 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
-  Skeleton 2 uses claw on Ada.
-  Skeleton 2 rolls Melee attack: 20 against 15: success.  [1d20: 20 = 20]
-  Ada loses 6 hit points (-4 left).  [1d6: 6 = 6]
-  Ada is out of the fight.
+  Skeleton 1 uses Close on Ada.
+  Skeleton 1 moves 8 cells to (1, 2).
+  Skeleton 2 uses Close on Ada.
+  Skeleton 2 moves 8 cells to (1, 3).
+  Ada uses Melee attack (Long sword) on Skeleton 1.
+  Ada rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
   Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+  Brom rolls Melee attack: 20 against 13: success.  [1d20: 20 = 20]
+  Skeleton 1 loses 7 hit points (-6 left).  [1d6: 6 = 6]
+  Skeleton 1 is out of the fight.
 Round 2.
-  Party rolls 1 for initiative.  [1d6: 1 = 1]
-  Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
-  Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
-  Skeleton 1 uses claw on Brom.
-  Skeleton 1 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
-  Brom loses 2 hit points (4 left).  [1d6: 2 = 2]
-  Skeleton 2 uses claw on Brom.
-  Skeleton 2 rolls Melee attack: 11 against 14: failure.  [1d20: 11 = 11]
-Round 3.
-  Party rolls 4 for initiative.  [1d6: 4 = 4]
-  Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-  Skeleton 1 uses claw on Brom.
-  Skeleton 1 rolls Melee attack: 19 against 14: success.  [1d20: 19 = 19]
-  Brom loses 3 hit points (1 left).  [1d6: 3 = 3]
-  Skeleton 2 uses claw on Brom.
-  Skeleton 2 rolls Melee attack: 4 against 14: failure.  [1d20: 4 = 4]
-  Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
-Round 4.
   Party rolls 5 for initiative.  [1d6: 5 = 5]
   Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
-  Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
-  Skeleton 1 uses claw on Brom.
-  Skeleton 1 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
-  Skeleton 2 uses claw on Brom.
-  Skeleton 2 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
-Round 5.
-  Party rolls 4 for initiative.  [1d6: 4 = 4]
-  Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
-  Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 15 against 13: success.  [1d20: 15 = 15]
-  Skeleton 1 loses 5 hit points (-4 left).  [1d6: 4 = 4]
-  Skeleton 1 is out of the fight.
-  Skeleton 2 uses claw on Brom.
-  Skeleton 2 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
-  Brom loses 4 hit points (-3 left).  [1d6: 4 = 4]
-  Brom is out of the fight.
-Crypt guard wins after 5 rounds.
-Party: Ada -4/2 (out), Brom -3/6 (out)
-Crypt guard: Skeleton 1 -4/1 (out), Skeleton 2 7/7
+  Ada uses Melee attack (Long sword) on Skeleton 2.
+  Ada rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 14 against 15: failure.  [1d20: 14 = 14]
+Round 3.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 10 against 15: failure.  [1d20: 10 = 10]
+  Ada uses Melee attack (Long sword) on Skeleton 2.
+  Ada rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 19 against 13: success.  [1d20: 19 = 19]
+  Skeleton 2 loses 4 hit points (3 left).  [1d6: 3 = 3]
+Round 4.
+  Party rolls 6 for initiative.  [1d6: 6 = 6]
+  Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+  Ada uses Melee attack (Long sword) on Skeleton 2.
+  Ada rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
+  Skeleton 2 loses 6 hit points (-3 left).  [1d8: 5 = 5]
+  Skeleton 2 is out of the fight.
+Party wins after 4 rounds.
+Party: Ada 2/2, Brom 6/6
+Crypt guard: Skeleton 1 -6/1 (out), Skeleton 2 -3/7 (out)
 [exit 0]
 
 $ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --seed 1 --runs 200
 200 runs from seed 1
-  Party wins 35 (17.5%)
-  Ogre wins 165 (82.5%)
-  rounds: min 1, mean 5.12, max 14
-  Ada still fighting at the end: 21 (10.5%)
-  Brom still fighting at the end: 35 (17.5%)
+  Party wins 32 (16%)
+  Ogre wins 168 (84%)
+  rounds: min 2, mean 5.43, max 15
+  Ada still fighting at the end: 20 (10%)
+  Brom still fighting at the end: 32 (16%)
 [exit 0]
 

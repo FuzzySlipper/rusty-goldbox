@@ -14,7 +14,8 @@
   },
   "effect": {
     "action": "spell_damage",
-    "damage": "roll(1 + floor((self.level - 1) / 2), 4) + 1 + floor((self.level - 1) / 2)"
+    "damage": "roll(1 + floor((self.level - 1) / 2), 4) + 1 + floor((self.level - 1) / 2)",
+    "range": "6 + self.level"
   },
   "description": "Unerring missiles of magical energy, 1d4+1 damage each; one missile, plus one for every two levels beyond first."
 }

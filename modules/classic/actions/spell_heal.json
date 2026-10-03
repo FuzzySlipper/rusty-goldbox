@@ -6,6 +6,7 @@
     "action": 1
   },
   "target": "hurt_ally",
+  "range": "1",
   "parameters": [
     "amount"
   ],

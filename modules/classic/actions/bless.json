@@ -6,6 +6,7 @@
     "action": 1
   },
   "target": "all_allies",
+  "range": "6",
   "always": [
     {
       "op": "apply_condition",

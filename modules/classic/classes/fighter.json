@@ -64,6 +64,9 @@
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d2"
+    },
+    {
+      "action": "close"
     }
   ]
 }

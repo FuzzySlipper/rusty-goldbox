@@ -6,8 +6,10 @@
     "action": 1
   },
   "target": "enemy",
+  "range": "use.range",
   "parameters": [
-    "damage"
+    "damage",
+    "range"
   ],
   "always": [
     {

@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "close",
+  "name": "Close",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "valid_target": "combat.distance > 1",
+  "prefer": "0 - combat.distance",
+  "always": [
+    {
+      "op": "move",
+      "distance": "floor(self.movement / 10)"
+    }
+  ]
+}

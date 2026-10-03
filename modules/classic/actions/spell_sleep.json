@@ -6,6 +6,7 @@
     "action": 1
   },
   "target": "all_enemies",
+  "range": "use.range",
   "max_targets": "2d4",
   "valid_target": "target.level <= 4 and not target.undead",
   "prefer": "0 - target.level",
@@ -15,5 +16,8 @@
       "condition": "asleep",
       "rounds": "5 * self.level"
     }
+  ],
+  "parameters": [
+    "range"
   ]
 }

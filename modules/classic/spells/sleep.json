@@ -13,7 +13,8 @@
     "spells_1": "1"
   },
   "effect": {
-    "action": "spell_sleep"
+    "action": "spell_sleep",
+    "range": "3 + self.level"
   },
   "description": "Up to 2d4 living creatures of 4 hit dice or fewer, the weakest first, fall into magical sleep with no saving throw."
 }

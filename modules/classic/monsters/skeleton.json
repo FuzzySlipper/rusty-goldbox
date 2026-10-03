@@ -18,6 +18,9 @@
       "action": "melee_attack",
       "name": "claw",
       "damage": "1d6"
+    },
+    {
+      "action": "close"
     }
   ],
   "xp": 14

@@ -24,7 +24,7 @@ artwork, its title and trademarks, or its variable experience point rule.
 | class `equipment`, race `multiclass_equipment` | Chapter I, armour and weapons permitted to each class (pp. 11, 18, 20, 25) and the races' multi-class restrictions (pp. 4–7) |
 | `advancement/standard`, race `multiclasses`, class level `hp` division | Chapter I, multi-classing and dual-classing (pp. 27–28) and permitted class options (pp. 4–7) |
 | `spells/` | Chapter II, cleric and magic user level 1 spells; descriptions are reworded |
-| `checks/`, `actions/`, `combat/standard` | Chapter III, combat (pp. 125–128) |
+| `checks/`, `actions/`, `combat/standard` | Chapter III, combat (pp. 125–128) and movement (p. 123) |
 
 Monsters (`monsters/`) are original content written for this module. They use
 the Chapter III rule that monsters attack and save as fighters of an
@@ -63,8 +63,16 @@ small:
   doesn't state a minimum.
 - Surprise costs the surprised side its first whole round, rather than one
   or two segments.
-- Combat has no positions or movement, and fighters make one attack per round
-  at every level.
+- Combat is on a field of 10 ft squares, 10 by 6, with diagonal steps
+  counting as one. Melee reaches 10 ft (one square), as the source says
+  (p. 128). A combatant out of reach closes into combat, moving its movement
+  rate in feet per round (p. 123) and attacking the next round (p. 128);
+  charging, the fighting retreat and fleeing aren't modelled. Spell ranges
+  are the spells' own in squares (magic missile 6 + level, sleep 3 + level,
+  bless 6, cure light wounds by touch), and an attack or spell needs a clear
+  line of sight. Missile fire has no range or range increment penalty yet,
+  and no first-party creature uses it. Fighters make one attack per round at
+  every level.
 - Spells cast in combat spend a slot of their level, from tracks whose
   maximum adds the slots of every class the character has; a character
   knows a list of spells rather than memorising them each day, and the

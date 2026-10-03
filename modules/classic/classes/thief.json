@@ -63,6 +63,9 @@
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d2"
+    },
+    {
+      "action": "close"
     }
   ],
   "equipment": "item.id == 'leather_armour' or item.id == 'dagger' or item.id == 'long_sword'"

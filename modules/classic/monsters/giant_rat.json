@@ -17,6 +17,9 @@
       "action": "melee_attack",
       "name": "bite",
       "damage": "1d3"
+    },
+    {
+      "action": "close"
     }
   ],
   "xp": 7
