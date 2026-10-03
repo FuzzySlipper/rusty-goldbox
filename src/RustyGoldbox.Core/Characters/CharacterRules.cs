@@ -954,7 +954,7 @@ public static class CharacterRules
             return [];
         }
 
-        bool classChosen = rules.Advancement?.Json.GetProperty("experience").GetString() == "character";
+        bool classChosen = rules.ExperienceByCharacter;
         if (!RequiresTraining(rules) && !classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
         {
             return gains;

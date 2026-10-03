@@ -312,6 +312,19 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ExperienceAwardDoesNotAssumeEveryAdvancementHasAnExperienceField()
+    {
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Ruth", null, null, Features: ["quick_feet", "heavy_hitter", "iron_will"]))!;
+
+        List<LevelGain> gains = WithDice(dice => CharacterRules.Award(set.Rules!, character, 25, dice));
+
+        Assert.Empty(gains);
+        Assert.Equal(25, character.Experience);
+    }
+
+    [Fact]
     public void UniversalD100ModuleMarksAndImprovesADeclaredSkill()
     {
         string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
