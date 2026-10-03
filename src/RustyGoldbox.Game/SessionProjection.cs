@@ -278,8 +278,8 @@ internal static class SessionProjection
             {
                 ["id"] = lifepath.QualifiedId,
                 ["name"] = lifepath.Name,
-                ["startAge"] = lifepath.Json.TryGetProperty("start_age", out JsonElement startAge) ? startAge.GetInt32() : 18,
-                ["maxTerms"] = lifepath.Json.TryGetProperty("max_terms", out JsonElement maxTerms) ? maxTerms.GetInt32() : 7,
+                ["startAge"] = lifepath.Json.GetProperty("start_age").GetInt32(),
+                ["maxTerms"] = lifepath.Json.GetProperty("max_terms").GetInt32(),
                 ["careers"] = new JsonArray(CharacterRules.LifepathCareers(lifepath).Select(career => (JsonNode)new JsonObject
                 {
                     ["id"] = career.Id,

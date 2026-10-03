@@ -660,9 +660,7 @@ public static class CharacterFile
 
             int index = 0;
             int? previousAgeAfter = null;
-            int startAge = character.Lifepath.Json.TryGetProperty("start_age", out JsonElement declaredStart)
-                ? declaredStart.GetInt32()
-                : 18;
+            int startAge = character.Lifepath.Json.GetProperty("start_age").GetInt32();
             foreach (JsonElement term in terms.EnumerateArray())
             {
                 string at = $"$.career_terms[{index}]";
