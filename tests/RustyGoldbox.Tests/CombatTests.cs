@@ -662,6 +662,47 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void CombatEventAnchorsMustBePassableForTheSelectedEncounter()
+    {
+        using TempModules licensed = new();
+        string sample = CopyModule(licensed, Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt"), "sample-crypt");
+        string guards = Path.Combine(licensed.Root, "sample-crypt", "events", "guards.json");
+        string[] dependencies =
+        [
+            Path.Combine(Rules.RepositoryRoot, "modules", "classic"),
+            Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art"),
+        ];
+        File.WriteAllText(guards, """
+            { "type": "event", "id": "guards", "kind": "combat", "encounter": "classic:crypt_guard", "party_start": [4, 1], "monsters_start": [4, 4], "on_win": "guards_down", "on_lose": "guards_down", "on_draw": "guards_down" }
+            """);
+        ModuleSet rejected = ModuleLoader.Load(sample, dependencies);
+        Assert.Equal(["$.monsters_start", "$.party_start"], rejected.Diagnostics
+            .Where(diagnostic => diagnostic.Rule == "event.combat-placement")
+            .Select(diagnostic => diagnostic.JsonPath!)
+            .Order());
+        Assert.All(rejected.Diagnostics.Where(diagnostic => diagnostic.Rule == "event.combat-placement"), diagnostic => Assert.Equal(guards, diagnostic.File));
+
+        File.WriteAllText(guards, """
+            { "type": "event", "id": "guards", "kind": "combat", "encounter": "classic:crypt_guard", "party_start": [0, 0], "monsters_start": [9, 5], "on_win": "guards_down", "on_lose": "guards_down", "on_draw": "guards_down" }
+            """);
+        ModuleSet accepted = ModuleLoader.Load(sample, dependencies);
+        Assert.DoesNotContain(accepted.Diagnostics, diagnostic => diagnostic.Rule == "event.combat-placement");
+
+        using TempModules fixture = new();
+        TerrainRuleset(fixture);
+        fixture.Write("rules/walled.json", """
+            { "type": "encounter", "id": "walled", "name": "Walled", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": ["..#..", "..#..", "....."] }
+            """);
+        fixture.Module("art", "assets");
+        string campaign = fixture.Module("tale", "campaign", requires: $"{Require("rules", "*")}, {Require("art", "*")}");
+        fixture.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 1 } }""");
+        fixture.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        fixture.Write("tale/fight.json", """{ "type": "event", "id": "fight", "kind": "combat", "encounter": "rules:walled", "combat": "rules:maze", "party_start": [0, 0], "monsters_start": [4, 2] }""");
+        ModuleSet fixtureSet = ModuleLoader.Load(campaign, [fixture.Root]);
+        Assert.Empty(fixtureSet.Diagnostics);
+    }
+
+    [Fact]
     public void ACombatActionOrRuleCanFleeTheWholeSide()
     {
         using TempModules modules = new();
@@ -1285,6 +1326,19 @@ public sealed class CombatTests
         System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
         node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"{module}:{item}"!).ToArray());
         File.WriteAllText(path, node.ToJsonString());
+    }
+
+    private static string CopyModule(TempModules modules, string source, string id)
+    {
+        string destination = Path.Combine(modules.Root, id);
+        foreach (string file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            string target = Path.Combine(destination, Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
+
+        return destination;
     }
 
     private static Dictionary<string, decimal> Scores(params (string Id, decimal Score)[] scores) => scores.ToDictionary(score => score.Id, score => score.Score);

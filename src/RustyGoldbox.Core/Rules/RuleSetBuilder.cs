@@ -1490,6 +1490,7 @@ public sealed class RuleSetBuilder
     private void CheckCombatEvent(Definition definition)
     {
         Definition? combat = null;
+        _rules.References.TryGetValue((definition, "$.encounter"), out Definition? encounter);
         if (definition.Json.TryGetProperty("combat", out _))
         {
             _rules.References.TryGetValue((definition, "$.combat"), out combat);
@@ -1538,6 +1539,10 @@ public sealed class RuleSetBuilder
             if (x < 0 || y < 0 || x >= width || y >= height)
             {
                 Error(definition, "event.combat-placement", path, $"Starting cell [{x}, {y}] is outside the combat field's {width} by {height} cells.");
+            }
+            else if (encounter is not null && !CombatField.Of(combat, encounter)!.Passable(new Cell(x, y)))
+            {
+                Error(definition, "event.combat-placement", path, $"Starting cell [{x}, {y}] is impassable in encounter '{encounter.Name}'. Choose an open or passable terrain cell.");
             }
         }
     }
