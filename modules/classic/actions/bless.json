@@ -7,6 +7,7 @@
   },
   "target": "all_allies",
   "range": "6",
+  "valid_target": "not target.condition.blessed",
   "always": [
     {
       "op": "apply_condition",

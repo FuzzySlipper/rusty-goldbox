@@ -387,6 +387,7 @@ public sealed class RuleSetBuilder
     {
         foreach (Definition monster in _rules.OfType(DefinitionTypes.Monster))
         {
+            CheckMonsterSpells(monster);
             if (!monster.Json.TryGetProperty("stats", out JsonElement stats))
             {
                 continue;
@@ -409,6 +410,29 @@ public sealed class RuleSetBuilder
                 {
                     Error(monster, "modifier.loop", path, $"This stat reads self.{stat.Name}, so it would depend on itself. Give it a value or read other stats.");
                 }
+            }
+        }
+    }
+
+    /// <summary>A monster's spells have an effect to cast and, when cast a number of times a day, at least one.</summary>
+    private void CheckMonsterSpells(Definition monster)
+    {
+        if (!monster.Json.TryGetProperty("spells", out JsonElement spells))
+        {
+            return;
+        }
+
+        for (int index = 0; index < spells.GetArrayLength(); index++)
+        {
+            string path = $"$.spells[{index}]";
+            if (_rules.References.TryGetValue((monster, $"{path}.spell"), out Definition? spell) && !spell.Json.TryGetProperty("effect", out _))
+            {
+                Error(monster, "monster.spell", $"{path}.spell", $"{spell.Name} has no effect to cast in combat. Give the spell an \"effect\" or leave it out.");
+            }
+
+            if (spells[index].TryGetProperty("per_day", out JsonElement perDay) && perDay.GetInt32() < 1)
+            {
+                Error(monster, "monster.spell", $"{path}.per_day", "per_day must be at least 1; leave the spell out for none.");
             }
         }
     }

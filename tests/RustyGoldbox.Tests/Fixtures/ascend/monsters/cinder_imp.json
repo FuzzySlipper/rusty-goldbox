@@ -11,6 +11,12 @@
     "attack_bonus": "3"
   },
   "xp": 50,
+  "spells": [
+    {
+      "spell": "flare",
+      "per_day": 1
+    }
+  ],
   "actions": [
     {
       "action": "skitter"

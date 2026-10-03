@@ -320,6 +320,11 @@ public static class DefinitionTypes
             new("tracks", new MapKind(new ReferenceKind("track"), SelfNumber), false, "Maximum for each track the ruleset doesn't compute itself, for example { \"hit_points\": \"2d8\" }; rolled when the monster appears."),
             new("stats", new MapKind(new StatKind(false), new ExpressionKind(null, Roots.Self)), false, "Stat values that replace the derived ones, each of the stat's type, for example { \"ac\": \"6\", \"size\": \"'large'\" }."),
             new("actions", new ListKind(Use), true, "Actions the monster takes in combat, in order of preference, for example { \"action\": \"melee_attack\", \"name\": \"bite\", \"damage\": \"1d3\" }."),
+            new("spells", new ListKind(new ObjectKind(
+            [
+                new("spell", new ReferenceKind("spell"), true, "The spell; it needs an effect."),
+                new("per_day", new IntegerKind(), false, "Casts a day (an innate power), instead of paying the spell's cost from the monster's tracks."),
+            ])), false, "Spells it casts in combat before its actions, while it can: from its own tracks (give them in \"tracks\", for example { \"spells_1\": \"2\" }), or a number of times a day, for example [ { \"spell\": \"bless\" }, { \"spell\": \"sleep\", \"per_day\": 1 } ]."),
             new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
             new("xp", new IntegerKind(), true, "Experience for defeating it."),
         ],

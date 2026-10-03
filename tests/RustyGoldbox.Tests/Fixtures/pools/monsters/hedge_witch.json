@@ -1,0 +1,26 @@
+{
+  "type": "monster",
+  "id": "hedge_witch",
+  "name": "Hedge witch",
+  "tracks": {
+    "health": "6",
+    "willpower": "6"
+  },
+  "stats": {
+    "attack_pool": "3",
+    "defence": "1"
+  },
+  "spells": [
+    {
+      "spell": "bolt"
+    }
+  ],
+  "xp": 20,
+  "actions": [
+    {
+      "action": "strike",
+      "name": "Staff",
+      "damage": "1"
+    }
+  ]
+}

@@ -75,7 +75,9 @@ public sealed class CombatTests
 
         Golden.Verify("classic-combat.txt", CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "crypt_guard", "--seed", "3"],
-            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "ogre", "--seed", "1", "--runs", "200"]));
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "ogre", "--seed", "1", "--runs", "200"],
+            // The acolyte blesses its side and heals from its own two 1st level spells.
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "crypt_cult", "--seed", "2"]));
     }
 
     [Fact]

@@ -53,3 +53,41 @@ $ goldbox sim combat --module modules/classic --party ada.json,brom.json --encou
   Brom still fighting at the end: 32 (16%)
 [exit 0]
 
+$ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter crypt_cult --seed 2
+seed 2
+Round 1.
+  Party rolls 3 for initiative.  [1d6: 3 = 3]
+  Crypt cult rolls 3 for initiative.  [1d6: 3 = 3]
+  Ada uses Close on Acolyte.
+  Ada moves 8 cells to (8, 2).
+  Brom uses Close on Acolyte.
+  Brom moves 8 cells to (8, 3).
+  Acolyte uses Bless on Acolyte, Skeleton 1, Skeleton 2.
+  Acolyte spends 1 1st level spells (1 left).
+  Acolyte is Blessed for 6 rounds.
+  Skeleton 1 is Blessed for 6 rounds.
+  Skeleton 2 is Blessed for 6 rounds.
+  Skeleton 1 uses claw on Ada.
+  Skeleton 1 rolls Melee attack: 6 + 1 modifiers = 7 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 3 + 1 modifiers = 4 against 15: failure.  [1d20: 3 = 3]
+Round 2.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt cult rolls 1 for initiative.  [1d6: 1 = 1]
+  Ada uses Melee attack (Long sword) on Skeleton 1.
+  Ada rolls Melee attack: 8 against 13: failure.  [1d20: 8 = 8]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 5 against 13: failure.  [1d20: 5 = 5]
+  Acolyte uses mace on Ada.
+  Acolyte rolls Melee attack: 18 + 1 modifiers = 19 against 16: success.  [1d20: 18 = 18]
+  Ada loses 5 hit points (-3 left).  [1d6: 4 = 4]
+  Ada is out of the fight.
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 16 + 1 modifiers = 17 against 14: success.  [1d20: 16 = 16]
+  Brom loses 6 hit points (0 left).  [1d6: 6 = 6]
+  Brom is out of the fight.
+Crypt cult wins after 2 rounds.
+Party: Ada -3/2 (out), Brom 0/6 (out)
+Crypt cult: Acolyte 8/8, Skeleton 1 1/1, Skeleton 2 4/4
+[exit 0]
+

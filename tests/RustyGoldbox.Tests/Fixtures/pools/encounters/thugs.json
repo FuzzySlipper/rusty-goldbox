@@ -6,6 +6,10 @@
     {
       "monster": "thug",
       "count": "2"
+    },
+    {
+      "monster": "hedge_witch",
+      "count": "1"
     }
   ]
 }

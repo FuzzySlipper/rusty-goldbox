@@ -1,0 +1,36 @@
+{
+  "type": "monster",
+  "id": "acolyte",
+  "name": "Acolyte",
+  "class": "cleric",
+  "level": 2,
+  "tracks": {
+    "hit_points": "2d8",
+    "spells_1": "2"
+  },
+  "stats": {
+    "ac": "5",
+    "movement": "90",
+    "size": "'medium'",
+    "undead": "false"
+  },
+  "spells": [
+    {
+      "spell": "bless"
+    },
+    {
+      "spell": "cure_light_wounds"
+    }
+  ],
+  "actions": [
+    {
+      "action": "melee_attack",
+      "name": "mace",
+      "damage": "1d6 + 1"
+    },
+    {
+      "action": "close"
+    }
+  ],
+  "xp": 35
+}

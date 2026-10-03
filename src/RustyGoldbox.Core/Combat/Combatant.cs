@@ -41,13 +41,23 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
     /// <summary>The prepared copies it has left; casting a spell in <see cref="Preparing"/> uses one.</summary>
     public List<Definition> Prepared { get; } = [];
 
-    /// <summary>Whether it has what casting the spell needs besides its cost: a prepared copy, if the spell is one it prepares.</summary>
-    public bool CanCast(Definition spell) => !Preparing.Contains(spell) || Prepared.Contains(spell);
+    /// <summary>Casts left of spells it has a number of times a day; those cost nothing else.</summary>
+    public Dictionary<Definition, int> CastsLeft { get; } = [];
 
-    /// <summary>Uses up a prepared copy of the spell, if it is one it prepares.</summary>
+    /// <summary>Whether it has what casting the spell needs besides its cost: a cast left, or a prepared copy if the spell is one it prepares.</summary>
+    public bool CanCast(Definition spell)
+    {
+        return CastsLeft.TryGetValue(spell, out int left) ? left > 0 : !Preparing.Contains(spell) || Prepared.Contains(spell);
+    }
+
+    /// <summary>Uses up a cast left or a prepared copy of the spell, where it has them.</summary>
     public void Cast(Definition spell)
     {
-        if (Preparing.Contains(spell))
+        if (CastsLeft.TryGetValue(spell, out int left))
+        {
+            CastsLeft[spell] = left - 1;
+        }
+        else if (Preparing.Contains(spell))
         {
             Prepared.Remove(spell);
         }
@@ -92,6 +102,10 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         copy.Reactions.AddRange(Reactions);
         copy.Preparing.UnionWith(Preparing);
         copy.Prepared.AddRange(Prepared);
+        foreach ((Definition spell, int left) in CastsLeft)
+        {
+            copy.CastsLeft[spell] = left;
+        }
         return copy;
     }
 
@@ -122,7 +136,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         return combatant;
     }
 
-    /// <summary>A monster as a combatant: its track maxima rolled, every track at its start.</summary>
+    /// <summary>A monster as a combatant: its track maxima rolled, every track at its start, and its spells before its actions.</summary>
     public static Combatant FromMonster(RuleSet rules, Definition monster, string name, Evaluator evaluator)
     {
         Creature creature = new(name);
@@ -140,8 +154,28 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         {
             evaluator.StartTrack(creature, track);
         }
-        Combatant combatant = new(name, creature, ReadUses(rules, monster, "$.actions", []));
+        List<UseOption> uses = [];
+        Dictionary<Definition, int> casts = [];
+        if (monster.Json.TryGetProperty("spells", out JsonElement spells))
+        {
+            for (int index = 0; index < spells.GetArrayLength(); index++)
+            {
+                Definition spell = rules.Reference(monster, $"$.spells[{index}].spell");
+                uses.AddRange(ReadUse(rules, spell, spell.Json.GetProperty("effect"), "$.effect", []).Select(use => use with { Name = spell.Name, Spell = spell }));
+                if (spells[index].TryGetProperty("per_day", out JsonElement perDay))
+                {
+                    casts[spell] = perDay.GetInt32();
+                }
+            }
+        }
+
+        uses.AddRange(ReadUses(rules, monster, "$.actions", []));
+        Combatant combatant = new(name, creature, uses);
         combatant.AddReactions(rules, [monster]);
+        foreach ((Definition spell, int count) in casts)
+        {
+            combatant.CastsLeft[spell] = count;
+        }
         return combatant;
     }
 

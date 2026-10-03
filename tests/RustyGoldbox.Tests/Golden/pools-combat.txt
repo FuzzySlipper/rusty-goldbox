@@ -4,41 +4,25 @@ Round 1.
   Mags rolls 4 for initiative.  [1d10: 1 = 1]
   Thug 1 rolls 11 for initiative.  [1d10: 9 = 9]
   Thug 2 rolls 6 for initiative.  [1d10: 4 = 4]
+  Hedge witch rolls 9 for initiative.  [1d10: 7 = 7]
   Thug 1 uses Knife on Mags.
-  Thug 1 rolls Attack: 1 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 7,9,6,6 = 1]
+  Thug 1 rolls Attack: 2 against 2: success.  [4d10 count 8+ again 10+ cancel 1-: 9,6,6,10,2 = 2]
+  Mags loses 2 health (7 left).
+  Hedge witch uses Bolt on Mags.
+  Hedge witch spends 2 willpower (4 left).
+  Mags loses 5 health (2 left).  [1d6 again 6+: 5 = 5]
   Thug 2 uses Knife on Mags.
-  Thug 2 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 10,2,1,5,3 = 0]
-  Mags uses Bolt on Thug 1.
+  Thug 2 rolls Attack: 1 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 5,3,9,4 = 1]
+  Mags uses Bolt on Hedge witch.
   Mags spends 2 willpower (2 left).
-  Thug 1 loses 1 health (6 left).  [1d6 again 6+: 1 = 1]
+  Hedge witch loses 2 health (4 left).  [1d6 again 6+: 2 = 2]
 Round 2.
   Thug 1 uses Knife on Mags.
-  Thug 1 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 4,6,1,10,6 = 0]
-  Thug 2 uses Knife on Mags.
-  Thug 2 rolls Attack: 2 against 2: success.  [4d10 count 8+ again 10+ cancel 1-: 9,9,4,3 = 2]
-  Mags loses 2 health (7 left).
-  Mags uses Bolt on Thug 1.
-  Mags spends 2 willpower (0 left).
-  Thug 1 loses 5 health (1 left).  [1d6 again 6+: 5 = 5]
-Round 3.
-  Thug 1 uses Knife on Mags.
-  Thug 1 rolls Attack: -1 against 2: botch.  [4d10 count 8+ again 10+ cancel 1-: 7,1,2,2 = -1]
-  Thug 1 loses 1 health (0 left).
-  Thug 1 is out of the fight.
-  Thug 2 uses Knife on Mags.
-  Thug 2 rolls Attack: 0 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 4,6,5,2 = 0]
-  Mags uses Strike (Club) on Thug 2.
-  Mags rolls Attack: 1 against 1: success.  [7d10 count 8+ again 10+ cancel 1-: 4,4,9,5,5,1,9 = 1]
-  Thug 2 loses 4 health (3 left).  [1d6 again 6+: 4 = 4]
-Round 4.
-  Thug 2 uses Knife on Mags.
-  Thug 2 rolls Attack: 1 against 2: failure.  [4d10 count 8+ again 10+ cancel 1-: 3,4,6,9 = 1]
-  Mags uses Strike (Club) on Thug 2.
-  Mags rolls Attack: 2 against 1: success.  [7d10 count 8+ again 10+ cancel 1-: 10,6,4,6,3,7,5,9 = 2]
-  Thug 2 loses 3 health (0 left).  [1d6 again 6+: 2 = 2]
-  Thug 2 is out of the fight.
-Party wins after 4 rounds.
-Party: Mags 7/9
-Thugs: Thug 1 0/7 (out), Thug 2 0/7 (out)
+  Thug 1 rolls Attack: 2 against 2: success.  [4d10 count 8+ again 10+ cancel 1-: 1,10,6,9,9 = 2]
+  Mags loses 2 health (0 left).
+  Mags is out of the fight.
+Thugs wins after 2 rounds.
+Party: Mags 0/9 (out)
+Thugs: Thug 1 7/7, Thug 2 7/7, Hedge witch 4/6
 [exit 0]
 

@@ -1,0 +1,15 @@
+{
+  "type": "encounter",
+  "id": "crypt_cult",
+  "name": "Crypt cult",
+  "monsters": [
+    {
+      "monster": "acolyte",
+      "count": "1"
+    },
+    {
+      "monster": "skeleton",
+      "count": "2"
+    }
+  ]
+}
