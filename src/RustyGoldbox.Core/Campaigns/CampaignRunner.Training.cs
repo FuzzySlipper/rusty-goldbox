@@ -29,12 +29,6 @@ public sealed partial class CampaignRunner
         }
 
         Character character = _state.Party[member - 1];
-        if (!CharacterRules.ReadyToLevel(_rules, character))
-        {
-            facts.Add(new RefusedFact($"{character.Name} doesn't have the experience for another level."));
-            return;
-        }
-
         Definition advancement = _rules.Advancement!;
         decimal price = ServicePrice(advancement, "$.training.cost", character);
         if (!CanPay(trainer, "Training", price, facts))

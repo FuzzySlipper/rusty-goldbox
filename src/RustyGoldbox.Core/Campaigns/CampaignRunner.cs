@@ -494,8 +494,14 @@ public sealed partial class CampaignRunner
             return false;
         }
 
+        if (gains.Count == 0)
+        {
+            facts.Add(new RefusedFact($"{character.Name} has no level available with those choices."));
+            return false;
+        }
+
         ReportLevels(character, member, gains, before, dice, facts);
-        return gains.Count > 0;
+        return true;
     }
 
     /// <summary>The former command: a dual-classed character calls on its dormant classes (forfeiting the adventure's experience) or stops.</summary>
