@@ -38,7 +38,9 @@ internal static class GoldboxCli
 
           goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
-                [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
+                [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--lifepath <id>]
+                [--career <id>,...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]
+                [--seed <n>] [--out <file>]
               --class and --race are needed where the ruleset has classes and races.
               Makes attributes by the creation's method (roll, array, point buy or boosts), applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
@@ -52,6 +54,10 @@ internal static class GoldboxCli
               Where it uses point buy, --attributes are the bought scores.
               Where experience is split between classes, --class fighter,thief starts with
               both, as the race's multiclasses allow.
+              With --lifepath, --career chooses one career per term (or repeat one with --terms);
+              --skill-table supplies the visible table choice for each actual skill roll and
+              --benefit chooses cash or material for each mustering-out roll. The saved character
+              records every term roll, choice and result in career_terms.
           goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]
               Adds experience, gains every level reached and saves the file. Where the
               advancement counts experience by character level, levels go to --class (a

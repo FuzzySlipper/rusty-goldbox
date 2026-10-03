@@ -102,9 +102,18 @@ dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module mo
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/sample-crypt --class fighter --race human --name Ada --portrait placeholder-art:fighter_portrait --out ada.json
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/universal-d100 --creation staged --feature staged_soldier --name Rook --seed 4 --out rook.json
 dotnet run --project src/RustyGoldbox.Cli -- character skills rook.json --module modules/universal-d100 --skill sword=profession:100+personal:90,shield=profession:50,dodge=profession:40,brawl=profession:30,bow=profession:30
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/scifi-2d6 --name Vance --lifepath prior_history --career marine --terms 1 --skill-table service,service,service --benefit cash --seed 3 --out vance.json
 dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --module modules/fate-condensed --raise fight --feature deadeye
 dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
 ```
+
+When a character-creation definition names a `lifepath`, `--career` chooses
+the career for each term (one choice repeats with `--terms`),
+`--skill-table` supplies the visible table choice for each actual 1D6 skill
+roll, and `--benefit` chooses cash or material for each mustering-out roll.
+The saved character keeps its age, term choices, roll totals and results in
+`career_terms`; `goldbox character show --json` and the Game party projection
+expose that ledger.
 
 Campaigns play from command scripts, and save and resume:
 

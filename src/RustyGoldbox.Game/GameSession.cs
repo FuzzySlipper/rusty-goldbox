@@ -193,7 +193,12 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <param name="portrait">A portrait asset for the character, or null for none.</param>
     /// <param name="race">The race, or null in a ruleset without races.</param>
     /// <param name="characterClass">The class, or null in a ruleset without classes.</param>
-    public void Roll(IEngineContext engine, string name, string? race, string? characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null, IReadOnlyList<SkillAllocation>? skillPoints = null, string? creation = null)
+    /// <param name="lifepath">The optional term-by-term career procedure.</param>
+    /// <param name="careers">Career IDs, one per term, or one repeated with <paramref name="terms"/>.</param>
+    /// <param name="skillTables">Skill-table IDs consumed by the actual term rolls.</param>
+    /// <param name="benefits">Cash or material choices consumed by mustering-out rolls.</param>
+    /// <param name="terms">Number of repeated terms; zero means one.</param>
+    public void Roll(IEngineContext engine, string name, string? race, string? characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null, IReadOnlyList<SkillAllocation>? skillPoints = null, string? creation = null, string? lifepath = null, IReadOnlyList<string>? careers = null, IReadOnlyList<string>? skillTables = null, IReadOnlyList<string>? benefits = null, int terms = 0)
     {
         Notes.Clear();
         if (Screen != Screen.Party)
@@ -214,7 +219,7 @@ internal sealed class GameSession(ModuleLibrary library)
         int roll = ++_rolls;
         using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.{roll}"));
         DiceRoller dice = new(engine.Random, stream);
-        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Creation: creation, Features: features, Boosts: boosts, SkillPoints: skillPoints), dice, problems);
+        Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Creation: creation, SkillPoints: skillPoints, Features: features, Boosts: boosts, Lifepath: lifepath, Careers: careers, SkillTables: skillTables, Benefits: benefits, Terms: terms), dice, problems);
         if (character is null)
         {
             Notes.AddRange(problems.Select(problem => problem.Message));

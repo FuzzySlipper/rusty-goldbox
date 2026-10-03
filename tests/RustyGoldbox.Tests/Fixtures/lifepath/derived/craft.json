@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "craft",
+  "name": "Craft",
+  "value": "self.body - 10"
+}

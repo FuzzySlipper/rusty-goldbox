@@ -45,6 +45,10 @@ export function mountProductUi(root, context) {
   const characterClass = element('select', { 'aria-label': 'Class' });
   const creation = element('select', { 'aria-label': 'Character creation' });
   const portrait = element('select', { 'aria-label': 'Portrait' });
+  const lifepathCareer = element('select', { 'aria-label': 'Career' });
+  const lifepathTerms = element('input', { type: 'number', min: '1', value: '1', size: '3', 'aria-label': 'Career terms' });
+  const lifepathTables = element('input', { value: 'personal,personal', size: '18', 'aria-label': 'Skill tables in roll order' });
+  const lifepathBenefits = element('input', { value: 'cash', size: '12', 'aria-label': 'Benefit tables in roll order' });
   // Feature and boost choices, kept by slot so a choice survives re-renders.
   const choiceSelects = new Map();
   // Skill amounts are a local draft until the player submits the Core action.
@@ -172,6 +176,8 @@ export function mountProductUi(root, context) {
           ...picture(member.portraitPicture, `${member.name}'s portrait`, 40),
           element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, ${formatBalances(member.balances)}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
+        ...(member.careerTerms?.length ? [element('div', { style: 'opacity:.8' }, `Prior history age ${member.age}: `,
+          ...member.careerTerms.map((term) => element('div', {}, `Term ${term.number} ${term.career} (${term.results.join(', ') || 'no result'}${term.benefitsLost ? '; benefits lost' : ''})`)))] : []),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         ...renderSkillPoints(member, index),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
@@ -193,6 +199,10 @@ export function mountProductUi(root, context) {
       members,
       row(name, ...creationControl, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.picture, 'Chosen portrait', 32)),
       choices.rows,
+      ...(view.lifepath ? [row(element('span', {}, 'Career:'), lifepathCareer,
+        element('span', {}, 'Terms:'), lifepathTerms,
+        element('span', {}, 'Skill tables:'), lifepathTables,
+        element('span', {}, 'Benefits:'), lifepathBenefits)] : []),
       row(button('Roll', () => send({
         action: 'roll',
         name: name.value,
@@ -203,6 +213,13 @@ export function mountProductUi(root, context) {
         ...(portrait.value ? { portrait: portrait.value } : {}),
         ...(choices.features().length > 0 ? { features: choices.features() } : {}),
         ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),
+        ...(view.lifepath ? {
+          lifepath: view.lifepath.id,
+          careers: lifepathCareer.value ? [lifepathCareer.value] : [],
+          terms: Number(lifepathTerms.value) || 1,
+          skillTables: lifepathTables.value.split(',').map((value) => value.trim()).filter(Boolean),
+          benefits: lifepathBenefits.value.split(',').map((value) => value.trim()).filter(Boolean),
+        } : {}),
       }))),
       row(button('Begin', () => send({ action: 'begin' })), button('Back', () => send({ action: 'quit' }))));
   };
@@ -223,6 +240,18 @@ export function mountProductUi(root, context) {
     const creationSlots = [];
     if (!creation) {
       return { rows, features: () => [], boosts: () => [] };
+    }
+
+    if (view.lifepath) {
+      fill(lifepathCareer, view.lifepath.careers ?? []);
+      if (!lifepathCareer.value && view.lifepath.careers?.length) {
+        lifepathCareer.value = view.lifepath.careers[0].id;
+      }
+      const selected = (view.lifepath.careers ?? []).find((career) => career.id === lifepathCareer.value);
+      if (selected?.skillTables?.length && !lifepathTables.value.trim()) {
+        lifepathTables.value = selected.skillTables[0];
+      }
+      rows.append(element('div', { style: 'opacity:.8' }, `${view.lifepath.name}: actual 2D6 rolls are recorded in each character's prior-history ledger; choose a career, skill tables and benefit tables before rolling.`));
     }
 
     const grants = [...creation.grants.map((grant) => ({ grant, creation: true })), ...(chosenClass?.grants ?? []).map((grant) => ({ grant, creation: false }))];

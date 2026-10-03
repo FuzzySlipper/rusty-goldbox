@@ -24,6 +24,14 @@ feature a grant takes and, under creation by boosts, for each boost that
 offers a choice, in the order Core takes them (race, creation features, class,
 creation). Core checks the roll; its notes say what to fix.
 
+When `creation.lifepath` is present, the party projection also carries
+`lifepath` with its careers and available skill tables. The party controls
+send `lifepath`, `careers`, `terms`, `skillTables` and `benefits` in the same
+`roll` command; Core performs the actual throws and returns each member's
+`age`, `lifepath` and `careerTerms`, including roll objects, selected tables,
+benefit choices, results and `benefitsLost` for a failed term. The DOM displays
+that ledger after the character is rolled and owns none of the career state.
+
 Portraits and icons are media objects the projection carries
 (`portraitPicture`, the portrait chooser's `picture`, `iconPicture`: an Engine
 UI image `url`, the image's `width` and `height`, and a sheet's `frame` size),

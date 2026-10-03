@@ -41,6 +41,7 @@ public sealed class RuleSetBuilder
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
         builder.CheckAdvancement();
+        builder.CheckLifepaths();
         builder.CheckCurrencies();
         builder.CheckEconomy();
         builder.CheckResting();
@@ -560,6 +561,270 @@ public sealed class RuleSetBuilder
 
                 index++;
             }
+        }
+    }
+
+    /// <summary>Checks the data shape of term-by-term careers before Core consumes it.</summary>
+    private void CheckLifepaths()
+    {
+        foreach (Definition lifepath in _rules.OfType(DefinitionTypes.Lifepath))
+        {
+            if (lifepath.Json.TryGetProperty("start_age", out JsonElement startAge) && startAge.GetInt32() < 0)
+            {
+                Error(lifepath, "lifepath.age", "$.start_age", "A lifepath start age cannot be negative.");
+            }
+
+            if (lifepath.Json.TryGetProperty("term_years", out JsonElement termYears) && termYears.GetInt32() <= 0)
+            {
+                Error(lifepath, "lifepath.term", "$.term_years", "A lifepath term must add at least one year.");
+            }
+
+            if (lifepath.Json.TryGetProperty("max_terms", out JsonElement maxTerms) && maxTerms.GetInt32() <= 0)
+            {
+                Error(lifepath, "lifepath.terms", "$.max_terms", "A lifepath must allow at least one term.");
+            }
+
+            JsonElement careers = lifepath.Json.GetProperty("careers");
+            if (careers.GetArrayLength() == 0)
+            {
+                Error(lifepath, "lifepath.careers", "$.careers", $"{lifepath.QualifiedId} needs at least one career.");
+            }
+
+            HashSet<string> careerIds = [];
+            for (int careerIndex = 0; careerIndex < careers.GetArrayLength(); careerIndex++)
+            {
+                JsonElement career = careers[careerIndex];
+                string careerPath = $"$.careers[{careerIndex}]";
+                string id = career.GetProperty("id").GetString()!;
+                if (!careerIds.Add(id))
+                {
+                    Error(lifepath, "lifepath.career-duplicate", $"{careerPath}.id", $"Career ID '{id}' is repeated in {lifepath.QualifiedId}. Give each career a distinct ID.");
+                }
+
+                foreach (string phase in new[] { "qualification", "survival", "commission", "advancement", "reenlistment" })
+                {
+                    if (career.TryGetProperty(phase, out JsonElement roll))
+                    {
+                        CheckLifepathThrow(lifepath, roll, $"{careerPath}.{phase}");
+                    }
+                }
+
+                JsonElement skills = career.GetProperty("skills");
+                if (skills.GetArrayLength() == 0)
+                {
+                    Error(lifepath, "lifepath.skills", $"{careerPath}.skills", $"Career '{id}' needs at least one skill table.");
+                }
+
+                HashSet<string> tableIds = [];
+                for (int tableIndex = 0; tableIndex < skills.GetArrayLength(); tableIndex++)
+                {
+                    JsonElement table = skills[tableIndex];
+                    string tablePath = $"{careerPath}.skills[{tableIndex}]";
+                    string tableId = table.GetProperty("id").GetString()!;
+                    if (!tableIds.Add(tableId))
+                    {
+                        Error(lifepath, "lifepath.table-duplicate", $"{tablePath}.id", $"Skill table ID '{tableId}' is repeated for career '{id}'.");
+                    }
+
+                    HashSet<int> rolls = [];
+                    JsonElement entries = table.GetProperty("entries");
+                    for (int entryIndex = 0; entryIndex < entries.GetArrayLength(); entryIndex++)
+                    {
+                        JsonElement entry = entries[entryIndex];
+                        string entryPath = $"{tablePath}.entries[{entryIndex}]";
+                        int roll = entry.GetProperty("roll").GetInt32();
+                        if (roll is < 1 or > 6 || !rolls.Add(roll))
+                        {
+                            Error(lifepath, "lifepath.table-roll", $"{entryPath}.roll", "A skill table must have one distinct entry for each 1D6 result from 1 through 6.");
+                        }
+
+                        CheckLifepathRaise(lifepath, entry, entryPath, entry.GetProperty("kind").GetString()!);
+                    }
+                }
+
+                if (career.TryGetProperty("ranks", out JsonElement ranks))
+                {
+                    HashSet<int> rankIds = [];
+                    for (int rankIndex = 0; rankIndex < ranks.GetArrayLength(); rankIndex++)
+                    {
+                        JsonElement rank = ranks[rankIndex];
+                        string rankPath = $"{careerPath}.ranks[{rankIndex}]";
+                        int number = rank.GetProperty("rank").GetInt32();
+                        if (number < 1 || !rankIds.Add(number))
+                        {
+                            Error(lifepath, "lifepath.rank", $"{rankPath}.rank", "A career rank must be a distinct positive number.");
+                        }
+
+                        if (rank.TryGetProperty("skill", out _))
+                        {
+                            CheckLifepathRaise(lifepath, rank, rankPath, "skill");
+                        }
+                    }
+                }
+
+                JsonElement benefits = career.GetProperty("benefits");
+                if (!benefits.TryGetProperty("cash", out _) && !benefits.TryGetProperty("material", out _))
+                {
+                    Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits", $"Career '{id}' needs a cash or material benefit table.");
+                }
+
+                if (benefits.TryGetProperty("cash", out JsonElement cash))
+                {
+                    if (cash.GetArrayLength() == 0)
+                    {
+                        Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits.cash", "A cash benefit table needs at least one row.");
+                    }
+
+                    CheckLifepathCashBenefits(lifepath, cash, $"{careerPath}.benefits.cash");
+                }
+
+                if (benefits.TryGetProperty("material", out JsonElement material))
+                {
+                    if (material.GetArrayLength() == 0)
+                    {
+                        Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits.material", "A material benefit table needs at least one row.");
+                    }
+
+                    HashSet<int> rolls = [];
+                    for (int benefitIndex = 0; benefitIndex < material.GetArrayLength(); benefitIndex++)
+                    {
+                        JsonElement benefit = material[benefitIndex];
+                        string path = $"{careerPath}.benefits.material[{benefitIndex}]";
+                        int roll = benefit.GetProperty("roll").GetInt32();
+                        if (roll is < 1 or > 7 || !rolls.Add(roll))
+                        {
+                            Error(lifepath, "lifepath.benefit-roll", $"{path}.roll", "A material benefit table must have one distinct entry for each 1D6 result (or a result modified up to 7).");
+                        }
+
+                        string kind = benefit.GetProperty("kind").GetString()!;
+                        if (kind is "skill" or "attribute")
+                        {
+                            CheckLifepathRaise(lifepath, benefit, path, kind);
+                        }
+                        else if (kind == "item" && !benefit.TryGetProperty("item", out _))
+                        {
+                            Error(lifepath, "lifepath.benefit", path, "An item benefit needs an \"item\" reference.");
+                        }
+                        else if (kind == "currency" && !benefit.TryGetProperty("currency", out _))
+                        {
+                            Error(lifepath, "lifepath.benefit", path, "A currency benefit needs a \"currency\" reference.");
+                        }
+
+                        if (benefit.TryGetProperty("amount", out JsonElement amount) && amount.GetInt32() < 0)
+                        {
+                            Error(lifepath, "lifepath.benefit", $"{path}.amount", "A material benefit amount cannot be negative.");
+                        }
+                    }
+
+                    if (!rolls.Contains(1))
+                    {
+                        Error(lifepath, "lifepath.benefit-roll", $"{careerPath}.benefits.material", "A material benefit table needs a row for 1 so every 1D6 result selects a benefit.");
+                    }
+                }
+            }
+
+            if (lifepath.Json.TryGetProperty("aging", out JsonElement aging))
+            {
+                if (aging.GetProperty("start_age").GetInt32() < 0)
+                {
+                    Error(lifepath, "lifepath.age", "$.aging.start_age", "An ageing start age cannot be negative.");
+                }
+
+                if (aging.GetProperty("start_term").GetInt32() < 1)
+                {
+                    Error(lifepath, "lifepath.age", "$.aging.start_term", "An ageing start term must be positive.");
+                }
+
+                JsonElement effects = aging.GetProperty("effects");
+                for (int effectIndex = 0; effectIndex < effects.GetArrayLength(); effectIndex++)
+                {
+                    JsonElement effect = effects[effectIndex];
+                    string effectPath = $"$.aging.effects[{effectIndex}]";
+                    if (effect.GetProperty("min").GetInt32() > effect.GetProperty("max").GetInt32())
+                    {
+                        Error(lifepath, "lifepath.aging-range", effectPath, "An ageing row's min must be no greater than its max.");
+                    }
+
+                    JsonElement changes = effect.GetProperty("changes");
+                    for (int changeIndex = 0; changeIndex < changes.GetArrayLength(); changeIndex++)
+                    {
+                        JsonElement change = changes[changeIndex];
+                        if (change.GetProperty("amount").GetInt32() < 0)
+                        {
+                            Error(lifepath, "lifepath.aging-change", $"{effectPath}.changes[{changeIndex}].amount", "An ageing change is subtracted, so its amount cannot be negative.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void CheckLifepathThrow(Definition lifepath, JsonElement roll, string path)
+    {
+        bool hasStat = roll.TryGetProperty("stat", out _);
+        bool hasCheck = roll.TryGetProperty("check", out _);
+        if (hasStat && hasCheck)
+        {
+            Error(lifepath, "lifepath.throw", path, "A career throw needs exactly one of \"stat\" (a 2D6 characteristic throw) or \"check\" (an existing check definition).");
+        }
+
+        // Re-enlistment is commonly a raw 2D6 throw with no characteristic.
+        if (!hasStat && !hasCheck && !path.EndsWith(".reenlistment", StringComparison.Ordinal))
+        {
+            Error(lifepath, "lifepath.throw", path, "A career throw needs \"stat\" (a 2D6 characteristic throw) or \"check\" (an existing check definition); only reenlistment may be a raw 2D6 throw.");
+        }
+
+        if (hasStat && !roll.TryGetProperty("target", out _))
+        {
+            Error(lifepath, "lifepath.throw", path, "A stat career throw needs \"target\": the number a 2D6 total must reach.");
+        }
+
+        if (!hasStat && !hasCheck && !roll.TryGetProperty("target", out _))
+        {
+            Error(lifepath, "lifepath.throw", path, "A raw reenlistment throw needs \"target\": the number a 2D6 total must reach.");
+        }
+    }
+
+    private void CheckLifepathRaise(Definition lifepath, JsonElement entry, string path, string kind)
+    {
+        if (!entry.TryGetProperty("stat", out JsonElement stat) || !_rules.Stats.TryGetValue(stat.GetString()!, out Stat? target))
+        {
+            return;
+        }
+
+        if (kind == "attribute" && !target.IsAttribute)
+        {
+            Error(lifepath, "lifepath.attribute", $"{path}.stat", $"'{target.Id}' is a derived stat; an attribute is required for an attribute result.");
+        }
+
+        if (kind is "skill" or "attribute" && entry.TryGetProperty("amount", out JsonElement amount) && amount.GetInt32() < 1)
+        {
+            Error(lifepath, "lifepath.raise", $"{path}.amount", "A skill or attribute result must add at least one level.");
+        }
+    }
+
+    private void CheckLifepathCashBenefits(Definition lifepath, JsonElement cash, string path)
+    {
+        HashSet<int> rolls = [];
+        for (int index = 0; index < cash.GetArrayLength(); index++)
+        {
+            JsonElement benefit = cash[index];
+            string at = $"{path}[{index}]";
+            int roll = benefit.GetProperty("roll").GetInt32();
+            if (roll is < 1 or > 7 || !rolls.Add(roll))
+            {
+                Error(lifepath, "lifepath.benefit-roll", $"{at}.roll", "A cash benefit table must have one distinct entry for each 1D6 result (or a result modified up to 7).");
+            }
+
+            if (benefit.GetProperty("amount").GetInt32() < 0)
+            {
+                Error(lifepath, "lifepath.benefit", $"{at}.amount", "A cash benefit cannot subtract money.");
+            }
+        }
+
+        if (!rolls.Contains(1))
+        {
+            Error(lifepath, "lifepath.benefit-roll", path, "A cash benefit table needs a row for 1 so every 1D6 result selects a benefit.");
         }
     }
 

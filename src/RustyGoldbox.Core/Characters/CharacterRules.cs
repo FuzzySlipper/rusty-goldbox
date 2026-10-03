@@ -14,6 +14,11 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="AlsoClasses">Under experience split between classes: further classes to start with, as the race's multiclasses allow.</param>
 /// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
 /// <param name="SkillPoints">Under staged creation: profession and personal points to spend on the creation's listed skills.</param>
+/// <param name="Lifepath">The lifepath definition to resolve and run after scores and base creation are made.</param>
+/// <param name="Careers">Career IDs, one per requested term; with one ID and <paramref name="Terms"/> greater than one it repeats.</param>
+/// <param name="SkillTables">Skill-table IDs, in the order term rolls consume them.</param>
+/// <param name="Benefits">Benefit-table choices (cash or material), in the order mustering-out rolls consume them.</param>
+/// <param name="Terms">Number of terms when <paramref name="Careers"/> has one repeated career; zero means one term.</param>
 /// <param name="Class">The class; null in a ruleset without classes.</param>
 /// <param name="Race">The race; null in a ruleset without races.</param>
 public sealed record CreationRequest(
@@ -26,7 +31,13 @@ public sealed record CreationRequest(
     IReadOnlyList<string>? Features = null,
     IReadOnlyList<string>? Boosts = null,
     IReadOnlyList<string>? AlsoClasses = null,
-    IReadOnlyList<SkillAllocation>? SkillPoints = null);
+    IReadOnlyList<SkillAllocation>? SkillPoints = null,
+
+    string? Lifepath = null,
+    IReadOnlyList<string>? Careers = null,
+    IReadOnlyList<string>? SkillTables = null,
+    IReadOnlyList<string>? Benefits = null,
+    int Terms = 0);
 
 /// <summary>A choice a character makes: <see cref="Count"/> features of any of <see cref="Kinds"/>, and what grants it, for messages.</summary>
 public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
@@ -64,7 +75,7 @@ public sealed record SkillPointOptions(decimal Profession, decimal Personal, IRe
 /// Creates and advances characters from the rule set's character-creation,
 /// race and class definitions. Problems are rule diagnostics, not exceptions.
 /// </summary>
-public static class CharacterRules
+public static partial class CharacterRules
 {
     public static Character? Create(RuleSet rules, IReadOnlyList<ModuleStamp> modules, CreationRequest request, DiceRoller dice, List<ModuleDiagnostic> problems)
     {
@@ -181,7 +192,7 @@ public static class CharacterRules
                 character.Tracks[levelTrack.Id] = new TrackValue { Max = kept };
             }
 
-            List<Grant> grants = [.. CreationGrants(creation), .. LevelGrants(rules, character, evaluator)];
+            List<Grant> grants = [.. CreationGrants(creation, request.Lifepath is null), .. LevelGrants(rules, character, evaluator)];
             if (!Choose(rules, character, grants, choices, evaluator, problems) || !NoneLeft(choices, problems))
             {
                 return null;
@@ -196,6 +207,12 @@ public static class CharacterRules
             foreach ((string currency, decimal amount) in StartingBalances(rules, creation, character, evaluator, problems))
             {
                 character.Balances[currency] = amount;
+            }
+
+            if (request.Lifepath is string lifepath
+                && !RunLifepath(rules, character, lifepath, request.Careers, request.SkillTables, request.Benefits, request.Terms, dice, problems))
+            {
+                return null;
             }
         }
         catch (RuleFailure failure)
@@ -299,7 +316,7 @@ public static class CharacterRules
     /// </summary>
     public static void CheckHistory(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
     {
-        Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation };
+        Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation, Lifepath = character.Lifepath };
         replay.LeftClasses.AddRange(character.LeftClasses);
         if (ScoresBeforeBoosts(rules, character, problems) is not Dictionary<string, decimal> scores)
         {
@@ -319,7 +336,7 @@ public static class CharacterRules
             List<ModuleDiagnostic> found = [];
             try
             {
-                List<Grant> grants = [.. index == 0 ? CreationGrants(character.Creation) : [], .. LevelGrants(rules, replay, evaluator)];
+                List<Grant> grants = [.. index == 0 ? CreationGrants(character.Creation, character.Lifepath is null) : [], .. LevelGrants(rules, replay, evaluator)];
                 List<Definition> choices = [.. level.Features];
                 if (Choose(rules, replay, grants, choices, evaluator, found) && NoneLeft(choices, found))
                 {
@@ -1437,9 +1454,11 @@ public static class CharacterRules
     }
 
     /// <summary>The choices every new character makes, from the character-creation definition.</summary>
-    private static List<Grant> CreationGrants(Definition creation)
+    private static List<Grant> CreationGrants(Definition creation, bool includeCareer = true)
     {
-        return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})");
+        return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})")
+            .Where(grant => includeCareer || !grant.Kinds.Contains("career"))
+            .ToList();
     }
 
     /// <summary>

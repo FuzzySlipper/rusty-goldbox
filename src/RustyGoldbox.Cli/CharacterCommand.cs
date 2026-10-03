@@ -12,8 +12,8 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--skill <id>=profession:<n>+personal:<n>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
-        + "       goldbox character skills <file> --module <path> --skill <id>=profession:<n>+personal:<n>,... [--seed <n>]\n"
+        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--skill <id>=profession:<n>+personal:<n>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--lifepath <id> --career <id>[,<id>...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]] [--seed <n>] [--out <file>]\n"
+        + "       goldbox character skills <file> --module <path> --skill <id>=profession:<n>+personal:<n>,... [--lifepath <id> --career <id>[,<id>...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]] [--seed <n>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character milestone <file> --module <path> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...]\n"
@@ -218,7 +218,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--skill", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--skill", "--boosts", "--spells", "--portrait", "--lifepath", "--career", "--terms", "--skill-table", "--benefit", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null))
         {
             error = Usage;
@@ -227,7 +227,8 @@ internal static class CharacterCommand
         ulong seed = 1;
         Dictionary<string, decimal>? attributes = null;
         List<SkillAllocation>? skillPoints = null;
-        error ??= ParseSeed(parsed, ref seed) ?? ParseAttributes(parsed.Single("--attributes"), out attributes) ?? ParseSkillPoints(parsed, out skillPoints);
+        int terms = 0;
+        error ??= ParseSeed(parsed, ref seed) ?? ParseAttributes(parsed.Single("--attributes"), out attributes) ?? ParseSkillPoints(parsed, out skillPoints) ?? ParseTerms(parsed, ref terms);
         if (error is not null)
         {
             return output.UsageError(error);
@@ -242,6 +243,7 @@ internal static class CharacterCommand
         IReadOnlyList<string>? priority = parsed.Single("--priority")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         // Core asks for a class and race only where the ruleset has them.
         string[] classes = parsed.Single("--class")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+        List<string> careers = Values(parsed, "--career");
         CreationRequest request = new(
             parsed.Single("--name") ?? "Unnamed",
             classes.FirstOrDefault(),
@@ -251,8 +253,13 @@ internal static class CharacterCommand
             parsed.Single("--creation"),
             Features(parsed),
             parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
-            classes.Skip(1).ToList(),
-            SkillPoints: skillPoints);
+            AlsoClasses: classes.Skip(1).ToList(),
+            SkillPoints: skillPoints,
+            Lifepath: parsed.Single("--lifepath"),
+            Careers: careers.Count == 0 ? null : careers,
+            SkillTables: Values(parsed, "--skill-table"),
+            Benefits: Values(parsed, "--benefit"),
+            Terms: terms);
         List<ModuleDiagnostic> problems = [];
         (Character? character, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
             CharacterRules.Create(set.Rules, Character.StampsOf(set), request, dice, problems));
@@ -562,6 +569,18 @@ internal static class CharacterCommand
         }
 
         return null;
+    }
+
+    private static string? ParseTerms(Arguments parsed, ref int terms)
+    {
+        if (parsed.Single("--terms") is not string value)
+        {
+            return null;
+        }
+
+        return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out terms) && terms >= 0
+            ? null
+            : $"--terms must be a nonnegative whole number, but was '{value}'.";
     }
 
     private static string? ParseAttributes(string? text, out Dictionary<string, decimal>? attributes)

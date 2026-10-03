@@ -1,0 +1,68 @@
+{
+  "type": "lifepath",
+  "id": "careers",
+  "name": "Careers",
+  "start_age": 18,
+  "term_years": 4,
+  "max_terms": 2,
+  "aging": {
+    "start_age": 18,
+    "start_term": 1,
+    "effects": [
+      { "min": -6, "max": 12, "changes": [] }
+    ]
+  },
+  "careers": [
+    {
+      "id": "maker",
+      "name": "Maker",
+      "qualification": { "stat": "body", "target": 1 },
+      "survival": { "stat": "mind", "target": 1 },
+      "reenlistment": { "target": 1 },
+      "skills": [
+        {
+          "id": "personal",
+          "name": "Personal",
+          "entries": [
+            { "roll": 1, "kind": "attribute", "stat": "body" },
+            { "roll": 2, "kind": "attribute", "stat": "mind" },
+            { "roll": 3, "kind": "skill", "stat": "craft" },
+            { "roll": 4, "kind": "skill", "stat": "craft" },
+            { "roll": 5, "kind": "attribute", "stat": "body" },
+            { "roll": 6, "kind": "attribute", "stat": "mind" }
+          ]
+        },
+        {
+          "id": "professional",
+          "name": "Professional",
+          "entries": [
+            { "roll": 1, "kind": "skill", "stat": "craft" },
+            { "roll": 2, "kind": "skill", "stat": "craft" },
+            { "roll": 3, "kind": "attribute", "stat": "body" },
+            { "roll": 4, "kind": "attribute", "stat": "mind" },
+            { "roll": 5, "kind": "skill", "stat": "craft" },
+            { "roll": 6, "kind": "skill", "stat": "craft" }
+          ]
+        }
+      ],
+      "benefits": {
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 10 },
+          { "roll": 2, "currency": "credits", "amount": 20 },
+          { "roll": 3, "currency": "credits", "amount": 30 },
+          { "roll": 4, "currency": "credits", "amount": 40 },
+          { "roll": 5, "currency": "credits", "amount": 50 },
+          { "roll": 6, "currency": "credits", "amount": 60 }
+        ],
+        "material": [
+          { "roll": 1, "kind": "item", "item": "toolkit" },
+          { "roll": 2, "kind": "skill", "stat": "craft" },
+          { "roll": 3, "kind": "attribute", "stat": "body" },
+          { "roll": 4, "kind": "attribute", "stat": "mind" },
+          { "roll": 5, "kind": "skill", "stat": "craft" },
+          { "roll": 6, "kind": "item", "item": "toolkit" }
+        ]
+      }
+    }
+  ]
+}

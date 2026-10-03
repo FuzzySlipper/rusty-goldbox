@@ -22,11 +22,41 @@ public static class CharacterFile
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    private static readonly IReadOnlyList<Definitions.Field> LifepathRollFields =
+    [
+        new("kind", new Definitions.TextKind(), true, "Qualification, survival, commission, advancement or ageing."),
+        new("roll", new Definitions.NumberKind(), true, "Raw dice result."),
+        new("modifier", new Definitions.NumberKind(), true, "Stat and fixed modifiers included in the total."),
+        new("total", new Definitions.NumberKind(), true, "Final result."),
+        new("target", new Definitions.NumberKind(), true, "Target for a success check, or 0 for ageing."),
+        new("success", new Definitions.BooleanKind(), true, "Whether the check succeeded."),
+    ];
+
     public static IReadOnlyList<Definitions.Field> DataFields { get; } =
     [
         new("name", new Definitions.TextKind(), true, "Character name."),
         new("race", new Definitions.ReferenceKind("race"), false, "Race; omit in a ruleset without races."),
         new("creation", new Definitions.ReferenceKind("character-creation"), true, "The creation rules that granted its first level choices."),
+        new("lifepath", new Definitions.ReferenceKind("lifepath"), false, "The term-by-term career rules used during creation."),
+        new("age", new Definitions.IntegerKind(), false, "Age after the recorded career terms."),
+        new("career_terms", new Definitions.ListKind(new Definitions.ObjectKind(
+        [
+            new("career", new Definitions.TextKind(), true, "Career ID within the lifepath."),
+            new("number", new Definitions.IntegerKind(), true, "Term number, starting at 1."),
+            new("age_before", new Definitions.IntegerKind(), true, "Age before this term."),
+            new("age_after", new Definitions.IntegerKind(), true, "Age after this term."),
+            new("rank_before", new Definitions.IntegerKind(), true, "Career rank before the term."),
+            new("rank_after", new Definitions.IntegerKind(), true, "Career rank after the term."),
+            new("qualification", new Definitions.ObjectKind(LifepathRollFields), false, "Qualification roll result."),
+            new("survival", new Definitions.ObjectKind(LifepathRollFields), false, "Survival roll result."),
+            new("commission", new Definitions.ObjectKind(LifepathRollFields), false, "Commission roll result."),
+            new("advancement", new Definitions.ObjectKind(LifepathRollFields), false, "Advancement roll result."),
+            new("aging", new Definitions.ObjectKind(LifepathRollFields), false, "Ageing roll result."),
+            new("ended", new Definitions.BooleanKind(), true, "Whether this term ended prior history."),
+            new("benefits_lost", new Definitions.BooleanKind(), true, "Whether this term contributes no benefits."),
+            new("choices", new Definitions.ListKind(new Definitions.TextKind()), true, "Table choices supplied while resolving the term."),
+            new("results", new Definitions.ListKind(new Definitions.TextKind()), true, "Human-readable gains and outcomes from the term."),
+        ])), false, "Persisted term ledger; it explains the actual rolls and choices that produced the character."),
         new("levels", new Definitions.ListKind(new Definitions.ObjectKind(
         [
             new("class", new Definitions.ReferenceKind("class"), false, "Class taken; omit in a classless ruleset."),
@@ -102,6 +132,34 @@ public static class CharacterFile
             }
 
             writer.WriteString("creation", character.Creation.QualifiedId);
+            if (character.Lifepath is Definition lifepath)
+            {
+                writer.WriteString("lifepath", lifepath.QualifiedId);
+                writer.WriteNumber("age", character.Age);
+                writer.WriteStartArray("career_terms");
+                foreach (LifepathTerm term in character.CareerTerms)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("career", term.Career);
+                    writer.WriteNumber("number", term.Number);
+                    writer.WriteNumber("age_before", term.AgeBefore);
+                    writer.WriteNumber("age_after", term.AgeAfter);
+                    writer.WriteNumber("rank_before", term.RankBefore);
+                    writer.WriteNumber("rank_after", term.RankAfter);
+                    WriteLifepathRoll(writer, "qualification", term.Qualification);
+                    WriteLifepathRoll(writer, "survival", term.Survival);
+                    WriteLifepathRoll(writer, "commission", term.Commission);
+                    WriteLifepathRoll(writer, "advancement", term.Advancement);
+                    WriteLifepathRoll(writer, "aging", term.Aging);
+                    writer.WriteBoolean("ended", term.Ended);
+                    writer.WriteBoolean("benefits_lost", term.BenefitsLost);
+                    WriteStrings(writer, "choices", term.Choices);
+                    WriteStrings(writer, "results", term.Results);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
             writer.WriteStartArray("levels");
             foreach (LevelTaken level in character.Levels)
             {
@@ -287,6 +345,34 @@ public static class CharacterFile
         writer.WriteEndArray();
     }
 
+    private static void WriteStrings(Utf8JsonWriter writer, string name, IEnumerable<string> values)
+    {
+        writer.WriteStartArray(name);
+        foreach (string value in values)
+        {
+            writer.WriteStringValue(value);
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static void WriteLifepathRoll(Utf8JsonWriter writer, string name, LifepathRoll? roll)
+    {
+        if (roll is not LifepathRoll result)
+        {
+            return;
+        }
+
+        writer.WriteStartObject(name);
+        writer.WriteString("kind", result.Kind);
+        writer.WriteNumber("roll", result.Roll);
+        writer.WriteNumber("modifier", result.Modifier);
+        writer.WriteNumber("total", result.Total);
+        writer.WriteNumber("target", result.Target);
+        writer.WriteBoolean("success", result.Success);
+        writer.WriteEndObject();
+    }
+
     private sealed class Reader(string path, ModuleSet set, List<ModuleDiagnostic> problems, string prefix)
     {
         private readonly RuleSet _rules = set.Rules!;
@@ -319,6 +405,7 @@ public static class CharacterFile
             bool raceless = !_rules.OfType(DefinitionTypes.Race).Any();
             Definition? race = raceless ? null : Reference(root, "race", DefinitionTypes.Race);
             Definition? creation = Reference(root, "creation", DefinitionTypes.CharacterCreation);
+            Definition? lifepath = root.TryGetProperty("lifepath", out _) ? Reference(root, "lifepath", DefinitionTypes.Lifepath) : null;
             decimal? experience = Number(root, "experience");
             Dictionary<string, decimal> balances = ReadBalances(root);
             if (problems.Count > _before || name is null || (race is null && !raceless) || creation is null)
@@ -326,11 +413,13 @@ public static class CharacterFile
                 return null;
             }
 
-            Character character = new() { Name = name, Modules = modules, Race = race, Creation = creation };
+            Character character = new() { Name = name, Modules = modules, Race = race, Creation = creation, Lifepath = lifepath };
             if (!ReadLevels(root, character))
             {
                 return null;
             }
+
+            ReadLifepath(root, character);
 
             character.Experience = experience ?? 0;
             ReadList(root, "left_classes", DefinitionTypes.Class, character.LeftClasses);
@@ -491,6 +580,152 @@ public static class CharacterFile
             }
 
             return problems.Count == before;
+        }
+
+        private void ReadLifepath(JsonElement root, Character character)
+        {
+            bool hasAge = root.TryGetProperty("age", out JsonElement age);
+            bool hasTerms = root.TryGetProperty("career_terms", out JsonElement terms);
+            if (character.Lifepath is null)
+            {
+                if (hasAge || hasTerms)
+                {
+                    Error("$.lifepath", "A character with age or career_terms must name its lifepath definition.");
+                }
+
+                return;
+            }
+
+            if (!hasAge || age.ValueKind != JsonValueKind.Number || !age.TryGetInt32(out int years) || years < 0)
+            {
+                Error("$.age", "A lifepath character needs a nonnegative whole-number age.");
+            }
+            else
+            {
+                character.Age = years;
+            }
+
+            if (!hasTerms || terms.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.career_terms", "A lifepath character needs career_terms: an array of recorded terms.");
+                return;
+            }
+
+            int index = 0;
+            foreach (JsonElement term in terms.EnumerateArray())
+            {
+                string at = $"$.career_terms[{index}]";
+                index++;
+                if (term.ValueKind != JsonValueKind.Object)
+                {
+                    Error(at, "Each career term must be an object with its career, ages, ranks, rolls, choices and results.");
+                    continue;
+                }
+
+                if (Text(term, "career", at) is not string career
+                    || Number(term, "number", at) is not decimal number
+                    || Number(term, "age_before", at) is not decimal ageBefore
+                    || Number(term, "age_after", at) is not decimal ageAfter
+                    || Number(term, "rank_before", at) is not decimal rankBefore
+                    || Number(term, "rank_after", at) is not decimal rankAfter
+                    || FlagRequired(term, "ended", at) is not bool ended
+                    || FlagRequired(term, "benefits_lost", at) is not bool benefitsLost)
+                {
+                    continue;
+                }
+
+                if (!character.Lifepath.Json.GetProperty("careers").EnumerateArray().Any(candidate => candidate.GetProperty("id").GetString() == career))
+                {
+                    Error($"{at}.career", $"'{career}' is not a career in {character.Lifepath.QualifiedId}; the term ledger must use one of {string.Join(", ", character.Lifepath.Json.GetProperty("careers").EnumerateArray().Select(candidate => candidate.GetProperty("id").GetString()))}.");
+                }
+
+                if (number < 1 || number != decimal.Truncate(number))
+                {
+                    Error($"{at}.number", "A career term number must be a positive whole number.");
+                }
+
+                if (ageBefore < 0 || ageBefore != decimal.Truncate(ageBefore) || ageAfter < 0 || ageAfter != decimal.Truncate(ageAfter) || ageAfter < ageBefore)
+                {
+                    Error(at, "A career term must have nonnegative whole-number ages, with age_after no less than age_before.");
+                }
+
+                if (rankBefore < 0 || rankBefore != decimal.Truncate(rankBefore) || rankAfter < 0 || rankAfter != decimal.Truncate(rankAfter))
+                {
+                    Error(at, "A career term must have nonnegative whole-number ranks.");
+                }
+
+                List<string> choices = Strings(term, "choices", at);
+                List<string> results = Strings(term, "results", at);
+                LifepathRoll? qualification = ReadLifepathRoll(term, "qualification", at);
+                LifepathRoll? survival = ReadLifepathRoll(term, "survival", at);
+                LifepathRoll? commission = ReadLifepathRoll(term, "commission", at);
+                LifepathRoll? advancement = ReadLifepathRoll(term, "advancement", at);
+                LifepathRoll? aging = ReadLifepathRoll(term, "aging", at);
+                character.CareerTerms.Add(new LifepathTerm(career, (int)number, (int)ageBefore, (int)ageAfter, (int)rankBefore, (int)rankAfter, qualification, survival, commission, advancement, aging, ended, benefitsLost, choices, results));
+            }
+
+            character.LifepathEnded = character.CareerTerms.Any(term => term.Ended) || character.CareerTerms.Count > 0;
+        }
+
+        private LifepathRoll? ReadLifepathRoll(JsonElement term, string name, string at)
+        {
+            if (!term.TryGetProperty(name, out JsonElement roll))
+            {
+                return null;
+            }
+
+            string path = $"{at}.{name}";
+            if (roll.ValueKind != JsonValueKind.Object
+                || Text(roll, "kind", path) is not string kind
+                || Number(roll, "roll", path) is not decimal raw
+                || Number(roll, "modifier", path) is not decimal modifier
+                || Number(roll, "total", path) is not decimal total
+                || Number(roll, "target", path) is not decimal target
+                || FlagRequired(roll, "success", path) is not bool success)
+            {
+                Error(path, "A lifepath roll must contain kind, roll, modifier, total, target and success.");
+                return null;
+            }
+
+            return new LifepathRoll(kind, raw, modifier, total, target, success);
+        }
+
+        private List<string> Strings(JsonElement root, string name, string at)
+        {
+            if (!root.TryGetProperty(name, out JsonElement values) || values.ValueKind != JsonValueKind.Array)
+            {
+                Error($"{at}.{name}", $"\"{name}\" must be an array of text.");
+                return [];
+            }
+
+            List<string> result = [];
+            int index = 0;
+            foreach (JsonElement value in values.EnumerateArray())
+            {
+                if (value.ValueKind != JsonValueKind.String)
+                {
+                    Error($"{at}.{name}[{index}]", "The value must be text.");
+                }
+                else
+                {
+                    result.Add(value.GetString()!);
+                }
+
+                index++;
+            }
+
+            return result;
+        }
+
+        private bool? FlagRequired(JsonElement root, string name, string at)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value) || value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            {
+                Error($"{at}.{name}", $"\"{name}\" must be true or false.");
+                return null;
+            }
+
+            return value.GetBoolean();
         }
 
         /// <summary>"class_experience": each class's own experience, by class ID; only classes the character has.</summary>

@@ -18,6 +18,31 @@ public sealed record LevelTaken(Definition? Class, decimal Gain, IReadOnlyList<D
     public IReadOnlyList<string> Boosts { get; init; } = [];
 }
 
+/// <summary>A recorded 2D6 or existing-check result during a career term.</summary>
+public sealed record LifepathRoll(string Kind, decimal Roll, decimal Modifier, decimal Total, decimal Target, bool Success);
+
+/// <summary>
+/// One immutable entry in a character's prior-history ledger. The choices and
+/// results are kept so a saved character can explain how its current skills,
+/// characteristics, gear and money were gained.
+/// </summary>
+public sealed record LifepathTerm(
+    string Career,
+    int Number,
+    int AgeBefore,
+    int AgeAfter,
+    int RankBefore,
+    int RankAfter,
+    LifepathRoll? Qualification,
+    LifepathRoll? Survival,
+    LifepathRoll? Commission,
+    LifepathRoll? Advancement,
+    LifepathRoll? Aging,
+    bool Ended,
+    bool BenefitsLost,
+    IReadOnlyList<string> Choices,
+    IReadOnlyList<string> Results);
+
 /// <summary>A player character: its choices, scores and progress under a rule set.</summary>
 public sealed class Character
 {
@@ -29,6 +54,18 @@ public sealed class Character
 
     /// <summary>The character-creation definition the character was made with; its grants are the first level's choices.</summary>
     public required Definition Creation { get; set; }
+
+    /// <summary>The optional ruleset-owned term-by-term career procedure used to make this character.</summary>
+    public Definition? Lifepath { get; set; }
+
+    /// <summary>Age in years after the recorded career terms; zero means the character has no lifepath.</summary>
+    public int Age { get; set; }
+
+    /// <summary>Career terms in order, including a failed term that ended prior history.</summary>
+    public List<LifepathTerm> CareerTerms { get; } = [];
+
+    /// <summary>Whether prior history has ended and no further career terms may be taken.</summary>
+    public bool LifepathEnded { get; set; }
 
     /// <summary>Every level the character has, first to last; a new character has one.</summary>
     public List<LevelTaken> Levels { get; } = [];
@@ -140,11 +177,13 @@ public sealed class Character
         Character copy = new()
         {
             Name = Name, Modules = Modules, Race = Race, Creation = Creation,
+            Lifepath = Lifepath, Age = Age, LifepathEnded = LifepathEnded,
             Experience = Experience, Portrait = Portrait, Npc = Npc,
             UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
             Prepared = Prepared?.ToList(),
         };
         copy.Levels.AddRange(Levels);
+        copy.CareerTerms.AddRange(CareerTerms);
         copy.LeftClasses.AddRange(LeftClasses);
         copy.Equipment.AddRange(Equipment);
         copy.Spells.AddRange(Spells);

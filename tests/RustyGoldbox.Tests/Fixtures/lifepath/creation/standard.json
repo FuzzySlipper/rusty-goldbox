@@ -1,0 +1,10 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Standard",
+  "attributes": ["body", "mind"],
+  "method": "roll",
+  "attribute_roll": "10",
+  "default": true,
+  "lifepath": "careers"
+}

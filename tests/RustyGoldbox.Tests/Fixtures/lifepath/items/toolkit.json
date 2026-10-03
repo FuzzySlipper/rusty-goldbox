@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "toolkit",
+  "name": "Toolkit",
+  "kind": "gear",
+  "cost": 5,
+  "currency": "credits",
+  "weight": 1
+}

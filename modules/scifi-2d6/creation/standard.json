@@ -14,10 +14,5 @@
   "attribute_roll": "2d6",
   "assignment": "arrange",
   "default": true,
-  "features": [
-    {
-      "kind": "career",
-      "count": 1
-    }
-  ]
+  "lifepath": "prior_history"
 }

@@ -1,0 +1,220 @@
+{
+  "type": "lifepath",
+  "id": "prior_history",
+  "name": "Prior history",
+  "start_age": 18,
+  "term_years": 4,
+  "max_terms": 7,
+  "aging": {
+    "start_age": 34,
+    "start_term": 4,
+    "effects": [
+      { "min": -6, "max": -6, "changes": [
+        { "stat": "str", "amount": 2 }, { "stat": "dex", "amount": 2 }, { "stat": "end", "amount": 2 }, { "stat": "int", "amount": 1 }
+      ] },
+      { "min": -5, "max": -5, "changes": [
+        { "stat": "str", "amount": 2 }, { "stat": "dex", "amount": 2 }, { "stat": "end", "amount": 2 }
+      ] },
+      { "min": -4, "max": -4, "changes": [
+        { "stat": "str", "amount": 2 }, { "stat": "dex", "amount": 2 }, { "stat": "end", "amount": 1 }
+      ] },
+      { "min": -3, "max": -3, "changes": [
+        { "stat": "str", "amount": 2 }, { "stat": "dex", "amount": 1 }, { "stat": "end", "amount": 1 }
+      ] },
+      { "min": -2, "max": -2, "changes": [
+        { "stat": "str", "amount": 1 }, { "stat": "dex", "amount": 1 }, { "stat": "end", "amount": 1 }
+      ] },
+      { "min": -1, "max": -1, "changes": [
+        { "stat": "str", "amount": 1 }, { "stat": "dex", "amount": 1 }
+      ] },
+      { "min": 0, "max": 0, "changes": [
+        { "stat": "str", "amount": 1 }
+      ] },
+      { "min": 1, "max": 12, "changes": [] }
+    ]
+  },
+  "careers": [
+    {
+      "id": "scout",
+      "name": "Scout",
+      "qualification": { "stat": "int", "target": 6 },
+      "survival": { "stat": "end", "target": 7 },
+      "reenlistment": { "target": 6 },
+      "ranks": [
+        { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
+      ],
+      "skills": [
+        { "id": "personal", "name": "Personal development", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "str" }, { "roll": 2, "kind": "attribute", "stat": "dex" },
+          { "roll": 3, "kind": "attribute", "stat": "end" }, { "roll": 4, "kind": "skill", "stat": "athletics" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "service", "name": "Service skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "athletics" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "skill", "stat": "melee_combat" }, { "roll": 4, "kind": "skill", "stat": "tactics" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "specialist", "name": "Specialist skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "tactics" }, { "roll": 2, "kind": "skill", "stat": "athletics" },
+          { "roll": 3, "kind": "skill", "stat": "gun_combat" }, { "roll": 4, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] },
+        { "id": "advanced", "name": "Advanced education", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "tactics" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] }
+      ],
+      "benefits": {
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
+          { "roll": 3, "currency": "credits", "amount": 10000 }, { "roll": 4, "currency": "credits", "amount": 20000 },
+          { "roll": 5, "currency": "credits", "amount": 20000 }, { "roll": 6, "currency": "credits", "amount": 50000 }
+        ],
+        "material": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "athletics" },
+          { "roll": 3, "kind": "item", "item": "rifle" }, { "roll": 4, "kind": "item", "item": "cutlass" },
+          { "roll": 5, "kind": "attribute", "stat": "soc" }, { "roll": 6, "kind": "item", "item": "mesh" }
+        ]
+      }
+    },
+    {
+      "id": "marine",
+      "name": "Marine",
+      "qualification": { "stat": "int", "target": 6 },
+      "survival": { "stat": "end", "target": 6 },
+      "commission": { "stat": "edu", "target": 6 },
+      "advancement": { "stat": "soc", "target": 7 },
+      "reenlistment": { "target": 6 },
+      "ranks": [
+        { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
+      ],
+      "skills": [
+        { "id": "personal", "name": "Personal development", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "str" }, { "roll": 2, "kind": "attribute", "stat": "dex" },
+          { "roll": 3, "kind": "attribute", "stat": "end" }, { "roll": 4, "kind": "attribute", "stat": "int" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "service", "name": "Service skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "tactics" }, { "roll": 2, "kind": "skill", "stat": "athletics" },
+          { "roll": 3, "kind": "skill", "stat": "gun_combat" }, { "roll": 4, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "specialist", "name": "Specialist skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "gun_combat" }, { "roll": 2, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "tactics" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] },
+        { "id": "advanced", "name": "Advanced education", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "tactics" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] }
+      ],
+      "benefits": {
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
+          { "roll": 3, "currency": "credits", "amount": 10000 }, { "roll": 4, "currency": "credits", "amount": 20000 },
+          { "roll": 5, "currency": "credits", "amount": 20000 }, { "roll": 6, "currency": "credits", "amount": 50000 }
+        ],
+        "material": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "item", "item": "rifle" }, { "roll": 4, "kind": "item", "item": "cutlass" },
+          { "roll": 5, "kind": "attribute", "stat": "soc" }, { "roll": 6, "kind": "item", "item": "mesh" }
+        ]
+      }
+    },
+    {
+      "id": "mercenary",
+      "name": "Mercenary",
+      "qualification": { "stat": "int", "target": 4 },
+      "survival": { "stat": "end", "target": 6 },
+      "commission": { "stat": "int", "target": 7 },
+      "advancement": { "stat": "int", "target": 6 },
+      "reenlistment": { "target": 5 },
+      "ranks": [
+        { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
+      ],
+      "skills": [
+        { "id": "personal", "name": "Personal development", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "str" }, { "roll": 2, "kind": "attribute", "stat": "dex" },
+          { "roll": 3, "kind": "attribute", "stat": "end" }, { "roll": 4, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "service", "name": "Service skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "gun_combat" }, { "roll": 2, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "tactics" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "specialist", "name": "Specialist skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "tactics" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "skill", "stat": "melee_combat" }, { "roll": 4, "kind": "skill", "stat": "athletics" },
+          { "roll": 5, "kind": "skill", "stat": "tactics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "advanced", "name": "Advanced education", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "tactics" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] }
+      ],
+      "benefits": {
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
+          { "roll": 3, "currency": "credits", "amount": 5000 }, { "roll": 4, "currency": "credits", "amount": 5000 },
+          { "roll": 5, "currency": "credits", "amount": 10000 }, { "roll": 6, "currency": "credits", "amount": 20000 }
+        ],
+        "material": [
+          { "roll": 1, "kind": "attribute", "stat": "int" }, { "roll": 2, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 3, "kind": "item", "item": "cutlass" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 5, "kind": "attribute", "stat": "soc" }, { "roll": 6, "kind": "item", "item": "jack" }
+        ]
+      }
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "qualification": { "stat": "dex", "target": 5 },
+      "survival": { "stat": "dex", "target": 4 },
+      "commission": { "stat": "str", "target": 6 },
+      "advancement": { "stat": "int", "target": 7 },
+      "reenlistment": { "target": 4 },
+      "ranks": [
+        { "rank": 2, "name": "Soldier", "skill": "gun_combat", "amount": 1 }
+      ],
+      "skills": [
+        { "id": "personal", "name": "Personal development", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "str" }, { "roll": 2, "kind": "attribute", "stat": "dex" },
+          { "roll": 3, "kind": "attribute", "stat": "end" }, { "roll": 4, "kind": "skill", "stat": "melee_combat" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "service", "name": "Service skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "athletics" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "skill", "stat": "melee_combat" }, { "roll": 4, "kind": "skill", "stat": "tactics" },
+          { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "specialist", "name": "Specialist skills", "entries": [
+          { "roll": 1, "kind": "skill", "stat": "tactics" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "skill", "stat": "melee_combat" }, { "roll": 4, "kind": "skill", "stat": "athletics" },
+          { "roll": 5, "kind": "skill", "stat": "tactics" }, { "roll": 6, "kind": "skill", "stat": "gun_combat" }
+        ] },
+        { "id": "advanced", "name": "Advanced education", "entries": [
+          { "roll": 1, "kind": "attribute", "stat": "edu" }, { "roll": 2, "kind": "skill", "stat": "tactics" },
+          { "roll": 3, "kind": "skill", "stat": "athletics" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 5, "kind": "skill", "stat": "melee_combat" }, { "roll": 6, "kind": "skill", "stat": "tactics" }
+        ] }
+      ],
+      "benefits": {
+        "cash": [
+          { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
+          { "roll": 3, "currency": "credits", "amount": 5000 }, { "roll": 4, "currency": "credits", "amount": 5000 },
+          { "roll": 5, "currency": "credits", "amount": 10000 }, { "roll": 6, "currency": "credits", "amount": 20000 }
+        ],
+        "material": [
+          { "roll": 1, "kind": "attribute", "stat": "int" }, { "roll": 2, "kind": "skill", "stat": "gun_combat" },
+          { "roll": 3, "kind": "item", "item": "blade" }, { "roll": 4, "kind": "item", "item": "auto_pistol" },
+          { "roll": 5, "kind": "attribute", "stat": "soc" }, { "roll": 6, "kind": "skill", "stat": "melee_combat" }
+        ]
+      }
+    }
+  ]
+}

@@ -271,6 +271,23 @@ internal static class SessionProjection
             ["boosts"] = Boosts(creation),
         };
         projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(CreationChoice).ToArray());
+        if (creation.Json.TryGetProperty("lifepath", out _)
+            && rules.Reference(creation, "$.lifepath") is Definition lifepath)
+        {
+            projection["lifepath"] = new JsonObject
+            {
+                ["id"] = lifepath.QualifiedId,
+                ["name"] = lifepath.Name,
+                ["startAge"] = lifepath.Json.TryGetProperty("start_age", out JsonElement startAge) ? startAge.GetInt32() : 18,
+                ["maxTerms"] = lifepath.Json.TryGetProperty("max_terms", out JsonElement maxTerms) ? maxTerms.GetInt32() : 7,
+                ["careers"] = new JsonArray(CharacterRules.LifepathCareers(lifepath).Select(career => (JsonNode)new JsonObject
+                {
+                    ["id"] = career.Id,
+                    ["name"] = career.Name,
+                    ["skillTables"] = new JsonArray(career.SkillTables.Select(table => (JsonNode)table).ToArray()),
+                }).ToArray()),
+            };
+        }
         foreach (JsonNode? entry in projection["classes"]!.AsArray())
         {
             Definition characterClass = rules.Find(DefinitionTypes.Class, entry!["id"]!.GetValue<string>(), out _)!;
@@ -437,6 +454,39 @@ internal static class SessionProjection
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
             ["portraitPicture"] = character.Portrait is Definition portrait ? Picture(rules, portrait, imageUrl) : null,
+            ["age"] = character.Lifepath is null ? null : character.Age,
+            ["lifepath"] = character.Lifepath?.QualifiedId,
+            ["careerTerms"] = new JsonArray(character.CareerTerms.Select(term => new JsonObject
+            {
+                ["career"] = term.Career,
+                ["number"] = term.Number,
+                ["ageBefore"] = term.AgeBefore,
+                ["ageAfter"] = term.AgeAfter,
+                ["rankBefore"] = term.RankBefore,
+                ["rankAfter"] = term.RankAfter,
+                ["qualification"] = LifepathRoll(term.Qualification),
+                ["survival"] = LifepathRoll(term.Survival),
+                ["commission"] = LifepathRoll(term.Commission),
+                ["advancement"] = LifepathRoll(term.Advancement),
+                ["aging"] = LifepathRoll(term.Aging),
+                ["ended"] = term.Ended,
+                ["benefitsLost"] = term.BenefitsLost,
+                ["choices"] = new JsonArray(term.Choices.Select(choice => (JsonNode)choice).ToArray()),
+                ["results"] = new JsonArray(term.Results.Select(result => (JsonNode)result).ToArray()),
+            }).ToArray()),
+        };
+    }
+
+    private static JsonObject? LifepathRoll(LifepathRoll? roll)
+    {
+        return roll is null ? null : new JsonObject
+        {
+            ["kind"] = roll.Kind,
+            ["roll"] = roll.Roll,
+            ["modifier"] = roll.Modifier,
+            ["total"] = roll.Total,
+            ["target"] = roll.Target,
+            ["success"] = roll.Success,
         };
     }
 

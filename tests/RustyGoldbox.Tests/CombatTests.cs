@@ -212,8 +212,8 @@ public sealed class CombatTests
         using TempModules scratch = new();
         string scifi = Path.Combine(Rules.RepositoryRoot, "modules", "scifi-2d6");
         string transcript = CliTranscript.Run(scratch.Root,
-            ["character", "new", "--module", scifi, "--name", "Vance", "--feature", "marine", "--priority", "end,dex,str,int,edu,soc", "--seed", "3", "--out", "vance.json"],
-            ["character", "new", "--module", scifi, "--name", "Kira", "--feature", "mercenary", "--priority", "str,dex,end,int,edu,soc", "--seed", "5", "--out", "kira.json"]);
+            ["character", "new", "--module", scifi, "--name", "Vance", "--lifepath", "prior_history", "--career", "marine", "--terms", "1", "--skill-table", "service,service,service", "--benefit", "cash", "--priority", "end,dex,str,int,edu,soc", "--seed", "3", "--out", "vance.json"],
+            ["character", "new", "--module", scifi, "--name", "Kira", "--lifepath", "prior_history", "--career", "mercenary", "--terms", "1", "--skill-table", "service,service,service", "--benefit", "cash", "--priority", "str,dex,end,int,edu,soc", "--seed", "5", "--out", "kira.json"]);
         Equip(scratch, "vance.json", "scifi-2d6", "rifle", "mesh");
         Equip(scratch, "kira.json", "scifi-2d6", "cutlass", "jack");
 

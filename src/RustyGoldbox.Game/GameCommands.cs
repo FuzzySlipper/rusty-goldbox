@@ -123,11 +123,16 @@ internal static class GameCommands
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
                     IReadOnlyList<string>? features = payload.TryGetProperty("features", out _) ? Texts(payload, "features") : null;
                     IReadOnlyList<string>? boosts = payload.TryGetProperty("boosts", out _) ? Texts(payload, "boosts") : null;
+                    string? lifepath = payload.TryGetProperty("lifepath", out _) ? Text(payload, "lifepath") : null;
+                    IReadOnlyList<string>? careers = payload.TryGetProperty("careers", out _) ? Texts(payload, "careers") : null;
+                    IReadOnlyList<string>? skillTables = payload.TryGetProperty("skillTables", out _) ? Texts(payload, "skillTables") : null;
+                    IReadOnlyList<string>? benefits = payload.TryGetProperty("benefits", out _) ? Texts(payload, "benefits") : null;
                     IReadOnlyList<SkillAllocation>? skillPoints = payload.TryGetProperty("skills", out _) ? Skills(payload) : null;
+                    string? creation = payload.TryGetProperty("creation", out _) ? Text(payload, "creation") : null;
                     string? race = payload.TryGetProperty("race", out _) ? Text(payload, "race") : null;
                     string? characterClass = payload.TryGetProperty("class", out _) ? Text(payload, "class") : null;
-                    string? creation = payload.TryGetProperty("creation", out _) ? Text(payload, "creation") : null;
-                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts, skillPoints, creation);
+                    int terms = payload.TryGetProperty("terms", out _) ? Integer(payload, "terms") : 0;
+                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts, skillPoints, creation, lifepath, careers, skillTables, benefits, terms);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));

@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "lifepath",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Lifepath (test fixture)",
+  "requires": [],
+  "provenance": "Original test fixture shaped like a term career system. Contains no published rules text or tables."
+}
