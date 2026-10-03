@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Rusty.Engine;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Characters;
@@ -90,7 +92,7 @@ public sealed class CombatTests
     {
         using TempModules scratch = new();
         WriteCharacter(scratch, Fixture("degrees"), "tor.json", new CreationRequest("Tor", "vanguard", "hillfolk",
-            Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight"]), "longblade");
+            Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight"]), "longblade", "buckler");
         WriteCharacter(scratch, Fixture("degrees"), "wren.json", new CreationRequest("Wren", "mystic", "sylvan",
             Features: ["duskwood", "scribe", "sylvan_step", "spark"], Boosts: ["insight", "insight", "finesse", "intellect", "finesse", "stamina", "brawn"]), "staff");
 
@@ -99,6 +101,31 @@ public sealed class CombatTests
         Golden.Verify("degrees-combat.txt", CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "3"],
             ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "2"]));
+    }
+
+    [Fact]
+    public void WhatACreatureHasEquippedDecidesWhatWorks()
+    {
+        using TempModules scratch = new();
+        CreationRequest tor = new("Tor", "vanguard", "hillfolk",
+            Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"], Boosts: ["brawn", "insight", "stamina", "brawn", "brawn", "stamina", "finesse", "insight"]);
+        WriteCharacter(scratch, Fixture("degrees"), "shielded.json", tor, "longblade", "buckler");
+        WriteCharacter(scratch, Fixture("degrees"), "bare.json", tor, "longblade");
+        CreationRequest ilse = new("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 16), ("wit", 16)), Features: ["lightning_reflexes"]);
+        WriteCharacter(scratch, Fixture("ascend"), "light.json", ilse, "chain_shirt");
+        WriteCharacter(scratch, Fixture("ascend"), "heavy.json", ilse, "banded_mail");
+
+        string Sim(string module, string party, string encounter) => CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", Fixture(module), "--party", party, "--encounter", encounter, "--seed", "3"]);
+
+        // Degrees: shield ward's armour and the raise-shield reaction need a shield in hand.
+        Assert.Contains("Tor reacts to", Sim("degrees", "shielded.json", "raiders"), StringComparison.Ordinal);
+        Assert.DoesNotContain("Tor reacts to", Sim("degrees", "bare.json", "raiders"), StringComparison.Ordinal);
+        decimal Ac(string file) => decimal.Parse(Regex.Match(CliTranscript.Run(scratch.Root, ["character", "show", file, "--module", Fixture("degrees")]), @"\bac\s+(\d+)").Groups[1].Value, CultureInfo.InvariantCulture);
+        Assert.Equal(Ac("bare.json") + 1, Ac("shielded.json"));
+        // Ascend: an adept can't hex in heavy armour.
+        Assert.Contains("Ilse uses Hex", Sim("ascend", "light.json", "bullies"), StringComparison.Ordinal);
+        Assert.DoesNotContain("Ilse uses Hex", Sim("ascend", "heavy.json", "bullies"), StringComparison.Ordinal);
     }
 
     [Fact]

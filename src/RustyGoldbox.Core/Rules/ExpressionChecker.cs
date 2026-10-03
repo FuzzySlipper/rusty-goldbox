@@ -289,6 +289,11 @@ internal sealed class ExpressionChecker(
             return CheckEachClass(call, function);
         }
 
+        if (function.Name == "equipped")
+        {
+            return CheckEquipped(call, function);
+        }
+
         if (function.Name == "spell_slots" && !roots.HasFlag(Roots.Self))
         {
             throw new ExpressionException("spell_slots() reads self's classes, but this field can't read self.", call.Column);
@@ -322,6 +327,29 @@ internal sealed class ExpressionChecker(
 
         ExpressionChecker inner = new(rules, module, roots | Roots.Class, useParameters, conditionValues, derivedType, isInferring);
         Expect(inner.Check(call.Arguments[0]), ExprType.Number, call.Arguments[0].Column, $"{function.Name}()");
+        foreach ((Expr expr, CompiledTable table) in inner.Tables)
+        {
+            Tables[expr] = table;
+        }
+
+        return ExprType.Number;
+    }
+
+    /// <summary>equipped(): the argument is a boolean checked as if inside an item, reading item.id and the like.</summary>
+    private ExprType CheckEquipped(CallExpr call, ExpressionFunction function)
+    {
+        if (call.Arguments.Count != 1)
+        {
+            throw new ExpressionException($"{function.Signature} takes {function.ArgumentCountText}, but got {call.Arguments.Count}.", call.Column);
+        }
+
+        if (!roots.HasFlag(Roots.Self))
+        {
+            throw new ExpressionException("equipped() goes over self's equipment, but this field can't read self.", call.Column);
+        }
+
+        ExpressionChecker inner = new(rules, module, roots | Roots.Item, useParameters, conditionValues, derivedType, isInferring);
+        Expect(inner.Check(call.Arguments[0]), ExprType.Boolean, call.Arguments[0].Column, "equipped()");
         foreach ((Expr expr, CompiledTable table) in inner.Tables)
         {
             Tables[expr] = table;

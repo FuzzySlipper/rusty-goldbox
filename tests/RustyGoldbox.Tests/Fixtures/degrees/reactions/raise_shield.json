@@ -8,5 +8,6 @@
   },
   "use": {
     "action": "brace"
-  }
+  },
+  "when": "equipped(item.kind == 'shield') > 0"
 }

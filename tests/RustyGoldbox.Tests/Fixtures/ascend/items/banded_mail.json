@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "banded_mail",
+  "name": "Banded mail",
+  "kind": "armour",
+  "cost": 250,
+  "weight": 35,
+  "modifiers": [
+    {
+      "stat": "ac",
+      "value": "6"
+    }
+  ]
+}

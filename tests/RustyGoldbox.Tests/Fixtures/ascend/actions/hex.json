@@ -23,5 +23,6 @@
       }
     }
   ],
-  "valid_target": "not target.condition.shaken"
+  "valid_target": "not target.condition.shaken",
+  "available": "equipped(item.kind == 'armour' and item.weight > 30) == 0"
 }

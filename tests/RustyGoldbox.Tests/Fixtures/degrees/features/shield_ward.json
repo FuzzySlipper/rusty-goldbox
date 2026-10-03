@@ -6,7 +6,7 @@
   "modifiers": [
     {
       "stat": "ac",
-      "value": "1"
+      "value": "if equipped(item.kind == 'shield') > 0 then 1 else 0"
     }
   ]
 }

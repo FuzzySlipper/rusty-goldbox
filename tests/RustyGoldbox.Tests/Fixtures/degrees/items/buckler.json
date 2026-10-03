@@ -1,0 +1,8 @@
+{
+  "type": "item",
+  "id": "buckler",
+  "name": "Buckler",
+  "kind": "shield",
+  "cost": 1,
+  "weight": 1
+}

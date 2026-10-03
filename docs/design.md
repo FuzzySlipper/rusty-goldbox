@@ -174,7 +174,10 @@ checked against the race and the class's requirements (3.5e style). A class's `e
 `item.weight` and `item.cost`) says what its members may equip, checked when
 an item is equipped and when a character file loads; a race's
 `multiclass_equipment` says whether a multi-classed character needs every
-class to allow an item or any one. A class's
+class to allow an item or any one. What works with the gear is a separate
+question: `equipped(x)` counts the equipped items `x` holds for, so an
+action's `available`, a reaction's `when` or a feature's modifier can need a
+shield or forbid heavy armour. A class's
 modifiers read `class.level`, the creature's level in that class, so
 per-class progressions such as base attack and base saves add up across
 classes. With experience **split** (first-edition multi-classing), a

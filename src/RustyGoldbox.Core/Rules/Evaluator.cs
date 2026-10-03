@@ -434,7 +434,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
 
             if (path.Root == "item")
             {
-                Definition item = scope.Item ?? throw new ExpressionException($"item.{path.Name} has no value here: it is read in a class's equipment rule.", path.Column);
+                Definition item = scope.Item ?? throw new ExpressionException($"item.{path.Name} has no value here: it is read in a class's equipment rule and inside equipped().", path.Column);
                 return path.Name switch
                 {
                     "id" => Value.Of(item.Id),
@@ -573,6 +573,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                     "class_max" => each.Max(),
                     _ => each.Aggregate(0m, (total, value) => Add(total, value, call.Column)),
                 });
+            }
+
+            if (call.Function == "equipped")
+            {
+                Creature self = scope.Self ?? throw new ExpressionException("equipped() needs a self creature, but none was given.", call.Column);
+                int count = self.Equipment.Count(item => new Run(evaluator, expression, scope with { Item = item }).Evaluate(call.Arguments[0]).Boolean);
+                return Value.Of(count);
             }
 
             if (call.Function == "spell_slots")
