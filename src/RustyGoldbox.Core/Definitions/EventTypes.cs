@@ -153,14 +153,21 @@ public static class EventTypes
 
     public static DefinitionType Rest { get; } = new(
         "rest",
-        "The party rests: each character's named tracks return to their maximum (spell slots, power points, or hit points for a full night).",
+        "The party rests: immediate restoration, or timed periods under a resting policy. Named tracks and prepared spells restore only after all periods complete.",
         [
             new("text", new TextKind(), true, "What the party sees."),
             new("tracks", new ListKind(new ReferenceKind("track")), true, "The tracks restored."),
+            new("resting", new ReferenceKind("resting"), false, "A ruleset policy for timed recovery. Without it, named tracks restore immediately as before."),
+            new("periods", new IntegerKind(), false, "With resting, how many whole periods to attempt; required and positive."),
+            new("wandering", new ObjectKind(
+            [
+                new("when", Guard, true, "Checked once per attempted period; may roll dice. If true, that period grants no recovery, rest stops and the event runs."),
+                new("event", new ReferenceKind("event"), true, "The combat event for the wandering encounter, including its outcome chains."),
+            ]), false, "A wandering encounter check during timed rest. The attempted period still advances time."),
             new("prepare", new BooleanKind(), false, "If true, characters also prepare their memorised spells again (for classes with prepares_spells). Without it, prepared spells already cast stay spent."),
             Next,
         ],
-        """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
+        """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
     public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, Training, End];
 

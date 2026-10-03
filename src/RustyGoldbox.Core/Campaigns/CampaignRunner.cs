@@ -375,29 +375,7 @@ public sealed partial class CampaignRunner
                 Award(evt, "$.amount", amount, each, _state.Party.Select(_ => true).ToList(), dice, facts);
                 return Next(evt, "$.next");
             case "rest":
-                Evaluator evaluator = new(_rules, null);
-                for (int i = 0; i < json.GetProperty("tracks").GetArrayLength(); i++)
-                {
-                    Definition track = _rules.Reference(evt, $"$.tracks[{i}]");
-                    foreach (Character character in _state.Party)
-                    {
-                        if (Located(track, "$", () => evaluator.KnownTrackMax(character.ToCreature(), track)) is decimal max)
-                        {
-                            character.Tracks[track.Id].Current = max;
-                        }
-                    }
-                }
-
-                if (json.TryGetProperty("prepare", out JsonElement prepare) && prepare.GetBoolean())
-                {
-                    foreach (Character character in _state.Party)
-                    {
-                        character.Prepared = null;
-                    }
-                }
-
-                facts.Add(new TextFact(json.GetProperty("text").GetString()!));
-                return Next(evt, "$.next");
+                return Rest(evt, dice, facts);
             case "combat":
                 return Fight(evt, dice, facts);
             default:

@@ -568,6 +568,7 @@ public sealed class GameTests
             Assert.Equal(0, session.Runner.State.Party[0].Gold);
             Run(session, engine, """{ "action": "play", "command": "leave" }""");
             Assert.Null(Projected()["temple"]);
+            Run(session, engine, """{ "action": "play", "command": "choose 1" }""");
             Assert.Contains("The outfitter wishes you safe travels.", session.Log);
             var trainee = session.Runner.State.Party[0];
             trainee.Experience = 2001;

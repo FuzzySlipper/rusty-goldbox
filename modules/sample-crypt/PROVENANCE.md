@@ -5,3 +5,6 @@ All content in this module (areas, events, variables and the campaign definition
 The gate shrine and its five-gold healing fee are original sample content.
 Its heal operation uses the required ruleset's track and the existing
 operation vocabulary.
+
+The roadside rest option and its one-in-six rat encounter are original sample
+content. Recovery uses Classic's licensed natural resting policy.

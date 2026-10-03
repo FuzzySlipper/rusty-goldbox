@@ -1,0 +1,1 @@
+{ "type": "event", "id": "road_wanderer", "kind": "combat", "encounter": "classic:rat_pack", "on_win": "farewell", "on_lose": "farewell", "on_draw": "farewell" }

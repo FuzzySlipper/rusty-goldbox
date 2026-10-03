@@ -1,0 +1,1 @@
+{ "type": "resting", "id": "natural", "unit": "days", "restore": [{ "track": "hit_points", "amount": "1" }] }

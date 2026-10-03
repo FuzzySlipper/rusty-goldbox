@@ -206,3 +206,13 @@ Rulesets without training retain their existing immediate advancement.
 `character level --trained` is an authoring assertion that training happened
 outside the campaign, for importing or preparing a character file. In play,
 only the paid `train` command gains a training-required level.
+
+A `resting` ruleset definition gives the period (`rounds`, `hours` or `days`)
+and per-period `restore` track/amount pairs. Rounds reference the ruleset's
+`combat` definition for its existing `round_seconds`. A rest event selects it with `resting` and a positive `periods`.
+`CampaignRunner.Rest.cs` advances fictional campaign days and applies shared
+track healing for every uninterrupted period. Optional `wandering.when` rolls
+once per attempted period: a hit advances that period's time, grants no recovery,
+ends rest and runs `wandering.event` (a combat event and its usual outcome chains).
+Only a completed rest restores the event's full `tracks`, prepares spells and
+chains to `next`. Rest without a policy retains immediate restoration.

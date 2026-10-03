@@ -2,5 +2,5 @@
   "type": "event", "id": "temple", "kind": "temple",
   "text": "The gate shrine offers healing to travellers.",
   "services": [{ "label": "Healing", "cost": "5", "operations": [{ "op": "heal", "track": "classic:hit_points", "amount": "1d8" }] }],
-  "next": "farewell"
+  "next": "services_done"
 }

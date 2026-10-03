@@ -92,6 +92,9 @@ seed 1
   The party finds 100 gold, Dagger.  [2d6: 5+5 = 10]
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
+  Rest period 1/1 (days); campaign time: 1 days.
+  Ada recovers 0 hit points.
+  Brom recovers 0 hit points.
   The rattling stops. A draught rises from somewhere to the west.
 > status
   Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 220 + 120 | carrying Dagger
@@ -134,6 +137,9 @@ seed 1
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > leave
   The party leaves the temple.
+  Stay at the gate? [1] Leave  [2] Rest a day
+> choose 1
+  The party chooses 1: Leave.
   The outfitter wishes you safe travels.
 > left
   The party faces north.
@@ -178,6 +184,9 @@ seed 1
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > leave
   The party leaves the temple.
+  Stay at the gate? [1] Leave  [2] Rest a day
+> choose 1
+  The party chooses 1: Leave.
   The outfitter wishes you safe travels.
 > left
   The party faces north.

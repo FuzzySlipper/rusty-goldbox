@@ -4,6 +4,7 @@ forward       # [1,2]
 leave         # the outfitter before the guards are defeated
 serve 1 1     # healing at the gate shrine
 leave         # leave the shrine
+choose 1      # leave the gate
 left
 forward       # [1,1]
 right

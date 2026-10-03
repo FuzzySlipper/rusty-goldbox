@@ -105,3 +105,7 @@ Training (`advancement/standard.training`) adapts Chapter III, p. 118:
 unspecified; this module uses the current total character level, including
 multi-class levels. Each payment buys one class level. Tutor suitability and
 performance-based durations are not modelled.
+
+Natural recovery (`resting/natural`) adapts Chapter III, p. 124: one hit point
+per uninterrupted day. Constitution delays/weekly bonuses, coma and mandatory
+post-injury convalescence are not modelled in this policy.

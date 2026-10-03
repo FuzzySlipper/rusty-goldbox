@@ -42,6 +42,7 @@ public sealed class RuleSetBuilder
         builder.CheckCreationAttributes();
         builder.CheckAdvancement();
         builder.CheckEconomy();
+        builder.CheckResting();
         builder.CheckGrants();
         builder.CheckActions();
         builder.CheckCampaigns();
@@ -1164,6 +1165,23 @@ public sealed class RuleSetBuilder
         }
     }
 
+    private void CheckResting()
+    {
+        foreach (Definition resting in _rules.OfType(DefinitionTypes.Resting))
+        {
+            bool rounds = resting.Json.GetProperty("unit").GetString() == "rounds";
+            bool combat = resting.Json.TryGetProperty("combat", out _);
+            if (rounds && !combat)
+            {
+                Error(resting, "resting.duration", "$.combat", "A rounds policy needs a combat reference for the ruleset's round_seconds.");
+            }
+            else if (!rounds && combat)
+            {
+                Error(resting, "resting.duration", "$.combat", "combat only applies to a rounds policy; omit it for hours or days.");
+            }
+        }
+    }
+
     private void CheckEconomy()
     {
         List<Definition> economies = _rules.OfType(DefinitionTypes.Economy).ToList();
@@ -1184,6 +1202,23 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "rest":
+                bool timed = definition.Json.TryGetProperty("resting", out _);
+                if (timed && (!definition.Json.TryGetProperty("periods", out JsonElement count) || count.GetInt32() <= 0))
+                {
+                    Error(definition, "event.rest", "$.periods", "Timed rest requires a positive whole number of periods.");
+                }
+                else if (!timed && (definition.Json.TryGetProperty("periods", out _) || definition.Json.TryGetProperty("wandering", out _)))
+                {
+                    Error(definition, "event.rest", "$", "periods and wandering require a resting policy; omit them for immediate rest.");
+                }
+
+                if (_rules.References.TryGetValue((definition, "$.wandering.event"), out Definition? roaming) && roaming.Json.GetProperty("kind").GetString() != "combat")
+                {
+                    Error(definition, "event.rest", "$.wandering.event", "The wandering event must have kind combat, with an encounter and its outcome chains.");
+                }
+
+                break;
             case "training" when !Characters.CharacterRules.RequiresTraining(_rules):
                 Error(definition, "event.training", "$", "A training event needs advancement.training with cost and days expressions in its ruleset.");
                 break;

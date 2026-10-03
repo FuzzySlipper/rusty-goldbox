@@ -8,5 +8,7 @@
     "classic:spells_2"
   ],
   "next": "quiet",
-  "prepare": true
+  "prepare": true,
+  "resting": "classic:natural",
+  "periods": 1
 }

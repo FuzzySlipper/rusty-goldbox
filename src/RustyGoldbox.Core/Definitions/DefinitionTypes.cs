@@ -145,6 +145,20 @@ public static class DefinitionTypes
         }
         """);
 
+    public static DefinitionType Resting { get; } = new(
+        "resting",
+        "Rules for one period of rest: its duration and track recovery. Campaign rest events choose this policy and how many periods.",
+        [
+            new("unit", new EnumKind(["rounds", "hours", "days"]), true, "The duration of one period."),
+            new("combat", new ReferenceKind("combat"), false, "With rounds, the combat definition that owns round_seconds; required. Otherwise omit it."),
+            new("restore", new ListKind(new ObjectKind(
+            [
+                new("track", new ReferenceKind("track"), true, "The track to heal."),
+                new("amount", SelfNumber, true, "Recovery each uninterrupted period, up to the track's restore cap; self is the resting character."),
+            ])), true, "Recovery per period, in order. An empty list advances time without gradual recovery."),
+        ],
+        """{ "type": "resting", "id": "natural", "unit": "days", "restore": [{ "track": "hit_points", "amount": "1" }] }""");
+
     public static DefinitionType Advancement { get; } = new(
         "advancement",
         "How characters gain levels. Without one, each class has its own experience table (levels[].xp) and a character stays in one class. With experience \"character\", one table gives the experience for each total character level, and each new level is taken in a class of the player's choice, so a character can hold levels in several classes. A module set has at most one.",
@@ -672,7 +686,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Advancement, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Resting, Advancement, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure, Skin,
     ];
 

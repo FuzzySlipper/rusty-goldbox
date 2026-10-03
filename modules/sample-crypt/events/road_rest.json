@@ -1,0 +1,1 @@
+{ "type": "event", "id": "road_rest", "kind": "rest", "text": "You rest beside the gate for a day.", "tracks": [], "resting": "classic:natural", "periods": 1, "wandering": { "when": "1d6 == 1", "event": "road_wanderer" }, "next": "farewell" }
