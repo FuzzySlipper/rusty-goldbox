@@ -434,10 +434,17 @@ public static partial class CharacterRules
             }
         }
 
-        ValidatePersistedSkillCurrentValues(rules, character, options, configuredSkills, problems);
+        // Once choices are committed, base/current are historical creation
+        // context. Later levels, raises, equipment and conditions can change
+        // the live derived value, so don't replay that context against today's
+        // character at a save boundary.
+        if (!character.SkillPointsCommitted)
+        {
+            ValidatePendingSkillCurrentValues(rules, character, options, configuredSkills, problems);
+        }
     }
 
-    private static void ValidatePersistedSkillCurrentValues(
+    private static void ValidatePendingSkillCurrentValues(
         RuleSet rules,
         Character character,
         SkillPointOptions options,

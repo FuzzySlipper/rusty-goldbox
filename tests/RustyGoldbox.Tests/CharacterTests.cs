@@ -499,7 +499,7 @@ public sealed class CharacterTests
     }
 
     [Fact]
-    public void CharacterFileRejectsForgedStagedAllocationAndBonus()
+    public void CharacterFileRejectsForgedStagedAllocation()
     {
         using TempModules scratch = new();
         string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
@@ -514,17 +514,11 @@ public sealed class CharacterTests
         string path = Path.Combine(scratch.Root, "forged.json");
         System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
         forged["skill_allocations"]!["axe"]!["profession"] = 999;
-        System.Text.Json.Nodes.JsonObject axe = forged["skill_point_options"]!["skills"]!.AsArray()
-            .Single(skill => skill!["id"]!.GetValue<string>() == "axe")!.AsObject();
-        axe["base"] = 999;
-        axe["current"] = 0;
-        forged["stat_bonuses"]!["axe"] = 1998;
         File.WriteAllText(path, forged.ToJsonString());
 
         List<ModuleDiagnostic> problems = [];
         Assert.Null(CharacterFile.Read(path, set, problems));
         Assert.Contains(problems, problem => problem.JsonPath == "$.skill_allocations" && problem.Message.Contains("budget", StringComparison.Ordinal));
-        Assert.Contains(problems, problem => problem.JsonPath == "$.skill_point_options.skills.axe.current" && problem.Message.Contains("persisted character state", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -557,7 +551,7 @@ public sealed class CharacterTests
     }
 
     [Fact]
-    public void CharacterFileRejectsForgedStagedCurrentValueWithConsistentBonus()
+    public void CharacterFileRejectsForgedPendingStagedCurrentValue()
     {
         using TempModules scratch = new();
         string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
@@ -567,15 +561,13 @@ public sealed class CharacterTests
             {
                 ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
             },
-            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
-            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("sword", Personal: 100)]))!;
+            Creation: "staged", Features: ["staged_warrior"]))!;
         string path = Path.Combine(scratch.Root, "forged-current.json");
         System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
         System.Text.Json.Nodes.JsonObject sword = forged["skill_point_options"]!["skills"]!.AsArray()
             .Single(skill => skill!["id"]!.GetValue<string>() == "sword")!.AsObject();
         sword["base"] = 999;
         sword["current"] = 0;
-        forged["stat_bonuses"]!["sword"] = 1099;
         File.WriteAllText(path, forged.ToJsonString());
 
         List<ModuleDiagnostic> problems = [];
@@ -635,6 +627,59 @@ public sealed class CharacterTests
         Assert.NotNull(loaded);
         Assert.Empty(problems);
         Assert.Equal(14, new Evaluator(set.Rules!, null).Stat(loaded!.ToCreature(), "dodge").Number);
+    }
+
+    [Fact]
+    public void CommittedStagedCharacterPreservesOptionsAfterAnAttributeBoost()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/skill.json", """{ "type": "derived", "id": "skill", "name": "Skill", "value": "self.str" }""");
+        modules.Write("rules/profession.json", """{ "type": "feature", "id": "profession", "name": "Profession", "kind": "staged-profession", "skills": ["skill"] }""");
+        modules.Write("rules/staged.json", """
+            { "type": "character-creation", "id": "staged", "name": "Staged", "attributes": ["str"],
+              "method": "roll", "attribute_roll": "10",
+              "skill_points": { "profession": "1", "personal": "0", "skills": { "skill": "self.str" } },
+              "features": [ { "kind": "staged-profession", "count": 1 } ] }
+            """);
+        modules.Write("rules/warrior.json", """
+            { "type": "class", "id": "warrior", "name": "Warrior", "levels": [ { "hp": "1" }, { "hp": "1" } ] }
+            """);
+        modules.Write("rules/boost_amounts.json", """
+            { "type": "table", "id": "boost_amounts", "name": "Boost amounts",
+              "keys": [ { "name": "score", "type": "number" } ], "value": "number",
+              "rows": [ ["1-17", 2], ["18+", 1] ] }
+            """);
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "standard", "name": "Levels", "experience": "character", "levels": [0, 1],
+              "level_boosts": [ { "count": 1, "when": "self.level == 2", "amounts": "boost_amounts" } ] }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        Character character = Create(set, new CreationRequest("Rook", "warrior", null,
+            Attributes: new Dictionary<string, decimal> { ["str"] = 10 }, Creation: "staged", Features: ["profession"],
+            SkillPoints: [new SkillAllocation("skill", Profession: 1)]))!;
+        SkillPointOptions before = character.SkillPointData!;
+        Assert.Equal(10, Assert.Single(before.Skills).Current);
+
+        List<ModuleDiagnostic> problems = [];
+        List<LevelGain>? gains = WithDice(dice => CharacterRules.AddExperience(set.Rules!, character, 1, dice, problems, boosts: ["str"]));
+        Assert.Empty(problems);
+        Assert.Equal(2, Assert.Single(gains!).Level);
+        Assert.Equal(12, character.Attributes["str"]);
+
+        string path = Path.Combine(modules.Root, "rook.json");
+        File.WriteAllText(path, CharacterFile.ToJson(character));
+        Character? loaded = CharacterFile.Read(path, set, problems);
+
+        Assert.NotNull(loaded);
+        Assert.Empty(problems);
+        Assert.Equal(character.Attributes["str"], loaded!.Attributes["str"]);
+        Assert.Equal(before.Profession, loaded.SkillPointData!.Profession);
+        Assert.Equal(before.Personal, loaded.SkillPointData.Personal);
+        Assert.Equal(before.Skills.Select(skill => (skill.Skill, skill.Base, skill.Current, skill.ProfessionAllowed)),
+            loaded.SkillPointData.Skills.Select(skill => (skill.Skill, skill.Base, skill.Current, skill.ProfessionAllowed)));
     }
 
     [Fact]
