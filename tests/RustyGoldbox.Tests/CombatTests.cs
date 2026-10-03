@@ -30,10 +30,40 @@ public sealed class CombatTests
         Golden.Verify("classic-spells.txt", CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "human", "--name", "Mira", "--attributes", "str=9,dex=14,con=12,int=16,wis=10,cha=10", "--spells", "bless", "--out", "mira.json"],
             ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "human", "--name", "Mira", "--attributes", "str=9,dex=14,con=12,int=16,wis=10,cha=10", "--spells", "sleep,magic_missile", "--out", "mira.json"],
-            // Sleep takes 2d4 rats of 4 hit dice or fewer and spends Mira's one 1st level spell; magic missile then can't be paid for.
+            // Mira memorises the first spell she knows in her one slot: sleep takes 2d4 rats of 4 hit dice or fewer.
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "rat_pack", "--seed", "3"],
-            // Skeletons are undead, so sleep has no one to take and Mira casts magic missile instead.
+            // Skeletons are undead, so sleep has no one to take, and magic missile isn't memorised.
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"],
+            // One slot holds one copy; memorising magic missile instead lets her cast it.
+            ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "sleep,magic_missile"],
+            ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "magic_missile"],
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"]));
+    }
+
+    [Fact]
+    public void APreparedCopyIsCastOnceWhateverSlotsAreLeft()
+    {
+        ModuleSet set = ModuleLoader.Load(Fixture("ascend"), []);
+        RuleSet rules = set.Rules!;
+        List<ModuleDiagnostic> problems = [];
+        Character ilse = WithDice(dice => CharacterRules.Create(rules, Character.StampsOf(set), new CreationRequest("Ilse", "adept", "folk", Attributes: Scores(("might", 9), ("grace", 12), ("grit", 16), ("wit", 16)), Features: ["lightning_reflexes"]), dice, problems))!;
+        WithDice(dice => CharacterRules.AddExperience(rules, ilse, 3000, dice, problems, null, ["great_fortitude"]));
+        Assert.True(CharacterRules.SetSpells(rules, ilse, ["flare"], problems));
+        Assert.Empty(problems);
+
+        // Two slots at level 3: without a plan she prepares flare twice; memorising one copy leaves a slot unused.
+        Assert.Equal(["flare", "flare"], CharacterRules.MemorisedPlan(rules, ilse).Select(spell => spell.Id));
+        Assert.True(CharacterRules.SetMemorised(rules, ilse, ["flare"], problems));
+        Definition combat = rules.Find(DefinitionTypes.Combat, "standard", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "brutes", out _)!;
+        CombatResult result = WithDice(dice => CombatRunner.Run(rules, combat,
+            [new CombatSide("Party", [Combatant.FromCharacter(rules, ilse)]), new CombatSide("Brutes", Encounters.Spawn(rules, encounter, dice))],
+            dice, 6, encounter));
+
+        List<string> lines = result.Facts.Select(fact => fact.Describe()).ToList();
+        Assert.Single(lines, line => line.StartsWith("Ilse uses Flare", StringComparison.Ordinal));
+        Assert.Contains("Ilse spends 1 1st circle slots (1 left).", lines);
+        Assert.Empty(result.Sides[0].Members[0].Prepared);
     }
 
     [Fact]

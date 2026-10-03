@@ -403,6 +403,14 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
     }
 
     /// <param name="path">The file the character was just saved to, if any.</param>
+    /// <summary>Spell names with repeats counted: "Sleep, Magic missile x2".</summary>
+    private static string Names(IEnumerable<Definition> spells)
+    {
+        return spells.Any()
+            ? string.Join(", ", spells.GroupBy(spell => spell).Select(group => group.Count() == 1 ? group.Key.Name : $"{group.Key.Name} x{group.Count()}"))
+            : "none";
+    }
+
     public void CharacterSheet(RuleSet rules, Character character, string? path, ulong? seed, IReadOnlyList<DiceRoll> rolls, IReadOnlyList<LevelGain> gains)
     {
         List<SheetStat> stats = Core.Characters.CharacterSheet.Stats(rules, character);
@@ -457,6 +465,12 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         if (character.Spells.Count > 0)
         {
             writer.WriteLine($"  spells: {string.Join(", ", character.Spells.Select(spell => spell.Name))}");
+            List<Definition> plan = CharacterRules.MemorisedPlan(rules, character);
+            if (plan.Count > 0)
+            {
+                string unspent = character.Prepared is null ? "all left" : $"left: {Names(character.Prepared)}";
+                writer.WriteLine($"  memorised: {Names(plan)} ({(character.Memorised.Count > 0 ? "chosen" : "known spells in order")}; {unspent})");
+            }
         }
 
         if (character.Features.Any())

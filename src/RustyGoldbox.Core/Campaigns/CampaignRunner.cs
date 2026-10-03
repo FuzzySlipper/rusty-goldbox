@@ -271,6 +271,14 @@ public sealed class CampaignRunner
                     }
                 }
 
+                if (json.TryGetProperty("prepare", out JsonElement prepare) && prepare.GetBoolean())
+                {
+                    foreach (Character character in _state.Party)
+                    {
+                        character.Prepared = null;
+                    }
+                }
+
                 facts.Add(new TextFact(json.GetProperty("text").GetString()!));
                 return Next(evt, "$.next");
             case "combat":
@@ -360,6 +368,12 @@ public sealed class CampaignRunner
             foreach ((string id, TrackValue value) in sides[0].Members[i].Creature.Tracks)
             {
                 _state.Party[i].Tracks[id] = new TrackValue { Current = value.Current, Max = _state.Party[i].Tracks.TryGetValue(id, out TrackValue? own) ? own.Max : null };
+            }
+
+            // And the prepared spells it cast.
+            if (sides[0].Members[i].Preparing.Count > 0)
+            {
+                _state.Party[i].Prepared = sides[0].Members[i].Prepared.ToList();
             }
         }
 

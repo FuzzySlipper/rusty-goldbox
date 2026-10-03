@@ -332,7 +332,7 @@ public sealed class CharacterTests
         Assert.All(problems, problem => Assert.Equal("character.file", problem.Rule));
         File.WriteAllText(file, """
             { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "creation": "standard", "levels": [ { "class": "warrior", "gain": 5, "features": [ "iron_will", "improved_initiative" ] } ], "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "gold": 0 }
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 }, "arcana_1": { "current": 0 } }, "gold": 0 }
             """);
         problems.Clear();
         Assert.Null(CharacterFile.Read(file, set, problems));

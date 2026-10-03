@@ -315,7 +315,10 @@ Combat is built so that no die convention is assumed:
   classes) or a single pool of power points. A character knows a list of
   spells, each on one of its classes' lists and payable at full resources;
   in combat it casts them first while it can pay, and a `rest` event restores
-  the tracks it names. An action with `max_targets` affects that many of its
+  the tracks it names. A class with `prepares_spells` memorises instead: the
+  character holds a day's copies (one per casting, all payable together), each
+  cast once, and a `rest` with `prepare` readies them again; without a chosen
+  list it memorises its known spells in order as far as its slots go. An action with `max_targets` affects that many of its
   candidates, the ones `prefer` ranks highest (sleep by hit dice).
 - **Checks give outcome tiers.** A check is a roll, an optional bonus and a
   target, rolled high or under, with ordered tiers that read the roll and

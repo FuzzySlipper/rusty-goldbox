@@ -57,9 +57,11 @@ internal static class GoldboxCli
               new class must accept the character), else to the class of the latest level.
               Where experience is split, a new --class is a class change (dual-classing).
               --feature fills the choices the new levels grant, --boosts the boosts they grant.
-          goldbox character spells <file> --module <path> --set <id>,...
-              Sets the spells the character knows: each on one of its classes' lists and
-              payable from its tracks. Combat casts them first while it can pay.
+          goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]
+              --set sets the spells the character knows: each on one of its classes' lists and
+              payable from its tracks. Combat casts them first while it can pay. For classes
+              that prepare spells, --memorise lists the copies it readies each day (repeat an ID
+              for two), all payable together; without it, its known spells in order fill its slots.
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 

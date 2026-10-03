@@ -99,6 +99,7 @@ public static class EventTypes
         [
             new("text", new TextKind(), true, "What the party sees."),
             new("tracks", new ListKind(new ReferenceKind("track")), true, "The tracks restored."),
+            new("prepare", new BooleanKind(), false, "If true, characters also prepare their memorised spells again (for classes with prepares_spells). Without it, prepared spells already cast stay spent."),
             Next,
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");

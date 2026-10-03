@@ -7,5 +7,6 @@
     "classic:spells_1",
     "classic:spells_2"
   ],
-  "next": "quiet"
+  "next": "quiet",
+  "prepare": true
 }

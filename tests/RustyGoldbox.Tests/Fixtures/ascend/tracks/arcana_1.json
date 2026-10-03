@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "arcana_1",
+  "name": "1st circle slots",
+  "max": "spell_slots(1)"
+}

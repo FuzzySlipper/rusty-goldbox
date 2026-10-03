@@ -13,7 +13,7 @@ internal static class CharacterCommand
     private const string Usage =
         "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
-        + "       goldbox character spells <file> --module <path> --set <id>,...\n"
+        + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character show <file> --module <path>";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
@@ -143,8 +143,8 @@ internal static class CharacterCommand
     /// <summary><c>character spells</c>: sets the spells a character knows, checked against its classes and tracks.</summary>
     private static int Spells(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--set"], []);
-        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--set") is null))
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--set", "--memorise"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || (parsed.Single("--set") is null && parsed.Single("--memorise") is null)))
         {
             error = Usage;
         }
@@ -161,7 +161,8 @@ internal static class CharacterCommand
         }
 
         List<ModuleDiagnostic> problems = [];
-        if (!CharacterRules.SetSpells(set.Rules!, character!, List(parsed.Single("--set")!), problems))
+        if ((parsed.Single("--set") is string known && !CharacterRules.SetSpells(set.Rules!, character!, List(known), problems))
+            || (parsed.Single("--memorise") is string memorised && !CharacterRules.SetMemorised(set.Rules!, character!, List(memorised), problems)))
         {
             return output.Problems(problems);
         }

@@ -361,6 +361,150 @@ public static class CharacterRules
         return null;
     }
 
+    /// <summary>Whether casting the spell needs a prepared copy: it is on the list of one of the character's classes that prepares spells.</summary>
+    public static bool NeedsPreparing(RuleSet rules, Character character, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("lists", out JsonElement lists))
+        {
+            return false;
+        }
+
+        foreach (JsonProperty entry in lists.EnumerateObject())
+        {
+            Definition listing = rules.Reference(spell, $"$.lists.{entry.Name}");
+            if (character.ClassLevels().ContainsKey(listing) && listing.Json.TryGetProperty("prepares_spells", out JsonElement prepares) && prepares.GetBoolean())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The copies the character prepares each day: its memorised list, or
+    /// without one, its known spells that need preparing, taken in order and
+    /// round again while its tracks can pay for another.
+    /// </summary>
+    public static List<Definition> MemorisedPlan(RuleSet rules, Character character)
+    {
+        if (character.Memorised.Count > 0)
+        {
+            return character.Memorised.ToList();
+        }
+
+        List<Definition> preparing = character.Spells.Where(spell => NeedsPreparing(rules, character, spell)).ToList();
+        List<Definition> plan = [];
+        Dictionary<Definition, decimal> left = Budgets(rules, character);
+        bool added = true;
+        for (int pass = 0; added; pass++)
+        {
+            added = false;
+            foreach (Definition spell in preparing)
+            {
+                // A spell that costs nothing is prepared once, or the passes would never end.
+                bool free = !spell.Json.TryGetProperty("cost", out JsonElement cost) || !cost.EnumerateObject().Any();
+                if ((pass == 0 || !free) && Pay(rules, character, spell, left))
+                {
+                    plan.Add(spell);
+                    added |= !free;
+                }
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>The prepared copies the character has left to cast.</summary>
+    public static List<Definition> PreparedLeft(RuleSet rules, Character character) => character.Prepared?.ToList() ?? MemorisedPlan(rules, character);
+
+    /// <summary>
+    /// Sets the copies the character memorises each day, in order, and
+    /// prepares them now: each a spell it knows that needs preparing, all of
+    /// them together payable from its tracks at their maximum.
+    /// </summary>
+    public static bool SetMemorised(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> plan = [];
+        Dictionary<Definition, decimal> left = Budgets(rules, character);
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Spell, id, "spell", problems) is not Definition spell)
+            {
+                continue;
+            }
+
+            if (MemorisedProblem(rules, character, spell, left) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.spell", problem, spell.Module, spell.File, "$"));
+                continue;
+            }
+
+            plan.Add(spell);
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        character.Memorised.Clear();
+        character.Memorised.AddRange(plan);
+        character.Prepared = null;
+        return true;
+    }
+
+    /// <summary>Why the character can't memorise another copy of the spell with what <paramref name="left"/> of its tracks remains, or null (and pays for it) when it can.</summary>
+    public static string? MemorisedProblem(RuleSet rules, Character character, Definition spell, Dictionary<Definition, decimal> left)
+    {
+        if (!character.Spells.Contains(spell))
+        {
+            return $"{character.Name} doesn't know {spell.Name}; it can memorise only spells it knows.";
+        }
+
+        if (!NeedsPreparing(rules, character, spell))
+        {
+            return $"{spell.Name} isn't prepared: none of {character.Name}'s classes that have it on their list prepares spells.";
+        }
+
+        return Pay(rules, character, spell, left) ? null : $"{character.Name} can't memorise another {spell.Name}: its tracks can't pay for every copy.";
+    }
+
+    /// <summary>The character's tracks at their maximum, for paying a day's prepared spells from.</summary>
+    public static Dictionary<Definition, decimal> Budgets(RuleSet rules, Character character)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        return rules.Tracks.Values.ToDictionary(track => track, track => evaluator.KnownTrackMax(creature, track) ?? 0);
+    }
+
+    /// <summary>Takes the spell's cost from <paramref name="left"/> when all of it is there; returns whether it was.</summary>
+    private static bool Pay(RuleSet rules, Character character, Definition spell, Dictionary<Definition, decimal> left)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return true;
+        }
+
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        Dictionary<Definition, decimal> costs = cost.EnumerateObject().ToDictionary(
+            entry => rules.Reference(spell, $"$.cost.{entry.Name}"),
+            entry => evaluator.Evaluate(rules.Expression(spell, $"$.cost.{entry.Name}"), creature, null).Number);
+        if (costs.Any(entry => left[entry.Key] < entry.Value))
+        {
+            return false;
+        }
+
+        foreach ((Definition track, decimal amount) in costs)
+        {
+            left[track] -= amount;
+        }
+
+        return true;
+    }
+
     /// <summary>The spells the character could know, in the module set's order: those <see cref="SpellProblem"/> has nothing against.</summary>
     public static List<Definition> CastableSpells(RuleSet rules, Character character)
     {
@@ -396,6 +540,9 @@ public static class CharacterRules
 
         character.Spells.Clear();
         character.Spells.AddRange(spells);
+        // Copies of spells it no longer knows are forgotten; the rest are prepared afresh.
+        character.Memorised.RemoveAll(spell => !spells.Contains(spell));
+        character.Prepared = null;
         return true;
     }
 

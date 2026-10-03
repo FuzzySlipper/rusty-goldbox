@@ -107,6 +107,7 @@
       2
     ]
   ],
+  "prepares_spells": true,
   "actions": [
     {
       "action": "melee_attack",

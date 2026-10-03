@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
@@ -156,6 +157,35 @@ public sealed class CampaignTests
         Assert.Contains("neither side wins before the round limit", output, StringComparison.Ordinal);
         Assert.Contains("No side won after 3 rounds.", output, StringComparison.Ordinal);
         Assert.Contains("gold 9 + 8", output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true, 2)]
+    [InlineData(false, 1)]
+    public void ARestThatPreparesSpellsLetsACasterCastAgain(bool prepare, int flares)
+    {
+        string fixtures = Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures");
+        string ascend = Path.Combine(fixtures, "ascend");
+        using TempModules modules = new();
+        string campaign = modules.Module("camp", "campaign", requires: $"{Require("ascend", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("camp/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("camp/campaign.json", """{ "type": "campaign", "id": "camp", "name": "Camp", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "first" }""");
+        modules.Write("camp/first.json", """{ "type": "event", "id": "first", "kind": "combat", "encounter": "ascend:imps", "on_win": "camp" }""");
+        modules.Write("camp/camp.json", $$"""{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest.", "tracks": ["ascend:arcana_1", "ascend:hit_points"], "prepare": {{(prepare ? "true" : "false")}}, "next": "second" }""");
+        modules.Write("camp/second.json", """{ "type": "event", "id": "second", "kind": "combat", "encounter": "ascend:imps" }""");
+        using TempModules scratch = new();
+        Run(scratch, "character", "new", "--module", ascend, "--class", "warrior", "--race", "folk", "--name", "Kara", "--attributes", "might=16,grace=12,grit=14,wit=12", "--feature", "iron_will,improved_initiative", "--out", "kara.json");
+        Run(scratch, "character", "new", "--module", ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=16,wit=16", "--feature", "lightning_reflexes", "--spells", "flare", "--out", "ilse.json");
+        Equip(scratch, "kara.json", "ascend:longsword");
+        File.WriteAllText(Path.Combine(scratch.Root, "status.script"), "status\n");
+
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "kara.json,ilse.json", "--script", "status.script", "--seed", "5",
+            "--modules", fixtures, "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+
+        Assert.Equal(0, code);
+        // Ilse prepares one flare a day: a rest restores the slot either way, but only one that prepares spells gives her the copy back.
+        Assert.Equal(2, Regex.Matches(output, "Combat with Cinder imps: the party wins").Count);
+        Assert.Equal(flares, Regex.Matches(output, "Ilse uses Flare").Count);
     }
 
     [Fact]

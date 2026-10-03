@@ -74,9 +74,11 @@ small:
   and no first-party creature uses it. Fighters make one attack per round at
   every level.
 - Spells cast in combat spend a slot of their level, from tracks whose
-  maximum adds the slots of every class the character has; a character
-  knows a list of spells rather than memorising them each day, and the
-  sample crypt's rest restores slots. Sleep affects up to 2d4 living
+  maximum adds the slots of every class the character has. Magic users and
+  clerics memorise a copy per slot from the spells they know (a magic user's
+  spell book, a cleric's chosen prayers) and cast each copy once; the sample
+  crypt's rest restores slots and memorised spells together, without the
+  source's study time. Sleep affects up to 2d4 living
   creatures of 4 hit dice or fewer, weakest first, rather than the source's
   count by hit dice band; magic missile fires all its missiles at one target.
 - Monsters' hit points are their hit dice rolled as written, with no minimum.

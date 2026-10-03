@@ -84,8 +84,18 @@ public sealed class Character
 
     public List<Definition> Equipment { get; } = [];
 
-    /// <summary>The spells the character knows or has prepared, cast in combat while it can pay for them.</summary>
+    /// <summary>The spells the character knows, cast in combat while it can pay for them (and, for a class that prepares spells, has a copy prepared).</summary>
     public List<Definition> Spells { get; } = [];
+
+    /// <summary>
+    /// For classes that prepare spells, the copies the character memorises
+    /// each day, one entry a casting; empty means its known spells in order,
+    /// as many as its tracks pay for (<see cref="CharacterRules.MemorisedPlan"/>).
+    /// </summary>
+    public List<Definition> Memorised { get; } = [];
+
+    /// <summary>The prepared copies not yet cast since the last rest that prepared spells; null when all of them are left.</summary>
+    public List<Definition>? Prepared { get; set; }
 
     public List<Definition> Conditions { get; } = [];
 

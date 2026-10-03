@@ -125,6 +125,7 @@ public static class DefinitionTypes
                 new("grants", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features the character chooses on reaching this level of the class, for example a bonus feat."),
             ])), true, "One entry per level of the class, starting at level 1."),
             new("spell_slots", new ListKind(new ListKind(new IntegerKind())), false, "Per level (same length as levels): spells per day for spell level 1, 2, ...; [] for none."),
+            new("prepares_spells", new BooleanKind(), false, "If true, its spells are memorised each day: the character casts only the copies it prepared (as many as its tracks pay for), each copy once, until a rest that prepares spells. Without it, the character casts any spell it knows while it can pay."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
             new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
             new("equipment", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Item), false, "Which items members of the class may equip, reading item.id, item.kind, item.weight and item.cost, for example \"item.kind != 'armour' or item.id == 'leather_armour'\". Without it, any item."),

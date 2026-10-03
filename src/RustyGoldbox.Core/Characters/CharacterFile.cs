@@ -24,7 +24,7 @@ public static class CharacterFile
 
     private static readonly string[] Fields =
     [
-        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "conditions", "portrait",
+        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "memorised", "prepared", "conditions", "portrait",
     ];
 
     public static string ToJson(Character character)
@@ -130,6 +130,16 @@ public static class CharacterFile
             if (character.Spells.Count > 0)
             {
                 WriteReferences(writer, "spells", character.Spells);
+            }
+
+            if (character.Memorised.Count > 0)
+            {
+                WriteReferences(writer, "memorised", character.Memorised);
+            }
+
+            if (character.Prepared is List<Definition> prepared)
+            {
+                WriteReferences(writer, "prepared", prepared);
             }
 
             WriteReferences(writer, "conditions", character.Conditions);
@@ -246,6 +256,32 @@ public static class CharacterFile
                 {
                     Error($"$.spells[{index}]", unknown);
                 }
+            }
+
+            ReadList(root, "memorised", DefinitionTypes.Spell, character.Memorised);
+            Dictionary<Definition, decimal> budgets = CharacterRules.Budgets(_rules, character);
+            for (int index = 0; index < character.Memorised.Count; index++)
+            {
+                if (CharacterRules.MemorisedProblem(_rules, character, character.Memorised[index], budgets) is string unmemorised)
+                {
+                    Error($"$.memorised[{index}]", unmemorised);
+                }
+            }
+
+            if (root.TryGetProperty("prepared", out _))
+            {
+                List<Definition> prepared = [];
+                ReadList(root, "prepared", DefinitionTypes.Spell, prepared);
+                List<Definition> plan = CharacterRules.MemorisedPlan(_rules, character);
+                for (int index = 0; index < prepared.Count; index++)
+                {
+                    if (!plan.Remove(prepared[index]))
+                    {
+                        Error($"$.prepared[{index}]", $"{prepared[index].Name} is prepared more times than {character.Name} memorises it. \"prepared\" lists the memorised copies not yet cast.");
+                    }
+                }
+
+                character.Prepared = prepared;
             }
 
             if (root.TryGetProperty("portrait", out JsonElement portrait) && Resolve(portrait, "$.portrait", DefinitionTypes.Asset) is Definition asset)

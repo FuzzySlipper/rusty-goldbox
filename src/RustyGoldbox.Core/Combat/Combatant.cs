@@ -35,6 +35,24 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     public decimal SurprisedRounds { get; set; }
 
+    /// <summary>The spells it casts only from prepared copies.</summary>
+    public HashSet<Definition> Preparing { get; } = [];
+
+    /// <summary>The prepared copies it has left; casting a spell in <see cref="Preparing"/> uses one.</summary>
+    public List<Definition> Prepared { get; } = [];
+
+    /// <summary>Whether it has what casting the spell needs besides its cost: a prepared copy, if the spell is one it prepares.</summary>
+    public bool CanCast(Definition spell) => !Preparing.Contains(spell) || Prepared.Contains(spell);
+
+    /// <summary>Uses up a prepared copy of the spell, if it is one it prepares.</summary>
+    public void Cast(Definition spell)
+    {
+        if (Preparing.Contains(spell))
+        {
+            Prepared.Remove(spell);
+        }
+    }
+
     /// <summary>The same combatant under another name, before a fight starts.</summary>
     public Combatant Renamed(string newName)
     {
@@ -72,6 +90,8 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         renamed.Equipment.AddRange(Creature.Equipment);
         Combatant copy = new(newName, renamed, Uses);
         copy.Reactions.AddRange(Reactions);
+        copy.Preparing.UnionWith(Preparing);
+        copy.Prepared.AddRange(Prepared);
         return copy;
     }
 
@@ -97,6 +117,8 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         uses = uses.DistinctBy(use => (use.Action, use.Name)).ToList();
         Combatant combatant = new(character.Name, creature, uses);
         combatant.AddReactions(rules, creature.ClassLevels.Keys.Concat(creature.Features.Distinct()));
+        combatant.Preparing.UnionWith(character.Spells.Where(spell => CharacterRules.NeedsPreparing(rules, character, spell)));
+        combatant.Prepared.AddRange(CharacterRules.PreparedLeft(rules, character));
         return combatant;
     }
 

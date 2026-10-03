@@ -488,7 +488,7 @@ public sealed class CombatRunner
     {
         foreach (UseOption use in actor.Uses)
         {
-            if (!Affordable(actor, use.Action) || (use.Spell is Definition spell && !SpellAffordable(actor, spell)))
+            if (!Affordable(actor, use.Action) || (use.Spell is Definition spell && (!actor.CanCast(spell) || !SpellAffordable(actor, spell))))
             {
                 continue;
             }
@@ -589,6 +589,7 @@ public sealed class CombatRunner
         if (use.Spell is Definition cast)
         {
             PaySpell(actor, cast);
+            actor.Cast(cast);
         }
 
         foreach (Combatant target in targets)
