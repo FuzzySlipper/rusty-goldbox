@@ -4,6 +4,7 @@
   "name": "Auto pistol",
   "kind": "gun",
   "cost": 200,
+  "currency": "credits",
   "weight": 0.75,
   "parameters": {
     "damage": "2d6"

@@ -4,6 +4,7 @@
   "name": "Shortsword",
   "kind": "finesse weapon",
   "cost": 10,
+  "currency": "gold",
   "weight": 2,
   "parameters": {
     "damage": "1d6",

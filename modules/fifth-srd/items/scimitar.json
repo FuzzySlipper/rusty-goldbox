@@ -4,6 +4,7 @@
   "name": "Scimitar",
   "kind": "finesse weapon",
   "cost": 25,
+  "currency": "gold",
   "weight": 3,
   "parameters": {
     "damage": "1d6",

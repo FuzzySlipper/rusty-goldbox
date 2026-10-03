@@ -15,8 +15,9 @@ public sealed partial class CampaignRunner
         }
 
         Definition advancement = _rules.Advancement!;
+        Definition currency = _rules.Reference(advancement, "$.training.currency");
         string prices = string.Join("; ", _state.Party.Select((character, index) =>
-            $"[{index + 1}] {character.Name}: {Fact(ServicePrice(advancement, "$.training.cost", character))} gold{(CharacterRules.ReadyToLevel(_rules, character) ? " (ready)" : " (needs experience)")}"));
+            $"[{index + 1}] {character.Name}: {Fact(ServicePrice(advancement, "$.training.cost", character))} {currency.Name.ToLowerInvariant()}{(CharacterRules.ReadyToLevel(_rules, character) ? " (ready)" : " (needs experience)")}"));
         return new TextFact($"{trainer.Json.GetProperty("text").GetString()} {prices}. Commands: train <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], leave.");
     }
 
@@ -30,8 +31,9 @@ public sealed partial class CampaignRunner
 
         Character character = _state.Party[member - 1];
         Definition advancement = _rules.Advancement!;
+        Definition currency = _rules.Reference(advancement, "$.training.currency");
         decimal price = ServicePrice(advancement, "$.training.cost", character);
-        if (!CanPay(trainer, "Training", price, facts))
+        if (!CanPay(trainer, "Training", currency, price, facts))
         {
             return;
         }
@@ -53,9 +55,9 @@ public sealed partial class CampaignRunner
             return;
         }
 
-        Pay(price);
+        CurrencyLedger.Pay(_state.Party, currency.Id, price);
         _state.ElapsedDays = elapsed;
-        facts.Add(new TextFact($"{character.Name} trains for {Fact(days)} days and {Fact(price)} gold. Campaign time: {Fact(elapsed)} days.") { Rolls = dice.Rolls.Skip(before).ToList() });
+        facts.Add(new TextFact($"{character.Name} trains for {Fact(days)} days and {Fact(price)} {currency.Name.ToLowerInvariant()}. Campaign time: {Fact(elapsed)} days.") { Rolls = dice.Rolls.Skip(before).ToList() });
         facts.Add(Training()!);
     }
 }

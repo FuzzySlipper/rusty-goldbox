@@ -4,6 +4,7 @@
   "name": "Scale Mail",
   "kind": "medium armor",
   "cost": 4,
+  "currency": "gold",
   "weight": 2,
   "modifiers": [
     {

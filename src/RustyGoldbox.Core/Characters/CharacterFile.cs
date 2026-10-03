@@ -43,7 +43,7 @@ public static class CharacterFile
             new("current", new Definitions.NumberKind(), true, "Current track value."),
             new("max", new Definitions.NumberKind(), false, "Own maximum for the level track; other maxima come from data."),
         ])), true, "All track values by their shared stat IDs."),
-        new("gold", new Definitions.NumberKind(), true, "Gold carried."),
+        new("balances", new Definitions.MapKind(new Definitions.TextKind(), new Definitions.NumberKind()), true, "Money carried, by declared currency ID; an empty object is valid when the ruleset has no currencies."),
         new("equipment", new Definitions.ListKind(new Definitions.ReferenceKind("item")), true, "Carried equipment."),
         new("spells", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Known spells."),
         new("memorised", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Memorised copies."),
@@ -166,7 +166,13 @@ public static class CharacterFile
             }
 
             writer.WriteEndObject();
-            writer.WriteNumber("gold", character.Gold);
+            writer.WriteStartObject("balances");
+            foreach ((string currency, decimal amount) in character.Balances.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+            {
+                writer.WriteNumber(currency, amount);
+            }
+
+            writer.WriteEndObject();
             WriteReferences(writer, "equipment", character.Equipment);
             if (character.Spells.Count > 0)
             {
@@ -265,7 +271,7 @@ public static class CharacterFile
             Definition? race = raceless ? null : Reference(root, "race", DefinitionTypes.Race);
             Definition? creation = Reference(root, "creation", DefinitionTypes.CharacterCreation);
             decimal? experience = Number(root, "experience");
-            decimal? gold = Number(root, "gold");
+            Dictionary<string, decimal> balances = ReadBalances(root);
             if (problems.Count > _before || name is null || (race is null && !raceless) || creation is null)
             {
                 return null;
@@ -284,7 +290,10 @@ public static class CharacterFile
                 ReadClassExperience(classExperience, character);
             }
 
-            character.Gold = gold ?? 0;
+            foreach ((string currency, decimal amount) in balances)
+            {
+                character.Balances[currency] = amount;
+            }
             ReadAttributes(root, character);
             ReadTracks(root, character);
             if (character.Experience < 0)
@@ -590,6 +599,40 @@ public static class CharacterFile
             {
                 Error($"$.tracks.{levelTrack.Id}", $"{levelTrack.Id} is built from level gains, so it needs \"max\".");
             }
+        }
+
+        private Dictionary<string, decimal> ReadBalances(JsonElement root)
+        {
+            Dictionary<string, decimal> balances = [];
+            if (!root.TryGetProperty("balances", out JsonElement given) || given.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.balances", "Missing \"balances\": an object mapping each declared currency ID to its carried amount.");
+                return balances;
+            }
+
+            foreach (JsonProperty entry in given.EnumerateObject())
+            {
+                string at = $"$.balances.{entry.Name}";
+                if (!_rules.Currencies.ContainsKey(entry.Name))
+                {
+                    Error(at, $"'{entry.Name}' is not a currency of this module set. Currencies: {(_rules.Currencies.Count == 0 ? "none" : string.Join(", ", _rules.Currencies.Keys))}.");
+                    continue;
+                }
+
+                if (Number(given, entry.Name, "$.balances") is decimal amount)
+                {
+                    if (amount < 0)
+                    {
+                        Error(at, "A currency balance cannot be negative.");
+                    }
+                    else
+                    {
+                        balances[entry.Name] = amount;
+                    }
+                }
+            }
+
+            return balances;
         }
 
         private void ReadList(JsonElement root, string name, DefinitionType type, List<Definition> into, string at = "$")

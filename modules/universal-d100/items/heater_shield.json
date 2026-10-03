@@ -4,6 +4,7 @@
   "name": "Heater shield",
   "kind": "shield",
   "cost": 10,
+  "currency": "credits",
   "weight": 3.0,
   "modifiers": []
 }

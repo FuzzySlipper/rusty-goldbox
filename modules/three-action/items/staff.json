@@ -4,6 +4,7 @@
   "name": "Staff",
   "kind": "melee weapon",
   "cost": 0,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "1d4",

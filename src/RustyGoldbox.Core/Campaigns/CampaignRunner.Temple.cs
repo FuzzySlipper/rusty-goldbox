@@ -19,7 +19,8 @@ public sealed partial class CampaignRunner
         foreach (JsonElement service in temple.Json.GetProperty("services").EnumerateArray())
         {
             string path = $"$.services[{index}].cost";
-            services.Add(new TempleOffer(index + 1, service.GetProperty("label").GetString()!, _state.Party
+            Definition currency = _rules.Reference(temple, $"$.services[{index}].currency");
+            services.Add(new TempleOffer(index + 1, service.GetProperty("label").GetString()!, currency, _state.Party
                 .Select(character => ServicePrice(temple, path, character)).ToList()));
             index++;
         }
@@ -47,26 +48,16 @@ public sealed partial class CampaignRunner
         return evaluator.Evaluate(_rules.Expression(owner, path), new Scope(character.ToCreature(), null, Variables: _state.Variables, PartyItems: _state.CarriedItems));
     }
 
-    private bool CanPay(Definition owner, string label, decimal price, List<PlayFact> facts)
+    private bool CanPay(Definition owner, string label, Definition currency, decimal price, List<PlayFact> facts)
     {
-        decimal gold = Located(owner, "$", () => _state.Party.Sum(character => Math.Max(0, character.Gold)));
-        if (_state.Party.Count == 0 || gold < price)
+        decimal balance = Located(owner, "$", () => CurrencyLedger.Total(_state.Party, currency.Id));
+        if (_state.Party.Count == 0 || balance < price)
         {
-            facts.Add(new RefusedFact($"{label} costs {Fact(price)} gold; the party has {Fact(gold)}."));
+            facts.Add(new RefusedFact($"{label} costs {Fact(price)} {currency.Name.ToLowerInvariant()}; the party has {Fact(balance)}."));
             return false;
         }
 
         return true;
-    }
-
-    private void Pay(decimal price)
-    {
-        foreach (Character character in _state.Party)
-        {
-            decimal paid = Math.Min(Math.Max(0, character.Gold), price);
-            character.Gold -= paid;
-            price -= paid;
-        }
     }
 
     private void Serve(int number, int member, DiceRoller dice, List<PlayFact> facts)
@@ -88,7 +79,8 @@ public sealed partial class CampaignRunner
         string path = $"$.services[{number - 1}]";
         string label = services[number - 1].GetProperty("label").GetString()!;
         decimal price = ServicePrice(temple, $"{path}.cost", character);
-        if (!CanPay(temple, label, price, facts))
+        Definition currency = _rules.Reference(temple, $"{path}.currency");
+        if (!CanPay(temple, label, currency, price, facts))
         {
             return;
         }
@@ -119,7 +111,7 @@ public sealed partial class CampaignRunner
             });
         }
 
-        Pay(price);
+        CurrencyLedger.Pay(_state.Party, currency.Id, price);
         foreach ((string id, TrackValue value) in creature.Tracks)
         {
             character.Tracks[id] = value;
@@ -127,7 +119,7 @@ public sealed partial class CampaignRunner
 
         character.Conditions.Clear();
         character.Conditions.AddRange(creature.Conditions);
-        facts.Add(new TextFact($"{character.Name} receives {label} for {Fact(price)} gold.") { Rolls = dice.Rolls.Skip(before).ToList() });
+        facts.Add(new TextFact($"{character.Name} receives {label} for {Fact(price)} {currency.Name.ToLowerInvariant()}.") { Rolls = dice.Rolls.Skip(before).ToList() });
         facts.Add(Temple()!);
     }
 

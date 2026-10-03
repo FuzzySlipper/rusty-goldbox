@@ -472,7 +472,10 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             writer.WriteLine($"  {track.Track.Name.ToLowerInvariant()} {N(track.Current ?? 0)}/{max}");
         }
 
-        writer.WriteLine($"  gold {character.Gold}");
+        foreach (Definition currency in rules.Currencies.Values)
+        {
+            writer.WriteLine($"  {currency.Name.ToLowerInvariant()} {N(character.Balances.GetValueOrDefault(currency.Id))}");
+        }
         if (character.Spells.Count > 0)
         {
             writer.WriteLine($"  spells: {string.Join(", ", character.Spells.Select(spell => spell.Name))}");
@@ -616,9 +619,9 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                         shop = fact is ShopFact shop ? new
                         {
                             text = shop.Text,
-                            gold = shop.Gold,
-                            stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price }),
-                            carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, holder = offer.Holder }),
+                            balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
+                            stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
+                            carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
                         } : null,
                     }),
                 }),

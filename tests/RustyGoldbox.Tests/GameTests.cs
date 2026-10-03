@@ -536,19 +536,19 @@ public sealed class GameTests
                 Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
             }
 
-            Assert.Single(session.Party).Gold = 2;
+            Assert.Single(session.Party).Balances["gold"] = 2;
             Run(session, engine, """{ "action": "begin" }""");
             Run(session, engine, """{ "action": "play", "command": "right" }""");
             Run(session, engine, """{ "action": "play", "command": "forward" }""");
             JsonObject Projected() => SessionProjection.Build(session);
             JsonNode shop = Projected()["shop"]!;
-            Assert.Equal(2m, shop["gold"]!.GetValue<decimal>());
+            Assert.Equal(2m, shop["balances"]!["classic:gold"]!.GetValue<decimal>());
             Assert.Equal("classic:dagger", Assert.Single(shop["stock"]!.AsArray())!["id"]!.GetValue<string>());
             Assert.Equal(2m, shop["stock"]![0]!["price"]!.GetValue<decimal>());
 
             Run(session, engine, """{ "action": "play", "command": "buy 1" }""");
             shop = Projected()["shop"]!;
-            Assert.Equal(0m, shop["gold"]!.GetValue<decimal>());
+            Assert.Equal(0m, shop["balances"]!["classic:gold"]!.GetValue<decimal>());
             Assert.Equal(1m, Assert.Single(shop["carried"]!.AsArray())!["price"]!.GetValue<decimal>());
             Run(session, engine, """{ "action": "save", "slot": "shop" }""");
             session.Quit();
@@ -557,15 +557,15 @@ public sealed class GameTests
             Assert.Single(Projected()["shop"]!["carried"]!.AsArray());
             Run(session, engine, """{ "action": "play", "command": "sell 1" }""");
             Assert.Empty(Projected()["shop"]!["carried"]!.AsArray());
-            Assert.Equal(1m, Projected()["shop"]!["gold"]!.GetValue<decimal>());
+            Assert.Equal(1m, Projected()["shop"]!["balances"]!["classic:gold"]!.GetValue<decimal>());
             Run(session, engine, """{ "action": "play", "command": "leave" }""");
             Assert.Null(Projected()["shop"]);
             Assert.NotNull(Projected()["temple"]);
-            session.Runner.State.Party[0].Gold = 5;
+            session.Runner.State.Party[0].Balances["gold"] = 5;
             session.Runner.State.Party[0].Tracks["hit_points"].Current = 0;
             Run(session, engine, """{ "action": "play", "command": "serve 1 1" }""");
             Assert.True(session.Runner.State.Party[0].Tracks["hit_points"].Current > 0);
-            Assert.Equal(0, session.Runner.State.Party[0].Gold);
+            Assert.Equal(0, session.Runner.State.Party[0].Balances["gold"]);
             Run(session, engine, """{ "action": "play", "command": "leave" }""");
             Assert.Null(Projected()["temple"]);
             Run(session, engine, """{ "action": "play", "command": "choose 1" }""");
@@ -573,7 +573,7 @@ public sealed class GameTests
             var trainee = session.Runner.State.Party[0];
             trainee.Experience = 2001;
             trainee.ClassExperience[trainee.Class!] = 2001;
-            trainee.Gold = 1500;
+            trainee.Balances["gold"] = 1500;
             session.Runner.State.X = 3;
             session.Runner.State.Y = 2;
             session.Runner.State.Facing = RustyGoldbox.Core.Campaigns.Facing.West;
@@ -581,7 +581,7 @@ public sealed class GameTests
             Assert.NotNull(Projected()["training"]);
             Run(session, engine, """{ "action": "play", "command": "train 1" }""");
             Assert.Equal(2, trainee.Level);
-            Assert.Equal(0, trainee.Gold);
+            Assert.Equal(0, trainee.Balances["gold"]);
             Assert.InRange(session.Runner.State.ElapsedDays, 7, 28);
             Run(session, engine, """{ "action": "save", "slot": "training" }""");
             session.Quit();

@@ -40,7 +40,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
 | `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, and the creature view expressions read |
-| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, gold), giving them a portrait asset, and gaining levels in one class or several, from character-creation, advancement, race and class data |
+| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances), giving them a portrait asset, and gaining levels in one class or several, from character-creation, advancement, race and class data |
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
@@ -49,8 +49,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls: parsing the map text and drawing it |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, variables, fired triggers, pending menu or shop, party and inventory; characters own gold and equipment |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and `CampaignRunner.Shop.cs` | The play command surface: movement, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character gold, party inventory and equipment |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, variables, fired triggers, pending menu or shop, party and inventory; characters own declared currency balances and equipment |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and `CampaignRunner.Shop.cs` | The play command surface: movement, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
@@ -342,17 +342,17 @@ transport, scheduler or renderer.
 Temples offer numbered services through `serve <service> <member>` and `leave`.
 Service expressions read the chosen character as `self` and campaign variables;
 `heal` names its track and `remove_condition` names a condition. The campaign
-runner uses existing character tracks, conditions and pooled character gold;
+runner uses existing character tracks, conditions and pooled balances in the service's declared currency;
 `CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
 healing with combat. Saves retain an open temple and Game projections expose
 prices for each member.
 
-An advancement may declare `training: { "cost": "self.level * 20", "days": "2" }`.
+An advancement may declare `training: { "cost": "self.level * 20", "currency": "gold", "days": "2" }`.
 Experience still accumulates, but levels wait for `train <member>` at a training
 event, with the same class, feature and boost choices as `level`. One payment
-buys one level; a failure to choose or pay leaves gold and time unchanged.
+buys one level; a failure to choose or pay leaves the named balance and time unchanged.
 `CampaignRunner.Training.cs` uses `CharacterRules` for advancement and the
-existing character gold for fees. Campaign state stores fictional `ElapsedDays`
+existing character balances for fees. Campaign state stores fictional `ElapsedDays`
 and the open trainer in saves; this is game time, independent of Engine clocks.
 Rulesets without training retain their existing immediate advancement.
 
@@ -374,6 +374,6 @@ at module loading, supplying module stamps from its declared dependencies.
 chain to `next`, refusals to `on_refused` (or end the chain). They enforce the
 campaign's party maximum/minimum and never remove player characters.
 `CampaignRunner.Party.cs` moves the same NPC character between `Party` and
-`AbsentNpcs`; rejoining preserves wounds, gold and gear. Saves keep both lists
+`AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.

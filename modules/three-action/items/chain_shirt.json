@@ -4,6 +4,7 @@
   "name": "Chain Shirt",
   "kind": "light armor",
   "cost": 5,
+  "currency": "gold",
   "weight": 1,
   "modifiers": [
     {

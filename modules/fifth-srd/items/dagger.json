@@ -4,6 +4,7 @@
   "name": "Dagger",
   "kind": "finesse weapon",
   "cost": 2,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "1d4",

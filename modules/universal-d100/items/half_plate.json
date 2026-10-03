@@ -4,6 +4,7 @@
   "name": "Half plate",
   "kind": "armour",
   "cost": 60,
+  "currency": "credits",
   "weight": 18.0,
   "modifiers": [
     {

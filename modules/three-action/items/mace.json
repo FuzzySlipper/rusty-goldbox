@@ -4,6 +4,7 @@
   "name": "Mace",
   "kind": "melee weapon",
   "cost": 1,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "1d6",

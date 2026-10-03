@@ -4,6 +4,7 @@
   "name": "Chain mail",
   "kind": "armour",
   "cost": 75,
+  "currency": "gold",
   "weight": 30,
   "modifiers": [
     {

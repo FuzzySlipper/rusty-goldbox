@@ -35,6 +35,9 @@ public sealed class RuleSet
     /// <summary>Tracks by ID. Expressions read each as &lt;id&gt; (current) and max_&lt;id&gt;.</summary>
     public Dictionary<string, Definition> Tracks { get; } = [];
 
+    /// <summary>Named currencies declared by the ruleset. An empty map means the ruleset has no money.</summary>
+    public Dictionary<string, Definition> Currencies { get; } = [];
+
     /// <summary>The sprite asset each monster or class is drawn with, from figure definitions.</summary>
     public Dictionary<Definition, Definition> Figures { get; } = [];
 

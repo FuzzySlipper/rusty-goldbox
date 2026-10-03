@@ -4,6 +4,7 @@
   "name": "Shield",
   "kind": "shield",
   "cost": 12,
+  "currency": "gold",
   "weight": 8,
   "modifiers": [
     {

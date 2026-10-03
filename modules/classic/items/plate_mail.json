@@ -4,6 +4,7 @@
   "name": "Plate mail",
   "kind": "armour",
   "cost": 400,
+  "currency": "gold",
   "weight": 45,
   "modifiers": [
     {

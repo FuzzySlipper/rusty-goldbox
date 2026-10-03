@@ -4,6 +4,7 @@
   "name": "Charm of grit",
   "kind": "charm",
   "cost": 500,
+  "currency": "gold",
   "weight": 0,
   "modifiers": [
     {

@@ -54,6 +54,7 @@ None.
 | `races/`, `tables/ancestry_hp` (Human, Dwarf, Elf, Halfling: Hit Points, Speed, boosts and flaws) | Player Core: Ancestries |
 | `spells/` and their actions (Ignition, Divine Lance, Shield, Force Barrage, Bless, Heal, Blazing Bolt, Spiritual Armament, Fireball, Heroism) | Player Core: Spells |
 | `items/` (weapons with damage dice, agile, deadly and categories; armor with AC bonus and Dexterity cap; wooden and steel shields with Hardness) | Player Core: Equipment |
+| `currencies/gold` | Player Core: Equipment prices |
 | `monsters/wolf`, `zombie_shambler`, `giant_centipede`, `boar` | Monster Core |
 | `monsters/bandit`, `ruffian` | NPC Core |
 | Creature XP (party level −2 is 20 XP, party level 40, +1 is 60) | GM Core: Building Encounters |

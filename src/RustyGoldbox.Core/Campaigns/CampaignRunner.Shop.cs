@@ -14,8 +14,8 @@ public sealed partial class CampaignRunner
             return null;
         }
 
-        decimal gold = Located(shop, "$", () => _state.Party.Sum(character => character.Gold));
-        return new ShopFact(shop.Json.GetProperty("text").GetString()!, gold, Stock(shop), Carried().Select(entry => entry.Offer).ToList());
+        IReadOnlyDictionary<Definition, decimal> balances = Located(shop, "$", () => CurrencyLedger.Snapshot(_state.Party, _rules));
+        return new ShopFact(shop.Json.GetProperty("text").GetString()!, balances, Stock(shop), Carried().Select(entry => entry.Offer).ToList());
     }
 
     private List<ShopOffer> Stock(Definition shop)
@@ -30,7 +30,8 @@ public sealed partial class CampaignRunner
             }
 
             Definition item = _rules.Reference(shop, $"$.items[{index}].item");
-            offered.Add(new ShopOffer(offered.Count + 1, item, item.Json.GetProperty("cost").GetDecimal()));
+            Definition currency = _rules.Reference(item, "$.currency");
+            offered.Add(new ShopOffer(offered.Count + 1, item, item.Json.GetProperty("cost").GetDecimal(), currency));
         }
 
         return offered;
@@ -47,7 +48,8 @@ public sealed partial class CampaignRunner
             {
                 Definition item = items[index];
                 decimal price = Located(economy, "$.sell_fraction", () => checked(item.Json.GetProperty("cost").GetDecimal() * fraction));
-                carried.Add((new ShopOffer(carried.Count + 1, item, price, holder), items, index));
+                Definition currency = _rules.Reference(item, "$.currency");
+                carried.Add((new ShopOffer(carried.Count + 1, item, price, currency, holder), items, index));
             }
         }
 
@@ -75,15 +77,15 @@ public sealed partial class CampaignRunner
         }
 
         ShopOffer offer = stock[number - 1];
-        if (!CanPay(shop, offer.Item.Name, offer.Price, facts))
+        if (!CanPay(shop, offer.Item.Name, offer.Currency, offer.Price, facts))
         {
             return;
         }
 
-        Pay(offer.Price);
+        CurrencyLedger.Pay(_state.Party, offer.Currency.Id, offer.Price);
 
         _state.Inventory.Add(offer.Item);
-        facts.Add(new TradeFact(true, offer.Item.Name, offer.Price));
+        facts.Add(new TradeFact(true, offer.Item.Name, offer.Currency, offer.Price));
         facts.Add(Shop()!);
     }
 
@@ -103,19 +105,15 @@ public sealed partial class CampaignRunner
         }
 
         (ShopOffer offer, List<Definition> items, int index) = carried[number - 1];
-        // Calculate the new balances before removing the item, so a numeric overflow can't lose it.
-        decimal share = decimal.Floor(offer.Price / _state.Party.Count);
-        decimal[] balances = Located(_rules.Economy!, "$.sell_fraction", () => _state.Party
-            .Select((character, member) => checked(character.Gold + share + (member == 0 ? offer.Price - share * _state.Party.Count : 0)))
-            .ToArray());
-        Located(_rules.Economy!, "$.sell_fraction", () => balances.Sum());
-        for (int member = 0; member < balances.Length; member++)
+        // Credit the named currency before removing the item, so an overflow can't lose it.
+        Located(_rules.Economy!, "$.sell_fraction", () =>
         {
-            _state.Party[member].Gold = balances[member];
-        }
+            CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
+            return true;
+        });
 
         items.RemoveAt(index);
-        facts.Add(new TradeFact(false, offer.Item.Name, offer.Price));
+        facts.Add(new TradeFact(false, offer.Item.Name, offer.Currency, offer.Price));
         facts.Add(Shop()!);
     }
 

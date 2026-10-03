@@ -392,7 +392,21 @@ public sealed partial class CampaignRunner
     private Definition? Treasure(Definition evt, DiceRoller dice, List<PlayFact> facts)
     {
         int before = dice.Rolls.Count;
-        decimal gold = evt.Json.TryGetProperty("gold", out _) ? Evaluate(evt, "$.gold", dice).Number : 0;
+        Definition? currency = evt.Json.TryGetProperty("currency", out _)
+            ? _rules.Reference(evt, "$.currency")
+            : null;
+        decimal amount = evt.Json.TryGetProperty("amount", out _)
+            ? Located(evt, "$.amount", () =>
+            {
+                decimal value = Evaluate(evt, "$.amount", dice).Number;
+                if (value < 0)
+                {
+                    throw new ExpressionException("Treasure amount must be nonnegative; change amount.", 0);
+                }
+
+                return value;
+            })
+            : 0;
         List<Definition> items = [];
         if (evt.Json.TryGetProperty("items", out JsonElement found))
         {
@@ -403,22 +417,13 @@ public sealed partial class CampaignRunner
         }
 
         // One owner for money: the characters. Shares split evenly; the remainder goes to the first.
-        if (gold != 0 && _state.Party.Count > 0)
+        if (currency is not null && amount != 0)
         {
-            decimal share = decimal.Floor(gold / _state.Party.Count);
-            Located(evt, "$.gold", () =>
-            {
-                for (int i = 0; i < _state.Party.Count; i++)
-                {
-                    _state.Party[i].Gold = checked(_state.Party[i].Gold + share + (i == 0 ? gold - share * _state.Party.Count : 0));
-                }
-
-                return true;
-            });
+            CurrencyLedger.CreditSplit(_state.Party, currency.Id, amount);
         }
 
         _state.Inventory.AddRange(items);
-        facts.Add(new TreasureFact(gold, items.Select(item => item.Name).ToList()) { Rolls = dice.Rolls.Skip(before).ToList() });
+        facts.Add(new TreasureFact(currency, amount, items.Select(item => item.Name).ToList()) { Rolls = dice.Rolls.Skip(before).ToList() });
         return Next(evt, "$.next");
     }
 
@@ -748,7 +753,10 @@ public sealed partial class CampaignRunner
             lines.Add($"{character.Name} ({tracks}, {Fact(character.Experience)} xp{ready})");
         }
 
-        lines.Add($"gold {string.Join(" + ", _state.Party.Select(character => Fact(character.Gold)))}");
+        foreach (Definition currency in _rules.Currencies.Values)
+        {
+            lines.Add($"{currency.Name.ToLowerInvariant()} {string.Join(" + ", _state.Party.Select(character => Fact(character.Balances.GetValueOrDefault(currency.Id))))}");
+        }
         if (_state.Inventory.Count > 0)
         {
             lines.Add($"carrying {string.Join(", ", _state.Inventory.Select(item => item.Name))}");

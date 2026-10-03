@@ -29,6 +29,7 @@ the SRD; the PDF and DOCX editions are at DriveThruRPG, product 186894).
 | `actions/`, `reactions/dodge`, `conditions/dodging` (dodging gives the attacker −1 and the dodger −1 on its own checks until the next round) | Chapter 5: Attack, Reactions, Dodging |
 | `conditions/injury`, `overflow`, `spill_*`, `tracks/`, `combat/standard` (damage = weapon dice + Effect − armour, at least 1 at Effect 6+; Endurance first, then Strength or Dexterity; unconscious with two characteristics at 0) | Chapter 5: Damage, Armor, Damage Results |
 | `items/` (dagger 1D6, blade 2D6, cutlass 3D6, revolver and auto pistol 2D6, rifle 3D6; jack 1, mesh 5) | Chapter 4: Equipment |
+| `currencies/credits` | Chapter 4: Equipment pricing already used by the item definitions |
 
 The careers' skill packages and the two NPCs are original examples written
 for this module; the career names are the SRD's.

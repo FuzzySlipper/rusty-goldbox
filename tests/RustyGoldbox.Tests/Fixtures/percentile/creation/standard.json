@@ -9,7 +9,7 @@
   ],
   "attribute_roll": "2d6 + 6",
   "assignment": "in-order",
-  "starting_gold": {
-    "soldier": "roll(2, 6) * 10"
+  "starting": {
+    "soldier": { "gold": "roll(2, 6) * 10" }
   }
 }

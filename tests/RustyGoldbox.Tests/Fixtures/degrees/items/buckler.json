@@ -4,5 +4,6 @@
   "name": "Buckler",
   "kind": "shield",
   "cost": 1,
+  "currency": "gold",
   "weight": 1
 }

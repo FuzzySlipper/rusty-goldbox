@@ -4,6 +4,7 @@
   "name": "Plate Armor",
   "kind": "armor",
   "cost": 1500,
+  "currency": "gold",
   "weight": 65,
   "modifiers": [
     {

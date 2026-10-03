@@ -4,6 +4,7 @@
   "name": "Longsword",
   "kind": "weapon",
   "cost": 15,
+  "currency": "gold",
   "weight": 4,
   "parameters": {
     "damage": "1d8"

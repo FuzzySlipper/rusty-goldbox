@@ -4,6 +4,7 @@
   "name": "Short sword",
   "kind": "sword",
   "cost": 10,
+  "currency": "credits",
   "weight": 1.0,
   "parameters": {
     "damage": "1d6 + 1",

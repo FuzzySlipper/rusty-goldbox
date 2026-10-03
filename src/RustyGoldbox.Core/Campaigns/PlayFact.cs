@@ -104,16 +104,16 @@ public sealed record ItemsFact(bool Given, Definition Item, int Count) : PlayFac
     public override string Describe() => $"The party {(Given ? "receives" : "hands over")} {Count} × {Item.Name}.";
 }
 
-public sealed record TreasureFact(decimal Gold, IReadOnlyList<string> Items) : PlayFact
+public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnlyList<string> Items) : PlayFact
 {
     public override string Kind => "treasure";
 
     public override string Describe()
     {
         List<string> parts = [];
-        if (Gold != 0)
+        if (Currency is Definition currency && Amount != 0)
         {
-            parts.Add($"{N(Gold)} gold");
+            parts.Add($"{N(Amount)} {Currency.Name.ToLowerInvariant()}");
         }
 
         parts.AddRange(Items);
@@ -122,34 +122,35 @@ public sealed record TreasureFact(decimal Gold, IReadOnlyList<string> Items) : P
 }
 
 /// <summary>A numbered item at its purchase or resale price; Holder names equipped gear.</summary>
-public sealed record ShopOffer(int Number, Definition Item, decimal Price, string? Holder = null);
+public sealed record ShopOffer(int Number, Definition Item, decimal Price, Definition Currency, string? Holder = null);
 
-public sealed record ShopFact(string Text, decimal Gold, IReadOnlyList<ShopOffer> Stock, IReadOnlyList<ShopOffer> Carried) : PlayFact
+public sealed record ShopFact(string Text, IReadOnlyDictionary<Definition, decimal> Balances, IReadOnlyList<ShopOffer> Stock, IReadOnlyList<ShopOffer> Carried) : PlayFact
 {
     public override string Kind => "shop";
 
     public override string Describe()
     {
         string Offers(IReadOnlyList<ShopOffer> offers) => offers.Count == 0 ? "none" : string.Join("  ", offers.Select(offer =>
-            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")} {N(offer.Price)} gold"));
-        return $"{Text} Gold: {N(Gold)}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
+            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}"));
+        string balances = Balances.Count == 0 ? "none" : string.Join(", ", Balances.Select(entry => $"{N(entry.Value)} {entry.Key.Name.ToLowerInvariant()}"));
+        return $"{Text} Balances: {balances}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
     }
 }
 
-public sealed record TradeFact(bool Bought, string Item, decimal Gold) : PlayFact
+public sealed record TradeFact(bool Bought, string Item, Definition Currency, decimal Amount) : PlayFact
 {
     public override string Kind => Bought ? "bought" : "sold";
 
-    public override string Describe() => $"The party {(Bought ? "buys" : "sells")} {Item} for {N(Gold)} gold.";
+    public override string Describe() => $"The party {(Bought ? "buys" : "sells")} {Item} for {N(Amount)} {Currency.Name.ToLowerInvariant()}.";
 }
 
-public sealed record TempleOffer(int Number, string Label, IReadOnlyList<decimal> Prices);
+public sealed record TempleOffer(int Number, string Label, Definition Currency, IReadOnlyList<decimal> Prices);
 
 public sealed record TempleFact(string Text, IReadOnlyList<TempleOffer> Services) : PlayFact
 {
     public override string Kind => "temple";
 
-    public override string Describe() => $"{Text} {string.Join("  ", Services.Select(service => $"[{service.Number}] {service.Label}: {string.Join(", ", service.Prices.Select((price, member) => $"member {member + 1} {N(price)} gold"))}"))}. Commands: serve <service> <member>, leave.";
+    public override string Describe() => $"{Text} {string.Join("  ", Services.Select(service => $"[{service.Number}] {service.Label}: {string.Join(", ", service.Prices.Select((price, member) => $"member {member + 1} {N(price)} {service.Currency.Name.ToLowerInvariant()}"))}"))}. Commands: serve <service> <member>, leave.";
 }
 
 public sealed record PartyFact(bool Joined, Definition Npc, string Name, int Members) : PlayFact

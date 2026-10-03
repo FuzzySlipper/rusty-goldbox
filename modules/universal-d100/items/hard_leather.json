@@ -4,6 +4,7 @@
   "name": "Hard leather",
   "kind": "armour",
   "cost": 10,
+  "currency": "credits",
   "weight": 5.0,
   "modifiers": [
     {

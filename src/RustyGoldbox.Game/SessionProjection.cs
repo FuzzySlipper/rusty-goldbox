@@ -115,7 +115,7 @@ internal static class SessionProjection
             projection["shop"] = runner.Shop() is ShopFact shop ? new JsonObject
             {
                 ["text"] = shop.Text,
-                ["gold"] = shop.Gold,
+                ["balances"] = Balances(shop.Balances),
                 ["stock"] = Offers(shop.Stock),
                 ["carried"] = Offers(shop.Carried),
             } : null;
@@ -126,6 +126,7 @@ internal static class SessionProjection
                 {
                     ["number"] = service.Number,
                     ["label"] = service.Label,
+                    ["currency"] = service.Currency.QualifiedId,
                     ["prices"] = new JsonArray(service.Prices.Select(price => (JsonNode)JsonValue.Create(price)!).ToArray()),
                 }).ToArray()),
             } : null;
@@ -223,8 +224,20 @@ internal static class SessionProjection
             ["id"] = offer.Item.QualifiedId,
             ["name"] = offer.Item.Name,
             ["price"] = offer.Price,
+            ["currency"] = offer.Currency.QualifiedId,
             ["holder"] = offer.Holder,
         }).ToArray());
+    }
+
+    private static JsonObject Balances(IReadOnlyDictionary<Definition, decimal> balances)
+    {
+        JsonObject result = [];
+        foreach ((Definition currency, decimal amount) in balances)
+        {
+            result[currency.QualifiedId] = amount;
+        }
+
+        return result;
     }
 
     private static JsonArray Choices(RuleSet rules, DefinitionType type)
@@ -377,13 +390,24 @@ internal static class SessionProjection
             ["memorisedChosen"] = character.Memorised.Count > 0,
             ["prepared"] = Spells(CharacterRules.PreparedLeft(rules, character)),
             ["castable"] = new JsonArray(CharacterRules.CastableSpells(rules, character).Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
-            ["gold"] = (double)character.Gold,
+            ["balances"] = Balances(character.Balances, rules),
             ["experience"] = (double)character.Experience,
             ["levelReady"] = CharacterRules.ReadyToLevel(rules, character),
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
             ["portraitPicture"] = character.Portrait is Definition portrait ? Picture(rules, portrait, imageUrl) : null,
         };
+    }
+
+    private static JsonObject Balances(IReadOnlyDictionary<string, decimal> balances, RuleSet rules)
+    {
+        JsonObject result = [];
+        foreach ((string currency, decimal amount) in balances.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+        {
+            result[rules.Currencies.TryGetValue(currency, out Definition? definition) ? definition.QualifiedId : currency] = amount;
+        }
+
+        return result;
     }
 
     /// <summary>The area as the CLI's player view draws it, with the party as an arrow.</summary>

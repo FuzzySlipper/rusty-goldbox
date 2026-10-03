@@ -31,14 +31,14 @@ public sealed class TempleTests
                 Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
             }
 
-            party.ForEach(character => character.Gold = 0);
+            party.ForEach(character => character.Balances["gold"] = 0);
             Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("serve 1 2", engine.Random)));
             Assert.Equal(1, party[1].Tracks["hit_points"].Current);
-            party[0].Gold = 1;
-            party[1].Gold = 1;
+            party[0].Balances["gold"] = 1;
+            party[1].Balances["gold"] = 1;
             runner.Execute("serve 1 2", engine.Random);
-            Assert.Equal(0, party[0].Gold);
-            Assert.Equal(0, party[1].Gold);
+            Assert.Equal(0, party[0].Balances["gold"]);
+            Assert.Equal(0, party[1].Balances["gold"]);
             Assert.Equal(party[1].Tracks["hit_points"].Max, party[1].Tracks["hit_points"].Current);
             Assert.Equal(0, party[0].Tracks["hit_points"].Current);
             runner.Execute("serve 2 2", engine.Random);
@@ -60,7 +60,7 @@ public sealed class TempleTests
     {
         using TempModules modules = new();
         string campaign = Fixture(modules);
-        modules.Write("tale/shrine.json", "{ \"type\": \"event\", \"id\": \"shrine\", \"kind\": \"temple\", \"text\": \"Hi\", \"services\": [{ \"label\": \"Bad\", \"cost\": \"0\", \"operations\": [" + operation + "] }] }");
+        modules.Write("tale/shrine.json", "{ \"type\": \"event\", \"id\": \"shrine\", \"kind\": \"temple\", \"text\": \"Hi\", \"services\": [{ \"label\": \"Bad\", \"cost\": \"0\", \"currency\": \"rules:gold\", \"operations\": [" + operation + "] }] }");
         ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
         Assert.Contains(set.Diagnostics, problem => problem.JsonPath == "$.services[0].operations[0]" + suffix && problem.Module == "tale" && problem.File!.EndsWith("shrine.json", StringComparison.Ordinal));
     }
@@ -81,7 +81,7 @@ public sealed class TempleTests
         string campaign = ShopTests.Fixture(modules);
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "shrine" }""");
         modules.Write("rules/ill.json", """{ "type": "condition", "id": "ill", "name": "Ill", "modifiers": [] }""");
-        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Welcome to the shrine.", "services": [{ "label": "Mend", "cost": "self.level * 2", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "100" }] }, { "label": "Cure", "cost": "0", "operations": [{ "op": "remove_condition", "condition": "rules:ill" }] }], "next": "farewell" }""");
+        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Welcome to the shrine.", "services": [{ "label": "Mend", "cost": "self.level * 2", "currency": "rules:gold", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "100" }] }, { "label": "Cure", "cost": "0", "currency": "rules:gold", "operations": [{ "op": "remove_condition", "condition": "rules:ill" }] }], "next": "farewell" }""");
         return campaign;
     }
 }

@@ -4,6 +4,7 @@
   "name": "Ring armour",
   "kind": "armour",
   "cost": 30,
+  "currency": "credits",
   "weight": 10.0,
   "modifiers": [
     {

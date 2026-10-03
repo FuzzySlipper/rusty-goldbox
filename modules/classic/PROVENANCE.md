@@ -20,6 +20,7 @@ artwork, its title and trademarks, or its variable experience point rule.
 | `races/` and `tables/race_movement` | Chapter I, character races (pp. 3–8) |
 | `classes/`, `tables/thac0`, `tables/saving_throws` | Chapter I, fighter, cleric, magic user and thief (pp. 10–27) |
 | `items/` | Chapter I, equipment and armour (pp. 31–34) |
+| `currencies/gold` | Chapter I, equipment and starting money (pp. 30–34) |
 | `creation/standard` (rolls, starting gold) | Chapter I (pp. 1, 30) |
 | class `equipment`, race `multiclass_equipment` | Chapter I, armour and weapons permitted to each class (pp. 11, 18, 20, 25) and the races' multi-class restrictions (pp. 4–7) |
 | `advancement/standard`, race `multiclasses`, class level `hp` division | Chapter I, multi-classing and dual-classing (pp. 27–28) and permitted class options (pp. 4–7) |

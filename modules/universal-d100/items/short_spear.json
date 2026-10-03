@@ -4,6 +4,7 @@
   "name": "Short spear",
   "kind": "spear",
   "cost": 5,
+  "currency": "credits",
   "weight": 2.0,
   "parameters": {
     "damage": "1d6 + 1",

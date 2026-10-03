@@ -51,6 +51,16 @@ public static class DefinitionTypes
         { "type": "track", "id": "hit_points", "name": "Hit points", "from_levels": true }
         """);
 
+    public static DefinitionType Currency { get; } = new(
+        "currency",
+        "A named kind of money a ruleset uses. Balances are kept separately for each currency; a ruleset may declare none.",
+        [
+            new("name", new TextKind(), true, "Display name, for example \"Gold pieces\" or \"Credits\"."),
+        ],
+        """
+        { "type": "currency", "id": "gold", "name": "Gold" }
+        """);
+
     public static DefinitionType Derived { get; } = new(
         "derived",
         "A value computed from other stats, such as armour class or a to-hit bonus. Expressions read it as self.<id>; its type is inferred from the expression.",
@@ -128,7 +138,7 @@ public static class DefinitionTypes
             new("prepares_spells", new BooleanKind(), false, "If true, its spells are memorised each day: the character casts only the copies it prepared (as many as its tracks pay for), each copy once, until a rest that prepares spells; a spell that costs nothing (a cantrip) is always ready. Without it, the character casts any spell it knows while it can pay."),
             new("actions", new ListKind(Use), false, "Actions characters of the class can take in combat, in order of preference."),
             new("reactions", new ListKind(new ReferenceKind("reaction")), false, "Reactions it gives in combat."),
-            new("starting_gold", SelfNumber, false, "Starting gold pieces for a new character of the class, for example \"5d4 * 10\", when the character creation's starting_gold doesn't name the class. A class an extension adds brings its own this way."),
+            new("starting", new MapKind(new ReferenceKind("currency"), SelfNumber), false, "Starting balances for a new character of this class, by currency. A class an extension adds brings its own this way when the creation does not name it."),
             new("equipment", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Item), false, "Which items members of the class may equip, reading item.id, item.kind, item.weight and item.cost, for example \"item.kind != 'armour' or item.id == 'leather_armour'\". Without it, any item."),
             new("modifiers", new ListKind(ClassModifier), false, "Modifiers a creature with levels in the class has. They may read class.level, its level in this class, so per-class progressions add up across classes: { \"stat\": \"base_attack\", \"value\": \"floor(class.level * 3 / 4)\" }."),
             Boosts,
@@ -149,7 +159,7 @@ public static class DefinitionTypes
         "npc",
         "A predefined character, using character data without format or modules (the loader supplies those). Export with goldbox character npc; join and dismiss events use its qualified identity.",
         [new("character", new ObjectKind(Characters.CharacterFile.DataFields), true, "Complete character data, checked by the character reader. References must name this module or its requires. No rolling or creation happens when the NPC joins.")],
-        """{ "type": "npc", "id": "guide", "character": { "name": "Guide", "race": "rules:folk", "creation": "rules:standard", "levels": [{ "class": "rules:scout", "gain": 4 }], "experience": 0, "attributes": { "agility": 10 }, "tracks": { "health": { "current": 4, "max": 4 } }, "gold": 0, "equipment": [], "conditions": [] } }""");
+        """{ "type": "npc", "id": "guide", "character": { "name": "Guide", "race": "rules:folk", "creation": "rules:standard", "levels": [{ "class": "rules:scout", "gain": 4 }], "experience": 0, "attributes": { "agility": 10 }, "tracks": { "health": { "current": 4, "max": 4 } }, "balances": { "gold": 0 }, "equipment": [], "conditions": [] } }""");
 
     public static DefinitionType Resting { get; } = new(
         "resting",
@@ -175,7 +185,8 @@ public static class DefinitionTypes
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
             new("training", new ObjectKind(
             [
-                new("cost", SelfNumber, true, "Gold for one level, evaluated before levelling; self.level is the current total level. Must be nonnegative and must not roll dice."),
+                new("cost", SelfNumber, true, "Amount for one level in the named currency, evaluated before levelling; self.level is the current total level. Must be nonnegative and must not roll dice."),
+                new("currency", new ReferenceKind("currency"), true, "Currency paid for one level."),
                 new("days", SelfNumber, true, "Days spent training, evaluated before levelling; may roll dice and must be nonnegative."),
             ]), false, "When present, earned experience waits for paid training at a training event. Each payment gains one level."),
             new("experience_to", new EnumKind(["survivors", "party", "each"]), false, "Who gets the experience a fight or an experience event awards in play: an even share (rounding down) to the characters still standing (\"survivors\", the default, also without an advancement definition) or to the whole party, or the whole amount to each member (\"each\")."),
@@ -201,7 +212,7 @@ public static class DefinitionTypes
           "experience": "character",
           "levels": [0, 1000, 3000, 6000, 10000],
           "grants": [ { "kind": "feat", "when": "self.level == 1 or self.level % 3 == 0" } ],
-          "training": { "cost": "self.level * 20", "days": "2" }
+          "training": { "cost": "self.level * 20", "currency": "gold", "days": "2" }
         }
         """);
 
@@ -303,19 +314,20 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("kind", new TextKind(), true, "What sort of item it is, in the ruleset's own words, for example \"weapon\" or \"armour\". Uses with from_item match it."),
-            new("cost", new NumberKind(), true, "Price, at least 0, in the ruleset's money. Shops charge this and buy back at the economy's sell_fraction of it."),
+            new("cost", new NumberKind(), true, "Price, at least 0, in the currency named by \"currency\". Shops charge this and buy back at the economy's sell_fraction of it."),
+            new("currency", new ReferenceKind("currency"), true, "The currency in which this item's cost is paid."),
             new("weight", new NumberKind(), true, "Weight, in the ruleset's unit."),
             new("parameters", new MapKind(new TextKind(), CombatNumber), false, "Values the item gives actions used with it (uses with from_item), for example { \"damage\": \"1d8\" }. May read target, for example to deal more against large creatures."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers while equipped, for example armour lowering \"ac\"."),
         ],
         """
-        { "type": "item", "id": "long_sword", "name": "Long sword", "kind": "weapon", "cost": 15, "weight": 7, "parameters": { "damage": "if target.size == 'large' then 1d12 else 1d8" } }
+        { "type": "item", "id": "long_sword", "name": "Long sword", "kind": "weapon", "cost": 15, "currency": "gold", "weight": 7, "parameters": { "damage": "if target.size == 'large' then 1d12 else 1d8" } }
         """);
 
     public static DefinitionType Economy { get; } = new(
         "economy",
-        "The ruleset's shop resale policy. A module set has at most one; shop events need one. Purchases use item cost and pooled character gold; proceeds are shared evenly, with the remainder to the first character.",
-        [new("sell_fraction", new NumberKind(), true, "The fraction of item cost paid for a carried item, from 0 to 1. Prices keep fractional gold without rounding.")],
+        "The ruleset's shop resale policy. A module set has at most one; shop events need one. Purchases use each item's declared currency and pooled character balances; proceeds are shared evenly, with the remainder to the first character.",
+        [new("sell_fraction", new NumberKind(), true, "The fraction of item cost paid for a carried item, from 0 to 1. Prices keep fractional currency without rounding.")],
         """{ "type": "economy", "id": "standard", "sell_fraction": 0.5 }""");
 
     public static DefinitionType Spell { get; } = new(
@@ -634,7 +646,7 @@ public static class DefinitionTypes
 
     public static DefinitionType CharacterCreation { get; } = new(
         "character-creation",
-        "How new characters are made: how attribute scores are made (rolled, an arranged array, point buy or boosts), the features every character chooses, and starting gold. A ruleset may offer several; one marked default is used when none is named.",
+        "How new characters are made: how attribute scores are made (rolled, an arranged array, point buy or boosts), the features every character chooses, and starting balances. A ruleset may offer several; one marked default is used when none is named.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("attributes", new ListKind(new StatKind(true)), true, "Every attribute once, in the order rolls are taken and sheets show them."),
@@ -649,7 +661,7 @@ public static class DefinitionTypes
             new("costs", new ReferenceKind("table"), false, "Method point-buy: a table from a score to its total cost from the base, for example rows [8, 0], [9, 1], ..., [18, 16]."),
             new("boost", new IntegerKind(), false, "Method boosts: how much each boost raises an attribute."),
             new("boosts", Boosts.Kind, false, "Method boosts: boosts every new character has besides those of its race, creation features and class; usually free ones ({})."),
-            new("starting_gold", new MapKind(new ReferenceKind("class"), SelfNumber), false, "Starting gold pieces for each class it names; a class it doesn't name uses its own starting_gold. Without either, characters start with none."),
+            new("starting", new MapKind(new ReferenceKind("class"), new MapKind(new ReferenceKind("currency"), SelfNumber)), false, "Starting balances for each class it names, by currency; a class it doesn't name uses its own \"starting\" map. Without either, characters start with none."),
             new("features", new ListKind(new ObjectKind([GrantKind, GrantKinds, GrantCount])), false, "Features every new character chooses, for example a background and a heritage."),
         ],
         """
@@ -660,7 +672,7 @@ public static class DefinitionTypes
           "attributes": ["str", "dex", "con", "int", "wis", "cha"],
           "attribute_roll": "3d6",
           "assignment": "in-order",
-          "starting_gold": { "fighter": "(3d6 + 2) * 10" }
+          "starting": { "fighter": { "gold": "(3d6 + 2) * 10" } }
         }
         """);
 
@@ -700,7 +712,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Resting, Advancement, Npc, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Currency, Derived, Table, Race, Class, Resting, Advancement, Npc, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure, Skin,
     ];
 

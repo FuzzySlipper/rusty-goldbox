@@ -4,6 +4,7 @@
   "name": "Leather Armor",
   "kind": "light armor",
   "cost": 2,
+  "currency": "gold",
   "weight": 1,
   "modifiers": [
     {

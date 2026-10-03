@@ -44,6 +44,7 @@ None.
 | `actions/` (an attack is dodged, or parried with a shield; each defence after the first in a round at −30%; a critical does maximum damage and ignores armour; a missile weapon adds half a positive damage modifier) | Combat Actions, Parry, Dodge, Attack and Defense Matrix, Damage Modifier |
 | `conditions/` (armour subtracts from damage; a single wound of half the hit points or more is a major wound: the character fights on for rounds equal to its remaining hit points; at 2 or fewer hit points it is unconscious) | Armor, Minor Wounds, Major Wounds, Hit Points |
 | `items/` (broadsword, short sword, battle axe, dagger, light mace, short spear, self bow, heater shield, soft and hard leather, ring armour, half plate, with their damage, armour points and skill penalties) | Weapons and Armor tables |
+| `currencies/credits` | Weapons and Armor tables: prices already used by the item definitions |
 | `monsters/wolf`, `bear` | Ch. 11 Creatures: Natural Creatures (average values) |
 
 `monsters/bandit` and the four professions' skill spreads are original

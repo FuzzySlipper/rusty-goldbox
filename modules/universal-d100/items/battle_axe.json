@@ -4,6 +4,7 @@
   "name": "Battle axe",
   "kind": "axe",
   "cost": 15,
+  "currency": "credits",
   "weight": 1.0,
   "parameters": {
     "damage": "1d8 + 2",

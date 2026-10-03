@@ -98,7 +98,7 @@ the CLI; a checkbox per installed extension built on a campaign's ruleset in
 the Game). They resolve like requirements, and their ruleset must be the
 set's. Character files stamp every module of the set they were made under and
 saves record the added extensions, so loading either without them is refused
-with the IDs to add. A class can carry its own `starting_gold`, so an added
+with the IDs to add. A class can carry its own `starting` balance map, so an added
 class needs no patch to the ruleset's character creation.
 
 ### Identity and references
@@ -432,12 +432,14 @@ Combat is built so that no die convention is assumed:
   the play transcript names them, and saves keep the picture and music.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
   an item and an optional campaign guard; stock is unlimited and offered at
-  the item's cost. A ruleset's single `economy` definition declares
-  `sell_fraction` (0 to 1). Carried items, including equipped gear, sell at
-  cost times that fraction, keeping fractional gold. Purchases spend character
-  gold in party order; proceeds use the treasure split (whole-gold shares,
-  remainder to the first member). Bought items join party inventory. Leaving
-  follows the event's `next`, and saves retain an open shop.
+  the item's cost in its declared currency. A ruleset's single `economy`
+  definition declares `sell_fraction` (0 to 1). Carried items, including
+  equipped gear, sell at cost times that fraction, keeping fractional amounts.
+  Purchases spend the item's currency from pooled character balances in party
+  order; proceeds use the treasure split (whole shares, remainder to the first
+  member). Bought items join party inventory. A ruleset may declare no
+  currencies, in which case paid content cannot be authored. Leaving follows
+  the event's `next`, and saves retain an open shop.
 - **Experience** comes from felled monsters and experience events, shared
   among the survivors (or the whole party, or given whole to each character,
   as the ruleset says). A level that
@@ -585,17 +587,17 @@ regression checks for module and rules behavior.
 Temples offer numbered services through `serve <service> <member>` and `leave`.
 Service expressions read the chosen character as `self` and campaign variables;
 `heal` names its track and `remove_condition` names a condition. The campaign
-runner uses existing character tracks, conditions and pooled character gold;
+runner uses existing character tracks, conditions and pooled balances in the service's declared currency;
 `CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
 healing with combat. Saves retain an open temple and Game projections expose
 prices for each member.
 
-An advancement may declare `training: { "cost": "self.level * 20", "days": "2" }`.
+An advancement may declare `training: { "cost": "self.level * 20", "currency": "gold", "days": "2" }`.
 Experience still accumulates, but levels wait for `train <member>` at a training
 event, with the same class, feature and boost choices as `level`. One payment
-buys one level; a failure to choose or pay leaves gold and time unchanged.
+buys one level; a failure to choose or pay leaves the named balance and time unchanged.
 `CampaignRunner.Training.cs` uses `CharacterRules` for advancement and the
-existing character gold for fees. Campaign state stores fictional `ElapsedDays`
+existing character balances for fees. Campaign state stores fictional `ElapsedDays`
 and the open trainer in saves; this is game time, independent of Engine clocks.
 Rulesets without training retain their existing immediate advancement.
 
@@ -617,7 +619,7 @@ at module loading, supplying module stamps from its declared dependencies.
 chain to `next`, refusals to `on_refused` (or end the chain). They enforce the
 campaign's party maximum/minimum and never remove player characters.
 `CampaignRunner.Party.cs` moves the same NPC character between `Party` and
-`AbsentNpcs`; rejoining preserves wounds, gold and gear. Saves keep both lists
+`AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.
 

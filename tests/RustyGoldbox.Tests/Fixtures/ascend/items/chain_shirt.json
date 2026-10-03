@@ -4,6 +4,7 @@
   "name": "Chain shirt",
   "kind": "armour",
   "cost": 100,
+  "currency": "gold",
   "weight": 25,
   "modifiers": [
     {

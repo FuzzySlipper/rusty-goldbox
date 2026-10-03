@@ -26,6 +26,7 @@ English SRD 5.2.1 PDF from https://media.dndbeyond.com/compendium-images/srd/5.2
 | `combat/standard` (initiative, action, Bonus Action, movement and Reaction; 5-foot squares; Opportunity Attacks) | Combat; Rules Glossary |
 | `spells/` and their actions (Fire Bolt, Sacred Flame, Magic Missile, Guiding Bolt, Cure Wounds, Healing Word, Shield, Scorching Ray, Fireball) | Spells |
 | `items/` (weapons, armor and the shield, with their damage and Armor Class) | Equipment |
+| `currencies/gold` | Equipment: gold piece prices |
 | `monsters/` (Goblin Warrior, Bandit, Skeleton, Zombie with Undead Fortitude, Wolf with Pack Tactics, Ogre) | Monsters; Animals |
 
 The encounters are original groupings of SRD creatures.

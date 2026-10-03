@@ -4,6 +4,7 @@
   "name": "Blade",
   "kind": "blade",
   "cost": 50,
+  "currency": "credits",
   "weight": 0.35,
   "parameters": {
     "damage": "2d6"

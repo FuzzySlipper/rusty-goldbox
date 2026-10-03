@@ -13,6 +13,12 @@ export function mountProductUi(root, context) {
     context?.intents?.claim(COMMAND_INTENT, { kind: 'product-payload', contract: COMMAND_CONTRACT, data });
   };
 
+  const currencyName = (id) => id ? id.split(':').at(-1) : 'currency';
+  const formatBalances = (balances) => {
+    const entries = Object.entries(balances ?? {});
+    return entries.length === 0 ? 'no money' : entries.map(([id, amount]) => `${amount} ${currencyName(id)}`).join(', ');
+  };
+
   const panel = element('aside', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '', style: PANEL_STYLE });
   const title = element('h1', { style: 'margin:0 0 4px;font-size:16px' }, 'Rusty Goldbox');
   // The look lives in a stylesheet of theme variables, so a skin restyles every panel at once.
@@ -146,7 +152,7 @@ export function mountProductUi(root, context) {
       members.append(element('li', {},
         element('div', { style: 'display:flex;gap:6px;align-items:center' },
           ...picture(member.portraitPicture, `${member.name}'s portrait`, 40),
-          element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, gold ${member.gold}`)),
+          element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, ${formatBalances(member.balances)}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
@@ -316,17 +322,17 @@ export function mountProductUi(root, context) {
     const temple = view.temple ? fragment(
       element('p', {}, view.temple.text),
       ...view.temple.services.map((service) => row(element('span', {}, service.label),
-        ...service.prices.map((price, member) => button(`${view.party[member].name} — ${price} gold`,
+        ...service.prices.map((price, member) => button(`${view.party[member].name} — ${price} ${currencyName(service.currency)}`,
           () => send({ action: 'play', command: `serve ${service.number} ${member + 1}` }))))),
       row(button('Leave temple', () => send({ action: 'play', command: 'leave' })))) : '';
     const shop = view.shop ? fragment(
       element('h2', { style: HEADING_STYLE }, view.shop.text),
-      element('div', {}, `Party gold: ${view.shop.gold}`),
+      element('div', {}, `Party balances: ${formatBalances(view.shop.balances)}`),
       element('div', {}, 'Buy'),
-      row(...view.shop.stock.map((offer) => button(`${offer.number}. ${offer.name} — ${offer.price} gold`,
+      row(...view.shop.stock.map((offer) => button(`${offer.number}. ${offer.name} — ${offer.price} ${currencyName(offer.currency)}`,
         () => send({ action: 'play', command: `buy ${offer.number}` })))),
       element('div', {}, 'Sell'),
-      row(...view.shop.carried.map((offer) => button(`${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''} — ${offer.price} gold`,
+      row(...view.shop.carried.map((offer) => button(`${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''} — ${offer.price} ${currencyName(offer.currency)}`,
         () => send({ action: 'play', command: `sell ${offer.number}` })))),
       row(button('Leave shop', () => send({ action: 'play', command: 'leave' })))) : '';
     const log = element('pre', { id: 'rusty-goldbox-log', style: LOG_STYLE }, (view.log ?? []).join('\n'));

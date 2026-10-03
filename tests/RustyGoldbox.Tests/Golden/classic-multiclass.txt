@@ -317,7 +317,9 @@ $ goldbox character show aldo.json --module modules/classic --json
         "current": 0
       }
     },
-    "gold": 120,
+    "balances": {
+      "gold": 120
+    },
     "equipment": [],
     "forfeits_experience": true,
     "conditions": []

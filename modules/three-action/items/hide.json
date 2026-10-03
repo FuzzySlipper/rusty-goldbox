@@ -4,6 +4,7 @@
   "name": "Hide Armor",
   "kind": "medium armor",
   "cost": 2,
+  "currency": "gold",
   "weight": 2,
   "modifiers": [
     {

@@ -4,6 +4,7 @@
   "name": "Long sword",
   "kind": "weapon",
   "cost": 15,
+  "currency": "gold",
   "weight": 7,
   "parameters": {
     "damage": "if target.size == 'large' then 1d12 else 1d8"

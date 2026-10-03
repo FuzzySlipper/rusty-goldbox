@@ -4,6 +4,7 @@
   "name": "Rifle",
   "kind": "gun",
   "cost": 200,
+  "currency": "credits",
   "weight": 4,
   "parameters": {
     "damage": "3d6"

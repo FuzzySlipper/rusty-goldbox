@@ -4,6 +4,7 @@
   "name": "Short bow",
   "kind": "missile weapon",
   "cost": 15,
+  "currency": "gold",
   "weight": 8,
   "parameters": {
     "damage": "1d6",

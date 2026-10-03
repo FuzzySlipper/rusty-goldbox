@@ -196,13 +196,13 @@ public sealed class CampaignTests
         modules.Write("rules/wait.json", """{ "type": "action", "id": "wait", "name": "Wait", "cost": { "turn": 1 }, "target": "self", "always": [ { "op": "heal", "amount": "0" } ] }""");
         modules.Write("rules/statue.json", """{ "type": "monster", "id": "statue", "name": "Statue", "tracks": { "hit_points": "5" }, "actions": [ { "action": "wait" } ], "xp": 0 }""");
         modules.Write("rules/statues.json", """{ "type": "encounter", "id": "statues", "name": "Statues", "monsters": [ { "monster": "statue", "count": "1" } ] }""");
-        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "c", "name": "C", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order", "starting_gold": { "warrior": "5" } }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "c", "name": "C", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order", "starting": { "warrior": { "gold": "5" } } }""");
         modules.Write("rules/folk.json", """{ "type": "race", "id": "folk", "name": "Folk", "classes": ["warrior"] }""");
         string campaign = modules.Module("tale", "campaign", requires: $"{Require("rules", "*")}, {Require("art", "*")}");
         modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "standoff" }""");
         modules.Write("tale/standoff.json", """{ "type": "event", "id": "standoff", "kind": "combat", "encounter": "rules:statues", "on_draw": "coins" }""");
-        modules.Write("tale/coins.json", """{ "type": "event", "id": "coins", "kind": "treasure", "gold": "7" }""");
+        modules.Write("tale/coins.json", """{ "type": "event", "id": "coins", "kind": "treasure", "currency": "rules:gold", "amount": "7" }""");
         using TempModules scratch = new();
         Run(scratch, "character", "new", "--module", Path.Combine(modules.Root, "rules"), "--class", "warrior", "--race", "folk", "--name", "A", "--out", "a.json");
         Run(scratch, "character", "new", "--module", Path.Combine(modules.Root, "rules"), "--class", "warrior", "--race", "folk", "--name", "B", "--out", "b.json");

@@ -207,7 +207,9 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
         "max": 60
       }
     },
-    "gold": 15,
+    "balances": {
+      "gold": 15
+    },
     "equipment": [],
     "conditions": []
   },

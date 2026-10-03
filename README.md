@@ -112,9 +112,10 @@ dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-cryp
 
 The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
 stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
-scripts and the Game's shop buttons. Gold stays on characters and purchases
-join party inventory; selling equipped gear removes it from its wearer. The
-ruleset declares resale in `economy.sell_fraction` (`goldbox schema economy`),
+scripts and the Game's shop buttons. Declared currency balances stay on
+characters and purchases join party inventory; selling equipped gear removes it
+from its wearer. Each item names its payment currency, and the ruleset declares
+resale in `economy.sell_fraction` (`goldbox schema economy`),
 and `goldbox schema events` describes the shop format. Saves keep an open shop.
 
 Campaign `give` and `take` events name an `item` and an optional positive
@@ -207,17 +208,17 @@ Read [AGENTS.md](AGENTS.md) before changing anything.
 Temples offer numbered services through `serve <service> <member>` and `leave`.
 Service expressions read the chosen character as `self` and campaign variables;
 `heal` names its track and `remove_condition` names a condition. The campaign
-runner uses existing character tracks, conditions and pooled character gold;
+runner uses existing character tracks, conditions and pooled balances in each service's declared currency;
 `CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
 healing with combat. Saves retain an open temple and Game projections expose
 prices for each member.
 
-An advancement may declare `training: { "cost": "self.level * 20", "days": "2" }`.
+An advancement may declare `training: { "cost": "self.level * 20", "currency": "gold", "days": "2" }`.
 Experience still accumulates, but levels wait for `train <member>` at a training
 event, with the same class, feature and boost choices as `level`. One payment
-buys one level; a failure to choose or pay leaves gold and time unchanged.
+buys one level; a failure to choose or pay leaves the named balance and time unchanged.
 `CampaignRunner.Training.cs` uses `CharacterRules` for advancement and the
-existing character gold for fees. Campaign state stores fictional `ElapsedDays`
+existing character balances for fees. Campaign state stores fictional `ElapsedDays`
 and the open trainer in saves; this is game time, independent of Engine clocks.
 Rulesets without training retain their existing immediate advancement.
 
@@ -243,6 +244,6 @@ at module loading, supplying module stamps from its declared dependencies.
 chain to `next`, refusals to `on_refused` (or end the chain). They enforce the
 campaign's party maximum/minimum and never remove player characters.
 `CampaignRunner.Party.cs` moves the same NPC character between `Party` and
-`AbsentNpcs`; rejoining preserves wounds, gold and gear. Saves keep both lists
+`AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.

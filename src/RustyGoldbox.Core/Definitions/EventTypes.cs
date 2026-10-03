@@ -94,13 +94,14 @@ public static class EventTypes
 
     public static DefinitionType Treasure { get; } = new(
         "treasure",
-        "Gives the party gold and items.",
+        "Gives the party an explicitly named currency and items.",
         [
-            new("gold", new ExpressionKind(ExprType.Number, Roots.Campaign), false, "Gold found, for example \"3d6 * 10\"; shared evenly among the characters, the remainder to the first."),
+            new("currency", new ReferenceKind("currency"), false, "The currency found. Required with amount; omit both for item-only treasure."),
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign), false, "Currency found, for example \"3d6 * 10\"; shared evenly among the characters, the remainder to the first."),
             new("items", new ListKind(new ReferenceKind("item")), false, "Items found."),
             Next,
         ],
-        """{ "type": "event", "id": "loot", "kind": "treasure", "gold": "2d6 * 10", "items": ["classic:dagger"] }""");
+        """{ "type": "event", "id": "loot", "kind": "treasure", "currency": "classic:gold", "amount": "2d6 * 10", "items": ["classic:dagger"] }""");
 
     public static DefinitionType Experience { get; } = new(
         "experience",
@@ -155,16 +156,17 @@ public static class EventTypes
             new("services", new ListKind(new ObjectKind(
             [
                 new("label", new TextKind(), true, "The service name."),
-                new("cost", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign), true, "Gold charged; may read the chosen character as self and campaign variables. Must evaluate to a nonnegative number."),
+                new("cost", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign), true, "Amount charged in the named currency; may read the chosen character as self and campaign variables. Must evaluate to a nonnegative number."),
+                new("currency", new ReferenceKind("currency"), true, "Currency charged for this service."),
                 new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign, ["heal", "remove_condition"])), true, "Operations on the chosen character; heal requires a track and to, if given, must be self."),
             ])), true, "Services in order, numbered from 1."),
             Next, Picture, Sound, Music,
         ],
-        """{ "type": "event", "id": "temple", "kind": "temple", "text": "Welcome.", "services": [{ "label": "Healing", "cost": "10", "operations": [{ "op": "heal", "track": "classic:hit_points", "amount": "1d8" }] }] }""");
+        """{ "type": "event", "id": "temple", "kind": "temple", "text": "Welcome.", "services": [{ "label": "Healing", "cost": "10", "currency": "classic:gold", "operations": [{ "op": "heal", "track": "classic:hit_points", "amount": "1d8" }] }] }""");
 
     public static DefinitionType Training { get; } = new(
         "training",
-        "Offers the ruleset advancement's training: gold and days for one waiting level. Waits for train <member> with the level command's choices, or leave.",
+        "Offers the ruleset advancement's training: a declared currency amount and days for one waiting level. Waits for train <member> with the level command's choices, or leave.",
         [new("text", new TextKind(), true, "The trainer's greeting."), Next, Picture, Sound, Music],
         """{ "type": "event", "id": "trainer", "kind": "training", "text": "Train here.", "next": "farewell" }""");
 

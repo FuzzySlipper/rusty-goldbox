@@ -4,6 +4,7 @@
   "name": "Club",
   "kind": "weapon",
   "cost": 1,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "roll_explode(1, 6, 6)"

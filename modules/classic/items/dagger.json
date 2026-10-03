@@ -4,6 +4,7 @@
   "name": "Dagger",
   "kind": "weapon",
   "cost": 2,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "if target.size == 'large' then 1d3 else 1d4"

@@ -44,7 +44,7 @@
         "current": 0
       }
     },
-    "gold": 0,
+    "balances": { "gold": 0 },
     "equipment": [
       "classic:dagger"
     ],

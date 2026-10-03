@@ -4,6 +4,7 @@
   "name": "Dagger",
   "kind": "dagger",
   "cost": 5,
+  "currency": "credits",
   "weight": 0.5,
   "parameters": {
     "damage": "1d4 + 2",

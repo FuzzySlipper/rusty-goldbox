@@ -3,7 +3,7 @@ Vance
   dexterity 10/10
   endurance 11/11
   strength 9/9
-  gold 0
+  credits 0
   features: Marine (career)
   str            9      Strength score
   dex            10     Dexterity score
@@ -29,7 +29,7 @@ Kira
   dexterity 9/9
   endurance 9/9
   strength 10/10
-  gold 0
+  credits 0
   features: Mercenary (career)
   str            10     Strength score
   dex            9      Dexterity score

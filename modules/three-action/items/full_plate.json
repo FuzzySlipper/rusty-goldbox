@@ -4,6 +4,7 @@
   "name": "Full Plate",
   "kind": "heavy armor",
   "cost": 30,
+  "currency": "gold",
   "weight": 4,
   "modifiers": [
     {

@@ -4,6 +4,7 @@
   "name": "Sword",
   "kind": "weapon",
   "cost": 10,
+  "currency": "gold",
   "weight": 3,
   "parameters": {
     "damage": "1d8"

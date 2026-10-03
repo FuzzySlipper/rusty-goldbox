@@ -4,6 +4,7 @@
   "name": "Light Crossbow",
   "kind": "ranged weapon",
   "cost": 25,
+  "currency": "gold",
   "weight": 5,
   "parameters": {
     "damage": "1d8",

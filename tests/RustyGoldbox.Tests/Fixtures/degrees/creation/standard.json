@@ -19,9 +19,9 @@
     {},
     {}
   ],
-  "starting_gold": {
-    "vanguard": "15",
-    "mystic": "15"
+  "starting": {
+    "vanguard": { "gold": "15" },
+    "mystic": { "gold": "15" }
   },
   "features": [
     {

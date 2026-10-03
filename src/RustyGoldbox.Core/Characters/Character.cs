@@ -101,7 +101,8 @@ public sealed class Character
     /// </summary>
     public Dictionary<string, TrackValue> Tracks { get; } = [];
 
-    public decimal Gold { get; set; }
+    /// <summary>Money carried by currency ID. A ruleset with no currencies leaves this empty.</summary>
+    public Dictionary<string, decimal> Balances { get; } = [];
 
     public List<Definition> Equipment { get; } = [];
 
@@ -127,7 +128,7 @@ public sealed class Character
         Character copy = new()
         {
             Name = Name, Modules = Modules, Race = Race, Creation = Creation,
-            Experience = Experience, Gold = Gold, Portrait = Portrait, Npc = Npc,
+            Experience = Experience, Portrait = Portrait, Npc = Npc,
             UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
             Prepared = Prepared?.ToList(),
         };
@@ -145,6 +146,11 @@ public sealed class Character
         foreach (var entry in Attributes)
         {
             copy.Attributes.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in Balances)
+        {
+            copy.Balances.Add(entry.Key, entry.Value);
         }
 
         foreach (var entry in Tracks)

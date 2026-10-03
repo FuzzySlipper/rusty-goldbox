@@ -41,6 +41,7 @@ public sealed class RuleSetBuilder
         builder.CheckMonsterStats();
         builder.CheckCreationAttributes();
         builder.CheckAdvancement();
+        builder.CheckCurrencies();
         builder.CheckEconomy();
         builder.CheckResting();
         builder.CheckGrants();
@@ -70,6 +71,14 @@ public sealed class RuleSetBuilder
             if (!_rules.Variables.TryAdd(variable.Id, variable))
             {
                 Error(variable, "variable.duplicate", "$.id", $"Variable '{variable.Id}' is already declared in {_rules.Variables[variable.Id].QualifiedId}. Variable names are shared by the module set.");
+            }
+        }
+
+        foreach (Definition currency in _rules.OfType(DefinitionTypes.Currency))
+        {
+            if (!_rules.Currencies.TryAdd(currency.Id, currency))
+            {
+                Error(currency, "currency.duplicate", "$.id", $"Currency '{currency.Id}' is already defined in {_rules.Currencies[currency.Id].QualifiedId}. Currency IDs are shared by the whole module set; use another ID.");
             }
         }
 
@@ -1209,6 +1218,17 @@ public sealed class RuleSetBuilder
         }
     }
 
+    private void CheckCurrencies()
+    {
+        foreach (Definition currency in _rules.OfType(DefinitionTypes.Currency))
+        {
+            if (_manifests[currency.Module].Kind != ModuleKind.Ruleset)
+            {
+                Error(currency, "currency.module", "$", "A currency belongs in the ruleset. Extensions and campaigns cannot introduce money types.");
+            }
+        }
+    }
+
     private void CheckEvent(Definition definition)
     {
         string kind = definition.Json.GetProperty("kind").GetString()!;
@@ -1218,6 +1238,15 @@ public sealed class RuleSetBuilder
                 if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
                 {
                     Error(definition, "event.items", "$.count", "An item count must be a positive whole number; omit count for one copy.");
+                }
+
+                break;
+            case "treasure":
+                bool hasCurrency = definition.Json.TryGetProperty("currency", out _);
+                bool hasAmount = definition.Json.TryGetProperty("amount", out _);
+                if (hasCurrency != hasAmount)
+                {
+                    Error(definition, "event.treasure", "$", "A treasure event needs both \"currency\" and \"amount\", or neither for item-only treasure.");
                 }
 
                 break;

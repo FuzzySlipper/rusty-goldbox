@@ -12,10 +12,10 @@
   ],
   "attribute_roll": "3d6",
   "assignment": "in-order",
-  "starting_gold": {
-    "fighter": "(3d6 + 2) * 10",
-    "cleric": "3d6 * 10",
-    "magic_user": "2d4 * 10",
-    "thief": "2d6 * 10"
+  "starting": {
+    "fighter": { "gold": "(3d6 + 2) * 10" },
+    "cleric": { "gold": "3d6 * 10" },
+    "magic_user": { "gold": "2d4 * 10" },
+    "thief": { "gold": "2d6 * 10" }
   }
 }

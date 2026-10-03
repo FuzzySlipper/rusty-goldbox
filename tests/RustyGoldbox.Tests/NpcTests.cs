@@ -26,7 +26,7 @@ public sealed class NpcTests
             Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is PartyFact { Joined: true });
             Character guide = runner.State.Party[1];
             Assert.Equal("tale:guide", guide.Npc!.QualifiedId);
-            guide.Gold = 0;
+            guide.Balances["gold"] = 0;
             guide.Tracks["hit_points"].Current = 1;
             guide.Equipment.Add(set.Rules.Find(DefinitionTypes.Item, "tool", out _)!);
             Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is RefusedFact);
@@ -46,7 +46,7 @@ public sealed class NpcTests
             runner.Execute("choose 1", engine.Random);
             Assert.Same(guide, restored.Party[1]);
             Assert.Empty(restored.AbsentNpcs);
-            Assert.Equal(0, guide.Gold);
+            Assert.Equal(0, guide.Balances["gold"]);
             Assert.Equal(1, guide.Tracks["hit_points"].Current);
             Assert.Single(guide.Equipment);
         });

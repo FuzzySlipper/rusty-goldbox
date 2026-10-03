@@ -4,6 +4,7 @@
   "name": "Breastplate",
   "kind": "medium armor",
   "cost": 8,
+  "currency": "gold",
   "weight": 2,
   "modifiers": [
     {

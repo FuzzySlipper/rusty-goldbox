@@ -2,6 +2,7 @@
   "type": "event",
   "id": "guard_loot",
   "kind": "treasure",
-  "gold": "2d6 * 10",
+  "currency": "classic:gold",
+  "amount": "2d6 * 10",
   "next": "guard_dagger"
 }

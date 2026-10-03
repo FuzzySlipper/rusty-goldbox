@@ -4,6 +4,7 @@
   "name": "Banded mail",
   "kind": "armour",
   "cost": 250,
+  "currency": "gold",
   "weight": 35,
   "modifiers": [
     {

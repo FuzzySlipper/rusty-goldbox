@@ -19,6 +19,7 @@ internal static class Rules
     public static string WriteSmallRuleset(TempModules modules)
     {
         string root = modules.Module("rules", "ruleset");
+        modules.Write("rules/gold.json", """{ "type": "currency", "id": "gold", "name": "Gold" }""");
         modules.Write("rules/hit_points.json", """{ "type": "track", "id": "hit_points", "name": "Hit points", "from_levels": true }""");
         modules.Write("rules/str.json", """{ "type": "attribute", "id": "str", "name": "Strength", "min": 3, "max": 18, "default": 10 }""");
         modules.Write("rules/bonus.json", """

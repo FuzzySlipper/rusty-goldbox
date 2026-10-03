@@ -2,7 +2,6 @@ $ goldbox character new --module modules/fate-condensed --name Ruth --priority f
 Ruth
   mental stress 4/4
   physical stress 7/7
-  gold 0
   features: Heavy Hitter (stunt), Tough as Nails (stunt), Quick Feet (stunt)
   academics          0      Academics
   athletics          3      Athletics
@@ -32,7 +31,6 @@ $ goldbox character new --module modules/fate-condensed --name Ethan --priority 
 Ethan
   mental stress 5/5
   physical stress 3/3
-  gold 0
   features: Deadeye (stunt), Iron Will (stunt), Cutting Words (stunt)
   academics          0      Academics
   athletics          3      Athletics

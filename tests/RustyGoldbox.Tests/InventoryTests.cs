@@ -74,7 +74,7 @@ public sealed class InventoryTests
     {
         using TempModules modules = new();
         string campaign = TempleTests.Fixture(modules);
-        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Mend?", "services": [{ "label": "Mend", "cost": "carried(item.id == 'tool')", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "carried(item.kind == 'gear')" }] }] }""");
+        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Mend?", "services": [{ "label": "Mend", "cost": "carried(item.id == 'tool')", "currency": "rules:gold", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "carried(item.kind == 'gear')" }] }] }""");
         ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
         Assert.Empty(set.Diagnostics);
         List<Character> party = ShopTests.Party(modules, campaign, set);

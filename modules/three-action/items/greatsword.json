@@ -4,6 +4,7 @@
   "name": "Greatsword",
   "kind": "melee weapon",
   "cost": 2,
+  "currency": "gold",
   "weight": 2,
   "parameters": {
     "damage": "1d12",

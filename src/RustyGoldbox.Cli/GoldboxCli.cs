@@ -42,7 +42,7 @@ internal static class GoldboxCli
               --class and --race are needed where the ruleset has classes and races.
               Makes attributes by the creation's method (roll, array, point buy or boosts), applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
-              track, and rolls gold. --priority arranges rolls where the ruleset allows.
+              track, and rolls any declared starting balances. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range. --portrait gives the character a
               portrait asset from the module set. --feature fills the choices creation and the

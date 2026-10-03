@@ -4,6 +4,7 @@
   "name": "Jack",
   "kind": "armour",
   "cost": 50,
+  "currency": "credits",
   "weight": 1,
   "modifiers": [
     {

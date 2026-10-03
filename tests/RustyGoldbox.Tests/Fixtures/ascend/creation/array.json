@@ -15,8 +15,8 @@
     13,
     12
   ],
-  "starting_gold": {
-    "warrior": "roll(4, 4) * 10",
-    "adept": "roll(3, 4) * 10"
+  "starting": {
+    "warrior": { "gold": "roll(4, 4) * 10" },
+    "adept": { "gold": "roll(3, 4) * 10" }
   }
 }

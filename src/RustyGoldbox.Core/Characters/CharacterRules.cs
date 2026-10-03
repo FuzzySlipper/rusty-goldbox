@@ -165,7 +165,10 @@ public static class CharacterRules
             }
 
             StartTracks(rules, character, evaluator);
-            character.Gold = StartingGold(rules, creation, character, evaluator, problems);
+            foreach ((string currency, decimal amount) in StartingBalances(rules, creation, character, evaluator, problems))
+            {
+                character.Balances[currency] = amount;
+            }
         }
         catch (RuleFailure failure)
         {
@@ -1340,47 +1343,84 @@ public static class CharacterRules
     }
 
     /// <summary>
-    /// The starting gold for the character's class: the creation's entry for
-    /// it, else the class's own; with several classes, the wealthiest of them.
+    /// The starting balance for each currency: the creation's entry for a
+    /// class, else the class's own; with several classes, the highest amount
+    /// each class grants is kept. This preserves separate coins without
+    /// inventing an exchange rate.
     /// </summary>
-    private static decimal StartingGold(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
+    private static Dictionary<string, decimal> StartingBalances(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
     {
-        List<decimal> amounts = [];
-        bool creationGold = creation.Json.TryGetProperty("starting_gold", out JsonElement golds);
+        List<Dictionary<string, decimal>> amounts = [];
+        bool creationStarting = creation.Json.TryGetProperty("starting", out JsonElement starting);
         foreach (Definition characterClass in character.ClassLevels().Keys)
         {
-            string? found = null;
-            if (creationGold)
+            string? classPath = null;
+            JsonElement selectedStarting = default;
+            if (creationStarting)
             {
-                foreach (JsonProperty entry in golds.EnumerateObject())
+                foreach (JsonProperty entry in starting.EnumerateObject())
                 {
-                    if (rules.Reference(creation, $"$.starting_gold.{entry.Name}") == characterClass)
+                    if (rules.Reference(creation, $"$.starting.{entry.Name}") == characterClass)
                     {
-                        found = $"$.starting_gold.{entry.Name}";
+                        classPath = $"$.starting.{entry.Name}";
+                        selectedStarting = entry.Value;
                     }
                 }
             }
 
-            if (found is not null)
+            if (classPath is not null)
             {
-                amounts.Add(Evaluate(rules, evaluator, creation, found, character.ToCreature()));
+                Dictionary<string, decimal> balances = [];
+                foreach (JsonProperty entry in selectedStarting.EnumerateObject())
+                {
+                    string path = $"{classPath}.{entry.Name}";
+                    decimal amount = Evaluate(rules, evaluator, creation, path, character.ToCreature());
+                    if (amount < 0)
+                    {
+                        problems.Add(new ModuleDiagnostic("character.currency", $"Starting amount for {entry.Name} cannot be negative.", creation.Module, creation.File, path));
+                    }
+                    else
+                    {
+                        balances[rules.Reference(creation, path).Id] = amount;
+                    }
+                }
+
+                amounts.Add(balances);
             }
-            else if (characterClass.Json.TryGetProperty("starting_gold", out _))
+            else if (characterClass.Json.TryGetProperty("starting", out JsonElement classStarting))
             {
-                amounts.Add(Evaluate(rules, evaluator, characterClass, "$.starting_gold", character.ToCreature()));
+                Dictionary<string, decimal> balances = [];
+                foreach (JsonProperty entry in classStarting.EnumerateObject())
+                {
+                    string path = $"$.starting.{entry.Name}";
+                    decimal amount = Evaluate(rules, evaluator, characterClass, path, character.ToCreature());
+                    if (amount < 0)
+                    {
+                        problems.Add(new ModuleDiagnostic("character.currency", $"Starting amount for {entry.Name} cannot be negative.", characterClass.Module, characterClass.File, path));
+                    }
+                    else
+                    {
+                        balances[rules.Reference(characterClass, path).Id] = amount;
+                    }
+                }
+
+                amounts.Add(balances);
             }
-            else if (creationGold)
+            else if (creationStarting)
             {
                 problems.Add(new ModuleDiagnostic(
-                    "character.gold",
-                    $"{creation.QualifiedId} has no starting_gold for {characterClass.QualifiedId}, and the class has none of its own. Give the class a \"starting_gold\", or add \"{characterClass.Id}\" to the creation's.",
+                    "character.currency",
+                    $"{creation.QualifiedId} has no starting balance for {characterClass.QualifiedId}, and the class has none of its own. Give the class a \"starting\" map, or add \"{characterClass.Id}\" to the creation's.",
                     creation.Module,
                     creation.File,
-                    "$.starting_gold"));
+                    "$.starting"));
             }
         }
 
-        return amounts.DefaultIfEmpty(0).Max();
+        return amounts
+            .SelectMany(values => values)
+            .GroupBy(entry => entry.Key, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Max(entry => entry.Value), StringComparer.Ordinal);
     }
 
     private static Dictionary<string, decimal>? RollAttributes(

@@ -36,14 +36,14 @@ public sealed class ShopTests
 
             runner.State.Variables["licensed"] = Value.Of(true);
             Assert.Equal(2, runner.Shop()!.Stock.Count);
-            party[0].Gold = 1;
-            party[1].Gold = 2.5m;
+            party[0].Balances["gold"] = 1;
+            party[1].Balances["gold"] = 2.5m;
             Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 2", engine.Random)));
             Assert.Empty(runner.State.Inventory);
-            Assert.Equal([1m, 2.5m], party.Select(member => member.Gold));
+            Assert.Equal([1m, 2.5m], party.Select(member => member.Balances["gold"]));
 
             runner.Execute("buy 1", engine.Random);
-            Assert.Equal([0m, 0m], party.Select(member => member.Gold));
+            Assert.Equal([0m, 0m], party.Select(member => member.Balances["gold"]));
             Definition tool = Assert.Single(runner.State.Inventory);
             // Duplicate items are separate copies; selling one leaves the other and the worn one.
             runner.State.Inventory.Add(tool);
@@ -52,7 +52,7 @@ public sealed class ShopTests
             runner.Execute("sell 2", engine.Random);
             Assert.Single(runner.State.Inventory);
             Assert.Single(party[1].Equipment);
-            Assert.Equal([0.875m, 0m], party.Select(member => member.Gold));
+            Assert.Equal([0.875m, 0m], party.Select(member => member.Balances["gold"]));
             Assert.Equal("B", runner.Shop()!.Carried[1].Holder);
             runner.Execute("sell 2", engine.Random);
             Assert.Empty(party[1].Equipment);
@@ -120,7 +120,7 @@ public sealed class ShopTests
     [Theory]
     [InlineData("rules/economy.json", """{ "type": "economy", "id": "standard", "sell_fraction": -0.1 }""", "economy.sell-fraction", "$.sell_fraction")]
     [InlineData("rules/economy.json", """{ "type": "economy", "id": "standard", "sell_fraction": 1.1 }""", "economy.sell-fraction", "$.sell_fraction")]
-    [InlineData("rules/tool.json", """{ "type": "item", "id": "tool", "name": "Tool", "kind": "gear", "cost": -1, "weight": 1 }""", "item.cost", "$.cost")]
+    [InlineData("rules/tool.json", """{ "type": "item", "id": "tool", "name": "Tool", "kind": "gear", "cost": -1, "currency": "gold", "weight": 1 }""", "item.cost", "$.cost")]
     [InlineData("rules/other.json", """{ "type": "economy", "id": "other", "sell_fraction": 0.5 }""", "economy.duplicate", "$.id")]
     [InlineData("tale/store.json", """{ "type": "event", "id": "store", "kind": "shop", "text": "Hi", "items": [{ "item": "rules:missing" }] }""", "reference.not-found", "$.items[0].item")]
     public void BadShopDataNamesItsFileAndPath(string file, string json, string rule, string path)
@@ -168,8 +168,8 @@ public sealed class ShopTests
         string campaign = Fixture(modules);
         ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
         List<Character> party = Party(modules, campaign, set);
-        party[0].Gold = decimal.MaxValue;
-        party[1].Gold = 0;
+        party[0].Balances["gold"] = decimal.MaxValue;
+        party[1].Balances["gold"] = 0;
         CampaignState state = CampaignRunner.NewState(set.Rules!, set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!, party, 1);
         state.Inventory.Add(set.Rules.Find(DefinitionTypes.Item, "blade", out _)!);
         CampaignRunner runner = new(set.Rules, state);
@@ -180,18 +180,18 @@ public sealed class ShopTests
             RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("sell 1", engine.Random));
             Assert.Equal("$.sell_fraction", failure.Diagnostic.JsonPath);
             Assert.Single(state.Inventory);
-            Assert.Equal([decimal.MaxValue, 0m], party.Select(member => member.Gold));
+            Assert.Equal([decimal.MaxValue, 0m], party.Select(member => member.Balances["gold"]));
         });
     }
 
     internal static string Fixture(TempModules modules)
     {
         Rules.WriteSmallRuleset(modules);
-        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "c", "name": "C", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order", "starting_gold": { "warrior": "5" } }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "c", "name": "C", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order", "starting": { "warrior": { "gold": "5" } } }""");
         modules.Write("rules/folk.json", """{ "type": "race", "id": "folk", "name": "Folk", "classes": ["warrior"] }""");
         modules.Write("rules/economy.json", """{ "type": "economy", "id": "standard", "sell_fraction": 0.25 }""");
-        modules.Write("rules/tool.json", """{ "type": "item", "id": "tool", "name": "Tool", "kind": "gear", "cost": 3.5, "weight": 1 }""");
-        modules.Write("rules/blade.json", """{ "type": "item", "id": "blade", "name": "Blade", "kind": "weapon", "cost": 10, "weight": 2 }""");
+        modules.Write("rules/tool.json", """{ "type": "item", "id": "tool", "name": "Tool", "kind": "gear", "cost": 3.5, "currency": "gold", "weight": 1 }""");
+        modules.Write("rules/blade.json", """{ "type": "item", "id": "blade", "name": "Blade", "kind": "weapon", "cost": 10, "currency": "gold", "weight": 2 }""");
         modules.Module("art", "assets");
         string campaign = modules.Module("tale", "campaign", requires: $"{TempModules.Require("rules", "*")}, {TempModules.Require("art", "*")}");
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "store" }""");

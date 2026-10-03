@@ -4,6 +4,7 @@
   "name": "Rapier",
   "kind": "finesse weapon",
   "cost": 25,
+  "currency": "gold",
   "weight": 2,
   "parameters": {
     "damage": "1d8",

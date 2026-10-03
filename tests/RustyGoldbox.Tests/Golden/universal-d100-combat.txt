@@ -1,7 +1,7 @@
 $ goldbox character new --module modules/universal-d100 --name Aldric --feature soldier --seed 4 --out aldric.json
 Aldric
   hit points 12/12
-  gold 0
+  credits 0
   features: Soldier (profession)
   str            8      Strength
   con            9      Constitution
@@ -31,7 +31,7 @@ Saved to aldric.json.
 $ goldbox character new --module modules/universal-d100 --name Mira --feature hunter --seed 9 --out mira.json
 Mira
   hit points 11/11
-  gold 0
+  credits 0
   features: Hunter (profession)
   str            10     Strength
   con            10     Constitution
@@ -61,7 +61,7 @@ Saved to mira.json.
 $ goldbox character show aldric.json --module modules/universal-d100
 Aldric
   hit points 12/12
-  gold 0
+  credits 0
   features: Soldier (profession)
   str            8      Strength
   con            9      Constitution

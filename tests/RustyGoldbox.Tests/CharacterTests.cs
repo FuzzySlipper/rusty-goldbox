@@ -312,27 +312,27 @@ public sealed class CharacterTests
     }
 
     [Fact]
-    public void AnAddedExtensionsClassBringsItsOwnStartingGoldAndIsStamped()
+    public void AnAddedExtensionsClassBringsItsOwnStartingBalancesAndIsStamped()
     {
         using TempModules modules = new();
         string degrees = Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "degrees");
         modules.Module("blades", "extension", requires: TempModules.Require("degrees", "^0.1.0"));
         string level = """{ "hp": "if self.level == 1 then 8 + self.ancestry_hp else 8", "hp_bonus": "self.stamina_mod" }""";
         string levels = string.Join(", ", Enumerable.Repeat(level, 5));
-        modules.Write("blades/classes/duelist.json", $$"""{ "type": "class", "id": "duelist", "name": "Duelist", "levels": [ {{levels}} ], "boosts": [ { "from": ["finesse"] } ], "starting_gold": "20" }""");
+        modules.Write("blades/classes/duelist.json", $$"""{ "type": "class", "id": "duelist", "name": "Duelist", "levels": [ {{levels}} ], "boosts": [ { "from": ["finesse"] } ], "starting": { "degrees:gold": "20" } }""");
         modules.Write("blades/classes/drifter.json", $$"""{ "type": "class", "id": "drifter", "name": "Drifter", "levels": [ {{levels}} ], "boosts": [ { "from": ["finesse"] } ] }""");
         ModuleSet set = ModuleLoader.Load(degrees, [modules.Root, Path.GetDirectoryName(degrees)!], extensions: ["blades"]);
         Assert.Empty(set.Diagnostics);
 
-        // The creation's starting_gold names only the fixture's own classes; the extension's class pays its own.
+        // The creation's starting map names only the fixture's own classes; the extension's class pays its own.
         string[] boosts = ["presence", "insight", "stamina", "finesse", "stamina", "insight", "brawn"];
         Character duelist = Create(set, new CreationRequest("Vex", "duelist", "sylvan", Features: ["duskwood", "scribe", "sylvan_step"], Boosts: boosts))!;
-        Assert.Equal(20, duelist.Gold);
+        Assert.Equal(20, duelist.Balances["gold"]);
         Assert.Equal(["degrees", "blades"], duelist.Modules.Select(module => module.Id));
 
         List<ModuleDiagnostic> problems = [];
         Assert.Null(WithDice(dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest("Rook", "drifter", "sylvan", Features: ["duskwood", "scribe", "sylvan_step"], Boosts: boosts), dice, problems)));
-        Assert.Contains(problems, problem => problem.Rule == "character.gold" && problem.Message.Contains("Give the class a \"starting_gold\"", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.Rule == "character.currency" && problem.Message.Contains("Give the class a \"starting\"", StringComparison.Ordinal));
 
         // Read back without the extension, the character is refused with the ID to add.
         string file = Path.Combine(modules.Root, "vex.json");
@@ -381,7 +381,7 @@ public sealed class CharacterTests
         string file = Path.Combine(modules.Root, "bad.json");
         File.WriteAllText(file, """
             { "format": 1, "name": 5, "modules": ["ascend"], "race": "folk", "levels": "x", "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "gold": 0 }
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 } }, "balances": { "gold": 0 } }
             """);
         List<ModuleDiagnostic> problems = [];
 
@@ -392,7 +392,7 @@ public sealed class CharacterTests
         Assert.All(problems, problem => Assert.Equal("character.file", problem.Rule));
         File.WriteAllText(file, """
             { "format": 1, "name": "x", "modules": [ { "id": "ascend", "version": "0.1.0" } ], "race": "folk", "creation": "standard", "levels": [ { "class": "warrior", "gain": 5, "features": [ "iron_will", "improved_initiative" ] } ], "experience": -5,
-              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 }, "arcana_1": { "current": 0 } }, "gold": 0 }
+              "attributes": { "might": 10, "grace": 10, "grit": 10, "wit": 10 }, "tracks": { "hit_points": { "max": 5, "current": 5 }, "arcana_1": { "current": 0 } }, "balances": { "gold": 0 } }
             """);
         problems.Clear();
         Assert.Null(CharacterFile.Read(file, set, problems));

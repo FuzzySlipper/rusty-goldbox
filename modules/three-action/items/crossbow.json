@@ -4,6 +4,7 @@
   "name": "Crossbow",
   "kind": "ranged weapon",
   "cost": 3,
+  "currency": "gold",
   "weight": 1,
   "parameters": {
     "damage": "1d8",

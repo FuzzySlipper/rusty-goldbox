@@ -4,6 +4,7 @@
   "name": "Longbow",
   "kind": "ranged weapon",
   "cost": 6,
+  "currency": "gold",
   "weight": 2,
   "parameters": {
     "damage": "1d8",

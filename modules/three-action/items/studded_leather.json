@@ -4,6 +4,7 @@
   "name": "Studded Leather",
   "kind": "light armor",
   "cost": 3,
+  "currency": "gold",
   "weight": 1,
   "modifiers": [
     {

@@ -4,6 +4,7 @@
   "name": "Longsword",
   "kind": "melee weapon",
   "cost": 15,
+  "currency": "gold",
   "weight": 3,
   "parameters": {
     "damage": "1d8",

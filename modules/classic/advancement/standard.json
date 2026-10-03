@@ -6,6 +6,7 @@
   "class_change": "self.race == 'human' and self.classes == 1 and (if self.class == 'fighter' then self.str else if self.class == 'cleric' then self.wis else if self.class == 'magic_user' then self.int else self.dex) >= 15 and (if class.id == 'fighter' then self.str else if class.id == 'cleric' then self.wis else if class.id == 'magic_user' then self.int else self.dex) >= 17",
   "training": {
     "cost": "self.level * 1500",
+    "currency": "gold",
     "days": "1d4 * 7"
   }
 }
