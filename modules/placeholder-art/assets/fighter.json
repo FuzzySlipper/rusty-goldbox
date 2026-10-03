@@ -1,7 +1,7 @@
 {
   "type": "asset",
   "id": "fighter",
-  "kind": "sprite",
+  "media": "sheet",
   "file": "sprites/fighter.png",
   "frame_size": [
     32,

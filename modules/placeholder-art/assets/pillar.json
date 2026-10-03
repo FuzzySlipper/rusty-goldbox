@@ -1,7 +1,7 @@
 {
   "type": "asset",
   "id": "pillar",
-  "kind": "sprite",
+  "media": "sheet",
   "file": "sprites/pillar.png",
   "frame_size": [
     32,

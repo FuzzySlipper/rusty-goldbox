@@ -1,9 +1,9 @@
 {
   "type": "asset",
   "id": "stone_wall",
-  "kind": "wall_set",
+  "media": "image",
   "file": "walls/stone.png",
-  "frames": {
+  "regions": {
     "wall": [
       0,
       0,

@@ -339,7 +339,7 @@ public sealed class CampaignTests
     {
         using TempModules modules = new();
         modules.Module("art", "assets");
-        modules.Write("art/missing.json", """{ "type": "asset", "id": "missing", "kind": "backdrop", "file": "nowhere.svg" }""");
+        modules.Write("art/missing.json", """{ "type": "asset", "id": "missing", "media": "image", "file": "nowhere.svg" }""");
         Rules.WriteSmallRuleset(modules);
         string campaign = modules.Module("tale", "campaign", requires: $"{Require("rules", "*")}, {Require("art", "*")}");
         modules.Write("tale/hall.json", """

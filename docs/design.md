@@ -84,7 +84,7 @@ object whose `type` field names its definition type. Other files (media,
 | --- | --- | --- |
 | `ruleset` | Attributes, derived values, races, classes and level tables, checks, conditions, item types, spells and abilities, monsters, the combat procedure and character creation | assets modules only; usually nothing |
 | `extension` | Additions to a ruleset (classes, spells, monsters) and declared patches to its definitions (house rules) | exactly one ruleset, plus extensions and assets |
-| `assets` | Logical asset IDs mapped to files: wall sets, backdrops, portraits, combat icons, sounds and music | other assets modules only |
+| `assets` | Logical asset IDs mapped to media files (images and frame sheets; sounds, music and video to come), used for wall sets, backdrops, portraits, icons and figures | other assets modules only |
 | `campaign` | Areas, maps, events, encounters, NPCs, shops, variables, the starting party rules and the start location | exactly one ruleset, one or more assets modules, any extensions |
 
 No module may require a campaign, and a resolved module set contains at most
@@ -128,18 +128,23 @@ class needs no patch to the ruleset's character creation.
 - Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
   provides the same IDs. `goldbox module validate` lists any that are missing.
-- An asset has a kind (`wall_set`, `backdrop`, `portrait`, `icon`), and a
-  reference names the kind it needs: an area's `wall_set`, a cell's
-  `backdrop`. Asset files are 8-bit RGBA PNGs, the format the Engine renderer
-  admits, and validation reads each header to check that. A wall set is one
-  image with named frames (pixel rectangles for `wall` and `door`, optionally
-  `floor` and `ceiling`), so art of any size and layout fits. A sprite is a
-  sheet of equal frames (any frame size and count) with the way it faces,
-  the pixel it stands on, its height in cells and optional named animations
-  (frames and fps, looping or once). A `figure` definition (in a campaign or
-  extension, since rulesets carry no art) says which sprite draws a monster or
-  a class, and optionally the icon that lists it. A character may have a
-  `portrait` asset, chosen at creation and kept in its file and saves.
+- An asset says what its file is, its **media**: an `image` (optionally with
+  named pixel `regions`) or a `sheet` of equal frames (any frame size and
+  count) with optional named animations (frames and fps, looping or once),
+  and, to stand in the world, the way it faces, the pixel it stands on and its
+  height in cells. Image files are 8-bit RGBA PNGs, the format the Engine
+  renderer admits, and validation reads each header to check that. A
+  reference names the **slot** it fills, and the slot decides which media fit
+  (`Media` in Core, `goldbox schema media`): a `picture` (a cell's backdrop, a
+  portrait, an icon, and every new place that shows a picture) takes any
+  visual media; a `figure` takes a sheet that can stand; a `wall_set` takes an
+  image with wall and door regions. So a new media type is added once and
+  every slot that accepts it takes it, and the Game draws each with one
+  presenter. Optional `tags` (such as `portrait`) tell pickers what art is
+  meant for without limiting where it can be used. A `figure` definition (in a
+  campaign or extension, since rulesets carry no art) says which sheet draws a
+  monster or a class, and optionally the picture that lists it. A character
+  may have a portrait, chosen at creation and kept in its file and saves.
 
 ### Rules as data
 
@@ -488,8 +493,9 @@ regression checks for module and rules behavior.
   - Sprites are drawn facing one way and flipped horizontally for the other.
     There are no directional sprite sets and no meshes or mesh animation. A
     sprite may be an animated strip of frames.
-  - The DOM draws text, menus and panels around the view. Module images can't
-    be DOM images (bundles give no URLs), so pictures are renderer sprites.
+  - The DOM draws text, menus and panels around the view. Module images reach
+    it as Engine UI image URLs (portraits, icons), and pictures over the view
+    are renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine
   persistence scope, as the same JSON `goldbox play --save` writes.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with

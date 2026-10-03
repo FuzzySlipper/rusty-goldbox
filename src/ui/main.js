@@ -108,7 +108,7 @@ export function mountProductUi(root, context) {
       fill(item, view.items ?? []);
       members.append(element('li', {},
         element('div', { style: 'display:flex;gap:6px;align-items:center' },
-          ...picture(member.portraitUrl, `${member.name}'s portrait`, 40),
+          ...picture(member.portraitPicture, `${member.name}'s portrait`, 40),
           element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, gold ${member.gold}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
@@ -126,7 +126,7 @@ export function mountProductUi(root, context) {
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`),
       ...(view.extensions?.length ? [element('div', { style: 'opacity:.8' }, `Extensions: ${view.extensions.join(', ')}`)] : []),
       members,
-      row(name, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.url, 'Chosen portrait', 32)),
+      row(name, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.picture, 'Chosen portrait', 32)),
       choices.rows,
       row(button('Roll', () => send({
         action: 'roll',
@@ -207,7 +207,7 @@ export function mountProductUi(root, context) {
   /** The party as a roster strip: each member's portrait, name and track values. */
   const renderRoster = (party) => element('div', { id: 'rusty-goldbox-roster', style: 'display:flex;flex-wrap:wrap;gap:8px;margin:6px 0' },
     ...party.map((member) => element('div', { style: 'display:flex;gap:6px;align-items:center;padding:3px 6px;background:rgba(255,255,255,.05);border-radius:4px' },
-      ...picture(member.portraitUrl, `${member.name}'s portrait`, 48),
+      ...picture(member.portraitPicture, `${member.name}'s portrait`, 48),
       element('div', {},
         element('strong', {}, member.name),
         ...member.tracks.map((track) => element('div', { style: 'opacity:.85' }, track)),
@@ -300,7 +300,7 @@ export function mountProductUi(root, context) {
     const side = (index) => element('ul', { style: 'padding-left:16px;margin:2px 0' },
       ...fight.members.filter((member) => member.side === index).map((member) => element('li',
         { style: member.defeated ? 'opacity:.45;text-decoration:line-through' : (member.acting ? 'color:#f6c177' : '') },
-        ...picture(member.iconUrl, '', 16),
+        ...picture(member.iconPicture, '', 16),
         ` ${member.name}: ${fight.track} ${member.value}${member.max === null ? '' : '/' + member.max}`)));
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Combat: ${fight.encounter ?? ''}`),
@@ -349,13 +349,29 @@ function element(tag, attributes = {}, ...children) {
   return node;
 }
 
-/** An image the product granted (an Engine UI image URL), drawn pixel-sharp at a size; nothing without one. */
-function picture(url, label, size) {
-  if (!url) {
+/**
+ * Any picture the projection carries ({ url, width, height, frame }), drawn
+ * pixel-sharp within a size-pixel square: an image whole, a sheet's first
+ * frame cropped from it. Nothing without one. Every panel picture goes
+ * through here, so a new kind of media is drawn in one place.
+ */
+function picture(media, label, size) {
+  if (!media?.url) {
     return [];
   }
 
-  return [element('img', { src: url, alt: label, width: size, height: size, style: 'image-rendering:pixelated;object-fit:contain' })];
+  if (!media.frame) {
+    return [element('img', { src: media.url, alt: label, width: size, height: size, style: 'image-rendering:pixelated;object-fit:contain' })];
+  }
+
+  const [frameWidth, frameHeight] = media.frame;
+  const scale = size / Math.max(frameWidth, frameHeight);
+  return [element('div', {
+    role: 'img',
+    'aria-label': label,
+    style: `width:${frameWidth * scale}px;height:${frameHeight * scale}px;image-rendering:pixelated;`
+      + `background:url("${media.url}") 0 0 / ${media.width * scale}px ${media.height * scale}px no-repeat`,
+  })];
 }
 
 function fragment(...children) {

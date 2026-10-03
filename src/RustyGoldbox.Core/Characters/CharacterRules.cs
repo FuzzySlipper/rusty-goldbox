@@ -634,12 +634,8 @@ public static class CharacterRules
         return asset;
     }
 
-    /// <summary>Why an asset can't be a portrait, or null when it can.</summary>
-    public static string? PortraitProblem(Definition asset)
-    {
-        string kind = asset.Json.GetProperty("kind").GetString()!;
-        return kind == "portrait" ? null : $"{asset.QualifiedId} is a {kind} asset, but a character's portrait must be a portrait.";
-    }
+    /// <summary>Why an asset can't be a portrait (a picture slot), or null when it can.</summary>
+    public static string? PortraitProblem(Definition asset) => Media.Problem("picture", asset);
 
     /// <summary>
     /// Adds experience and gains every level it reaches, rolling hit points

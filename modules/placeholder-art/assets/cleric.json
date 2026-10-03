@@ -1,7 +1,7 @@
 {
   "type": "asset",
   "id": "cleric",
-  "kind": "sprite",
+  "media": "sheet",
   "file": "sprites/cleric.png",
   "frame_size": [
     32,

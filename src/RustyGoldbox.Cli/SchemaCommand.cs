@@ -24,7 +24,7 @@ internal static class SchemaCommand
         (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
         if (error is null && parsed.Positionals.Count > 1)
         {
-            error = "Usage: goldbox schema [type | module | expressions]";
+            error = "Usage: goldbox schema [type | module | expressions | operations | events | media]";
         }
 
         if (error is not null)
@@ -58,11 +58,16 @@ internal static class SchemaCommand
             return Events(output);
         }
 
+        if (topic == "media")
+        {
+            return MediaTopic(output);
+        }
+
         DefinitionType? type = DefinitionTypes.Find(topic);
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events, media.");
         }
 
         return Type(output, type);
@@ -75,7 +80,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "module", "expressions", "operations", "events" },
+                topics = new[] { "module", "expressions", "operations", "events", "media" },
             });
             return GoldboxCli.Ok;
         }
@@ -251,6 +256,44 @@ internal static class SchemaCommand
             output.Line($"  Example: {kind.Example}");
         }
 
+        return GoldboxCli.Ok;
+    }
+
+    private const string ImageExample = """{ "type": "asset", "id": "tavern", "media": "image", "file": "pictures/tavern.png" }""";
+
+    private const string SheetExample = """{ "type": "asset", "id": "fire", "media": "sheet", "file": "pictures/fire.png", "frame_size": [64, 64], "animations": { "burn": { "frames": [0, 1, 2, 3], "fps": 8 } } }""";
+
+    private static int MediaTopic(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                media = Media.Types,
+                slots = Media.Slots.Select(slot => new { name = slot.Name, description = slot.Description, accepts = slot.Accepts }),
+                examples = new[] { System.Text.Json.JsonDocument.Parse(ImageExample).RootElement, System.Text.Json.JsonDocument.Parse(SheetExample).RootElement },
+            });
+            return GoldboxCli.Ok;
+        }
+
+        output.Line("An asset says what its file is (its media); a reference names the slot it fills, and the slot");
+        output.Line("decides which media fit. Anything that shows a picture shows any visual media.");
+        output.Line();
+        output.Line("Media:");
+        output.Line("  image  one picture; optional named \"regions\" (pixel rectangles) for uses that need them.");
+        output.Line("  sheet  equal frames (\"frame_size\"), optionally animated; \"faces\", \"anchor\" and \"height\" let it stand in the world.");
+        output.Line();
+        output.Line("Slots:");
+        foreach (Media.Slot slot in Media.Slots)
+        {
+            output.Line($"  {slot.Name}: {slot.Description}");
+            output.Line($"    accepts {slot.Accepts}.");
+        }
+
+        output.Line();
+        output.Line($"Example image: {ImageExample}");
+        output.Line($"Example sheet: {SheetExample}");
+        output.Line("Fields: `goldbox schema asset`.");
         return GoldboxCli.Ok;
     }
 

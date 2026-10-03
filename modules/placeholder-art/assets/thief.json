@@ -1,7 +1,7 @@
 {
   "type": "asset",
   "id": "thief",
-  "kind": "sprite",
+  "media": "sheet",
   "file": "sprites/thief.png",
   "frame_size": [
     32,

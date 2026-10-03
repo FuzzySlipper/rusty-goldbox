@@ -26,7 +26,7 @@ internal static class GoldboxCli
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
-          goldbox schema [<type> | module | expressions]
+          goldbox schema [<type> | module | expressions | operations | events | media]
               The format reference: definition types with fields and examples.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]

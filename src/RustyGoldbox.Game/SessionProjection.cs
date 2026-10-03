@@ -56,8 +56,8 @@ internal static class SessionProjection
             Creation(rules, projection);
             projection["items"] = Choices(rules, DefinitionTypes.Item);
             projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
-                .Where(asset => asset.Json.GetProperty("kind").GetString() == "portrait")
-                .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id, ["url"] = imageUrl(asset) }).ToArray());
+                .Where(asset => asset.Json.TryGetProperty("tags", out JsonElement tags) && tags.EnumerateArray().Any(tag => tag.GetString() == "portrait"))
+                .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id, ["picture"] = Picture(rules, asset, imageUrl) }).ToArray());
             projection["party"] = new JsonArray(session.Party.Select(character => (JsonNode)Member(rules, character, imageUrl)).ToArray());
         }
 
@@ -79,7 +79,7 @@ internal static class SessionProjection
                     ["defeated"] = fight.Defeated.Contains(member.Name),
                     ["acting"] = fight.Acting.Who == member.Name,
                     ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
-                    ["iconUrl"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? imageUrl(picture) : null,
+                    ["iconPicture"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? Picture(session.Set.Rules, picture, imageUrl) : null,
                 }).ToArray()),
                 ["log"] = Strings(fight.Lines.TakeLast(14)),
             };
@@ -255,6 +255,25 @@ internal static class SessionProjection
                 : [])).ToArray());
     }
 
+    /// <summary>
+    /// How the panels show an asset in a picture slot, whatever its media: the
+    /// image URL, the image's pixel size, and for a sheet the size of the
+    /// frame shown. Null when the image can't be shown.
+    /// </summary>
+    private static JsonObject? Picture(RuleSet rules, Definition asset, Func<Definition, string?> imageUrl)
+    {
+        if (imageUrl(asset) is not string url)
+        {
+            return null;
+        }
+
+        (int width, int height) = rules.ImageSizes[asset];
+        JsonArray? frame = Media.MediaOf(asset) == "sheet" && asset.Json.GetProperty("frame_size") is JsonElement size
+            ? new JsonArray(size[0].GetInt32(), size[1].GetInt32())
+            : null;
+        return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame };
+    }
+
     private static JsonArray Spells(IEnumerable<Definition> spells)
     {
         return new JsonArray(spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray());
@@ -283,7 +302,7 @@ internal static class SessionProjection
             ["levelReady"] = CharacterRules.ReadyToLevel(rules, character),
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
-            ["portraitUrl"] = character.Portrait is Definition portrait ? imageUrl(portrait) : null,
+            ["portraitPicture"] = character.Portrait is Definition portrait ? Picture(rules, portrait, imageUrl) : null,
         };
     }
 

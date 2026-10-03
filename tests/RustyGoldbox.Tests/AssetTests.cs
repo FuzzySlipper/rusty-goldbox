@@ -36,22 +36,23 @@ public sealed class AssetTests
     }
 
     [Fact]
-    public void AWallSetIsAnyImageWithItsFramesInside()
+    public void AnImagesRegionsLieInsideIt()
     {
         using TempModules modules = new();
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "strip.png"));
 
-        // A vertical strip of non-square frames: the format fixes no layout or size.
-        modules.Write("art/strip.json", """{ "type": "asset", "id": "strip", "kind": "wall_set", "file": "strip.png", "frames": { "wall": [0, 0, 32, 48], "door": [0, 48, 32, 48] } }""");
+        // A vertical strip of non-square regions: the format fixes no layout or size.
+        modules.Write("art/strip.json", """{ "type": "asset", "id": "strip", "media": "image", "file": "strip.png", "regions": { "wall": [0, 0, 32, 48], "door": [0, 48, 32, 48] } }""");
         ModuleSet set = ModuleLoader.Load(art, []);
         Assert.Empty(set.Diagnostics);
         Assert.Equal((32, 96), set.Rules!.ImageSizes.Single().Value);
 
-        modules.Write("art/strip.json", """{ "type": "asset", "id": "strip", "kind": "wall_set", "file": "strip.png", "frames": { "wall": [0, 60, 32, 48], "window": [0, 0, 1, 1] } }""");
-        modules.Write("art/still.json", """{ "type": "asset", "id": "still", "kind": "backdrop", "file": "strip.png", "frames": { "wall": [0, 0, 1, 1] } }""");
+        // Any names: what a use needs is the slot's business.
+        modules.Write("art/strip.json", """{ "type": "asset", "id": "strip", "media": "image", "file": "strip.png", "regions": { "wall": [0, 60, 32, 48], "window": [0, 0, 1, 1] } }""");
+        modules.Write("art/frames.json", """{ "type": "asset", "id": "frames", "media": "sheet", "file": "strip.png", "frame_size": [32, 48], "regions": { "wall": [0, 0, 1, 1] } }""");
         Assert.Equal(
-            [("asset.frames", "$.frames"), ("asset.frames", "$.frames"), ("asset.frames", "$.frames.wall"), ("asset.frames", "$.frames.window")],
+            [("asset.regions", "$.regions"), ("asset.regions", "$.regions.wall")],
             ModuleLoader.Load(art, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
     }
 
@@ -62,8 +63,8 @@ public sealed class AssetTests
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgb.png"), Path.Combine(art, "rgb.png"));
         modules.Write("art/notes.svg", "<svg/>");
-        modules.Write("art/rgb.json", """{ "type": "asset", "id": "rgb", "kind": "portrait", "file": "rgb.png" }""");
-        modules.Write("art/svg.json", """{ "type": "asset", "id": "svg", "kind": "icon", "file": "notes.svg" }""");
+        modules.Write("art/rgb.json", """{ "type": "asset", "id": "rgb", "media": "image", "file": "rgb.png" }""");
+        modules.Write("art/svg.json", """{ "type": "asset", "id": "svg", "media": "image", "file": "notes.svg" }""");
 
         List<ModuleDiagnostic> diagnostics = ModuleLoader.Load(art, []).Diagnostics.OrderBy(diagnostic => diagnostic.File, StringComparer.Ordinal).ToList();
 
@@ -73,44 +74,49 @@ public sealed class AssetTests
     }
 
     [Fact]
-    public void AreasNeedAssetsOfTheRightKind()
+    public void SlotsDecideWhichMediaFit()
     {
         using TempModules modules = new();
         modules.Module("rules", "ruleset");
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
-        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "kind": "backdrop", "file": "a.png" }""");
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "media": "image", "file": "a.png" }""");
+        modules.Write("art/flicker.json", """{ "type": "asset", "id": "flicker", "media": "sheet", "file": "a.png", "frame_size": [32, 48], "animations": { "flicker": { "frames": [0, 1], "fps": 4 } } }""");
         string tale = modules.Module("tale", "campaign", requires: $"{TempModules.Require("rules", "*")}, {TempModules.Require("art", "*")}");
-        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "wall_set": "art:picture", "cells": [ { "at": [0, 0], "backdrop": "art:picture" } ], "entries": { "in": { "at": [0, 0], "facing": "north" } } }""");
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 1 } }""");
+        void Hall(string wallSet) => modules.Write("tale/hall.json", $$"""{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|     |", "+--+--+"], "wall_set": "{{wallSet}}", "cells": [ { "at": [0, 0], "backdrop": "art:picture" }, { "at": [1, 0], "backdrop": "art:flicker" } ], "entries": { "in": { "at": [0, 0], "facing": "north" } } }""");
 
-        ModuleDiagnostic diagnostic = Assert.Single(ModuleLoader.Load(tale, []).Diagnostics);
+        // A picture slot takes an image or a sheet; a wall set needs an image with wall and door regions.
+        Hall("art:picture");
+        ModuleDiagnostic regions = Assert.Single(ModuleLoader.Load(tale, []).Diagnostics);
+        Hall("art:flicker");
+        ModuleDiagnostic sheet = Assert.Single(ModuleLoader.Load(tale, []).Diagnostics);
 
-        Assert.Equal(("reference.asset-kind", "$.wall_set"), (diagnostic.Rule, diagnostic.JsonPath));
-        Assert.Equal("art:picture is a backdrop asset, but this needs a wall_set.", diagnostic.Message);
+        Assert.Equal(("reference.media", "$.wall_set"), (regions.Rule, regions.JsonPath));
+        Assert.Equal("art:picture is used as a wall set, so it needs \"wall\" and \"door\" in its \"regions\" (pixel rectangles in the image).", regions.Message);
+        Assert.Equal("art:flicker is a sheet, but a wall set is an image with wall and door regions.", sheet.Message);
     }
 
     [Fact]
-    public void ASpriteIsAWholeGridOfFramesWithAnimationsThatPlayFramesItHas()
+    public void ASheetIsAWholeGridOfFramesWithAnimationsThatPlayFramesItHas()
     {
         using TempModules modules = new();
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "sheet.png"));
 
         // Two 32 x 48 frames down a strip, any size: the format fixes no layout.
-        modules.Write("art/walker.json", """{ "type": "asset", "id": "walker", "kind": "sprite", "file": "sheet.png", "frame_size": [32, 48], "faces": "left", "height": 1.5, "anchor": [16, 47], "animations": { "walk": { "frames": [0, 1], "fps": 6 } } }""");
+        modules.Write("art/walker.json", """{ "type": "asset", "id": "walker", "media": "sheet", "file": "sheet.png", "frame_size": [32, 48], "faces": "left", "height": 1.5, "anchor": [16, 47], "animations": { "walk": { "frames": [0, 1], "fps": 6 } } }""");
         Assert.Empty(ModuleLoader.Load(art, []).Diagnostics);
 
-        modules.Write("art/walker.json", """{ "type": "asset", "id": "walker", "kind": "sprite", "file": "sheet.png", "frame_size": [32, 40], "faces": "left", "height": 1 }""");
-        modules.Write("art/runner.json", """{ "type": "asset", "id": "runner", "kind": "sprite", "file": "sheet.png", "frame_size": [16, 48], "frame_count": 5, "height": 0 }""");
-        modules.Write("art/jumper.json", """{ "type": "asset", "id": "jumper", "kind": "sprite", "file": "sheet.png", "frame_size": [32, 48], "frame_count": 2, "faces": "right", "height": 1, "anchor": [32, 0], "animations": { "jump": { "frames": [0, 2], "fps": 0 } } }""");
-        modules.Write("art/still.json", """{ "type": "asset", "id": "still", "kind": "backdrop", "file": "sheet.png", "faces": "left" }""");
+        modules.Write("art/walker.json", """{ "type": "asset", "id": "walker", "media": "sheet", "file": "sheet.png", "frame_size": [32, 40], "faces": "left", "height": 1 }""");
+        modules.Write("art/runner.json", """{ "type": "asset", "id": "runner", "media": "sheet", "file": "sheet.png", "frame_size": [16, 48], "frame_count": 5, "height": 0 }""");
+        modules.Write("art/jumper.json", """{ "type": "asset", "id": "jumper", "media": "sheet", "file": "sheet.png", "frame_size": [32, 48], "frame_count": 2, "faces": "right", "height": 1, "anchor": [32, 0], "animations": { "jump": { "frames": [0, 2], "fps": 0 } } }""");
+        modules.Write("art/still.json", """{ "type": "asset", "id": "still", "media": "image", "file": "sheet.png", "faces": "left" }""");
         Assert.Equal(
             [
                 ("jumper.json", "$.anchor"),
                 ("jumper.json", "$.animations.jump.fps"),
                 ("jumper.json", "$.animations.jump.frames[1]"),
-                ("runner.json", "$"),
                 ("runner.json", "$.frame_count"),
                 ("runner.json", "$.height"),
                 ("still.json", "$.faces"),
@@ -151,13 +157,13 @@ public sealed class AssetTests
     }
 
     [Fact]
-    public void AFigureDrawsOneMonsterOrClassWithASprite()
+    public void AFigureDrawsOneMonsterOrClassWithASheet()
     {
         using TempModules modules = new();
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
-        modules.Write("art/rat.json", """{ "type": "asset", "id": "rat", "kind": "sprite", "file": "a.png", "frame_size": [32, 48], "faces": "left", "height": 0.4 }""");
-        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "kind": "portrait", "file": "a.png" }""");
+        modules.Write("art/rat.json", """{ "type": "asset", "id": "rat", "media": "sheet", "file": "a.png", "frame_size": [32, 48], "faces": "left", "height": 0.4 }""");
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "media": "image", "file": "a.png" }""");
         string house = modules.Module("house", "extension", requires: $"{TempModules.Require("classic", "*")}, {TempModules.Require("art", "*")}");
         modules.Write("house/rat.json", """{ "type": "figure", "id": "rat", "monster": "classic:giant_rat", "sprite": "art:rat" }""");
         string[] search = [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")];
@@ -168,7 +174,7 @@ public sealed class AssetTests
         Assert.Empty(set.Rules.Icons);
 
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "i.png"));
-        modules.Write("art/badge.json", """{ "type": "asset", "id": "badge", "kind": "icon", "file": "i.png" }""");
+        modules.Write("art/badge.json", """{ "type": "asset", "id": "badge", "media": "image", "file": "i.png" }""");
         modules.Write("house/rat.json", """{ "type": "figure", "id": "rat", "monster": "classic:giant_rat", "sprite": "art:rat", "icon": "art:badge" }""");
         Assert.Equal("art:badge", ModuleLoader.Load(house, search).Rules!.Icons.Single().Value.QualifiedId);
 
@@ -176,7 +182,7 @@ public sealed class AssetTests
         modules.Write("house/nothing.json", """{ "type": "figure", "id": "nothing", "sprite": "art:rat" }""");
         modules.Write("house/portrait.json", """{ "type": "figure", "id": "portrait", "class": "classic:thief", "sprite": "art:picture" }""");
         Assert.Equal(
-            [("nothing.json", "figure.subject"), ("portrait.json", "reference.asset-kind"), ("rat.json", "figure.duplicate")],
+            [("nothing.json", "figure.subject"), ("portrait.json", "reference.media"), ("rat.json", "figure.duplicate")],
             ModuleLoader.Load(house, search).Diagnostics.Select(diagnostic => (Path.GetFileName(diagnostic.File!), diagnostic.Rule)).Order());
     }
 
@@ -200,14 +206,14 @@ public sealed class AssetTests
     }
 
     [Fact]
-    public void APropIsASpriteWithABooleanCondition()
+    public void APropIsASheetWithABooleanCondition()
     {
         using TempModules modules = new();
         modules.Module("rules", "ruleset");
         string art = modules.Module("art", "assets");
         File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
-        modules.Write("art/chest.json", """{ "type": "asset", "id": "chest", "kind": "sprite", "file": "a.png", "frame_size": [32, 48], "faces": "right", "height": 0.5 }""");
-        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "kind": "backdrop", "file": "a.png" }""");
+        modules.Write("art/chest.json", """{ "type": "asset", "id": "chest", "media": "sheet", "file": "a.png", "frame_size": [32, 48], "faces": "right", "height": 0.5 }""");
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "media": "image", "file": "a.png" }""");
         string tale = modules.Module("tale", "campaign", requires: $"{TempModules.Require("rules", "*")}, {TempModules.Require("art", "*")}");
         modules.Write("tale/opened.json", """{ "type": "variable", "id": "opened", "value_type": "boolean", "initial": "false" }""");
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 1 } }""");
@@ -218,7 +224,7 @@ public sealed class AssetTests
 
         Hall("""{ "at": [1, 0], "prop": { "sprite": "art:picture", "hidden": "1 + 1" } }""");
         Assert.Equal(
-            [("expression.type", "$.cells[0].prop.hidden"), ("reference.asset-kind", "$.cells[0].prop.sprite")],
+            [("expression.type", "$.cells[0].prop.hidden"), ("reference.media", "$.cells[0].prop.sprite")],
             ModuleLoader.Load(tale, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
     }
 }

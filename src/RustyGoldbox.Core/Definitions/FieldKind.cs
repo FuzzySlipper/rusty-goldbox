@@ -130,14 +130,15 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
 
 /// <summary>
 /// A reference to another definition: <c>id</c> in the same module or
-/// <c>module:id</c> in a required one. With <paramref name="AssetKind"/>, it
-/// must be an asset of that kind.
+/// <c>module:id</c> in a required one. With <paramref name="Slot"/>, it is an
+/// asset filling that media slot (<see cref="Media.Slots"/>), which decides
+/// the media that fit.
 /// </summary>
-public sealed record ReferenceKind(string DefinitionType, string? AssetKind = null) : FieldKind
+public sealed record ReferenceKind(string DefinitionType, string? Slot = null) : FieldKind
 {
-    public override string Describe() => AssetKind is null
+    public override string Describe() => Slot is null
         ? $"reference to a {DefinitionType} (\"id\" or \"module:id\")"
-        : $"reference to a {AssetKind} asset (\"id\" or \"module:id\")";
+        : $"reference to an asset for a {Slot} slot (\"id\" or \"module:id\"; see `goldbox schema media`)";
 }
 
 /// <summary>The ID of a stat: an attribute or a derived value.</summary>

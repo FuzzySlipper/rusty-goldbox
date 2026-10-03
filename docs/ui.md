@@ -24,11 +24,14 @@ feature a grant takes and, under creation by boosts, for each boost that
 offers a choice, in the order Core takes them (race, creation features, class,
 creation). Core checks the roll; its notes say what to fix.
 
-Portraits and icons are `<img>` elements on Engine UI image URLs the projection
-carries (`portraitUrl`, the portrait chooser's `url`, `iconUrl`), drawn
-pixel-sharp: party members and the chosen portrait on the party screen, a
-roster strip (portrait, name, tracks, experience) in play, and icons in the
-combat lists. A missing URL draws nothing.
+Portraits and icons are media objects the projection carries
+(`portraitPicture`, the portrait chooser's `picture`, `iconPicture`: an Engine
+UI image `url`, the image's `width` and `height`, and a sheet's `frame` size),
+all drawn by one `picture` function: an image as an `<img>`, a sheet's first
+frame cropped from it, pixel-sharp. They show on party members and the chosen
+portrait on the party screen, a roster strip (portrait, name, tracks,
+experience) in play, and icons in the combat lists. A missing picture draws
+nothing. The portrait chooser offers assets tagged `portrait`.
 
 Each member in the party and play projections carries the spells it knows and
 the ones it could (`spells`, `castable`); the panel shows a checkbox per

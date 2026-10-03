@@ -1,6 +1,6 @@
 {
   "type": "asset",
   "id": "crypt",
-  "kind": "backdrop",
+  "media": "image",
   "file": "backdrops/crypt.png"
 }

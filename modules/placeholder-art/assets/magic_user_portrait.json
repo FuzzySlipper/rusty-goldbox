@@ -1,6 +1,9 @@
 {
   "type": "asset",
   "id": "magic_user_portrait",
-  "kind": "portrait",
-  "file": "portraits/magic_user.png"
+  "media": "image",
+  "file": "portraits/magic_user.png",
+  "tags": [
+    "portrait"
+  ]
 }

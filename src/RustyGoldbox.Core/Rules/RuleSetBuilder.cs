@@ -182,10 +182,9 @@ public sealed class RuleSetBuilder
                         if (target is not null)
                         {
                             _rules.References[(definition, site.JsonPath)] = target;
-                            if (reference.AssetKind is string kind && target.Json.GetProperty("kind").GetString() != kind)
+                            if (reference.Slot is string slot && Media.Problem(slot, target) is string unfit)
                             {
-                                Error(definition, "reference.asset-kind", site.JsonPath,
-                                    $"{target.QualifiedId} is a {target.Json.GetProperty("kind").GetString()} asset, but this needs a {kind}.");
+                                Error(definition, "reference.media", site.JsonPath, unfit);
                             }
                         }
 
@@ -887,56 +886,40 @@ public sealed class RuleSetBuilder
         }
 
         _rules.ImageSizes[asset] = (width, height);
-        string kind = asset.Json.GetProperty("kind").GetString()!;
-        if (!asset.Json.TryGetProperty("frames", out JsonElement frames))
+        bool sheet = Media.MediaOf(asset) == "sheet";
+        if (asset.Json.TryGetProperty("regions", out JsonElement regions))
         {
-            if (kind == "wall_set")
+            if (sheet)
             {
-                Error(asset, "asset.frames", "$", $"A wall_set needs \"frames\" naming the {string.Join(" and ", DefinitionTypes.WallSetFrames.Take(2))} rectangles (and optionally floor and ceiling) in its image.");
+                Error(asset, "asset.regions", "$.regions", "Only an image has regions; a sheet is cut into frames by its frame_size.");
+            }
+            else
+            {
+                CheckRegions(asset, regions, width, height);
             }
         }
-        else if (kind != "wall_set")
-        {
-            Error(asset, "asset.frames", "$.frames", "Only wall_set assets have frames; this image is drawn whole.");
-        }
-        else
-        {
-            CheckWallSetFrames(asset, frames, width, height);
-        }
 
-        if (kind == "sprite")
+        if (sheet)
         {
-            CheckSprite(asset, width, height);
+            CheckSheet(asset, width, height);
         }
         else
         {
-            foreach (string field in DefinitionTypes.SpriteFields.Where(field => asset.Json.TryGetProperty(field, out _)))
+            foreach (string field in Media.SheetFields.Where(field => asset.Json.TryGetProperty(field, out _)))
             {
-                Error(asset, "asset.sprite", $"$.{field}", $"\"{field}\" is a sprite field; this asset is a {kind}.");
+                Error(asset, "asset.sheet", $"$.{field}", $"\"{field}\" is a sheet field; this asset is an image. Make it \"media\": \"sheet\" to cut it into frames.");
             }
         }
     }
 
-    private void CheckWallSetFrames(Definition asset, JsonElement frames, int width, int height)
+    private void CheckRegions(Definition asset, JsonElement regions, int width, int height)
     {
-        foreach (string required in DefinitionTypes.WallSetFrames.Take(2).Where(name => !frames.TryGetProperty(name, out _)))
+        foreach (JsonProperty region in regions.EnumerateObject())
         {
-            Error(asset, "asset.frames", "$.frames", $"Missing the \"{required}\" frame.");
-        }
-
-        foreach (JsonProperty frame in frames.EnumerateObject())
-        {
-            string at = $"$.frames.{frame.Name}";
-            if (!DefinitionTypes.WallSetFrames.Contains(frame.Name))
-            {
-                Error(asset, "asset.frames", at, $"'{frame.Name}' is not a wall_set frame; frames are {string.Join(", ", DefinitionTypes.WallSetFrames)}.");
-                continue;
-            }
-
-            int[] rect = frame.Value.EnumerateArray().Select(value => value.GetInt32()).ToArray();
+            int[] rect = region.Value.EnumerateArray().Select(value => value.GetInt32()).ToArray();
             if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
             {
-                Error(asset, "asset.frames", at, $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
+                Error(asset, "asset.regions", $"$.regions.{region.Name}", $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
             }
         }
     }
@@ -1013,17 +996,17 @@ public sealed class RuleSetBuilder
     private static bool Inside(int value, int size) => value >= 0 && value < size;
 
     /// <summary>A sprite sheet is a whole grid of equal frames; its animations play frames it has.</summary>
-    private void CheckSprite(Definition asset, int width, int height)
+    private void CheckSheet(Definition asset, int width, int height)
     {
         JsonElement json = asset.Json;
-        foreach (string required in new[] { "frame_size", "faces", "height" }.Where(field => !json.TryGetProperty(field, out _)))
+        if (!json.TryGetProperty("frame_size", out _))
         {
-            Error(asset, "asset.sprite", "$", $"A sprite needs \"{required}\" (see `goldbox schema asset`).");
+            Error(asset, "asset.sheet", "$", "A sheet needs \"frame_size\", the [width, height] of one frame (see `goldbox schema asset`).");
         }
 
         if (json.TryGetProperty("height", out JsonElement standing) && standing.GetDouble() <= 0)
         {
-            Error(asset, "asset.sprite", "$.height", "height must be more than 0 cells.");
+            Error(asset, "asset.sheet", "$.height", "height must be more than 0 cells.");
         }
 
         if (!json.TryGetProperty("frame_size", out JsonElement size))
@@ -1035,7 +1018,7 @@ public sealed class RuleSetBuilder
         int frameHeight = size[1].GetInt32();
         if (frameWidth < 1 || frameHeight < 1 || width % frameWidth != 0 || height % frameHeight != 0)
         {
-            Error(asset, "asset.sprite", "$.frame_size", $"[{frameWidth}, {frameHeight}] must divide the {width} x {height} image into whole frames.");
+            Error(asset, "asset.sheet", "$.frame_size", $"[{frameWidth}, {frameHeight}] must divide the {width} x {height} image into whole frames.");
             return;
         }
 
@@ -1046,7 +1029,7 @@ public sealed class RuleSetBuilder
             count = declared.GetInt32();
             if (count < 1 || count > cells)
             {
-                Error(asset, "asset.sprite", "$.frame_count", $"frame_count must be from 1 to the {cells} frames the image holds.");
+                Error(asset, "asset.sheet", "$.frame_count", $"frame_count must be from 1 to the {cells} frames the image holds.");
                 return;
             }
         }
@@ -1054,7 +1037,7 @@ public sealed class RuleSetBuilder
         if (json.TryGetProperty("anchor", out JsonElement anchor)
             && (!Inside(anchor[0].GetInt32(), frameWidth) || !Inside(anchor[1].GetInt32(), frameHeight)))
         {
-            Error(asset, "asset.sprite", "$.anchor", $"The anchor must be a pixel inside the {frameWidth} x {frameHeight} frame.");
+            Error(asset, "asset.sheet", "$.anchor", $"The anchor must be a pixel inside the {frameWidth} x {frameHeight} frame.");
         }
 
         if (!json.TryGetProperty("animations", out JsonElement animations))
@@ -1068,7 +1051,7 @@ public sealed class RuleSetBuilder
             JsonElement played = animation.Value.GetProperty("frames");
             if (played.GetArrayLength() == 0)
             {
-                Error(asset, "asset.sprite", $"{at}.frames", "An animation plays at least one frame.");
+                Error(asset, "asset.sheet", $"{at}.frames", "An animation plays at least one frame.");
             }
 
             int index = 0;
@@ -1076,7 +1059,7 @@ public sealed class RuleSetBuilder
             {
                 if (frame.GetInt32() < 0 || frame.GetInt32() >= count)
                 {
-                    Error(asset, "asset.sprite", $"{at}.frames[{index}]", $"Frame {frame.GetInt32()} isn't in the sheet; frames are 0 to {count - 1}.");
+                    Error(asset, "asset.sheet", $"{at}.frames[{index}]", $"Frame {frame.GetInt32()} isn't in the sheet; frames are 0 to {count - 1}.");
                 }
 
                 index++;
@@ -1084,7 +1067,7 @@ public sealed class RuleSetBuilder
 
             if (animation.Value.GetProperty("fps").GetDouble() <= 0)
             {
-                Error(asset, "asset.sprite", $"{at}.fps", "fps must be more than 0.");
+                Error(asset, "asset.sheet", $"{at}.fps", "fps must be more than 0.");
             }
         }
     }

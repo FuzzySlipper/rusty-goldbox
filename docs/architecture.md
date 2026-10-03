@@ -31,9 +31,9 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
 | `src/RustyGoldbox.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
 | `src/RustyGoldbox.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
-| `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), and checking one file against its type (`DefinitionReader`) |
+| `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), and media: what an asset is and which media each slot accepts (`Media`) |
 | `src/RustyGoldbox.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
-| `src/RustyGoldbox.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and asset kinds), stats, table rows, expression types, modifiers, asset images and wall-set frames |
+| `src/RustyGoldbox.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, asset images and wall-set frames |
 | `src/RustyGoldbox.Core/Rules/ExpressionChecker.cs` | Expression type checking against a rule set |
 | `src/RustyGoldbox.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
 | `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
@@ -67,7 +67,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
 | `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
 | `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
-| `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sprite asset as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
+| `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
@@ -238,11 +238,11 @@ placement from the lower left, and a sprite's placement is within the
 camera's viewport). The area becomes one generated mesh: each wall, door or
 secret door on a cell edge is a quad facing into that cell (back faces are not
 drawn), and each cell has a floor and a ceiling, textured from the area's
-wall set frames or a plain material. The mesh is rebuilt only when the area
+wall set's regions or a plain material. The mesh is rebuilt only when the area
 (or its module's content) changes. The camera stands at the party's cell
 centre, half a cell up, at the facing's yaw (north is the Engine's zero yaw).
 When the party's cell has a backdrop, it shows over the view as a sprite
-fitted to the window. A cell's prop stands at the cell's centre as a
+fitted to the window: an image whole, a sheet's first frame. A cell's prop stands at the cell's centre as a
 cylindrical billboard playing its idle animation; while its `hidden`
 condition holds (`CampaignRunner.IsTrue` against the campaign variables) it is
 published invisible. The area mesh and props are released only after a
@@ -269,10 +269,12 @@ Continue (a button, Enter or Space) skips to the end, then returns to play.
 Play commands wait until then.
 
 Portraits and icons reach the panels as Engine UI images: `UiImages` opens an
-asset's PNG from its module bundle once (`Ui.OpenImage`), keeps the image for
-the product's life, and the projection carries its URL beside the asset ID (a
-party member's `portraitUrl`, the portrait chooser's `url`, a combatant's
-`iconUrl`). The panels never see image bytes.
+asset's PNG from its module bundle once (`Ui.OpenImage`) and keeps the image for
+the product's life. The projection carries any panel picture as one media
+object beside the asset ID (`{ url, width, height, frame }`: a party member's
+`portraitPicture`, the portrait chooser's `picture`, a combatant's
+`iconPicture`), so a sheet shows its first frame, and the UI's one `picture`
+function draws every kind. The panels never see image bytes.
 
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,

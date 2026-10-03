@@ -1,6 +1,9 @@
 {
   "type": "asset",
   "id": "cleric_portrait",
-  "kind": "portrait",
-  "file": "portraits/cleric.png"
+  "media": "image",
+  "file": "portraits/cleric.png",
+  "tags": [
+    "portrait"
+  ]
 }

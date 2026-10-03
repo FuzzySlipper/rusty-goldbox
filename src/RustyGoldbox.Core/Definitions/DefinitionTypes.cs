@@ -461,8 +461,8 @@ public static class DefinitionTypes
             new("class", new ReferenceKind("class"), false, "The class it draws (for every character of the class)."),
             new("combat", new ReferenceKind("combat"), false, "With terrain: the combat definition whose field declares it."),
             new("terrain", new TextKind(), false, "A terrain key the combat's field declares, for example \"#\": the sprite stands on every cell of it."),
-            new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite asset."),
-            new("icon", new ReferenceKind("asset", "icon"), false, "A small picture for lists, such as the combat roster."),
+            new("sprite", new ReferenceKind("asset", "figure"), true, "The sheet that draws it (a figure slot)."),
+            new("icon", new ReferenceKind("asset", "picture"), false, "A small picture for lists, such as the combat roster (a picture slot)."),
         ],
         """
         { "type": "figure", "id": "skeleton", "monster": "classic:skeleton", "sprite": "placeholder-art:skeleton", "icon": "placeholder-art:skull" }
@@ -481,44 +481,35 @@ public static class DefinitionTypes
         """);
 
     /// <summary>The asset kinds the presentation draws, each an RGBA PNG.</summary>
-    public static IReadOnlyList<string> AssetKinds { get; } = ["wall_set", "backdrop", "portrait", "icon", "sprite"];
-
-    /// <summary>The frames a wall set has; the first two are required.</summary>
-    public static IReadOnlyList<string> WallSetFrames { get; } = ["wall", "door", "floor", "ceiling"];
-
-    /// <summary>The fields only a sprite has.</summary>
-    public static IReadOnlyList<string> SpriteFields { get; } = ["frame_size", "frame_count", "faces", "anchor", "height", "animations"];
-
     public static DefinitionType Asset { get; } = new(
         "asset",
-        "A logical asset ID mapped to an image in the module. Other modules refer to it as module:id, never by path. "
-        + "The file is an 8-bit RGBA PNG (the format the Engine renderer admits). Kinds: wall_set (one image holding "
-        + "the frames the first-person view draws an area with), backdrop (a cell's background picture), portrait "
-        + "(a character's picture), icon (a small picture) and sprite (a figure or prop standing in the 3D view or in "
-        + "combat: a sheet of equal frames, drawn facing one way and flipped for the other, optionally animated).",
+        "A logical asset ID mapped to a file in the module, and what media the file is. Other modules refer to it as module:id, never by path. "
+        + "An asset says only what it is; each reference names the slot it fills (picture, figure, wall_set) and the slot decides which media fit, "
+        + "so anything that shows a picture shows any visual media (see `goldbox schema media`). Images are 8-bit RGBA PNGs, the format the Engine renderer admits.",
         [
-            new("kind", new EnumKind(AssetKinds), true, "What the asset is for; references say which kind they need."),
+            new("media", new EnumKind(Media.Types), true, "What the file is: \"image\" (one picture, optionally with named regions) or \"sheet\" (equal frames, optionally animated)."),
             new("file", new TextKind(), true, "Path of the PNG inside this module, with forward slashes."),
-            new("frames", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
-                "wall_set only: named pixel rectangles [x, y, width, height] inside the image. wall and door are required; floor and ceiling are optional."),
+            new("regions", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
+                "image only: named pixel rectangles [x, y, width, height] inside the image. A wall set needs wall and door, and may have floor and ceiling."),
             new("frame_size", new ListKind(new IntegerKind(), 2), false,
-                "sprite only (required): [width, height] of one frame in pixels. Frames are read left to right, then top to bottom, and the image must be a whole number of frames across and down."),
-            new("frame_count", new IntegerKind(), false, "sprite only: how many frames the sheet holds, when the last row isn't full. Defaults to every cell."),
-            new("faces", new EnumKind(["left", "right"]), false, "sprite only (required): which way the art faces; the renderer flips it to face the other way."),
-            new("anchor", new ListKind(new IntegerKind(), 2), false, "sprite only: the pixel [x, y] in a frame that stands on the floor. Defaults to the bottom centre."),
-            new("height", new NumberKind(), false, "sprite only (required): how tall a frame stands, in cells (a cell is 1 x 1 x 1); the width follows the frame's shape."),
+                "sheet only (required): [width, height] of one frame in pixels. Frames are read left to right, then top to bottom, and the image must be a whole number of frames across and down."),
+            new("frame_count", new IntegerKind(), false, "sheet only: how many frames the sheet holds, when the last row isn't full. Defaults to every cell."),
             new("animations", new MapKind(new TextKind(), new ObjectKind(
             [
                 new("frames", new ListKind(new IntegerKind()), true, "Frame numbers in play order, counting from 0."),
                 new("fps", new NumberKind(), true, "Frames per second."),
                 new("loop", new BooleanKind(), false, "Repeat (true, the default) or play once and hold the last frame."),
-            ])), false, "sprite only: named animations such as idle, walk, attack, hit or die. Without one, the sprite shows frame 0."),
+            ])), false, "sheet only: named animations such as idle, walk, attack, hit or die. A picture plays the first; a figure picks by name. Without any, it shows frame 0."),
+            new("faces", new EnumKind(["left", "right"]), false, "sheet only: which way the art faces; the renderer flips it to face the other way. A figure needs it."),
+            new("anchor", new ListKind(new IntegerKind(), 2), false, "sheet only: the pixel [x, y] in a frame that stands on the floor. Defaults to the bottom centre."),
+            new("height", new NumberKind(), false, "sheet only: how tall a frame stands, in cells (a cell is 1 x 1 x 1); the width follows the frame's shape. A figure needs it."),
+            new("tags", new ListKind(new TextKind()), false, "Words that say what the art is meant for, so pickers can offer it: \"portrait\" puts it in the portrait chooser. They don't limit where it can be used."),
         ],
         """
         {
           "type": "asset",
           "id": "skeleton",
-          "kind": "sprite",
+          "media": "sheet",
           "file": "sprites/skeleton.png",
           "frame_size": [32, 48],
           "faces": "right",
@@ -533,15 +524,15 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("map", new ListKind(new TextKind()), true, "The grid as " + Campaigns.AreaMap.FormatDescription),
-            new("wall_set", new ReferenceKind("asset", "wall_set"), false, "The wall_set asset the first-person view draws the area with."),
+            new("wall_set", new ReferenceKind("asset", "wall_set"), false, "The image the first-person view draws the area with (a wall_set slot: wall and door regions)."),
             new("cells", new ListKind(new ObjectKind(
             [
                 new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell; x west to east and y north to south, from 0."),
                 new("zone", new TextKind(), false, "A zone tag for the cell."),
-                new("backdrop", new ReferenceKind("asset", "backdrop"), false, "The backdrop asset shown in the cell."),
+                new("backdrop", new ReferenceKind("asset", "picture"), false, "The picture shown over the view in the cell (a picture slot)."),
                 new("prop", new ObjectKind(
                 [
-                    new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite standing in the cell (a chest, a pillar, bones, a guard)."),
+                    new("sprite", new ReferenceKind("asset", "figure"), true, "The sheet standing in the cell (a figure slot): a chest, a pillar, bones, a guard."),
                     new("hidden", new ExpressionKind(Expressions.ExprType.Boolean, Roots.Campaign), false,
                         "While this is true the prop isn't there, for example \"campaign.var.chest_opened\"; it may read campaign.var."),
                 ]), false, "Something standing in the middle of the cell in the first-person view. It doesn't block movement."),

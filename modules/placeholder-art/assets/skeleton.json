@@ -1,14 +1,33 @@
 {
   "type": "asset",
   "id": "skeleton",
-  "kind": "sprite",
+  "media": "sheet",
   "file": "sprites/skeleton.png",
-  "frame_size": [32, 48],
+  "frame_size": [
+    32,
+    48
+  ],
   "frame_count": 7,
   "faces": "right",
   "height": 0.75,
   "animations": {
-    "idle": { "frames": [0, 1, 2, 3], "fps": 4 },
-    "attack": { "frames": [4, 5, 6], "fps": 8, "loop": false }
+    "idle": {
+      "frames": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "fps": 4
+    },
+    "attack": {
+      "frames": [
+        4,
+        5,
+        6
+      ],
+      "fps": 8,
+      "loop": false
+    }
   }
 }

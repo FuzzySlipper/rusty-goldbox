@@ -82,7 +82,7 @@ internal sealed class SceneView : IDisposable
                 ShowProps(runner, state.Area, facts);
                 Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
                 _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
-                if (Backdrop(rules, state) is Definition backdrop && ArtFor(rules, session.Set, backdrop) is { Sprite: Appearance sprite })
+                if (Backdrop(rules, state) is Definition backdrop && BackdropOf(rules, session.Set, backdrop) is Appearance sprite)
                 {
                     facts.Add(new AppearanceFact(BackdropObject, false, 0, Placed, sprite, true, RenderLayer.Ui));
                 }
@@ -124,7 +124,7 @@ internal sealed class SceneView : IDisposable
         foreach (Art art in _art.Values)
         {
             art.Figures?.Dispose();
-            art.Sprite?.Dispose();
+            art.Backdrop?.Dispose();
             art.Material.Dispose();
             art.Texture.Dispose();
         }
@@ -224,7 +224,7 @@ internal sealed class SceneView : IDisposable
     private void Build(RuleSet rules, ModuleSet set, Definition area, Definition? wallSet)
     {
         AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
-        Art? art = wallSet is null ? null : ArtFor(rules, set, wallSet);
+        Art? art = wallSet is null ? null : ArtFor(set, wallSet);
         Dictionary<string, UvRect> frames = art is null ? PlainFrames() : Frames(wallSet!, rules.ImageSizes[wallSet!]);
         AreaGeometry geometry = AreaMesh.Build(map, frames);
         Material textured = art?.Material ?? _plain;
@@ -249,7 +249,7 @@ internal sealed class SceneView : IDisposable
     private static Dictionary<string, UvRect> Frames(Definition wallSet, (int Width, int Height) size)
     {
         Dictionary<string, UvRect> frames = [];
-        foreach (JsonProperty frame in wallSet.Json.GetProperty("frames").EnumerateObject())
+        foreach (JsonProperty frame in wallSet.Json.GetProperty("regions").EnumerateObject())
         {
             int[] rect = frame.Value.EnumerateArray().Select(value => value.GetInt32()).ToArray();
             frames[frame.Name] = new UvRect(
@@ -284,12 +284,8 @@ internal sealed class SceneView : IDisposable
         return null;
     }
 
-    /// <summary>
-    /// The asset's texture (and, for a wall set, its material; for a backdrop,
-    /// its sprite in the view window; for a sprite, its atlas), admitted once
-    /// per asset content.
-    /// </summary>
-    private Art? ArtFor(RuleSet rules, ModuleSet set, Definition asset)
+    /// <summary>The asset's texture and material, admitted once per asset content.</summary>
+    private Art? ArtFor(ModuleSet set, Definition asset)
     {
         ModuleSource source = set.LoadOrder.First(loaded => loaded.Manifest.Id == asset.Module).Manifest.Source;
         string key = $"{asset.QualifiedId}@{source.Identity}";
@@ -310,25 +306,43 @@ internal sealed class SceneView : IDisposable
         }
 
         Material material = _engine.Graphics.CreateMaterial(new MaterialRequest(new Color(1, 1, 1, 1), texture, 0.95f, new Color(1, 1, 1, 1), Vector3.Zero, 0, false));
-        Appearance? sprite = null;
-        if (asset.Json.GetProperty("kind").GetString() == "backdrop")
+        Art art = new(texture, material);
+        _art[key] = art;
+        return art;
+    }
+
+    /// <summary>
+    /// A picture filling the view window, made once per asset: an image
+    /// whole, or a sheet's first frame.
+    /// </summary>
+    private Appearance? BackdropOf(RuleSet rules, ModuleSet set, Definition asset)
+    {
+        if (ArtFor(set, asset) is not Art art)
+        {
+            return null;
+        }
+
+        if (art.Backdrop is null)
         {
             (int width, int height) = rules.ImageSizes[asset];
-            sprite = _engine.Graphics.CreateSprite(new SpriteAppearanceRequest(
-                texture, Vector2.Zero, Vector2.One, new Vector2(0.5f, 0.5f), new Vector2(width, height),
+            Vector2 uvMax = Vector2.One;
+            if (Media.MediaOf(asset) == "sheet")
+            {
+                JsonElement frame = asset.Json.GetProperty("frame_size");
+                uvMax = new Vector2((float)frame[0].GetInt32() / width, (float)frame[1].GetInt32() / height);
+                (width, height) = (frame[0].GetInt32(), frame[1].GetInt32());
+            }
+
+            art.Backdrop = _engine.Graphics.CreateSprite(new SpriteAppearanceRequest(
+                art.Texture, Vector2.Zero, uvMax, new Vector2(0.5f, 0.5f), new Vector2(width, height),
                 BillboardMode.None, SpriteSizeMode.Pixel, 100, SpriteDepthPolicy.DepthTestOff, new Color(1, 1, 1, 1)));
 
             // Sprite placement is a rectangle within the camera's viewport: this fills the view window.
             _engine.Graphics.SetSpriteViewport(new SpriteViewportUpdateRequest(
-                sprite, true, Vector2.Zero, Vector2.One, new Vector2(0.5f, 0.5f), SpriteViewportFit.Contain));
+                art.Backdrop, true, Vector2.Zero, Vector2.One, new Vector2(0.5f, 0.5f), SpriteViewportFit.Contain));
         }
 
-        SpriteArt? figures = asset.Json.GetProperty("kind").GetString() == "sprite"
-            ? SpriteArt.Admit(_engine.Graphics, texture, asset, rules.ImageSizes[asset])
-            : null;
-        Art art = new(texture, material, sprite, figures);
-        _art[key] = art;
-        return art;
+        return art.Backdrop;
     }
 
     private static CameraDescriptor Camera(CameraPose pose, double fieldOfView = FieldOfView)
@@ -348,7 +362,17 @@ internal sealed class SceneView : IDisposable
         return rules.Figures.TryGetValue(kind, out Definition? sprite) ? SpriteArtOf(rules, set, sprite) : null;
     }
 
-    private SpriteArt? SpriteArtOf(RuleSet rules, ModuleSet set, Definition sprite) => ArtFor(rules, set, sprite)?.Figures;
+    /// <summary>A figure-ready sheet's frames and animations, admitted once per asset content.</summary>
+    private SpriteArt? SpriteArtOf(RuleSet rules, ModuleSet set, Definition sprite)
+    {
+        if (ArtFor(set, sprite) is not Art art)
+        {
+            return null;
+        }
+
+        art.Figures ??= SpriteArt.Admit(_engine.Graphics, art.Texture, sprite, rules.ImageSizes[sprite]);
+        return art.Figures;
+    }
 
     /// <summary>The area's wall set floor, which combat in the area stands on.</summary>
     private (Material Material, UvRect Frame)? Floor(RuleSet rules, ModuleSet set, Definition area)
@@ -360,12 +384,21 @@ internal sealed class SceneView : IDisposable
 
         Definition wallSet = rules.Reference(area, "$.wall_set");
         Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
-        return frames.TryGetValue("floor", out UvRect floor) && ArtFor(rules, set, wallSet) is Art art ? (art.Material, floor) : null;
+        return frames.TryGetValue("floor", out UvRect floor) && ArtFor(set, wallSet) is Art art ? (art.Material, floor) : null;
     }
 
     /// <summary>A cell's prop: its figure and animation, where it stands, and the condition that hides it.</summary>
     private sealed record Prop(Appearance Figure, SpritePlayback? Playback, Transform Placement, string? HiddenPath);
 
-    /// <summary>An admitted asset: its texture and material, and its backdrop sprite or sprite atlas when it has one.</summary>
-    private sealed record Art(RenderResource Texture, Material Material, Appearance? Sprite, SpriteArt? Figures);
+    /// <summary>An admitted asset: its texture and material, and the backdrop or figure frames made from it once something shows it so.</summary>
+    private sealed class Art(RenderResource texture, Material material)
+    {
+        public RenderResource Texture { get; } = texture;
+
+        public Material Material { get; } = material;
+
+        public Appearance? Backdrop { get; set; }
+
+        public SpriteArt? Figures { get; set; }
+    }
 }

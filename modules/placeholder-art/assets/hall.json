@@ -1,6 +1,6 @@
 {
   "type": "asset",
   "id": "hall",
-  "kind": "backdrop",
+  "media": "image",
   "file": "backdrops/hall.png"
 }

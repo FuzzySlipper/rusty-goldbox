@@ -142,10 +142,10 @@ public sealed class GameTests
             }
 
             JsonObject projection = SessionProjection.Build(session, asset => images.Url(session.Set!, asset));
-            string url = projection["party"]![0]!["portraitUrl"]!.GetValue<string>();
+            string url = projection["party"]![0]!["portraitPicture"]!["url"]!.GetValue<string>();
             Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
             // One image per asset: the chooser and the member share it.
-            Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["url"]?.GetValue<string>() == url);
+            Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["picture"]?["url"]?.GetValue<string>() == url);
         });
     }
 
@@ -200,9 +200,19 @@ public sealed class GameTests
             Assert.Equal("placeholder-art:cleric_portrait", session.Party.Single().Portrait!.QualifiedId);
             Assert.Equal("placeholder-art:cleric_portrait", SessionProjection.Build(session)["party"]![0]!["portrait"]!.GetValue<string>());
 
-            Run(session, engine, """{ "action": "roll", "name": "Cid", "race": "classic:human", "class": "classic:fighter", "portrait": "placeholder-art:crypt" }""");
+            Run(session, engine, """{ "action": "roll", "name": "Cid", "race": "classic:human", "class": "classic:fighter", "portrait": "placeholder-art:nowhere" }""");
             Assert.Single(session.Party);
-            Assert.Contains(session.Notes, note => note.Contains("must be a portrait", StringComparison.Ordinal));
+            Assert.Contains(session.Notes, note => note.Contains("placeholder-art:nowhere", StringComparison.Ordinal));
+
+            // Any picture media is a portrait: a sheet's projected picture names the frame the panels crop.
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 1; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Bones", "race": "classic:human", "class": "classic:cleric", "portrait": "placeholder-art:skeleton" }""");
+            }
+
+            JsonNode party = SessionProjection.Build(session, _ => "url")["party"]!;
+            Assert.Null(party[0]!["portraitPicture"]!["frame"]);
+            Assert.Equal("[32,48]", party[1]!["portraitPicture"]!["frame"]!.ToJsonString());
         });
     }
 

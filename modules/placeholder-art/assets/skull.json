@@ -1,6 +1,6 @@
 {
   "type": "asset",
   "id": "skull",
-  "kind": "icon",
+  "media": "image",
   "file": "icons/skull.png"
 }

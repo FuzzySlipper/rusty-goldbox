@@ -6,7 +6,7 @@ using RustyGoldbox.Core.Definitions;
 namespace RustyGoldbox.Game.Presentation;
 
 /// <summary>
-/// A sprite asset admitted to the Engine: an atlas of its frames sized in
+/// A sheet asset used as a figure, admitted to the Engine: an atlas of its frames sized in
 /// world units (a cell is 1), the pivot its anchor stands on, and its
 /// animations as playback frames. Figures made from it are billboards turned
 /// to the camera around the vertical axis; <see cref="Scale"/> flips one to
@@ -34,7 +34,7 @@ internal sealed class SpriteArt : IDisposable
 
     public IReadOnlyCollection<string> Animations => _animations.Keys;
 
-    /// <summary>Admits a checked sprite asset's frames from its <paramref name="texture"/>.</summary>
+    /// <summary>Admits a checked figure sheet's frames from its <paramref name="texture"/>.</summary>
     public static SpriteArt Admit(IGraphicsService graphics, RenderResource texture, Definition asset, (int Width, int Height) image)
     {
         JsonElement json = asset.Json;

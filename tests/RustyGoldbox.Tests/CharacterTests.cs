@@ -471,12 +471,16 @@ public sealed class CharacterTests
         Assert.Equal(0, CampaignTests.Run(scratch, "play", "--campaign", crypt, "--party", "ada.json", "--script", "look.script", "--save", "game.json").Code);
         Assert.Contains("placeholder-art:fighter_portrait", File.ReadAllText(Path.Combine(scratch.Root, "game.json")), StringComparison.Ordinal);
 
+        // A portrait is a picture slot: any visual media fits, an animated sheet as well as an image.
+        (int sheet, string drawn) = CampaignTests.Run(scratch, "character", "new", "--module", crypt, "--class", "fighter", "--race", "human",
+            "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--portrait", "placeholder-art:skeleton");
+        Assert.True(sheet == 0, drawn);
         (int refused, string message) = CampaignTests.Run(scratch, "character", "new", "--module", crypt, "--class", "fighter", "--race", "human",
-            "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--portrait", "placeholder-art:hall");
+            "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--portrait", "placeholder-art:nowhere");
         Assert.Equal(1, refused);
-        Assert.Contains("placeholder-art:hall is a backdrop asset, but a character's portrait must be a portrait.", message, StringComparison.Ordinal);
+        Assert.Contains("placeholder-art:nowhere", message, StringComparison.Ordinal);
 
-        string edited = File.ReadAllText(Path.Combine(scratch.Root, "ada.json")).Replace("fighter_portrait", "skull", StringComparison.Ordinal);
+        string edited = File.ReadAllText(Path.Combine(scratch.Root, "ada.json")).Replace("fighter_portrait", "nowhere", StringComparison.Ordinal);
         File.WriteAllText(Path.Combine(scratch.Root, "ada.json"), edited);
         (int unread, string why) = CampaignTests.Run(scratch, "character", "show", "ada.json", "--module", crypt);
         Assert.Equal(1, unread);
