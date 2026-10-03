@@ -245,6 +245,11 @@ public sealed class Character
     /// </summary>
     public decimal? NextLevelExperience(RuleSet rules)
     {
+        if (rules.AdvancementKind != "experience")
+        {
+            return null;
+        }
+
         if (rules.ExperienceSplit)
         {
             return null;

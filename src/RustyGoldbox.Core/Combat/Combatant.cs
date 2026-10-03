@@ -104,6 +104,11 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             renamed.Values[id] = value;
         }
 
+        foreach ((string id, decimal bonus) in Creature.AdvancementBonuses)
+        {
+            renamed.AdvancementBonuses[id] = bonus;
+        }
+
         renamed.Conditions.AddRange(Creature.Conditions);
         renamed.Equipment.AddRange(Creature.Equipment);
         Combatant copy = new(newName, renamed, Uses) { Character = Character };

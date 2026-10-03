@@ -1131,6 +1131,56 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void DuplicatePartyCombatantsKeepTheirAdvancementBonuses()
+    {
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        RuleSet rules = set.Rules!;
+        Dictionary<string, decimal> attributes = new()
+        {
+            ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+        };
+
+        Character Make(IReadOnlyList<SkillAllocation> allocations)
+        {
+            List<ModuleDiagnostic> problems = [];
+            Character character = WithDice(dice => CharacterRules.Create(rules, Character.StampsOf(set),
+                new CreationRequest("Rook", null, null, Attributes: attributes, Creation: "staged",
+                    Features: ["staged_soldier"], SkillPoints: allocations), dice, problems))!;
+            Assert.Empty(problems);
+            return character;
+        }
+
+        Character strong = Make(
+        [
+            new("brawl", Profession: 120), new("sword", Profession: 100, Personal: 20),
+            new("shield", Profession: 30), new("bow", Personal: 80),
+        ]);
+        Character ordinary = Make(
+        [
+            new("brawl", Profession: 20), new("sword", Profession: 230), new("shield", Personal: 100),
+        ]);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "standard", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "bandits", out _)!;
+
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            List<CombatSide> sides = Encounters.Distinct(
+            [
+                new CombatSide("Party", [Combatant.FromCharacter(rules, strong), Combatant.FromCharacter(rules, ordinary)]),
+                new CombatSide(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
+            ]);
+            return CombatRunner.Run(rules, combat, sides, dice, maxRounds: 1, encounter);
+        });
+
+        Assert.Equal(["Rook", "Rook (2)"], result.Sides[0].Members.Select(member => member.Name));
+        Evaluator statEvaluator = new(rules, null);
+        Assert.Equal(145m, statEvaluator.Stat(result.Sides[0].Members[0].Creature, "brawl").Number);
+        Assert.Equal(45m, statEvaluator.Stat(result.Sides[0].Members[1].Creature, "brawl").Number);
+    }
+
+    [Fact]
     public void TracksAreSpentFlooredAndCapped()
     {
         using TempModules modules = new();

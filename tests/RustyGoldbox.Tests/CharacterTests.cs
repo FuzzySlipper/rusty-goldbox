@@ -325,6 +325,48 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ClassfulNonExperienceAdvancementCanBeCreatedThroughCli()
+    {
+        using TempModules modules = new();
+        string module = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/warrior.json", """{ "type": "class", "id": "warrior", "name": "Warrior", "levels": [ { "hp": "1" } ] }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "10", "default": true }""");
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "milestones", "name": "Milestones", "kind": "milestone",
+              "milestones": { "skill_raise": { "count": 0, "amount": 1 }, "skill_swap": { "count": 0 }, "feature": { "kind": "stunt", "count": 0 } } }
+            """);
+
+        (int code, string output) = CampaignTests.Run(modules, "character", "new", "--module", module,
+            "--class", "warrior", "--name", "Ada", "--attributes", "str=10", "--out", "ada.json");
+
+        Assert.True(code == 0, output);
+        Assert.True(File.Exists(Path.Combine(modules.Root, "ada.json")), output);
+        Assert.Contains("Warrior", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NonExperienceAdvancementRefusesExplicitExperienceLevel()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed");
+        (int created, string creationOutput) = CampaignTests.Run(scratch, "character", "new", "--module", module,
+            "--name", "Ruth", "--priority", "fight,athletics,physique,notice,will,shoot,empathy,lore,provoke,stealth",
+            "--feature", "quick_feet,heavy_hitter,iron_will", "--out", "ruth.json");
+        Assert.True(created == 0, creationOutput);
+
+        (int code, string output) = CampaignTests.Run(scratch, "character", "level", "ruth.json", "--module", module, "--xp", "100");
+
+        Assert.Equal(1, code);
+        Assert.Contains("milestone", output, StringComparison.Ordinal);
+        Assert.Contains("no experience levels", output, StringComparison.Ordinal);
+        ModuleSet set = ModuleLoader.Load(module, []);
+        List<ModuleDiagnostic> problems = [];
+        Character saved = CharacterFile.Read(Path.Combine(scratch.Root, "ruth.json"), set, problems)!;
+        Assert.Empty(problems);
+        Assert.Equal(0, saved.Experience);
+    }
+
+    [Fact]
     public void UniversalD100ModuleMarksAndImprovesADeclaredSkill()
     {
         string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");

@@ -773,6 +773,16 @@ public static class CharacterRules
         bool trained = false,
         bool oneLevel = false)
     {
+        if (rules.AdvancementKind != "experience")
+        {
+            string kind = rules.AdvancementKind;
+            string owner = rules.Advancement?.QualifiedId ?? "this ruleset";
+            problems.Add(new ModuleDiagnostic(
+                "character.experience",
+                $"{owner} selects '{kind}' advancement, which has no experience levels; character level cannot add experience or take a level."));
+            return null;
+        }
+
         if (RequiresTraining(rules) && !trained)
         {
             problems.Add(new ModuleDiagnostic("character.training", "This ruleset requires paid training before a level; earn experience in play and use train <member> at a training event."));
@@ -1054,7 +1064,10 @@ public static class CharacterRules
         }
 
         bool classChosen = rules.ExperienceByCharacter;
-        if (!RequiresTraining(rules) && !classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
+        if (rules.AdvancementKind == "experience"
+            && !RequiresTraining(rules)
+            && !classChosen
+            && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
         {
             return gains;
         }
