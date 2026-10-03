@@ -870,7 +870,7 @@ public sealed partial class CampaignRunner
         bool found = false;
         foreach (Character character in _state.Party)
         {
-            if (Located(check, "$", () => evaluator.Check(check, character.ToCreature(), null)).Success)
+            if (CharacterCheck(check, character, evaluator))
             {
                 found = true;
                 break;
@@ -884,6 +884,22 @@ public sealed partial class CampaignRunner
         }
 
         facts.Add(result);
+    }
+
+    private bool CharacterCheck(Definition check, Character character, Evaluator evaluator)
+    {
+        CheckResult result = Located(check, "$", () => evaluator.Check(check, character.ToCreature(), null));
+        if (!result.Success)
+        {
+            return false;
+        }
+
+        if (check.Json.TryGetProperty("skill", out JsonElement skill))
+        {
+            CharacterRules.MarkSkillUse(_rules, character, skill.GetString()!, []);
+        }
+
+        return true;
     }
 
     private StatusFact Status()
