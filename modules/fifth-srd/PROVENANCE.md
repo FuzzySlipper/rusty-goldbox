@@ -19,7 +19,7 @@ English SRD 5.2.1 PDF from https://media.dndbeyond.com/compendium-images/srd/5.2
 | --- | --- |
 | `attributes/`, `derived/*_mod`, `derived/proficiency`, `creation/` (standard array; point cost with 27 points) | Playing the Game: The Six Abilities, Proficiency; Character Creation |
 | `advancement/standard` (300, 900, 2,700, 6,500 XP) | Character Advancement |
-| `classes/` (Fighter, Rogue, Cleric, Wizard to level 5: hit points, Second Wind, Extra Attack, Sneak Attack, spell slots, subclass at level 3, Ability Score Improvement at 4) | Classes |
+| `classes/` (Fighter, Rogue, Cleric, Wizard to level 5: hit points, Second Wind, Action Surge, Extra Attack, Sneak Attack, Uncanny Dodge, spell slots, subclass at level 3, Ability Score Improvement at 4) | Classes |
 | `features/` (Acolyte, Criminal, Sage and Soldier backgrounds; Alert, Tough and Savage Attacker; Archery, Defense and Dueling; Champion, Thief, Life Domain and Evoker; Ability Score Improvement) | Character Origins, Feats, Classes |
 | `races/` (Human, Dwarf with Dwarven Toughness, Elf, Halfling) | Character Origins: Species |
 | `checks/`, `conditions/` (d20 attack rolls against AC with Advantage and Disadvantage, Critical Hits doubling dice, saving throws against a spell save DC, Prone, Dodging, death saving throws, massive damage) | Playing the Game; Combat; Rules Glossary |
@@ -34,8 +34,8 @@ The encounters are original groupings of SRD creatures.
 ## Simplifications
 
 - Only levels 1 to 5 of four classes, one subclass each, and a handful of
-  spells are included. Weapon Mastery, Action Surge, Tactical Mind, Cunning
-  Action, Channel Divinity, Arcane Recovery, multiclassing requirements,
+  spells are included. Weapon Mastery, Tactical Mind, Cunning Action, Channel
+  Divinity, Arcane Recovery, multiclassing requirements,
   skills and tool proficiencies are not modelled. Savage Attacker,
   Thief and Evoker features have no effect here.
 - A background gives a fixed +2/+1 to two of its three abilities, and the

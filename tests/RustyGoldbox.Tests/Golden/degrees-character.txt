@@ -25,6 +25,7 @@ error[character.boosts] degrees tests/RustyGoldbox.Tests/Fixtures/degrees/races/
 $ goldbox character new --module tests/RustyGoldbox.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --boosts brawn,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
 Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
   hit points 23/23
+  quickened uses 1/1
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat)
   brawn                   16     Brawn
@@ -60,6 +61,7 @@ $ goldbox character level tor.json --module tests/RustyGoldbox.Tests/Fixtures/de
 Reached level 2: +13 hit points.
 Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
   hit points 36/36
+  quickened uses 1/1
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat)
   brawn                   16     Brawn
@@ -103,6 +105,7 @@ Reached level 4: +13 hit points.
 Reached level 5: +13 hit points.
 Tor: Hillfolk Vanguard 5 (4000 xp, highest level)
   hit points 80/80
+  quickened uses 1/1
   gold 15
   features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat), Steady stance (vanguard feat), Hill lore (ancestry feat)
   brawn                   18     Brawn
@@ -205,6 +208,9 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "hit_points": {
         "current": 80,
         "max": 60
+      },
+      "quickened": {
+        "current": 1
       }
     },
     "balances": {
@@ -400,6 +406,13 @@ $ goldbox character show tor.json --module tests/RustyGoldbox.Tests/Fixtures/deg
       "name": "Hit points",
       "current": 80,
       "max": 80,
+      "problem": null
+    },
+    {
+      "id": "quickened",
+      "name": "Quickened uses",
+      "current": 1,
+      "max": 1,
       "problem": null
     }
   ],

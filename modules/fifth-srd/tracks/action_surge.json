@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "action_surge",
+  "name": "Action Surge uses",
+  "max": "if self.fighter_level >= 2 then 1 else 0"
+}

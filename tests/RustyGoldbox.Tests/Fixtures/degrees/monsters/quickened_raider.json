@@ -1,0 +1,24 @@
+{
+  "type": "monster",
+  "id": "quickened_raider",
+  "name": "Quickened raider",
+  "tracks": {
+    "hit_points": "100"
+  },
+  "stats": {
+    "ac": "10",
+    "brawn": "10",
+    "weapon_proficiency": "5",
+    "reflex": "5",
+    "insight_mod": "10"
+  },
+  "actions": [
+    {
+      "action": "quickened"
+    },
+    {
+      "action": "poke"
+    }
+  ],
+  "xp": 0
+}

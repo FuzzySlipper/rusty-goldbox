@@ -482,6 +482,7 @@ Reached level 3: +8 hit points.
 Reached level 4: +8 hit points.
 Reached level 5: +8 hit points.
 Bram: Human Fighter 5 (6500 xp, highest level)
+  action surge uses 1/1
   death save failures 0/3
   death save successes 0/3
   hit points 44/44
@@ -660,6 +661,8 @@ Round 1.
   Zombie 1 moves 4 cells to (7, 2).
   Zombie 2 uses Move on Bram.
   Zombie 2 moves 4 cells to (7, 5).
+  Bram uses Action Surge on Bram.
+  Bram spends 1 action surge uses (0 left).
   Bram uses Move on Skeleton 1.
   Bram moves 4 cells to (4, 3).
   Bram uses Attack (Longsword) on Skeleton 1.
@@ -668,21 +671,26 @@ Round 1.
   Attack (Longsword) 2 of 2 goes to Skeleton 1.
   Bram rolls Melee attack: 14 + 7 = 21 against 14: success.  [1d20: 14 = 14]
   Skeleton 1 loses 5 hit points (8 left).  [1d8: 1 = 1]
-  Ilsa is no longer Shielded.
-  Ilsa uses Fireball on Skeleton 1, Skeleton 2, Zombie 1, Zombie 2.
-  Ilsa spends 1 level 3 spell slots (1 left).
-  Skeleton 1 rolls Dexterity saving throw: 10 + 3 = 13 against 15: failure.  [1d20: 10 = 10]
-  Skeleton 1 loses 8 hit points (0 left).  [8d6: 6+4+2+3+4+1+3+6 = 29]
+  Bram uses Attack (Longsword) on Skeleton 1.
+  Attack (Longsword) 1 of 2 goes to Skeleton 1.
+  Bram rolls Melee attack: 10 + 7 = 17 against 14: success.  [1d20: 10 = 10]
+  Skeleton 1 loses 6 hit points (2 left).  [1d8: 2 = 2]
+  Attack (Longsword) 2 of 2 goes to Skeleton 1.
+  Bram rolls Melee attack: 8 + 7 = 15 against 14: success.  [1d20: 8 = 8]
+  Skeleton 1 loses 2 hit points (0 left).  [1d8: 4 = 4]
   Skeleton 1 is out of the fight.
-  Skeleton 2 rolls Dexterity saving throw: 6 + 3 = 9 against 15: failure.  [1d20: 6 = 6]
-  Skeleton 2 loses 13 hit points (0 left).  [8d6: 2+2+1+1+5+1+1+1 = 14]
+  Ilsa is no longer Shielded.
+  Ilsa uses Fireball on Skeleton 2, Zombie 1, Zombie 2.
+  Ilsa spends 1 level 3 spell slots (1 left).
+  Skeleton 2 rolls Dexterity saving throw: 5 + 3 = 8 against 15: failure.  [1d20: 5 = 5]
+  Skeleton 2 loses 13 hit points (0 left).  [8d6: 4+1+3+6+6+2+2+1 = 25]
   Skeleton 2 is out of the fight.
-  Zombie 1 rolls Dexterity saving throw: 11 - 2 = 9 against 15: failure.  [1d20: 11 = 11]
-  Zombie 1 rolls Constitution saving throw: 20 + 3 - 30 modifiers = -7 against 5: failure.  [8d6: 6+3+2+3+6+2+4+4 = 30; 1d20: 20 = 20]
+  Zombie 1 rolls Dexterity saving throw: 3 - 2 = 1 against 15: failure.  [1d20: 3 = 3]
+  Zombie 1 rolls Constitution saving throw: 9 + 3 - 22 modifiers = -10 against 5: failure.  [8d6: 5+1+1+1+3+6+3+2 = 22; 1d20: 9 = 9]
   Zombie 1 loses 15 hit points (0 left).
   Zombie 1 is out of the fight.
-  Zombie 2 rolls Dexterity saving throw: 14 - 2 = 12 against 15: failure.  [1d20: 14 = 14]
-  Zombie 2 rolls Constitution saving throw: 16 + 3 - 28 modifiers = -9 against 5: failure.  [8d6: 3+1+6+5+5+2+4+2 = 28; 1d20: 16 = 16]
+  Zombie 2 rolls Dexterity saving throw: 10 - 2 = 8 against 15: failure.  [1d20: 10 = 10]
+  Zombie 2 rolls Constitution saving throw: 3 + 3 - 28 modifiers = -22 against 5: failure.  [8d6: 2+4+4+2+6+3+1+6 = 28; 1d20: 3 = 3]
   Zombie 2 loses 15 hit points (0 left).
   Zombie 2 is out of the fight.
 Party wins after 1 round.

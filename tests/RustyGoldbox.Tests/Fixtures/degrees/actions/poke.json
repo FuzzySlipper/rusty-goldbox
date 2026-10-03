@@ -1,0 +1,15 @@
+{
+  "type": "action",
+  "id": "poke",
+  "name": "Poke",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "always": [
+    {
+      "op": "damage",
+      "amount": "1"
+    }
+  ]
+}

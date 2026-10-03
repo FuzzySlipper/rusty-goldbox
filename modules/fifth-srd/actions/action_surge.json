@@ -1,0 +1,20 @@
+{
+  "type": "action",
+  "id": "action_surge",
+  "name": "Action Surge",
+  "cost": {
+    "action": 0
+  },
+  "target": "self",
+  "available": "self.action_surge > 0",
+  "always": [
+    {
+      "op": "grant_budget",
+      "budget": "action",
+      "amount": "1",
+      "track": "action_surge",
+      "spend": "1",
+      "to": "self"
+    }
+  ]
+}
