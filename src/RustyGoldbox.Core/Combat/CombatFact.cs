@@ -85,6 +85,23 @@ public sealed record CheckFact(string Who, string Check, CheckResult Result) : C
     private static string Sign(decimal value) => value < 0 ? $"- {N(-value)}" : $"+ {N(value)}";
 }
 
+/// <summary>A resource spent after a check's roll changed its result.</summary>
+public sealed record PostRollFact(
+    string Who,
+    string Check,
+    string Option,
+    Definition Track,
+    decimal Cost,
+    string Effect,
+    decimal Before,
+    decimal After) : CombatFact
+{
+    public override string Kind => "post_roll";
+
+    public override string Describe() =>
+        $"{Who} spends {N(Cost)} {Track.Name.ToLowerInvariant()} after {Check}: {Option} ({Effect}, {N(Before)} to {N(After)}).";
+}
+
 public sealed record DamageFact(string Who, Definition Track, decimal Amount, decimal Left) : CombatFact
 {
     public override string Kind => "damage";

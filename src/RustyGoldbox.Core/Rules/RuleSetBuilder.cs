@@ -833,6 +833,31 @@ public sealed class RuleSetBuilder
         HashSet<string> budget = _rules.OfType(DefinitionTypes.Combat)
             .SelectMany(combat => combat.Json.GetProperty("budget").EnumerateArray().Select(entry => entry.GetProperty("id").GetString()!))
             .ToHashSet();
+        foreach (Definition check in _rules.OfType(DefinitionTypes.Check))
+        {
+            if (!check.Json.TryGetProperty("post_roll", out JsonElement options))
+            {
+                continue;
+            }
+
+            for (int index = 0; index < options.GetArrayLength(); index++)
+            {
+                JsonElement option = options[index];
+                bool bonus = option.TryGetProperty("bonus", out _);
+                bool reroll = option.TryGetProperty("reroll", out JsonElement rerollValue) && rerollValue.GetBoolean();
+                if (bonus == reroll)
+                {
+                    Error(check, "check.post-roll", $"$.post_roll[{index}]", "A post-roll option needs exactly one effect: a \"bonus\" expression or \"reroll\": true.");
+                }
+
+                if (_rules.References.TryGetValue((check, $"$.post_roll[{index}].track"), out Definition? track)
+                    && track.Type != DefinitionTypes.Track)
+                {
+                    Error(check, "check.post-roll", $"$.post_roll[{index}].track", $"'{track.QualifiedId}' is not a resource track.");
+                }
+            }
+        }
+
         foreach (Definition reaction in _rules.OfType(DefinitionTypes.Reaction))
         {
             foreach (JsonProperty entry in reaction.Json.GetProperty("cost").EnumerateObject().Where(entry => !budget.Contains(entry.Name)))
@@ -858,7 +883,10 @@ public sealed class RuleSetBuilder
                 }
             }
 
-            if (!cost.EnumerateObject().Any(entry => entry.Value.GetInt32() > 0))
+            if (!cost.EnumerateObject().Any(entry => entry.Value.GetInt32() > 0)
+                && !(action.Json.TryGetProperty("available", out _)
+                    && ContainsOperation(action.Json, "grant_budget"))
+                && !IsReactionAction(action))
             {
                 Error(action, "action.cost", "$.cost", "An action must cost at least 1 of some budget, or a creature could take it forever.");
             }
@@ -894,6 +922,12 @@ public sealed class RuleSetBuilder
             WalkOperations(action, action.Json, "$");
         }
 
+        foreach (Definition definition in _rules.Definitions.Where(definition => definition.Type is { } type
+                     && (type == DefinitionTypes.Action || type == DefinitionTypes.Condition)))
+        {
+            CheckBudgetOperations(definition, definition.Json, "$", budget);
+        }
+
         foreach (Definition definition in _rules.Definitions)
         {
             foreach (ReferenceSite site in definition.References)
@@ -909,6 +943,54 @@ public sealed class RuleSetBuilder
             if (definition.Type == DefinitionTypes.Condition)
             {
                 WalkOperations(definition, definition.Json, "$");
+            }
+        }
+    }
+
+    private static bool ContainsOperation(JsonElement element, string name)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            if (element.TryGetProperty("op", out JsonElement op) && op.ValueKind == JsonValueKind.String && op.GetString() == name)
+            {
+                return true;
+            }
+
+            return element.EnumerateObject().Any(property => ContainsOperation(property.Value, name));
+        }
+
+        return element.ValueKind == JsonValueKind.Array && element.EnumerateArray().Any(item => ContainsOperation(item, name));
+    }
+
+    private bool IsReactionAction(Definition action)
+    {
+        return _rules.OfType(DefinitionTypes.Reaction).Any(reaction =>
+            _rules.References.TryGetValue((reaction, "$.use.action"), out Definition? referenced) && referenced == action);
+    }
+
+    private void CheckBudgetOperations(Definition definition, JsonElement element, string path, HashSet<string> budget)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            if (element.TryGetProperty("op", out JsonElement op) && op.ValueKind == JsonValueKind.String && op.GetString() == "grant_budget"
+                && element.TryGetProperty("budget", out JsonElement budgetId) && !budget.Contains(budgetId.GetString()!))
+            {
+                string known = budget.Count == 0 ? "No combat definition declares a budget." : $"Budget IDs: {string.Join(", ", budget.Order(StringComparer.Ordinal))}.";
+                Error(definition, "operation.grant-budget", $"{path}.budget", $"'{budgetId.GetString()}' is not a budget in any combat definition. {known}");
+            }
+
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                CheckBudgetOperations(definition, property.Value, $"{path}.{property.Name}", budget);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            int index = 0;
+            foreach (JsonElement item in element.EnumerateArray())
+            {
+                CheckBudgetOperations(definition, item, $"{path}[{index}]", budget);
+                index++;
             }
         }
     }
@@ -1475,6 +1557,26 @@ public sealed class RuleSetBuilder
                 && _rules.References.TryGetValue((definition, $"{path}.check"), out Definition? check))
             {
                 CheckOutcomes(definition, check, outcomes, $"{path}.outcomes");
+            }
+
+            if (element.TryGetProperty("op", out op) && op.ValueKind == JsonValueKind.String && op.GetString() == "reduce_damage"
+                && !element.TryGetProperty("amount", out _) && !element.TryGetProperty("fraction", out _))
+            {
+                Error(definition, "operation.reduce-damage", path, "reduce_damage needs an \"amount\" or \"fraction\" to change pending damage.");
+            }
+
+            if (element.TryGetProperty("op", out op) && op.ValueKind == JsonValueKind.String && op.GetString() == "grant_budget"
+                && _rules.References.TryGetValue((definition, $"{path}.track"), out Definition? resource)
+                && resource.Type != DefinitionTypes.Track)
+            {
+                Error(definition, "operation.grant-budget", $"{path}.track", $"'{resource.QualifiedId}' is not a resource track.");
+            }
+
+            if (element.TryGetProperty("op", out op) && op.ValueKind == JsonValueKind.String && op.GetString() == "reduce_damage"
+                && _rules.References.TryGetValue((definition, $"{path}.shield_track"), out Definition? shield)
+                && shield.Type != DefinitionTypes.Track)
+            {
+                Error(definition, "operation.reduce-damage", $"{path}.shield_track", $"'{shield.QualifiedId}' is not a resource track.");
             }
 
             foreach (JsonProperty property in element.EnumerateObject())

@@ -16,6 +16,8 @@ public static class OperationTypes
 
     private static readonly Field OnTrack = new("track", new ReferenceKind("track"), false, "The track it acts on; without it, the combat definition's track.");
 
+    private static readonly Field ResourceTrack = new("track", new ReferenceKind("track"), true, "The resource track to spend or alter.");
+
     public static DefinitionType Damage { get; } = new(
         "damage",
         "Lowers a track (hit points unless it names another), never below the track's minimum.",
@@ -96,7 +98,30 @@ public static class OperationTypes
         [],
         """{ "op": "flee" }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If, Move, Flee];
+    public static DefinitionType GrantBudget { get; } = new(
+        "grant_budget",
+        "Adds to a creature's named budget for its current turn after spending a resource track. This is the data hook for effects such as Action Surge or Quickened.",
+        [
+            new("budget", new TextKind(), true, "The combat budget ID to add to."),
+            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), true, "How much budget to add, rounded down."),
+            ResourceTrack,
+            new("spend", new ExpressionKind(ExprType.Number, ActionRoots), true, "How much of the resource track to spend."),
+            To,
+        ],
+        """{ "op": "grant_budget", "budget": "action", "amount": "1", "track": "action_surge", "spend": "1", "to": "self" }""");
+
+    public static DefinitionType ReduceDamage { get; } = new(
+        "reduce_damage",
+        "Reduces the pending damage currently being applied to a creature by an amount, or keeps a fraction of it. A shield track may also take the remaining damage. It is valid only from a reaction triggered by hit.",
+        [
+            new("amount", new ExpressionKind(ExprType.Number, ActionRoots), false, "A flat amount to subtract from pending damage."),
+            new("fraction", new ExpressionKind(ExprType.Number, ActionRoots), false, "The fraction of pending damage that remains, from 0 to 1; for example 0.5 halves it."),
+            new("shield_track", new ReferenceKind("track"), false, "A track holding shield hit points; after the reduction, the remaining pending damage is removed from this track too."),
+            To,
+        ],
+        """{ "op": "reduce_damage", "amount": "self.shield_hardness", "shield_track": "shield_points", "to": "self" }""");
+
+    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If, Move, Flee, GrantBudget, ReduceDamage];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(operation => operation.Name == name);
 }

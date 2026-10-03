@@ -7,6 +7,22 @@
   "bonus": "self.athletics",
   "target": "target.notice + roll_fudge(4)",
   "succeeds": "at-least",
+  "post_roll": [
+    {
+      "name": "Invoke for +2",
+      "track": "fate_points",
+      "cost": "1",
+      "bonus": "2",
+      "score": "if self.fate_points > 0 and check.margin >= -2 and check.margin < 0 then 10 else -1"
+    },
+    {
+      "name": "Invoke for a reroll",
+      "track": "fate_points",
+      "cost": "1",
+      "reroll": true,
+      "score": "if self.fate_points > 0 and check.margin < -2 then 10 else -1"
+    }
+  ],
   "tiers": [
     {
       "name": "style",

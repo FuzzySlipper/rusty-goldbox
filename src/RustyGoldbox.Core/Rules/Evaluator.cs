@@ -124,6 +124,12 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
     public CheckResult Check(Definition check, Creature self, Creature? target, decimal extra = 0)
     {
         decimal roll = Evaluate(rules.Expression(check, "$.roll"), self, target).Number;
+        return CheckWithRoll(check, self, target, roll, extra);
+    }
+
+    /// <summary>Resolves a check using a roll already made, such as a post-roll bonus.</summary>
+    public CheckResult CheckWithRoll(Definition check, Creature self, Creature? target, decimal roll, decimal extra = 0, decimal? targetOverride = null)
+    {
         decimal bonus = rules.TryExpression(check, "$.bonus", out CompiledExpression? bonusExpression)
             ? Evaluate(bonusExpression!, self, target).Number
             : 0;
@@ -141,7 +147,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             }
         }
 
-        decimal needed = Evaluate(rules.Expression(check, "$.target"), self, target).Number;
+        decimal needed = targetOverride ?? Evaluate(rules.Expression(check, "$.target"), self, target).Number;
         decimal total = Add(Add(roll, bonus, 1), modifier, 1);
         bool atLeast = check.Json.GetProperty("succeeds").GetString() == "at-least";
         bool success = atLeast ? total >= needed : total <= needed;

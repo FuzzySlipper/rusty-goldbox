@@ -1,5 +1,6 @@
 $ goldbox character new --module modules/fate-condensed --name Ruth --priority fight,athletics,physique,notice,will,shoot,empathy,lore,provoke,stealth --feature heavy_hitter,tough_as_nails,quick_feet --out ruth.json
 Ruth
+  fate points 3/3
   mental stress 4/4
   physical stress 7/7
   features: Heavy Hitter (stunt), Tough as Nails (stunt), Quick Feet (stunt)
@@ -29,6 +30,7 @@ Saved to ruth.json.
 
 $ goldbox character new --module modules/fate-condensed --name Ethan --priority shoot,notice,athletics,burglary,will,provoke,fight,crafts,stealth,deceive --feature deadeye,iron_will,cutting_words --out ethan.json
 Ethan
+  fate points 3/3
   mental stress 5/5
   physical stress 3/3
   features: Deadeye (stunt), Iron Will (stunt), Cutting Words (stunt)
@@ -66,109 +68,155 @@ $ goldbox sim combat --module modules/fate-condensed --party ruth.json,ethan.jso
 seed 1
 Round 1.
   Ruth uses Shoot on Cultist 1.
-  Ruth rolls Shoot: 0 + 2 = 2 against 3: failure.  [4dF: + - + - = 0; 4dF: + + + - = 2]
+  Ruth rolls Shoot: 0 + 2 + 2 modifiers = 4 against 3: success.  [4dF: + - + - = 0; 4dF: + + + - = 2]
+  Ruth spends 1 fate points (2 left).
+  Ruth spends 1 fate points after Shoot: Invoke for +2 (+2, 2 to 4).
+  Cultist 1 loses 1 physical stress (0 left).
   Ruth chooses Cultist 1 next (score 3).
   Cultist 1 uses Shoot on Ethan.
-  Cultist 1 rolls Shoot: -1 against 2: failure.  [4dF: - + - 0 = -1; 4dF: - + - 0 = -1]
+  Cultist 1 rolls Shoot: 0 against 5: failure.  [4dF: - + - 0 = -1; 4dF: - + - 0 = -1; 4dF: + - - + = 0; 4dF: + + 0 0 = 2]
+  Cultist 1 spends 1 fate points (2 left).
+  Cultist 1 spends 1 fate points after Shoot: Invoke for a reroll (reroll, -1 to 0).  [4dF: + - - + = 0; 4dF: + + 0 0 = 2]
   Cultist 1 chooses Cultist 2 next (score 0).
   Cultist 2 uses Shoot on Ethan.
-  Cultist 2 rolls Shoot: 0 against 5: failure.  [4dF: + - - + = 0; 4dF: + + 0 0 = 2]
+  Cultist 2 rolls Shoot: 3 against 1: success.  [4dF: - - 0 - = -3; 4dF: - - + + = 0; 4dF: + 0 + + = 3; 4dF: 0 - - 0 = -2]
+  Cultist 2 spends 1 fate points (2 left).
+  Cultist 2 spends 1 fate points after Shoot: Invoke for a reroll (reroll, -3 to 3).  [4dF: + 0 + + = 3; 4dF: 0 - - 0 = -2]
+  Ethan loses 2 physical stress (1 left).
   Cultist 2 chooses Cultist 3 next (score 0).
   Cultist 3 uses Shoot on Ethan.
-  Cultist 3 rolls Shoot: -3 against 3: failure.  [4dF: - - 0 - = -3; 4dF: - - + + = 0]
+  Cultist 3 rolls Shoot: 2 against 2: tie.  [4dF: + + - + = 2; 4dF: 0 0 0 - = -1]
   Cultist 3 chooses Thug next (score 0).
   Thug uses Shoot on Ethan.
-  Thug rolls Shoot: 3 against 1: success.  [4dF: + 0 + + = 3; 4dF: 0 - - 0 = -2]
-  Ethan loses 2 physical stress (1 left).
+  Thug rolls Shoot: 0 against 3: failure.  [4dF: 0 - 0 0 = -1; 4dF: 0 + 0 - = 0; 4dF: 0 + 0 - = 0; 4dF: + - 0 0 = 0]
+  Thug spends 1 fate points (2 left).
+  Thug spends 1 fate points after Shoot: Invoke for a reroll (reroll, -1 to 0).  [4dF: 0 + 0 - = 0; 4dF: + - 0 0 = 0]
   Thug chooses Ethan next (score -1).
   Ethan uses Shoot on Cultist 1.
-  Ethan rolls Shoot: 2 + 4 + 2 modifiers = 8 against 0: style.  [4dF: + + - + = 2; 4dF: 0 0 0 - = -1]
+  Ethan rolls Shoot: 1 + 4 + 2 modifiers = 7 against 3: style.  [4dF: 0 + 0 0 = 1; 4dF: + 0 0 + = 2]
   Cultist 1 is Taken out.
   Cultist 1 is out of the fight.
 Round 2.
   Ethan chooses Cultist 2 next (score 0).
   Cultist 2 uses Shoot on Ethan.
-  Cultist 2 rolls Shoot: -1 against 3: failure.  [4dF: 0 - 0 0 = -1; 4dF: 0 + 0 - = 0]
+  Cultist 2 rolls Shoot: 3 + 2 modifiers = 5 against 4: success.  [4dF: 0 + + + = 3; 4dF: + 0 + - = 1]
+  Cultist 2 spends 1 fate points (1 left).
+  Cultist 2 spends 1 fate points after Shoot: Invoke for +2 (+2, 3 to 5).
+  Ethan loses 1 physical stress (0 left).
   Cultist 2 chooses Cultist 3 next (score 0).
   Cultist 3 uses Shoot on Ethan.
-  Cultist 3 rolls Shoot: 0 against 3: failure.  [4dF: 0 + 0 - = 0; 4dF: + - 0 0 = 0]
+  Cultist 3 rolls Shoot: -1 against 1: failure.  [4dF: - + 0 - = -1; 4dF: + 0 + + = 3; 4dF: + - 0 - = -1; 4dF: - - - + = -2]
+  Cultist 3 spends 1 fate points (2 left).
+  Cultist 3 spends 1 fate points after Shoot: Invoke for a reroll (reroll, -1 to -1).  [4dF: + - 0 - = -1; 4dF: - - - + = -2]
   Cultist 3 chooses Thug next (score 0).
   Thug uses Shoot on Ethan.
-  Thug rolls Shoot: 1 against 5: failure.  [4dF: 0 + 0 0 = 1; 4dF: + 0 0 + = 2]
+  Thug rolls Shoot: 2 against 1: success.  [4dF: 0 - 0 0 = -1; 4dF: - + + + = 2; 4dF: + - + + = 2; 4dF: + - - - = -2]
+  Thug spends 1 fate points (1 left).
+  Thug spends 1 fate points after Shoot: Invoke for a reroll (reroll, -1 to 2).  [4dF: + - + + = 2; 4dF: + - - - = -2]
+  Ethan is Hurt (mild consequence).
   Thug chooses Ruth next (score -1).
   Ruth uses Shoot on Cultist 2.
-  Ruth rolls Shoot: 3 + 2 = 5 against 2: style.  [4dF: 0 + + + = 3; 4dF: + 0 + - = 1]
+  Ruth rolls Shoot: -1 + 2 = 1 against 1: tie.  [4dF: + - - 0 = -1; 4dF: - 0 + 0 = 0]
+  Ruth chooses Ethan next (score 1).
+  Ethan uses Shoot on Cultist 2.
+  Ethan rolls Shoot: -1 + 4 + 2 modifiers = 5 against -2: style.  [4dF: - + - 0 = -1; 4dF: - - 0 - = -3]
   Cultist 2 is Taken out.
   Cultist 2 is out of the fight.
-  Ruth chooses Ethan next (score 1).
-  Ethan uses Shoot on Cultist 3.
-  Ethan rolls Shoot: -1 + 4 + 2 modifiers = 5 against 4: success.  [4dF: - + 0 - = -1; 4dF: + 0 + + = 3]
-  Cultist 3 loses 1 physical stress (0 left).
 Round 3.
   Ethan chooses Cultist 3 next (score 0).
   Cultist 3 uses Shoot on Ethan.
-  Cultist 3 rolls Shoot: -1 against 1: failure.  [4dF: + - 0 - = -1; 4dF: - - - + = -2]
+  Cultist 3 rolls Shoot: 2 against 2: tie.  [4dF: + + - + = 2; 4dF: + 0 - - = -1]
   Cultist 3 chooses Thug next (score 0).
   Thug uses Shoot on Ethan.
-  Thug rolls Shoot: -1 against 5: failure.  [4dF: 0 - 0 0 = -1; 4dF: - + + + = 2]
+  Thug rolls Shoot: 0 against 4: failure.  [4dF: 0 0 + - = 0; 4dF: - 0 0 + = 0; 4dF: - + - + = 0; 4dF: 0 0 + 0 = 1]
+  Thug spends 1 fate points (0 left).
+  Thug spends 1 fate points after Shoot: Invoke for a reroll (reroll, 0 to 0).  [4dF: - + - + = 0; 4dF: 0 0 + 0 = 1]
   Thug chooses Ruth next (score -1).
   Ruth uses Shoot on Cultist 3.
-  Ruth rolls Shoot: 2 + 2 = 4 against -1: style.  [4dF: + - + + = 2; 4dF: + - - - = -2]
+  Ruth rolls Shoot: 2 + 2 = 4 against 3: success.  [4dF: 0 0 + + = 2; 4dF: + 0 + 0 = 2]
+  Cultist 3 loses 1 physical stress (0 left).
+  Ruth chooses Ethan next (score 1).
+  Ethan uses Shoot on Cultist 3.
+  Ethan rolls Shoot: -3 + 4 + 2 modifiers = 3 against 3: tie.  [4dF: - 0 - - = -3; 4dF: + 0 0 + = 2]
+Round 4.
+  Ethan chooses Cultist 3 next (score 0).
+  Cultist 3 uses Shoot on Ethan.
+  Cultist 3 rolls Shoot: -1 against 5: failure.  [4dF: - + - + = 0; 4dF: + + 0 0 = 2; 4dF: - 0 0 0 = -1; 4dF: + 0 + 0 = 2]
+  Cultist 3 spends 1 fate points (1 left).
+  Cultist 3 spends 1 fate points after Shoot: Invoke for a reroll (reroll, 0 to -1).  [4dF: - 0 0 0 = -1; 4dF: + 0 + 0 = 2]
+  Cultist 3 chooses Thug next (score 0).
+  Thug uses Shoot on Ethan.
+  Thug rolls Shoot: -1 against 3: failure.  [4dF: - + 0 - = -1; 4dF: - 0 + 0 = 0]
+  Thug chooses Ruth next (score -1).
+  Ruth uses Shoot on Cultist 3.
+  Ruth rolls Shoot: -2 + 2 + 2 modifiers = 2 against 1: success.  [4dF: 0 0 - - = -2; 4dF: + + - - = 0]
+  Ruth spends 1 fate points (1 left).
+  Ruth spends 1 fate points after Shoot: Invoke for +2 (+2, 0 to 2).
   Cultist 3 is Taken out.
   Cultist 3 is out of the fight.
   Ruth chooses Ethan next (score 1).
   Ethan uses Shoot on Thug.
-  Ethan rolls Shoot: -1 + 4 + 2 modifiers = 5 against 1: style.  [4dF: + - - 0 = -1; 4dF: - 0 + 0 = 0]
+  Ethan rolls Shoot: -1 + 4 + 2 modifiers = 5 against 0: style.  [4dF: + 0 - - = -1; 4dF: 0 - 0 0 = -1]
   Thug is Taken out.
   Thug is out of the fight.
-Party wins after 3 rounds.
-Party: Ruth 7/7, Ethan 1/3
-Cult cell: Cultist 1 1/1 (out), Cultist 2 1/1 (out), Cultist 3 0/1 (out), Thug 2/2 (out)
+Party wins after 4 rounds.
+Party: Ruth 7/7, Ethan 0/3
+Cult cell: Cultist 1 0/1 (out), Cultist 2 1/1 (out), Cultist 3 0/1 (out), Thug 2/2 (out)
 [exit 0]
 
 $ goldbox sim combat --module modules/fate-condensed --party ruth.json,ethan.json --encounter ghoul --seed 2
 seed 2
 Round 1.
   Ruth uses Shoot on Ghoul.
-  Ruth rolls Shoot: 0 + 2 = 2 against 6: failure.  [4dF: + + - - = 0; 4dF: + + + + = 4]
+  Ruth rolls Shoot: -2 + 2 = 0 against 0: tie.  [4dF: + + - - = 0; 4dF: + + + + = 4; 4dF: 0 0 - - = -2; 4dF: - + - - = -2]
+  Ruth spends 1 fate points (2 left).
+  Ruth spends 1 fate points after Shoot: Invoke for a reroll (reroll, 2 to 0).  [4dF: 0 0 - - = -2; 4dF: - + - - = -2]
   Ruth chooses Ghoul next (score 2).
   Ghoul uses Shoot on Ethan.
-  Ghoul rolls Shoot: -2 against 1: failure.  [4dF: 0 0 - - = -2; 4dF: - + - - = -2]
+  Ghoul rolls Shoot: -2 against 3: failure.  [4dF: + + - - = 0; 4dF: 0 - 0 + = 0; 4dF: - - - + = -2; 4dF: + - - + = 0]
+  Ghoul spends 1 fate points (2 left).
+  Ghoul spends 1 fate points after Shoot: Invoke for a reroll (reroll, 0 to -2).  [4dF: - - - + = -2; 4dF: + - - + = 0]
   Ghoul chooses Ethan next (score -1).
   Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 2: style.  [4dF: + + - - = 0; 4dF: 0 - 0 + = 0]
-  Ghoul is Hurt (mild consequence).
-  Ghoul loses 2 physical stress (1 left).
+  Ethan rolls Shoot: -1 + 4 + 2 modifiers = 5 against 4: success.  [4dF: 0 - + - = -1; 4dF: 0 + + 0 = 2]
+  Ghoul loses 1 physical stress (2 left).
 Round 2.
   Ethan chooses Ghoul next (score -1).
   Ghoul uses Shoot on Ethan.
-  Ghoul rolls Shoot: -2 against 3: failure.  [4dF: - - - + = -2; 4dF: + - - + = 0]
+  Ghoul rolls Shoot: 2 + 2 modifiers = 4 against 4: tie.  [4dF: + - + + = 2; 4dF: 0 + + - = 1]
+  Ghoul spends 1 fate points (1 left).
+  Ghoul spends 1 fate points after Shoot: Invoke for +2 (+2, 2 to 4).
   Ghoul chooses Ruth next (score -1).
   Ruth uses Shoot on Ghoul.
-  Ruth rolls Shoot: -1 + 2 = 1 against 4: failure.  [4dF: 0 - + - = -1; 4dF: 0 + + 0 = 2]
+  Ruth rolls Shoot: -3 + 2 + 2 modifiers = 1 against 0: success.  [4dF: - - 0 - = -3; 4dF: - + - - = -2]
+  Ruth spends 1 fate points (1 left).
+  Ruth spends 1 fate points after Shoot: Invoke for +2 (+2, -1 to 1).
+  Ghoul loses 1 physical stress (1 left).
   Ruth chooses Ethan next (score 1).
   Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: 2 + 4 + 2 modifiers = 8 against 3: style.  [4dF: + - + + = 2; 4dF: 0 + + - = 1]
+  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 2: style.  [4dF: + - 0 0 = 0; 4dF: 0 - + 0 = 0]
   Ghoul is Badly hurt (moderate consequence).
-  Ghoul loses 1 physical stress (0 left).
 Round 3.
   Ethan chooses Ghoul next (score -1).
   Ghoul uses Shoot on Ethan.
-  Ghoul rolls Shoot: -3 against 1: failure.  [4dF: - - 0 - = -3; 4dF: - + - - = -2]
+  Ghoul rolls Shoot: 2 against 2: tie.  [4dF: + 0 0 - = 0; 4dF: 0 + + + = 3; 4dF: + - + + = 2; 4dF: - + 0 - = -1]
+  Ghoul spends 1 fate points (0 left).
+  Ghoul spends 1 fate points after Shoot: Invoke for a reroll (reroll, 0 to 2).  [4dF: + - + + = 2; 4dF: - + 0 - = -1]
   Ghoul chooses Ruth next (score -1).
   Ruth uses Shoot on Ghoul.
-  Ruth rolls Shoot: 0 + 2 = 2 against 2: tie.  [4dF: + - 0 0 = 0; 4dF: 0 - + 0 = 0]
+  Ruth rolls Shoot: -1 + 2 = 1 against 0: success.  [4dF: - 0 0 0 = -1; 4dF: 0 - 0 - = -2]
+  Ghoul loses 1 physical stress (0 left).
   Ruth chooses Ethan next (score 1).
   Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 5: success.  [4dF: + 0 0 - = 0; 4dF: 0 + + + = 3]
+  Ethan rolls Shoot: 1 + 4 + 2 modifiers = 7 against 3: style.  [4dF: + - + 0 = 1; 4dF: 0 + 0 0 = 1]
   Ghoul is Maimed (severe consequence).
 Round 4.
   Ethan chooses Ghoul next (score -1).
   Ghoul uses Shoot on Ethan.
-  Ghoul rolls Shoot: 2 against 2: tie.  [4dF: + - + + = 2; 4dF: - + 0 - = -1]
+  Ghoul rolls Shoot: 1 against 4: failure.  [4dF: 0 - + + = 1; 4dF: + - + 0 = 1]
   Ghoul chooses Ruth next (score -1).
   Ruth uses Shoot on Ghoul.
-  Ruth rolls Shoot: -1 + 2 = 1 against 0: success.  [4dF: - 0 0 0 = -1; 4dF: 0 - 0 - = -2]
+  Ruth rolls Shoot: 2 + 2 = 4 against 1: style.  [4dF: + + 0 0 = 2; 4dF: - 0 + - = -1]
   Ghoul is Taken out.
   Ghoul is out of the fight.
 Party wins after 4 rounds.
