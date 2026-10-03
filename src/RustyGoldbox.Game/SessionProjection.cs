@@ -107,6 +107,8 @@ internal static class SessionProjection
             projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
+            projection["picture"] = state.Picture is Definition shown ? Picture(session.Set!.Rules!, shown, imageUrl) : null;
+            projection["music"] = state.Music?.QualifiedId;
         }
 
         return projection;

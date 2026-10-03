@@ -32,6 +32,12 @@ public sealed class CampaignState
     /// <summary>A menu waiting for a choice.</summary>
     public Definition? PendingMenu { get; set; }
 
+    /// <summary>The picture the latest event showed, until the party moves or another replaces it.</summary>
+    public Definition? Picture { get; set; }
+
+    /// <summary>The music playing: the latest event's that named some.</summary>
+    public Definition? Music { get; set; }
+
     public bool Ended { get; set; }
 
     /// <summary>Commands taken so far; command n rolls on random scope goldbox.play.n.</summary>

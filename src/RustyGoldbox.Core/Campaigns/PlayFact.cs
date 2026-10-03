@@ -56,6 +56,19 @@ public sealed record LookFact(string Area, int X, int Y, Facing Facing, IReadOnl
     }
 }
 
+/// <summary>The media an event brings: a picture shown, a sound played once, music that loops from now on.</summary>
+public sealed record MediaFact(Definition? Picture, Definition? Sound, Definition? Music) : PlayFact
+{
+    public override string Kind => "media";
+
+    public override string Describe() => string.Join(" ", new[]
+    {
+        Picture is null ? null : $"[picture {Picture.QualifiedId}]",
+        Sound is null ? null : $"[sound {Sound.QualifiedId}]",
+        Music is null ? null : $"[music {Music.QualifiedId}]",
+    }.Where(part => part is not null));
+}
+
 public sealed record TextFact(string Text) : PlayFact
 {
     public override string Kind => "text";

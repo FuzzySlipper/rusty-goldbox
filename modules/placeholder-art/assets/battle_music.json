@@ -1,0 +1,6 @@
+{
+  "type": "asset",
+  "id": "battle_music",
+  "media": "audio",
+  "file": "music/battle.wav"
+}

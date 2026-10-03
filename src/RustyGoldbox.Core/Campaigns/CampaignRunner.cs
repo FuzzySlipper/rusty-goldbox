@@ -115,6 +115,7 @@ public sealed class CampaignRunner
                 break;
             case "left" or "right" or "around" when words.Length == 1:
                 _state.Facing = Facings.Turn(_state.Facing, verb == "left" ? -1 : verb == "right" ? 1 : 2);
+                _state.Picture = null;
                 facts.Add(new TurnedFact(_state.Facing));
                 break;
             case "choose" when words.Length == 2 && int.TryParse(words[1], out int number):
@@ -159,6 +160,7 @@ public sealed class CampaignRunner
         }
 
         (_state.X, _state.Y) = (x, y);
+        _state.Picture = null;
         facts.Add(new MovedFact(x, y, _state.Facing));
         Trigger(dice, facts);
     }
@@ -229,10 +231,27 @@ public sealed class CampaignRunner
         }
     }
 
+    /// <summary>Shows the event's picture, plays its sound and starts its music, as it begins.</summary>
+    private void Present(Definition evt, List<PlayFact> facts)
+    {
+        Definition? picture = evt.Json.TryGetProperty("picture", out _) ? _rules.Reference(evt, "$.picture") : null;
+        Definition? sound = evt.Json.TryGetProperty("sound", out _) ? _rules.Reference(evt, "$.sound") : null;
+        Definition? music = evt.Json.TryGetProperty("music", out _) ? _rules.Reference(evt, "$.music") : null;
+        if (picture is null && sound is null && music is null)
+        {
+            return;
+        }
+
+        _state.Picture = picture ?? _state.Picture;
+        _state.Music = music ?? _state.Music;
+        facts.Add(new MediaFact(picture, sound, music));
+    }
+
     /// <summary>Runs one event and returns the next, or null when the chain stops here.</summary>
     private Definition? Run(Definition evt, DiceRoller dice, List<PlayFact> facts)
     {
         JsonElement json = evt.Json;
+        Present(evt, facts);
         switch (json.GetProperty("kind").GetString())
         {
             case "text":

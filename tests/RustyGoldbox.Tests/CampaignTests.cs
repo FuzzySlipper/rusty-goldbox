@@ -76,6 +76,39 @@ public sealed class CampaignTests
     }
 
     [Fact]
+    public void EventPicturesLastUntilThePartyMovesAndMusicCarriesIntoSaves()
+    {
+        using TempModules modules = new();
+        string campaign = modules.Module("tale", "campaign", requires: $"{Require("classic", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+--+", "|        |", "+--+--+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } }, "cells": [ { "at": [1, 0], "event": "shrine" } ] }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "text", "text": "A shrine.", "picture": "placeholder-art:altar", "music": "placeholder-art:crypt_music", "next": "pray" }""");
+        modules.Write("tale/pray.json", """{ "type": "event", "id": "pray", "kind": "menu", "text": "Pray?", "sound": "placeholder-art:bones_crunch", "options": [ { "label": "Yes" } ] }""");
+        using TempModules scratch = new();
+        WriteParty(scratch, Rules.ClassicPath);
+        string library = Path.Combine(Rules.RepositoryRoot, "modules");
+        File.WriteAllText(Path.Combine(scratch.Root, "first.script"), "forward\n");
+        File.WriteAllText(Path.Combine(scratch.Root, "second.script"), "choose 1\nforward\n");
+
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "ada.json", "--script", "first.script", "--save", "s.json", "--modules", library);
+        Assert.True(code == 0, output);
+        Assert.Contains("[picture placeholder-art:altar] [music placeholder-art:crypt_music]", output, StringComparison.Ordinal);
+        Assert.Contains("[sound placeholder-art:bones_crunch]", output, StringComparison.Ordinal);
+        using (JsonDocument waiting = JsonDocument.Parse(File.ReadAllText(Path.Combine(scratch.Root, "s.json"))))
+        {
+            // The menu's own sound doesn't replace the picture the chain showed.
+            Assert.Equal("placeholder-art:altar", waiting.RootElement.GetProperty("picture").GetString());
+            Assert.Equal("placeholder-art:crypt_music", waiting.RootElement.GetProperty("music").GetString());
+        }
+
+        (code, output) = Run(scratch, "play", "--campaign", campaign, "--load", "s.json", "--script", "second.script", "--save", "t.json", "--modules", library);
+        Assert.True(code == 0, output);
+        using JsonDocument moved = JsonDocument.Parse(File.ReadAllText(Path.Combine(scratch.Root, "t.json")));
+        Assert.Equal(JsonValueKind.Null, moved.RootElement.GetProperty("picture").ValueKind);
+        Assert.Equal("placeholder-art:crypt_music", moved.RootElement.GetProperty("music").GetString());
+    }
+
+    [Fact]
     public void SaveSlotsInEnginePersistenceCarryGamesBothWays()
     {
         using TempModules scratch = new();

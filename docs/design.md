@@ -84,7 +84,7 @@ object whose `type` field names its definition type. Other files (media,
 | --- | --- | --- |
 | `ruleset` | Attributes, derived values, races, classes and level tables, checks, conditions, item types, spells and abilities, monsters, the combat procedure and character creation | assets modules only; usually nothing |
 | `extension` | Additions to a ruleset (classes, spells, monsters) and declared patches to its definitions (house rules) | exactly one ruleset, plus extensions and assets |
-| `assets` | Logical asset IDs mapped to media files (images and frame sheets; sounds, music and video to come), used for wall sets, backdrops, portraits, icons and figures | other assets modules only |
+| `assets` | Logical asset IDs mapped to media files (images, frame sheets and audio; video to come), used for wall sets, backdrops, portraits, icons, figures, event pictures, sounds and music | other assets modules only |
 | `campaign` | Areas, maps, events, encounters, NPCs, shops, variables, the starting party rules and the start location | exactly one ruleset, one or more assets modules, any extensions |
 
 No module may require a campaign, and a resolved module set contains at most
@@ -128,8 +128,9 @@ class needs no patch to the ruleset's character creation.
 - Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
   provides the same IDs. `goldbox module validate` lists any that are missing.
-- An asset says what its file is, its **media**: an `image` (optionally with
-  named pixel `regions`) or a `sheet` of equal frames (any frame size and
+- An asset says what its file is, its **media**: `audio` (Ogg Vorbis or Opus,
+  WAV or FLAC, the formats the Engine decodes; validation reads each header),
+  an `image` (optionally with named pixel `regions`) or a `sheet` of equal frames (any frame size and
   count) with optional named animations (frames and fps, looping or once),
   and, to stand in the world, the way it faces, the pixel it stands on and its
   height in cells. Image files are 8-bit RGBA PNGs, the format the Engine
@@ -138,7 +139,7 @@ class needs no patch to the ruleset's character creation.
   (`Media` in Core, `goldbox schema media`): a `picture` (a cell's backdrop, a
   portrait, an icon, and every new place that shows a picture) takes any
   visual media; a `figure` takes a sheet that can stand; a `wall_set` takes an
-  image with wall and door regions. So a new media type is added once and
+  image with wall and door regions; `sound` and `music` take audio. So a new media type is added once and
   every slot that accepts it takes it, and the Game draws each with one
   presenter. Optional `tags` (such as `portrait`) tell pickers what art is
   meant for without limiting where it can be used. A `figure` definition (in a
@@ -395,7 +396,10 @@ Combat is built so that no die convention is assumed:
   temple, training, rest, NPC join/leave, set/test variable, teleport, a
   conditional branch, chain-to, and end adventure. Each event names its
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
-  branch can be guarded by an expression.
+  branch can be guarded by an expression. Text, menu and combat events may
+  bring a `picture` (shown until the party moves or another event shows one),
+  a `sound` (played once) and `music` (looping until another event's music);
+  the play transcript names them, and saves keep the picture and music.
 - **Experience** comes from felled monsters and experience events, shared
   among the survivors (or the whole party, or given whole to each character,
   as the ruleset says). A level that

@@ -11,12 +11,15 @@ public static class EventTypes
 {
     private static readonly ExpressionKind Guard = new(ExprType.Boolean, Roots.Campaign);
     private static readonly Field Next = new("next", new ReferenceKind("event"), false, "The event that follows; without it, the chain ends and the party can move again.");
+    private static readonly Field Picture = new("picture", new ReferenceKind("asset", "picture"), false, "A picture shown with the event, any visual media; it stays until the party moves or another event shows one.");
+    private static readonly Field Sound = new("sound", new ReferenceKind("asset", "sound"), false, "Audio played once as the event begins.");
+    private static readonly Field Music = new("music", new ReferenceKind("asset", "music"), false, "Audio that loops from this event on, until another event's music replaces it.");
 
     public static DefinitionType Text { get; } = new(
         "text",
         "Shows text.",
-        [new("text", new TextKind(), true, "What the party sees or hears."), Next],
-        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "next": "gate_choice" }""");
+        [new("text", new TextKind(), true, "What the party sees or hears."), Next, Picture, Sound, Music],
+        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "picture": "crypt-art:gate", "sound": "crypt-art:creak", "next": "gate_choice" }""");
 
     public static DefinitionType Menu { get; } = new(
         "menu",
@@ -29,6 +32,9 @@ public static class EventTypes
                 new("when", Guard, false, "Offered only when this is true."),
                 new("next", new ReferenceKind("event"), false, "The event if chosen; without it, the chain ends."),
             ])), true, "The options, in order; choose takes the number shown."),
+            Picture,
+            Sound,
+            Music,
         ],
         """{ "type": "event", "id": "gate_choice", "kind": "menu", "text": "Force the gate?", "options": [ { "label": "Force it", "next": "forced" }, { "label": "Leave it" } ] }""");
 
@@ -41,8 +47,11 @@ public static class EventTypes
             new("on_win", new ReferenceKind("event"), false, "The event after a win."),
             new("on_lose", new ReferenceKind("event"), false, "The event after a loss; without it, the adventure ends."),
             new("on_draw", new ReferenceKind("event"), false, "The event when neither side wins within the combat's round limit; without it, the chain ends and play goes on."),
+            Picture,
+            Sound,
+            Music,
         ],
-        """{ "type": "event", "id": "guards", "kind": "combat", "encounter": "classic:crypt_guard", "on_win": "loot" }""");
+        """{ "type": "event", "id": "guards", "kind": "combat", "encounter": "classic:crypt_guard", "music": "crypt-art:battle", "on_win": "loot" }""");
 
     public static DefinitionType Set { get; } = new(
         "set",

@@ -15,7 +15,10 @@ public static class Media
     public sealed record Slot(string Name, string Description, string Accepts);
 
     /// <summary>The media an asset can be.</summary>
-    public static IReadOnlyList<string> Types { get; } = ["image", "sheet"];
+    public static IReadOnlyList<string> Types { get; } = ["image", "sheet", "audio"];
+
+    /// <summary>The audio formats the Engine decodes, by the bytes a file starts with.</summary>
+    public static IReadOnlyList<string> AudioFormats { get; } = ["Ogg (Vorbis or Opus)", "WAV", "FLAC"];
 
     /// <summary>The fields only a sheet has.</summary>
     public static IReadOnlyList<string> SheetFields { get; } = ["frame_size", "frame_count", "animations", "faces", "anchor", "height"];
@@ -31,6 +34,8 @@ public static class Media
             "a sheet with faces and height, so it can stand on the floor and be flipped to face either way"),
         new("wall_set", "The textures the first-person view builds an area from.",
             "an image with wall and door regions (and optionally floor and ceiling)"),
+        new("sound", "A sound played once: an event's sound effect.", "audio"),
+        new("music", "Music that loops until something else changes it: an event's music.", "audio"),
     ];
 
     public static Slot? FindSlot(string name) => Slots.FirstOrDefault(slot => slot.Name == name);
@@ -42,6 +47,16 @@ public static class Media
     {
         JsonElement json = asset.Json;
         string media = MediaOf(asset);
+        if (slot is "sound" or "music")
+        {
+            return media == "audio" ? null : $"{asset.QualifiedId} is a picture ({media}), but a {slot} is audio.";
+        }
+
+        if (media == "audio")
+        {
+            return $"{asset.QualifiedId} is audio, but {(slot == "wall_set" ? "a wall set" : $"a {slot}")} is something seen.";
+        }
+
         switch (slot)
         {
             case "picture":

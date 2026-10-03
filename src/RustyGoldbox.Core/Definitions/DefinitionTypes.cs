@@ -485,10 +485,11 @@ public static class DefinitionTypes
         "asset",
         "A logical asset ID mapped to a file in the module, and what media the file is. Other modules refer to it as module:id, never by path. "
         + "An asset says only what it is; each reference names the slot it fills (picture, figure, wall_set) and the slot decides which media fit, "
-        + "so anything that shows a picture shows any visual media (see `goldbox schema media`). Images are 8-bit RGBA PNGs, the format the Engine renderer admits.",
+        + "so anything that shows a picture shows any visual media (see `goldbox schema media`). Images are 8-bit RGBA PNGs, the format the Engine renderer admits; "
+        + "audio is Ogg (Vorbis or Opus), WAV or FLAC, the formats the Engine decodes.",
         [
-            new("media", new EnumKind(Media.Types), true, "What the file is: \"image\" (one picture, optionally with named regions) or \"sheet\" (equal frames, optionally animated)."),
-            new("file", new TextKind(), true, "Path of the PNG inside this module, with forward slashes."),
+            new("media", new EnumKind(Media.Types), true, "What the file is: \"image\" (one picture, optionally with named regions), \"sheet\" (equal frames, optionally animated) or \"audio\" (a sound or music)."),
+            new("file", new TextKind(), true, "Path of the file inside this module, with forward slashes: a PNG for an image or sheet; an Ogg, WAV or FLAC file for audio."),
             new("regions", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
                 "image only: named pixel rectangles [x, y, width, height] inside the image. A wall set needs wall and door, and may have floor and ceiling."),
             new("frame_size", new ListKind(new IntegerKind(), 2), false,

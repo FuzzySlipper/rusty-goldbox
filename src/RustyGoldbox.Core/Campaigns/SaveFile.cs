@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "picture", "music", "inventory", "ended", "party",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -95,6 +95,8 @@ public static class SaveFile
                 writer.WriteString("pending_menu", state.PendingMenu.QualifiedId);
             }
 
+            writer.WriteString("picture", state.Picture?.QualifiedId);
+            writer.WriteString("music", state.Music?.QualifiedId);
             writer.WriteStartArray("inventory");
             foreach (Definition item in state.Inventory)
             {
@@ -350,6 +352,9 @@ public static class SaveFile
                 }
             }
 
+            state.Picture = Media(root, "picture");
+            state.Music = Media(root, "music");
+
             if (root.TryGetProperty("inventory", out JsonElement inventory) && inventory.ValueKind == JsonValueKind.Array)
             {
                 int index = 0;
@@ -406,6 +411,28 @@ public static class SaveFile
             }
 
             return Resolve(value, $"$.{name}", type);
+        }
+
+        /// <summary>The asset the save shows or plays as <paramref name="name"/>, which must fit that slot; null when it names none.</summary>
+        private Definition? Media(JsonElement root, string name)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            if (Resolve(value, $"$.{name}", DefinitionTypes.Asset) is not Definition asset)
+            {
+                return null;
+            }
+
+            if (Definitions.Media.Problem(name, asset) is string problem)
+            {
+                Error($"$.{name}", problem);
+                return null;
+            }
+
+            return asset;
         }
 
         private Definition? Resolve(JsonElement value, string at, DefinitionType type)

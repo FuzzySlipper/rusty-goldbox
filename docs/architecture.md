@@ -279,7 +279,8 @@ function draws every kind. The panels never see image bytes.
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,
 campaigns, the party, and in play the position, the player-view map, the
-waiting menu and the latest log lines. The DOM renders it and holds no state.
+waiting menu, the latest log lines, the event picture (a media object) and the
+music playing. The DOM renders it and holds no state.
 
 ## Build and host
 

@@ -57,6 +57,34 @@ public sealed class AssetTests
     }
 
     [Fact]
+    public void AudioFitsSoundAndMusicSlotsOnly()
+    {
+        using TempModules modules = new();
+        modules.Module("rules", "ruleset");
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        File.Copy(Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art", "sounds", "bones.wav"), Path.Combine(art, "crack.wav"));
+        modules.Write("art/picture.json", """{ "type": "asset", "id": "picture", "media": "image", "file": "a.png" }""");
+        modules.Write("art/crack.json", """{ "type": "asset", "id": "crack", "media": "audio", "file": "crack.wav" }""");
+        Assert.Empty(ModuleLoader.Load(art, []).Diagnostics);
+
+        // A PNG isn't audio, and audio has no picture fields.
+        modules.Write("art/fake.json", """{ "type": "asset", "id": "fake", "media": "audio", "file": "a.png", "frame_size": [1, 1] }""");
+        Assert.Equal([("asset.audio", "$.file"), ("asset.audio", "$.frame_size")],
+            ModuleLoader.Load(art, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+        File.Delete(Path.Combine(art, "fake.json"));
+
+        string tale = modules.Module("tale", "campaign", requires: $"{TempModules.Require("rules", "*")}, {TempModules.Require("art", "*")}");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 1 } }""");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "north" } } }""");
+        modules.Write("tale/swapped.json", """{ "type": "event", "id": "swapped", "kind": "text", "text": "!", "picture": "art:crack", "sound": "art:picture", "music": "art:crack" }""");
+
+        Assert.Equal(
+            [("$.picture", "art:crack is audio, but a picture is something seen."), ("$.sound", "art:picture is a picture (image), but a sound is audio.")],
+            ModuleLoader.Load(tale, []).Diagnostics.Select(diagnostic => (diagnostic.JsonPath!, diagnostic.Message)).Order());
+    }
+
+    [Fact]
     public void ImagesMustBeRgbaPngs()
     {
         using TempModules modules = new();

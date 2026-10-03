@@ -824,6 +824,10 @@ public sealed class RuleSetBuilder
                 {
                     Error(definition, "asset.file", "$.file", $"There is no file '{file}' in module '{definition.Module}' ({source.PathOf(file)}).");
                 }
+                else if (Media.MediaOf(definition) == "audio")
+                {
+                    CheckAudio(definition, source, file);
+                }
                 else
                 {
                     CheckImage(definition, source, file);
@@ -863,6 +867,39 @@ public sealed class RuleSetBuilder
                 }
             }
         }
+    }
+
+    /// <summary>An audio asset's file is one the Engine decodes, and it has no picture fields.</summary>
+    private void CheckAudio(Definition asset, ModuleSource source, string file)
+    {
+        byte[] bytes;
+        try
+        {
+            bytes = source.Read(file);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Error(asset, "asset.file", "$.file", $"Can't read '{file}': {exception.Message}");
+            return;
+        }
+
+        bool ogg = Starts(bytes, "OggS");
+        bool wav = Starts(bytes, "RIFF") && bytes.Length >= 12 && System.Text.Encoding.ASCII.GetString(bytes, 8, 4) == "WAVE";
+        bool flac = Starts(bytes, "fLaC");
+        if (!ogg && !wav && !flac)
+        {
+            Error(asset, "asset.audio", "$.file", $"'{file}' is not audio the Engine decodes; use {string.Join(", ", Media.AudioFormats)}.");
+        }
+
+        foreach (string field in Media.SheetFields.Append("regions").Where(field => asset.Json.TryGetProperty(field, out _)))
+        {
+            Error(asset, "asset.audio", $"$.{field}", $"\"{field}\" is for pictures; this asset is audio.");
+        }
+    }
+
+    private static bool Starts(byte[] bytes, string magic)
+    {
+        return bytes.Length >= magic.Length && System.Text.Encoding.ASCII.GetString(bytes, 0, magic.Length) == magic;
     }
 
     /// <summary>The asset's file is a PNG the renderer admits, and a wall set's frames lie inside it.</summary>

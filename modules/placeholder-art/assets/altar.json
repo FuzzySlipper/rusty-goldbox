@@ -1,0 +1,21 @@
+{
+  "type": "asset",
+  "id": "altar",
+  "media": "sheet",
+  "file": "pictures/altar.png",
+  "frame_size": [
+    160,
+    100
+  ],
+  "animations": {
+    "glow": {
+      "frames": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "fps": 4
+    }
+  }
+}

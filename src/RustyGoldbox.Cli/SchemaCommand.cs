@@ -261,6 +261,8 @@ internal static class SchemaCommand
 
     private const string ImageExample = """{ "type": "asset", "id": "tavern", "media": "image", "file": "pictures/tavern.png" }""";
 
+    private const string AudioExample = """{ "type": "asset", "id": "creak", "media": "audio", "file": "sounds/creak.ogg" }""";
+
     private const string SheetExample = """{ "type": "asset", "id": "fire", "media": "sheet", "file": "pictures/fire.png", "frame_size": [64, 64], "animations": { "burn": { "frames": [0, 1, 2, 3], "fps": 8 } } }""";
 
     private static int MediaTopic(Output output)
@@ -271,7 +273,7 @@ internal static class SchemaCommand
             {
                 media = Media.Types,
                 slots = Media.Slots.Select(slot => new { name = slot.Name, description = slot.Description, accepts = slot.Accepts }),
-                examples = new[] { System.Text.Json.JsonDocument.Parse(ImageExample).RootElement, System.Text.Json.JsonDocument.Parse(SheetExample).RootElement },
+                examples = new[] { ImageExample, SheetExample, AudioExample }.Select(example => System.Text.Json.JsonDocument.Parse(example).RootElement),
             });
             return GoldboxCli.Ok;
         }
@@ -282,6 +284,7 @@ internal static class SchemaCommand
         output.Line("Media:");
         output.Line("  image  one picture; optional named \"regions\" (pixel rectangles) for uses that need them.");
         output.Line("  sheet  equal frames (\"frame_size\"), optionally animated; \"faces\", \"anchor\" and \"height\" let it stand in the world.");
+        output.Line($"  audio  a sound or music: {string.Join(", ", Media.AudioFormats)}.");
         output.Line();
         output.Line("Slots:");
         foreach (Media.Slot slot in Media.Slots)
@@ -293,6 +296,7 @@ internal static class SchemaCommand
         output.Line();
         output.Line($"Example image: {ImageExample}");
         output.Line($"Example sheet: {SheetExample}");
+        output.Line($"Example audio: {AudioExample}");
         output.Line("Fields: `goldbox schema asset`.");
         return GoldboxCli.Ok;
     }

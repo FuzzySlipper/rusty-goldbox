@@ -609,6 +609,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                         text = fact.Describe(),
                         rolls = fact.Rolls.Select(RollJson),
                         combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
+                        media = fact is MediaFact shown ? new { picture = shown.Picture?.QualifiedId, sound = shown.Sound?.QualifiedId, music = shown.Music?.QualifiedId } : null,
                     }),
                 }),
                 position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },

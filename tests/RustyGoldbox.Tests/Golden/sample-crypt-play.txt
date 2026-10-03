@@ -19,6 +19,7 @@ Legend: '--' '|' wall, 'DD' 'D' door, 'SS' 'S' secret door; !1 once-only event, 
 $ goldbox play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt.script
 seed 1
   The party is in Crypt entrance at [0, 2], facing north.
+  [music placeholder-art:crypt_music]
   Wind moans through the gate of an old crypt. Somewhere inside, bones shift.
 > look
   Crypt entrance [0, 2], facing north. north: open; east: open; south: wall; west: wall.
@@ -32,6 +33,7 @@ seed 1
   The party moves to [0, 1], facing north.
 > forward
   The party moves to [0, 0], facing north.
+  [sound placeholder-art:bones_crunch]
   Bones crunch underfoot. Scratches on the wall point east.
 > right
   The party faces east.
@@ -56,6 +58,7 @@ seed 1
   The bar scrapes free. Cold air seeps from beyond.
 > forward
   The party moves to [3, 2], facing south.
+  [music placeholder-art:battle_music]
     Round 1.
     Party rolls 6 for initiative.  [1d6: 6 = 6]
     Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
@@ -130,6 +133,7 @@ seed 1
   The party faces south.
 > forward
   The party moves to [1, 1], facing south.
+  [picture placeholder-art:altar]
   An altar glows faintly. [1] Lay the dagger on it  [2] Step away
 > choose 1
   The party chooses 1: Lay the dagger on it.
@@ -141,6 +145,7 @@ seed 1
 $ goldbox play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyGoldbox.Tests/Fixtures/scripts/crypt-early-stairs.script
 seed 1
   The party is in Crypt entrance at [0, 2], facing north.
+  [music placeholder-art:crypt_music]
   Wind moans through the gate of an old crypt. Somewhere inside, bones shift.
 > right
   The party faces east.

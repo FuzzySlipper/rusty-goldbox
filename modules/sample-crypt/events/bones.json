@@ -2,5 +2,6 @@
   "type": "event",
   "id": "bones",
   "kind": "text",
-  "text": "Bones crunch underfoot. Scratches on the wall point east."
+  "text": "Bones crunch underfoot. Scratches on the wall point east.",
+  "sound": "placeholder-art:bones_crunch"
 }
