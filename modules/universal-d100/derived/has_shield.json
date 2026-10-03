@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "has_shield",
+  "name": "Carries a shield",
+  "value": "equipped(item.kind == 'shield') > 0"
+}

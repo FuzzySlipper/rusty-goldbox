@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "heater_shield",
+  "name": "Heater shield",
+  "kind": "shield",
+  "cost": 10,
+  "weight": 3.0,
+  "modifiers": []
+}

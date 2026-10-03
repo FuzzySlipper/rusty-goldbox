@@ -1,0 +1,22 @@
+{
+  "type": "check",
+  "id": "bow",
+  "name": "Missile Weapon (Bow)",
+  "roll": "1d100",
+  "target": "self.bow",
+  "succeeds": "at-most",
+  "tiers": [
+    {
+      "name": "critical",
+      "when": "check.roll <= ceil(check.target / 20)"
+    },
+    {
+      "name": "special",
+      "when": "check.roll <= ceil(check.target / 5)"
+    },
+    {
+      "name": "fumble",
+      "when": "check.roll > 100 - ceil((100 - min(check.target, 99)) / 20)"
+    }
+  ]
+}

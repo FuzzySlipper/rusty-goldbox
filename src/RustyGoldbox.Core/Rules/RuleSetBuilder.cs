@@ -609,6 +609,7 @@ public sealed class RuleSetBuilder
         {
             ["attribute_roll"] = "roll",
             ["assignment"] = "roll",
+            ["attribute_rolls"] = "roll",
             ["array"] = "array",
             ["budget"] = "point-buy",
             ["costs"] = "point-buy",

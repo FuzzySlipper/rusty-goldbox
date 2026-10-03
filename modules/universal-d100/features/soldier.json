@@ -1,0 +1,29 @@
+{
+  "type": "feature",
+  "id": "soldier",
+  "name": "Soldier",
+  "kind": "profession",
+  "description": "Trained in arms and formations.",
+  "modifiers": [
+    {
+      "stat": "sword",
+      "value": "45"
+    },
+    {
+      "stat": "shield",
+      "value": "40"
+    },
+    {
+      "stat": "dodge",
+      "value": "15"
+    },
+    {
+      "stat": "brawl",
+      "value": "20"
+    },
+    {
+      "stat": "bow",
+      "value": "15"
+    }
+  ]
+}

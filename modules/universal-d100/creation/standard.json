@@ -1,0 +1,27 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Rolled characteristics",
+  "attributes": [
+    "str",
+    "con",
+    "siz",
+    "int",
+    "pow",
+    "dex",
+    "cha"
+  ],
+  "method": "roll",
+  "attribute_roll": "3d6",
+  "attribute_rolls": {
+    "siz": "2d6 + 6",
+    "int": "2d6 + 6"
+  },
+  "default": true,
+  "features": [
+    {
+      "kind": "profession",
+      "count": 1
+    }
+  ]
+}

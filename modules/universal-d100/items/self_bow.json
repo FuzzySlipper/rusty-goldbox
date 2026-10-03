@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "self_bow",
+  "name": "Self bow",
+  "kind": "bow",
+  "cost": 5,
+  "weight": 0.5,
+  "parameters": {
+    "damage": "1d6 + 1",
+    "max": "7"
+  }
+}

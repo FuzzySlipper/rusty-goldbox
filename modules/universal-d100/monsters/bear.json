@@ -1,0 +1,31 @@
+{
+  "type": "monster",
+  "id": "bear",
+  "name": "Bear",
+  "tracks": {
+    "hit_points": "17"
+  },
+  "stats": {
+    "dex": "11",
+    "armour": "3",
+    "dodge": "10",
+    "brawl": "25",
+    "dm_d4": "0",
+    "dm_d6": "2"
+  },
+  "actions": [
+    {
+      "action": "brawl_attack",
+      "name": "Claw",
+      "damage": "1d6",
+      "max": "6"
+    },
+    {
+      "action": "brawl_attack",
+      "name": "Bite",
+      "damage": "1d10",
+      "max": "10"
+    }
+  ],
+  "xp": 60
+}

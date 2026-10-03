@@ -1,0 +1,36 @@
+{
+  "type": "condition",
+  "id": "wound",
+  "name": "Wound",
+  "instant": true,
+  "values": {
+    "amount": 0,
+    "pierce": 0
+  },
+  "modifiers": [],
+  "description": "A blow's damage: armour subtracts unless it pierces; a single wound of half the hit points or more is a major wound.",
+  "on_apply": [
+    {
+      "op": "damage",
+      "amount": "max(0, condition.amount - (if condition.pierce > 0 then 0 else self.armour))",
+      "to": "self"
+    },
+    {
+      "op": "if",
+      "when": "condition.amount - (if condition.pierce > 0 then 0 else self.armour) >= self.major_wound",
+      "then": [
+        {
+          "op": "apply_condition",
+          "condition": "shock",
+          "rounds": "max(1, self.hit_points)",
+          "to": "self"
+        },
+        {
+          "op": "apply_condition",
+          "condition": "badly_wounded",
+          "to": "self"
+        }
+      ]
+    }
+  ]
+}

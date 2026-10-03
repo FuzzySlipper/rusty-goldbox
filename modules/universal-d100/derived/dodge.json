@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dodge",
+  "name": "Dodge",
+  "value": "self.dex * 2"
+}

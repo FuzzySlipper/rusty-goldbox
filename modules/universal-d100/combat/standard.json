@@ -1,0 +1,51 @@
+{
+  "type": "combat",
+  "id": "standard",
+  "name": "Combat round",
+  "initiative": "self.dex",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 12,
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": 1
+    }
+  ],
+  "rolled": "round",
+  "track": "hit_points",
+  "defeated": "self.hit_points <= 2 or (self.condition.badly_wounded and not self.condition.shock)",
+  "actions": [
+    {
+      "action": "sword_attack",
+      "from_item": "sword"
+    },
+    {
+      "action": "axe_attack",
+      "from_item": "axe"
+    },
+    {
+      "action": "dagger_attack",
+      "from_item": "dagger"
+    },
+    {
+      "action": "mace_attack",
+      "from_item": "mace"
+    },
+    {
+      "action": "spear_attack",
+      "from_item": "spear"
+    },
+    {
+      "action": "bow_attack",
+      "from_item": "bow"
+    },
+    {
+      "action": "brawl_attack",
+      "name": "Fist",
+      "damage": "1d3",
+      "max": "3"
+    }
+  ]
+}

@@ -1,0 +1,1043 @@
+{
+  "type": "action",
+  "id": "dagger_attack",
+  "name": "Dagger",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "score": "self.dagger",
+  "parameters": [
+    "damage",
+    "max"
+  ],
+  "check": "dagger",
+  "outcomes": {
+    "success": [
+      {
+        "op": "if",
+        "when": "target.has_shield and target.shield > target.dodge",
+        "then": [
+          {
+            "op": "check",
+            "check": "parry",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "else": [
+          {
+            "op": "check",
+            "check": "dodge",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "special": [
+      {
+        "op": "if",
+        "when": "target.has_shield and target.shield > target.dodge",
+        "then": [
+          {
+            "op": "check",
+            "check": "parry",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "else": [
+          {
+            "op": "check",
+            "check": "dodge",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "critical": [
+      {
+        "op": "if",
+        "when": "target.has_shield and target.shield > target.dodge",
+        "then": [
+          {
+            "op": "check",
+            "check": "parry",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "else": [
+          {
+            "op": "check",
+            "check": "dodge",
+            "outcomes": {
+              "success": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "failure": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "critical": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "special": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "fumble": [
+                {
+                  "op": "if",
+                  "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 3",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "wound",
+                      "values": {
+                        "amount": "use.max + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                        "pierce": "1"
+                      }
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "(if outer.roll > outer.target then 0 else if outer.roll <= ceil(outer.target / 20) then 3 else if outer.roll <= ceil(outer.target / 5) then 2 else 1) - (if check.roll > check.target then 0 else if check.roll <= ceil(check.target / 20) then 3 else if check.roll <= ceil(check.target / 5) then 2 else 1) >= 1",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "wound",
+                          "values": {
+                            "amount": "use.damage + (if self.dm_d4 >= 0 then roll(self.dm_d4, 4) else 0 - roll(1, 4)) + (if self.dm_d6 >= 0 then roll(self.dm_d6, 6) else 0 - roll(0 - self.dm_d6, 6))",
+                            "pierce": "0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

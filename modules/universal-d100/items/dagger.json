@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "dagger",
+  "name": "Dagger",
+  "kind": "dagger",
+  "cost": 5,
+  "weight": 0.5,
+  "parameters": {
+    "damage": "1d4 + 2",
+    "max": "6"
+  }
+}

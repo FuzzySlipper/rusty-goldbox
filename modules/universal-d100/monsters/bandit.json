@@ -1,0 +1,26 @@
+{
+  "type": "monster",
+  "id": "bandit",
+  "name": "Bandit",
+  "tracks": {
+    "hit_points": "13"
+  },
+  "stats": {
+    "dex": "12",
+    "armour": "2",
+    "dodge": "30",
+    "sword": "45",
+    "brawl": "40",
+    "dm_d4": "0",
+    "dm_d6": "0"
+  },
+  "actions": [
+    {
+      "action": "sword_attack",
+      "name": "Short sword",
+      "damage": "1d6 + 1",
+      "max": "7"
+    }
+  ],
+  "xp": 25
+}

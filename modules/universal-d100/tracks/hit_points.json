@@ -1,0 +1,6 @@
+{
+  "type": "track",
+  "id": "hit_points",
+  "name": "Hit points",
+  "max": "ceil((self.con + self.siz) / 2)"
+}

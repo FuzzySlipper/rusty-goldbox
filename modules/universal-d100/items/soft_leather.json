@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "soft_leather",
+  "name": "Soft leather",
+  "kind": "armour",
+  "cost": 5,
+  "weight": 3.5,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "1"
+    }
+  ]
+}

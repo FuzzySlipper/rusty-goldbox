@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "siz",
+  "name": "Size",
+  "min": 8,
+  "max": 21
+}

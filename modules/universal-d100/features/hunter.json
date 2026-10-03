@@ -1,0 +1,25 @@
+{
+  "type": "feature",
+  "id": "hunter",
+  "name": "Hunter",
+  "kind": "profession",
+  "description": "Lives by bow and spear.",
+  "modifiers": [
+    {
+      "stat": "bow",
+      "value": "50"
+    },
+    {
+      "stat": "spear",
+      "value": "35"
+    },
+    {
+      "stat": "dodge",
+      "value": "20"
+    },
+    {
+      "stat": "dagger",
+      "value": "15"
+    }
+  ]
+}

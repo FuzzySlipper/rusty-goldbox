@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "ring_armour",
+  "name": "Ring armour",
+  "kind": "armour",
+  "cost": 30,
+  "weight": 10.0,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "5"
+    },
+    {
+      "stat": "dodge",
+      "value": "-10"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "hard_leather",
+  "name": "Hard leather",
+  "kind": "armour",
+  "cost": 10,
+  "weight": 5.0,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "2"
+    },
+    {
+      "stat": "dodge",
+      "value": "-10"
+    }
+  ]
+}

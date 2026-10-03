@@ -192,6 +192,11 @@ wait until the new class passes them (`self.former_level`). A class level's
 moves every level's hit points (3.5e), while rulesets without it keep each
 level's gain as rolled (first edition).
 
+A roll creation may give some attributes their own roll (`attribute_rolls`,
+SIZ at 2d6 + 6). A combat's `rolled` says whether `self.rolled.<check>` counts
+since the creature's turn (a multiple attack penalty) or the round (a penalty
+for each defence after the first).
+
 Races and classes are optional: a ruleset without any (Fate) makes characters
 from creation alone, with one classless level holding its choices and no
 levels to gain. A partial `--priority` ranks only the top attributes; the rest

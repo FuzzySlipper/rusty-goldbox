@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "badly_wounded",
+  "name": "Badly wounded",
+  "description": "Has taken a major wound; collapses when the shock wears off.",
+  "modifiers": []
+}

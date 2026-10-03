@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "broadsword",
+  "name": "Broadsword",
+  "kind": "sword",
+  "cost": 20,
+  "weight": 1.5,
+  "parameters": {
+    "damage": "1d8 + 1",
+    "max": "9"
+  }
+}

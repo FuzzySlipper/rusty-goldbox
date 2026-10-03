@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "battle_axe",
+  "name": "Battle axe",
+  "kind": "axe",
+  "cost": 15,
+  "weight": 1.0,
+  "parameters": {
+    "damage": "1d8 + 2",
+    "max": "10"
+  }
+}

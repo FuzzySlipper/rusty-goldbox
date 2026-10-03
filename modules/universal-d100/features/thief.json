@@ -1,0 +1,25 @@
+{
+  "type": "feature",
+  "id": "thief",
+  "name": "Thief",
+  "kind": "profession",
+  "description": "Quick hands and quicker feet.",
+  "modifiers": [
+    {
+      "stat": "dagger",
+      "value": "45"
+    },
+    {
+      "stat": "dodge",
+      "value": "40"
+    },
+    {
+      "stat": "brawl",
+      "value": "20"
+    },
+    {
+      "stat": "sword",
+      "value": "15"
+    }
+  ]
+}

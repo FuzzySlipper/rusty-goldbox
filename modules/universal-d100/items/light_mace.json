@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "light_mace",
+  "name": "Light mace",
+  "kind": "mace",
+  "cost": 10,
+  "weight": 1.0,
+  "parameters": {
+    "damage": "1d6 + 2",
+    "max": "8"
+  }
+}

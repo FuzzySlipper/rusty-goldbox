@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "major_wound",
+  "name": "Major wound level",
+  "value": "ceil(self.max_hit_points / 2)"
+}

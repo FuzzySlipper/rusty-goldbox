@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "universal-d100",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Universal d100",
+  "requires": [],
+  "provenance": "Game mechanics adapted from the Basic Roleplaying ORC Content Document (Chaosium Inc.) under the ORC License; see PROVENANCE.md and LICENSE-ORC.txt"
+}

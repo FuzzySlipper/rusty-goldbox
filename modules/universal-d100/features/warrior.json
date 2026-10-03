@@ -1,0 +1,25 @@
+{
+  "type": "feature",
+  "id": "warrior",
+  "name": "Warrior",
+  "kind": "profession",
+  "description": "A fighter of a warrior culture.",
+  "modifiers": [
+    {
+      "stat": "axe",
+      "value": "50"
+    },
+    {
+      "stat": "spear",
+      "value": "30"
+    },
+    {
+      "stat": "dodge",
+      "value": "25"
+    },
+    {
+      "stat": "brawl",
+      "value": "25"
+    }
+  ]
+}

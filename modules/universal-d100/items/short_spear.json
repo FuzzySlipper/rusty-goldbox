@@ -1,0 +1,12 @@
+{
+  "type": "item",
+  "id": "short_spear",
+  "name": "Short spear",
+  "kind": "spear",
+  "cost": 5,
+  "weight": 2.0,
+  "parameters": {
+    "damage": "1d6 + 1",
+    "max": "7"
+  }
+}

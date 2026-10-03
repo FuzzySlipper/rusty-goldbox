@@ -1,0 +1,22 @@
+{
+  "type": "check",
+  "id": "parry",
+  "name": "Shield parry",
+  "roll": "1d100",
+  "target": "self.shield - 30 * self.rolled.parry",
+  "succeeds": "at-most",
+  "tiers": [
+    {
+      "name": "critical",
+      "when": "check.roll <= ceil(check.target / 20)"
+    },
+    {
+      "name": "special",
+      "when": "check.roll <= ceil(check.target / 5)"
+    },
+    {
+      "name": "fumble",
+      "when": "check.roll > 100 - ceil((100 - min(check.target, 99)) / 20)"
+    }
+  ]
+}

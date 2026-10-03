@@ -1379,8 +1379,23 @@ public static class CharacterRules
             return null;
         }
 
-        List<decimal> rolls = attributes.Select(_ => Evaluate(rules, evaluator, creation, "$.attribute_roll", null)).ToList();
-        return Arrange(attributes, rolls, priority, problems);
+        // An attribute with its own roll (SIZ at 2d6 + 6) keeps it; the others are rolled alike and arranged.
+        JsonElement own = creation.Json.TryGetProperty("attribute_rolls", out JsonElement given) ? given : default;
+        bool HasOwn(Definition attribute) => own.ValueKind == JsonValueKind.Object && own.TryGetProperty(attribute.Id, out _);
+        Dictionary<string, decimal> rolled = [];
+        foreach (Definition attribute in attributes)
+        {
+            rolled[attribute.Id] = Evaluate(rules, evaluator, creation, HasOwn(attribute) ? $"$.attribute_rolls.{attribute.Id}" : "$.attribute_roll", null);
+        }
+
+        List<Definition> shared = attributes.Where(attribute => !HasOwn(attribute)).ToList();
+        Dictionary<string, decimal>? arranged = Arrange(shared, shared.Select(attribute => rolled[attribute.Id]).ToList(), priority, problems);
+        if (arranged is null)
+        {
+            return null;
+        }
+
+        return attributes.ToDictionary(attribute => attribute.Id, attribute => HasOwn(attribute) ? rolled[attribute.Id] : arranged[attribute.Id]);
     }
 
     /// <summary>

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dm_d4",
+  "name": "Damage modifier d4s",
+  "value": "if self.str + self.siz >= 13 and self.str + self.siz <= 16 then -1 else if self.str + self.siz >= 25 and self.str + self.siz <= 32 then 1 else 0"
+}

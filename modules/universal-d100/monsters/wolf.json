@@ -1,0 +1,25 @@
+{
+  "type": "monster",
+  "id": "wolf",
+  "name": "Wolf",
+  "tracks": {
+    "hit_points": "10"
+  },
+  "stats": {
+    "dex": "13",
+    "armour": "2",
+    "dodge": "35",
+    "brawl": "30",
+    "dm_d4": "0",
+    "dm_d6": "0"
+  },
+  "actions": [
+    {
+      "action": "brawl_attack",
+      "name": "Bite",
+      "damage": "1d8",
+      "max": "8"
+    }
+  ],
+  "xp": 20
+}

@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "pow",
+  "name": "Power",
+  "min": 3,
+  "max": 30
+}

@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "cha",
+  "name": "Charisma",
+  "min": 3,
+  "max": 21
+}

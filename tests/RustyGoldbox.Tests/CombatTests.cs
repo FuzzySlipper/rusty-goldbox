@@ -187,6 +187,34 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void UniversalD100FightsAreDodgedParriedAndMajorWoundsShock()
+    {
+        using TempModules scratch = new();
+        string d100 = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        string Equip(string file, params string[] items)
+        {
+            string path = Path.Combine(scratch.Root, file);
+            System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+            node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"universal-d100:{item}"!).ToArray());
+            File.WriteAllText(path, node.ToJsonString());
+            return file;
+        }
+
+        // Characteristics are rolled (SIZ and INT at 2D6+6), a profession gives the skills, and gear brings armour and its penalties.
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", d100, "--name", "Aldric", "--feature", "soldier", "--seed", "4", "--out", "aldric.json"],
+            ["character", "new", "--module", d100, "--name", "Mira", "--feature", "hunter", "--seed", "9", "--out", "mira.json"]);
+        Equip("aldric.json", "broadsword", "heater_shield", "ring_armour");
+        Equip("mira.json", "self_bow", "dagger", "soft_leather");
+
+        // Each takes its best weapon; defences after the first in a round are at -30%; a major wound puts Mira in shock.
+        Golden.Verify("universal-d100-combat.txt", transcript + CliTranscript.Run(scratch.Root,
+            ["character", "show", "aldric.json", "--module", d100],
+            ["sim", "combat", "--module", d100, "--party", "aldric.json,mira.json", "--encounter", "bandits", "--seed", "1"],
+            ["sim", "combat", "--module", d100, "--party", "aldric.json,mira.json", "--encounter", "bear", "--seed", "2"]));
+    }
+
+    [Fact]
     public void PoolsFightCountsSuccessesWithRerollsAndCancels()
     {
         using TempModules scratch = new();

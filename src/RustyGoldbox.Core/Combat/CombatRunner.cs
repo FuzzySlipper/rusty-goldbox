@@ -125,6 +125,13 @@ public sealed class CombatRunner
             round++;
             _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest, CanSee);
             Record(new RoundFact(round));
+            if (RolledByRound)
+            {
+                foreach (Combatant member in Everyone)
+                {
+                    member.Creature.Rolled.Clear();
+                }
+            }
             if (order is null || rollEachRound)
             {
                 order = TurnOrder();
@@ -336,12 +343,18 @@ public sealed class CombatRunner
         }
 
         _turn = actor;
-        actor.Creature.Rolled.Clear();
+        if (!RolledByRound)
+        {
+            actor.Creature.Rolled.Clear();
+        }
         ActOnTurn(actor);
         EndTurn(actor);
         _turn = null;
         return true;
     }
+
+    /// <summary>Whether self.rolled counts checks over the whole round (the combat's rolled: "round") rather than since the creature's own turn began.</summary>
+    private bool RolledByRound => _combat.Json.TryGetProperty("rolled", out JsonElement rolled) && rolled.GetString() == "round";
 
     /// <summary>Whether defeated creatures still run their conditions and count them down (the combat's downed_conditions).</summary>
     private bool DownedConditions => _combat.Json.TryGetProperty("downed_conditions", out JsonElement downed) && downed.GetBoolean();

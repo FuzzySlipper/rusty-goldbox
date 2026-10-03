@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "half_plate",
+  "name": "Half plate",
+  "kind": "armour",
+  "cost": 60,
+  "weight": 18.0,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "7"
+    },
+    {
+      "stat": "dodge",
+      "value": "-20"
+    }
+  ]
+}

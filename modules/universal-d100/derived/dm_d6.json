@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "dm_d6",
+  "name": "Damage modifier d6s",
+  "value": "if self.str + self.siz <= 12 then -1 else if self.str + self.siz <= 32 then 0 else if self.str + self.siz <= 40 then 1 else 2 + floor((self.str + self.siz - 41) / 16)"
+}
