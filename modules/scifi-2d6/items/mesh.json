@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "mesh",
+  "name": "Mesh",
+  "kind": "armour",
+  "cost": 150,
+  "weight": 2,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "5"
+    }
+  ]
+}

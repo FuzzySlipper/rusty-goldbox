@@ -1,0 +1,16 @@
+{
+  "type": "condition",
+  "id": "dodging",
+  "name": "Dodging",
+  "description": "Attacks against it are at -1; its own checks are at -1 until its next turn ends.",
+  "modifiers": [
+    {
+      "check": "melee",
+      "value": "-1"
+    },
+    {
+      "check": "shooting",
+      "value": "-1"
+    }
+  ]
+}

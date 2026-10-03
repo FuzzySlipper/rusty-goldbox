@@ -1,0 +1,14 @@
+{
+  "type": "reaction",
+  "id": "dodge",
+  "name": "Dodge",
+  "trigger": "targeted",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "not self.condition.dodging",
+  "use": {
+    "action": "dodge"
+  },
+  "counter": false
+}

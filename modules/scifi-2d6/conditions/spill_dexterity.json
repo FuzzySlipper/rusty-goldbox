@@ -1,0 +1,18 @@
+{
+  "type": "condition",
+  "id": "spill_dexterity",
+  "name": "Damage to dexterity",
+  "instant": true,
+  "values": {
+    "amount": 0
+  },
+  "modifiers": [],
+  "on_apply": [
+    {
+      "op": "damage",
+      "track": "dexterity",
+      "amount": "condition.amount",
+      "to": "self"
+    }
+  ]
+}

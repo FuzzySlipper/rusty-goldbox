@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "edu",
+  "name": "Education",
+  "min": 0,
+  "max": 15
+}

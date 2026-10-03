@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "guards",
+  "name": "Guard post",
+  "monsters": [
+    {
+      "monster": "guard",
+      "count": "2"
+    }
+  ]
+}

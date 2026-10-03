@@ -1,0 +1,7 @@
+{
+  "type": "track",
+  "id": "endurance",
+  "name": "Endurance",
+  "max": "self.end",
+  "min": "0"
+}

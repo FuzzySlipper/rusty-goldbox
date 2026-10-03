@@ -1,0 +1,31 @@
+{
+  "type": "monster",
+  "id": "pirate",
+  "name": "Pirate",
+  "tracks": {
+    "strength": "7",
+    "dexterity": "8",
+    "endurance": "7"
+  },
+  "stats": {
+    "gun_combat": "1",
+    "melee_combat": "0",
+    "armour": "1"
+  },
+  "actions": [
+    {
+      "action": "shoot",
+      "name": "Auto pistol",
+      "damage": "2d6"
+    },
+    {
+      "action": "melee_attack",
+      "name": "Blade",
+      "damage": "2d6"
+    }
+  ],
+  "reactions": [
+    "dodge"
+  ],
+  "xp": 0
+}

@@ -1,0 +1,39 @@
+{
+  "type": "condition",
+  "id": "injury",
+  "name": "Injury",
+  "instant": true,
+  "values": {
+    "amount": 0
+  },
+  "modifiers": [],
+  "description": "A hit's damage, taken from Endurance first.",
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "condition.amount > self.endurance",
+      "then": [
+        {
+          "op": "apply_condition",
+          "condition": "overflow",
+          "values": {
+            "amount": "condition.amount - self.endurance"
+          },
+          "to": "self"
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "when": "condition.amount > 0 and self.endurance > 0",
+      "then": [
+        {
+          "op": "damage",
+          "track": "endurance",
+          "amount": "condition.amount",
+          "to": "self"
+        }
+      ]
+    }
+  ]
+}

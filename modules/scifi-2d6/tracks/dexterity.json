@@ -1,0 +1,7 @@
+{
+  "type": "track",
+  "id": "dexterity",
+  "name": "Dexterity",
+  "max": "self.dex",
+  "min": "0"
+}

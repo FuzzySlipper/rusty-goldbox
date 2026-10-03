@@ -1,0 +1,61 @@
+{
+  "type": "condition",
+  "id": "overflow",
+  "name": "Damage past Endurance",
+  "instant": true,
+  "values": {
+    "amount": 0
+  },
+  "modifiers": [],
+  "description": "Damage Endurance couldn't take goes to the higher of Strength and Dexterity, and what that can't take to the other.",
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "self.strength >= self.dexterity",
+      "then": [
+        {
+          "op": "if",
+          "when": "condition.amount > self.strength",
+          "then": [
+            {
+              "op": "apply_condition",
+              "condition": "spill_dexterity",
+              "values": {
+                "amount": "condition.amount - self.strength"
+              },
+              "to": "self"
+            }
+          ]
+        },
+        {
+          "op": "damage",
+          "track": "strength",
+          "amount": "condition.amount",
+          "to": "self"
+        }
+      ],
+      "else": [
+        {
+          "op": "if",
+          "when": "condition.amount > self.dexterity",
+          "then": [
+            {
+              "op": "apply_condition",
+              "condition": "spill_strength",
+              "values": {
+                "amount": "condition.amount - self.dexterity"
+              },
+              "to": "self"
+            }
+          ]
+        },
+        {
+          "op": "damage",
+          "track": "dexterity",
+          "amount": "condition.amount",
+          "to": "self"
+        }
+      ]
+    }
+  ]
+}

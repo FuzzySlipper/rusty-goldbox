@@ -1,0 +1,17 @@
+{
+  "type": "feature",
+  "id": "scout",
+  "name": "Scout",
+  "kind": "career",
+  "description": "Survey and courier work: Gun Combat-1, Athletics-1.",
+  "modifiers": [
+    {
+      "stat": "gun_combat",
+      "value": "4"
+    },
+    {
+      "stat": "athletics",
+      "value": "4"
+    }
+  ]
+}

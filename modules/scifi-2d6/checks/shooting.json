@@ -1,0 +1,9 @@
+{
+  "type": "check",
+  "id": "shooting",
+  "name": "Shooting attack",
+  "roll": "2d6",
+  "bonus": "self.gun_combat + self.dex_dm",
+  "target": "8",
+  "succeeds": "at-least"
+}

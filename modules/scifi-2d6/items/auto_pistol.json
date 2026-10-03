@@ -1,0 +1,11 @@
+{
+  "type": "item",
+  "id": "auto_pistol",
+  "name": "Auto pistol",
+  "kind": "gun",
+  "cost": 200,
+  "weight": 0.75,
+  "parameters": {
+    "damage": "2d6"
+  }
+}

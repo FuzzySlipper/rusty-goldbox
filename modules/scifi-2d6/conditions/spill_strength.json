@@ -1,0 +1,18 @@
+{
+  "type": "condition",
+  "id": "spill_strength",
+  "name": "Damage to strength",
+  "instant": true,
+  "values": {
+    "amount": 0
+  },
+  "modifiers": [],
+  "on_apply": [
+    {
+      "op": "damage",
+      "track": "strength",
+      "amount": "condition.amount",
+      "to": "self"
+    }
+  ]
+}

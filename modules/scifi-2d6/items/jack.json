@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "jack",
+  "name": "Jack",
+  "kind": "armour",
+  "cost": 50,
+  "weight": 1,
+  "modifiers": [
+    {
+      "stat": "armour",
+      "value": "1"
+    }
+  ]
+}

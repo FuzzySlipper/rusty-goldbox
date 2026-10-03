@@ -1,0 +1,7 @@
+{
+  "type": "track",
+  "id": "strength",
+  "name": "Strength",
+  "max": "self.str",
+  "min": "0"
+}

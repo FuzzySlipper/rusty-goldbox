@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "scifi-2d6",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "2D6 Science Fiction",
+  "requires": [],
+  "provenance": "Open Game Content adapted from the Cepheus Engine System Reference Document under the OGL 1.0a; see PROVENANCE.md and LICENSE-OGL.txt"
+}

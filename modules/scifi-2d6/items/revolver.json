@@ -1,0 +1,11 @@
+{
+  "type": "item",
+  "id": "revolver",
+  "name": "Revolver",
+  "kind": "gun",
+  "cost": 150,
+  "weight": 0.9,
+  "parameters": {
+    "damage": "2d6"
+  }
+}

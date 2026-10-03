@@ -745,10 +745,18 @@ public sealed class CombatRunner
         Located(owner, path, () => Apply(owner, operation, path, scope, op, who, before));
         if (op == "apply_condition" && _rules.Reference(owner, $"{path}.condition") is Definition applied && applied.Json.TryGetProperty("on_apply", out JsonElement onApply))
         {
+            int rollsApplied = _dice.Rolls.Count;
+            int factsApplied = _facts.Count;
             RunOperations(applied, onApply, "$.on_apply", ConditionScope(who, applied), who, null);
             if (IsInstant(applied))
             {
                 who.Creature.ConditionValues.Remove(applied);
+
+                // An instant condition records nothing of its own, so the dice its values rolled show with what it did first.
+                if (rollsApplied > before && _facts.Count > factsApplied)
+                {
+                    _facts[factsApplied] = _facts[factsApplied] with { Rolls = [.. _dice.Rolls.Skip(before).Take(rollsApplied - before), .. _facts[factsApplied].Rolls] };
+                }
             }
         }
 

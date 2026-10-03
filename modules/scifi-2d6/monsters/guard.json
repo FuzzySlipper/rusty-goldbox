@@ -1,0 +1,26 @@
+{
+  "type": "monster",
+  "id": "guard",
+  "name": "Security guard",
+  "tracks": {
+    "strength": "8",
+    "dexterity": "7",
+    "endurance": "8"
+  },
+  "stats": {
+    "gun_combat": "0",
+    "melee_combat": "1",
+    "armour": "5"
+  },
+  "actions": [
+    {
+      "action": "shoot",
+      "name": "Revolver",
+      "damage": "2d6"
+    }
+  ],
+  "reactions": [
+    "dodge"
+  ],
+  "xp": 0
+}

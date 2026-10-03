@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "dodge",
+  "name": "Dodge",
+  "cost": {
+    "significant": 1
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "dodging",
+      "rounds": "1",
+      "to": "self"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "str_dm",
+  "name": "Strength DM",
+  "value": "floor(self.strength / 3) - 2"
+}

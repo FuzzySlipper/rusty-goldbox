@@ -1,0 +1,11 @@
+{
+  "type": "item",
+  "id": "blade",
+  "name": "Blade",
+  "kind": "blade",
+  "cost": 50,
+  "weight": 0.35,
+  "parameters": {
+    "damage": "2d6"
+  }
+}

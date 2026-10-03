@@ -1,0 +1,26 @@
+{
+  "type": "action",
+  "id": "shoot",
+  "name": "Shoot",
+  "cost": {
+    "significant": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "check": "shooting",
+  "check_bonus": "0 - (if target.condition.dodging then 1 else 0)",
+  "score": "self.gun_combat + use.damage / 4",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "injury",
+        "values": {
+          "amount": "max(if check.margin >= 6 then 1 else 0, use.damage + check.margin - target.armour)"
+        }
+      }
+    ]
+  }
+}

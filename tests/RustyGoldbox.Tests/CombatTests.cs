@@ -215,6 +215,28 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ScifiDamageComesOffCharacteristicsUntilTwoAreGone()
+    {
+        using TempModules scratch = new();
+        string scifi = Path.Combine(Rules.RepositoryRoot, "modules", "scifi-2d6");
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", scifi, "--name", "Vance", "--feature", "marine", "--priority", "end,dex,str,int,edu,soc", "--seed", "3", "--out", "vance.json"],
+            ["character", "new", "--module", scifi, "--name", "Kira", "--feature", "mercenary", "--priority", "str,dex,end,int,edu,soc", "--seed", "5", "--out", "kira.json"]);
+        foreach ((string file, string[] items) in new[] { ("vance.json", new[] { "rifle", "mesh" }), ("kira.json", new[] { "cutlass", "jack" }) })
+        {
+            string path = Path.Combine(scratch.Root, file);
+            System.Text.Json.Nodes.JsonNode node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+            node["equipment"] = new System.Text.Json.Nodes.JsonArray(items.Select(item => (System.Text.Json.Nodes.JsonNode)$"scifi-2d6:{item}"!).ToArray());
+            File.WriteAllText(path, node.ToJsonString());
+        }
+
+        // 2D6 + skill + DM against 8; damage is weapon dice + Effect - armour, off Endurance, then Strength or Dexterity;
+        // the DMs fall with them, and two characteristics at 0 is unconscious. Pirates dodge (attacker -1).
+        Golden.Verify("scifi-2d6-combat.txt", transcript + CliTranscript.Run(scratch.Root,
+            ["sim", "combat", "--module", scifi, "--party", "vance.json,kira.json", "--encounter", "boarders", "--seed", "1"]));
+    }
+
+    [Fact]
     public void PoolsFightCountsSuccessesWithRerollsAndCancels()
     {
         using TempModules scratch = new();

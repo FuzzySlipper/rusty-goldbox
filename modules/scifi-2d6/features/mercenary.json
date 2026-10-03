@@ -1,0 +1,21 @@
+{
+  "type": "feature",
+  "id": "mercenary",
+  "name": "Mercenary",
+  "kind": "career",
+  "description": "Hired soldiering: Gun Combat-1, Melee Combat-2, Athletics-1.",
+  "modifiers": [
+    {
+      "stat": "gun_combat",
+      "value": "4"
+    },
+    {
+      "stat": "melee_combat",
+      "value": "5"
+    },
+    {
+      "stat": "athletics",
+      "value": "4"
+    }
+  ]
+}

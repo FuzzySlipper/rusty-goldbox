@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "end_dm",
+  "name": "Endurance DM",
+  "value": "floor(self.endurance / 3) - 2"
+}

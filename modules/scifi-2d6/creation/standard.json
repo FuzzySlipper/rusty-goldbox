@@ -1,0 +1,23 @@
+{
+  "type": "character-creation",
+  "id": "standard",
+  "name": "Rolled characteristics",
+  "attributes": [
+    "str",
+    "dex",
+    "end",
+    "int",
+    "edu",
+    "soc"
+  ],
+  "method": "roll",
+  "attribute_roll": "2d6",
+  "assignment": "arrange",
+  "default": true,
+  "features": [
+    {
+      "kind": "career",
+      "count": 1
+    }
+  ]
+}

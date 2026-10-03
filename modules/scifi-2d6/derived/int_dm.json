@@ -1,0 +1,6 @@
+{
+  "type": "derived",
+  "id": "int_dm",
+  "name": "Intelligence DM",
+  "value": "floor(self.int / 3) - 2"
+}

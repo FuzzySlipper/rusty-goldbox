@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "end",
+  "name": "Endurance score",
+  "min": 0,
+  "max": 15
+}
