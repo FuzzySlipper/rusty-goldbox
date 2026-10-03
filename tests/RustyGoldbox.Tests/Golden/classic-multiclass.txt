@@ -29,7 +29,7 @@ Saved to thror.json.
   seed 4: 1d10: 3 = 3; 1d6: 1 = 1; 3d6: 2+4+3 = 9; 2d6: 2+3 = 5
 [exit 0]
 
-$ goldbox character level thror.json --module modules/classic --xp 5000 --seed 3
+$ goldbox character level thror.json --module modules/classic --xp 5000 --seed 3 --trained
 Reached level 3 (Fighter 2): +2 hit points.
 Reached level 4 (Thief 2): +2 hit points.
 Reached level 5 (Thief 3): +2 hit points.
@@ -82,13 +82,13 @@ Saved to aldo.json.
   seed 1: 1d10: 6 = 6; 3d6: 1+5+4 = 10
 [exit 0]
 
-$ goldbox character level aldo.json --module modules/classic --xp 4500 --class thief --seed 2
+$ goldbox character level aldo.json --module modules/classic --xp 4500 --class thief --seed 2 --trained
 error[character.multiclass] classic modules/classic/advancement/standard.json $.class_change
   Aldo can't change to classic:thief: self.race == 'human' and self.classes == 1 and (if self.class == 'fighter' then self.str else if self.class == 'cleric' then self.wis else if self.class == 'magic_user' then self.int else self.dex) >= 15 and (if class.id == 'fighter' then self.str else if class.id == 'cleric' then self.wis else if class.id == 'magic_user' then self.int else self.dex) >= 17.
 1 error.
 [exit 1]
 
-$ goldbox character level aldo.json --module modules/classic --xp 4500 --seed 2
+$ goldbox character level aldo.json --module modules/classic --xp 4500 --seed 2 --trained
 Reached level 2: +7 hit points.
 Reached level 3: +1 hit points.
 Aldo: Human Fighter 3 (4500 xp, Fighter 4500 of 7750)
@@ -115,7 +115,7 @@ Saved to aldo.json.
   seed 2: 1d10: 7 = 7; 1d10: 1 = 1
 [exit 0]
 
-$ goldbox character level aldo.json --module modules/classic --xp 0 --class magic_user --seed 5
+$ goldbox character level aldo.json --module modules/classic --xp 0 --class magic_user --seed 5 --trained
 Reached level 4 (Magic user 1): +0 hit points.
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
   former class (Fighter) waits for the new class to pass it (character former <file> on to call on it)
@@ -198,7 +198,7 @@ Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, le
 Saved to aldo.json.
 [exit 0]
 
-$ goldbox character level aldo.json --module modules/classic --xp 20000 --seed 6
+$ goldbox character level aldo.json --module modules/classic --xp 20000 --seed 6 --trained
 Reached level 5 (Magic user 2): +0 hit points.
 Reached level 6 (Magic user 3): +0 hit points.
 Reached level 7 (Magic user 4): +1 hit points.

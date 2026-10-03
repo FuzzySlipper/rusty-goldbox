@@ -1,0 +1,34 @@
+$ goldbox character new --module tale --modules . --class warrior --race folk --name A --seed 1 --out a.json
+A: Folk Warrior 1 (0 xp, next level at 10)
+  hit points 5/5
+  gold 5
+  str            10     Strength
+  hit            0      Hit bonus
+  strong         false  Strong
+Saved to a.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox play --campaign tale --modules . --party a.json --seed 1 --script train.script
+seed 1
+  The party is in Hall at [0, 0], facing east.
+  Experience: A 30.
+  A has the experience for a new level; use train 1 at a training event.
+  Train here. [1] A: 2 gold (ready). Commands: train <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], leave.
+> level 1
+  Can't: leave the trainer first, or use train <member> with level choices.
+> train 1
+  A reaches level 2 (Warrior 2): +2 hit points.
+  A has the experience for a new level; use train 1 at a training event.
+  A trains for 2 days and 2 gold. Campaign time: 2 days.
+  Train here. [1] A: 4 gold (ready). Commands: train <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], leave.
+> train 1
+  Can't: Training costs 4 gold; the party has 3.
+> status
+  A (hit points 7/7, 30 xp, level ready) | gold 3
+  Train here. [1] A: 4 gold (ready). Commands: train <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], leave.
+> leave
+  The party leaves the trainer.
+  Safe travels.
+[exit 0]
+

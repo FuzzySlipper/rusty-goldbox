@@ -23,7 +23,7 @@ Saved to brom.json.
   seed 11: 3d6: 5+1+5 = 11; 3d6: 6+3+2 = 11; 3d6: 6+4+5 = 15; 3d6: 2+3+3 = 8; 3d6: 3+6+4 = 13; 3d6: 1+1+5 = 7; 1d10: 5 = 5; 3d6: 6+2+4 = 12
 [exit 0]
 
-$ goldbox character level brom.json --module modules/classic --xp 5000 --seed 3
+$ goldbox character level brom.json --module modules/classic --xp 5000 --seed 3 --trained
 Reached level 2: +5 hit points.
 Reached level 3: +12 hit points.
 Brom: Dwarf Fighter 3 (5000 xp, Fighter 5000 of 7750)

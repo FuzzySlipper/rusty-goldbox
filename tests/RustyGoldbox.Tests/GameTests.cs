@@ -569,6 +569,25 @@ public sealed class GameTests
             Run(session, engine, """{ "action": "play", "command": "leave" }""");
             Assert.Null(Projected()["temple"]);
             Assert.Contains("The outfitter wishes you safe travels.", session.Log);
+            var trainee = session.Runner.State.Party[0];
+            trainee.Experience = 2001;
+            trainee.ClassExperience[trainee.Class!] = 2001;
+            trainee.Gold = 1500;
+            session.Runner.State.X = 3;
+            session.Runner.State.Y = 2;
+            session.Runner.State.Facing = RustyGoldbox.Core.Campaigns.Facing.West;
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Assert.NotNull(Projected()["training"]);
+            Run(session, engine, """{ "action": "play", "command": "train 1" }""");
+            Assert.Equal(2, trainee.Level);
+            Assert.Equal(0, trainee.Gold);
+            Assert.InRange(session.Runner.State.ElapsedDays, 7, 28);
+            Run(session, engine, """{ "action": "save", "slot": "training" }""");
+            session.Quit();
+            Run(session, engine, """{ "action": "load", "slot": "training" }""");
+            Assert.NotNull(Projected()["training"]);
+            Assert.Equal(2, session.Runner!.State.Party[0].Level);
+            Assert.InRange(Projected()["elapsedDays"]!.GetValue<decimal>(), 7, 28);
         });
     }
 

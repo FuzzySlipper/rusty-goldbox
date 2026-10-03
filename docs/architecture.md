@@ -328,3 +328,12 @@ runner uses existing character tracks, conditions and pooled character gold;
 `CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
 healing with combat. Saves retain an open temple and Game projections expose
 prices for each member.
+
+An advancement may declare `training: { "cost": "self.level * 20", "days": "2" }`.
+Experience still accumulates, but levels wait for `train <member>` at a training
+event, with the same class, feature and boost choices as `level`. One payment
+buys one level; a failure to choose or pay leaves gold and time unchanged.
+`CampaignRunner.Training.cs` uses `CharacterRules` for advancement and the
+existing character gold for fees. Campaign state stores fictional `ElapsedDays`
+and the open trainer in saves; this is game time, independent of Engine clocks.
+Rulesets without training retain their existing immediate advancement.

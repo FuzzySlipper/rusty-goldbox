@@ -60,8 +60,18 @@
       "event": "stairs"
     },
     {
-      "at": [1, 2],
+      "at": [
+        1,
+        2
+      ],
       "event": "outfitter"
+    },
+    {
+      "at": [
+        2,
+        2
+      ],
+      "event": "trainer"
     }
   ],
   "entries": {

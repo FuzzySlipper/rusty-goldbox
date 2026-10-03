@@ -12,7 +12,7 @@ internal static class CharacterCommand
 
     private const string Usage =
         "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
-        + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
+        + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character former <file> --module <path> on|off\n"
         + "       goldbox character show <file> --module <path>\n"
@@ -93,7 +93,7 @@ internal static class CharacterCommand
 
     private static int Level(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--xp", "--class", "--feature", "--boosts", "--seed"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--xp", "--class", "--feature", "--boosts", "--seed"], ["--trained"]);
         if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--xp") is null))
         {
             error = Usage;
@@ -120,7 +120,7 @@ internal static class CharacterCommand
 
         List<ModuleDiagnostic> problems = [];
         (List<LevelGain>? gains, IReadOnlyList<DiceRoll> rolls) = EngineDice.Run(seed, RandomScope, dice =>
-            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class"), Features(parsed), parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)));
+            CharacterRules.AddExperience(set.Rules!, character!, experience, dice, problems, parsed.Single("--class"), Features(parsed), parsed.Single("--boosts")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries), trained: parsed.Has("--trained")));
         if (gains is null)
         {
             // Problems from ruleset expressions name their definition; the rest are about this character.

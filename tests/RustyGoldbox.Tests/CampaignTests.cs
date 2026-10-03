@@ -315,8 +315,8 @@ public sealed class CampaignTests
         using TempModules scratch = new();
         string classic = Rules.ClassicPath;
         Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Aldo", "--attributes", "str=16,dex=12,con=13,int=17,wis=10,cha=10", "--out", "aldo.json");
-        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "4500", "--seed", "2");
-        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "0", "--class", "magic_user", "--seed", "5");
+        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "4500", "--seed", "2", "--trained");
+        Run(scratch, "character", "level", "aldo.json", "--module", classic, "--xp", "0", "--class", "magic_user", "--seed", "5", "--trained");
         Run(scratch, "character", "new", "--module", classic, "--class", "fighter", "--race", "human", "--name", "Ada", "--attributes", "str=16,dex=13,con=15,int=10,wis=9,cha=11", "--seed", "2", "--out", "ada.json");
         Equip(scratch, "aldo.json", "classic:dagger");
         Equip(scratch, "ada.json", "classic:long_sword", "classic:chain_mail", "classic:shield");

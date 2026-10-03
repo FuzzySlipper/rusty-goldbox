@@ -153,6 +153,11 @@ public static class DefinitionTypes
             new("experience", new EnumKind(["class", "character", "split"]), true, "\"class\": each class's levels[].xp, one class per character. \"character\": the levels below, by total level, with a class chosen for each level. \"split\": a character may start with several classes (as its race's multiclasses allow); experience is divided evenly between the classes it advances in, each on its own levels[].xp, and class_change may let it leave its class for a new one."),
             new("class_change", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Class), false, "With experience \"split\": whether a character may leave its classes for a new one (dual-classing), read with class.id as the new class, for example \"self.race == 'human' and self.classes == 1\". The classes left stop advancing and their modifiers and actions wait until the new class's level is higher; self.former_level is the highest of them. Without it, no class change."),
             new("levels", new ListKind(new IntegerKind()), false, "With experience \"character\": the experience needed for each character level, starting with 0 for level 1."),
+            new("training", new ObjectKind(
+            [
+                new("cost", SelfNumber, true, "Gold for one level, evaluated before levelling; self.level is the current total level. Must be nonnegative and must not roll dice."),
+                new("days", SelfNumber, true, "Days spent training, evaluated before levelling; may roll dice and must be nonnegative."),
+            ]), false, "When present, earned experience waits for paid training at a training event. Each payment gains one level."),
             new("experience_to", new EnumKind(["survivors", "party", "each"]), false, "Who gets the experience a fight or an experience event awards in play: an even share (rounding down) to the characters still standing (\"survivors\", the default, also without an advancement definition) or to the whole party, or the whole amount to each member (\"each\")."),
             new("grants", new ListKind(new ObjectKind(
             [
@@ -175,7 +180,8 @@ public static class DefinitionTypes
           "name": "Character levels",
           "experience": "character",
           "levels": [0, 1000, 3000, 6000, 10000],
-          "grants": [ { "kind": "feat", "when": "self.level == 1 or self.level % 3 == 0" } ]
+          "grants": [ { "kind": "feat", "when": "self.level == 1 or self.level % 3 == 0" } ],
+          "training": { "cost": "self.level * 20", "days": "2" }
         }
         """);
 

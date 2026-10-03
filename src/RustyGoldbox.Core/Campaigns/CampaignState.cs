@@ -37,6 +37,11 @@ public sealed class CampaignState
 
     public Definition? PendingTemple { get; set; }
 
+    public Definition? PendingTraining { get; set; }
+
+    /// <summary>Fictional campaign time in days, advanced by authored training and rest.</summary>
+    public decimal ElapsedDays { get; set; }
+
     /// <summary>The picture the latest event showed, until the party moves or another replaces it.</summary>
     public Definition? Picture { get; set; }
 

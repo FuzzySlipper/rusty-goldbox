@@ -39,7 +39,7 @@ public sealed class CombatTests
             ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "magic_missile"],
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"],
             // At level 3 she fires two missiles a casting, each at the weakest skeleton still standing, and memorises two castings.
-            ["character", "level", "mira.json", "--module", Rules.ClassicPath, "--xp", "5001", "--seed", "1"],
+            ["character", "level", "mira.json", "--module", Rules.ClassicPath, "--xp", "5001", "--seed", "1", "--trained"],
             ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "magic_missile,magic_missile"],
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"]));
     }

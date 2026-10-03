@@ -18,7 +18,7 @@ public sealed class CharacterTests
     {
         Golden.Verify("classic-character.txt", CliTranscript.Run(
             ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "dwarf", "--name", "Brom", "--seed", "11", "--out", "brom.json"],
-            ["character", "level", "brom.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3"],
+            ["character", "level", "brom.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3", "--trained"],
             ["character", "new", "--module", Rules.ClassicPath, "--class", "magic_user", "--race", "dwarf", "--seed", "1"]));
     }
 
@@ -29,17 +29,17 @@ public sealed class CharacterTests
             ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter,magic_user", "--race", "dwarf", "--name", "Nain", "--attributes", "str=15,dex=14,con=15,int=10,wis=10,cha=9"],
             ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter,thief", "--race", "dwarf", "--name", "Thror", "--attributes", "str=15,dex=14,con=15,int=10,wis=10,cha=9", "--seed", "4", "--out", "thror.json"],
             // Experience divides evenly: 2500 each takes the thief to level 3 but the fighter only to 2.
-            ["character", "level", "thror.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3"],
+            ["character", "level", "thror.json", "--module", Rules.ClassicPath, "--xp", "5000", "--seed", "3", "--trained"],
             ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "human", "--name", "Aldo", "--attributes", "str=16,dex=12,con=13,int=17,wis=10,cha=10", "--out", "aldo.json"],
-            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--class", "thief", "--seed", "2"],
-            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--seed", "2"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--class", "thief", "--seed", "2", "--trained"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "4500", "--seed", "2", "--trained"],
             // A dual-classed fighter starts magic user at level 1, gains no hit points until passing fighter 3,
             // and fights with the magic user's table until then.
-            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "0", "--class", "magic_user", "--seed", "5"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "0", "--class", "magic_user", "--seed", "5", "--trained"],
             // Calling on the fighter brings back its table (and, in play, costs the adventure's experience).
             ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "on"],
             ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "off"],
-            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "20000", "--seed", "6"],
+            ["character", "level", "aldo.json", "--module", Rules.ClassicPath, "--xp", "20000", "--seed", "6", "--trained"],
             ["character", "former", "aldo.json", "--module", Rules.ClassicPath, "on"],
             ["character", "show", "aldo.json", "--module", Rules.ClassicPath, "--json"]));
     }
@@ -135,10 +135,11 @@ public sealed class CharacterTests
         ModuleSet classic = ModuleLoader.Load(Rules.ClassicPath, []);
         Character fighter = Create(classic, new CreationRequest("Ada", "fighter", "human", Attributes: new Dictionary<string, decimal> { ["str"] = 16, ["dex"] = 13, ["con"] = 15, ["int"] = 10, ["wis"] = 9, ["cha"] = 11 }))!;
 
-        // Classic levels need no choices, so the level comes at once.
+        // Classic experience waits for paid training even when no choices are needed.
         List<LevelGain> gains = WithDice(dice => CharacterRules.Award(classic.Rules!, fighter, 2001, dice));
-        Assert.Equal(2, Assert.Single(gains).Level);
-        Assert.False(CharacterRules.ReadyToLevel(classic.Rules!, fighter));
+        Assert.Empty(gains);
+        Assert.Equal(1, fighter.Level);
+        Assert.True(CharacterRules.ReadyToLevel(classic.Rules!, fighter));
 
         // Ascend's levels take a class (and here a feat): the experience is kept, the level waits, and a failed try changes nothing.
         ModuleSet set = ModuleLoader.Load(Ascend, []);
@@ -279,7 +280,7 @@ public sealed class CharacterTests
         Character fighter = Create(set, new CreationRequest("x", "fighter", "human", Attributes: new Dictionary<string, decimal> { ["str"] = 15, ["dex"] = 12, ["con"] = 12, ["int"] = 12, ["wis"] = 12, ["cha"] = 12 }))!;
         List<ModuleDiagnostic> problems = [];
 
-        Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, fighter, 5000, dice, problems, "thief")));
+        Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, fighter, 5000, dice, problems, "thief", trained: true)));
         Assert.Equal("character.multiclass", Assert.Single(problems).Rule);
     }
 

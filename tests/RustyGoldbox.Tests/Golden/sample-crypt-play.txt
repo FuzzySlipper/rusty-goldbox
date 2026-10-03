@@ -5,7 +5,7 @@ Crypt entrance (sample-crypt:entrance), 4 x 3; x runs east, y south, from 0
 +  +--+--+DD+
 |  |   <S|!v|
 +  +  +--+  +
-|^G ! |   !1|
+|^G ! |!  !1|
 +--+--+--+--+
 Legend: '--' '|' wall, 'DD' 'D' door, 'SS' 'S' secret door; !1 once-only event, !<arrow> event when facing that way, <arrow><letter> entry.
   [0, 0] event bones, once; zone hall; backdrop placeholder-art:hall
@@ -13,6 +13,7 @@ Legend: '--' '|' wall, 'DD' 'D' door, 'SS' 'S' secret door; !1 once-only event, 
   [3, 2] event guards, once; zone crypt; backdrop placeholder-art:crypt
   [2, 1] event stairs; zone crypt; backdrop placeholder-art:crypt
   [1, 2] event outfitter
+  [2, 2] event trainer
   [0, 2] entry gate, facing north
   [2, 1] entry stairs_up, facing west
 [exit 0]

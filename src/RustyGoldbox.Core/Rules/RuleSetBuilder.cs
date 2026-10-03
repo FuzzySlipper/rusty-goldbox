@@ -1184,6 +1184,9 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "training" when !Characters.CharacterRules.RequiresTraining(_rules):
+                Error(definition, "event.training", "$", "A training event needs advancement.training with cost and days expressions in its ruleset.");
+                break;
             case "shop" when _rules.Economy is null:
                 Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
                 break;

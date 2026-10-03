@@ -139,6 +139,12 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "temple", "kind": "temple", "text": "Welcome.", "services": [{ "label": "Healing", "cost": "10", "operations": [{ "op": "heal", "track": "classic:hit_points", "amount": "1d8" }] }] }""");
 
+    public static DefinitionType Training { get; } = new(
+        "training",
+        "Offers the ruleset advancement's training: gold and days for one waiting level. Waits for train <member> with the level command's choices, or leave.",
+        [new("text", new TextKind(), true, "The trainer's greeting."), Next, Picture, Sound, Music],
+        """{ "type": "event", "id": "trainer", "kind": "training", "text": "Train here.", "next": "farewell" }""");
+
     public static DefinitionType End { get; } = new(
         "end",
         "Ends the adventure.",
@@ -156,7 +162,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, Training, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

@@ -308,8 +308,11 @@ export function mountProductUi(root, context) {
   const renderPlay = (view) => {
     const menu = row(...(view.menu ?? []).map((option) =>
       button(`${option.number}. ${option.label}`, () => send({ action: 'play', command: `choose ${option.number}` }))));
-    const moves = row(...((view.shop || view.temple) ? ['look', 'status'] : ['left', 'forward', 'right', 'back', 'around', 'look', 'status']).map((move) =>
+    const moves = row(...((view.shop || view.temple || view.training) ? ['look', 'status'] : ['left', 'forward', 'right', 'back', 'around', 'look', 'status']).map((move) =>
       button(move, () => send({ action: 'play', command: move }))));
+    const training = view.training ? fragment(element('p', {}, view.training),
+      row(...view.party.map((member, index) => button(`Train ${member.name}`, () => send({ action: 'play', command: `train ${index + 1}` })))),
+      row(button('Leave trainer', () => send({ action: 'play', command: 'leave' })))) : '';
     const temple = view.temple ? fragment(
       element('p', {}, view.temple.text),
       ...view.temple.services.map((service) => row(element('span', {}, service.label),
@@ -330,7 +333,7 @@ export function mountProductUi(root, context) {
     queueMicrotask(() => { log.scrollTop = log.scrollHeight; });
     return fragment(
       element('pre', { id: 'rusty-goldbox-map', style: 'margin:0 0 6px;line-height:1.05' }, view.map ?? ''),
-      menu, shop, temple, moves, row(command),
+      menu, shop, temple, training, moves, row(command),
       log,
       renderRoster(view.party ?? []),
       ...(view.party ?? []).flatMap((member, index) => [...renderSpells(member, index), ...renderMemorised(member, index)]),

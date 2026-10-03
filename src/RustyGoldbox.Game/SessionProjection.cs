@@ -110,6 +110,8 @@ internal static class SessionProjection
                 ["label"] = option.Label,
             }).ToArray());
             projection["commands"] = CampaignRunner.CommandList;
+            projection["elapsedDays"] = state.ElapsedDays;
+            projection["training"] = runner.Training()?.Text;
             projection["shop"] = runner.Shop() is ShopFact shop ? new JsonObject
             {
                 ["text"] = shop.Text,

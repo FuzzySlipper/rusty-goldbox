@@ -99,3 +99,9 @@ small:
 - Armour movement limits, thief skills and turning undead are not modelled yet.
 - Shops buy carried gear at half its listed cost (`economy/standard.json`).
   This is an original sample resale policy, not a rule adapted from the source.
+
+Training (`advancement/standard.training`) adapts Chapter III, p. 118:
+1,500 gold per current total level and 1d4 weeks. The source leaves “per level”
+unspecified; this module uses the current total character level, including
+multi-class levels. Each payment buys one class level. Tutor suitability and
+performance-based durations are not modelled.

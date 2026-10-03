@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -120,6 +120,12 @@ public sealed partial class CampaignRunner
             return facts;
         }
 
+        if (_state.PendingTraining is not null && verb is not ("train" or "leave" or "look" or "status"))
+        {
+            facts.Add(new RefusedFact("leave the trainer first, or use train <member> with level choices."));
+            return facts;
+        }
+
         switch (verb)
         {
             case "forward" or "back" when words.Length == 1:
@@ -144,6 +150,15 @@ public sealed partial class CampaignRunner
                 {
                     LeaveTemple(dice, facts);
                 }
+                else if (_state.PendingTraining is Definition trainer)
+                {
+                    _state.PendingTraining = null;
+                    facts.Add(new TextFact("The party leaves the trainer."));
+                    if (Next(trainer, "$.next") is Definition next)
+                    {
+                        RunChain(next, dice, facts);
+                    }
+                }
                 else
                 {
                     LeaveShop(dice, facts);
@@ -167,6 +182,14 @@ public sealed partial class CampaignRunner
                     facts.Add(temple);
                 }
 
+                if (Training() is TextFact training)
+                {
+                    facts.Add(training);
+                }
+
+                break;
+            case "train" when words.Length >= 2 && int.TryParse(words[1], out int trainee):
+                Train(trainee, words[2..], dice, facts);
                 break;
             case "level" when words.Length >= 2 && int.TryParse(words[1], out int member):
                 Level(member, words[2..], dice, facts);
@@ -311,6 +334,10 @@ public sealed partial class CampaignRunner
                 _state.PendingTemple = evt;
                 facts.Add(Temple()!);
                 return null;
+            case "training":
+                _state.PendingTraining = evt;
+                facts.Add(Training()!);
+                return null;
             case "set":
                 Definition variable = _rules.Reference(evt, "$.variable");
                 Value value = Evaluate(evt, "$.value", dice);
@@ -444,12 +471,18 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>The level command: takes the levels a character has the experience for, with the choices they need.</summary>
-    private void Level(int member, string[] options, DiceRoller dice, List<PlayFact> facts)
+    private bool Level(int member, string[] options, DiceRoller dice, List<PlayFact> facts, bool trained = false)
     {
         if (member < 1 || member > _state.Party.Count)
         {
             facts.Add(new RefusedFact($"{member} is not a party member; members are 1 to {_state.Party.Count}."));
-            return;
+            return false;
+        }
+
+        if (CharacterRules.RequiresTraining(_rules) && !trained)
+        {
+            facts.Add(new RefusedFact("This ruleset requires training; use train <member> at a training event."));
+            return false;
         }
 
         Dictionary<string, string> given = [];
@@ -458,7 +491,7 @@ public sealed partial class CampaignRunner
             if (options[index] is not ("--class" or "--feature" or "--boosts") || index + 1 >= options.Length || given.ContainsKey(options[index]))
             {
                 facts.Add(new RefusedFact($"level takes a member number, then --class <id>, --feature <id>,... and --boosts <id>,..., each once."));
-                return;
+                return false;
             }
 
             given[options[index]] = options[++index];
@@ -469,19 +502,20 @@ public sealed partial class CampaignRunner
         if (nextClass is null && !CharacterRules.ReadyToLevel(_rules, character))
         {
             facts.Add(new RefusedFact($"{character.Name} doesn't have the experience for another level."));
-            return;
+            return false;
         }
 
         static List<string>? List(string? text) => text?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
         List<ModuleDiagnostic> problems = [];
         int before = dice.Rolls.Count;
-        if (CharacterRules.AddExperience(_rules, character, 0, dice, problems, nextClass, List(given.GetValueOrDefault("--feature")), List(given.GetValueOrDefault("--boosts"))) is not List<LevelGain> gains)
+        if (CharacterRules.AddExperience(_rules, character, 0, dice, problems, nextClass, List(given.GetValueOrDefault("--feature")), List(given.GetValueOrDefault("--boosts")), trained: trained, oneLevel: trained) is not List<LevelGain> gains)
         {
             facts.Add(new RefusedFact(string.Join(" ", problems.Select(problem => problem.Message))));
-            return;
+            return false;
         }
 
         ReportLevels(character, member, gains, before, dice, facts);
+        return gains.Count > 0;
     }
 
     /// <summary>The former command: a dual-classed character calls on its dormant classes (forfeiting the adventure's experience) or stops.</summary>
@@ -519,7 +553,9 @@ public sealed partial class CampaignRunner
 
         if (CharacterRules.ReadyToLevel(_rules, character))
         {
-            facts.Add(new LevelFact(character.Name, member, character.Level + 1, "", 0, track, Waiting: true));
+            facts.Add(CharacterRules.RequiresTraining(_rules)
+                ? new TextFact($"{character.Name} has the experience for a new level; use train {member} at a training event.")
+                : new LevelFact(character.Name, member, character.Level + 1, "", 0, track, Waiting: true));
         }
     }
 

@@ -1,0 +1,1 @@
+{ "type": "event", "id": "trainer", "kind": "training", "text": "A veteran offers training at the gate.", "next": "farewell" }

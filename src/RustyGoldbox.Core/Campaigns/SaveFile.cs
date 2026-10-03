@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "picture", "music", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -97,6 +97,8 @@ public static class SaveFile
 
             writer.WriteString("pending_shop", state.PendingShop?.QualifiedId);
             writer.WriteString("pending_temple", state.PendingTemple?.QualifiedId);
+            writer.WriteString("pending_training", state.PendingTraining?.QualifiedId);
+            writer.WriteNumber("elapsed_days", state.ElapsedDays);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);
             writer.WriteStartArray("inventory");
@@ -387,6 +389,33 @@ public static class SaveFile
                 if (state.PendingMenu is not null || state.PendingShop is not null)
                 {
                     Error("$.pending_temple", "A save can wait at only one menu, shop or temple.");
+                }
+            }
+
+            if (!root.TryGetProperty("elapsed_days", out JsonElement elapsed) || elapsed.ValueKind != JsonValueKind.Number || !elapsed.TryGetDecimal(out decimal days) || days < 0)
+            {
+                Error("$.elapsed_days", "elapsed_days must be a nonnegative number of fictional campaign days.");
+            }
+            else
+            {
+                state.ElapsedDays = days;
+            }
+
+            if (!root.TryGetProperty("pending_training", out JsonElement training) || training.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
+            {
+                Error("$.pending_training", "pending_training must be a training event ID, or null.");
+            }
+            else if (training.ValueKind == JsonValueKind.String)
+            {
+                state.PendingTraining = Find(root, "pending_training", DefinitionTypes.Event);
+                if (state.PendingTraining is not null && state.PendingTraining.Json.GetProperty("kind").GetString() != "training")
+                {
+                    Error("$.pending_training", "The pending event must have kind training.");
+                }
+
+                if (state.PendingMenu is not null || state.PendingShop is not null || state.PendingTemple is not null)
+                {
+                    Error("$.pending_training", "A save can wait at only one interactive event.");
                 }
             }
 

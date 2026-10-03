@@ -195,7 +195,7 @@ Party: Ada -4/2 (out), Mira 0/2 (out)
 Crypt guard: Skeleton 1 -1/1 (out), Skeleton 2 7/7
 [exit 0]
 
-$ goldbox character level mira.json --module modules/classic --xp 5001 --seed 1
+$ goldbox character level mira.json --module modules/classic --xp 5001 --seed 1 --trained
 Reached level 2: +2 hit points.
 Reached level 3: +1 hit points.
 Mira: Human Magic user 3 (5001 xp, Magic user 5001 of 10250)

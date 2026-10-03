@@ -655,11 +655,19 @@ public static class CharacterRules
         List<ModuleDiagnostic> problems,
         string? nextClass = null,
         IReadOnlyList<string>? features = null,
-        IReadOnlyList<string>? boosts = null)
+        IReadOnlyList<string>? boosts = null,
+        bool trained = false,
+        bool oneLevel = false)
     {
+        if (RequiresTraining(rules) && !trained)
+        {
+            problems.Add(new ModuleDiagnostic("character.training", "This ruleset requires paid training before a level; earn experience in play and use train <member> at a training event."));
+            return null;
+        }
+
         // All or nothing: a level that can't be taken leaves the character as it was.
         LevelSnapshot before = LevelSnapshot.Of(character);
-        List<LevelGain>? gains = Gain(rules, character, experience, dice, problems, nextClass, features, boosts);
+        List<LevelGain>? gains = Gain(rules, character, experience, dice, problems, nextClass, features, boosts, oneLevel);
         if (gains is null)
         {
             before.Restore(character);
@@ -675,6 +683,8 @@ public static class CharacterRules
     /// Where each level's class is chosen (experience by character), every
     /// level waits.
     /// </summary>
+    public static bool RequiresTraining(RuleSet rules) => rules.Advancement?.Json.TryGetProperty("training", out _) == true;
+
     public static List<LevelGain> Award(RuleSet rules, Character character, decimal experience, DiceRoller dice)
     {
         if (character.ForfeitsExperience)
@@ -683,7 +693,7 @@ public static class CharacterRules
         }
 
         bool classChosen = rules.Advancement?.Json.GetProperty("experience").GetString() == "character";
-        if (!classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
+        if (!RequiresTraining(rules) && !classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
         {
             return gains;
         }
@@ -801,7 +811,8 @@ public static class CharacterRules
         List<ModuleDiagnostic> problems,
         string? nextClass,
         IReadOnlyList<string>? features,
-        IReadOnlyList<string>? boosts)
+        IReadOnlyList<string>? boosts,
+        bool oneLevel)
     {
         Queue<string> boostChoices = new(boosts ?? []);
         List<Definition>? choices = FindFeatures(rules, features, problems);
@@ -839,9 +850,9 @@ public static class CharacterRules
                 }
 
                 Share(character, experience);
-                foreach (Definition each in character.AdvancingClasses())
+                foreach (Definition each in oneLevel && chosen is not null ? [chosen] : character.AdvancingClasses())
                 {
-                    while (character.ClassProgress().First(progress => progress.Class == each) is { Next: decimal needed } progress && progress.Experience >= needed)
+                    while ((!oneLevel || gains.Count == 0) && character.ClassProgress().First(progress => progress.Class == each) is { Next: decimal needed } progress && progress.Experience >= needed)
                     {
                         if (!Advance(rules, character, each, evaluator, gains, choices, boostChoices, problems))
                         {
@@ -851,7 +862,7 @@ public static class CharacterRules
                 }
             }
 
-            while (!rules.ExperienceSplit && character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
+            while ((!oneLevel || gains.Count == 0) && !rules.ExperienceSplit && character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
             {
                 // A class with no levels left stops here; the level waits for another class (see LevelWaiting).
                 if ((chosen ?? character.LatestClass) is not Definition characterClass
