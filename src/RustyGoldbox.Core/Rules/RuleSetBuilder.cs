@@ -1242,16 +1242,64 @@ public sealed class RuleSetBuilder
             case "teleport":
                 CheckEntry(definition, "$.area", definition.Json.GetProperty("entry").GetString()!, "$.entry");
                 break;
-            case "combat" when !definition.Json.TryGetProperty("combat", out _):
-                int combats = _rules.OfType(DefinitionTypes.Combat).Count();
-                if (combats != 1)
-                {
-                    Error(definition, "event.combat", "$", combats == 0
-                        ? "There is no combat definition in the module set to fight with."
-                        : "The module set has more than one combat definition; name one with \"combat\".");
-                }
-
+            case "combat":
+                CheckCombatEvent(definition);
                 break;
+        }
+    }
+
+    private void CheckCombatEvent(Definition definition)
+    {
+        Definition? combat = null;
+        if (definition.Json.TryGetProperty("combat", out _))
+        {
+            _rules.References.TryGetValue((definition, "$.combat"), out combat);
+        }
+        else
+        {
+            List<Definition> combats = _rules.OfType(DefinitionTypes.Combat).ToList();
+            if (combats.Count != 1)
+            {
+                Error(definition, "event.combat", "$", combats.Count == 0
+                    ? "There is no combat definition in the module set to fight with."
+                    : "The module set has more than one combat definition; name one with \"combat\".");
+            }
+            else
+            {
+                combat = combats[0];
+            }
+        }
+
+        if (definition.Json.TryGetProperty("surprise_rounds", out JsonElement rounds) && rounds.GetInt32() < 1)
+        {
+            Error(definition, "event.combat-surprise", "$.surprise_rounds", "surprise_rounds must be at least 1.");
+        }
+        if (!definition.Json.TryGetProperty("surprise", out _) && definition.Json.TryGetProperty("surprise_rounds", out _))
+        {
+            Error(definition, "event.combat-surprise", "$.surprise_rounds", "surprise_rounds needs surprise to name party or monsters.");
+        }
+
+        foreach (string path in new[] { "$.party_start", "$.monsters_start" })
+        {
+            if (!definition.Json.TryGetProperty(path[2..], out JsonElement start))
+            {
+                continue;
+            }
+
+            if (combat is null || !combat.Json.TryGetProperty("field", out JsonElement field))
+            {
+                Error(definition, "event.combat-placement", path, "A starting cell needs the selected combat definition to have a field.");
+                continue;
+            }
+
+            int x = start[0].GetInt32();
+            int y = start[1].GetInt32();
+            int width = field.GetProperty("width").GetInt32();
+            int height = field.GetProperty("height").GetInt32();
+            if (x < 0 || y < 0 || x >= width || y >= height)
+            {
+                Error(definition, "event.combat-placement", path, $"Starting cell [{x}, {y}] is outside the combat field's {width} by {height} cells.");
+            }
         }
     }
 

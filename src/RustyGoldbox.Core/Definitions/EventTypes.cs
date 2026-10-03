@@ -44,6 +44,10 @@ public static class EventTypes
         [
             new("encounter", new ReferenceKind("encounter"), true, "The monsters."),
             new("combat", new ReferenceKind("combat"), false, "The combat definition; needed only when the module set has more than one."),
+            new("party_start", new ListKind(new IntegerKind(), 2), false, "On a combat field, the party's starting cell [x, y]; members deploy outward from it. Without it, the combat definition chooses the party's edge."),
+            new("monsters_start", new ListKind(new IntegerKind(), 2), false, "On a combat field, the monsters' starting cell [x, y]; members deploy outward from it. Without it, the combat definition chooses the monsters' edge."),
+            new("surprise", new EnumKind(["party", "monsters"]), false, "The side that starts surprised, instead of rolling the combat definition's surprise; one round unless surprise_rounds says otherwise."),
+            new("surprise_rounds", new IntegerKind(), false, "How many rounds the side named by surprise loses; at least 1."),
             new("on_win", new ReferenceKind("event"), false, "The event after a win."),
             new("on_lose", new ReferenceKind("event"), false, "The event after a loss; without it, the adventure ends."),
             new("on_draw", new ReferenceKind("event"), false, "The event when neither side wins within the combat's round limit; without it, the chain ends and play goes on."),

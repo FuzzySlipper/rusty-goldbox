@@ -548,7 +548,7 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Who is in a fight and where they start on its track, for presenting it.</summary>
-    private List<FightMember> Members(Definition combat, Definition encounter, List<CombatSide> sides)
+    private List<FightMember> Members(Definition combat, Definition encounter, List<CombatSide> sides, CombatSetup? setup = null)
     {
         Definition track = _rules.Reference(combat, "$.track");
         Evaluator evaluator = new(_rules, null);
@@ -557,7 +557,8 @@ public sealed partial class CampaignRunner
         for (int side = 0; side < sides.Count; side++)
         {
             // The same starting cells the combat runner deploys to.
-            IReadOnlyList<Cell>? cells = field?.Deploy(side, sides[side].Members.Count);
+            Cell? anchor = setup is not null && setup.Starts.Count > side ? setup.Starts[side] : null;
+            IReadOnlyList<Cell>? cells = field?.Deploy(side, sides[side].Members.Count, anchor);
             for (int index = 0; index < sides[side].Members.Count; index++)
             {
                 Combatant member = sides[side].Members[index];
@@ -583,8 +584,9 @@ public sealed partial class CampaignRunner
             new CombatSide("Party", party),
             new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, dice)),
         ]);
-        List<FightMember> members = Members(combat, encounter, sides);
-        CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat), encounter);
+        CombatSetup? setup = Setup(evt);
+        List<FightMember> members = Members(combat, encounter, sides, setup);
+        CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat), encounter, setup);
 
         // The party keeps what the fight did to its tracks.
         for (int i = 0; i < _state.Party.Count; i++)
@@ -634,6 +636,37 @@ public sealed partial class CampaignRunner
         _state.Ended = true;
         facts.Add(new EndedFact("The party has fallen."));
         return null;
+    }
+
+    private CombatSetup? Setup(Definition evt)
+    {
+        List<Cell?> starts = [];
+        Cell? party = Coordinate(evt, "$.party_start");
+        Cell? monsters = Coordinate(evt, "$.monsters_start");
+        if (party is not null || monsters is not null)
+        {
+            starts.Add(party);
+            starts.Add(monsters);
+        }
+
+        if (!evt.Json.TryGetProperty("surprise", out JsonElement surprise))
+        {
+            return starts.Count == 0 ? null : new CombatSetup(starts);
+        }
+
+        int side = surprise.GetString() == "party" ? 0 : 1;
+        decimal rounds = evt.Json.TryGetProperty("surprise_rounds", out JsonElement count) ? count.GetInt32() : 1;
+        return new CombatSetup(starts, side, rounds);
+    }
+
+    private static Cell? Coordinate(Definition owner, string path)
+    {
+        if (!owner.Json.TryGetProperty(path[2..], out JsonElement coordinate))
+        {
+            return null;
+        }
+
+        return new Cell(coordinate[0].GetInt32(), coordinate[1].GetInt32());
     }
 
     /// <summary>

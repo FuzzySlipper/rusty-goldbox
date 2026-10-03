@@ -520,6 +520,34 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void AnEncounterCanChooseStartingCellsAndForceSurprise()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/grid.json", """
+            { "type": "combat", "id": "grid", "name": "Grid", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "field": { "width": 6, "height": 3, "metric": "manhattan" }, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "grid", out _)!;
+        Definition dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, dummy, "Hero", evaluator)]),
+                new CombatSide("Monsters", [Combatant.FromMonster(rules, dummy, "Guard", evaluator)]),
+            ], dice, 1, setup: new CombatSetup([new Cell(2, 1), new Cell(4, 1)], 1));
+        });
+
+        Assert.Equal(new Cell(2, 1), result.Sides[0].Members[0].Creature.Position);
+        Assert.Equal(new Cell(4, 1), result.Sides[1].Members[0].Creature.Position);
+        Assert.Equal("Monsters is surprised for 1 round.", result.Facts[0].Describe());
+    }
+
+    [Fact]
     public void MovementGoesRoundObstaclesAndPaysForRoughGround()
     {
         using TempModules modules = new();

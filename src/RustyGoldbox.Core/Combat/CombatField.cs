@@ -174,9 +174,10 @@ public sealed class CombatField
     /// <summary>
     /// Starting cells: side 0 from the left edge, side 1 from the right, each
     /// filling a column from the middle outward before moving one column in,
-    /// passing over cells creatures can't stand in.
+    /// passing over cells creatures can't stand in. When an anchor is given,
+    /// it is preferred and the remaining members fill nearby cells.
     /// </summary>
-    public IReadOnlyList<Cell> Deploy(int side, int count)
+    public IReadOnlyList<Cell> Deploy(int side, int count, Cell? anchor = null)
     {
         List<int> rows = Enumerable.Range(0, Height).OrderBy(row => Math.Abs(row * 2 - (Height - 1))).ThenBy(row => row).ToList();
         List<Cell> open = Enumerable.Range(0, Width)
@@ -185,6 +186,16 @@ public sealed class CombatField
             .SelectMany(x => rows.Select(y => new Cell(x, y)))
             .Where(Passable)
             .ToList();
+
+        if (anchor is Cell starting)
+        {
+            open = open
+                .OrderBy(cell => Distance(starting, cell))
+                .ThenBy(cell => cell.Y)
+                .ThenBy(cell => cell.X)
+                .ToList();
+        }
+
         if (open.Count == 0)
         {
             open.Add(new Cell(side % 2 == 0 ? 0 : Width - 1, rows[0]));
@@ -199,4 +210,5 @@ public sealed class CombatField
 
         return cells;
     }
+
 }

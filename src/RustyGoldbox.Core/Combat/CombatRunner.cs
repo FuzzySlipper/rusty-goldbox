@@ -13,6 +13,9 @@ public sealed record CombatSide(string Name, IReadOnlyList<Combatant> Members);
 /// <param name="Track">The combat's track, which summaries show.</param>
 public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track);
 
+/// <summary>Optional encounter-specific starting positions and surprise override.</summary>
+public sealed record CombatSetup(IReadOnlyList<Cell?> Starts, int? SurprisedSide = null, decimal SurpriseRounds = 1);
+
 /// <summary>
 /// The fixed combat loop. Each round: initiative (every round or once, as the
 /// combat definition says), then each creature's turn: start-of-turn condition
@@ -30,6 +33,7 @@ public sealed class CombatRunner
     private readonly Evaluator _evaluator;
     private readonly DiceRoller _dice;
     private readonly List<CombatSide> _sides;
+    private readonly CombatSetup? _setup;
     private readonly List<CombatFact> _facts = [];
     private readonly Definition _track;
     private readonly CombatField? _field;
@@ -37,18 +41,20 @@ public sealed class CombatRunner
     /// <summary>How many reactions are resolving: 0 on a turn, 1 in a reaction, 2 in a counter-reaction.</summary>
     private int _reactions;
 
-    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter)
+    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter, CombatSetup? setup)
     {
         _rules = rules;
         _combat = combat;
         _dice = dice;
+        _setup = setup;
         _evaluator = new Evaluator(rules, dice);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
         _field = CombatField.Of(combat, encounter);
         for (int side = 0; side < _sides.Count; side++)
         {
-            IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count);
+            Cell? anchor = setup is not null && setup.Starts.Count > side ? setup.Starts[side] : null;
+            IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count, anchor);
             for (int index = 0; index < _sides[side].Members.Count; index++)
             {
                 Combatant member = _sides[side].Members[index];
@@ -101,9 +107,9 @@ public sealed class CombatRunner
     }
 
     /// <summary>Fights the sides under the combat definition, on the encounter's terrain when it has some.</summary>
-    public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds, Definition? encounter = null)
+    public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds, Definition? encounter = null, CombatSetup? setup = null)
     {
-        return new CombatRunner(rules, combat, sides, dice, encounter).Fight(maxRounds);
+        return new CombatRunner(rules, combat, sides, dice, encounter, setup).Fight(maxRounds);
     }
 
     private IEnumerable<Combatant> Everyone => _sides.SelectMany(side => side.Members);
@@ -190,6 +196,23 @@ public sealed class CombatRunner
     /// </summary>
     private void RollSurprise()
     {
+        if (_setup?.SurprisedSide is int forced)
+        {
+            if (forced < 0 || forced >= _sides.Count || _setup.SurpriseRounds <= 0)
+            {
+                return;
+            }
+
+            CombatSide side = _sides[forced];
+            foreach (Combatant member in side.Members)
+            {
+                member.SurprisedRounds = _setup.SurpriseRounds;
+            }
+
+            Record(new SurprisedFact(side.Name, _setup.SurpriseRounds));
+            return;
+        }
+
         if (!_combat.Json.TryGetProperty("surprise", out _))
         {
             return;
