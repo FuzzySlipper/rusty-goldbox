@@ -1,5 +1,6 @@
 using Rusty.Engine;
 using Rusty.Engine.Testing;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
@@ -9,6 +10,36 @@ namespace RustyGoldbox.Tests;
 
 public sealed class CombatRollTests
 {
+    [Fact]
+    public void SkillUseIsMarkedAfterAPostRollChangesFailureToSuccess()
+    {
+        using TempModules modules = new();
+        string root = RollRuleset(modules, "9");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "15" }""");
+        modules.Write("rules/advancement.json", """{ "type": "advancement", "id": "practice", "name": "Practice", "kind": "improvement", "improvement": { "checks": [{ "skill": "str", "when": "true", "amount": "1" }] } }""");
+        string checkFile = Path.Combine(root, "check.json");
+        File.WriteAllText(checkFile, File.ReadAllText(checkFile).Replace("\"name\": \"Strike\"", "\"name\": \"Strike\", \"skill\": \"str\"", StringComparison.Ordinal));
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        Character character = WithDice(dice => CharacterRules.Create(rules, Character.StampsOf(set), new CreationRequest("Ada", "warrior", null), dice, []))!;
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition monster = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant rolled = Combatant.FromMonster(rules, monster, character.Name, evaluator);
+            Combatant actor = new(character.Name, rolled.Creature, rolled.Uses) { Character = character };
+            return CombatRunner.Run(rules, combat,
+                [new CombatSide("Party", [actor]), new CombatSide("Enemies", [Combatant.FromMonster(rules, dummy, dummy.Name, evaluator)])], dice, maxRounds: 1);
+        });
+
+        Assert.Equal("success", Assert.Single(result.Facts.OfType<CheckFact>()).Result.Tier);
+        Assert.Equal(1, character.SkillMarks["str"]);
+    }
+
     [Fact]
     public void ACheckCanSpendAResourceForABonusAfterItsRoll()
     {

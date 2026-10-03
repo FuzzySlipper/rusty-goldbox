@@ -29,7 +29,7 @@ public sealed class LockedDoorTests
     {
         using TempModules modules = new();
         string campaign = modules.Module("tale", "campaign", requires: $"{Require("classic", "*")}, {Require("placeholder-art", "*")}");
-        modules.Write("tale/key.json", """{ "type": "item", "id": "key", "name": "Iron key", "kind": "key", "cost": 1, "weight": 0 }""");
+        modules.Write("tale/key.json", """{ "type": "item", "id": "key", "name": "Iron key", "kind": "key", "currency": "classic:gold", "cost": 1, "weight": 0 }""");
         modules.Write("tale/pick_lock.json", """{ "type": "check", "id": "pick_lock", "name": "Pick lock", "roll": "20", "target": "1", "succeeds": "at-least" }""");
         modules.Write("tale/force_door.json", """{ "type": "check", "id": "force_door", "name": "Force door", "roll": "20", "target": "1", "succeeds": "at-least" }""");
         modules.Write("tale/unlock_event.json", """{ "type": "event", "id": "unlock_event", "kind": "open", "door": "event_gate" }""");
