@@ -1,0 +1,15 @@
+{
+  "type": "reaction",
+  "id": "avenge",
+  "name": "Avenge",
+  "trigger": "ally_defeated",
+  "cost": {
+    "reaction": 1
+  },
+  "when": "combat.distance <= 1",
+  "use": {
+    "action": "strike",
+    "name": "Avenging spear",
+    "damage": "1d6"
+  }
+}

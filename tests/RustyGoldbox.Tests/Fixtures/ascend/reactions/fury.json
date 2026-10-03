@@ -1,0 +1,12 @@
+{
+  "type": "reaction",
+  "id": "fury",
+  "name": "Fury",
+  "trigger": "ally_defeated",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "rage"
+  }
+}

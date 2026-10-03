@@ -672,11 +672,20 @@ public sealed class CombatRunner
         int before = _dice.Rolls.Count;
         int factsBefore = _facts.Count;
         Located(owner, path, () => Apply(owner, operation, path, scope, op, who, before));
-        CheckDefeated(who);
+        bool fell = CheckDefeated(who);
         if (op == "damage" && who != actor && who.Side != actor.Side
             && _facts.Skip(factsBefore).OfType<DamageFact>().Any(damage => damage.Who == who.Name && damage.Amount > 0))
         {
             React("damaged", who, actor);
+        }
+
+        // An enemy felled it: its allies still fighting may react against that enemy.
+        if (fell && who.Side != actor.Side)
+        {
+            foreach (Combatant ally in Everyone.Where(member => member.Side == who.Side && member != who).ToList())
+            {
+                React("ally_defeated", ally, actor);
+            }
         }
     }
 
@@ -938,15 +947,18 @@ public sealed class CombatRunner
         }
     }
 
-    /// <summary>Re-evaluates the combat's defeated rule; a creature can fall or get back up.</summary>
-    private void CheckDefeated(Combatant combatant)
+    /// <summary>Re-evaluates the combat's defeated rule; a creature can fall or get back up. Returns whether it just fell.</summary>
+    private bool CheckDefeated(Combatant combatant)
     {
         bool defeated = Evaluate(_combat, "$.defeated", new Scope(combatant.Creature, null)).Boolean;
-        if (defeated != combatant.Defeated)
+        if (defeated == combatant.Defeated)
         {
-            combatant.Defeated = defeated;
-            Record(defeated ? new DefeatedFact(combatant.Name) : new ReturnedFact(combatant.Name));
+            return false;
         }
+
+        combatant.Defeated = defeated;
+        Record(defeated ? new DefeatedFact(combatant.Name) : new ReturnedFact(combatant.Name));
+        return defeated;
     }
 
     /// <summary>Whether the caster's tracks can pay every cost of the spell.</summary>

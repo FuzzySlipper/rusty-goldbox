@@ -140,8 +140,8 @@ creatures take no turns; with the combat's `downed_conditions`, they still
 run their conditions and count them down at their place in the order, or at
 the round's end when they have none (initiative rolled each round leaves them
 out). Reactions resolve where their triggers happen: as a mover
-leaves a reach, before an action's check against the reactor, and after an
-operation wounds it. Every change is a `CombatFact`, with the dice that produced it.
+leaves a reach, before an action's check against the reactor, after an
+operation wounds it, and after an enemy's operation fells an ally. Every change is a `CombatFact`, with the dice that produced it.
 
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope

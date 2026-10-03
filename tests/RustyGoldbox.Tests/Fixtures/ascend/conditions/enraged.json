@@ -1,0 +1,15 @@
+{
+  "type": "condition",
+  "id": "enraged",
+  "name": "Enraged",
+  "modifiers": [
+    {
+      "check": "attack",
+      "value": "2"
+    },
+    {
+      "stat": "ac",
+      "value": "-2"
+    }
+  ]
+}

@@ -247,8 +247,8 @@ turn on it, and a rule about flanking or rear attacks can read positions.
 Without a field everyone is in reach.
 
 **Reactions** happen out of turn: a reaction names a trigger (an enemy
-leaving its reach, an enemy's action about to resolve against it, or an
-enemy's operation wounding it), spends a combat budget (usually a `reaction`
+leaving its reach, an enemy's action about to resolve against it, an
+enemy's operation wounding it, or an enemy felling one of its allies), spends a combat budget (usually a `reaction`
 budget refilled each turn) and resolves its use against whoever triggered it.
 Classes, monsters and features list the reactions they give. A `targeted`
 reaction is an interrupt: it resolves before the action's check (a raised

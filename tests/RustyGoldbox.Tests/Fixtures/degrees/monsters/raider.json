@@ -20,5 +20,8 @@
       "name": "Spear",
       "damage": "1d6"
     }
+  ],
+  "reactions": [
+    "avenge"
   ]
 }

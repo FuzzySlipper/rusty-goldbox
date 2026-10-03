@@ -13,10 +13,13 @@ Round 1.
   Kara rolls Attack: 20 + 4 = 24 against 13: critical.  [1d20: 20 = 20]
   Brute 1 loses 20 hit points (-3 left).  [1d8: 8 = 8; 1d8: 6 = 6]
   Brute 1 is out of the fight.
+  Brute 2 reacts to Kara: Fury.
+  Brute 2 uses Rage on Brute 2.
+  Brute 2 is Enraged for 3 rounds.
   Kara uses Advance on Brute 2.
   Kara moves 6 cells to (6, 1).
   Brute 2 uses Club on Kara.
-  Brute 2 rolls Attack: 7 + 5 = 12 against 11: success.  [1d20: 7 = 7]
+  Brute 2 rolls Attack: 7 + 5 + 2 modifiers = 14 against 11: success.  [1d20: 7 = 7]
   Kara loses 8 hit points (-1 left).  [1d8: 5 = 5]
   Kara is out of the fight.
 Brutes wins after 1 round.

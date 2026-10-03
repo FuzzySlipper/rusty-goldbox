@@ -1,0 +1,17 @@
+{
+  "type": "action",
+  "id": "rage",
+  "name": "Rage",
+  "cost": {
+    "standard": 1
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "apply_condition",
+      "condition": "enraged",
+      "rounds": "3",
+      "to": "self"
+    }
+  ]
+}
