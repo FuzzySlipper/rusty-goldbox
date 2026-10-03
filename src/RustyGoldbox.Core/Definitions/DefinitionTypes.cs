@@ -556,10 +556,11 @@ public static class DefinitionTypes
 
     public static DefinitionType Variable { get; } = new(
         "variable",
-        "A campaign variable: declared with a type and an initial value, read as campaign.var.<id>, changed by set events. Undeclared variables are errors.",
+        "A campaign or area variable: declared with a type and an initial value, read as campaign.var.<id> or area.var.<id>. Area values are separate for every area and changed by set events in the current area. Undeclared variables are errors.",
         [
             new("value_type", new EnumKind(["number", "boolean", "text"]), true, "Its type."),
             new("initial", new ExpressionKind(null, Roots.None), true, "Its value when the campaign starts, of its type, for example \"false\" or \"0\"."),
+            new("scope", new EnumKind(["campaign", "area"]), false, "Where its value lives: campaign (the default) is shared by the whole adventure; area gives each area its own value and is read as area.var.<id>."),
             new("description", new TextKind(), false, "What it records."),
         ],
         """
@@ -620,13 +621,14 @@ public static class DefinitionTypes
                 new("prop", new ObjectKind(
                 [
                     new("sprite", new ReferenceKind("asset", "figure"), true, "The sheet standing in the cell (a figure slot): a chest, a pillar, bones, a guard."),
-                    new("hidden", new ExpressionKind(Expressions.ExprType.Boolean, Roots.Campaign), false,
-                        "While this is true the prop isn't there, for example \"campaign.var.chest_opened\"; it may read campaign.var."),
+                    new("hidden", new ExpressionKind(Expressions.ExprType.Boolean, Roots.Campaign | Roots.Area), false,
+                        "While this is true the prop isn't there, for example \"campaign.var.chest_opened\" or \"area.var.chest_opened\"; it may read campaign.var or area.var."),
                 ]), false, "Something standing in the middle of the cell in the first-person view. It doesn't block movement."),
                 new("event", new ReferenceKind("event"), false, "The event that runs when the party enters the cell."),
                 new("facing", new EnumKind(["north", "east", "south", "west"]), false, "Run the event only when the party enters facing this way."),
                 new("once", new BooleanKind(), false, "If true, the event runs only the first time."),
             ])), false, "Cells with features."),
+            new("search", new ReferenceKind("check"), false, "The ruleset check used by the search command to discover secret doors around the party; when omitted, a check named search is used if the ruleset provides one."),
             new("entries", new MapKind(new TextKind(), new ObjectKind(
             [
                 new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell."),

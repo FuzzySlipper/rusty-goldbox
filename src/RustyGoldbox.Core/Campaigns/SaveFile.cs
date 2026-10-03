@@ -62,22 +62,26 @@ public static class SaveFile
             writer.WriteNumber("y", state.Y);
             writer.WriteString("facing", Facings.Name(state.Facing));
             writer.WriteStartObject("variables");
+            writer.WriteStartObject("campaign");
             foreach ((string id, Value value) in state.Variables.OrderBy(entry => entry.Key, StringComparer.Ordinal))
             {
-                switch (value.Type)
-                {
-                    case ExprType.Number:
-                        writer.WriteNumber(id, value.Number);
-                        break;
-                    case ExprType.Boolean:
-                        writer.WriteBoolean(id, value.Boolean);
-                        break;
-                    default:
-                        writer.WriteString(id, value.Text);
-                        break;
-                }
+                WriteValue(writer, id, value);
             }
 
+            writer.WriteEndObject();
+            writer.WriteStartObject("areas");
+            foreach ((string area, Dictionary<string, Value> values) in state.AreaVariables.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+            {
+                writer.WriteStartObject(area);
+                foreach ((string id, Value value) in values.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    WriteValue(writer, id, value);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
             writer.WriteEndObject();
             writer.WriteStartArray("fired");
             foreach (string fired in state.Fired.Order(StringComparer.Ordinal))
@@ -127,6 +131,22 @@ public static class SaveFile
         }
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    private static void WriteValue(Utf8JsonWriter writer, string id, Value value)
+    {
+        switch (value.Type)
+        {
+            case ExprType.Number:
+                writer.WriteNumber(id, value.Number);
+                break;
+            case ExprType.Boolean:
+                writer.WriteBoolean(id, value.Boolean);
+                break;
+            default:
+                writer.WriteString(id, value.Text);
+                break;
+        }
     }
 
     /// <summary>Reads a save file against the loaded module set; problems name the file and JSON path.</summary>
@@ -292,16 +312,50 @@ public static class SaveFile
         {
             if (!root.TryGetProperty("variables", out JsonElement variables) || variables.ValueKind != JsonValueKind.Object)
             {
-                Error("$.variables", "Missing \"variables\": the campaign variables and their values.");
+                Error("$.variables", "Missing \"variables\": the campaign and area variables and their values.");
                 return;
             }
 
-            foreach (Definition variable in _rules.Variables.Values)
+            if (!variables.TryGetProperty("campaign", out JsonElement campaign) || campaign.ValueKind != JsonValueKind.Object)
             {
-                string at = $"$.variables.{variable.Id}";
-                if (!variables.TryGetProperty(variable.Id, out JsonElement value))
+                Error("$.variables.campaign", "campaign must be an object containing the campaign-scoped variable values.");
+            }
+            else
+            {
+                ReadVariableObject(campaign, "$.variables.campaign", _rules.Variables, state.Variables, "campaign");
+            }
+
+            if (!variables.TryGetProperty("areas", out JsonElement areas) || areas.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.variables.areas", "areas must be an object mapping each area ID to its area-scoped variable values.");
+                return;
+            }
+
+            foreach (Definition area in _rules.OfType(DefinitionTypes.Area))
+            {
+                if (!areas.TryGetProperty(area.QualifiedId, out JsonElement values) || values.ValueKind != JsonValueKind.Object)
                 {
-                    Error("$.variables", $"Missing variable {variable.Id}.");
+                    Error($"$.variables.areas.{area.QualifiedId}", $"Missing values for area {area.QualifiedId}.");
+                    continue;
+                }
+
+                ReadVariableObject(values, $"$.variables.areas.{area.QualifiedId}", _rules.AreaVariables, state.ValuesFor(area), "area");
+            }
+
+            foreach (JsonProperty extra in areas.EnumerateObject().Where(property => _rules.OfType(DefinitionTypes.Area).All(area => area.QualifiedId != property.Name)))
+            {
+                Error($"$.variables.areas.{extra.Name}", $"'{extra.Name}' is not an area of this module set.");
+            }
+        }
+
+        private void ReadVariableObject(JsonElement values, string at, Dictionary<string, Definition> definitions, Dictionary<string, Value> destination, string scope)
+        {
+            foreach (Definition variable in definitions.Values)
+            {
+                string variableAt = $"{at}.{variable.Id}";
+                if (!values.TryGetProperty(variable.Id, out JsonElement value))
+                {
+                    Error(at, $"Missing {scope} variable {variable.Id}.");
                     continue;
                 }
 
@@ -315,17 +369,17 @@ public static class SaveFile
                 };
                 if (read is null)
                 {
-                    Error(at, $"{variable.Id} is a {type} variable, but the saved value is {JsonFiles.Describe(value.ValueKind)}.");
+                    Error(variableAt, $"{variable.Id} is a {type} variable, but the saved value is {JsonFiles.Describe(value.ValueKind)}.");
                 }
                 else
                 {
-                    state.Variables[variable.Id] = read.Value;
+                    destination[variable.Id] = read.Value;
                 }
             }
 
-            foreach (JsonProperty extra in variables.EnumerateObject().Where(property => !_rules.Variables.ContainsKey(property.Name)))
+            foreach (JsonProperty extra in values.EnumerateObject().Where(property => !definitions.ContainsKey(property.Name)))
             {
-                Error($"$.variables.{extra.Name}", $"'{extra.Name}' is not a variable of this campaign.");
+                Error($"{at}.{extra.Name}", $"'{extra.Name}' is not a {scope} variable of this module set.");
             }
         }
 

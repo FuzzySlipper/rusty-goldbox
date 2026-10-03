@@ -57,6 +57,7 @@ internal sealed class ExpressionChecker(
             "use" => Roots.Use,
             "check" => Roots.Check,
             "campaign" => Roots.Campaign,
+            "area" => Roots.Area,
             "class" => Roots.Class,
             "outer" => Roots.Outer,
             "condition" => Roots.Condition,
@@ -86,12 +87,17 @@ internal sealed class ExpressionChecker(
             return ExprType.Number;
         }
 
-        if (root == Roots.Campaign)
+        if (root is Roots.Campaign or Roots.Area)
         {
-            if (!rules.Variables.TryGetValue(path.Name, out Definition? variable))
+            Dictionary<string, Definition> variables = root == Roots.Campaign ? rules.Variables : rules.AreaVariables;
+            string scope = root == Roots.Campaign ? "campaign" : "area";
+            if (!variables.TryGetValue(path.Name, out Definition? variable))
             {
-                string known = rules.Variables.Count == 0 ? "No variables are declared." : $"Variables: {string.Join(", ", rules.Variables.Keys.Order(StringComparer.Ordinal))}.";
-                throw new ExpressionException($"'{path.Name}' is not a declared variable. {known} Declare it with a variable definition.", path.Column);
+                string known = variables.Count == 0 ? $"No {scope} variables are declared." : $"{scope} variables: {string.Join(", ", variables.Keys.Order(StringComparer.Ordinal))}.";
+                string missing = root == Roots.Campaign
+                    ? $"'{path.Name}' is not a declared variable. {known} Declare it with a variable definition whose scope is 'campaign'."
+                    : $"'{path.Name}' is not a declared area variable. {known} Declare it with a variable definition whose scope is 'area'.";
+                throw new ExpressionException(missing, path.Column);
             }
 
             if (!rules.VisibleModules[module].Contains(variable.Module))

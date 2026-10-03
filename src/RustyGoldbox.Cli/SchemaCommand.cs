@@ -247,7 +247,7 @@ internal static class SchemaCommand
         }
 
         output.Line("An event definition is { \"type\": \"event\", \"id\", \"kind\", ...the kind's fields }. Events chain by");
-        output.Line("naming the next event; cells and menus start chains. Expressions in events may read campaign.var.<name>.");
+        output.Line("naming the next event; cells and menus start chains. Expressions in events may read campaign.var.<name> or area.var.<name>.");
         foreach (DefinitionType kind in EventTypes.All)
         {
             output.Line();

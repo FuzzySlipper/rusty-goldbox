@@ -68,9 +68,11 @@ public sealed class RuleSetBuilder
 
         foreach (Definition variable in _rules.OfType(DefinitionTypes.Variable))
         {
-            if (!_rules.Variables.TryAdd(variable.Id, variable))
+            bool area = variable.Json.TryGetProperty("scope", out JsonElement scope) && scope.GetString() == "area";
+            Dictionary<string, Definition> variables = area ? _rules.AreaVariables : _rules.Variables;
+            if (!variables.TryAdd(variable.Id, variable))
             {
-                Error(variable, "variable.duplicate", "$.id", $"Variable '{variable.Id}' is already declared in {_rules.Variables[variable.Id].QualifiedId}. Variable names are shared by the module set.");
+                Error(variable, "variable.duplicate", "$.id", $"{(area ? "Area" : "Campaign")} variable '{variable.Id}' is already declared in {variables[variable.Id].QualifiedId}. Variable names are shared by the module set within each scope.");
             }
         }
 
@@ -997,7 +999,7 @@ public sealed class RuleSetBuilder
 
     private void CheckCampaigns()
     {
-        foreach (Definition variable in _rules.Variables.Values)
+        foreach (Definition variable in _rules.Variables.Values.Concat(_rules.AreaVariables.Values))
         {
             CheckValueType(variable, "$.initial", variable);
         }

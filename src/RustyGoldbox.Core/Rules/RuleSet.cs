@@ -32,6 +32,9 @@ public sealed class RuleSet
     /// <summary>Campaign variables by ID.</summary>
     public Dictionary<string, Definition> Variables { get; } = [];
 
+    /// <summary>Area-scoped variables by ID. Their values are kept once per campaign area.</summary>
+    public Dictionary<string, Definition> AreaVariables { get; } = [];
+
     /// <summary>Tracks by ID. Expressions read each as &lt;id&gt; (current) and max_&lt;id&gt;.</summary>
     public Dictionary<string, Definition> Tracks { get; } = [];
 

@@ -19,6 +19,9 @@ public enum Roots
     /// <summary>campaign.var.&lt;name&gt;: campaign variables.</summary>
     Campaign = 16,
 
+    /// <summary>area.var.&lt;name&gt;: variables whose values are kept separately for each area.</summary>
+    Area = 1024,
+
     /// <summary>class.level: the creature's level in the class a modifier belongs to.</summary>
     Class = 32,
 
@@ -96,6 +99,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
         if (Roots.HasFlag(Roots.Campaign))
         {
             roots.Add("campaign.var");
+        }
+
+        if (Roots.HasFlag(Roots.Area))
+        {
+            roots.Add("area.var");
         }
 
         if (Roots.HasFlag(Roots.Class))

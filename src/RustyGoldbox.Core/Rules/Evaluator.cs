@@ -37,7 +37,8 @@ public sealed record Scope(
     IReadOnlyDictionary<string, decimal>? ConditionValues = null,
     Definition? Class = null,
     Definition? Item = null,
-    IEnumerable<Definition>? PartyItems = null);
+    IEnumerable<Definition>? PartyItems = null,
+    IReadOnlyDictionary<string, Value>? AreaVariables = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -416,6 +417,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return scope.Variables is not null && scope.Variables.TryGetValue(path.Name, out Value variable)
                     ? variable
                     : throw new ExpressionException($"campaign.var.{path.Name} has no value here: there is no campaign running.", path.Column);
+            }
+
+            if (path.Root == "area")
+            {
+                return scope.AreaVariables is not null && scope.AreaVariables.TryGetValue(path.Name, out Value variable)
+                    ? variable
+                    : throw new ExpressionException($"area.var.{path.Name} has no value here: there is no current area.", path.Column);
             }
 
             if (path.Root == "class")

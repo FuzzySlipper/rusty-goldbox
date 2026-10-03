@@ -187,12 +187,12 @@ public static class Parser
                     throw new ExpressionException($"Expected a name after '{token.Text}.', like '{token.Text}.level'.", name.Column);
                 }
 
-                if (token.Text == "campaign")
+                if (token.Text is "campaign" or "area")
                 {
-                    // Campaign variables: campaign.var.<name>, read as PathExpr("campaign", name).
+                    // Scoped variables: campaign.var.<name> or area.var.<name>.
                     if (name.Text != "var" || Peek() is not { Kind: TokenKind.Operator, Text: "." })
                     {
-                        throw new ExpressionException("Read campaign variables as campaign.var.<name>.", token.Column);
+                        throw new ExpressionException($"Read {token.Text} variables as {token.Text}.var.<name>.", token.Column);
                     }
 
                     _position++;

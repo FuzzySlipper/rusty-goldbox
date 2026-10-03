@@ -459,9 +459,12 @@ Combat is built so that no die convention is assumed:
   dual-classed character may call on its former class before the new one
   passes it (`former <member> on`), and earns no more experience that
   adventure.
-- **Variables** are global or area-scoped. Each is declared with a type and an
-  initial value; undeclared variables fail validation. Expressions read them
-  as `campaign.var.<name>`.
+- **Variables** are global or area-scoped. Each is declared with a type, an
+  initial value and an optional `scope` (`campaign` is the default); undeclared
+  variables fail validation. Expressions read global values as
+  `campaign.var.<name>` and the value belonging to the current area as
+  `area.var.<name>`. Saves keep the two scopes separately and keep every area's
+  values.
 
 An area's map is written as text that agents can read and diff, in the same
 notation `goldbox map render` prints: `+` corners, horizontal edges of two

@@ -9,7 +9,7 @@ namespace RustyGoldbox.Core.Definitions;
 /// </summary>
 public static class EventTypes
 {
-    private static readonly ExpressionKind Guard = new(ExprType.Boolean, Roots.Campaign);
+    private static readonly ExpressionKind Guard = new(ExprType.Boolean, Roots.Campaign | Roots.Area);
     private static readonly Field Next = new("next", new ReferenceKind("event"), false, "The event that follows; without it, the chain ends and the party can move again.");
     private static readonly Field Picture = new("picture", new ReferenceKind("asset", "picture"), false, "A picture shown with the event, any visual media; it stays until the party moves or another event shows one.");
     private static readonly Field Sound = new("sound", new ReferenceKind("asset", "sound"), false, "Audio played once as the event begins.");
@@ -64,7 +64,7 @@ public static class EventTypes
         "Sets a campaign variable.",
         [
             new("variable", new ReferenceKind("variable"), true, "The variable."),
-            new("value", new ExpressionKind(null, Roots.Campaign), true, "Its new value, of the variable's type; may read campaign.var."),
+            new("value", new ExpressionKind(null, Roots.Campaign | Roots.Area), true, "Its new value, of the variable's type; may read campaign.var or area.var."),
             Next,
         ],
         """{ "type": "event", "id": "forced", "kind": "set", "variable": "gate_open", "value": "true", "next": "through" }""");
@@ -97,7 +97,7 @@ public static class EventTypes
         "Gives the party an explicitly named currency and items.",
         [
             new("currency", new ReferenceKind("currency"), false, "The currency found. Required with amount; omit both for item-only treasure."),
-            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign), false, "Currency found, for example \"3d6 * 10\"; shared evenly among the characters, the remainder to the first."),
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign | Roots.Area), false, "Currency found, for example \"3d6 * 10\"; shared evenly among the characters, the remainder to the first."),
             new("items", new ListKind(new ReferenceKind("item")), false, "Items found."),
             Next,
         ],
@@ -107,7 +107,7 @@ public static class EventTypes
         "experience",
         "Awards experience to the party, as for a quest done or a puzzle solved. Characters gain the levels it reaches that need no choice; the others wait for a level command.",
         [
-            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign), true, "Experience awarded, for example \"500\"; split as fights' awards are (see the advancement's experience_to) unless each is true."),
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign | Roots.Area), true, "Experience awarded, for example \"500\"; split as fights' awards are (see the advancement's experience_to) unless each is true."),
             new("each", new BooleanKind(), false, "If true, every character gets the whole amount. Without it, the amount is shared."),
             new("text", new TextKind(), false, "What the party sees first."),
             Next,
@@ -188,9 +188,9 @@ public static class EventTypes
             new("services", new ListKind(new ObjectKind(
             [
                 new("label", new TextKind(), true, "The service name."),
-                new("cost", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign), true, "Amount charged in the named currency; may read the chosen character as self and campaign variables. Must evaluate to a nonnegative number."),
+                new("cost", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), true, "Amount charged in the named currency; may read the chosen character as self and campaign variables. Must evaluate to a nonnegative number."),
                 new("currency", new ReferenceKind("currency"), true, "Currency charged for this service."),
-                new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign, ["heal", "remove_condition"])), true, "Operations on the chosen character; heal requires a track and to, if given, must be self."),
+                new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign | Roots.Area, ["heal", "remove_condition"])), true, "Operations on the chosen character; heal requires a track and to, if given, must be self."),
             ])), true, "Services in order, numbered from 1."),
             Next, Picture, Sound, Music,
         ],

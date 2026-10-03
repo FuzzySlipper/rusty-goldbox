@@ -32,6 +32,21 @@ public sealed class CampaignState
 
     public Dictionary<string, Value> Variables { get; } = [];
 
+    /// <summary>Values of area-scoped variables, keyed by each area's qualified ID.</summary>
+    public Dictionary<string, Dictionary<string, Value>> AreaVariables { get; } = [];
+
+    /// <summary>Values for an area, created by campaign start or save loading.</summary>
+    public Dictionary<string, Value> ValuesFor(Definition area)
+    {
+        if (!AreaVariables.TryGetValue(area.QualifiedId, out Dictionary<string, Value>? values))
+        {
+            values = [];
+            AreaVariables[area.QualifiedId] = values;
+        }
+
+        return values;
+    }
+
     /// <summary>Once-only triggers that have run, as "module:area@x,y".</summary>
     public HashSet<string> Fired { get; } = [];
 
