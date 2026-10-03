@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "soothe",
+  "name": "Soothe",
+  "cost": {
+    "action": 2
+  },
+  "target": "hurt_ally",
+  "score": "target.max_hit_points - target.hit_points - 5",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "1d8 + self.insight_mod"
+    }
+  ]
+}

@@ -178,97 +178,48 @@ Round 2.
   Bully 2 is out of the fight.
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Ilse uses Hex on Bully 1.
-  Bully 1 rolls Will save: 6 against 13: failure.  [1d20: 6 = 6]
-  Bully 1 is Shaken for 2 rounds.
+  Ilse uses Patch up on Kara.
+  Kara regains 7 hit points (8).  [1d6: 4 = 4]
   Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 1 + 5 - 2 modifiers = 4 against 11: miss.  [1d20: 1 = 1]
+  Bully 1 rolls Attack: 1 + 5 = 6 against 11: miss.  [1d20: 1 = 1]
   Bully 2 is no longer Shaken.
 Round 3.
   Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 4 + 4 + 4 modifiers = 12 against 12: success.  [1d20: 4 = 4]
-  Bully 1 loses 7 hit points (6 left).  [1d8: 4 = 4]
+  Kara rolls Attack: 4 + 4 + 2 modifiers = 10 against 12: failure.  [1d20: 4 = 4]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Ilse uses Punch on Bully 1.
-  Ilse rolls Attack: 2 - 1 = 1 against 12: failure.  [1d20: 2 = 2]
+  Ilse uses Hex on Bully 1.
+  Bully 1 rolls Will save: 16 against 13: success.  [1d20: 16 = 16]
   Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 11 + 5 - 2 modifiers = 14 against 11: success.  [1d20: 11 = 11]
-  Kara loses 6 hit points (-5 left).  [1d10: 3 = 3]
-  Kara is out of the fight.
-  Bully 1 is no longer Shaken.
+  Bully 1 rolls Attack: 2 + 5 = 7 against 11: failure.  [1d20: 2 = 2]
 Round 4.
-  Ilse uses Mend on Kara.
-  Kara regains 8 hit points (3).  [1d8: 5 = 5]
-  Kara is back in the fight.
+  Kara uses Melee attack (Longsword) on Bully 1.
+  Kara rolls Attack: 11 + 4 + 2 modifiers = 17 against 12: success.  [1d20: 11 = 11]
+  Bully 1 loses 8 hit points (5 left).  [1d8: 5 = 5]
+  Kara uses Aim on Kara.
+  Kara is Focused for 1 round.
+  Ilse uses Hex on Bully 1.
+  Bully 1 rolls Will save: 5 against 13: failure.  [1d20: 5 = 5]
+  Bully 1 is Shaken for 2 rounds.
   Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 16 + 5 = 21 against 11: success.  [1d20: 16 = 16]
-  Kara loses 9 hit points (-6 left).  [1d10: 6 = 6]
+  Bully 1 rolls Attack: 16 + 5 - 2 modifiers = 19 against 11: success.  [1d20: 16 = 16]
+  Kara loses 9 hit points (-1 left).  [1d10: 6 = 6]
   Kara is out of the fight.
-  Kara is no longer Focused.
 Round 5.
   Ilse uses Mend on Kara.
-  Kara regains 5 hit points (-1).  [1d8: 2 = 2]
-  Bully 1 uses Smash on Ilse.
-  Bully 1 rolls Attack: 5 + 5 = 10 against 15: failure.  [1d20: 5 = 5]
+  Kara regains 5 hit points (4).  [1d8: 2 = 2]
+  Kara is back in the fight.
+  Bully 1 uses Smash on Kara.
+  Bully 1 rolls Attack: 5 + 5 - 2 modifiers = 8 against 11: failure.  [1d20: 5 = 5]
+  Bully 1 is no longer Shaken.
 Round 6.
-  Ilse uses Mend on Kara.
-  Kara regains 9 hit points (8).  [1d8: 6 = 6]
-  Kara is back in the fight.
-  Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 8 + 5 = 13 against 11: success.  [1d20: 8 = 8]
-  Kara loses 4 hit points (4 left).  [1d10: 1 = 1]
-Round 7.
   Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 3 + 4 = 7 against 12: failure.  [1d20: 3 = 3]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Ilse uses Hex on Bully 1.
-  Bully 1 rolls Will save: 11 against 13: failure.  [1d20: 11 = 11]
-  Bully 1 is Shaken for 2 rounds.
-  Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 10 + 5 - 2 modifiers = 13 against 11: success.  [1d20: 10 = 10]
-  Kara loses 5 hit points (-1 left).  [1d10: 2 = 2]
-  Kara is out of the fight.
-Round 8.
-  Ilse uses Mend on Kara.
-  Kara regains 4 hit points (3).  [1d8: 1 = 1]
-  Kara is back in the fight.
-  Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 6 + 5 - 2 modifiers = 9 against 11: failure.  [1d20: 6 = 6]
-  Bully 1 is no longer Shaken.
-Round 9.
-  Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 3 + 4 + 2 modifiers = 9 against 12: failure.  [1d20: 3 = 3]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
-  Ilse uses Hex on Bully 1.
-  Bully 1 rolls Will save: 1 against 13: failure.  [1d20: 1 = 1]
-  Bully 1 is Shaken for 2 rounds.
-  Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 10 + 5 - 2 modifiers = 13 against 11: success.  [1d20: 10 = 10]
-  Kara loses 11 hit points (-8 left).  [1d10: 8 = 8]
-  Kara is out of the fight.
-Round 10.
-  Ilse uses Mend on Kara.
-  Kara regains 5 hit points (-3).  [1d8: 2 = 2]
-  Bully 1 uses Smash on Ilse.
-  Bully 1 rolls Attack: 10 + 5 - 2 modifiers = 13 against 15: failure.  [1d20: 10 = 10]
-  Bully 1 is no longer Shaken.
-  Kara is no longer Focused.
-Round 11.
-  Ilse uses Mend on Kara.
-  Kara regains 5 hit points (2).  [1d8: 2 = 2]
-  Kara is back in the fight.
-  Bully 1 uses Smash on Kara.
-  Bully 1 rolls Attack: 1 + 5 = 6 against 11: miss.  [1d20: 1 = 1]
-Round 12.
-  Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 20 + 4 = 24 against 12: critical.  [1d20: 20 = 20]
-  Bully 1 loses 13 hit points (-7 left).  [1d8: 1 = 1; 1d8: 6 = 6]
+  Kara rolls Attack: 18 + 4 + 2 modifiers = 24 against 12: success.  [1d20: 18 = 18]
+  Bully 1 loses 11 hit points (-6 left).  [1d8: 8 = 8]
   Bully 1 is out of the fight.
-Party wins after 12 rounds.
-Party: Kara 2/12, Ilse 9/9
-Bullies: Bully 1 -7/13 (out), Bully 2 -4/12 (out)
+  Kara is no longer Focused.
+Party wins after 6 rounds.
+Party: Kara 4/12, Ilse 9/9
+Bullies: Bully 1 -6/13 (out), Bully 2 -4/12 (out)
 [exit 0]
 

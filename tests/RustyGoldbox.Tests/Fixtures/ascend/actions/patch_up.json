@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "patch_up",
+  "name": "Patch up",
+  "cost": {
+    "standard": 1
+  },
+  "target": "hurt_ally",
+  "score": "if target.hit_points * 2 < target.max_hit_points then 10 else -1",
+  "always": [
+    {
+      "op": "heal",
+      "amount": "1d6 + self.wit_mod"
+    }
+  ]
+}

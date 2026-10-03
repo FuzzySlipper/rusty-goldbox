@@ -74,6 +74,9 @@
     {
       "action": "strike",
       "from_item": "weapon"
+    },
+    {
+      "action": "soothe"
     }
   ]
 }

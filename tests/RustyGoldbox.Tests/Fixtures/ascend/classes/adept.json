@@ -60,6 +60,9 @@
       "action": "mend"
     },
     {
+      "action": "patch_up"
+    },
+    {
       "action": "hex"
     },
     {

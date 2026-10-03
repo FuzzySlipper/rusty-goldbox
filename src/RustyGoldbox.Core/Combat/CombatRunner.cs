@@ -20,7 +20,7 @@ public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, 
 /// count down. The combat definition supplies the formulas and budget; actions
 /// and operations supply what happens. Choices are a simple deterministic
 /// policy: the first use in a creature's list it can afford and that has a
-/// target.
+/// target, or the highest-scoring one where its uses are scored.
 /// </summary>
 /// <exception cref="RuleFailure">A rule expression failed during the fight.</exception>
 public sealed class CombatRunner
@@ -434,7 +434,39 @@ public sealed class CombatRunner
         CheckDefeated(combatant);
     }
 
+    /// <summary>
+    /// The use a creature takes next: the first in its list it can afford,
+    /// that is available and has a target. When any of its uses has a score,
+    /// every such option is scored against its target (a use without one
+    /// scores 0) and the highest is taken, the first on a tie.
+    /// </summary>
     private (UseOption Use, List<Combatant> Targets)? Choose(Combatant actor)
+    {
+        bool scored = actor.Uses.Any(use => use.Action.Json.TryGetProperty("score", out _));
+        (UseOption Use, List<Combatant> Targets)? best = null;
+        decimal bestScore = 0;
+        foreach ((UseOption use, List<Combatant> targets) in Options(actor))
+        {
+            if (!scored)
+            {
+                return (use, targets);
+            }
+
+            decimal score = use.Action.Json.TryGetProperty("score", out _)
+                ? Number(use.Action, "$.score", new Scope(actor.Creature, targets[0].Creature, use.Parameters))
+                : 0;
+            if (best is null || score > bestScore)
+            {
+                best = (use, targets);
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>The uses a creature could take now, in its list's order, each with its targets.</summary>
+    private IEnumerable<(UseOption Use, List<Combatant> Targets)> Options(Combatant actor)
     {
         foreach (UseOption use in actor.Uses)
         {
@@ -452,11 +484,9 @@ public sealed class CombatRunner
             List<Combatant> targets = Targets(actor, use);
             if (targets.Count > 0)
             {
-                return (use, targets);
+                yield return (use, targets);
             }
         }
-
-        return null;
     }
 
     /// <summary>

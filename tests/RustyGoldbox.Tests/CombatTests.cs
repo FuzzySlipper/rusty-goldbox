@@ -78,7 +78,7 @@ public sealed class CombatTests
         Combatant combatant = Combatant.FromCharacter(set.Rules!, character);
 
         // Warrior's uses first, then the adept's (its punch is the warrior's, so it appears once), then the features'.
-        Assert.Equal(["Advance", "Aim", "Punch", "Mend", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
+        Assert.Equal(["Advance", "Aim", "Punch", "Mend", "Patch up", "Hex", "Second wind"], combatant.Uses.Select(use => use.Name));
         Evaluator evaluator = new(set.Rules!, null);
         // Warrior 1 and adept 2 each add their own progression.
         Assert.Equal(2m, evaluator.Stat(combatant.Creature, "attack_bonus").Number);
@@ -95,8 +95,10 @@ public sealed class CombatTests
             Features: ["duskwood", "scribe", "sylvan_step", "spark"], Boosts: ["insight", "insight", "finesse", "intellect", "finesse", "stamina", "brawn"]), "staff");
 
         // Natural 20s and 1s shift a degree; spark is a basic save the target rolls against Wren's spell DC.
+        // In the second, Wren's scored soothe outranks her attacks once she is hurt enough.
         Golden.Verify("degrees-combat.txt", CliTranscript.Run(scratch.Root,
-            ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "3"]));
+            ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "3"],
+            ["sim", "combat", "--module", Fixture("degrees"), "--party", "tor.json,wren.json", "--encounter", "raiders", "--seed", "2"]));
     }
 
     [Fact]
@@ -209,6 +211,33 @@ public sealed class CombatTests
         int round2 = lines.IndexOf("Round 2.");
         Assert.True(hexed >= 0 && hexed < round2);
         Assert.Contains("Quick dummy doesn't act (hexed).", lines.Skip(round2));
+    }
+
+    [Fact]
+    public void ScoredUsesAreTakenWhenTheyScoreHighest()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/patch.json", """
+            { "type": "action", "id": "patch", "name": "Patch", "cost": { "turn": 1 }, "target": "hurt_ally",
+              "score": "if target.hit_points < 5 then 1 else -1", "always": [ { "op": "heal", "amount": "3" } ] }
+            """);
+        modules.Write("rules/medic.json", """
+            { "type": "monster", "id": "medic", "name": "Medic", "tracks": { "hit_points": "10" }, "stats": { "str": "15" },
+              "actions": [ { "action": "patch" }, { "action": "smite", "damage": "1" } ], "xp": 0 }
+            """);
+        modules.Write("rules/brute.json", """
+            { "type": "monster", "id": "brute", "name": "Brute", "tracks": { "hit_points": "30" }, "stats": { "str": "5" },
+              "actions": [ { "action": "smite", "damage": "3" } ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        List<string> lines = Fight(rules, "duel", "medic", "brute", maxRounds: 3);
+
+        // Patch is listed first but scores below smite until the medic is badly hurt (4 left after round 2).
+        Assert.Equal(
+            ["Medic uses Smite on Brute.", "Medic uses Smite on Brute.", "Medic uses Patch on Medic."],
+            lines.Where(line => line.StartsWith("Medic uses", StringComparison.Ordinal)));
     }
 
     [Fact]

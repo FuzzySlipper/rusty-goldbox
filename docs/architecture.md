@@ -132,7 +132,9 @@ and durations. The choice is a deterministic policy: the first use in the
 creature's list it can afford and that has a target its `valid_target`
 accepts, aimed at the candidate its `prefer` ranks highest, or by default the
 enemy with the least left on the combat's track, the ally missing the most of
-it, or the first fallen ally. An action's check gives a tier; the action's
+it, or the first fallen ally. Where a creature's uses carry a `score`, it
+scores every such option against its target and takes the highest instead.
+An action's check gives a tier; the action's
 operations for that tier run, then its `always` operations. Defeated
 creatures take no turns; with the combat's `downed_conditions`, those that
 had no turn in a round still run their conditions and count them down at the
