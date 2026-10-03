@@ -103,7 +103,9 @@ internal sealed class GameSession(ModuleLibrary library)
 
     /// <summary>Rolls a character with the ruleset's character creation.</summary>
     /// <param name="portrait">A portrait asset for the character, or null for none.</param>
-    public void Roll(IEngineContext engine, string name, string race, string characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null)
+    /// <param name="race">The race, or null in a ruleset without races.</param>
+    /// <param name="characterClass">The class, or null in a ruleset without classes.</param>
+    public void Roll(IEngineContext engine, string name, string? race, string? characterClass, string? portrait = null, IReadOnlyList<string>? features = null, IReadOnlyList<string>? boosts = null)
     {
         Notes.Clear();
         if (Screen != Screen.Party)
@@ -134,7 +136,8 @@ internal sealed class GameSession(ModuleLibrary library)
 
         character.Portrait = chosen;
         Party.Add(character);
-        Notes.Add($"Rolled {character.Name}, a {character.Race.Name} {character.Class.Name} (seed {Seed}, roll {roll}).");
+        string kind = string.Join(" ", new[] { character.Race?.Name, character.Class?.Name }.Where(part => part is not null));
+        Notes.Add($"Rolled {character.Name}{(kind.Length > 0 ? $", a {kind}" : "")} (seed {Seed}, roll {roll}).");
     }
 
     public void Drop(int member)

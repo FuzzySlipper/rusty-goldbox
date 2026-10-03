@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "tough_as_nails",
+  "name": "Tough as Nails",
+  "kind": "stunt",
+  "description": "One more physical stress box.",
+  "modifiers": [
+    {
+      "track": "physical_stress",
+      "value": "1"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "crafts",
+  "name": "Crafts",
+  "min": 0,
+  "max": 8
+}

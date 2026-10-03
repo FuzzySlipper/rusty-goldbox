@@ -11,7 +11,7 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> --class <id> --race <id> [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
+        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character former <file> --module <path> on|off\n"
@@ -38,7 +38,7 @@ internal static class CharacterCommand
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
         (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--boosts", "--spells", "--portrait", "--seed", "--out"], []);
-        if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--class") is null || parsed.Single("--race") is null))
+        if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null))
         {
             error = Usage;
         }
@@ -58,11 +58,12 @@ internal static class CharacterCommand
         }
 
         IReadOnlyList<string>? priority = parsed.Single("--priority")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        string[] classes = parsed.Single("--class")!.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        // Core asks for a class and race only where the ruleset has them.
+        string[] classes = parsed.Single("--class")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
         CreationRequest request = new(
             parsed.Single("--name") ?? "Unnamed",
-            classes.FirstOrDefault() ?? "",
-            parsed.Single("--race")!,
+            classes.FirstOrDefault(),
+            parsed.Single("--race"),
             attributes,
             priority,
             parsed.Single("--creation"),

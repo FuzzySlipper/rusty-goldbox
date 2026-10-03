@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "drive",
+  "name": "Drive",
+  "min": 0,
+  "max": 8
+}

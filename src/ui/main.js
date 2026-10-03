@@ -97,7 +97,7 @@ export function mountProductUi(root, context) {
       members.append(element('li', {},
         element('div', { style: 'display:flex;gap:6px;align-items:center' },
           ...picture(member.portraitUrl, `${member.name}'s portrait`, 40),
-          element('span', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}`)),
+          element('span', {}, `${member.name}: ${[member.race, member.class && `${member.class} ${member.level}`].filter(Boolean).join(' ')}, ${member.tracks.join(', ')}, gold ${member.gold}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
@@ -112,13 +112,14 @@ export function mountProductUi(root, context) {
     const chosen = (view.portraits ?? []).find((entry) => entry.id === portrait.value);
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`), members,
-      row(name, race, characterClass, portrait, ...picture(chosen?.url, 'Chosen portrait', 32)),
+      row(name, ...((view.races ?? []).length > 0 ? [race] : []), ...((view.classes ?? []).length > 0 ? [characterClass] : []), portrait, ...picture(chosen?.url, 'Chosen portrait', 32)),
       choices.rows,
       row(button('Roll', () => send({
         action: 'roll',
         name: name.value,
-        race: race.value,
-        class: characterClass.value,
+        // A ruleset without races or classes has none to send.
+        ...((view.races ?? []).length > 0 ? { race: race.value } : {}),
+        ...((view.classes ?? []).length > 0 ? { class: characterClass.value } : {}),
         ...(portrait.value ? { portrait: portrait.value } : {}),
         ...(choices.features().length > 0 ? { features: choices.features() } : {}),
         ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),

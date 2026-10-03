@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "moderate",
+  "name": "Badly hurt (moderate consequence)",
+  "description": "A lasting harm that absorbed 4 shifts of a hit. It fills the slot until it recovers.",
+  "modifiers": []
+}

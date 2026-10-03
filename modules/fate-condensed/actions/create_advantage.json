@@ -1,0 +1,30 @@
+{
+  "type": "action",
+  "id": "create_advantage",
+  "name": "Create an advantage",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "available": "not self.condition.advantage",
+  "check": "advantage_athletics",
+  "score": "self.athletics - target.notice - 2",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "advantage",
+        "rounds": "1",
+        "to": "self"
+      }
+    ],
+    "style": [
+      {
+        "op": "apply_condition",
+        "condition": "advantage",
+        "rounds": "2",
+        "to": "self"
+      }
+    ]
+  }
+}

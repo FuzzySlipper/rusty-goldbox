@@ -169,6 +169,24 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void FateConflictsAbsorbHitsWithStressAndConsequences()
+    {
+        using TempModules scratch = new();
+        string fate = Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed");
+
+        // No races or classes: skills by the pyramid (a priority names the top ten), three stunts, stress from Physique and Will.
+        // Minor NPCs fall to any hit their stress can't hold; the ghoul takes consequences first.
+        Golden.Verify("fate-conflict.txt", CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", fate, "--name", "Ruth", "--priority", "fight,athletics,physique,notice,will,shoot,empathy,lore,provoke,stealth",
+                "--feature", "heavy_hitter,tough_as_nails,quick_feet", "--out", "ruth.json"],
+            ["character", "new", "--module", fate, "--name", "Ethan", "--priority", "shoot,notice,athletics,burglary,will,provoke,fight,crafts,stealth,deceive",
+                "--feature", "deadeye,iron_will,cutting_words", "--out", "ethan.json"],
+            ["character", "new", "--module", fate, "--name", "Nobody", "--class", "fighter"],
+            ["sim", "combat", "--module", fate, "--party", "ruth.json,ethan.json", "--encounter", "cult_cell", "--seed", "1"],
+            ["sim", "combat", "--module", fate, "--party", "ruth.json,ethan.json", "--encounter", "ghoul", "--seed", "2"]));
+    }
+
+    [Fact]
     public void PoolsFightCountsSuccessesWithRerollsAndCancels()
     {
         using TempModules scratch = new();

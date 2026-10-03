@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "cutting_words",
+  "name": "Cutting Words",
+  "kind": "stunt",
+  "description": "+2 to attack with Provoke.",
+  "modifiers": [
+    {
+      "check": "attack_provoke",
+      "value": "2"
+    }
+  ]
+}

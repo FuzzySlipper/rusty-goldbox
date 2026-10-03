@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "attack_provoke",
+  "name": "Provoke",
+  "roll": "roll_fudge(4)",
+  "bonus": "self.provoke",
+  "target": "target.will + roll_fudge(4)",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "style",
+      "when": "check.margin >= 3"
+    },
+    {
+      "name": "tie",
+      "when": "check.margin == 0"
+    }
+  ]
+}

@@ -55,13 +55,21 @@ public static class CharacterFile
             }
 
             writer.WriteEndArray();
-            writer.WriteString("race", character.Race.QualifiedId);
+            if (character.Race is Definition race)
+            {
+                writer.WriteString("race", race.QualifiedId);
+            }
+
             writer.WriteString("creation", character.Creation.QualifiedId);
             writer.WriteStartArray("levels");
             foreach (LevelTaken level in character.Levels)
             {
                 writer.WriteStartObject();
-                writer.WriteString("class", level.Class.QualifiedId);
+                if (level.Class is Definition levelClass)
+                {
+                    writer.WriteString("class", levelClass.QualifiedId);
+                }
+
                 writer.WriteNumber("gain", level.Gain);
                 if (level.Features.Count > 0)
                 {
@@ -219,11 +227,13 @@ public static class CharacterFile
 
             List<ModuleStamp> modules = ReadModules(root);
             string? name = Text(root, "name");
-            Definition? race = Reference(root, "race", DefinitionTypes.Race);
+            // A ruleset without races or classes leaves them out of its characters.
+            bool raceless = !_rules.OfType(DefinitionTypes.Race).Any();
+            Definition? race = raceless ? null : Reference(root, "race", DefinitionTypes.Race);
             Definition? creation = Reference(root, "creation", DefinitionTypes.CharacterCreation);
             decimal? experience = Number(root, "experience");
             decimal? gold = Number(root, "gold");
-            if (problems.Count > _before || name is null || race is null || creation is null)
+            if (problems.Count > _before || name is null || (race is null && !raceless) || creation is null)
             {
                 return null;
             }
@@ -346,10 +356,11 @@ public static class CharacterFile
                     continue;
                 }
 
-                Definition? characterClass = Reference(level, "class", DefinitionTypes.Class, at);
+                bool classless = !_rules.OfType(DefinitionTypes.Class).Any();
+                Definition? characterClass = classless ? null : Reference(level, "class", DefinitionTypes.Class, at);
                 List<Definition> features = [];
                 ReadList(level, "features", DefinitionTypes.Feature, features, at);
-                if (Number(level, "gain", at) is not decimal gain || characterClass is null)
+                if (Number(level, "gain", at) is not decimal gain || (characterClass is null && !classless))
                 {
                     continue;
                 }
@@ -367,6 +378,11 @@ public static class CharacterFile
                 }
 
                 character.Levels.Add(new LevelTaken(characterClass, gain, features) { Boosts = boosts });
+                if (characterClass is null)
+                {
+                    continue;
+                }
+
                 int classLevels = characterClass.Json.GetProperty("levels").GetArrayLength();
                 if (character.ClassLevels()[characterClass] > classLevels)
                 {

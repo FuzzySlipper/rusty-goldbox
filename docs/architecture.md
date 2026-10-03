@@ -72,6 +72,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/ui/main.js` | DOM debug readout: renders the session projection and claims `goldbox.command` intents |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
+| `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |

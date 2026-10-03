@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "quick_feet",
+  "name": "Quick Feet",
+  "kind": "stunt",
+  "description": "+2 to create advantages with Athletics.",
+  "modifiers": [
+    {
+      "check": "advantage_athletics",
+      "value": "2"
+    }
+  ]
+}

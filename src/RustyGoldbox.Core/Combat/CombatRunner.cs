@@ -52,6 +52,9 @@ public sealed class CombatRunner
             for (int index = 0; index < _sides[side].Members.Count; index++)
             {
                 Combatant member = _sides[side].Members[index];
+                // Actions every creature in these fights has come after its own.
+                member.Uses.AddRange(Combatant.ReadUses(rules, combat, "$.actions", member.Creature.Equipment)
+                    .Where(common => !member.Uses.Any(own => own.Action == common.Action && own.Name == common.Name)));
                 member.Side = side;
                 member.Creature.Position = cells?[index];
             }
@@ -727,6 +730,15 @@ public sealed class CombatRunner
         int before = _dice.Rolls.Count;
         int factsBefore = _facts.Count;
         Located(owner, path, () => Apply(owner, operation, path, scope, op, who, before));
+        if (op == "apply_condition" && _rules.Reference(owner, $"{path}.condition") is Definition applied && applied.Json.TryGetProperty("on_apply", out JsonElement onApply))
+        {
+            RunOperations(applied, onApply, "$.on_apply", ConditionScope(who, applied), who, null);
+            if (IsInstant(applied))
+            {
+                who.Creature.ConditionValues.Remove(applied);
+            }
+        }
+
         bool fell = CheckDefeated(who);
         if (op == "damage" && who != actor && who.Side != actor.Side
             && _facts.Skip(factsBefore).OfType<DamageFact>().Any(damage => damage.Who == who.Name && damage.Amount > 0))
@@ -774,6 +786,16 @@ public sealed class CombatRunner
                 decimal raised = Math.Max(current, Math.Min(_evaluator.TrackRestoreCap(who.Creature, track), current + amount));
                 value.Current = raised;
                 Record(new HealFact(who.Name, track, raised - current, raised), before);
+                break;
+            }
+
+            case "apply_condition" when IsInstant(_rules.Reference(owner, $"{path}.condition")):
+            {
+                // An instant condition is never held: its values last only while its on_apply runs (see Run).
+                Definition condition = _rules.Reference(owner, $"{path}.condition");
+                who.Creature.ConditionValues[condition] = operation.TryGetProperty("values", out JsonElement given)
+                    ? given.EnumerateObject().ToDictionary(value => value.Name, value => Number(owner, $"{path}.values.{value.Name}", scope))
+                    : [];
                 break;
             }
 
@@ -1002,6 +1024,8 @@ public sealed class CombatRunner
             .Select(entry => (Cell?)entry.Cell)
             .FirstOrDefault();
     }
+
+    private static bool IsInstant(Definition condition) => condition.Json.TryGetProperty("instant", out JsonElement instant) && instant.GetBoolean();
 
     /// <summary>What a condition's own operations read: its holder as self, and the values it was applied with.</summary>
     private static Scope ConditionScope(Combatant holder, Definition condition)

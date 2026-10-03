@@ -1,0 +1,7 @@
+{
+  "type": "track",
+  "id": "physical_stress",
+  "name": "Physical stress",
+  "max": "3 + (if self.physique >= 3 then 3 else if self.physique >= 1 then 1 else 0)",
+  "min": "0"
+}

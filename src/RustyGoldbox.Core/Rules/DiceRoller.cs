@@ -9,7 +9,8 @@ namespace RustyGoldbox.Core.Rules;
 /// <see cref="Again"/>, every face of that or more rolled another die, so
 /// <see cref="Faces"/> holds more than <see cref="Count"/>.
 /// </summary>
-public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, int Kept, int? AtLeast = null, int? Again = null, int? Cancel = null)
+/// <param name="Fudge">Fudge dice: each face is -1, 0 or +1.</param>
+public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, int Kept, int? AtLeast = null, int? Again = null, int? Cancel = null, bool Fudge = false)
 {
     public long Total => AtLeast is int threshold
         ? Faces.Count(face => face >= threshold) - (Cancel is int cancel ? Faces.Count(face => face <= cancel) : 0)
@@ -17,6 +18,11 @@ public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, in
 
     public override string ToString()
     {
+        if (Fudge)
+        {
+            return $"{Count}dF: {string.Join(" ", Faces.Select(face => face > 0 ? "+" : face < 0 ? "-" : "0"))} = {Total}";
+        }
+
         string mode = AtLeast is int threshold ? $" count {threshold}+" : Kept == Count || Again is not null ? "" : $" keep {Kept}";
         mode += (Again is int again ? $" again {again}+" : "") + (Cancel is int cancel ? $" cancel {cancel}-" : "");
         string faces = AtLeast is null ? string.Join("+", Faces) : string.Join(",", Faces);
@@ -54,6 +60,20 @@ public sealed class DiceRoller(IRandomService random, Rng stream)
     /// <paramref name="cancel"/> or lower; faces of <paramref name="again"/> or more roll another die.
     /// </summary>
     public long Pool(int count, int sides, int atLeast, int? again, int? cancel) => Roll(count, sides, count, atLeast, again, cancel);
+
+    /// <summary>Rolls <paramref name="count"/> Fudge dice (faces -1, 0, +1) and adds them.</summary>
+    public long Fudge(int count)
+    {
+        List<int> faces = [];
+        for (int i = 0; i < count; i++)
+        {
+            faces.Add((int)random.NextBoundedU32(new ScopedRngBoundedRequest(stream, 3)).Value - 1);
+        }
+
+        DiceRoll roll = new(count, 3, faces, count, Fudge: true);
+        _rolls.Add(roll);
+        return roll.Total;
+    }
 
     private long Roll(int count, int sides, int keep, int? atLeast, int? again = null, int? cancel = null)
     {

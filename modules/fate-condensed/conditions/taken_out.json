@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "taken_out",
+  "name": "Taken out",
+  "description": "Couldn't absorb a hit: out of the conflict.",
+  "modifiers": []
+}

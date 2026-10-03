@@ -1,0 +1,238 @@
+{
+  "type": "condition",
+  "id": "physical_hit",
+  "name": "Physical hit",
+  "description": "Absorbs a hit: stress boxes first, then the smallest consequences that cover the rest; a hit that can't be absorbed takes the creature out.",
+  "instant": true,
+  "values": {
+    "shifts": 0
+  },
+  "modifiers": [],
+  "on_apply": [
+    {
+      "op": "if",
+      "when": "condition.shifts > 0",
+      "then": [
+        {
+          "op": "if",
+          "when": "true and condition.shifts <= self.physical_stress + 0",
+          "then": [
+            {
+              "op": "damage",
+              "track": "physical_stress",
+              "amount": "condition.shifts",
+              "to": "self"
+            }
+          ],
+          "else": [
+            {
+              "op": "if",
+              "when": "self.takes_consequences and not self.condition.mild and condition.shifts <= self.physical_stress + 2",
+              "then": [
+                {
+                  "op": "apply_condition",
+                  "condition": "mild",
+                  "to": "self"
+                },
+                {
+                  "op": "if",
+                  "when": "condition.shifts > 2",
+                  "then": [
+                    {
+                      "op": "damage",
+                      "track": "physical_stress",
+                      "amount": "condition.shifts - 2",
+                      "to": "self"
+                    }
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "op": "if",
+                  "when": "self.takes_consequences and not self.condition.moderate and condition.shifts <= self.physical_stress + 4",
+                  "then": [
+                    {
+                      "op": "apply_condition",
+                      "condition": "moderate",
+                      "to": "self"
+                    },
+                    {
+                      "op": "if",
+                      "when": "condition.shifts > 4",
+                      "then": [
+                        {
+                          "op": "damage",
+                          "track": "physical_stress",
+                          "amount": "condition.shifts - 4",
+                          "to": "self"
+                        }
+                      ]
+                    }
+                  ],
+                  "else": [
+                    {
+                      "op": "if",
+                      "when": "self.takes_consequences and not self.condition.severe and condition.shifts <= self.physical_stress + 6",
+                      "then": [
+                        {
+                          "op": "apply_condition",
+                          "condition": "severe",
+                          "to": "self"
+                        },
+                        {
+                          "op": "if",
+                          "when": "condition.shifts > 6",
+                          "then": [
+                            {
+                              "op": "damage",
+                              "track": "physical_stress",
+                              "amount": "condition.shifts - 6",
+                              "to": "self"
+                            }
+                          ]
+                        }
+                      ],
+                      "else": [
+                        {
+                          "op": "if",
+                          "when": "self.takes_consequences and not self.condition.mild and not self.condition.moderate and condition.shifts <= self.physical_stress + 6",
+                          "then": [
+                            {
+                              "op": "apply_condition",
+                              "condition": "mild",
+                              "to": "self"
+                            },
+                            {
+                              "op": "apply_condition",
+                              "condition": "moderate",
+                              "to": "self"
+                            },
+                            {
+                              "op": "if",
+                              "when": "condition.shifts > 6",
+                              "then": [
+                                {
+                                  "op": "damage",
+                                  "track": "physical_stress",
+                                  "amount": "condition.shifts - 6",
+                                  "to": "self"
+                                }
+                              ]
+                            }
+                          ],
+                          "else": [
+                            {
+                              "op": "if",
+                              "when": "self.takes_consequences and not self.condition.mild and not self.condition.severe and condition.shifts <= self.physical_stress + 8",
+                              "then": [
+                                {
+                                  "op": "apply_condition",
+                                  "condition": "mild",
+                                  "to": "self"
+                                },
+                                {
+                                  "op": "apply_condition",
+                                  "condition": "severe",
+                                  "to": "self"
+                                },
+                                {
+                                  "op": "if",
+                                  "when": "condition.shifts > 8",
+                                  "then": [
+                                    {
+                                      "op": "damage",
+                                      "track": "physical_stress",
+                                      "amount": "condition.shifts - 8",
+                                      "to": "self"
+                                    }
+                                  ]
+                                }
+                              ],
+                              "else": [
+                                {
+                                  "op": "if",
+                                  "when": "self.takes_consequences and not self.condition.moderate and not self.condition.severe and condition.shifts <= self.physical_stress + 10",
+                                  "then": [
+                                    {
+                                      "op": "apply_condition",
+                                      "condition": "moderate",
+                                      "to": "self"
+                                    },
+                                    {
+                                      "op": "apply_condition",
+                                      "condition": "severe",
+                                      "to": "self"
+                                    },
+                                    {
+                                      "op": "if",
+                                      "when": "condition.shifts > 10",
+                                      "then": [
+                                        {
+                                          "op": "damage",
+                                          "track": "physical_stress",
+                                          "amount": "condition.shifts - 10",
+                                          "to": "self"
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "else": [
+                                    {
+                                      "op": "if",
+                                      "when": "self.takes_consequences and not self.condition.mild and not self.condition.moderate and not self.condition.severe and condition.shifts <= self.physical_stress + 12",
+                                      "then": [
+                                        {
+                                          "op": "apply_condition",
+                                          "condition": "mild",
+                                          "to": "self"
+                                        },
+                                        {
+                                          "op": "apply_condition",
+                                          "condition": "moderate",
+                                          "to": "self"
+                                        },
+                                        {
+                                          "op": "apply_condition",
+                                          "condition": "severe",
+                                          "to": "self"
+                                        },
+                                        {
+                                          "op": "if",
+                                          "when": "condition.shifts > 12",
+                                          "then": [
+                                            {
+                                              "op": "damage",
+                                              "track": "physical_stress",
+                                              "amount": "condition.shifts - 12",
+                                              "to": "self"
+                                            }
+                                          ]
+                                        }
+                                      ],
+                                      "else": [
+                                        {
+                                          "op": "apply_condition",
+                                          "condition": "taken_out",
+                                          "to": "self"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

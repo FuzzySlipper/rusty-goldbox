@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "iron_will",
+  "name": "Iron Will",
+  "kind": "stunt",
+  "description": "One more mental stress box.",
+  "modifiers": [
+    {
+      "track": "mental_stress",
+      "value": "1"
+    }
+  ]
+}

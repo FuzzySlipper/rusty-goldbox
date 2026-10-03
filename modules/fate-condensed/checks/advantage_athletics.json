@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "advantage_athletics",
+  "name": "Create an advantage",
+  "roll": "roll_fudge(4)",
+  "bonus": "self.athletics",
+  "target": "target.notice + roll_fudge(4)",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "style",
+      "when": "check.margin >= 3"
+    },
+    {
+      "name": "tie",
+      "when": "check.margin == 0"
+    }
+  ]
+}

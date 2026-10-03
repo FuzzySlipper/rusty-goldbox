@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "resources",
+  "name": "Resources",
+  "min": 0,
+  "max": 8
+}

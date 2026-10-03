@@ -258,8 +258,8 @@ internal static class SessionProjection
         return new JsonObject
         {
             ["name"] = character.Name,
-            ["race"] = character.Race.Name,
-            ["class"] = character.ClassLevels().Count > 1 ? character.ClassText : character.Class.Name,
+            ["race"] = character.Race?.Name,
+            ["class"] = character.ClassLevels().Count > 1 ? character.ClassText : character.Class?.Name,
             ["level"] = character.Level,
             ["tracks"] = Strings(CharacterSheet.Tracks(rules, character).Select(track => $"{track.Track.Name} {Number(track.Current)}/{Number(track.Max)}")),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),

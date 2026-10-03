@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "attack_shoot",
+  "name": "Shoot",
+  "roll": "roll_fudge(4)",
+  "bonus": "self.shoot",
+  "target": "target.athletics + roll_fudge(4)",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "style",
+      "when": "check.margin >= 3"
+    },
+    {
+      "name": "tie",
+      "when": "check.margin == 0"
+    }
+  ]
+}

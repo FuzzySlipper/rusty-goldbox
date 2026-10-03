@@ -1,0 +1,13 @@
+{
+  "type": "feature",
+  "id": "heavy_hitter",
+  "name": "Heavy Hitter",
+  "kind": "stunt",
+  "description": "+2 to attack with Fight.",
+  "modifiers": [
+    {
+      "check": "attack_fight",
+      "value": "2"
+    }
+  ]
+}

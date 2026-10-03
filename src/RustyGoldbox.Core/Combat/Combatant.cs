@@ -16,7 +16,8 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     public Creature Creature { get; } = creature;
 
-    public IReadOnlyList<UseOption> Uses { get; } = uses;
+    /// <summary>What it can take, in order of preference; the fight adds its combat definition's actions every creature has.</summary>
+    public List<UseOption> Uses { get; } = uses.ToList();
 
     /// <summary>The reactions the creature has, each with the use it reacts with.</summary>
     public List<(Definition Reaction, UseOption Use)> Reactions { get; } = [];
@@ -212,7 +213,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         }
     }
 
-    private static List<UseOption> ReadUses(RuleSet rules, Definition owner, string path, IReadOnlyList<Definition> equipment)
+    internal static List<UseOption> ReadUses(RuleSet rules, Definition owner, string path, IReadOnlyList<Definition> equipment)
     {
         List<UseOption> options = [];
         if (!owner.Json.TryGetProperty(path[2..], out JsonElement uses))

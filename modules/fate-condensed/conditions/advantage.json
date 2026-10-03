@@ -1,0 +1,20 @@
+{
+  "type": "condition",
+  "id": "advantage",
+  "name": "Advantage",
+  "description": "An aspect with a free invoke: +2 on the next exchange's rolls.",
+  "modifiers": [
+    {
+      "check": "attack_fight",
+      "value": "2"
+    },
+    {
+      "check": "attack_shoot",
+      "value": "2"
+    },
+    {
+      "check": "attack_provoke",
+      "value": "2"
+    }
+  ]
+}

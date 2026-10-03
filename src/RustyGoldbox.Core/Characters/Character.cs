@@ -12,7 +12,7 @@ public sealed record ModuleStamp(string Id, ModuleVersion Version);
 /// gained then from the level's hp (its hp_bonus, if any, is added as the
 /// character is now), and the features and boosts chosen at it.
 /// </summary>
-public sealed record LevelTaken(Definition Class, decimal Gain, IReadOnlyList<Definition> Features)
+public sealed record LevelTaken(Definition? Class, decimal Gain, IReadOnlyList<Definition> Features)
 {
     /// <summary>The attributes boosted at this level, in the order chosen (already in the character's scores).</summary>
     public IReadOnlyList<string> Boosts { get; init; } = [];
@@ -25,7 +25,7 @@ public sealed class Character
 
     public required IReadOnlyList<ModuleStamp> Modules { get; set; }
 
-    public required Definition Race { get; set; }
+    public required Definition? Race { get; set; }
 
     /// <summary>The character-creation definition the character was made with; its grants are the first level's choices.</summary>
     public required Definition Creation { get; set; }
@@ -34,7 +34,7 @@ public sealed class Character
     public List<LevelTaken> Levels { get; } = [];
 
     /// <summary>The class of the character's first level.</summary>
-    public Definition Class => Levels[0].Class;
+    public Definition? Class => Levels[0].Class;
 
     /// <summary>The character's total level over all its classes.</summary>
     public int Level => Levels.Count;
@@ -72,7 +72,10 @@ public sealed class Character
         Dictionary<Definition, int> levels = [];
         foreach (LevelTaken taken in Levels)
         {
-            levels[taken.Class] = levels.GetValueOrDefault(taken.Class) + 1;
+            if (taken.Class is Definition characterClass)
+            {
+                levels[characterClass] = levels.GetValueOrDefault(characterClass) + 1;
+            }
         }
 
         return levels;
@@ -82,7 +85,7 @@ public sealed class Character
     public IEnumerable<Definition> Features => Levels.SelectMany(level => level.Features);
 
     /// <summary>The class of the latest level: where the next level goes unless the player picks another.</summary>
-    public Definition LatestClass => Levels[^1].Class;
+    public Definition? LatestClass => Levels[^1].Class;
 
     /// <summary>The classes and levels as people write them: "Fighter 3 / Thief 2".</summary>
     public string ClassText => string.Join(" / ", ClassLevels().Select(entry => $"{entry.Key.Name} {entry.Value}"));
@@ -125,10 +128,10 @@ public sealed class Character
     {
         Creature creature = new(label) { Class = Class, Race = Race, Level = Level };
         Dictionary<Definition, int> reached = [];
-        foreach (LevelTaken taken in Levels)
+        foreach (LevelTaken taken in Levels.Where(taken => taken.Class is not null))
         {
-            reached[taken.Class] = reached.GetValueOrDefault(taken.Class) + 1;
-            creature.LevelsTaken.Add((taken.Class, reached[taken.Class]));
+            reached[taken.Class!] = reached.GetValueOrDefault(taken.Class!) + 1;
+            creature.LevelsTaken.Add((taken.Class!, reached[taken.Class!]));
         }
 
         // A class left by changing class waits until the new classes pass its level.
@@ -173,9 +176,15 @@ public sealed class Character
             return null;
         }
 
+        // A classless character (in a ruleset without classes) doesn't level by experience.
+        if (!rules.ExperienceByCharacter && Class is null)
+        {
+            return null;
+        }
+
         System.Text.Json.JsonElement levels = rules.ExperienceByCharacter
             ? rules.Advancement!.Json.GetProperty("levels")
-            : Class.Json.GetProperty("levels");
+            : Class!.Json.GetProperty("levels");
         if (Level >= levels.GetArrayLength())
         {
             return null;

@@ -1,0 +1,33 @@
+{
+  "type": "monster",
+  "id": "thug",
+  "name": "Thug",
+  "tracks": {
+    "physical_stress": "2",
+    "mental_stress": "2"
+  },
+  "stats": {
+    "academics": "0",
+    "athletics": "1",
+    "burglary": "0",
+    "contacts": "0",
+    "crafts": "0",
+    "deceive": "0",
+    "drive": "0",
+    "empathy": "0",
+    "fight": "2",
+    "investigate": "0",
+    "lore": "0",
+    "notice": "0",
+    "physique": "1",
+    "provoke": "0",
+    "rapport": "0",
+    "resources": "0",
+    "shoot": "0",
+    "stealth": "0",
+    "will": "0",
+    "takes_consequences": "false"
+  },
+  "actions": [],
+  "xp": 0
+}

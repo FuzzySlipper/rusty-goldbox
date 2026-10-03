@@ -449,7 +449,10 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             ? string.Join(", ", character.ClassProgress().Select(progress => $"{progress.Class.Name} {N(progress.Experience)}" + (progress.Next is decimal needed ? $" of {N(needed)}" : " (highest level)")))
             : character.NextLevelExperience(rules) is decimal needed ? $"next level at {needed}" : "highest level";
         string total = multiclass ? $"level {character.Level}, " : "";
-        writer.WriteLine($"{character.Name}: {character.Race.Name} {character.ClassText} ({total}{character.Experience} xp, {next}{left})");
+        // A ruleset without races or classes leaves them out; without classes there are no levels to count either.
+        string who = string.Join(" ", new[] { character.Race?.Name, character.ClassText }.Where(part => !string.IsNullOrEmpty(part)));
+        string progress = character.Class is null && !rules.ExperienceByCharacter ? "" : $" ({total}{character.Experience} xp, {next}{left})";
+        writer.WriteLine($"{character.Name}{(who.Length > 0 ? ": " + who : "")}{progress}");
         if (character.HasDormantClasses())
         {
             string former = string.Join(" and ", character.LeftClasses.Select(left => left.Name));
@@ -460,7 +463,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
         if (character.LevelWaiting(rules))
         {
-            writer.WriteLine($"  level {character.Level + 1} is waiting: {character.LatestClass.Name} has no more levels, so take it in another class (character level --xp 0 --class <id>).");
+            writer.WriteLine($"  level {character.Level + 1} is waiting: {character.LatestClass?.Name} has no more levels, so take it in another class (character level --xp 0 --class <id>).");
         }
 
         foreach (SheetTrack track in tracks)

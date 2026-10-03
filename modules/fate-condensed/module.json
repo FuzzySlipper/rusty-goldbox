@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "fate-condensed",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Fate Condensed",
+  "requires": [],
+  "provenance": "Game mechanics adapted from Fate Condensed (Evil Hat Productions) under the Creative Commons Attribution 3.0 Unported license; see PROVENANCE.md and LICENSE-CC-BY-3.0.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "attack_fight",
+  "name": "Fight",
+  "roll": "roll_fudge(4)",
+  "bonus": "self.fight",
+  "target": "target.athletics + roll_fudge(4)",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "style",
+      "when": "check.margin >= 3"
+    },
+    {
+      "name": "tie",
+      "when": "check.margin == 0"
+    }
+  ]
+}

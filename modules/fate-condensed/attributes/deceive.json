@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "deceive",
+  "name": "Deceive",
+  "min": 0,
+  "max": 8
+}

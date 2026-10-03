@@ -1,0 +1,32 @@
+{
+  "type": "combat",
+  "id": "conflict",
+  "name": "Conflict",
+  "initiative": "self.notice",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": 1
+    }
+  ],
+  "track": "physical_stress",
+  "defeated": "self.condition.taken_out",
+  "actions": [
+    {
+      "action": "fight"
+    },
+    {
+      "action": "shoot"
+    },
+    {
+      "action": "provoke"
+    },
+    {
+      "action": "create_advantage"
+    }
+  ]
+}

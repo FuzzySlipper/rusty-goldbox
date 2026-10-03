@@ -1,0 +1,31 @@
+{
+  "type": "action",
+  "id": "fight",
+  "name": "Fight",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "check": "attack_fight",
+  "score": "self.fight - target.athletics",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "physical_hit",
+        "values": {
+          "shifts": "check.margin"
+        }
+      }
+    ],
+    "style": [
+      {
+        "op": "apply_condition",
+        "condition": "physical_hit",
+        "values": {
+          "shifts": "check.margin"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "type": "monster",
+  "id": "ghoul",
+  "name": "Ghoul",
+  "tracks": {
+    "physical_stress": "3",
+    "mental_stress": "3"
+  },
+  "stats": {
+    "academics": "0",
+    "athletics": "2",
+    "burglary": "0",
+    "contacts": "0",
+    "crafts": "0",
+    "deceive": "0",
+    "drive": "0",
+    "empathy": "0",
+    "fight": "2",
+    "investigate": "0",
+    "lore": "0",
+    "notice": "2",
+    "physique": "3",
+    "provoke": "0",
+    "rapport": "0",
+    "resources": "0",
+    "shoot": "0",
+    "stealth": "0",
+    "will": "1"
+  },
+  "actions": [],
+  "xp": 0
+}

@@ -616,6 +616,7 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 "roll_keep" => Value.Of(RollKeep(arguments[0], arguments[1], arguments[2], call.Column)),
                 "roll_count" => Value.Of(RollCount(arguments[0], arguments[1], arguments[2], call.Column)),
                 "roll_explode" => Value.Of(RollPool(call.Function, arguments[0], arguments[1], null, arguments[2], 0, call.Column)),
+                "roll_fudge" => Value.Of(RollFudge(arguments[0], call.Column)),
                 "roll_pool" => Value.Of(RollPool(call.Function, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], call.Column)),
                 _ => Value.Of(RollDynamic(arguments[0], arguments[1], call.Column)),
             };
@@ -630,6 +631,21 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
             }
 
             return count == 0 ? 0 : Roll((int)count, (int)sides, column, keep);
+        }
+
+        private long RollFudge(decimal count, int column)
+        {
+            if (count != decimal.Truncate(count) || count < 0 || count > int.MaxValue)
+            {
+                throw new ExpressionException($"roll_fudge({count}) needs a whole number of dice, 0 or more.", column);
+            }
+
+            if (evaluator.Dice is null)
+            {
+                throw new ExpressionException("This expression rolls dice, but no dice roller was given.", column);
+            }
+
+            return count == 0 ? 0 : evaluator.Dice.Fudge((int)count);
         }
 
         private long RollCount(decimal count, decimal sides, decimal atLeast, int column)

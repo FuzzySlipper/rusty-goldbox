@@ -92,7 +92,7 @@ public sealed class CharacterTests
     public void CreationRejectsWhatTheRulesetForbids()
     {
         Assert.Equal(["character.priority"], Problems(Rules.ClassicPath, new CreationRequest("x", "fighter", "human", Priority: ["str", "dex", "con", "int", "wis", "cha"])));
-        Assert.Equal(["character.priority"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Priority: ["might", "grace"])));
+        Assert.Equal(["character.priority"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Priority: ["might", "might"])));
         Assert.Equal(["character.attributes", "character.attributes"], Problems(Ascend, new CreationRequest("x", "warrior", "folk", Attributes: new Dictionary<string, decimal> { ["might"] = 25, ["grace"] = 10, ["grit"] = 10, ["wit"] = 10, ["luck"] = 3 })));
         Assert.Equal(["character.class"], Problems(Ascend, new CreationRequest("x", "adept", "folk", Attributes: Scores(10, 10, 10, 9))));
         Assert.Equal(["character.race", "character.race"], Problems(Ascend, new CreationRequest("x", "adept", "stoneborn", Attributes: Scores(10, 10, 4, 12))));

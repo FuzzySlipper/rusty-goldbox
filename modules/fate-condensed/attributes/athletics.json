@@ -1,0 +1,7 @@
+{
+  "type": "attribute",
+  "id": "athletics",
+  "name": "Athletics",
+  "min": 0,
+  "max": 8
+}

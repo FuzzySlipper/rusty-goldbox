@@ -36,9 +36,10 @@ internal static class GoldboxCli
               for example {"self": "@brom.json", "target": {"monster": "skeleton"}}. Dice use Engine
               Random; the seed defaults to 1.
 
-          goldbox character new --module <path> --class <id> --race <id> [--name <name>]
+          goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
                 [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--seed <n>] [--out <file>]
+              --class and --race are needed where the ruleset has classes and races.
               Makes attributes by the creation's method (roll, array, point buy or boosts), applies the race, checks requirements, rolls the
               first level's gain for the level track (usually hit points), starts every
               track, and rolls gold. --priority arranges rolls where the ruleset allows.

@@ -192,6 +192,11 @@ wait until the new class passes them (`self.former_level`). A class level's
 moves every level's hit points (3.5e), while rulesets without it keep each
 level's gain as rolled (first edition).
 
+Races and classes are optional: a ruleset without any (Fate) makes characters
+from creation alone, with one classless level holding its choices and no
+levels to gain. A partial `--priority` ranks only the top attributes; the rest
+take the remaining values in the creation's order.
+
 What a character chooses beyond race and class is a **feature**: a
 background, heritage, feat, class feature or ability increase, each with a
 `kind` in the ruleset's own words, optional requirements (an expression read
@@ -342,6 +347,11 @@ Combat is built so that no die convention is assumed:
   dice-pool successes, `roll_pool` adds dice that roll again and ones that
   cancel successes, and `roll_explode` gives open-ended totals. Actions branch on tier names, not on hit or miss.
   An operation can make another check, such as a defender's parry.
+- **Shared procedures are instant conditions.** A condition with `on_apply`
+  operations runs them on its holder when applied, reading the values it was
+  applied with; an `instant` one is only that (Fate's absorbing a hit with
+  stress, then consequences, else taken out, shared by every attack). A
+  combat definition's `actions` are uses every creature has, after its own.
 - **Pools are declared, not built in.** Damage and heal act on a named
   track, or the combat's default one; costs that spend a pool are operations
   on it (an action can spend fatigue to hit harder).

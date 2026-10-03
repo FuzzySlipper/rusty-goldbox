@@ -13,10 +13,12 @@ namespace RustyGoldbox.Core.Characters;
 /// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
 /// <param name="AlsoClasses">Under experience split between classes: further classes to start with, as the race's multiclasses allow.</param>
 /// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
+/// <param name="Class">The class; null in a ruleset without classes.</param>
+/// <param name="Race">The race; null in a ruleset without races.</param>
 public sealed record CreationRequest(
     string Name,
-    string Class,
-    string Race,
+    string? Class,
+    string? Race,
     IReadOnlyDictionary<string, decimal>? Attributes = null,
     IReadOnlyList<string>? Priority = null,
     string? Creation = null,
@@ -44,7 +46,7 @@ public static class CharacterRules
     public static Character? Create(RuleSet rules, IReadOnlyList<ModuleStamp> modules, CreationRequest request, DiceRoller dice, List<ModuleDiagnostic> problems)
     {
         Definition? creation = FindCreation(rules, request.Creation, problems);
-        Definition? characterClass = Find(rules, DefinitionTypes.Class, request.Class, "class", problems);
+        Definition? characterClass = Optional(rules, DefinitionTypes.Class, request.Class, "class", "classes", problems, out bool classless);
         List<Definition> classes = characterClass is null ? [] : [characterClass];
         foreach (string also in request.AlsoClasses ?? [])
         {
@@ -54,9 +56,9 @@ public static class CharacterRules
             }
         }
 
-        Definition? race = Find(rules, DefinitionTypes.Race, request.Race, "race", problems);
+        Definition? race = Optional(rules, DefinitionTypes.Race, request.Race, "race", "races", problems, out bool raceless);
         List<Definition>? choices = FindFeatures(rules, request.Features, problems);
-        if (creation is null || characterClass is null || race is null || choices is null || problems.Count > 0)
+        if (creation is null || (characterClass is null && !classless) || (race is null && !raceless) || choices is null || problems.Count > 0)
         {
             return null;
         }
@@ -102,17 +104,21 @@ public static class CharacterRules
             return null;
         }
 
-        Adjust(race, scores);
+        if (race is not null)
+        {
+            Adjust(race, scores);
+            CheckRaceLimits(race, scores, problems);
+        }
+
         if (classes.Count > 1)
         {
-            CheckMulticlass(rules, race, classes, problems);
+            CheckMulticlass(rules, race!, classes, problems);
         }
-        else
+        else if (characterClass is not null)
         {
             CheckRaceClass(rules, race, characterClass, problems);
         }
 
-        CheckRaceLimits(race, scores, problems);
         foreach (Definition each in classes)
         {
             CheckClass(each, scores, problems);
@@ -131,6 +137,12 @@ public static class CharacterRules
 
         try
         {
+            // Without classes, one classless level holds what creation chose.
+            if (classes.Count == 0)
+            {
+                character.Levels.Add(new LevelTaken(null, 0, []));
+            }
+
             decimal kept = TakeLevels(rules, character, classes, evaluator).Sum(gain => gain.Kept);
             if (rules.ExperienceSplit)
             {
@@ -209,7 +221,7 @@ public static class CharacterRules
                 found.Add(failure.Diagnostic);
             }
 
-            problems.AddRange(found.Select(problem => problem with { Message = $"Level {index + 1} ({level.Class.Name}): {problem.Message}" }));
+            problems.AddRange(found.Select(problem => problem with { Message = $"Level {index + 1}{(level.Class is Definition taken ? $" ({taken.Name})" : "")}: {problem.Message}" }));
             replay.Levels[^1] = level;
             foreach (string boosted in level.Boosts)
             {
@@ -305,7 +317,7 @@ public static class CharacterRules
             }
         }
 
-        bool every = character.Race.Json.TryGetProperty("multiclass_equipment", out JsonElement mode) && mode.GetString() == "all";
+        bool every = character.Race is Definition race && race.Json.TryGetProperty("multiclass_equipment", out JsonElement mode) && mode.GetString() == "all";
         bool refused = every ? refusing.Count > 0 : refusing.Count == creature.ClassLevels.Count && refusing.Count > 0;
         if (!refused)
         {
@@ -841,8 +853,8 @@ public static class CharacterRules
             while (!rules.ExperienceSplit && character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
             {
                 // A class with no levels left stops here; the level waits for another class (see LevelWaiting).
-                Definition characterClass = chosen ?? character.LatestClass;
-                if (character.ClassLevels().GetValueOrDefault(characterClass) >= characterClass.Json.GetProperty("levels").GetArrayLength())
+                if ((chosen ?? character.LatestClass) is not Definition characterClass
+                    || character.ClassLevels().GetValueOrDefault(characterClass) >= characterClass.Json.GetProperty("levels").GetArrayLength())
                 {
                     break;
                 }
@@ -1063,9 +1075,12 @@ public static class CharacterRules
             }
         }
 
-        Definition characterClass = character.LatestClass;
-        int classLevel = character.ClassLevels()[characterClass];
-        grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[classLevel - 1], "grants", $"{characterClass.Name} level {classLevel}"));
+        if (character.LatestClass is Definition characterClass)
+        {
+            int classLevel = character.ClassLevels()[characterClass];
+            grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[classLevel - 1], "grants", $"{characterClass.Name} level {classLevel}"));
+        }
+
         return grants;
     }
 
@@ -1319,7 +1334,12 @@ public static class CharacterRules
         foreach (Definition characterClass in character.ClassLevels().Keys)
         {
             string? found = null;
-            foreach (JsonProperty entry in creation.Json.GetProperty("starting_gold").EnumerateObject())
+            if (!creation.Json.TryGetProperty("starting_gold", out JsonElement golds))
+            {
+                break;
+            }
+
+            foreach (JsonProperty entry in golds.EnumerateObject())
             {
                 if (rules.Reference(creation, $"$.starting_gold.{entry.Name}") == characterClass)
                 {
@@ -1359,12 +1379,6 @@ public static class CharacterRules
             return null;
         }
 
-        if (priority is not null && !IsPermutation(priority, attributes))
-        {
-            problems.Add(new ModuleDiagnostic("character.priority", $"The priority must list every attribute once: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
-            return null;
-        }
-
         List<decimal> rolls = attributes.Select(_ => Evaluate(rules, evaluator, creation, "$.attribute_roll", null)).ToList();
         return Arrange(attributes, rolls, priority, problems);
     }
@@ -1386,17 +1400,20 @@ public static class CharacterRules
             return scores;
         }
 
-        if (!IsPermutation(priority, attributes))
+        HashSet<string> known = attributes.Select(attribute => attribute.Id).ToHashSet();
+        if (priority.Count == 0 || priority.Distinct().Count() != priority.Count || priority.Any(id => !known.Contains(id)))
         {
-            problems.Add(new ModuleDiagnostic("character.priority", $"The priority must list every attribute once: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
+            problems.Add(new ModuleDiagnostic("character.priority", $"The priority lists attributes once each, highest first, from: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
             return null;
         }
 
+        // Those listed take the best values in order; the rest take what's left, in the creation's order.
+        List<string> order = [.. priority, .. attributes.Select(attribute => attribute.Id).Where(id => !priority.Contains(id))];
         List<decimal> best = values.OrderDescending().ToList();
         Dictionary<string, decimal> byPriority = [];
-        for (int i = 0; i < priority.Count; i++)
+        for (int i = 0; i < order.Count; i++)
         {
-            byPriority[priority[i]] = best[i];
+            byPriority[order[i]] = best[i];
         }
 
         foreach (Definition attribute in attributes)
@@ -1488,8 +1505,8 @@ public static class CharacterRules
         RuleSet rules,
         Definition creation,
         List<Definition> attributes,
-        Definition race,
-        Definition characterClass,
+        Definition? race,
+        Definition? characterClass,
         List<Definition> features,
         IReadOnlyList<string> chosen,
         List<ModuleDiagnostic> problems)
@@ -1498,7 +1515,7 @@ public static class CharacterRules
         decimal boost = creation.Json.GetProperty("boost").GetDecimal();
         Dictionary<string, decimal> scores = attributes.ToDictionary(attribute => attribute.Id, _ => start);
         Queue<string> left = new(chosen);
-        foreach (Definition source in new[] { race }.Concat(features).Append(characterClass).Append(creation))
+        foreach (Definition source in new[] { race }.Concat(features).Append(characterClass).Append(creation).OfType<Definition>())
         {
             if (!source.Json.TryGetProperty("boosts", out JsonElement boosts))
             {
@@ -1603,6 +1620,33 @@ public static class CharacterRules
         return problems.Count > 0 ? null : scores;
     }
 
+    /// <summary>
+    /// The race or class a character is made with: required when the ruleset
+    /// has any of that type, and left out when it has none (<paramref name="none"/>).
+    /// </summary>
+    private static Definition? Optional(RuleSet rules, DefinitionType type, string? id, string what, string plural, List<ModuleDiagnostic> problems, out bool none)
+    {
+        none = !rules.OfType(type).Any();
+        if (none)
+        {
+            if (id is not null)
+            {
+                problems.Add(new ModuleDiagnostic($"character.{what}", $"The module set has no {plural}, so a character has no {what}; leave it out."));
+            }
+
+            return null;
+        }
+
+        if (id is null)
+        {
+            string known = string.Join(", ", rules.OfType(type).Select(definition => definition.QualifiedId));
+            problems.Add(new ModuleDiagnostic($"character.{what}", $"Choose a {what}: {known}."));
+            return null;
+        }
+
+        return Find(rules, type, id, what, problems);
+    }
+
     private static void Adjust(Definition race, Dictionary<string, decimal> scores)
     {
         if (!race.Json.TryGetProperty("ability_adjustments", out JsonElement adjustments))
@@ -1616,9 +1660,9 @@ public static class CharacterRules
         }
     }
 
-    private static void CheckRaceClass(RuleSet rules, Definition race, Definition characterClass, List<ModuleDiagnostic> problems)
+    private static void CheckRaceClass(RuleSet rules, Definition? race, Definition characterClass, List<ModuleDiagnostic> problems)
     {
-        if (!race.Json.TryGetProperty("classes", out _))
+        if (race is null || !race.Json.TryGetProperty("classes", out _))
         {
             return;
         }
@@ -1712,10 +1756,5 @@ public static class CharacterRules
         }
 
         return found;
-    }
-
-    private static bool IsPermutation(IReadOnlyList<string> priority, List<Definition> attributes)
-    {
-        return priority.Count == attributes.Count && priority.Order(StringComparer.Ordinal).SequenceEqual(attributes.Select(attribute => attribute.Id).Order(StringComparer.Ordinal));
     }
 }
