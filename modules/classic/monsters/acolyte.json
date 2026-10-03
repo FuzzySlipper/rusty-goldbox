@@ -24,8 +24,16 @@
   ],
   "actions": [
     {
+      "action": "flee"
+    },
+    {
       "action": "melee_attack",
       "name": "mace",
+      "damage": "1d6 + 1"
+    },
+    {
+      "action": "charge",
+      "name": "mace (charging)",
       "damage": "1d6 + 1"
     },
     {

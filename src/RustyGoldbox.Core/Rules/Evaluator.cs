@@ -113,13 +113,14 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
         }
     }
 
-    public CheckResult Check(Definition check, Creature self, Creature? target)
+    /// <param name="extra">Added to the modifiers by whatever makes the check, such as an action's check_bonus (a range penalty, a charge).</param>
+    public CheckResult Check(Definition check, Creature self, Creature? target, decimal extra = 0)
     {
         decimal roll = Evaluate(rules.Expression(check, "$.roll"), self, target).Number;
         decimal bonus = rules.TryExpression(check, "$.bonus", out CompiledExpression? bonusExpression)
             ? Evaluate(bonusExpression!, self, target).Number
             : 0;
-        decimal modifier = 0;
+        decimal modifier = extra;
         foreach (Definition source in self.ModifierSources())
         {
             foreach (Modifier entry in rules.ModifiersOf(source))

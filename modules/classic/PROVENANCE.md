@@ -68,12 +68,20 @@ small:
 - Combat is on a field of 10 ft squares, 10 by 6, with diagonal steps
   counting as one. Melee reaches 10 ft (one square), as the source says
   (p. 128). A combatant out of reach closes into combat, moving its movement
-  rate in feet per round (p. 123) and attacking the next round (p. 128);
-  charging, the fighting retreat and fleeing aren't modelled. Spell ranges
+  rate in feet per round (p. 123) and attacking the next round (p. 128), or
+  charges: double movement ending in reach and +2 to hit, then not again for
+  10 rounds (the defender's longer weapon, set weapons and the lost dexterity
+  bonus aren't modelled). A creature leaving melee draws a parting blow at +4
+  from each foe it leaves (p. 128). Living monsters flee once down to a quarter
+  of their hit points, a stand-in for the source's morale rules, and get away
+  at the field's edge; mindless undead never flee. Characters don't flee, and
+  the fighting retreat isn't used. Spell ranges
   are the spells' own in squares (magic missile 6 + level, sleep 3 + level,
   bless 6, cure light wounds by touch), and an attack or spell needs a clear
-  line of sight. Missile fire has no range or range increment penalty yet,
-  and no first-party creature uses it. Fighters make one attack per round at
+  line of sight. Missile fire takes -2 to hit for each range increment beyond
+  the first (short bow 50 ft, p. 34), out to ten increments, where the
+  source sets no maximum; it isn't randomised among the melee as the source
+  says, and ammunition isn't counted. Fighters use a bow they carry. Fighters make one attack per round at
   every level.
 - Spells cast in combat spend a slot of their level, from tracks whose
   maximum adds the slots of every class the character has. Magic users and

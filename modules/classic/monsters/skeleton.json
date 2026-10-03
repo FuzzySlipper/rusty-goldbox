@@ -15,8 +15,16 @@
   },
   "actions": [
     {
+      "action": "flee"
+    },
+    {
       "action": "melee_attack",
       "name": "claw",
+      "damage": "1d6"
+    },
+    {
+      "action": "charge",
+      "name": "claw (charging)",
       "damage": "1d6"
     },
     {

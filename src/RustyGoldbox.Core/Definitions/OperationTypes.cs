@@ -62,6 +62,7 @@ public static class OperationTypes
         [
             new("check", new ReferenceKind("check"), true, "The check to make."),
             new("by", new EnumKind(["target", "self"]), false, "Who rolls it: the action's target (the default) or the creature acting; the other one is the check's target."),
+            new("bonus", new ExpressionKind(ExprType.Number, ActionRoots), false, "Added to the roll with the modifiers, for example \"2\" for a charge."),
             new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(ActionRoots | Roots.Check))), true, "Operations for each outcome tier: success, failure or one of the check's tiers. They read this check as check, and when this check is made in another check's outcomes, that one as outer."),
         ],
         """{ "op": "check", "check": "parry", "outcomes": { "failure": [ { "op": "damage", "amount": "use.damage" } ] } }""");
@@ -83,6 +84,8 @@ public static class OperationTypes
             new("distance", new ExpressionKind(ExprType.Number, ActionRoots), true, "Most movement to spend: 1 a cell, or the terrain's cost to enter. For example \"floor(self.speed / 5)\"."),
             new("toward", new EnumKind(["target", "away"]), false, "Toward the action's target (the default) or away from it."),
             new("within", new ExpressionKind(ExprType.Number, ActionRoots), false, "Moving toward: stop once the target is this close and in sight, for example \"use.range\" to close only to shooting range; without it, 1 (adjacent)."),
+            new("escape", new BooleanKind(), false, "Moving away: a creature with nowhere further to go at the field's edge (or in a fight without a field, at once) flees the fight. It is out of it but not felled, so its side gets no experience for it. Without it, false."),
+            new("provokes", new BooleanKind(), false, "Whether stepping out of an enemy's reach sets off its leaves_reach reactions (a free blow at a fleeing foe); false for a careful withdrawal such as a fighting retreat. Without it, true."),
             new("beyond", new ExpressionKind(ExprType.Number, ActionRoots), false, "Moving away: stop once at least this far, for example \"3\" to keep out of a charge; without it, use the whole distance."),
         ],
         """{ "op": "move", "distance": "floor(self.speed / 5)" }""");

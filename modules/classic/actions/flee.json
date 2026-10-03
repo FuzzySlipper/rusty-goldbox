@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "flee",
+  "name": "Flee",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "available": "not self.undead and self.hit_points * 4 <= self.max_hit_points",
+  "prefer": "0 - combat.distance",
+  "always": [
+    {
+      "op": "move",
+      "toward": "away",
+      "distance": "floor(self.movement / 5)",
+      "escape": true
+    }
+  ]
+}

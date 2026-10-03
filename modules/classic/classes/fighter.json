@@ -61,12 +61,23 @@
       "from_item": "weapon"
     },
     {
+      "action": "missile_attack",
+      "from_item": "missile weapon"
+    },
+    {
       "action": "melee_attack",
       "name": "Punch",
       "damage": "1d2"
     },
     {
+      "action": "charge",
+      "from_item": "weapon"
+    },
+    {
       "action": "close"
     }
+  ],
+  "reactions": [
+    "parting_blow"
   ]
 }

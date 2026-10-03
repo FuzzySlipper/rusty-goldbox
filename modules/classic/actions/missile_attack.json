@@ -6,10 +6,13 @@
     "action": 1
   },
   "target": "enemy",
+  "range": "use.increment * 10",
   "parameters": [
-    "damage"
+    "damage",
+    "increment"
   ],
   "check": "missile_attack",
+  "check_bonus": "0 - 2 * floor((combat.distance - 1) / use.increment)",
   "outcomes": {
     "success": [
       {

@@ -59,34 +59,37 @@ seed 1
     Round 1.
     Party rolls 6 for initiative.  [1d6: 6 = 6]
     Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
-    Ada uses Close on Skeleton 1.
+    Ada uses Charge (Long sword) on Skeleton 1.
     Ada moves 8 cells to (8, 2).
-    Brom uses Close on Skeleton 1.
-    Brom moves 8 cells to (8, 3).
-    Skeleton 1 uses claw on Ada.
-    Skeleton 1 rolls Melee attack: 11 against 15: failure.  [1d20: 11 = 11]
-    Skeleton 2 uses claw on Ada.
-    Skeleton 2 rolls Melee attack: 4 against 15: failure.  [1d20: 4 = 4]
-    Round 2.
-    Party rolls 2 for initiative.  [1d6: 2 = 2]
-    Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
-    Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
-    Skeleton 2 loses 4 hit points (0 left).  [1d8: 3 = 3]
-    Skeleton 2 is out of the fight.
-    Brom uses Melee attack (Heavy mace) on Skeleton 1.
-    Brom rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
-    Skeleton 1 loses 5 hit points (0 left).  [1d6: 4 = 4]
+    Ada is Winded for 10 rounds.
+    Ada rolls Melee attack: 11 + 2 modifiers = 13 against 13: success.  [1d20: 11 = 11]
+    Skeleton 1 loses 5 hit points (0 left).  [1d8: 4 = 4]
     Skeleton 1 is out of the fight.
+    Brom uses Charge (Heavy mace) on Skeleton 2.
+    Brom moves 8 cells to (8, 3).
+    Brom is Winded for 10 rounds.
+    Brom rolls Melee attack: 8 + 2 modifiers = 10 against 13: failure.  [1d20: 8 = 8]
+    Skeleton 2 uses claw on Ada.
+    Skeleton 2 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
+    Round 2.
+    Party rolls 5 for initiative.  [1d6: 5 = 5]
+    Crypt guard rolls 3 for initiative.  [1d6: 3 = 3]
+    Ada uses Melee attack (Long sword) on Skeleton 2.
+    Ada rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
+    Skeleton 2 loses 3 hit points (1 left).  [1d8: 2 = 2]
+    Brom uses Melee attack (Heavy mace) on Skeleton 2.
+    Brom rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
+    Skeleton 2 loses 4 hit points (-3 left).  [1d6: 3 = 3]
+    Skeleton 2 is out of the fight.
     Party wins after 2 rounds.
   Combat with Crypt guard: the party wins.
   Experience: Ada 14, Brom 14.
-  The party finds 90 gold, Dagger.  [2d6: 6+3 = 9]
+  The party finds 100 gold, Dagger.  [2d6: 5+5 = 10]
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
   The rattling stops. A draught rises from somewhere to the west.
 > status
-  Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 215 + 115 | carrying Dagger
+  Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 220 + 120 | carrying Dagger
 > around
   The party faces north.
 > forward

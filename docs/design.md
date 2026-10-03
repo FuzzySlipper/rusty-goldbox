@@ -242,7 +242,11 @@ action costs. The field declares kinds of **terrain** by one-character keys
 encounter lays them out as rows of text, so the same field can be a corridor
 or a pillared hall. Movement takes the cheapest way round obstacles; an
 action with a `range` also needs line of sight, while one without (moving
-toward an enemy) doesn't. Creatures have no facing: Gold Box fights didn't
+toward an enemy) doesn't. An action's `check_bonus` (and a check
+operation's `bonus`) adjust its roll for range or a charge. A move may be a
+careful withdrawal (`provokes: false`) that sets off no parting blows, and a
+fleeing creature (`escape`) that runs out of room at the field's edge leaves
+the fight, out but not felled. Creatures have no facing: Gold Box fights didn't
 turn on it, and a rule about flanking or rear attacks can read positions.
 Without a field everyone is in reach.
 

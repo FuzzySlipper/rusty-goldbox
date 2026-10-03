@@ -2,7 +2,11 @@
   "type": "item",
   "id": "short_bow",
   "name": "Short bow",
-  "kind": "weapon",
+  "kind": "missile weapon",
   "cost": 15,
-  "weight": 8
+  "weight": 8,
+  "parameters": {
+    "damage": "1d6",
+    "increment": "5"
+  }
 }

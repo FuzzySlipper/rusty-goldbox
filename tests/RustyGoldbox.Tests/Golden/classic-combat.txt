@@ -3,54 +3,70 @@ seed 3
 Round 1.
   Party rolls 5 for initiative.  [1d6: 5 = 5]
   Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-  Skeleton 1 uses Close on Ada.
+  Skeleton 1 uses claw (charging) on Ada.
   Skeleton 1 moves 8 cells to (1, 2).
-  Skeleton 2 uses Close on Ada.
+  Skeleton 1 is Winded for 10 rounds.
+  Skeleton 1 rolls Melee attack: 6 + 2 modifiers = 8 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 2 uses claw (charging) on Ada.
   Skeleton 2 moves 8 cells to (1, 3).
-  Ada uses Melee attack (Long sword) on Skeleton 1.
-  Ada rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
+  Skeleton 2 is Winded for 10 rounds.
+  Skeleton 2 rolls Melee attack: 20 + 2 modifiers = 22 against 15: success.  [1d20: 20 = 20]
+  Ada loses 6 hit points (-4 left).  [1d6: 6 = 6]
+  Ada is out of the fight.
   Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 20 against 13: success.  [1d20: 20 = 20]
-  Skeleton 1 loses 7 hit points (-6 left).  [1d6: 6 = 6]
-  Skeleton 1 is out of the fight.
+  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
 Round 2.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
+  Brom loses 2 hit points (4 left).  [1d6: 2 = 2]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 11 against 14: failure.  [1d20: 11 = 11]
+Round 3.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 19 against 14: success.  [1d20: 19 = 19]
+  Brom loses 3 hit points (1 left).  [1d6: 3 = 3]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 4 against 14: failure.  [1d20: 4 = 4]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+Round 4.
   Party rolls 5 for initiative.  [1d6: 5 = 5]
   Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
-  Ada uses Melee attack (Long sword) on Skeleton 2.
-  Ada rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
-  Brom uses Melee attack (Heavy mace) on Skeleton 2.
-  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
-  Skeleton 2 uses claw on Ada.
-  Skeleton 2 rolls Melee attack: 14 against 15: failure.  [1d20: 14 = 14]
-Round 3.
-  Party rolls 2 for initiative.  [1d6: 2 = 2]
-  Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
-  Skeleton 2 uses claw on Ada.
-  Skeleton 2 rolls Melee attack: 10 against 15: failure.  [1d20: 10 = 10]
-  Ada uses Melee attack (Long sword) on Skeleton 2.
-  Ada rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
-  Brom uses Melee attack (Heavy mace) on Skeleton 2.
-  Brom rolls Melee attack: 19 against 13: success.  [1d20: 19 = 19]
-  Skeleton 2 loses 4 hit points (3 left).  [1d6: 3 = 3]
-Round 4.
-  Party rolls 6 for initiative.  [1d6: 6 = 6]
-  Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
-  Ada uses Melee attack (Long sword) on Skeleton 2.
-  Ada rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
-  Skeleton 2 loses 6 hit points (-3 left).  [1d8: 5 = 5]
-  Skeleton 2 is out of the fight.
-Party wins after 4 rounds.
-Party: Ada 2/2, Brom 6/6
-Crypt guard: Skeleton 1 -6/1 (out), Skeleton 2 -3/7 (out)
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 1 against 13: failure.  [1d20: 1 = 1]
+  Skeleton 1 uses claw on Brom.
+  Skeleton 1 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 12 against 14: failure.  [1d20: 12 = 12]
+Round 5.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 15 against 13: success.  [1d20: 15 = 15]
+  Skeleton 1 loses 5 hit points (-4 left).  [1d6: 4 = 4]
+  Skeleton 1 is out of the fight.
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 14 against 14: success.  [1d20: 14 = 14]
+  Brom loses 4 hit points (-3 left).  [1d6: 4 = 4]
+  Brom is out of the fight.
+Crypt guard wins after 5 rounds.
+Party: Ada -4/2 (out), Brom -3/6 (out)
+Crypt guard: Skeleton 1 -4/1 (out), Skeleton 2 7/7
 [exit 0]
 
 $ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --seed 1 --runs 200
 200 runs from seed 1
-  Party wins 32 (16%)
-  Ogre wins 168 (84%)
-  rounds: min 2, mean 5.43, max 15
-  Ada still fighting at the end: 20 (10%)
-  Brom still fighting at the end: 32 (16%)
+  Party wins 55 (27.5%)
+  Ogre wins 145 (72.5%)
+  rounds: min 1, mean 4.87, max 14
+  Ada still fighting at the end: 36 (18%)
+  Brom still fighting at the end: 55 (27.5%)
 [exit 0]
 
 $ goldbox sim combat --module modules/classic --party ada.json,brom.json --encounter crypt_cult --seed 2
@@ -58,36 +74,203 @@ seed 2
 Round 1.
   Party rolls 3 for initiative.  [1d6: 3 = 3]
   Crypt cult rolls 3 for initiative.  [1d6: 3 = 3]
-  Ada uses Close on Acolyte.
+  Ada uses Charge (Long sword) on Acolyte.
   Ada moves 8 cells to (8, 2).
-  Brom uses Close on Acolyte.
+  Ada is Winded for 10 rounds.
+  Ada rolls Melee attack: 6 + 2 modifiers = 8 against 15: failure.  [1d20: 6 = 6]
+  Brom uses Charge (Heavy mace) on Acolyte.
   Brom moves 8 cells to (8, 3).
+  Brom is Winded for 10 rounds.
+  Brom rolls Melee attack: 3 + 2 modifiers = 5 against 15: failure.  [1d20: 3 = 3]
   Acolyte uses Bless on Acolyte, Skeleton 1, Skeleton 2.
   Acolyte spends 1 1st level spells (1 left).
   Acolyte is Blessed for 6 rounds.
   Skeleton 1 is Blessed for 6 rounds.
   Skeleton 2 is Blessed for 6 rounds.
   Skeleton 1 uses claw on Ada.
-  Skeleton 1 rolls Melee attack: 6 + 1 modifiers = 7 against 15: failure.  [1d20: 6 = 6]
+  Skeleton 1 rolls Melee attack: 10 + 1 modifiers = 11 against 15: failure.  [1d20: 10 = 10]
   Skeleton 2 uses claw on Ada.
-  Skeleton 2 rolls Melee attack: 3 + 1 modifiers = 4 against 15: failure.  [1d20: 3 = 3]
+  Skeleton 2 rolls Melee attack: 5 + 1 modifiers = 6 against 15: failure.  [1d20: 5 = 5]
 Round 2.
   Party rolls 4 for initiative.  [1d6: 4 = 4]
-  Crypt cult rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt cult rolls 3 for initiative.  [1d6: 3 = 3]
   Ada uses Melee attack (Long sword) on Skeleton 1.
-  Ada rolls Melee attack: 8 against 13: failure.  [1d20: 8 = 8]
-  Brom uses Melee attack (Heavy mace) on Skeleton 1.
-  Brom rolls Melee attack: 5 against 13: failure.  [1d20: 5 = 5]
-  Acolyte uses mace on Ada.
-  Acolyte rolls Melee attack: 18 + 1 modifiers = 19 against 16: success.  [1d20: 18 = 18]
-  Ada loses 5 hit points (-3 left).  [1d6: 4 = 4]
+  Ada rolls Melee attack: 18 against 13: success.  [1d20: 18 = 18]
+  Skeleton 1 loses 5 hit points (-4 left).  [1d8: 4 = 4]
+  Skeleton 1 is out of the fight.
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 16 against 15: success.  [1d20: 16 = 16]
+  Acolyte loses 7 hit points (1 left).  [1d6: 6 = 6]
+  Acolyte uses Cure light wounds on Acolyte.
+  Acolyte spends 1 1st level spells (0 left).
+  Acolyte regains 7 hit points (8).  [1d8: 7 = 7]
+  Skeleton 2 uses claw on Ada.
+  Skeleton 2 rolls Melee attack: 15 + 1 modifiers = 16 against 15: success.  [1d20: 15 = 15]
+  Ada loses 2 hit points (0 left).  [1d6: 2 = 2]
   Ada is out of the fight.
-  Skeleton 1 uses claw on Brom.
-  Skeleton 1 rolls Melee attack: 16 + 1 modifiers = 17 against 14: success.  [1d20: 16 = 16]
-  Brom loses 6 hit points (0 left).  [1d6: 6 = 6]
+Round 3.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt cult rolls 2 for initiative.  [1d6: 2 = 2]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 4 + 1 modifiers = 5 against 15: failure.  [1d20: 4 = 4]
+  Skeleton 2 uses claw (charging) on Brom.
+  Skeleton 2 moves 1 cell to (8, 2).
+  Skeleton 2 is Winded for 10 rounds.
+  Skeleton 2 rolls Melee attack: 17 + 3 modifiers = 20 against 14: success.  [1d20: 17 = 17]
+  Brom loses 1 hit points (5 left).  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 9 against 13: failure.  [1d20: 9 = 9]
+Round 4.
+  Party rolls 6 for initiative.  [1d6: 6 = 6]
+  Crypt cult rolls 3 for initiative.  [1d6: 3 = 3]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 4 against 13: failure.  [1d20: 4 = 4]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 12 + 1 modifiers = 13 against 15: failure.  [1d20: 12 = 12]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 5 + 1 modifiers = 6 against 14: failure.  [1d20: 5 = 5]
+Round 5.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Crypt cult rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 18 against 13: success.  [1d20: 18 = 18]
+  Skeleton 2 loses 2 hit points (2 left).  [1d6: 1 = 1]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 3 + 1 modifiers = 4 against 15: failure.  [1d20: 3 = 3]
+  Skeleton 2 uses claw on Brom.
+  Skeleton 2 rolls Melee attack: 13 + 1 modifiers = 14 against 14: success.  [1d20: 13 = 13]
+  Brom loses 6 hit points (-1 left).  [1d6: 6 = 6]
   Brom is out of the fight.
-Crypt cult wins after 2 rounds.
-Party: Ada -3/2 (out), Brom 0/6 (out)
-Crypt cult: Acolyte 8/8, Skeleton 1 1/1, Skeleton 2 4/4
+Crypt cult wins after 5 rounds.
+Party: Ada 0/2 (out), Brom -1/6 (out)
+Crypt cult: Acolyte 8/8, Skeleton 1 -4/1 (out), Skeleton 2 2/4
+[exit 0]
+
+$ goldbox sim combat --module modules/classic --party ada.json,brom.json,robin.json --encounter crypt_cult --seed 7
+seed 7
+Party is surprised for 1 round.  [1d6: 2 = 2]
+Round 1.
+  Party rolls 3 for initiative.  [1d6: 3 = 3]
+  Crypt cult rolls 5 for initiative.  [1d6: 5 = 5]
+  Acolyte uses Bless on Acolyte, Skeleton 1, Skeleton 2.
+  Acolyte spends 1 1st level spells (1 left).
+  Acolyte is Blessed for 6 rounds.
+  Skeleton 1 is Blessed for 6 rounds.
+  Skeleton 2 is Blessed for 6 rounds.
+  Skeleton 1 uses claw (charging) on Ada.
+  Skeleton 1 moves 8 cells to (1, 3).
+  Skeleton 1 is Winded for 10 rounds.
+  Skeleton 1 rolls Melee attack: 7 + 3 modifiers = 10 against 15: failure.  [1d20: 7 = 7]
+  Skeleton 2 uses claw (charging) on Ada.
+  Skeleton 2 moves 8 cells to (1, 1).
+  Skeleton 2 is Winded for 10 rounds.
+  Skeleton 2 rolls Melee attack: 4 + 3 modifiers = 7 against 15: failure.  [1d20: 4 = 4]
+  Ada doesn't act (surprised).
+  Brom doesn't act (surprised).
+  Robin doesn't act (surprised).
+Round 2.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Crypt cult rolls 2 for initiative.  [1d6: 2 = 2]
+  Ada uses Melee attack (Long sword) on Skeleton 1.
+  Ada rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+  Brom uses Melee attack (Heavy mace) on Skeleton 1.
+  Brom rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
+  Skeleton 1 loses 2 hit points (0 left).  [1d6: 1 = 1]
+  Skeleton 1 is out of the fight.
+  Robin uses Missile attack (Short bow) on Skeleton 2.
+  Robin rolls Missile attack: 18 + 2 = 20 against 13: success.  [1d20: 18 = 18]
+  Skeleton 2 loses 3 hit points (4 left).  [1d6: 3 = 3]
+  Acolyte uses mace (charging) on Ada.
+  Acolyte moves 8 cells to (1, 2).
+  Acolyte is Winded for 10 rounds.
+  Acolyte rolls Melee attack: 14 + 3 modifiers = 17 against 16: success.  [1d20: 14 = 14]
+  Ada loses 4 hit points (-2 left).  [1d6: 3 = 3]
+  Ada is out of the fight.
+  Skeleton 2 uses claw on Robin.
+  Skeleton 2 rolls Melee attack: 7 + 1 modifiers = 8 against 14: failure.  [1d20: 7 = 7]
+Round 3.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Crypt cult rolls 6 for initiative.  [1d6: 6 = 6]
+  Acolyte uses Cure light wounds on Skeleton 2.
+  Acolyte spends 1 1st level spells (0 left).
+  Skeleton 2 regains 3 hit points (7).  [1d8: 5 = 5]
+  Skeleton 2 uses claw on Robin.
+  Skeleton 2 rolls Melee attack: 11 + 1 modifiers = 12 against 14: failure.  [1d20: 11 = 11]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 4 against 15: failure.  [1d20: 4 = 4]
+  Robin uses Missile attack (Short bow) on Skeleton 2.
+  Robin rolls Missile attack: 14 + 2 = 16 against 13: success.  [1d20: 14 = 14]
+  Skeleton 2 loses 6 hit points (1 left).  [1d6: 6 = 6]
+Round 4.
+  Party rolls 5 for initiative.  [1d6: 5 = 5]
+  Crypt cult rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 18 against 15: success.  [1d20: 18 = 18]
+  Acolyte loses 6 hit points (6 left).  [1d6: 5 = 5]
+  Robin uses Missile attack (Short bow) on Skeleton 2.
+  Robin rolls Missile attack: 1 + 2 = 3 against 13: failure.  [1d20: 1 = 1]
+  Acolyte uses mace on Robin.
+  Acolyte rolls Melee attack: 12 + 1 modifiers = 13 against 15: failure.  [1d20: 12 = 12]
+  Skeleton 2 uses claw on Robin.
+  Skeleton 2 rolls Melee attack: 19 + 1 modifiers = 20 against 14: success.  [1d20: 19 = 19]
+  Robin loses 3 hit points (-2 left).  [1d6: 3 = 3]
+  Robin is out of the fight.
+Round 5.
+  Party rolls 3 for initiative.  [1d6: 3 = 3]
+  Crypt cult rolls 3 for initiative.  [1d6: 3 = 3]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 5 against 15: failure.  [1d20: 5 = 5]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 11 + 1 modifiers = 12 against 15: failure.  [1d20: 11 = 11]
+  Skeleton 2 uses Close on Brom.
+  Skeleton 2 moves 1 cell to (0, 2).
+Round 6.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Crypt cult rolls 1 for initiative.  [1d6: 1 = 1]
+  Brom uses Melee attack (Heavy mace) on Skeleton 2.
+  Brom rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
+  Skeleton 2 loses 2 hit points (-1 left).  [1d6: 1 = 1]
+  Skeleton 2 is out of the fight.
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 13 + 1 modifiers = 14 against 15: failure.  [1d20: 13 = 13]
+Round 7.
+  Party rolls 6 for initiative.  [1d6: 6 = 6]
+  Crypt cult rolls 5 for initiative.  [1d6: 5 = 5]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 2 against 15: failure.  [1d20: 2 = 2]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 2 + 1 modifiers = 3 against 15: failure.  [1d20: 2 = 2]
+  Acolyte is no longer Blessed.
+Round 8.
+  Party rolls 1 for initiative.  [1d6: 1 = 1]
+  Crypt cult rolls 4 for initiative.  [1d6: 4 = 4]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 5 against 15: failure.  [1d20: 5 = 5]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 9 against 15: failure.  [1d20: 9 = 9]
+Round 9.
+  Party rolls 2 for initiative.  [1d6: 2 = 2]
+  Crypt cult rolls 2 for initiative.  [1d6: 2 = 2]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 4 against 15: failure.  [1d20: 4 = 4]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 3 against 15: failure.  [1d20: 3 = 3]
+Round 10.
+  Party rolls 6 for initiative.  [1d6: 6 = 6]
+  Crypt cult rolls 5 for initiative.  [1d6: 5 = 5]
+  Brom uses Melee attack (Heavy mace) on Acolyte.
+  Brom rolls Melee attack: 12 against 15: failure.  [1d20: 12 = 12]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 4 against 15: failure.  [1d20: 4 = 4]
+Round 11.
+  Party rolls 4 for initiative.  [1d6: 4 = 4]
+  Crypt cult rolls 6 for initiative.  [1d6: 6 = 6]
+  Acolyte uses mace on Brom.
+  Acolyte rolls Melee attack: 18 against 15: success.  [1d20: 18 = 18]
+  Brom loses 6 hit points (0 left).  [1d6: 5 = 5]
+  Brom is out of the fight.
+Crypt cult wins after 11 rounds.
+Party: Ada -2/2 (out), Brom 0/6 (out), Robin -2/1 (out)
+Crypt cult: Acolyte 6/12, Skeleton 1 0/2 (out), Skeleton 2 -1/7 (out)
 [exit 0]
 

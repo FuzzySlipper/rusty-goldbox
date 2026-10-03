@@ -119,8 +119,15 @@
       "damage": "1d2"
     },
     {
+      "action": "charge",
+      "from_item": "weapon"
+    },
+    {
       "action": "close"
     }
   ],
-  "equipment": "item.id == 'dagger'"
+  "equipment": "item.id == 'dagger'",
+  "reactions": [
+    "parting_blow"
+  ]
 }

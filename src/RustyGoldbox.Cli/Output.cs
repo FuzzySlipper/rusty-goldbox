@@ -542,7 +542,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         foreach (CombatSide side in result.Sides)
         {
             string members = string.Join(", ", side.Members.Select(member =>
-                $"{member.Name} {TrackText(member, result.Track, evaluator)}{(member.Defeated ? " (out)" : "")}"));
+                $"{member.Name} {TrackText(member, result.Track, evaluator)}{(member.Escaped ? " (fled)" : member.Defeated ? " (out)" : "")}"));
             writer.WriteLine($"{side.Name}: {members}");
         }
     }

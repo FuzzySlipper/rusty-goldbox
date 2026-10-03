@@ -14,8 +14,16 @@
   },
   "actions": [
     {
+      "action": "flee"
+    },
+    {
       "action": "melee_attack",
       "name": "bite",
+      "damage": "1d3"
+    },
+    {
+      "action": "charge",
+      "name": "bite (charging)",
       "damage": "1d3"
     },
     {

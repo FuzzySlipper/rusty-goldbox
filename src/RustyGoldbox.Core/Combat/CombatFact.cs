@@ -131,6 +131,13 @@ public sealed record MoveFact(string Who, Cell From, Cell To, int Cells) : Comba
     public override string Describe() => $"{Who} moves {Cells} cell{(Cells == 1 ? "" : "s")} to ({To.X}, {To.Y}).";
 }
 
+public sealed record EscapedFact(string Who) : CombatFact
+{
+    public override string Kind => "escaped";
+
+    public override string Describe() => $"{Who} flees the field.";
+}
+
 public sealed record DefeatedFact(string Who) : CombatFact
 {
     public override string Kind => "defeated";

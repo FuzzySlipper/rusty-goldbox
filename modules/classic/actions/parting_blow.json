@@ -1,0 +1,23 @@
+{
+  "type": "action",
+  "id": "parting_blow",
+  "name": "Parting blow",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "damage"
+  ],
+  "check": "attack",
+  "check_bonus": "4",
+  "outcomes": {
+    "success": [
+      {
+        "op": "damage",
+        "amount": "use.damage + self.str_damage"
+      }
+    ]
+  }
+}

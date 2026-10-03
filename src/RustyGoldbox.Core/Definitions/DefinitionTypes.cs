@@ -412,6 +412,7 @@ public static class DefinitionTypes
             new("parameters", new ListKind(new TextKind()), false, "Names uses must supply (or get from an item), read as use.<name>, for example [\"damage\"]."),
             new("available", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Combat), false, "Whether the creature may take it now; without it, always."),
             new("check", new ReferenceKind("check"), false, "The check that decides the outcome, made by the actor against the target."),
+            new("check_bonus", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Added to the check's roll with the modifiers, worked out against the target: a range penalty such as \"0 - 2 * floor((combat.distance - 1) / use.increment)\", or \"4\" for a blow at a fleeing foe."),
             new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(OperationTypes.ActionRoots | Roots.Check))), false, "Operations for each outcome tier of the check: success, failure or one of its tiers. Tiers without an entry do nothing."),
             new("always", new ListKind(new OperationKind(OperationTypes.ActionRoots)), false, "Operations that run whatever the outcome, or the whole effect of an action without a check."),
         ],

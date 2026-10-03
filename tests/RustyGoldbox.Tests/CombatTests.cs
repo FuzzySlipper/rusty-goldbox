@@ -76,12 +76,16 @@ public sealed class CombatTests
         using TempModules scratch = new();
         WriteCharacter(scratch, Rules.ClassicPath, "ada.json", new CreationRequest("Ada", "fighter", "human", Attributes: Scores(("str", 16), ("dex", 13), ("con", 15), ("int", 10), ("wis", 9), ("cha", 11))), "long_sword", "chain_mail", "shield");
         WriteCharacter(scratch, Rules.ClassicPath, "brom.json", new CreationRequest("Brom", "cleric", "dwarf", Attributes: Scores(("str", 13), ("dex", 10), ("con", 14), ("int", 9), ("wis", 15), ("cha", 10))), "heavy_mace", "chain_mail");
+        WriteCharacter(scratch, Rules.ClassicPath, "robin.json", new CreationRequest("Robin", "fighter", "human", Attributes: Scores(("str", 12), ("dex", 17), ("con", 13), ("int", 10), ("wis", 9), ("cha", 11))), "short_bow", "leather_armour");
 
         Golden.Verify("classic-combat.txt", CliTranscript.Run(scratch.Root,
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "crypt_guard", "--seed", "3"],
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "ogre", "--seed", "1", "--runs", "200"],
             // The acolyte blesses its side and heals from its own two 1st level spells.
-            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "crypt_cult", "--seed", "2"]));
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json", "--encounter", "crypt_cult", "--seed", "2"],
+            // Ada and Brom charge; Robin shoots, at -2 beyond the bow's first 50 ft; the acolyte, badly hurt,
+            // flees past two parting blows (+4) and gets away at the field's edge.
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,brom.json,robin.json", "--encounter", "crypt_cult", "--seed", "7"]));
     }
 
     [Fact]
@@ -493,6 +497,45 @@ public sealed class CombatTests
         Assert.Equal(
             ["Barrage 1 of 4 goes to Dummy 1.", "Barrage 2 of 4 goes to Dummy 1.", "Barrage 3 of 4 goes to Dummy 2.", "Barrage 4 of 4 goes to Dummy 2."],
             FightOn(rules, "pair", "gunner").Where(line => line.StartsWith("Barrage", StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AFleeingCreatureDrawsPartingBlowsUnlessItWithdrawsAndEscapesAtTheEdge(bool provokes)
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/open.json", """{ "type": "encounter", "id": "open", "name": "Open", "monsters": [ { "monster": "coward", "count": "1" } ] }""");
+        modules.Write("rules/run.json", $$"""
+            { "type": "action", "id": "run", "name": "Run", "cost": { "turn": 1 }, "target": "enemy", "valid_target": "combat.distance <= 1",
+              "always": [ { "op": "move", "toward": "away", "distance": "6", "escape": true, "provokes": {{(provokes ? "true" : "false")}} } ] }
+            """);
+        modules.Write("rules/coward.json", """
+            { "type": "monster", "id": "coward", "name": "Coward", "tracks": { "hit_points": "50" }, "stats": { "str": "5" }, "actions": [ { "action": "run" } ], "xp": 0 }
+            """);
+        modules.Write("rules/swipe.json", """
+            { "type": "action", "id": "swipe", "name": "Swipe", "cost": { "turn": 1 }, "target": "enemy", "check": "always_hits", "check_bonus": "3",
+              "outcomes": { "success": [ { "op": "damage", "amount": "1" } ] } }
+            """);
+        modules.Write("rules/parting.json", """{ "type": "reaction", "id": "parting", "name": "Parting swipe", "trigger": "leaves_reach", "cost": { "reaction": 1 }, "use": { "action": "swipe" } }""");
+        modules.Write("rules/maze.json", """
+            { "type": "combat", "id": "maze", "name": "Maze", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "round",
+              "round_seconds": 6, "field": { "width": 5, "height": 3, "metric": "manhattan" },
+              "budget": [ { "id": "turn", "per_turn": 1 }, { "id": "reaction", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/guard.json", """
+            { "type": "monster", "id": "guard", "name": "Guard", "tracks": { "hit_points": "50" }, "stats": { "str": "15" },
+              "actions": [ { "action": "walk" } ], "reactions": ["parting"], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        List<string> lines = FightOn(rules, "open", "guard", rounds: 2);
+
+        // The guard closes; the coward steps out of reach to the corner (a swipe at it unless it withdraws) and, cornered at the edge, gets away.
+        Assert.Equal(provokes, lines.Contains("Guard reacts to Coward: Parting swipe."));
+        Assert.Equal(provokes, lines.Contains("Guard rolls Always hits: 20 + 3 modifiers = 23 against 10: success."));
+        Assert.Contains("Coward flees the field.", lines);
     }
 
     [Fact]

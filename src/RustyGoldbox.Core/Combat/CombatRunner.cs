@@ -139,7 +139,7 @@ public sealed class CombatRunner
                 {
                     tookTurns.Add(combatant);
                 }
-                else if (DownedConditions && !tookTurns.Contains(combatant))
+                else if (DownedConditions && !combatant.Escaped && !tookTurns.Contains(combatant))
                 {
                     // A creature that fell keeps its place, where its conditions run.
                     DownedTurn(combatant);
@@ -150,7 +150,7 @@ public sealed class CombatRunner
             // Those not in the order (down from the start, or dropped by a new roll) run theirs last.
             if (DownedConditions && StandingSides() > 1)
             {
-                foreach (Combatant downed in Everyone.Where(member => member.Defeated && !tookTurns.Contains(member)).ToList())
+                foreach (Combatant downed in Everyone.Where(member => member.Defeated && !member.Escaped && !tookTurns.Contains(member)).ToList())
                 {
                     DownedTurn(downed);
                 }
@@ -525,7 +525,7 @@ public sealed class CombatRunner
             "self" => [actor],
             "enemy" or "all_enemies" => enemies,
             "ally" or "all_allies" => allies,
-            "fallen_ally" => Everyone.Where(member => member.Defeated && member.Side == actor.Side && member != actor).ToList(),
+            "fallen_ally" => Everyone.Where(member => member.Defeated && !member.Escaped && member.Side == actor.Side && member != actor).ToList(),
             _ => allies.Where(member => Missing(member) > 0).ToList(),
         };
         // A range is how far it reaches and needs line of sight; without one, it reaches anyone (moving toward an enemy out of sight).
@@ -661,7 +661,8 @@ public sealed class CombatRunner
         Scope scope = new(actor.Creature, target.Creature, use.Parameters);
         if (action.Json.TryGetProperty("check", out _))
         {
-            CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target);
+            decimal extra = action.Json.TryGetProperty("check_bonus", out _) ? Number(action, "$.check_bonus", scope) : 0;
+            CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target, extra);
             if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
                 && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
             {
@@ -677,10 +678,10 @@ public sealed class CombatRunner
         return true;
     }
 
-    private CheckResult MakeCheck(Definition check, Combatant by, Combatant against)
+    private CheckResult MakeCheck(Definition check, Combatant by, Combatant against, decimal extra = 0)
     {
         int before = _dice.Rolls.Count;
-        CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature));
+        CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
         by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
         Record(new CheckFact(by.Name, check.Name, result), before);
         return result;
@@ -833,7 +834,8 @@ public sealed class CombatRunner
         bool bySelf = operation.TryGetProperty("by", out JsonElement by) && by.GetString() == "self";
         Combatant roller = bySelf ? actor : target ?? actor;
         Combatant other = bySelf ? target ?? actor : actor;
-        CheckResult result = MakeCheck(check, roller, other);
+        decimal extra = operation.TryGetProperty("bonus", out _) ? Number(owner, $"{path}.bonus", scope) : 0;
+        CheckResult result = MakeCheck(check, roller, other, extra);
         if (operation.GetProperty("outcomes").TryGetProperty(result.Tier, out JsonElement operations))
         {
             RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target);
@@ -851,6 +853,15 @@ public sealed class CombatRunner
     /// </summary>
     private void Move(Definition owner, JsonElement operation, string path, Scope scope, Combatant actor, Combatant? target)
     {
+        bool fleeing = operation.TryGetProperty("toward", out JsonElement way) && way.GetString() == "away"
+            && operation.TryGetProperty("escape", out JsonElement leaves) && leaves.GetBoolean();
+        if (_field is null && fleeing && target != actor)
+        {
+            // Without a field there is nowhere to run but away.
+            Escape(actor);
+            return;
+        }
+
         if (_field is null || actor.Creature.Position is not Cell start || target?.Creature.Position is not Cell goal || target == actor)
         {
             return;
@@ -860,6 +871,8 @@ public sealed class CombatRunner
         decimal allowed = Number(owner, $"{path}.distance", scope);
         decimal within = operation.TryGetProperty("within", out _) ? Number(owner, $"{path}.within", scope) : 1;
         decimal? beyond = operation.TryGetProperty("beyond", out _) ? Number(owner, $"{path}.beyond", scope) : null;
+        bool provokes = !operation.TryGetProperty("provokes", out JsonElement provoking) || provoking.GetBoolean();
+        bool escape = away && operation.TryGetProperty("escape", out JsonElement escaping) && escaping.GetBoolean();
         HashSet<Cell> blocked = Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
             .Select(member => member.Creature.Position!.Value)
             .ToHashSet();
@@ -876,7 +889,7 @@ public sealed class CombatRunner
             }
 
             // Enemies whose reach this step leaves may strike first.
-            foreach (Combatant enemy in Everyone.Where(member => member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList())
+            foreach (Combatant enemy in Everyone.Where(member => provokes && member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList())
             {
                 Cell watcher = enemy.Creature.Position!.Value;
                 Cell from = here;
@@ -902,6 +915,22 @@ public sealed class CombatRunner
             actor.Creature.Position = here;
             Record(new MoveFact(actor.Name, start, here, steps));
         }
+
+        // A creature running with nowhere further to go at the field's edge gets away.
+        if (escape && !actor.Defeated && spent < allowed && IsEdge(here) && StepAway(here, goal, blocked) is null)
+        {
+            Escape(actor);
+        }
+    }
+
+    private bool IsEdge(Cell cell) => cell.X == 0 || cell.Y == 0 || cell.X == _field!.Width - 1 || cell.Y == _field.Height - 1;
+
+    /// <summary>The creature leaves the fight, not felled: it can't be targeted or come back.</summary>
+    private void Escape(Combatant creature)
+    {
+        creature.Escaped = true;
+        creature.Defeated = true;
+        Record(new EscapedFact(creature.Name));
     }
 
     /// <summary>
@@ -1004,6 +1033,11 @@ public sealed class CombatRunner
     /// <summary>Re-evaluates the combat's defeated rule; a creature can fall or get back up. Returns whether it just fell.</summary>
     private bool CheckDefeated(Combatant combatant)
     {
+        if (combatant.Escaped)
+        {
+            return false;
+        }
+
         bool defeated = Evaluate(_combat, "$.defeated", new Scope(combatant.Creature, null)).Boolean;
         if (defeated == combatant.Defeated)
         {

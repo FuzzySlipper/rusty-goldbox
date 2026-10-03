@@ -1,0 +1,7 @@
+{
+  "type": "condition",
+  "id": "winded",
+  "name": "Winded",
+  "description": "Charged in the last 10 rounds, so can't charge again yet.",
+  "modifiers": []
+}

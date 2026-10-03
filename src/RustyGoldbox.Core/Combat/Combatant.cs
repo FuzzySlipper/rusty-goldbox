@@ -23,7 +23,11 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
     public int Side { get; set; }
 
+    /// <summary>Out of the fight: felled (by the combat's defeated rule) or escaped.</summary>
     public bool Defeated { get; set; }
+
+    /// <summary>Fled the field: out of the fight, though not felled, and back in it never.</summary>
+    public bool Escaped { get; set; }
 
     /// <summary>Rounds left for timed conditions; a condition without an entry lasts until removed.</summary>
     public Dictionary<Definition, decimal> ConditionRounds { get; } = [];

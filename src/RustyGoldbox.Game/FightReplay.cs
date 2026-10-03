@@ -96,6 +96,9 @@ internal sealed class FightReplay
             case DefeatedFact defeated:
                 _defeated.Add(defeated.Who);
                 break;
+            case EscapedFact escaped:
+                _defeated.Add(escaped.Who);
+                break;
             case ReturnedFact returned:
                 _defeated.Remove(returned.Who);
                 break;
@@ -109,7 +112,7 @@ internal sealed class FightReplay
         ActionFact => 0.6,
         DamageFact or HealFact => 0.5,
         MoveFact => 0.4,
-        DefeatedFact or EndFact => 0.7,
+        DefeatedFact or EscapedFact or EndFact => 0.7,
         _ => 0.25,
     };
 }

@@ -1,0 +1,13 @@
+{
+  "type": "reaction",
+  "id": "parting_blow",
+  "name": "Parting blow",
+  "trigger": "leaves_reach",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "parting_blow",
+    "from_item": "weapon"
+  }
+}

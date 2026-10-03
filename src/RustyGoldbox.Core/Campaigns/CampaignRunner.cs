@@ -515,7 +515,7 @@ public sealed class CampaignRunner
         facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter)));
 
         // Every monster felled is worth its experience, whoever won.
-        decimal earned = sides[1].Members.Where(member => member.Defeated && member.Creature.Monster is not null)
+        decimal earned = sides[1].Members.Where(member => member.Defeated && !member.Escaped && member.Creature.Monster is not null)
             .Sum(member => member.Creature.Monster!.Json.GetProperty("xp").GetDecimal());
         if (earned > 0)
         {

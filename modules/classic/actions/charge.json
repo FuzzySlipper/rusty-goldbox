@@ -1,0 +1,47 @@
+{
+  "type": "action",
+  "id": "charge",
+  "name": "Charge",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "damage"
+  ],
+  "available": "not self.condition.winded",
+  "valid_target": "combat.distance > 1 and combat.distance <= floor(self.movement / 5) + 1",
+  "prefer": "0 - combat.distance",
+  "always": [
+    {
+      "op": "move",
+      "distance": "floor(self.movement / 5)"
+    },
+    {
+      "op": "apply_condition",
+      "condition": "winded",
+      "rounds": "10",
+      "to": "self"
+    },
+    {
+      "op": "if",
+      "when": "combat.distance <= 1",
+      "then": [
+        {
+          "op": "check",
+          "check": "attack",
+          "by": "self",
+          "bonus": "2",
+          "outcomes": {
+            "success": [
+              {
+                "op": "damage",
+                "amount": "use.damage + self.str_damage"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

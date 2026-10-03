@@ -767,6 +767,11 @@ public sealed class RuleSetBuilder
                 }
             }
 
+            if (!hasCheck && action.Json.TryGetProperty("check_bonus", out _))
+            {
+                Error(action, "action.check-bonus", "$.check_bonus", "check_bonus adds to the action's check, but it has none. Add \"check\", or give the bonus to a check operation's \"bonus\".");
+            }
+
             if (!hasCheck && !action.Json.TryGetProperty("always", out _))
             {
                 Error(action, "action.outcomes", "$", "An action needs \"always\" operations, or a \"check\" with \"outcomes\"; otherwise it does nothing.");

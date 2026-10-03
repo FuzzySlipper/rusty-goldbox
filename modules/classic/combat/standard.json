@@ -24,6 +24,10 @@
     {
       "id": "action",
       "per_turn": 1
+    },
+    {
+      "id": "reaction",
+      "per_turn": 1
     }
   ],
   "track": "hit_points",
