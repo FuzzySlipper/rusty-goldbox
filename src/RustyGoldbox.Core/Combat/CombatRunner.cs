@@ -131,8 +131,15 @@ public sealed class CombatRunner
                 {
                     tookTurns.Add(combatant);
                 }
+                else if (DownedConditions && !tookTurns.Contains(combatant))
+                {
+                    // A creature that fell keeps its place, where its conditions run.
+                    DownedTurn(combatant);
+                    tookTurns.Add(combatant);
+                }
             }
 
+            // Those not in the order (down from the start, or dropped by a new roll) run theirs last.
             if (DownedConditions && StandingSides() > 1)
             {
                 foreach (Combatant downed in Everyone.Where(member => member.Defeated && !tookTurns.Contains(member)).ToList())
@@ -327,7 +334,8 @@ public sealed class CombatRunner
     private bool DownedConditions => _combat.Json.TryGetProperty("downed_conditions", out JsonElement downed) && downed.GetBoolean();
 
     /// <summary>
-    /// A defeated creature's end of round when downed_conditions is on: its
+    /// A defeated creature's turn when downed_conditions is on, at its place
+    /// in the order (or at the round's end if it has none): its
     /// conditions' start-of-turn operations, then their end-of-turn ones and
     /// durations, but no actions (bleeding out, a save to stabilise).
     /// </summary>

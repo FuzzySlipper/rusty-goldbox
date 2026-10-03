@@ -136,9 +136,10 @@ it, or the first fallen ally. Where a creature's uses carry a `score`, it
 scores every such option against its target and takes the highest instead.
 An action's check gives a tier; the action's
 operations for that tier run, then its `always` operations. Defeated
-creatures take no turns; with the combat's `downed_conditions`, those that
-had no turn in a round still run their conditions and count them down at the
-round's end. Reactions resolve where their triggers happen: as a mover
+creatures take no turns; with the combat's `downed_conditions`, they still
+run their conditions and count them down at their place in the order, or at
+the round's end when they have none (initiative rolled each round leaves them
+out). Reactions resolve where their triggers happen: as a mover
 leaves a reach, before an action's check against the reactor, and after an
 operation wounds it. Every change is a `CombatFact`, with the dice that produced it.
 

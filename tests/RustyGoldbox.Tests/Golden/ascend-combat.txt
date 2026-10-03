@@ -180,9 +180,9 @@ Round 2.
   Kara is Focused for 1 round.
   Ilse uses Patch up on Kara.
   Kara regains 7 hit points (8).  [1d6: 4 = 4]
+  Bully 2 is no longer Shaken.
   Bully 1 uses Smash on Kara.
   Bully 1 rolls Attack: 1 + 5 = 6 against 11: miss.  [1d20: 1 = 1]
-  Bully 2 is no longer Shaken.
 Round 3.
   Kara uses Melee attack (Longsword) on Bully 1.
   Kara rolls Attack: 4 + 4 + 2 modifiers = 10 against 12: failure.  [1d20: 4 = 4]
@@ -206,6 +206,7 @@ Round 4.
   Kara loses 9 hit points (-1 left).  [1d10: 6 = 6]
   Kara is out of the fight.
 Round 5.
+  Kara is no longer Focused.
   Ilse uses Mend on Kara.
   Kara regains 5 hit points (4).  [1d8: 2 = 2]
   Kara is back in the fight.
@@ -214,10 +215,9 @@ Round 5.
   Bully 1 is no longer Shaken.
 Round 6.
   Kara uses Melee attack (Longsword) on Bully 1.
-  Kara rolls Attack: 18 + 4 + 2 modifiers = 24 against 12: success.  [1d20: 18 = 18]
+  Kara rolls Attack: 18 + 4 = 22 against 12: success.  [1d20: 18 = 18]
   Bully 1 loses 11 hit points (-6 left).  [1d8: 8 = 8]
   Bully 1 is out of the fight.
-  Kara is no longer Focused.
 Party wins after 6 rounds.
 Party: Kara 4/12, Ilse 9/9
 Bullies: Bully 1 -6/13 (out), Bully 2 -4/12 (out)

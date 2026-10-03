@@ -362,7 +362,7 @@ public static class DefinitionTypes
                 new("height", new IntegerKind(), true, "Cells down."),
                 new("metric", new EnumKind(["chebyshev", "manhattan"]), false, "How distance counts: a diagonal step is 1 (chebyshev, the default) or there are only straight steps (manhattan)."),
             ]), false, "A grid the fight is on: creatures have positions, actions have a range in cells, and the move operation moves them. Without it, fights have no positions and everyone is in reach (combat.distance is 1)."),
-            new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down at the end of each round it had no turn, though it takes no actions (bleeding out, a save to stabilise). Without it, a defeated creature's conditions wait."),
+            new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down each round, though it takes no actions (bleeding out, a save to stabilise). It does so at its place in the turn order; with initiative each round a defeated creature isn't rolled for, so it does so at the round's end, as does one out of the fight from the start. Without it, a defeated creature's conditions wait."),
         ],
         """
         {

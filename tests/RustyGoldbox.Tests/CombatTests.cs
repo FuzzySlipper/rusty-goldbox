@@ -241,6 +241,55 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ADownedCreaturesConditionsRunAtItsPlaceInTheOrder()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/bleeding.json", """
+            { "type": "condition", "id": "bleeding", "name": "Bleeding", "modifiers": [], "each_turn": [ { "op": "damage", "amount": "1", "to": "self" } ] }
+            """);
+        modules.Write("rules/slash.json", """
+            { "type": "action", "id": "slash", "name": "Slash", "cost": { "turn": 1 }, "target": "enemy",
+              "always": [ { "op": "damage", "amount": "10" }, { "op": "apply_condition", "condition": "bleeding" } ] }
+            """);
+        modules.Write("rules/slasher.json", """
+            { "type": "monster", "id": "slasher", "name": "Slasher", "tracks": { "hit_points": "50" }, "stats": { "str": "15" }, "actions": [ { "action": "slash" } ], "xp": 0 }
+            """);
+        modules.Write("rules/bystander.json", """
+            { "type": "monster", "id": "bystander", "name": "Bystander", "tracks": { "hit_points": "50" }, "stats": { "str": "5" },
+              "actions": [ { "action": "smite", "damage": "1" } ], "xp": 0 }
+            """);
+        modules.Write("rules/bleed_out.json", """
+            { "type": "combat", "id": "bleed_out", "name": "Bleed out", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first",
+              "initiative_each": "combat", "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points",
+              "defeated": "self.hit_points <= 0", "downed_conditions": true }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "bleed_out", out _)!;
+
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Slashers", [Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "slasher", out _)!, "Slasher", evaluator)]),
+                new CombatSide("Others",
+                [
+                    Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "dummy", out _)!, "Dummy", evaluator),
+                    Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "bystander", out _)!, "Bystander", evaluator),
+                ]),
+            ], dice, 2);
+        });
+
+        // The dummy ties the bystander on initiative but is listed first: it falls to the first slash and bleeds at its own place, before the bystander acts.
+        List<string> lines = result.Facts.Select(fact => fact.Describe()).ToList();
+        int bleeds = lines.IndexOf("Dummy loses 1 hit points (-1 left).");
+        Assert.True(bleeds > lines.IndexOf("Dummy is out of the fight."));
+        Assert.True(bleeds < lines.IndexOf("Bystander uses Smite on Slasher."));
+        Assert.Equal(2, lines.Count(line => line.StartsWith("Dummy loses 1 hit points", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void SurprisedSidesLoseTheirFirstRound()
     {
         using TempModules modules = new();
