@@ -96,7 +96,7 @@ public sealed partial class CampaignRunner
         // Evaluate on the existing creature view before applying a paid service.
         Creature creature = character.ToCreature();
         Evaluator evaluator = new(_rules, dice);
-        Scope scope = new(creature, null, Variables: _state.Variables);
+        Scope scope = new(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems);
         int before = dice.Rolls.Count;
         JsonElement operations = services[number - 1].GetProperty("operations");
         for (int index = 0; index < operations.GetArrayLength(); index++)

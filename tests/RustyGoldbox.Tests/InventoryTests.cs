@@ -70,6 +70,32 @@ public sealed class InventoryTests
     }
 
     [Fact]
+    public void TemplePricesAndOperationsReadTheSamePartyItemScope()
+    {
+        using TempModules modules = new();
+        string campaign = TempleTests.Fixture(modules);
+        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Mend?", "services": [{ "label": "Mend", "cost": "carried(item.id == 'tool')", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "carried(item.kind == 'gear')" }] }] }""");
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = ShopTests.Party(modules, campaign, set);
+        Definition item = set.Rules!.Find(DefinitionTypes.Item, "tool", out _)!;
+        party[0].Equipment.Add(item);
+        party[0].Tracks["hit_points"].Current = 1;
+        CampaignState state = CampaignRunner.NewState(set.Rules, set.Rules.Find(DefinitionTypes.Campaign, "tale", out _)!, party, 1);
+        state.Inventory.Add(item);
+        CampaignRunner runner = new(set.Rules, state);
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            Assert.Equal(2, runner.Temple()!.Services[0].Prices[0]);
+            runner.Execute("serve 1 1", engine.Random);
+            Assert.Equal(3, party[0].Tracks["hit_points"].Current);
+            Assert.Equal(2, state.CarriedItems.Count());
+        });
+    }
+
+    [Fact]
     public void CliInventoryTranscriptAndSchemaDescribeTheSameEvents()
     {
         using TempModules modules = new();
