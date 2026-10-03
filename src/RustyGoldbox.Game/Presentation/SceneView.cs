@@ -178,7 +178,7 @@ internal sealed class SceneView : IDisposable
     private void ShowArea(RuleSet rules, ModuleSet set, CampaignRunner runner, Definition area, List<AppearanceFact> facts)
     {
         Definition? wallSet = area.Json.TryGetProperty("wall_set", out _) ? rules.Reference(area, "$.wall_set") : null;
-        string key = $"{area.QualifiedId}@{set.LoadOrder.First(loaded => loaded.Manifest.Id == area.Module).Manifest.Source.Identity}@{string.Join(',', runner.State.FoundSecrets.Order(StringComparer.Ordinal))}";
+        string key = $"{area.QualifiedId}@{set.LoadOrder.First(loaded => loaded.Manifest.Id == area.Module).Manifest.Source.Identity}@{string.Join(',', runner.State.FoundSecrets.Order(StringComparer.Ordinal))}@{string.Join(',', runner.State.OpenedDoors.Order(StringComparer.Ordinal))}";
         if (key != _areaKey)
         {
             RetireArea();

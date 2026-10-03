@@ -349,7 +349,7 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
-    /// <summary>Runs one play command: forward, back, left, right, around, choose n, look or status.</summary>
+    /// <summary>Runs one play command, including movement, search, door opening, event choices and status.</summary>
     public void Execute(IEngineContext engine, string command)
     {
         Notes.Clear();

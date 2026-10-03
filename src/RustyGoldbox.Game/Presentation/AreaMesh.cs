@@ -36,7 +36,7 @@ internal static class AreaMesh
             {
                 foreach (Facing side in Enum.GetValues<Facing>())
                 {
-                    // A secret door looks like wall to the party.
+                    // PlayerMap keeps undiscovered secret edges as Secret (wall); found ones become Door.
                     Edge edge = map.EdgeOf(x, y, side);
                     if (edge != Edge.Open)
                     {

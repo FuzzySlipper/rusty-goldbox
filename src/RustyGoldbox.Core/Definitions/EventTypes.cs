@@ -69,6 +69,18 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "forced", "kind": "set", "variable": "gate_open", "value": "true", "next": "through" }""");
 
+    public static DefinitionType Open { get; } = new(
+        "open",
+        "Unlocks and opens a named door in the current area.",
+        [
+            new("door", new TextKind(), true, "The area door ID to open."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "open_gate", "kind": "open", "door": "gate", "next": "through" }""");
+
     public static DefinitionType Branch { get; } = new(
         "branch",
         "Goes to the first event whose condition holds.",
@@ -238,7 +250,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

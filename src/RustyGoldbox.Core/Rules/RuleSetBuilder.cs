@@ -1455,6 +1455,9 @@ public sealed class RuleSetBuilder
                 }
 
                 break;
+            case "open" when string.IsNullOrWhiteSpace(definition.Json.GetProperty("door").GetString()):
+                Error(definition, "event.open", "$.door", "An open event needs the ID of a door in the current area.");
+                break;
             case "teleport":
                 CheckEntry(definition, "$.area", definition.Json.GetProperty("entry").GetString()!, "$.entry");
                 break;

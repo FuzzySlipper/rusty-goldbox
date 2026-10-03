@@ -434,11 +434,14 @@ Combat is built so that no die convention is assumed:
   named entry points. A secret-door edge is drawn as a wall until the party's
   `search [direction]` command succeeds at the area's `search` check (or the
   ruleset check named `search`); the discovered edge is kept in the save and
-  then appears as a door in the party map and first-person view.
+  then appears as a door in the party map and first-person view. A `doors`
+  declaration can lock a `DD` edge behind a key item, a pick or force check,
+  or an event chain; `open`, `pick` and `force` commands and forward movement
+  use those authored mechanisms, and opened edges are saved as open.
 - **Events.** These are UA-style event chains, written as data. Event types
   include text, question/menu, combat, treasure, experience, give/take item, shop,
   temple, training, rest, NPC join/leave, set/test variable, teleport, a
-  conditional branch, chain-to, and end adventure. Each event names its
+  conditional branch, door open, chain-to, and end adventure. Each event names its
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
   branch can be guarded by an expression. Text, menu, shop and combat events may
   bring a `picture` (shown until the party moves or another event shows one),

@@ -38,6 +38,9 @@ public sealed class CampaignState
     /// <summary>Secret doors discovered by search, keyed by area qualified ID and canonical map edge.</summary>
     public HashSet<string> FoundSecrets { get; } = [];
 
+    /// <summary>Doors opened by a key, check or event, keyed by area qualified ID and canonical map edge.</summary>
+    public HashSet<string> OpenedDoors { get; } = [];
+
     /// <summary>Values for an area, created by campaign start or save loading.</summary>
     public Dictionary<string, Value> ValuesFor(Definition area)
     {

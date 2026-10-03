@@ -629,6 +629,17 @@ public static class DefinitionTypes
                 new("once", new BooleanKind(), false, "If true, the event runs only the first time."),
             ])), false, "Cells with features."),
             new("search", new ReferenceKind("check"), false, "The ruleset check used by the search command to discover secret doors around the party; when omitted, a check named search is used if the ruleset provides one."),
+            new("doors", new ListKind(new ObjectKind(
+            [
+                new("id", new TextKind(), true, "Door name used by open events and commands."),
+                new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell whose side is the door."),
+                new("facing", new EnumKind(["north", "east", "south", "west"]), true, "The cell side containing the door."),
+                new("locked", new BooleanKind(), false, "Whether the door starts locked; true is the default when this field is omitted."),
+                new("key", new ReferenceKind("item"), false, "An item that opens the door without being consumed."),
+                new("pick", new ReferenceKind("check"), false, "A check any party member may succeed at to pick the lock."),
+                new("force", new ReferenceKind("check"), false, "A check any party member may succeed at to force the door."),
+                new("event", new ReferenceKind("event"), false, "An event chain that may unlock the door; an open event names this door."),
+            ])), false, "Locked door declarations. Each one names a DD map edge and at least one key, pick, force or event mechanism when locked."),
             new("entries", new MapKind(new TextKind(), new ObjectKind(
             [
                 new("at", new ListKind(new IntegerKind(), 2), true, "[x, y] of the cell."),
@@ -647,6 +658,7 @@ public static class DefinitionTypes
             "|  |  |",
             "+--+--+"
           ],
+          "doors": [ { "id": "gate", "at": [1, 0], "facing": "south", "key": "classic:key" } ],
           "cells": [ { "at": [1, 1], "event": "gate", "once": true } ],
           "entries": { "start": { "at": [0, 0], "facing": "east" } }
         }

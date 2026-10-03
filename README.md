@@ -120,7 +120,9 @@ from its wearer. Each item names its payment currency, and the ruleset declares
 resale in `economy.sell_fraction` (`goldbox schema economy`),
 and `goldbox schema events` describes the shop format. Areas can mark secret
 doors with `SS`; `search [direction]` uses the area's search check and saves
-discovered edges. Saves keep an open shop.
+discovered edges. `DD` edges may be declared as locked doors with key, pick,
+force or event mechanisms; `open`, `pick` and `force` use those declarations
+and saves keep opened doors and an open shop.
 
 Campaign `give` and `take` events name an `item` and an optional positive
 `count` (one by default). Giving adds carried copies. Taking removes carried

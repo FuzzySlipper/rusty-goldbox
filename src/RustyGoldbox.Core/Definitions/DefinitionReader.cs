@@ -516,6 +516,54 @@ public static class DefinitionReader
                 return;
             }
 
+            if (root.TryGetProperty("doors", out JsonElement doors))
+            {
+                HashSet<string> ids = new(StringComparer.Ordinal);
+                HashSet<string> edges = new(StringComparer.Ordinal);
+                int index = 0;
+                foreach (JsonElement door in doors.EnumerateArray())
+                {
+                    string id = door.GetProperty("id").GetString()!;
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        Error("area.door", $"$.doors[{index}].id", "A door ID cannot be empty.");
+                    }
+                    else if (!ids.Add(id))
+                    {
+                        Error("area.door", $"$.doors[{index}].id", $"Door '{id}' is declared more than once.");
+                    }
+
+                    int x = door.GetProperty("at")[0].GetInt32();
+                    int y = door.GetProperty("at")[1].GetInt32();
+                    Campaigns.Facing facing = Enum.Parse<Campaigns.Facing>(door.GetProperty("facing").GetString()!, ignoreCase: true);
+                    Campaigns.AreaEdge edge = new Campaigns.AreaEdge(x, y, facing).Canonical;
+                    if (!map.ContainsEdge(edge.X, edge.Y, edge.Facing))
+                    {
+                        Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is outside the map, which is {map.Width} wide and {map.Height} high.");
+                    }
+                    else if (map.EdgeOf(edge.X, edge.Y, edge.Facing) != Campaigns.Edge.Door)
+                    {
+                        Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is {map.EdgeOf(edge.X, edge.Y, edge.Facing)}, not a DD door edge.");
+                    }
+                    else if (!edges.Add(edge.Key))
+                    {
+                        Error("area.door", $"$.doors[{index}].at", $"The DD edge {edge.Key} is declared more than once.");
+                    }
+
+                    bool locked = !door.TryGetProperty("locked", out JsonElement lockedValue) || lockedValue.GetBoolean();
+                    bool hasMechanism = door.TryGetProperty("key", out _)
+                        || door.TryGetProperty("pick", out _)
+                        || door.TryGetProperty("force", out _)
+                        || door.TryGetProperty("event", out _);
+                    if (locked && !hasMechanism)
+                    {
+                        Error("area.door", $"$.doors[{index}]", "A locked door needs at least one of \"key\", \"pick\", \"force\" or \"event\".");
+                    }
+
+                    index++;
+                }
+            }
+
             if (root.TryGetProperty("cells", out JsonElement cells))
             {
                 int index = 0;

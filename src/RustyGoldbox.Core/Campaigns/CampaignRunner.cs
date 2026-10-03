@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, search [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -148,6 +148,9 @@ public sealed partial class CampaignRunner
             case "search" when words.Length is 1 or 2:
                 Search(words.Length == 2 ? words[1] : null, dice, facts);
                 break;
+            case "open" or "pick" or "force" when words.Length is 1 or 2:
+                Open(words[0], words.Length == 2 ? words[1] : null, dice, facts);
+                break;
             case "choose" when words.Length == 2 && int.TryParse(words[1], out int number):
                 Choose(number, dice, facts);
                 break;
@@ -226,7 +229,13 @@ public sealed partial class CampaignRunner
     private void Move(Facing direction, DiceRoller dice, List<PlayFact> facts)
     {
         AreaMap map = Map(_state.Area);
+        Edge raw = map.EdgeOf(_state.X, _state.Y, direction);
         Edge edge = EdgeFor(map, _state.X, _state.Y, direction);
+        if (raw == Edge.Door && edge == Edge.Door && !Open(direction, "move", dice, facts))
+        {
+            return;
+        }
+
         (int dx, int dy) = Facings.Step(direction);
         (int x, int y) = (_state.X + dx, _state.Y + dy);
         if (edge is Edge.Wall or Edge.Secret)
@@ -365,6 +374,9 @@ public sealed partial class CampaignRunner
                     ? _state.ValuesFor(_state.Area)
                     : _state.Variables)[variable.Id] = value;
                 facts.Add(new VariableFact(variable.Id, value));
+                return Next(evt, "$.next");
+            case "open":
+                OpenByEvent(evt, json.GetProperty("door").GetString()!, facts);
                 return Next(evt, "$.next");
             case "branch":
                 int index = 0;
@@ -767,9 +779,15 @@ public sealed partial class CampaignRunner
         AreaMap map = Map(area);
         return map.WithEdges((x, y, facing, edge) =>
         {
-            if (edge == Edge.Secret && _state.FoundSecrets.Contains(_state.EdgeKey(area, new AreaEdge(x, y, facing))))
+            string key = _state.EdgeKey(area, new AreaEdge(x, y, facing));
+            if (edge == Edge.Secret && _state.FoundSecrets.Contains(key))
             {
                 return Edge.Door;
+            }
+
+            if (edge == Edge.Door && _state.OpenedDoors.Contains(key))
+            {
+                return Edge.Open;
             }
 
             return edge;
@@ -779,9 +797,13 @@ public sealed partial class CampaignRunner
     private Edge EdgeFor(AreaMap map, int x, int y, Facing facing)
     {
         Edge edge = map.EdgeOf(x, y, facing);
-        return edge == Edge.Secret && _state.FoundSecrets.Contains(_state.EdgeKey(_state.Area, new AreaEdge(x, y, facing)))
-            ? Edge.Door
-            : edge;
+        string key = _state.EdgeKey(_state.Area, new AreaEdge(x, y, facing));
+        return edge switch
+        {
+            Edge.Secret when _state.FoundSecrets.Contains(key) => Edge.Door,
+            Edge.Door when _state.OpenedDoors.Contains(key) => Edge.Open,
+            _ => edge,
+        };
     }
 
     private void Search(string? direction, DiceRoller dice, List<PlayFact> facts)

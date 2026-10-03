@@ -65,6 +65,15 @@ public sealed record SearchFact(Facing Direction, bool Found) : PlayFact
         : $"The party searches the wall {Facings.Name(Direction)} and finds nothing.";
 }
 
+public sealed record DoorFact(Facing Direction, string Method, bool Opened) : PlayFact
+{
+    public override string Kind => "door";
+
+    public override string Describe() => Opened
+        ? $"The party opens the door {Facings.Name(Direction)} ({Method})."
+        : $"The party fails to {Method} the door {Facings.Name(Direction)}.";
+}
+
 /// <summary>The media an event brings: a picture shown, a sound played once, music that loops from now on.</summary>
 public sealed record MediaFact(Definition? Picture, Definition? Sound, Definition? Music) : PlayFact
 {

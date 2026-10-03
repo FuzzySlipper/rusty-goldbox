@@ -51,6 +51,6 @@ public sealed class SearchTests
         invalid["found_secrets"] = new JsonArray("tale:hall|0,0,west");
         saveProblems = [];
         Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(invalid.ToJsonString()), "bad-save.json", set, saveProblems));
-        Assert.Contains(saveProblems, problem => problem.Message.Contains("not a secret door edge", StringComparison.Ordinal));
+        Assert.Contains(saveProblems, problem => problem.Message.Contains("not a secret door", StringComparison.Ordinal));
     }
 }
