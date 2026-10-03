@@ -22,7 +22,8 @@
         "condition": "hit",
         "values": {
           "amount": "use.damage",
-          "critical": "0"
+          "critical": "0",
+          "attack": "1"
         }
       },
       {
@@ -37,7 +38,8 @@
         "condition": "hit",
         "values": {
           "amount": "use.damage + use.dice",
-          "critical": "1"
+          "critical": "1",
+          "attack": "1"
         }
       },
       {

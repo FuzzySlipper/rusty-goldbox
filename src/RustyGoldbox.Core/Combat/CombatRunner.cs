@@ -419,7 +419,7 @@ public sealed class CombatRunner
     /// reaction only counter-reactions can be taken, and nothing reacts to a
     /// counter-reaction.
     /// </summary>
-    private void React(string trigger, Combatant reactor, Combatant source, Func<Definition, bool>? fits = null, bool physical = false)
+    private void React(string trigger, Combatant reactor, Combatant source, Func<Definition, bool>? fits = null, bool physical = false, bool attack = false)
     {
         if (_reactions > 1 || reactor.Defeated || reactor == source
             || reactor.Creature.Conditions.Any(condition => condition.Json.TryGetProperty("prevents_actions", out JsonElement prevents) && prevents.GetBoolean()))
@@ -432,6 +432,7 @@ public sealed class CombatRunner
             bool counter = reaction.Json.TryGetProperty("counter", out JsonElement counters) && counters.GetBoolean();
             if (reaction.Json.GetProperty("trigger").GetString() != trigger || (_reactions == 1 && !counter) || !Affordable(reactor, reaction) || (fits is not null && !fits(reaction))
                 || (trigger == "hit" && reaction.Json.TryGetProperty("physical", out JsonElement physicalOnly) && physicalOnly.GetBoolean() && !physical)
+                || (trigger == "hit" && reaction.Json.TryGetProperty("attack", out JsonElement attackOnly) && attackOnly.GetBoolean() && !attack)
                 || (reaction.Json.TryGetProperty("when", out _) && !Evaluate(reaction, "$.when", new Scope(reactor.Creature, source.Creature)).Boolean))
             {
                 continue;
@@ -1031,7 +1032,8 @@ public sealed class CombatRunner
                     try
                     {
                         bool physical = scope.ConditionValues?.TryGetValue("physical", out decimal marker) == true && marker > 0;
-                        React("hit", who, damageSource, physical: physical);
+                        bool attack = scope.ConditionValues?.TryGetValue("attack", out decimal attackMarker) == true && attackMarker > 0;
+                        React("hit", who, damageSource, physical: physical, attack: attack);
                         amount = pending.Amount;
                     }
                     finally

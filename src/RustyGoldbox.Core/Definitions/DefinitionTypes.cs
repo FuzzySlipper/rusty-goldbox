@@ -281,6 +281,7 @@ public static class DefinitionTypes
             new("reach", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Combat), false, "With leaves_reach, how many cells it watches; without it, 1."),
             new("when", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Combat), false, "Whether it reacts, with target as the creature that triggered it."),
             new("physical", new BooleanKind(), false, "With trigger \"hit\", if true this reaction answers only a pending hit marked physical by its damage condition."),
+            new("attack", new BooleanKind(), false, "With trigger \"hit\", if true this reaction answers only a pending hit marked as coming from a confirmed attack roll."),
             new("counter", new BooleanKind(), false, "If true, it may also be taken against an enemy's reaction (a shield raised against an attack of opportunity, a counterspell), though nothing reacts to it in turn. Without it, it only answers actions on a turn."),
             new("use", Use, true, "The action it takes against the creature that triggered it (or itself, for an action targeting self), with its parameters or from_item."),
         ],

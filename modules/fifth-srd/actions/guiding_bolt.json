@@ -15,7 +15,8 @@
         "condition": "hit",
         "values": {
           "amount": "4d6",
-          "critical": "0"
+          "critical": "0",
+          "attack": "1"
         }
       },
       {
@@ -30,7 +31,8 @@
         "condition": "hit",
         "values": {
           "amount": "8d6",
-          "critical": "1"
+          "critical": "1",
+          "attack": "1"
         }
       },
       {

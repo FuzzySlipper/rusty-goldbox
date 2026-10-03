@@ -3,6 +3,7 @@
   "id": "uncanny_dodge",
   "name": "Uncanny Dodge",
   "trigger": "hit",
+  "attack": true,
   "cost": {
     "reaction": 1
   },

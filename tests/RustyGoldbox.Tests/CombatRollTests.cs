@@ -160,7 +160,43 @@ public sealed class CombatRollTests
         Assert.Empty(fifth.Diagnostics);
         Definition uncanny = fifth.Rules!.Find(DefinitionTypes.Reaction, "uncanny_dodge", out _)!;
         Assert.Equal("hit", uncanny.Json.GetProperty("trigger").GetString());
+        Assert.True(uncanny.Json.GetProperty("attack").GetBoolean());
         Assert.Contains("fraction", fifth.Rules.Find(DefinitionTypes.Action, "uncanny_dodge", out _)!.Json.GetRawText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FifthUncannyDodgeAnswersWeaponAndSpellAttacksOnly()
+    {
+        foreach (string action in new[] {
+            "{ \"action\": \"fifth-srd:monster_melee\", \"to_hit\": \"20\", \"damage\": \"6\", \"dice\": \"1\" }",
+            "{ \"action\": \"fifth-srd:spell_bolt\", \"range\": \"24\", \"damage\": \"6\", \"dice\": \"1\" }" })
+        {
+            CombatResult result = FifthReactionFight(action);
+            Assert.Contains(result.Facts.OfType<ReactionFact>(), reaction => reaction.Reaction == "Uncanny Dodge");
+            Assert.Contains(result.Facts.OfType<DamageFact>(), damage => damage.Who == "Rogue" && damage.Amount > 0 && damage.Amount < 6);
+        }
+
+        foreach (string action in new[] {
+            "{ \"action\": \"fifth-srd:fireball\" }",
+            "{ \"action\": \"fifth-srd:magic_missile\" }" })
+        {
+            CombatResult result = FifthReactionFight(action);
+            Assert.DoesNotContain(result.Facts.OfType<ReactionFact>(), reaction => reaction.Reaction == "Uncanny Dodge");
+            Assert.Contains(result.Facts.OfType<DamageFact>(), damage => damage.Who == "Rogue" && damage.Amount > 0);
+        }
+    }
+
+    [Fact]
+    public void SpellShieldBlockAnswersPhysicalStrikesButNotFireball()
+    {
+        CombatResult strike = ThreeActionShieldFight("{ \"action\": \"three-action:melee_strike\", \"damage\": \"10\", \"die\": \"0\", \"deadly\": \"0\", \"map\": \"0\", \"martial\": \"1\", \"slashing\": \"1\" }");
+        Assert.Contains(strike.Facts.OfType<ReactionFact>(), reaction => reaction.Reaction == "Shield Block");
+        Assert.Contains(strike.Facts.OfType<DamageFact>(), damage => damage.Who == "Shield bearer" && damage.Amount == 15);
+
+        CombatResult fireball = ThreeActionShieldFight("{ \"action\": \"three-action:fireball\" }");
+        Assert.DoesNotContain(fireball.Facts.OfType<ReactionFact>(), reaction => reaction.Reaction == "Shield Block");
+        Assert.Contains(fireball.Facts.OfType<DamageFact>(), damage => damage.Who == "Shield bearer" && damage.Amount > 0);
+        Assert.Contains(fireball.Sides.SelectMany(side => side.Members), member => member.Name == "Shield bearer" && member.Creature.Conditions.Any(condition => condition.Id == "shield_spell"));
     }
 
     [Fact]
@@ -280,6 +316,78 @@ public sealed class CombatRollTests
             [
                 new CombatSide("First", [actor]),
                 new CombatSide("Second", [Combatant.FromMonster(rules, two, two.Name, evaluator)]),
+            ], dice, maxRounds: 1);
+        });
+    }
+
+    private static CombatResult FifthReactionFight(string attackerUse)
+    {
+        using TempModules modules = new();
+        string root = modules.Module("probe", "extension", requires: TempModules.Require("fifth-srd", "*"));
+        modules.Write("probe/combat.json", """
+            { "type": "combat", "id": "probe", "name": "Probe", "initiative": "self.initiative_bonus", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "budget": [ { "id": "action", "per_turn": 1 }, { "id": "reaction", "per_turn": 1 } ], "track": "fifth-srd:hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("probe/rogue.json", """
+            { "type": "monster", "id": "rogue", "name": "Shield bearer", "class": "fifth-srd:rogue", "level": 5,
+              "tracks": { "fifth-srd:hit_points": "20" },
+              "stats": { "initiative_bonus": "1", "ac": "10", "dex_save": "-10", "str": "10", "dex": "10" },
+              "actions": [], "reactions": [ "fifth-srd:uncanny_dodge" ], "xp": 0 }
+            """);
+        modules.Write("probe/attacker.json", $$"""
+            { "type": "monster", "id": "attacker", "name": "Attacker", "class": "fifth-srd:fighter", "level": 1, "tracks": { "fifth-srd:hit_points": "20" },
+              "stats": { "initiative_bonus": "2", "ac": "10", "spell_dc": "100", "spell_mod": "20", "proficiency": "0", "dex_save": "0", "str": "10", "dex": "10" },
+              "actions": [ {{attackerUse}} ], "xp": 0 }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        return WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "attacker", out _ )!, "Attacker", evaluator);
+            Combatant rogue = Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "rogue", out _ )!, "Rogue", evaluator);
+            return CombatRunner.Run(rules, rules.Find(DefinitionTypes.Combat, "probe", out _ )!,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Defenders", [rogue]),
+            ], dice, maxRounds: 1);
+        });
+    }
+
+    private static CombatResult ThreeActionShieldFight(string attackerUse)
+    {
+        using TempModules modules = new();
+        string root = modules.Module("probe", "extension", requires: TempModules.Require("three-action", "*"));
+        modules.Write("probe/combat.json", """
+            { "type": "combat", "id": "probe", "name": "Probe", "initiative": "self.perception", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "budget": [ { "id": "action", "per_turn": 3 }, { "id": "reaction", "per_turn": 1 } ], "track": "three-action:hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("probe/shield_bearer.json", """
+            { "type": "monster", "id": "shield_bearer", "name": "Shield bearer", "class": "three-action:fighter", "level": 1, "tracks": { "three-action:hit_points": "20" },
+              "stats": { "perception": "1", "ac": "10", "reflex": "-10", "save_dc": "10", "str": "10", "dex": "10" },
+              "actions": [], "reactions": [ "three-action:spell_shield_block" ], "xp": 0 }
+            """);
+        modules.Write("probe/attacker.json", $$"""
+            { "type": "monster", "id": "attacker", "name": "Attacker", "class": "three-action:fighter", "level": 1, "tracks": { "three-action:hit_points": "20" },
+              "stats": { "perception": "2", "ac": "10", "reflex": "0", "save_dc": "100", "status_attack": "20", "spell_attack": "20", "str_mod": "0", "dex_mod": "0", "prone_penalty": "0", "martial_prof": "0", "simple_prof": "0", "str": "10", "dex": "10" },
+              "actions": [ {{attackerUse}} ], "xp": 0 }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        return WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "attacker", out _ )!, "Attacker", evaluator);
+            Combatant defender = Combatant.FromMonster(rules, rules.Find(DefinitionTypes.Monster, "shield_bearer", out _ )!, "Shield bearer", evaluator);
+            defender.Creature.Conditions.Add(rules.Find(DefinitionTypes.Condition, "shield_spell", out _ )!);
+            return CombatRunner.Run(rules, rules.Find(DefinitionTypes.Combat, "probe", out _ )!,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Defenders", [defender]),
             ], dice, maxRounds: 1);
         });
     }

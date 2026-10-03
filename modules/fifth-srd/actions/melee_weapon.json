@@ -21,7 +21,8 @@
         "condition": "hit",
         "values": {
           "amount": "use.damage + self.str_mod + self.dueling",
-          "critical": "0"
+          "critical": "0",
+          "attack": "1"
         }
       }
     ],
@@ -31,7 +32,8 @@
         "condition": "hit",
         "values": {
           "amount": "use.damage + use.dice + self.str_mod",
-          "critical": "1"
+          "critical": "1",
+          "attack": "1"
         }
       }
     ]

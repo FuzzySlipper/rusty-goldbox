@@ -3,6 +3,7 @@
   "id": "spell_shield_block",
   "name": "Shield Block",
   "trigger": "hit",
+  "physical": true,
   "cost": {
     "reaction": 1
   },
