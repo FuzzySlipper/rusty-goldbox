@@ -47,7 +47,7 @@ using the CLI**, not someone working in a visual editor. So:
 | `src/RustyGoldbox.Cli/` | `goldbox` commands. Thin: parse arguments, call Core, print results. No rules logic. |
 | `src/RustyGoldbox.Game/` | The Engine product: module bundles, Engine update/input, persistence and projections over Core. |
 | `src/ui/` | DOM companion. Observes projections and submits intents; it owns no game state. |
-| `modules/<id>/` | First-party module sources, each with `module.json` and provenance. |
+| `modules/<id>/` | First-party module sources, each with `module.json`, provenance and, for adapted content, its licence. |
 | `tests/` | Focused checks and golden transcripts. |
 
 `Rusty.Engine` owns lifecycle and update admission, input, rendering and
@@ -70,12 +70,23 @@ scheduler, renderer or state authority. All randomness goes through Engine
   Asset references are logical IDs, never file paths.
 - Rules belong in ruleset data, not in C#. If Core code mentions a specific
   class, spell, stat name or edition, that's a bug unless it's a fixture.
-- Record provenance for any module content adapted from a published game or
-  SRD, and use only open-licensed sources.
+- First-party modules may adapt content released under an open licence that
+  permits redistribution with attribution: the OGL 1.0a, the ORC License,
+  Creative Commons BY or BY-SA, and similar licences whose text you have read.
+  Each module carries one licence. Its directory holds that licence's full text
+  and every notice it requires (for example `LICENSE-OGL.txt` with the
+  section 15 copyright notices, or the CC BY attribution statement), and a
+  `PROVENANCE.md` that names the source and edition, maps definitions to source
+  sections, and lists what was left out. Respect what the licence excludes
+  (Product Identity under the OGL, Reserved Material under the ORC, trademarks
+  and setting names), and give a ShareAlike module the same licence. Content
+  under different licences goes in different modules. Never add content from
+  sources without such a licence, and never fill gaps with text from
+  non-open editions.
 - The engine must be able to express rule systems the repository doesn't
-  distribute. Prove a new Core capability with more than one ruleset shape,
-  using original fixture rulesets in `tests/` shaped like other systems; never
-  add copied commercial rules text or tables. UA/Dungeon Craft is a reference for
+  distribute. Prove a new Core capability with more than one ruleset shape:
+  first-party licensed rulesets and the original fixture rulesets in `tests/`,
+  which copy no published text or tables. UA/Dungeon Craft is a reference for
   features, not a source of code or formats.
 - When a definition type changes, update the first-party modules and the
   golden transcripts that use it in the same change.

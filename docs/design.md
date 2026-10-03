@@ -283,14 +283,18 @@ check, branch with `if`, and later move, grant XP or items, set a variable, and 
 takes expression arguments. Rulesets and campaigns choose and combine
 operations; they can't define new ones.
 
-**Expressible, not distributed.** The engine's job is to express rule
-systems, not to ship them. The repository distributes only rulesets whose
-source license allows it, with provenance (such as `modules/classic`, from OGL
-content). Other systems, including current commercial editions, must be
-writable as ruleset data that a user supplies, with no new code. That claim is
-checked with small original fixture rulesets in the tests that are shaped like
-those systems (ascending AC and ability modifiers, proficiency ranks, other
-action economies) but copy none of their text or tables. Core features stay
+**Expressible, and distributed where the licence allows.** The engine's job
+is to express rule systems. The repository distributes rulesets adapted from
+open-licensed sources (the OGL, the ORC License, Creative Commons BY), each in
+its own module directory with that licence's text, its required notices and a
+provenance file (such as `modules/classic`, from OGL content). Rules are often
+open while particular classes, monsters and settings are not, so a ruleset
+keeps to what its licence covers and leaves the rest to extensions a user
+supplies for their own copy. Other systems, including current commercial
+editions, must be writable as ruleset data with no new code. Original fixture
+rulesets in the tests, shaped like such systems (ascending AC and ability
+modifiers, proficiency ranks, other action economies) but copying none of
+their text or tables, check that claim alongside the licensed rulesets. Core features stay
 edition-neutral and are exercised by more than one ruleset shape.
 
 **Plugin boundary.** Modules are the plugins. They are data only and load at
