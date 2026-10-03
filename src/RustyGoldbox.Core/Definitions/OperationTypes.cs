@@ -90,7 +90,13 @@ public static class OperationTypes
         ],
         """{ "op": "move", "distance": "floor(self.speed / 5)" }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If, Move];
+    public static DefinitionType Flee { get; } = new(
+        "flee",
+        "Takes the acting creature out of the fight without felling it. When its side has no one left, the campaign gets the combat event's on_flee chain.",
+        [],
+        """{ "op": "flee" }""");
+
+    public static IReadOnlyList<DefinitionType> All { get; } = [Damage, Heal, ApplyCondition, RemoveCondition, Check, If, Move, Flee];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(operation => operation.Name == name);
 }

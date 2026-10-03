@@ -216,6 +216,45 @@ public sealed class CampaignTests
         Assert.Contains("gold 9 + 8", output, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ACombatFleeRunsTheOnFleeEvent()
+    {
+        using TempModules modules = new();
+        Rules.WriteSmallRuleset(modules);
+        modules.Module("art", "assets");
+        modules.Write("rules/fleeing.json", """
+            { "type": "combat", "id": "fleeing", "name": "Fleeing", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/run.json", """
+            { "type": "action", "id": "run", "name": "Run", "cost": { "turn": 1 }, "target": "self", "always": [ { "op": "flee" } ] }
+            """);
+        modules.Write("rules/coward.json", """
+            { "type": "monster", "id": "coward", "name": "Coward", "class": "warrior", "level": 1, "tracks": { "hit_points": "10" }, "stats": { "str": "15" }, "actions": [ { "action": "run" } ], "xp": 0 }
+            """);
+        modules.Write("rules/folk.json", """{ "type": "race", "id": "folk", "name": "Folk", "classes": ["warrior"] }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order" }""");
+        modules.Write("rules/cowards.json", """
+            { "type": "encounter", "id": "cowards", "name": "Cowards", "monsters": [ { "monster": "coward", "count": "1" } ] }
+            """);
+        string campaign = modules.Module("tale", "campaign", requires: $"{Require("rules", "*")}, {Require("art", "*")}");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "fight" }""");
+        modules.Write("tale/fight.json", """{ "type": "event", "id": "fight", "kind": "combat", "encounter": "rules:cowards", "combat": "rules:fleeing", "on_flee": "fled", "on_win": "won" }""");
+        modules.Write("tale/fled.json", """{ "type": "event", "id": "fled", "kind": "text", "text": "The cowards flee." }""");
+        modules.Write("tale/won.json", """{ "type": "event", "id": "won", "kind": "text", "text": "The party wins." }""");
+
+        using TempModules scratch = new();
+        (int createCode, string createOutput) = Run(scratch, "character", "new", "--module", Path.Combine(modules.Root, "rules"), "--class", "warrior", "--race", "folk", "--name", "Hero", "--out", "hero.json");
+        Assert.True(createCode == 0, createOutput);
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "hero.json");
+
+        Assert.True(code == 0, output);
+        Assert.Contains("Combat with Cowards: the monsters flee.", output, StringComparison.Ordinal);
+        Assert.Contains("The cowards flee.", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("The party wins.", output, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(true, 2)]
     [InlineData(false, 1)]

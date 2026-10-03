@@ -9,9 +9,9 @@ namespace RustyGoldbox.Core.Combat;
 /// <summary>A side in a fight.</summary>
 public sealed record CombatSide(string Name, IReadOnlyList<Combatant> Members);
 
-/// <summary>How a fight ended: the facts, the winning side (null if none) and the rounds fought.</summary>
+/// <summary>How a fight ended: the facts, the winning side (null if none), the rounds fought and a side that fled (if any).</summary>
 /// <param name="Track">The combat's track, which summaries show.</param>
-public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track);
+public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track, int? FledSide = null);
 
 /// <summary>Optional encounter-specific starting positions and surprise override.</summary>
 public sealed record CombatSetup(IReadOnlyList<Cell?> Starts, int? SurprisedSide = null, decimal SurpriseRounds = 1);
@@ -34,6 +34,7 @@ public sealed class CombatRunner
     private readonly DiceRoller _dice;
     private readonly List<CombatSide> _sides;
     private readonly CombatSetup? _setup;
+    private int? _fledSide;
     private readonly List<CombatFact> _facts = [];
     private readonly Definition _track;
     private readonly CombatField? _field;
@@ -184,7 +185,7 @@ public sealed class CombatRunner
         }
 
         Record(new EndFact(winner is int side ? _sides[side].Name : null, round));
-        return new CombatResult(_facts, winner, round, _sides, _track);
+        return new CombatResult(_facts, winner, round, _sides, _track, _fledSide);
     }
 
     /// <summary>
@@ -431,6 +432,12 @@ public sealed class CombatRunner
                     return;
                 }
             }
+        }
+
+        if (ShouldFlee(actor))
+        {
+            Escape(actor);
+            return;
         }
 
         Definition? preventing = actor.Creature.Conditions.FirstOrDefault(condition =>
@@ -779,6 +786,12 @@ public sealed class CombatRunner
             return;
         }
 
+        if (op == "flee")
+        {
+            Escape(actor);
+            return;
+        }
+
         if (op == "if")
         {
             string branch = Evaluate(owner, $"{path}.when", scope).Boolean ? "then" : "else";
@@ -1021,6 +1034,33 @@ public sealed class CombatRunner
         creature.Escaped = true;
         creature.Defeated = true;
         Record(new EscapedFact(creature.Name));
+        if (!_sides[creature.Side].Members.Any(member => !member.Defeated))
+        {
+            _fledSide = creature.Side;
+        }
+    }
+
+    private bool ShouldFlee(Combatant actor)
+    {
+        if (!_combat.Json.TryGetProperty("flee", out JsonElement rules))
+        {
+            return false;
+        }
+
+        string side = actor.Side == 0 ? "party" : "monsters";
+        int index = 0;
+        foreach (JsonElement rule in rules.EnumerateArray())
+        {
+            if (rule.GetProperty("side").GetString() == side
+                && Evaluate(_combat, $"$.flee[{index}].when", new Scope(actor.Creature, null)).Boolean)
+            {
+                return true;
+            }
+
+            index++;
+        }
+
+        return false;
     }
 
     /// <summary>

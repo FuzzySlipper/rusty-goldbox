@@ -51,6 +51,8 @@ public static class EventTypes
             new("on_win", new ReferenceKind("event"), false, "The event after a win."),
             new("on_lose", new ReferenceKind("event"), false, "The event after a loss; without it, the adventure ends."),
             new("on_draw", new ReferenceKind("event"), false, "The event when neither side wins within the combat's round limit; without it, the chain ends and play goes on."),
+            new("on_flee", new ReferenceKind("event"), false, "The event after either side flees, whether by a flee action, a flee rule or (when flee_on_draw is true) the round limit."),
+            new("flee_on_draw", new BooleanKind(), false, "Treat an undecided fight at its round limit as a flee outcome and use on_flee."),
             Picture,
             Sound,
             Music,

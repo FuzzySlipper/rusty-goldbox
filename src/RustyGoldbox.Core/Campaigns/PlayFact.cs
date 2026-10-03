@@ -164,6 +164,7 @@ public enum FightOutcome
     Won,
     Lost,
     Undecided,
+    Fled,
 }
 
 /// <summary>
@@ -176,7 +177,7 @@ public sealed record FightMember(string Name, int Side, Definition? Monster, Def
 /// <summary>A fight: who took part, what happened in order, and how it ended.</summary>
 /// <param name="Track">The combat's track (usually hit points) that <see cref="FightMember"/> values are on.</param>
 /// <param name="Field">The combat field the fight was on, or null for a fight without positions.</param>
-public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome, Combat.CombatField? Field = null) : PlayFact
+public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome, Combat.CombatField? Field = null, int? FledSide = null) : PlayFact
 {
     public override string Kind => "combat";
 
@@ -184,6 +185,9 @@ public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList
     {
         FightOutcome.Won => $"Combat with {Encounter}: the party wins.",
         FightOutcome.Lost => $"Combat with {Encounter}: the party loses.",
+        FightOutcome.Fled when FledSide == 0 => $"Combat with {Encounter}: the party flees.",
+        FightOutcome.Fled when FledSide == 1 => $"Combat with {Encounter}: the monsters flee.",
+        FightOutcome.Fled => $"Combat with {Encounter}: the fight ends by flight.",
         _ => $"Combat with {Encounter}: neither side wins before the round limit.",
     };
 }

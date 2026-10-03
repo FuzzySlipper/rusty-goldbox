@@ -548,6 +548,57 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ACombatActionOrRuleCanFleeTheWholeSide()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/fleeing.json", """
+            { "type": "combat", "id": "fleeing", "name": "Fleeing", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "flee": [ { "side": "party", "when": "self.hit_points <= 10" } ], "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/run.json", """
+            { "type": "action", "id": "run", "name": "Run", "cost": { "turn": 1 }, "target": "self", "always": [ { "op": "flee" } ] }
+            """);
+        modules.Write("rules/coward.json", """
+            { "type": "monster", "id": "coward", "name": "Coward", "tracks": { "hit_points": "10" }, "stats": { "str": "15" }, "actions": [ { "action": "run" } ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "fleeing", out _)!;
+        Definition dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+        Definition coward = rules.Find(DefinitionTypes.Monster, "coward", out _)!;
+
+        CombatResult ruleResult = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, coward, "Coward", evaluator)]),
+                new CombatSide("Monsters", [Combatant.FromMonster(rules, dummy, "Guard", evaluator)]),
+            ], dice, 1);
+        });
+        Assert.Equal(0, ruleResult.FledSide);
+        Assert.Contains("Coward flees the field.", ruleResult.Facts.Select(fact => fact.Describe()));
+
+        modules.Write("rules/coward.json", """
+            { "type": "monster", "id": "coward", "name": "Coward", "tracks": { "hit_points": "20" }, "stats": { "str": "15" }, "actions": [ { "action": "run" } ], "xp": 0 }
+            """);
+        rules = Rules.LoadValid(root);
+        combat = rules.Find(DefinitionTypes.Combat, "fleeing", out _)!;
+        dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+        coward = rules.Find(DefinitionTypes.Monster, "coward", out _)!;
+        CombatResult actionResult = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, coward, "Coward", evaluator)]),
+                new CombatSide("Monsters", [Combatant.FromMonster(rules, dummy, "Guard", evaluator)]),
+            ], dice, 1);
+        });
+        Assert.Equal(0, actionResult.FledSide);
+    }
+
+    [Fact]
     public void MovementGoesRoundObstaclesAndPaysForRoughGround()
     {
         using TempModules modules = new();

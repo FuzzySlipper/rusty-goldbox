@@ -400,6 +400,11 @@ public static class DefinitionTypes
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
             new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),
+            new("flee", new ListKind(new ObjectKind(
+            [
+                new("side", new EnumKind(["party", "monsters"]), true, "The side whose creature checks this rule; side 0 is the party and side 1 is the encounter."),
+                new("when", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Combat), true, "When true at the start of that creature's turn, it flees without taking an action."),
+            ])), false, "Rules that make a creature flee at the start of its turn. A side leaves only when all its creatures have fled; its combat event then follows on_flee."),
             new("field", new ObjectKind(
             [
                 new("width", new IntegerKind(), true, "Cells across; the first side starts on the left edge and the second on the right."),

@@ -603,13 +603,16 @@ public sealed partial class CampaignRunner
             }
         }
 
-        FightOutcome outcome = result.Winner switch
-        {
-            0 => FightOutcome.Won,
-            null => FightOutcome.Undecided,
-            _ => FightOutcome.Lost,
-        };
-        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter)));
+        bool drawFlees = result.Winner is null && evt.Json.TryGetProperty("flee_on_draw", out JsonElement draw) && draw.GetBoolean();
+        FightOutcome outcome = result.FledSide is not null || drawFlees
+            ? FightOutcome.Fled
+            : result.Winner switch
+            {
+                0 => FightOutcome.Won,
+                null => FightOutcome.Undecided,
+                _ => FightOutcome.Lost,
+            };
+        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter), result.FledSide));
 
         // Every monster felled is worth its experience, whoever won.
         decimal earned = sides[1].Members.Where(member => member.Defeated && !member.Escaped && member.Creature.Monster is not null)
@@ -626,6 +629,11 @@ public sealed partial class CampaignRunner
         if (outcome == FightOutcome.Undecided)
         {
             return Next(evt, "$.on_draw");
+        }
+
+        if (outcome == FightOutcome.Fled)
+        {
+            return Next(evt, "$.on_flee");
         }
 
         if (evt.Json.TryGetProperty("on_lose", out _))
