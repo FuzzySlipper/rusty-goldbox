@@ -423,7 +423,8 @@ public static class CharacterRules
     /// prepares them now: each a spell it knows that needs preparing, all of
     /// them together payable from its tracks at their maximum.
     /// </summary>
-    public static bool SetMemorised(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    /// <param name="prepareNow">False during an adventure: the copies left stay as they are, and the new list is prepared at the next rest that prepares spells.</param>
+    public static bool SetMemorised(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems, bool prepareNow = true)
     {
         int before = problems.Count;
         List<Definition> plan = [];
@@ -449,9 +450,10 @@ public static class CharacterRules
             return false;
         }
 
+        List<Definition> unspent = PreparedLeft(rules, character);
         character.Memorised.Clear();
         character.Memorised.AddRange(plan);
-        character.Prepared = null;
+        character.Prepared = prepareNow ? null : unspent;
         return true;
     }
 

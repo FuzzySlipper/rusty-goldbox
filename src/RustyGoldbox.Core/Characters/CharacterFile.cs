@@ -290,12 +290,12 @@ public static class CharacterFile
             {
                 List<Definition> prepared = [];
                 ReadList(root, "prepared", DefinitionTypes.Spell, prepared);
-                List<Definition> plan = CharacterRules.MemorisedPlan(_rules, character);
+                // Copies prepared before the list changed in play stay until the next rest, so they need only be known spells it prepares.
                 for (int index = 0; index < prepared.Count; index++)
                 {
-                    if (!plan.Remove(prepared[index]))
+                    if (!character.Spells.Contains(prepared[index]) || !CharacterRules.NeedsPreparing(_rules, character, prepared[index]))
                     {
-                        Error($"$.prepared[{index}]", $"{prepared[index].Name} is prepared more times than {character.Name} memorises it. \"prepared\" lists the memorised copies not yet cast.");
+                        Error($"$.prepared[{index}]", $"{prepared[index].Name} isn't a spell {character.Name} knows and prepares. \"prepared\" lists the memorised copies not yet cast.");
                     }
                 }
 

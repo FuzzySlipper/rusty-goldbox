@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Rusty.Engine;
 using Rusty.Engine.Testing;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Game;
@@ -145,6 +146,40 @@ public sealed class GameTests
             Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
             // One image per asset: the chooser and the member share it.
             Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["url"]?.GetValue<string>() == url);
+        });
+    }
+
+    [Fact]
+    public void APartyMemberMemorisesSpellsPreparedNowOrAtTheNextRest()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Mira", "race": "classic:human", "class": "classic:magic_user" }""");
+            }
+
+            Run(session, engine, """{ "action": "spells", "member": 0, "spells": ["classic:sleep", "classic:magic_missile"] }""");
+            Assert.Equal("Sleep", SessionProjection.Build(session)["party"]![0]!["memorised"]![0]!["name"]!.GetValue<string>());
+
+            // One 1st level slot: two copies are refused; one is prepared at once while making the party.
+            Run(session, engine, """{ "action": "memorise", "member": 0, "spells": ["classic:sleep", "classic:magic_missile"] }""");
+            Assert.Contains("can't memorise another Magic missile", Assert.Single(session.Notes), StringComparison.Ordinal);
+            Run(session, engine, """{ "action": "memorise", "member": 0, "spells": ["classic:magic_missile"] }""");
+            Assert.Empty(session.Notes);
+            Assert.Equal(["magic_missile"], CharacterRules.PreparedLeft(session.Set!.Rules!, session.Party[0]).Select(spell => spell.Id));
+
+            // In play the new list waits for a rest: magic missile is still the copy prepared.
+            Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            Run(session, engine, """{ "action": "begin" }""");
+            Assert.Equal(Screen.Play, session.Screen);
+            Run(session, engine, """{ "action": "memorise", "member": 0, "spells": ["classic:sleep"] }""");
+            Character mira = session.Runner!.State.Party[0];
+            Assert.Equal(["sleep"], mira.Memorised.Select(spell => spell.Id));
+            Assert.Equal(["magic_missile"], CharacterRules.PreparedLeft(session.Set!.Rules!, mira).Select(spell => spell.Id));
         });
     }
 

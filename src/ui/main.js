@@ -102,6 +102,7 @@ export function mountProductUi(root, context) {
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
         ...renderSpells(member, index),
+        ...renderMemorised(member, index),
         row(item,
           button('Give/take', () => send({ action: 'equip', member: index, item: item.value })),
           button('Drop', () => send({ action: 'drop', member: index })))));
@@ -221,6 +222,37 @@ export function mountProductUi(root, context) {
       ...boxes.map(({ spell, box }) => element('label', { style: 'margin-right:8px' }, box, ` ${spell.name}`)))];
   };
 
+  /**
+   * The copies a member memorises each day, with + and − per spell it could
+   * memorise; each change sends the whole list, which Core checks against its
+   * slots. In play the new list is prepared at the next rest.
+   */
+  const renderMemorised = (member, index) => {
+    const options = member.memorisable ?? [];
+    if (options.length === 0) {
+      return [];
+    }
+
+    const plan = (member.memorisedChosen ? member.memorised : []).map((spell) => spell.id);
+    const submit = (spells) => send({ action: 'memorise', member: index, spells });
+    const names = (list) => list.map((spell) => spell.name).join(', ') || 'none';
+    return [
+      element('div', {}, `${member.name} memorises: ${names(member.memorised ?? [])}${member.memorisedChosen ? '' : ' (known spells in order)'}; left today: ${names(member.prepared ?? [])}`),
+      row(...options.flatMap((spell) => [
+        // Adding to the default (known spells in order) starts a list of the member's own choosing.
+        button(`+ ${spell.name}`, () => submit([...plan, spell.id])),
+        button(`− ${spell.name}`, () => {
+          const current = member.memorisedChosen ? [...plan] : (member.memorised ?? []).map((entry) => entry.id);
+          const at = current.lastIndexOf(spell.id);
+          if (at >= 0) {
+            current.splice(at, 1);
+            submit(current);
+          }
+        }),
+      ])),
+    ];
+  };
+
   const renderPlay = (view) => {
     const menu = row(...(view.menu ?? []).map((option) =>
       button(`${option.number}. ${option.label}`, () => send({ action: 'play', command: `choose ${option.number}` }))));
@@ -233,7 +265,7 @@ export function mountProductUi(root, context) {
       menu, moves, row(command),
       log,
       renderRoster(view.party ?? []),
-      ...(view.party ?? []).flatMap((member, index) => renderSpells(member, index)),
+      ...(view.party ?? []).flatMap((member, index) => [...renderSpells(member, index), ...renderMemorised(member, index)]),
       // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
       row(...(view.party ?? []).flatMap((member, index) => member.levelReady
         ? [button(`Level up ${member.name}`, () => send({ action: 'play', command: `level ${index + 1}` }))]

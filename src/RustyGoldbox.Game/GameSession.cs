@@ -201,6 +201,32 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
+    /// <summary>
+    /// Sets the copies a party member memorises each day (an empty list: its
+    /// known spells in order). Making the party, they are prepared at once; in
+    /// play, at the next rest that prepares spells.
+    /// </summary>
+    public void SetMemorised(int member, IReadOnlyList<string> spells)
+    {
+        Notes.Clear();
+        List<Character>? party = Screen switch
+        {
+            Screen.Party => Party,
+            Screen.Play => Runner!.State.Party,
+            _ => null,
+        };
+        if (party is null || member < 0 || member >= party.Count)
+        {
+            return;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.SetMemorised(Set!.Rules!, party[member], spells, problems, prepareNow: Screen == Screen.Party))
+        {
+            Notes.AddRange(problems.Select(problem => problem.Message));
+        }
+    }
+
     public void Begin(IEngineContext engine)
     {
         Notes.Clear();

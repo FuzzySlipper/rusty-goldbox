@@ -248,6 +248,11 @@ internal static class SessionProjection
                 : [])).ToArray());
     }
 
+    private static JsonArray Spells(IEnumerable<Definition> spells)
+    {
+        return new JsonArray(spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray());
+    }
+
     private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl)
     {
         return new JsonObject
@@ -261,6 +266,10 @@ internal static class SessionProjection
             ["features"] = Strings(character.Features.Select(feature => feature.Name)),
             ["equipment"] = new JsonArray(character.Equipment.Select(item => (JsonNode)new JsonObject { ["id"] = item.QualifiedId, ["name"] = item.Name }).ToArray()),
             ["spells"] = new JsonArray(character.Spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
+            ["memorisable"] = Spells(character.Spells.Where(spell => CharacterRules.NeedsPreparing(rules, character, spell))),
+            ["memorised"] = Spells(CharacterRules.MemorisedPlan(rules, character)),
+            ["memorisedChosen"] = character.Memorised.Count > 0,
+            ["prepared"] = Spells(CharacterRules.PreparedLeft(rules, character)),
             ["castable"] = new JsonArray(CharacterRules.CastableSpells(rules, character).Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
             ["gold"] = (double)character.Gold,
             ["experience"] = (double)character.Experience,

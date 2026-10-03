@@ -132,6 +132,9 @@ internal static class GameCommands
                 case "spells":
                     session.SetSpells(Integer(payload, "member"), Texts(payload, "spells"));
                     break;
+                case "memorise":
+                    session.SetMemorised(Integer(payload, "member"), Texts(payload, "spells"));
+                    break;
                 case "begin":
                     session.Begin(engine);
                     break;
@@ -152,7 +155,7 @@ internal static class GameCommands
                     session.Refresh();
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, begin, play, continue, save, load and quit");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, drop, equip, spells, memorise, begin, play, continue, save, load and quit");
             }
         }
         catch (PayloadException exception)

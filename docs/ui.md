@@ -27,7 +27,11 @@ combat lists. A missing URL draws nothing.
 Each member in the party and play projections carries the spells it knows and
 the ones it could (`spells`, `castable`); the panel shows a checkbox per
 castable spell on both screens and sends the whole checked list as a `spells`
-action, which Core checks. In play each member shows its experience; one with
+action, which Core checks. A member whose class prepares spells also shows
+what it memorises and has left today (`memorisable`, `memorised`,
+`memorisedChosen`, `prepared`), with + and − per spell that send the whole
+list as a `memorise` action: prepared at once while making the party, at the
+next rest that prepares spells in play. In play each member shows its experience; one with
 a level waiting (`levelReady`) gets a Level up button that sends the play
 command `level <n>`, and a level that needs choices is taken by typing them in
 the command box (`level 2 --feature weapon_focus`), the refusal listing what
