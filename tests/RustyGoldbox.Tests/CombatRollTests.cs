@@ -43,6 +43,20 @@ public sealed class CombatRollTests
     }
 
     [Fact]
+    public void APostRollRerollKeepsAnOpponentsRolledTarget()
+    {
+        using TempModules modules = new();
+        string root = RollRuleset(modules, "1", "target.str + 1d6");
+        RuleSet rules = Rules.LoadValid(root);
+        CombatResult result = Fight(rules, "attacker", "dummy");
+
+        CheckFact check = Assert.Single(result.Facts.OfType<CheckFact>());
+        Assert.Equal("reroll", Assert.Single(result.Facts.OfType<PostRollFact>()).Effect);
+        Assert.Single(check.Rolls);
+        Assert.Equal(11, check.Result.Target);
+    }
+
+    [Fact]
     public void QuickenedAddsToTheCurrentTurnBudgetInTheOriginalFixture()
     {
         RuleSet rules = Rules.LoadValid(Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "degrees"));
@@ -126,7 +140,7 @@ public sealed class CombatRollTests
         Assert.Contains(set.Diagnostics, diagnostic => diagnostic.Rule == "operation.reduce-damage" && diagnostic.JsonPath == "$.always[0]");
     }
 
-    private static string RollRuleset(TempModules modules, string roll)
+    private static string RollRuleset(TempModules modules, string roll, string target = "10")
     {
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/luck.json", """
@@ -137,7 +151,7 @@ public sealed class CombatRollTests
               "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
             """);
         modules.Write("rules/check.json", $$"""
-            { "type": "check", "id": "strike", "name": "Strike", "roll": "{{roll}}", "target": "10", "succeeds": "at-least",
+            { "type": "check", "id": "strike", "name": "Strike", "roll": "{{roll}}", "target": "{{target}}", "succeeds": "at-least",
               "post_roll": [
                 { "name": "Luck +2", "track": "luck", "cost": "1", "bonus": "2", "score": "if check.margin < 0 then 2 else -1" },
                 { "name": "Luck reroll", "track": "luck", "cost": "1", "reroll": true, "score": "if check.margin < -2 then 3 else -1" }

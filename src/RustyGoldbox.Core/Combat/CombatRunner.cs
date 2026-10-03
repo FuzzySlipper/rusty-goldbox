@@ -903,7 +903,11 @@ public sealed class CombatRunner
         CheckResult changed;
         if (selected.TryGetProperty("reroll", out JsonElement reroll) && reroll.GetBoolean())
         {
-            changed = Located(check, $"$.post_roll[{bestIndex}]", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
+            changed = Located(check, $"$.post_roll[{bestIndex}]", () =>
+            {
+                decimal roll = _evaluator.Roll(check, by.Creature, against.Creature);
+                return _evaluator.CheckWithRoll(check, by.Creature, against.Creature, roll, extra, result.Target);
+            });
             effect = "reroll";
         }
         else

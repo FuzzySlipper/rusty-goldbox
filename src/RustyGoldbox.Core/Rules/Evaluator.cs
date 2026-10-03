@@ -124,8 +124,14 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
     /// <param name="extra">Added to the modifiers by whatever makes the check, such as an action's check_bonus (a range penalty, a charge).</param>
     public CheckResult Check(Definition check, Creature self, Creature? target, decimal extra = 0)
     {
-        decimal roll = Evaluate(rules.Expression(check, "$.roll"), self, target).Number;
+        decimal roll = Roll(check, self, target);
         return CheckWithRoll(check, self, target, roll, extra);
+    }
+
+    /// <summary>Makes the dice roll for a check without resolving its target or result.</summary>
+    public decimal Roll(Definition check, Creature self, Creature? target)
+    {
+        return Evaluate(rules.Expression(check, "$.roll"), self, target).Number;
     }
 
     /// <summary>Resolves a check using a roll already made, such as a post-roll bonus.</summary>
