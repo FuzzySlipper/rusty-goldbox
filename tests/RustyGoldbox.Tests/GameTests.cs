@@ -126,6 +126,29 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void PortraitsAndIconsReachThePanelsAsEngineImages()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            List<string> containers = Containers(scratch);
+            using UiImages images = new(engine, new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Brom", "race": "classic:human", "class": "classic:cleric", "portrait": "placeholder-art:cleric_portrait" }""");
+            }
+
+            JsonObject projection = SessionProjection.Build(session, asset => images.Url(session.Set!, asset));
+            string url = projection["party"]![0]!["portraitUrl"]!.GetValue<string>();
+            Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
+            // One image per asset: the chooser and the member share it.
+            Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["url"]?.GetValue<string>() == url);
+        });
+    }
+
+    [Fact]
     public void ARollCanChooseAPortrait()
     {
         using TempModules scratch = new();

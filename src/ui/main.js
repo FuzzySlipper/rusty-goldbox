@@ -43,6 +43,7 @@ export function mountProductUi(root, context) {
   };
   race.addEventListener('change', () => rerenderParty());
   characterClass.addEventListener('change', () => rerenderParty());
+  portrait.addEventListener('change', () => rerenderParty());
   const command = element('input', { size: '14', placeholder: 'command', 'aria-label': 'Play command' });
   command.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && command.value.trim().length > 0) {
@@ -94,8 +95,9 @@ export function mountProductUi(root, context) {
       const item = element('select', { 'aria-label': `Item for ${member.name}` });
       fill(item, view.items ?? []);
       members.append(element('li', {},
-        // Pictures need an Engine image path (rusty-engine #9129); until then the portrait is named.
-        element('div', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}${member.portrait ? `, portrait ${member.portrait}` : ''}`),
+        element('div', { style: 'display:flex;gap:6px;align-items:center' },
+          ...picture(member.portraitUrl, `${member.name}'s portrait`, 40),
+          element('span', {}, `${member.name}: ${member.race} ${member.class} ${member.level}, ${member.tracks.join(', ')}, gold ${member.gold}`)),
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
@@ -106,9 +108,10 @@ export function mountProductUi(root, context) {
     });
     const size = view.partySize ?? { min: 1, max: 1 };
     const choices = renderChoices(view);
+    const chosen = (view.portraits ?? []).find((entry) => entry.id === portrait.value);
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Party (${size.min} to ${size.max})`), members,
-      row(name, race, characterClass, portrait),
+      row(name, race, characterClass, portrait, ...picture(chosen?.url, 'Chosen portrait', 32)),
       choices.rows,
       row(button('Roll', () => send({
         action: 'roll',
@@ -185,6 +188,15 @@ export function mountProductUi(root, context) {
     };
   };
 
+  /** The party as a roster strip: each member's portrait, name and track values. */
+  const renderRoster = (party) => element('div', { id: 'rusty-goldbox-roster', style: 'display:flex;flex-wrap:wrap;gap:8px;margin:6px 0' },
+    ...party.map((member) => element('div', { style: 'display:flex;gap:6px;align-items:center;padding:3px 6px;background:rgba(255,255,255,.05);border-radius:4px' },
+      ...picture(member.portraitUrl, `${member.name}'s portrait`, 48),
+      element('div', {},
+        element('strong', {}, member.name),
+        ...member.tracks.map((track) => element('div', { style: 'opacity:.85' }, track)),
+        element('div', { style: 'opacity:.85' }, `${member.experience} xp${member.levelReady ? ' (level ready)' : ''}`)))));
+
   /** A checkbox per spell the member could know, checked for those it knows; a change sets the whole list. */
   const renderSpells = (member, index) => {
     const castable = member.castable ?? [];
@@ -220,7 +232,7 @@ export function mountProductUi(root, context) {
       element('pre', { id: 'rusty-goldbox-map', style: 'margin:0 0 6px;line-height:1.05' }, view.map ?? ''),
       menu, moves, row(command),
       log,
-      element('div', { style: 'opacity:.8' }, (view.party ?? []).map((member) => `${member.name} ${member.tracks.join(' ')} ${member.experience} xp${member.levelReady ? ' (level ready)' : ''}`).join(' · ')),
+      renderRoster(view.party ?? []),
       ...(view.party ?? []).flatMap((member, index) => renderSpells(member, index)),
       // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
       row(...(view.party ?? []).flatMap((member, index) => member.levelReady
@@ -241,7 +253,8 @@ export function mountProductUi(root, context) {
     const side = (index) => element('ul', { style: 'padding-left:16px;margin:2px 0' },
       ...fight.members.filter((member) => member.side === index).map((member) => element('li',
         { style: member.defeated ? 'opacity:.45;text-decoration:line-through' : (member.acting ? 'color:#f6c177' : '') },
-        `${member.name}: ${fight.track} ${member.value}${member.max === null ? '' : '/' + member.max}`)));
+        ...picture(member.iconUrl, '', 16),
+        ` ${member.name}: ${fight.track} ${member.value}${member.max === null ? '' : '/' + member.max}`)));
     return fragment(
       element('h2', { style: HEADING_STYLE }, `Combat: ${fight.encounter ?? ''}`),
       element('div', { style: 'display:flex;gap:16px' },
@@ -287,6 +300,15 @@ function element(tag, attributes = {}, ...children) {
   }
   node.append(...children);
   return node;
+}
+
+/** An image the product granted (an Engine UI image URL), drawn pixel-sharp at a size; nothing without one. */
+function picture(url, label, size) {
+  if (!url) {
+    return [];
+  }
+
+  return [element('img', { src: url, alt: label, width: size, height: size, style: 'image-rendering:pixelated;object-fit:contain' })];
 }
 
 function fragment(...children) {

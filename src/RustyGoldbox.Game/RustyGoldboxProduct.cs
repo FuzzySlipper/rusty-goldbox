@@ -17,6 +17,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private readonly UiStream _uiStream;
     private readonly GameSession _session;
     private readonly SceneView _view;
+    private readonly UiImages _images;
     private ulong _uiSequence;
 
     public RustyGoldboxProduct(ProductCreateContext context)
@@ -26,6 +27,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         ModuleLibrary library = new(problems => OpenModules(context.Content, context.Engine.Content, problems));
         _session = new GameSession(library);
         _view = new SceneView(_engine, library);
+        _images = new UiImages(_engine, library);
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
     }
 
@@ -77,6 +79,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     public void Dispose()
     {
         _view.Dispose();
+        _images.Dispose();
         _uiStream.Dispose();
     }
 
@@ -105,7 +108,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private void Publish()
     {
         _view.Show(_session);
-        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session));
+        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session, asset => _images.Url(_session.Set!, asset)));
         _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
     }
 }

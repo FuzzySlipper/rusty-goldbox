@@ -18,6 +18,12 @@ feature a grant takes and, under creation by boosts, for each boost that
 offers a choice, in the order Core takes them (race, creation features, class,
 creation). Core checks the roll; its notes say what to fix.
 
+Portraits and icons are `<img>` elements on Engine UI image URLs the projection
+carries (`portraitUrl`, the portrait chooser's `url`, `iconUrl`), drawn
+pixel-sharp: party members and the chosen portrait on the party screen, a
+roster strip (portrait, name, tracks, experience) in play, and icons in the
+combat lists. A missing URL draws nothing.
+
 Each member in the party and play projections carries the spells it knows and
 the ones it could (`spells`, `castable`); the panel shows a checkbox per
 castable spell on both screens and sends the whole checked list as a `spells`

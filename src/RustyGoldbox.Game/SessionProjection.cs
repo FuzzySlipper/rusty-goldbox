@@ -16,8 +16,10 @@ namespace RustyGoldbox.Game;
 /// </summary>
 internal static class SessionProjection
 {
-    public static JsonObject Build(GameSession session)
+    /// <param name="imageUrl">Where the panels can show an image asset, when it can be shown.</param>
+    public static JsonObject Build(GameSession session, Func<Definition, string?>? imageUrl = null)
     {
+        imageUrl ??= _ => null;
         JsonObject projection = new()
         {
             ["screen"] = session.Screen.ToString().ToLowerInvariant(),
@@ -48,8 +50,8 @@ internal static class SessionProjection
             projection["items"] = Choices(rules, DefinitionTypes.Item);
             projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
                 .Where(asset => asset.Json.GetProperty("kind").GetString() == "portrait")
-                .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id }).ToArray());
-            projection["party"] = new JsonArray(session.Party.Select(character => (JsonNode)Member(rules, character)).ToArray());
+                .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id, ["url"] = imageUrl(asset) }).ToArray());
+            projection["party"] = new JsonArray(session.Party.Select(character => (JsonNode)Member(rules, character, imageUrl)).ToArray());
         }
 
         if (session.Screen == Screen.Combat)
@@ -70,6 +72,7 @@ internal static class SessionProjection
                     ["defeated"] = fight.Defeated.Contains(member.Name),
                     ["acting"] = fight.Acting.Who == member.Name,
                     ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
+                    ["iconUrl"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? imageUrl(picture) : null,
                 }).ToArray()),
                 ["log"] = Strings(fight.Lines.TakeLast(14)),
             };
@@ -94,7 +97,7 @@ internal static class SessionProjection
                 ["label"] = option.Label,
             }).ToArray());
             projection["commands"] = CampaignRunner.CommandList;
-            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character)).ToArray());
+            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
         }
@@ -245,7 +248,7 @@ internal static class SessionProjection
                 : [])).ToArray());
     }
 
-    private static JsonObject Member(RuleSet rules, Character character)
+    private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl)
     {
         return new JsonObject
         {
@@ -264,6 +267,7 @@ internal static class SessionProjection
             ["levelReady"] = CharacterRules.ReadyToLevel(rules, character),
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
+            ["portraitUrl"] = character.Portrait is Definition portrait ? imageUrl(portrait) : null,
         };
     }
 

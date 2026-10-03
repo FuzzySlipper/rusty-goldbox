@@ -61,6 +61,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
+| `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL |
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, and copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
@@ -261,11 +262,11 @@ figures are spherical billboards so they stay upright under that camera.
 Continue (a button, Enter or Space) skips to the end, then returns to play.
 Play commands wait until then.
 
-Portraits and icons reach the projection as asset IDs (a party member's
-`portrait`, a combatant's `icon`) but aren't drawn yet: the DOM can't show
-bundle images, and viewport sprites draw in every composition view, so a
-roster strip beside the view isn't possible on the pinned Engine
-(rusty-engine #9129).
+Portraits and icons reach the panels as Engine UI images: `UiImages` opens an
+asset's PNG from its module bundle once (`Ui.OpenImage`), keeps the image for
+the product's life, and the projection carries its URL beside the asset ID (a
+party member's `portraitUrl`, the portrait chooser's `url`, a combatant's
+`iconUrl`). The panels never see image bytes.
 
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,
