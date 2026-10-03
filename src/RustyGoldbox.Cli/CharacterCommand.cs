@@ -15,6 +15,7 @@ internal static class CharacterCommand
         + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
         + "       goldbox character former <file> --module <path> on|off\n"
+        + "       goldbox character npc <file> --module <path> --id <id> --out <npc.json>\n"
         + "       goldbox character show <file> --module <path>\n"
         + "Each also takes [--modules <dir>]... and [--extension <id>,...] (extension modules added to the set).";
 
@@ -31,9 +32,51 @@ internal static class CharacterCommand
             "level" => Level(args.Skip(1), output, workingDirectory),
             "show" => Show(args.Skip(1), output, workingDirectory),
             "spells" => Spells(args.Skip(1), output, workingDirectory),
+            "npc" => Npc(args.Skip(1), output, workingDirectory),
             "former" => Former(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells, former and show.\n{Usage}"),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, level, spells, former, npc and show.\n{Usage}"),
         };
+    }
+
+    private static int Npc(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--id", "--out"], []);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null || parsed.Single("--out") is null || !RustyGoldbox.Core.Definitions.DefinitionIds.IsValid(parsed.Single("--id") ?? "")))
+        {
+            error = Usage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        var loaded = LoadCharacter(parsed, output, workingDirectory);
+        if (loaded.Failure is int failure)
+        {
+            return failure;
+        }
+
+        string path = Path.GetFullPath(parsed.Single("--out")!, workingDirectory);
+        try
+        {
+            File.WriteAllText(path, NpcFile.ToJson(loaded.Character!, parsed.Single("--id")!));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return output.Problems([new ModuleDiagnostic("npc.write", $"Can't write the NPC definition: {exception.Message}", File: path)]);
+        }
+
+        if (output.Json)
+        {
+            output.WriteJson(new { ok = true, npc = parsed.Single("--id"), path });
+        }
+        else
+        {
+            output.Line($"NPC {parsed.Single("--id")} saved to {path}.");
+        }
+
+        return GoldboxCli.Ok;
     }
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)

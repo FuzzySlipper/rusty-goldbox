@@ -592,6 +592,48 @@ public sealed class GameTests
         });
     }
 
+    [Fact]
+    public void NpcRecruitmentAndDismissalProjectTheSavedParty()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = Path.Combine(scratch.Root, "persistence") });
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            Run(session, engine, """{ "action": "begin" }""");
+            foreach (string command in new[] { "right", "forward", "leave", "leave", "choose 3" })
+            {
+                Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
+            }
+
+            Assert.Equal(2, session.Runner!.State.Party.Count);
+            JsonObject projection = SessionProjection.Build(session);
+            Assert.Equal("sample-crypt:guide", projection["party"]![1]!["npc"]!.GetValue<string>());
+            var guide = session.Runner.State.Party[1];
+            guide.Tracks["hit_points"].Current = 1;
+            guide.Equipment.Clear();
+            Run(session, engine, """{ "action": "save", "slot": "npc-party" }""");
+            session.Quit();
+            Run(session, engine, """{ "action": "load", "slot": "npc-party" }""");
+            Assert.Equal(2, session.Runner!.State.Party.Count);
+            Run(session, engine, """{ "action": "play", "command": "choose 3" }""");
+            Assert.Single(session.Runner.State.Party);
+            Assert.Single(session.Runner.State.AbsentNpcs);
+            Run(session, engine, """{ "action": "save", "slot": "npc-absent" }""");
+            session.Quit();
+            Run(session, engine, """{ "action": "load", "slot": "npc-absent" }""");
+            Run(session, engine, """{ "action": "play", "command": "choose 3" }""");
+            Assert.Equal(2, session.Runner!.State.Party.Count);
+            Assert.Equal(1, session.Runner.State.Party[1].Tracks["hit_points"].Current);
+            Assert.Empty(session.Runner.State.Party[1].Equipment);
+        });
+    }
+
     private static GameSession OpenSession(TempModules scratch, IEngineContext engine)
     {
         List<string> containers = Containers(scratch);

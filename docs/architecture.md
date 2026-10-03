@@ -347,3 +347,15 @@ once per attempted period: a hit advances that period's time, grants no recovery
 ends rest and runs `wandering.event` (a combat event and its usual outcome chains).
 Only a completed rest restores the event's full `tracks`, prepares spells and
 chains to `next`. Rest without a policy retains immediate restoration.
+
+NPC definitions contain fixed `character` data. Create a character with the CLI,
+then `goldbox character npc <file> --module <path> --id <id> --out <npc.json>`
+(also `--json`). `NpcFile` reuses `CharacterFile` to validate the template once
+at module loading, supplying module stamps from its declared dependencies.
+`join` and `dismiss` events reference the NPC definition; successful events
+chain to `next`, refusals to `on_refused` (or end the chain). They enforce the
+campaign's party maximum/minimum and never remove player characters.
+`CampaignRunner.Party.cs` moves the same NPC character between `Party` and
+`AbsentNpcs`; rejoining preserves wounds, gold and gear. Saves keep both lists
+and NPC identity, rejecting duplicate identities at the save boundary. The Game
+roster observes the existing party, with no separate NPC runtime or state.

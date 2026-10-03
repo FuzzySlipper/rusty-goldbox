@@ -137,7 +137,7 @@ seed 1
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > leave
   The party leaves the temple.
-  Stay at the gate? [1] Leave  [2] Rest a day
+  Stay at the gate? [1] Leave  [2] Rest a day  [3] Recruit the gate guide
 > choose 1
   The party chooses 1: Leave.
   The outfitter wishes you safe travels.
@@ -184,7 +184,7 @@ seed 1
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > leave
   The party leaves the temple.
-  Stay at the gate? [1] Leave  [2] Rest a day
+  Stay at the gate? [1] Leave  [2] Rest a day  [3] Recruit the gate guide
 > choose 1
   The party chooses 1: Leave.
   The outfitter wishes you safe travels.

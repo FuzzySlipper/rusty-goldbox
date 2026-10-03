@@ -338,6 +338,8 @@ public sealed partial class CampaignRunner
                 _state.PendingTraining = evt;
                 facts.Add(Training()!);
                 return null;
+            case "join" or "dismiss":
+                return ChangeParty(evt, facts);
             case "set":
                 Definition variable = _rules.Reference(evt, "$.variable");
                 Value value = Evaluate(evt, "$.value", dice);

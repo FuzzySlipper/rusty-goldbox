@@ -1,0 +1,45 @@
+$ goldbox character new --module tale --modules . --class warrior --race folk --name A --seed 1 --out a.json
+A: Folk Warrior 1 (0 xp, highest level)
+  hit points 6/6
+  gold 5
+  str            10     Strength
+  hit            0      Hit bonus
+  strong         false  Strong
+Saved to a.json.
+  seed 1: 1d10: 6 = 6
+[exit 0]
+
+$ goldbox character npc a.json --module tale --modules . --id exported --out exported.json --json
+{
+  "ok": true,
+  "npc": "exported",
+  "path": "exported.json"
+}
+[exit 0]
+
+$ goldbox play --campaign tale --modules . --party a.json --seed 1 --script npc.script
+seed 1
+  The party is in Hall at [0, 0], facing east.
+  Company? [1] Recruit  [2] Dismiss
+> choose 1
+  The party chooses 1: Recruit.
+  Guide joins the party (2 members).
+  Company? [1] Recruit  [2] Dismiss
+> status
+  A (hit points 6/6, 0 xp) | Guide (hit points 6/6, 0 xp) | gold 5 + 5
+> choose 1
+  The party chooses 1: Recruit.
+  Can't: Guide is already in the party.
+  Company? [1] Recruit  [2] Dismiss
+> choose 2
+  The party chooses 2: Dismiss.
+  Guide leaves the party (1 members).
+  Company? [1] Recruit  [2] Dismiss
+> choose 1
+  The party chooses 1: Recruit.
+  Guide joins the party (2 members).
+  Company? [1] Recruit  [2] Dismiss
+> status
+  A (hit points 6/6, 0 xp) | Guide (hit points 6/6, 0 xp) | gold 5 + 5
+[exit 0]
+

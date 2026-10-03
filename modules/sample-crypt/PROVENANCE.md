@@ -8,3 +8,6 @@ operation vocabulary.
 
 The roadside rest option and its one-in-six rat encounter are original sample
 content. Recovery uses Classic's licensed natural resting policy.
+
+The gate guide NPC and recruitment/dismissal events are original characters
+and sample content. Its character data uses the required Classic ruleset.

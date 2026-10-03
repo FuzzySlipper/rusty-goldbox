@@ -38,6 +38,8 @@ public sealed class RuleSet
     /// <summary>The sprite asset each monster or class is drawn with, from figure definitions.</summary>
     public Dictionary<Definition, Definition> Figures { get; } = [];
 
+    internal Dictionary<Definition, Characters.Character> Npcs { get; } = [];
+
     /// <summary>The sprite each combat field's terrain key is drawn with, by combat definition and key.</summary>
     public Dictionary<(Definition Combat, char Key), Definition> TerrainFigures { get; } = [];
 

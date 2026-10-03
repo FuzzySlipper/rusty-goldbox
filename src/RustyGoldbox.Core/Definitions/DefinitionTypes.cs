@@ -145,6 +145,12 @@ public static class DefinitionTypes
         }
         """);
 
+    public static DefinitionType Npc { get; } = new(
+        "npc",
+        "A predefined character, using character data without format or modules (the loader supplies those). Export with goldbox character npc; join and dismiss events use its qualified identity.",
+        [new("character", new ObjectKind(Characters.CharacterFile.DataFields), true, "Complete character data, checked by the character reader. References must name this module or its requires. No rolling or creation happens when the NPC joins.")],
+        """{ "type": "npc", "id": "guide", "character": { "name": "Guide", "race": "rules:folk", "creation": "rules:standard", "levels": [{ "class": "rules:scout", "gain": 4 }], "experience": 0, "attributes": { "agility": 10 }, "tracks": { "health": { "current": 4, "max": 4 } }, "gold": 0, "equipment": [], "conditions": [] } }""");
+
     public static DefinitionType Resting { get; } = new(
         "resting",
         "Rules for one period of rest: its duration and track recovery. Campaign rest events choose this policy and how many periods.",
@@ -686,7 +692,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Derived, Table, Race, Class, Resting, Advancement, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Derived, Table, Race, Class, Resting, Advancement, Npc, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure, Skin,
     ];
 

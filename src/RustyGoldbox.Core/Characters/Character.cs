@@ -120,6 +120,41 @@ public sealed class Character
 
     public List<Definition> Conditions { get; } = [];
 
+    public Definition? Npc { get; set; }
+
+    internal Character Copy()
+    {
+        Character copy = new()
+        {
+            Name = Name, Modules = Modules, Race = Race, Creation = Creation,
+            Experience = Experience, Gold = Gold, Portrait = Portrait, Npc = Npc,
+            UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
+            Prepared = Prepared?.ToList(),
+        };
+        copy.Levels.AddRange(Levels);
+        copy.LeftClasses.AddRange(LeftClasses);
+        copy.Equipment.AddRange(Equipment);
+        copy.Spells.AddRange(Spells);
+        copy.Memorised.AddRange(Memorised);
+        copy.Conditions.AddRange(Conditions);
+        foreach (var entry in ClassExperience)
+        {
+            copy.ClassExperience.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in Attributes)
+        {
+            copy.Attributes.Add(entry.Key, entry.Value);
+        }
+
+        foreach (var entry in Tracks)
+        {
+            copy.Tracks.Add(entry.Key, new TrackValue { Current = entry.Value.Current, Max = entry.Value.Max });
+        }
+
+        return copy;
+    }
+
     /// <summary>The portrait asset the character is shown with, when one was chosen.</summary>
     public Definition? Portrait { get; set; }
 

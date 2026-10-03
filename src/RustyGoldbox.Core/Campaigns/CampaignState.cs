@@ -22,6 +22,9 @@ public sealed class CampaignState
 
     public List<Character> Party { get; } = [];
 
+    /// <summary>NPCs currently outside the party; the same character moves between these two lists.</summary>
+    public List<Character> AbsentNpcs { get; } = [];
+
     public List<Definition> Inventory { get; } = [];
 
     public Dictionary<string, Value> Variables { get; } = [];

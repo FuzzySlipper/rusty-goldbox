@@ -363,6 +363,7 @@ internal static class SessionProjection
         return new JsonObject
         {
             ["name"] = character.Name,
+            ["npc"] = character.Npc?.QualifiedId,
             ["race"] = character.Race?.Name,
             ["class"] = character.ClassLevels().Count > 1 ? character.ClassText : character.Class?.Name,
             ["level"] = character.Level,

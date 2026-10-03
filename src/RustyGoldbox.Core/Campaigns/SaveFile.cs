@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -111,6 +111,13 @@ public static class SaveFile
             writer.WriteBoolean("ended", state.Ended);
             writer.WriteStartArray("party");
             foreach (Character character in state.Party)
+            {
+                CharacterFile.Write(writer, character);
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("absent_npcs");
+            foreach (Character character in state.AbsentNpcs.OrderBy(character => character.Npc!.QualifiedId, StringComparer.Ordinal))
             {
                 CharacterFile.Write(writer, character);
             }
@@ -458,6 +465,36 @@ public static class SaveFile
                 }
 
                 member++;
+            }
+
+            if (!root.TryGetProperty("absent_npcs", out JsonElement absent) || absent.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.absent_npcs", "absent_npcs must be an array of NPC characters outside the party.");
+            }
+            else
+            {
+                int index = 0;
+                foreach (JsonElement data in absent.EnumerateArray())
+                {
+                    if (CharacterFile.Read(data, path, $"$.absent_npcs[{index}]", set, problems) is Character character)
+                    {
+                        if (character.Npc is null)
+                        {
+                            Error($"$.absent_npcs[{index}].npc", "An absent character must name its npc definition.");
+                        }
+                        else
+                        {
+                            state.AbsentNpcs.Add(character);
+                        }
+                    }
+
+                    index++;
+                }
+            }
+
+            foreach (var duplicate in state.Party.Concat(state.AbsentNpcs).Where(character => character.Npc is not null).GroupBy(character => character.Npc).Where(group => group.Count() > 1))
+            {
+                Error("$.absent_npcs", $"NPC {duplicate.Key!.QualifiedId} appears more than once; keep one copy, in the party or absent.");
             }
 
             JsonElement size = state.Campaign.Json.GetProperty("party");

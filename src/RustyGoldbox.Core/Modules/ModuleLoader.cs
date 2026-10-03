@@ -107,6 +107,12 @@ public static class ModuleLoader
             rules = RuleSetBuilder.Build(order, definitions, diagnostics);
         }
 
-        return new ModuleSet(root, searched, order, rules, diagnostics) { Extensions = resolver.Added.Select(added => added.Id).ToList() };
+        ModuleSet set = new(root, searched, order, rules, diagnostics) { Extensions = resolver.Added.Select(added => added.Id).ToList() };
+        if (set.IsValid)
+        {
+            Characters.NpcFile.Check(set, diagnostics);
+        }
+
+        return set;
     }
 }

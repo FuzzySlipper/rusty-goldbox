@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "recruit_guide",
+  "kind": "join",
+  "npc": "guide",
+  "next": "guide_joined",
+  "on_refused": "services_done"
+}

@@ -145,6 +145,18 @@ public static class EventTypes
         [new("text", new TextKind(), true, "The trainer's greeting."), Next, Picture, Sound, Music],
         """{ "type": "event", "id": "trainer", "kind": "training", "text": "Train here.", "next": "farewell" }""");
 
+    public static DefinitionType Join { get; } = new(
+        "join",
+        "Adds a predefined NPC to the party, within the campaign maximum. An absent NPC rejoins with its existing state; one already present is refused.",
+        [new("npc", new ReferenceKind("npc"), true, "The NPC."), Next, new("on_refused", new ReferenceKind("event"), false, "Fallback when the party is full or the NPC already present; without it the chain ends.")],
+        """{ "type": "event", "id": "recruit", "kind": "join", "npc": "guide", "next": "gate", "on_refused": "gate" }""");
+
+    public static DefinitionType Dismiss { get; } = new(
+        "dismiss",
+        "Moves an NPC out of the party, preserving it for later rejoining and saves. The party cannot fall below its campaign minimum.",
+        [new("npc", new ReferenceKind("npc"), true, "The NPC to remove; player characters are unaffected."), Next, new("on_refused", new ReferenceKind("event"), false, "Fallback when absent or at the minimum; without it the chain ends.")],
+        """{ "type": "event", "id": "dismiss_guide", "kind": "dismiss", "npc": "guide", "next": "gate" }""");
+
     public static DefinitionType End { get; } = new(
         "end",
         "Ends the adventure.",
@@ -169,7 +181,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, Training, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

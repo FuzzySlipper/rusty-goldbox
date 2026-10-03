@@ -1,0 +1,53 @@
+{
+  "type": "npc",
+  "id": "guide",
+  "character": {
+    "name": "Gate guide",
+    "race": "classic:human",
+    "creation": "classic:standard",
+    "levels": [
+      {
+        "class": "classic:fighter",
+        "gain": 6
+      }
+    ],
+    "experience": 0,
+    "class_experience": {
+      "classic:fighter": 0
+    },
+    "attributes": {
+      "str": 15,
+      "dex": 12,
+      "con": 13,
+      "int": 10,
+      "wis": 10,
+      "cha": 10
+    },
+    "tracks": {
+      "hit_points": {
+        "current": 6,
+        "max": 6
+      },
+      "spells_1": {
+        "current": 0
+      },
+      "spells_2": {
+        "current": 0
+      },
+      "spells_3": {
+        "current": 0
+      },
+      "spells_4": {
+        "current": 0
+      },
+      "spells_5": {
+        "current": 0
+      }
+    },
+    "gold": 0,
+    "equipment": [
+      "classic:dagger"
+    ],
+    "conditions": []
+  }
+}

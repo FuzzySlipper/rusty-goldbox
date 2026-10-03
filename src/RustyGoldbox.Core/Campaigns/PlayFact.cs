@@ -145,6 +145,13 @@ public sealed record TempleFact(string Text, IReadOnlyList<TempleOffer> Services
     public override string Describe() => $"{Text} {string.Join("  ", Services.Select(service => $"[{service.Number}] {service.Label}: {string.Join(", ", service.Prices.Select((price, member) => $"member {member + 1} {N(price)} gold"))}"))}. Commands: serve <service> <member>, leave.";
 }
 
+public sealed record PartyFact(bool Joined, Definition Npc, string Name, int Members) : PlayFact
+{
+    public override string Kind => Joined ? "joined" : "dismissed";
+
+    public override string Describe() => $"{Name} {(Joined ? "joins" : "leaves")} the party ({Members} members).";
+}
+
 public enum FightOutcome
 {
     Won,

@@ -22,10 +22,39 @@ public static class CharacterFile
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private static readonly string[] Fields =
+    public static IReadOnlyList<Definitions.Field> DataFields { get; } =
     [
-        "format", "name", "modules", "race", "creation", "levels", "class_experience", "left_classes", "experience", "attributes", "tracks", "gold", "equipment", "spells", "memorised", "prepared", "uses_former_classes", "forfeits_experience", "conditions", "portrait",
+        new("name", new Definitions.TextKind(), true, "Character name."),
+        new("race", new Definitions.ReferenceKind("race"), false, "Race; omit in a ruleset without races."),
+        new("creation", new Definitions.ReferenceKind("character-creation"), true, "The creation rules that granted its first level choices."),
+        new("levels", new Definitions.ListKind(new Definitions.ObjectKind(
+        [
+            new("class", new Definitions.ReferenceKind("class"), false, "Class taken; omit in a classless ruleset."),
+            new("gain", new Definitions.NumberKind(), true, "Recorded level track gain, before hp_bonus."),
+            new("features", new Definitions.ListKind(new Definitions.ReferenceKind("feature")), false, "Choices granted at this level."),
+            new("boosts", new Definitions.ListKind(new Definitions.StatKind(true)), false, "Attributes boosted at this level."),
+        ])), true, "Levels in order, as exported from a character."),
+        new("class_experience", new Definitions.MapKind(new Definitions.ReferenceKind("class"), new Definitions.NumberKind()), false, "Experience per class for split advancement."),
+        new("left_classes", new Definitions.ListKind(new Definitions.ReferenceKind("class")), false, "Classes left by a class change."),
+        new("experience", new Definitions.NumberKind(), true, "Total experience."),
+        new("attributes", new Definitions.MapKind(new Definitions.StatKind(true), new Definitions.NumberKind()), true, "Final attribute scores, including racial adjustments and boosts."),
+        new("tracks", new Definitions.MapKind(new Definitions.TextKind(), new Definitions.ObjectKind(
+        [
+            new("current", new Definitions.NumberKind(), true, "Current track value."),
+            new("max", new Definitions.NumberKind(), false, "Own maximum for the level track; other maxima come from data."),
+        ])), true, "All track values by their shared stat IDs."),
+        new("gold", new Definitions.NumberKind(), true, "Gold carried."),
+        new("equipment", new Definitions.ListKind(new Definitions.ReferenceKind("item")), true, "Carried equipment."),
+        new("spells", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Known spells."),
+        new("memorised", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Memorised copies."),
+        new("prepared", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Unspent prepared copies; omit for the full plan."),
+        new("conditions", new Definitions.ListKind(new Definitions.ReferenceKind("condition")), true, "Held conditions."),
+        new("portrait", new Definitions.ReferenceKind("asset", "portrait"), false, "Portrait art."),
+        new("uses_former_classes", new Definitions.BooleanKind(), false, "Calling on dormant classes."),
+        new("forfeits_experience", new Definitions.BooleanKind(), false, "Experience forfeited this adventure."),
     ];
+
+    private static readonly string[] Fields = ["format", "modules", "npc", .. DataFields.Select(field => field.Name)];
 
     public static string ToJson(Character character)
     {
@@ -45,6 +74,10 @@ public static class CharacterFile
             writer.WriteStartObject();
             writer.WriteNumber("format", CurrentFormat);
             writer.WriteString("name", character.Name);
+            if (character.Npc is Definition npc)
+            {
+                writer.WriteString("npc", npc.QualifiedId);
+            }
             writer.WriteStartArray("modules");
             foreach (ModuleStamp module in character.Modules)
             {
@@ -274,6 +307,11 @@ public static class CharacterFile
                 {
                     Error($"$.equipment[{index}]", refused);
                 }
+            }
+
+            if (root.TryGetProperty("npc", out _))
+            {
+                character.Npc = Reference(root, "npc", DefinitionTypes.Npc);
             }
 
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "guide_joined",
+  "kind": "set",
+  "variable": "guide_present",
+  "value": "true",
+  "next": "services_done"
+}

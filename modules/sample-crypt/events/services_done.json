@@ -1,1 +1,26 @@
-{ "type": "event", "id": "services_done", "kind": "menu", "text": "Stay at the gate?", "options": [{ "label": "Leave", "next": "farewell" }, { "label": "Rest a day", "next": "road_rest" }] }
+{
+  "type": "event",
+  "id": "services_done",
+  "kind": "menu",
+  "text": "Stay at the gate?",
+  "options": [
+    {
+      "label": "Leave",
+      "next": "farewell"
+    },
+    {
+      "label": "Rest a day",
+      "next": "road_rest"
+    },
+    {
+      "label": "Recruit the gate guide",
+      "when": "not campaign.var.guide_present",
+      "next": "recruit_guide"
+    },
+    {
+      "label": "Dismiss the gate guide",
+      "when": "campaign.var.guide_present",
+      "next": "dismiss_guide"
+    }
+  ]
+}
