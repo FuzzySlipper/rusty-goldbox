@@ -322,7 +322,9 @@ Combat is built so that no die convention is assumed:
   Monsters list spells too, cast before their actions: paid from their own
   tracks (a monster's slots or power points are just tracks it is given) or
   a number of times a day, as innate powers. An action with `max_targets` affects that many of its
-  candidates, the ones `prefer` ranks highest (sleep by hit dice).
+  candidates, the ones `prefer` ranks highest (sleep by hit dice); one with
+  `portions` resolves that many times, each portion on the target it would
+  pick then, so missiles move on once their target falls.
 - **Checks give outcome tiers.** A check is a roll, an optional bonus and a
   target, rolled high or under, with ordered tiers that read the roll and
   margin. That expresses natural-20 criticals, degrees of success by margin,

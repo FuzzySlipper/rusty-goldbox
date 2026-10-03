@@ -749,6 +749,11 @@ public sealed class RuleSetBuilder
                 Error(action, "action.cost", "$.cost", "An action must cost at least 1 of some budget, or a creature could take it forever.");
             }
 
+            if (action.Json.TryGetProperty("portions", out _) && action.Json.GetProperty("target").GetString() is "self" or "all_enemies" or "all_allies")
+            {
+                Error(action, "action.portions", "$.portions", "Portions go to one target at a time; a self or whole-side action can't divide its effect. Use a target of enemy, ally, hurt_ally or fallen_ally.");
+            }
+
             bool hasCheck = action.Json.TryGetProperty("check", out _);
             if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes))
             {

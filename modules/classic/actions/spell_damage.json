@@ -7,9 +7,11 @@
   },
   "target": "enemy",
   "range": "use.range",
+  "portions": "use.missiles",
   "parameters": [
     "damage",
-    "range"
+    "range",
+    "missiles"
   ],
   "always": [
     {

@@ -597,6 +597,12 @@ public sealed class CombatRunner
             actor.Cast(cast);
         }
 
+        if (action.Json.TryGetProperty("portions", out _))
+        {
+            Divide(actor, use);
+            return;
+        }
+
         foreach (Combatant target in targets)
         {
             if (target.Defeated && target != actor && action.Json.GetProperty("target").GetString() != "fallen_ally")
@@ -604,32 +610,71 @@ public sealed class CombatRunner
                 continue;
             }
 
-            // An enemy it targets may interrupt first; it may not survive to act.
-            if (target != actor && target.Side != actor.Side)
+            if (!Resolve(actor, use, target))
             {
-                React("targeted", target, actor);
-                if (actor.Defeated)
-                {
-                    return;
-                }
-            }
-
-            Scope scope = new(actor.Creature, target.Creature, use.Parameters);
-            if (action.Json.TryGetProperty("check", out _))
-            {
-                CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target);
-                if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
-                    && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
-                {
-                    RunOperations(action, operations, $"$.outcomes.{result.Tier}", scope with { Check = result }, actor, target);
-                }
-            }
-
-            if (action.Json.TryGetProperty("always", out JsonElement always))
-            {
-                RunOperations(action, always, "$.always", scope, actor, target);
+                return;
             }
         }
+    }
+
+    /// <summary>
+    /// An action with portions (missiles, shared damage): its effect resolves
+    /// once per portion, each on the target it would choose now, so a target
+    /// a portion felled passes its share to the next. It stops when no target
+    /// is left or the actor falls.
+    /// </summary>
+    private void Divide(Combatant actor, UseOption use)
+    {
+        Definition action = use.Action;
+        int before = _dice.Rolls.Count;
+        int count = (int)Math.Clamp(decimal.Floor(Number(action, "$.portions", new Scope(actor.Creature, null, use.Parameters))), 0, int.MaxValue);
+        for (int portion = 1; portion <= count; portion++)
+        {
+            if (Targets(actor, use).FirstOrDefault() is not Combatant target)
+            {
+                return;
+            }
+
+            Record(new PortionFact(use.Name, portion, count, target.Name), portion == 1 ? before : null);
+            if (!Resolve(actor, use, target))
+            {
+                return;
+            }
+        }
+    }
+
+    /// <summary>Resolves the action against one target: its reaction first, then the check and operations. Returns false if the actor fell to a reaction.</summary>
+    private bool Resolve(Combatant actor, UseOption use, Combatant target)
+    {
+        Definition action = use.Action;
+
+        // An enemy it targets may interrupt first; it may not survive to act.
+        if (target != actor && target.Side != actor.Side)
+        {
+            React("targeted", target, actor);
+            if (actor.Defeated)
+            {
+                return false;
+            }
+        }
+
+        Scope scope = new(actor.Creature, target.Creature, use.Parameters);
+        if (action.Json.TryGetProperty("check", out _))
+        {
+            CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target);
+            if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
+                && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
+            {
+                RunOperations(action, operations, $"$.outcomes.{result.Tier}", scope with { Check = result }, actor, target);
+            }
+        }
+
+        if (action.Json.TryGetProperty("always", out JsonElement always))
+        {
+            RunOperations(action, always, "$.always", scope, actor, target);
+        }
+
+        return true;
     }
 
     private CheckResult MakeCheck(Definition check, Combatant by, Combatant against)

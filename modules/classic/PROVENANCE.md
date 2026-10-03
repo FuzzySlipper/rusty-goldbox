@@ -80,6 +80,7 @@ small:
   crypt's rest restores slots and memorised spells together, without the
   source's study time. Sleep affects up to 2d4 living
   creatures of 4 hit dice or fewer, weakest first, rather than the source's
-  count by hit dice band; magic missile fires all its missiles at one target.
+  count by hit dice band. Magic missile's missiles each go to the weakest foe
+  in range, so they spread once one falls; the caster doesn't choose.
 - Monsters' hit points are their hit dice rolled as written, with no minimum.
 - Armour movement limits, thief skills and turning undead are not modelled yet.

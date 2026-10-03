@@ -55,6 +55,14 @@ public sealed record ActionFact(string Who, string Action, string Target) : Comb
     public override string Describe() => $"{Who} uses {Action} on {Target}.";
 }
 
+/// <summary>One portion of an action divided among targets (a missile), and where it goes.</summary>
+public sealed record PortionFact(string Action, int Portion, int Count, string Target) : CombatFact
+{
+    public override string Kind => "portion";
+
+    public override string Describe() => $"{Action} {Portion} of {Count} goes to {Target}.";
+}
+
 public sealed record CheckFact(string Who, string Check, CheckResult Result) : CombatFact
 {
     public override string Kind => "check";

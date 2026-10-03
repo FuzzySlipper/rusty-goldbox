@@ -37,6 +37,10 @@ public sealed class CombatTests
             // One slot holds one copy; memorising magic missile instead lets her cast it.
             ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "sleep,magic_missile"],
             ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "magic_missile"],
+            ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"],
+            // At level 3 she fires two missiles a casting, each at the weakest skeleton still standing, and memorises two castings.
+            ["character", "level", "mira.json", "--module", Rules.ClassicPath, "--xp", "5001", "--seed", "1"],
+            ["character", "spells", "mira.json", "--module", Rules.ClassicPath, "--memorise", "magic_missile,magic_missile"],
             ["sim", "combat", "--module", Rules.ClassicPath, "--party", "ada.json,mira.json", "--encounter", "crypt_guard", "--seed", "3"]));
     }
 
@@ -463,6 +467,32 @@ public sealed class CombatTests
         // Walks up, then backs off only until three away.
         Assert.Equal(["Skirmisher moves 3 cells to (3, 1).", "Skirmisher moves 2 cells to (1, 1)."],
             FightOn(rules, "open", "skirmisher", rounds: 2).Where(line => line.StartsWith("Skirmisher moves", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void ADividedEffectMovesOnWhenItsTargetFalls()
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/pair.json", """{ "type": "encounter", "id": "pair", "name": "Pair", "monsters": [ { "monster": "dummy", "count": "2" } ] }""");
+        modules.Write("rules/barrage.json", """
+            { "type": "action", "id": "barrage", "name": "Barrage", "cost": { "turn": 1 }, "target": "enemy", "portions": "4", "always": [ { "op": "damage", "amount": "6" } ] }
+            """);
+        modules.Write("rules/gunner.json", """
+            { "type": "monster", "id": "gunner", "name": "Gunner", "tracks": { "hit_points": "50" }, "stats": { "str": "15" }, "actions": [ { "action": "barrage" } ], "xp": 0 }
+            """);
+        modules.Write("rules/sweep.json", """
+            { "type": "action", "id": "sweep", "name": "Sweep", "cost": { "turn": 1 }, "target": "all_enemies", "portions": "2", "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Equal(("action.portions", "$.portions"), set.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Single());
+        modules.Write("rules/sweep.json", """{ "type": "action", "id": "sweep", "name": "Sweep", "cost": { "turn": 1 }, "target": "all_enemies", "always": [ { "op": "damage", "amount": "1" } ] }""");
+        RuleSet rules = Rules.LoadValid(root);
+
+        // Each portion goes to the enemy with the least left: two finish the first dummy, two the second.
+        Assert.Equal(
+            ["Barrage 1 of 4 goes to Dummy 1.", "Barrage 2 of 4 goes to Dummy 1.", "Barrage 3 of 4 goes to Dummy 2.", "Barrage 4 of 4 goes to Dummy 2."],
+            FightOn(rules, "pair", "gunner").Where(line => line.StartsWith("Barrage", StringComparison.Ordinal)));
     }
 
     [Fact]
