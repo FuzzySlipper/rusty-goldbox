@@ -23,13 +23,17 @@ public sealed class CombatField
 
     private readonly Dictionary<Cell, Terrain> _terrain;
 
-    private CombatField(int width, int height, bool diagonal, Dictionary<Cell, Terrain> terrain)
+    private CombatField(Definition combat, int width, int height, bool diagonal, Dictionary<Cell, Terrain> terrain)
     {
+        Combat = combat;
         Width = width;
         Height = height;
         Diagonal = diagonal;
         _terrain = terrain;
     }
+
+    /// <summary>The combat definition the field belongs to.</summary>
+    public Definition Combat { get; }
 
     public int Width { get; }
 
@@ -74,7 +78,7 @@ public sealed class CombatField
             }
         }
 
-        return new CombatField(field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), diagonal, terrain);
+        return new CombatField(combat, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), diagonal, terrain);
     }
 
     /// <summary>The terrain kinds a combat definition's field declares, by key.</summary>

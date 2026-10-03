@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
@@ -66,7 +67,12 @@ internal sealed class SceneView : IDisposable
             if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
             {
                 _showingCombat = true;
-                _combat.Show(fight, kind => SpriteFor(rules, session.Set, kind), Floor(rules, session.Set, state.Area), facts);
+                _combat.Show(
+                    fight,
+                    kind => SpriteFor(rules, session.Set, kind),
+                    key => fight.Fight.Field is CombatField field && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
+                    Floor(rules, session.Set, state.Area),
+                    facts);
                 _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.Pose, CombatScene.FieldOfView)));
             }
             else if (session.Screen == Screen.Play)

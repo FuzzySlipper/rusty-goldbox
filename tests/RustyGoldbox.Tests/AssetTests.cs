@@ -181,6 +181,25 @@ public sealed class AssetTests
     }
 
     [Fact]
+    public void AFigureCanDrawACombatFieldsTerrain()
+    {
+        // The sample crypt draws classic's pillars with the placeholder pillar.
+        ModuleSet crypt = ModuleLoader.Load(Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt"), []);
+        Assert.Empty(crypt.Diagnostics);
+        ((Definition combat, char key), Definition sprite) = crypt.Rules!.TerrainFigures.Single();
+        Assert.Equal(("classic:standard", '#', "placeholder-art:pillar"), (combat.QualifiedId, key, sprite.QualifiedId));
+
+        using TempModules modules = new();
+        string house = modules.Module("house", "extension", requires: $"{TempModules.Require("classic", "*")}, {TempModules.Require("placeholder-art", "*")}");
+        modules.Write("house/mud.json", """{ "type": "figure", "id": "mud", "combat": "classic:standard", "terrain": "~", "sprite": "placeholder-art:pillar" }""");
+        modules.Write("house/loose.json", """{ "type": "figure", "id": "loose", "terrain": "#", "sprite": "placeholder-art:pillar" }""");
+        Assert.Equal(
+            [("loose.json", "$.combat"), ("mud.json", "$.terrain")],
+            ModuleLoader.Load(house, [Path.Combine(Rules.RepositoryRoot, "modules")]).Diagnostics
+                .Select(diagnostic => (Path.GetFileName(diagnostic.File!), diagnostic.JsonPath!)).Order());
+    }
+
+    [Fact]
     public void APropIsASpriteWithABooleanCondition()
     {
         using TempModules modules = new();

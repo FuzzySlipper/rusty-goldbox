@@ -940,14 +940,21 @@ public sealed class RuleSetBuilder
         }
     }
 
-    /// <summary>A figure draws exactly one monster or class, and nothing has two figures.</summary>
+    /// <summary>A figure draws exactly one monster, class or terrain key, and nothing has two figures.</summary>
     private void CheckFigure(Definition figure)
     {
         bool monster = figure.Json.TryGetProperty("monster", out _);
         bool characterClass = figure.Json.TryGetProperty("class", out _);
-        if (monster == characterClass)
+        bool terrain = figure.Json.TryGetProperty("terrain", out _);
+        if ((monster ? 1 : 0) + (characterClass ? 1 : 0) + (terrain ? 1 : 0) != 1)
         {
-            Error(figure, "figure.subject", "$", "A figure draws exactly one thing: give \"monster\" or \"class\", not both or neither.");
+            Error(figure, "figure.subject", "$", "A figure draws exactly one thing: give \"monster\", \"class\" or \"terrain\" (with \"combat\"), not several or none.");
+            return;
+        }
+
+        if (terrain)
+        {
+            CheckTerrainFigure(figure);
             return;
         }
 
@@ -970,6 +977,35 @@ public sealed class RuleSetBuilder
         if (_rules.References.TryGetValue((figure, "$.icon"), out Definition? icon))
         {
             _rules.Icons[subject] = icon;
+        }
+    }
+
+    /// <summary>A terrain figure names a key its combat's field declares, once in the module set.</summary>
+    private void CheckTerrainFigure(Definition figure)
+    {
+        if (!figure.Json.TryGetProperty("combat", out _))
+        {
+            Error(figure, "figure.subject", "$.combat", "A terrain figure needs the \"combat\" whose field declares the terrain.");
+            return;
+        }
+
+        if (!_rules.References.TryGetValue((figure, "$.combat"), out Definition? combat) || !_rules.References.TryGetValue((figure, "$.sprite"), out Definition? sprite))
+        {
+            return;
+        }
+
+        string key = figure.Json.GetProperty("terrain").GetString()!;
+        Dictionary<char, Terrain> kinds = combat.Json.TryGetProperty("field", out JsonElement field) ? CombatField.Kinds(field) : [];
+        if (key.Length != 1 || !kinds.ContainsKey(key[0]))
+        {
+            string known = kinds.Count == 0 ? $"Combat '{combat.Id}' declares no terrain." : $"Its terrain: {string.Join(", ", kinds.Keys.Select(k => $"'{k}'"))}.";
+            Error(figure, "figure.subject", "$.terrain", $"'{key}' is not terrain the field of combat '{combat.Id}' declares. {known}");
+            return;
+        }
+
+        if (!_rules.TerrainFigures.TryAdd((combat, key[0]), sprite))
+        {
+            Error(figure, "figure.duplicate", "$.terrain", $"Terrain '{key}' of {combat.QualifiedId} already has a figure; a module set has one figure for each.");
         }
     }
 

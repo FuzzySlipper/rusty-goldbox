@@ -1,0 +1,12 @@
+{
+  "type": "asset",
+  "id": "pillar",
+  "kind": "sprite",
+  "file": "sprites/pillar.png",
+  "frame_size": [
+    32,
+    48
+  ],
+  "faces": "right",
+  "height": 1.5
+}

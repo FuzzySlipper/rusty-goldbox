@@ -15,3 +15,4 @@ admits.
 | `bones` | `sprites/bones.png` | A single 32 x 16 frame: a skull and scattered bones, for lying on a floor |
 | `fighter_portrait`, `cleric_portrait`, `magic_user_portrait`, `thief_portrait` | `portraits/<class>.png` | 48 x 48 head-and-shoulders portraits matching the hero sprites |
 | `skull` | `icons/skull.png` | A 24 x 24 skull icon |
+| `pillar` | `sprites/pillar.png` | A single 32 x 48 frame: a stone pillar with capital and base, for combat terrain |

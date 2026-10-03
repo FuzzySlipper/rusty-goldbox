@@ -23,6 +23,11 @@ internal sealed class CombatScene : IDisposable
 
     private const ulong FloorObject = 100;
     private const ulong FigureObjects = 1000;
+    private const ulong TerrainObjects = 100_000;
+
+    // Terrain without a figure: impassable ground as a grey block, rough ground as a low brown slab.
+    private static readonly Color BlockingColour = new(0.42f, 0.42f, 0.45f, 1);
+    private static readonly Color RoughColour = new(0.45f, 0.33f, 0.2f, 1);
 
     private static readonly Color[] SideColours = [new(0.3f, 0.45f, 0.8f, 1), new(0.75f, 0.3f, 0.25f, 1)];
 
@@ -30,6 +35,7 @@ internal sealed class CombatScene : IDisposable
     private readonly Material _plain;
     private readonly List<IDisposable> _retired = [];
     private readonly Dictionary<string, Figure> _figures = [];
+    private readonly List<Figure> _terrain = [];
     private FightReplay? _fight;
     private MeshResource? _floorMesh;
     private Appearance? _floor;
@@ -57,15 +63,22 @@ internal sealed class CombatScene : IDisposable
 
     /// <summary>Adds the scene for <paramref name="fight"/>, building it when the fight is new.</summary>
     /// <param name="spriteFor">The sprite a monster or class is drawn with, or null.</param>
+    /// <param name="terrainFor">The sprite a terrain key of the fight's field is drawn with, or null.</param>
     /// <param name="floor">The floor material and frame (the area's wall set floor), or null for plain.</param>
-    public void Show(FightReplay fight, Func<Definition, SpriteArt?> spriteFor, (Material Material, UvRect Frame)? floor, List<AppearanceFact> facts)
+    public void Show(FightReplay fight, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, (Material Material, UvRect Frame)? floor, List<AppearanceFact> facts)
     {
         if (fight != _fight)
         {
-            Build(fight, spriteFor, floor);
+            Build(fight, spriteFor, terrainFor, floor);
         }
 
         facts.Add(new AppearanceFact(FloorObject, false, 0, new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One), _floor!, true, RenderLayer.Scene));
+        ulong ground = TerrainObjects;
+        foreach (Figure piece in _terrain)
+        {
+            facts.Add(new AppearanceFact(ground++, false, 0, piece.Placement, piece.Appearance, true, RenderLayer.Scene));
+        }
+
         if (fight.Acting.Count != _acted)
         {
             _acted = fight.Acting.Count;
@@ -116,7 +129,7 @@ internal sealed class CombatScene : IDisposable
         ReleaseRetired();
     }
 
-    private void Build(FightReplay fight, Func<Definition, SpriteArt?> spriteFor, (Material Material, UvRect Frame)? floor)
+    private void Build(FightReplay fight, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, (Material Material, UvRect Frame)? floor)
     {
         Retire();
         _fight = fight;
@@ -160,6 +173,18 @@ internal sealed class CombatScene : IDisposable
         {
             figure.Play("idle");
         }
+
+        // Each terrain cell: its figure's sprite standing there, or a plain block or slab.
+        foreach ((Cell cell, Terrain terrain) in fight.Fight.Field?.Terrain ?? new Dictionary<Cell, Terrain>())
+        {
+            Vector3 at = new(cell.X + 0.5f, 0, cell.Y + 0.5f);
+            SpriteArt? art = terrainFor(terrain.Key);
+            _terrain.Add(art is not null
+                ? new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(at, Quaternion.Identity, art.Scale(faceRight: true)))
+                : terrain.Passable
+                    ? Figure.Box(_graphics, at, RoughColour, new Vector3(0.95f, 0.06f, 0.95f))
+                    : Figure.Box(_graphics, at, BlockingColour, new Vector3(0.9f, 1f, 0.9f)));
+        }
     }
 
     /// <summary>Takes the current fight's scene out of use; it is released after the next publish.</summary>
@@ -171,6 +196,12 @@ internal sealed class CombatScene : IDisposable
         }
 
         _figures.Clear();
+        foreach (Figure piece in _terrain)
+        {
+            _retired.AddRange(piece.Owned());
+        }
+
+        _terrain.Clear();
         if (_floor is not null)
         {
             _retired.Add(_floor);
@@ -200,10 +231,13 @@ internal sealed class CombatScene : IDisposable
 
         public SpritePlayback? Playback { get; private set; }
 
-        public static Figure Block(IGraphicsService graphics, Vector3 at, Color colour)
+        public static Figure Block(IGraphicsService graphics, Vector3 at, Color colour) => Box(graphics, at, colour, new Vector3(0.35f, 0.7f, 0.35f));
+
+        /// <summary>A plain cube of <paramref name="size"/> standing on <paramref name="at"/>.</summary>
+        public static Figure Box(IGraphicsService graphics, Vector3 at, Color colour, Vector3 size)
         {
             Appearance block = graphics.CreatePrimitive(new PrimitiveAppearanceRequest(PrimitiveGeometry.Cube, false, colour));
-            return new Figure(null, block, new Transform(at + new Vector3(0, 0.35f, 0), Quaternion.Identity, new Vector3(0.35f, 0.7f, 0.35f)));
+            return new Figure(null, block, new Transform(at + new Vector3(0, size.Y / 2, 0), Quaternion.Identity, size));
         }
 
         /// <summary>Switches to <paramref name="animation"/> when the sprite has it.</summary>

@@ -447,12 +447,14 @@ public static class DefinitionTypes
 
     public static DefinitionType Figure { get; } = new(
         "figure",
-        "How a monster or a class looks: the sprite drawn for it in combat and in the 3D view. Rulesets carry no art, so "
+        "How a monster, a class or a kind of combat terrain looks: the sprite drawn for it in combat and in the 3D view. Rulesets carry no art, so "
         + "figures live in a campaign or extension that requires both the ruleset and an assets module. Give exactly one of "
-        + "monster and class; a module set has at most one figure for each.",
+        + "monster, class and terrain (with its combat); a module set has at most one figure for each.",
         [
             new("monster", new ReferenceKind("monster"), false, "The monster it draws."),
             new("class", new ReferenceKind("class"), false, "The class it draws (for every character of the class)."),
+            new("combat", new ReferenceKind("combat"), false, "With terrain: the combat definition whose field declares it."),
+            new("terrain", new TextKind(), false, "A terrain key the combat's field declares, for example \"#\": the sprite stands on every cell of it."),
             new("sprite", new ReferenceKind("asset", "sprite"), true, "The sprite asset."),
             new("icon", new ReferenceKind("asset", "icon"), false, "A small picture for lists, such as the combat roster."),
         ],

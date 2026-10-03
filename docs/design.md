@@ -246,7 +246,9 @@ toward an enemy) doesn't. An action's `check_bonus` (and a check
 operation's `bonus`) adjust its roll for range or a charge. A move may be a
 careful withdrawal (`provokes: false`) that sets off no parting blows, and a
 fleeing creature (`escape`) that runs out of room at the field's edge leaves
-the fight, out but not felled. Creatures have no facing: Gold Box fights didn't
+the fight, out but not felled. In the Game, terrain stands on the field as
+the sprite a `figure` gives its key (rulesets carry no art), or as a plain
+block or slab. Creatures have no facing: Gold Box fights didn't
 turn on it, and a rule about flanking or rear attacks can read positions.
 Without a field everyone is in reach.
 

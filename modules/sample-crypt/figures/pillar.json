@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "pillar",
+  "combat": "classic:standard",
+  "terrain": "#",
+  "sprite": "placeholder-art:pillar"
+}
