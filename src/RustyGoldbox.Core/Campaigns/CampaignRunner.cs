@@ -846,7 +846,7 @@ public sealed partial class CampaignRunner
         bool found = false;
         foreach (Character character in _state.Party)
         {
-            if (evaluator.Check(check, character.ToCreature(), null).Success)
+            if (Located(check, "$", () => evaluator.Check(check, character.ToCreature(), null)).Success)
             {
                 found = true;
                 break;
