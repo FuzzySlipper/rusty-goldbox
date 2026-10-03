@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace RustyGoldbox.Core.Campaigns;
@@ -9,7 +10,7 @@ public enum Edge
     Wall,
     Door,
 
-    /// <summary>A secret door: passable, but drawn as a wall on the map players see.</summary>
+    /// <summary>A secret door: it remains hidden and blocks movement until discovered.</summary>
     Secret,
 }
 
@@ -19,6 +20,37 @@ public enum Facing
     East,
     South,
     West,
+}
+
+/// <summary>A canonical edge of an area's cell grid. Shared edges have one key from either side.</summary>
+public readonly record struct AreaEdge(int X, int Y, Facing Facing)
+{
+    public AreaEdge Canonical => Facing switch
+    {
+        Facing.South => new AreaEdge(X, Y + 1, Facing.North),
+        Facing.East => new AreaEdge(X + 1, Y, Facing.West),
+        _ => this,
+    };
+
+    public string Key
+    {
+        get
+        {
+            AreaEdge edge = Canonical;
+            return $"{edge.X},{edge.Y},{Facings.Name(edge.Facing)}";
+        }
+    }
+
+    public static bool TryParse(string text, out AreaEdge edge)
+    {
+        edge = default;
+        string[] parts = text.Split(',', StringSplitOptions.None);
+        return parts.Length == 3
+            && int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int x)
+            && int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int y)
+            && Facings.TryParse(parts[2], out Facing facing)
+            && (edge = new AreaEdge(x, y, facing)).Key == text;
+    }
 }
 
 public static class Facings
@@ -79,6 +111,15 @@ public sealed class AreaMap
 
     public bool Contains(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
 
+    /// <summary>Whether a cell-side coordinate addresses an edge in this map, including the outer boundary.</summary>
+    public bool ContainsEdge(int x, int y, Facing facing) => facing switch
+    {
+        Facing.North => x >= 0 && x < Width && y >= 0 && y <= Height,
+        Facing.South => Contains(x, y),
+        Facing.West => x >= 0 && x <= Width && y >= 0 && y < Height,
+        _ => Contains(x, y),
+    };
+
     /// <summary>The edge on the <paramref name="facing"/> side of cell (x, y).</summary>
     public Edge EdgeOf(int x, int y, Facing facing)
     {
@@ -89,6 +130,24 @@ public sealed class AreaMap
             Facing.West => _vertical[x, y],
             _ => _vertical[x + 1, y],
         };
+    }
+
+    /// <summary>Copies the map while replacing effective edge kinds, used for player-discovered or opened edges.</summary>
+    public AreaMap WithEdges(Func<int, int, Facing, Edge, Edge> replace)
+    {
+        AreaMap copy = new(Width, Height);
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                foreach (Facing facing in Enum.GetValues<Facing>())
+                {
+                    copy.SetEdge(x, y, facing, replace(x, y, facing, EdgeOf(x, y, facing)));
+                }
+            }
+        }
+
+        return copy;
     }
 
     /// <summary>Parses map rows; problems are (row, column, message) with 1-based columns.</summary>
@@ -195,6 +254,25 @@ public sealed class AreaMap
             {
                 map._vertical[x, y] = parsed.Value;
             }
+        }
+    }
+
+    private void SetEdge(int x, int y, Facing facing, Edge edge)
+    {
+        switch (facing)
+        {
+            case Facing.North:
+                _horizontal[x, y] = edge;
+                break;
+            case Facing.South:
+                _horizontal[x, y + 1] = edge;
+                break;
+            case Facing.West:
+                _vertical[x, y] = edge;
+                break;
+            default:
+                _vertical[x + 1, y] = edge;
+                break;
         }
     }
 

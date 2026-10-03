@@ -84,7 +84,7 @@ internal sealed class SceneView : IDisposable
             else if (session.Screen == Screen.Play)
             {
                 _showingArea = true;
-                ShowArea(rules, session.Set, state.Area, facts);
+                ShowArea(rules, session.Set, runner, state.Area, facts);
                 ShowProps(runner, state.Area, facts);
                 Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
                 _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
@@ -175,15 +175,15 @@ internal sealed class SceneView : IDisposable
         _camera.Dispose();
     }
 
-    private void ShowArea(RuleSet rules, ModuleSet set, Definition area, List<AppearanceFact> facts)
+    private void ShowArea(RuleSet rules, ModuleSet set, CampaignRunner runner, Definition area, List<AppearanceFact> facts)
     {
         Definition? wallSet = area.Json.TryGetProperty("wall_set", out _) ? rules.Reference(area, "$.wall_set") : null;
-        string key = $"{area.QualifiedId}@{set.LoadOrder.First(loaded => loaded.Manifest.Id == area.Module).Manifest.Source.Identity}";
+        string key = $"{area.QualifiedId}@{set.LoadOrder.First(loaded => loaded.Manifest.Id == area.Module).Manifest.Source.Identity}@{string.Join(',', runner.State.FoundSecrets.Order(StringComparer.Ordinal))}";
         if (key != _areaKey)
         {
             RetireArea();
             _areaKey = key;
-            Build(rules, set, area, wallSet);
+            Build(rules, set, runner.PlayerMap(area), area, wallSet);
             BuildProps(rules, set, area);
         }
 
@@ -263,9 +263,8 @@ internal sealed class SceneView : IDisposable
         _retired.Clear();
     }
 
-    private void Build(RuleSet rules, ModuleSet set, Definition area, Definition? wallSet)
+    private void Build(RuleSet rules, ModuleSet set, AreaMap map, Definition area, Definition? wallSet)
     {
-        AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
         Art? art = wallSet is null ? null : ArtFor(set, wallSet);
         Dictionary<string, UvRect> frames = art is null ? PlainFrames() : Frames(wallSet!, rules.ImageSizes[wallSet!]);
         AreaGeometry geometry = AreaMesh.Build(map, frames);

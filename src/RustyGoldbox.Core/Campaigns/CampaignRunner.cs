@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, search [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -145,6 +145,9 @@ public sealed partial class CampaignRunner
                 _state.Picture = null;
                 facts.Add(new TurnedFact(_state.Facing));
                 break;
+            case "search" when words.Length is 1 or 2:
+                Search(words.Length == 2 ? words[1] : null, dice, facts);
+                break;
             case "choose" when words.Length == 2 && int.TryParse(words[1], out int number):
                 Choose(number, dice, facts);
                 break;
@@ -223,10 +226,10 @@ public sealed partial class CampaignRunner
     private void Move(Facing direction, DiceRoller dice, List<PlayFact> facts)
     {
         AreaMap map = Map(_state.Area);
-        Edge edge = map.EdgeOf(_state.X, _state.Y, direction);
+        Edge edge = EdgeFor(map, _state.X, _state.Y, direction);
         (int dx, int dy) = Facings.Step(direction);
         (int x, int y) = (_state.X + dx, _state.Y + dy);
-        if (edge == Edge.Wall)
+        if (edge is Edge.Wall or Edge.Secret)
         {
             facts.Add(new RefusedFact($"a wall blocks the way {Facings.Name(direction)}."));
             return;
@@ -745,7 +748,7 @@ public sealed partial class CampaignRunner
         List<string> sides = [];
         foreach (Facing side in new[] { _state.Facing, Facings.Turn(_state.Facing, 1), Facings.Turn(_state.Facing, 2), Facings.Turn(_state.Facing, 3) })
         {
-            string what = map.EdgeOf(_state.X, _state.Y, side) switch
+            string what = EdgeFor(map, _state.X, _state.Y, side) switch
             {
                 Edge.Wall or Edge.Secret => "wall",
                 Edge.Door => "door",
@@ -756,6 +759,85 @@ public sealed partial class CampaignRunner
 
         string? zone = CellOf(_state.Area, _state.X, _state.Y) is (JsonElement cell, _) && cell.TryGetProperty("zone", out JsonElement found) ? found.GetString() : null;
         return new LookFact(_state.Area.Name, _state.X, _state.Y, _state.Facing, sides, zone);
+    }
+
+    /// <summary>Returns the current area's player-facing map, with discovered secrets revealed.</summary>
+    public AreaMap PlayerMap(Definition area)
+    {
+        AreaMap map = Map(area);
+        return map.WithEdges((x, y, facing, edge) =>
+        {
+            if (edge == Edge.Secret && _state.FoundSecrets.Contains(_state.EdgeKey(area, new AreaEdge(x, y, facing))))
+            {
+                return Edge.Door;
+            }
+
+            return edge;
+        });
+    }
+
+    private Edge EdgeFor(AreaMap map, int x, int y, Facing facing)
+    {
+        Edge edge = map.EdgeOf(x, y, facing);
+        return edge == Edge.Secret && _state.FoundSecrets.Contains(_state.EdgeKey(_state.Area, new AreaEdge(x, y, facing)))
+            ? Edge.Door
+            : edge;
+    }
+
+    private void Search(string? direction, DiceRoller dice, List<PlayFact> facts)
+    {
+        AreaMap map = Map(_state.Area);
+        List<Facing> sides;
+        if (direction is null)
+        {
+            sides = [ _state.Facing, Facings.Turn(_state.Facing, 1), Facings.Turn(_state.Facing, 2), Facings.Turn(_state.Facing, 3) ];
+        }
+        else if (Facings.TryParse(direction, out Facing parsed))
+        {
+            sides = [parsed];
+        }
+        else
+        {
+            facts.Add(new RefusedFact($"'{direction}' is not a direction: {string.Join(", ", Facings.Names)}."));
+            return;
+        }
+
+        Facing? target = sides.Where(side => map.EdgeOf(_state.X, _state.Y, side) == Edge.Secret
+            && !_state.FoundSecrets.Contains(_state.EdgeKey(_state.Area, new AreaEdge(_state.X, _state.Y, side)))).Cast<Facing?>().FirstOrDefault();
+        if (target is null)
+        {
+            facts.Add(new TextFact("The party finds no undiscovered secret door here."));
+            return;
+        }
+
+        Definition? check = _state.Area.Json.TryGetProperty("search", out _)
+            ? _rules.Reference(_state.Area, "$.search")
+            : _rules.Find(DefinitionTypes.Check, "search", out _);
+        if (check is null)
+        {
+            facts.Add(new RefusedFact($"the area has a secret door but no search check; give the area a \"search\" check reference or define a check named search in its ruleset."));
+            return;
+        }
+
+        Evaluator evaluator = new(_rules, dice);
+        int before = dice.Rolls.Count;
+        bool found = false;
+        foreach (Character character in _state.Party)
+        {
+            if (evaluator.Check(check, character.ToCreature(), null).Success)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        SearchFact result = new(target.Value, found) { Rolls = dice.Rolls.Skip(before).ToList() };
+        if (found)
+        {
+            _state.FoundSecrets.Add(_state.EdgeKey(_state.Area, new AreaEdge(_state.X, _state.Y, target.Value)));
+        }
+
+        facts.Add(result);
     }
 
     private StatusFact Status()

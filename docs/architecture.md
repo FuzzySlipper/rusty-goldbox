@@ -48,8 +48,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, flee rules and actions, checks and operations, condition durations, defeat |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
-| `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls: parsing the map text and drawing it |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, fired triggers, pending menu or shop, party and inventory; characters own declared currency balances and equipment |
+| `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, fired triggers, pending menu or shop, party and inventory; characters own declared currency balances and equipment |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and `CampaignRunner.Shop.cs` | The play command surface: movement, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
@@ -176,7 +176,7 @@ and runs the fight inside the Engine tool host; run k uses random scope
 ## Campaigns
 
 `CampaignRunner` owns play: it takes one command at a time (`forward`,
-`back`, `left`, `right`, `around`, `choose <n>`, `look`, `status`,
+`back`, `left`, `right`, `around`, `search [direction]`, `choose <n>`, `look`, `status`,
 `level <member>`, `former <member> on|off`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu waits for a choice, the chain ends, or the adventure does. A

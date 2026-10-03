@@ -103,7 +103,7 @@ internal static class SessionProjection
                 ["y"] = state.Y,
                 ["facing"] = Facings.Name(state.Facing),
             };
-            projection["map"] = Map(state);
+            projection["map"] = Map(runner, state);
             projection["menu"] = new JsonArray(runner.MenuOptions().Select(option => (JsonNode)new JsonObject
             {
                 ["number"] = option.Number,
@@ -411,9 +411,9 @@ internal static class SessionProjection
     }
 
     /// <summary>The area as the CLI's player view draws it, with the party as an arrow.</summary>
-    private static string Map(CampaignState state)
+    private static string Map(CampaignRunner runner, CampaignState state)
     {
-        AreaMap map = AreaMap.Parse(state.Area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+        AreaMap map = runner.PlayerMap(state.Area);
         string arrow = state.Facing switch
         {
             Facing.North => "^^",

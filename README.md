@@ -118,7 +118,9 @@ scripts and the Game's shop buttons. Declared currency balances stay on
 characters and purchases join party inventory; selling equipped gear removes it
 from its wearer. Each item names its payment currency, and the ruleset declares
 resale in `economy.sell_fraction` (`goldbox schema economy`),
-and `goldbox schema events` describes the shop format. Saves keep an open shop.
+and `goldbox schema events` describes the shop format. Areas can mark secret
+doors with `SS`; `search [direction]` uses the area's search check and saves
+discovered edges. Saves keep an open shop.
 
 Campaign `give` and `take` events name an `item` and an optional positive
 `count` (one by default). Giving adds carried copies. Taking removes carried

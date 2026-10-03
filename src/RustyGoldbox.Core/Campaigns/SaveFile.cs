@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "found_secrets", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -83,6 +83,13 @@ public static class SaveFile
 
             writer.WriteEndObject();
             writer.WriteEndObject();
+            writer.WriteStartArray("found_secrets");
+            foreach (string found in state.FoundSecrets.Order(StringComparer.Ordinal))
+            {
+                writer.WriteStringValue(found);
+            }
+
+            writer.WriteEndArray();
             writer.WriteStartArray("fired");
             foreach (string fired in state.Fired.Order(StringComparer.Ordinal))
             {
@@ -232,6 +239,7 @@ public static class SaveFile
 
             CampaignState state = new() { Campaign = campaign, Seed = seed, Area = area, X = x.Value, Y = y.Value, Facing = facing, Commands = commands.Value };
             ReadVariables(root, state);
+            ReadFoundSecrets(root, state);
             ReadRest(root, state);
             return problems.Count > _before ? null : state;
         }
@@ -557,6 +565,77 @@ public static class SaveFile
             if (member < min || member > max)
             {
                 Error("$.party", $"{state.Campaign.Name} takes a party of {min} to {max}; the save has {member}.");
+            }
+        }
+
+        private void ReadFoundSecrets(JsonElement root, CampaignState state)
+        {
+            if (!root.TryGetProperty("found_secrets", out JsonElement found) || found.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.found_secrets", "Missing \"found_secrets\": the secret doors discovered by searching.");
+                return;
+            }
+
+            int index = 0;
+            foreach (JsonElement entry in found.EnumerateArray())
+            {
+                string at = $"$.found_secrets[{index}]";
+                if (entry.ValueKind != JsonValueKind.String)
+                {
+                    Error(at, "found_secrets entries must be text area edge keys such as \"tale:hall|1,0,west\".");
+                }
+                else
+                {
+                    string key = entry.GetString()!;
+                    int separator = key.IndexOf('|');
+                    if (separator <= 0 || separator == key.Length - 1 || key.IndexOf('|', separator + 1) >= 0)
+                    {
+                        Error(at, "A found secret key must be '<area qualified ID>|<x>,<y>,<facing>'.");
+                        index++;
+                        continue;
+                    }
+
+                    string areaId = key[..separator];
+                    string edgeText = key[(separator + 1)..];
+                    Definition? area = _rules.Find(DefinitionTypes.Area, areaId, out string? problem);
+                    if (area is null)
+                    {
+                        Error(at, problem!);
+                        index++;
+                        continue;
+                    }
+
+                    if (!AreaEdge.TryParse(edgeText, out AreaEdge parsed))
+                    {
+                        Error(at, "The edge must be a canonical '<x>,<y>,<facing>' key; facing is north, east, south or west.");
+                        index++;
+                        continue;
+                    }
+
+                    AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+                    AreaEdge edge = parsed.Canonical;
+                    if (!map.ContainsEdge(edge.X, edge.Y, edge.Facing))
+                    {
+                        Error(at, $"{edgeText} is outside {area.QualifiedId}'s {map.Width}x{map.Height} map.");
+                        index++;
+                        continue;
+                    }
+
+                    if (map.EdgeOf(edge.X, edge.Y, edge.Facing) != Edge.Secret)
+                    {
+                        Error(at, $"{edgeText} is not a secret door edge in {area.QualifiedId}.");
+                        index++;
+                        continue;
+                    }
+
+                    string canonical = $"{area.QualifiedId}|{edge.Key}";
+                    if (!state.FoundSecrets.Add(canonical))
+                    {
+                        Error(at, "The found secret key is duplicated.");
+                    }
+                }
+
+                index++;
             }
         }
 

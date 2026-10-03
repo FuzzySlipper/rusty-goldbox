@@ -35,6 +35,9 @@ public sealed class CampaignState
     /// <summary>Values of area-scoped variables, keyed by each area's qualified ID.</summary>
     public Dictionary<string, Dictionary<string, Value>> AreaVariables { get; } = [];
 
+    /// <summary>Secret doors discovered by search, keyed by area qualified ID and canonical map edge.</summary>
+    public HashSet<string> FoundSecrets { get; } = [];
+
     /// <summary>Values for an area, created by campaign start or save loading.</summary>
     public Dictionary<string, Value> ValuesFor(Definition area)
     {
@@ -46,6 +49,8 @@ public sealed class CampaignState
 
         return values;
     }
+
+    public string EdgeKey(Definition area, AreaEdge edge) => $"{area.QualifiedId}|{edge.Canonical.Key}";
 
     /// <summary>Once-only triggers that have run, as "module:area@x,y".</summary>
     public HashSet<string> Fired { get; } = [];

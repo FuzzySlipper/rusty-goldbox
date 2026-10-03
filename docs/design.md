@@ -431,7 +431,10 @@ Combat is built so that no die convention is assumed:
   side has a wall, door or opening type, and a cell is never just "solid".
   Areas can be dungeon levels or overland maps. A cell can carry zone tags, a
   backdrop and an event trigger with a facing or once-only flag. Areas have
-  named entry points.
+  named entry points. A secret-door edge is drawn as a wall until the party's
+  `search [direction]` command succeeds at the area's `search` check (or the
+  ruleset check named `search`); the discovered edge is kept in the save and
+  then appears as a door in the party map and first-person view.
 - **Events.** These are UA-style event chains, written as data. Event types
   include text, question/menu, combat, treasure, experience, give/take item, shop,
   temple, training, rest, NPC join/leave, set/test variable, teleport, a
