@@ -51,9 +51,11 @@ leaves out what needs a table to decide:
   actor, the current actor chooses who goes next. The headless AI uses the
   declared initiative_score policy to make that choice.
 - Conflicts use three shared zones in the combat field; everyone in one zone
-  can reach everyone there (distance 0), and moving between zones is part of a
-  movement action. Ties and success with style give no boost. Defending is
-  always with Athletics (physical) or Will (mental).
+  can reach everyone there (distance 0). Fight may move one adjacent zone into
+  the target's zone before its attack in the same one-action budget; this is
+  the module's data expression of Fate's free movement alongside an action.
+  Ties and success with style give no boost. Defending is always with
+  Athletics (physical) or Will (mental).
 - A hit is absorbed with stress first, then the smallest consequence (or pair)
   that covers the rest. The extra mild consequence at Superb Physique or Will
   is not modelled.

@@ -6,26 +6,38 @@
     "action": 1
   },
   "target": "enemy",
-  "check": "attack_fight",
+  "valid_target": "combat.distance <= 1",
   "score": "self.fight - target.athletics",
-  "outcomes": {
-    "success": [
-      {
-        "op": "apply_condition",
-        "condition": "physical_hit",
-        "values": {
-          "shifts": "check.margin"
-        }
+  "always": [
+    {
+      "op": "move",
+      "distance": "1",
+      "within": "0"
+    },
+    {
+      "op": "check",
+      "check": "attack_fight",
+      "by": "self",
+      "outcomes": {
+        "success": [
+          {
+            "op": "apply_condition",
+            "condition": "physical_hit",
+            "values": {
+              "shifts": "check.margin"
+            }
+          }
+        ],
+        "style": [
+          {
+            "op": "apply_condition",
+            "condition": "physical_hit",
+            "values": {
+              "shifts": "check.margin"
+            }
+          }
+        ]
       }
-    ],
-    "style": [
-      {
-        "op": "apply_condition",
-        "condition": "physical_hit",
-        "values": {
-          "shifts": "check.margin"
-        }
-      }
-    ]
-  }
+    }
+  ]
 }

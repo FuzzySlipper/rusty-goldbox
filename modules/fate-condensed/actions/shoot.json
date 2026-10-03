@@ -6,6 +6,7 @@
     "action": 1
   },
   "target": "enemy",
+  "range": "2",
   "check": "attack_shoot",
   "score": "self.shoot - target.athletics",
   "outcomes": {

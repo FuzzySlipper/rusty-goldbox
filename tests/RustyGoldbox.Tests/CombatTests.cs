@@ -542,6 +542,68 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void FateConflictMovesIntoAnAdjacentZoneBeforeFightAndShootsAcrossZones()
+    {
+        RuleSet fate = Rules.LoadValid(Path.Combine(Rules.RepositoryRoot, "modules", "fate-condensed"));
+        Definition combat = fate.Find(DefinitionTypes.Combat, "conflict", out _)!;
+        Definition cultist = fate.Find(DefinitionTypes.Monster, "cultist", out _)!;
+
+        CombatResult Run(Cell foeStart) => WithDice(dice =>
+        {
+            Evaluator evaluator = new(fate, dice);
+            return CombatRunner.Run(fate, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(fate, cultist, "Hero", evaluator)]),
+                new CombatSide("Foes", [Combatant.FromMonster(fate, cultist, "Foe", evaluator)]),
+            ], dice, 1, setup: new CombatSetup([new Cell(0, 0), foeStart]));
+        });
+
+        List<string> adjacent = Run(new Cell(1, 0)).Facts.Select(fact => fact.Describe()).ToList();
+        Assert.Contains("Hero uses Fight on Foe.", adjacent);
+        Assert.Contains("Hero moves 1 cell to (1, 0).", adjacent);
+        Assert.True(adjacent.IndexOf("Hero uses Fight on Foe.") < adjacent.IndexOf("Hero moves 1 cell to (1, 0)."));
+        Assert.Contains(adjacent, line => line.StartsWith("Hero rolls Fight:", StringComparison.Ordinal));
+
+        List<string> across = Run(new Cell(2, 0)).Facts.Select(fact => fact.Describe()).ToList();
+        Assert.Contains("Hero uses Shoot on Foe.", across);
+        Assert.DoesNotContain(across, line => line.StartsWith("Hero moves", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnOriginalFixtureCanEnterAnOccupiedZoneWithWithinZero()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/zones_move.json", """
+            { "type": "combat", "id": "zones_move", "name": "Zones move", "initiative": "self.str", "initiative_by": "creature", "initiative_order": "highest-first", "initiative_each": "combat",
+              "round_seconds": 6, "field": { "width": 2, "height": 1, "mode": "zones" }, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0",
+              "actions": [ { "action": "step_hit" } ] }
+            """);
+        modules.Write("rules/step_hit.json", """
+            { "type": "action", "id": "step_hit", "name": "Step hit", "cost": { "turn": 1 }, "target": "enemy", "valid_target": "combat.distance <= 1",
+              "always": [ { "op": "move", "distance": "1", "within": "0" }, { "op": "damage", "amount": "1" } ] }
+            """);
+        modules.Write("rules/walker.json", """
+            { "type": "monster", "id": "walker", "name": "Walker", "tracks": { "hit_points": "20" }, "stats": { "str": "15" }, "actions": [], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "zones_move", out _)!;
+        Definition walker = rules.Find(DefinitionTypes.Monster, "walker", out _)!;
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, walker, "Hero", evaluator)]),
+                new CombatSide("Foes", [Combatant.FromMonster(rules, walker, "Foe", evaluator)]),
+            ], dice, 1, setup: new CombatSetup([new Cell(0, 0), new Cell(1, 0)]));
+        });
+
+        Assert.Contains(result.Facts, fact => fact is ActionFact { Who: "Hero", Action: "Step hit" });
+        Assert.Contains(result.Facts.OfType<MoveFact>(), move => move.Who == "Hero" && move.From == new Cell(0, 0) && move.To == new Cell(1, 0) && move.Cells == 1);
+    }
+
+    [Fact]
     public void ElectiveInitiativeLetsTheLastActorChooseByScore()
     {
         using TempModules modules = new();

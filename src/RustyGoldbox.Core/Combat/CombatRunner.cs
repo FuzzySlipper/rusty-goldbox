@@ -1133,7 +1133,9 @@ public sealed class CombatRunner
             for (int y = 0; y < _field.Height; y++)
             {
                 Cell cell = new(x, y);
-                if (_field.Distance(cell, goal) <= within && cell != goal && _field.Passable(cell) && !blocked.Contains(cell) && _field.CanSee(cell, goal))
+                // A positive reach stops beside the target; within 0 means the
+                // actor must enter the target's cell, which is valid for zones.
+                if (_field.Distance(cell, goal) <= within && (within <= 0 || cell != goal) && _field.Passable(cell) && !blocked.Contains(cell) && _field.CanSee(cell, goal))
                 {
                     costs[cell] = 0;
                     frontier.Enqueue(cell, 0);
