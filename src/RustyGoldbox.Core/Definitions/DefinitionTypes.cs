@@ -739,17 +739,23 @@ public static class DefinitionTypes
         }
         """);
 
+    private static readonly ObjectKind LifepathDice = new(
+    [
+        new("count", new IntegerKind(), true, "Number of dice rolled."),
+        new("sides", new IntegerKind(), true, "Number of faces on each die."),
+    ]);
+
     private static readonly ObjectKind LifepathThrow = new(
     [
-        new("stat", new StatKind(false), false, "The stat added to a 2D6 roll; use a derived stat when the ruleset wants a skill check."),
+        new("stat", new StatKind(false), false, "The stat added to the configured career dice; use a derived stat when the ruleset wants a skill check."),
         new("check", new ReferenceKind("check"), false, "An existing check definition to resolve with the normal Evaluator."),
-        new("target", new IntegerKind(), false, "The target for a 2D6 stat throw; totals at least this number succeed."),
+        new("target", new IntegerKind(), false, "The target for a stat throw; totals at least this number succeed."),
         new("modifier", new IntegerKind(), false, "A fixed modifier added to the throw."),
     ]);
 
     private static readonly ObjectKind LifepathTableEntry = new(
     [
-        new("roll", new IntegerKind(), true, "The 1D6 result that selects this entry."),
+        new("roll", new IntegerKind(), true, "The configured skill-die total that selects this entry."),
         new("kind", new EnumKind(["skill", "attribute"]), true, "Whether the result raises a skill or an attribute."),
         new("stat", new StatKind(false), true, "The skill or attribute to raise; the kind decides which is allowed."),
         new("amount", new IntegerKind(), false, "Levels or points to add; without it, 1."),
@@ -759,7 +765,15 @@ public static class DefinitionTypes
     [
         new("id", new TextKind(), true, "The choice ID supplied by the player, for example \"personal\"."),
         new("name", new TextKind(), true, "Display name."),
-        new("entries", new ListKind(LifepathTableEntry, 6), true, "Six entries selected by a 1D6 roll."),
+        new("entries", new ListKind(LifepathTableEntry), true, "One entry per possible configured skill-die total."),
+    ]);
+
+    private static readonly ObjectKind LifepathSkillRolls = new(
+    [
+        new("base", new IntegerKind(), true, "Skill rolls before commission or advancement successes."),
+        new("no_commission", new IntegerKind(), true, "Skill rolls for a career without commission or advancement rules."),
+        new("commission", new IntegerKind(), true, "Additional skill rolls when commission succeeds."),
+        new("advancement", new IntegerKind(), true, "Additional skill rolls when advancement succeeds."),
     ]);
 
     private static readonly ObjectKind LifepathRank = new(
@@ -772,14 +786,14 @@ public static class DefinitionTypes
 
     private static readonly ObjectKind LifepathCashBenefit = new(
     [
-        new("roll", new IntegerKind(), true, "The 1D6 result that selects this benefit."),
+        new("roll", new IntegerKind(), true, "The configured benefit-die total that selects this benefit."),
         new("currency", new ReferenceKind("currency"), true, "Currency added to the character's balance."),
         new("amount", new IntegerKind(), true, "Amount added to the balance."),
     ]);
 
     private static readonly ObjectKind LifepathMaterialBenefit = new(
     [
-        new("roll", new IntegerKind(), true, "The 1D6 result that selects this benefit."),
+        new("roll", new IntegerKind(), true, "The configured benefit-die total that selects this benefit."),
         new("kind", new EnumKind(["skill", "attribute", "item", "currency"]), true, "The material benefit's effect."),
         new("stat", new StatKind(false), false, "Skill or attribute raised by this benefit."),
         new("item", new ReferenceKind("item"), false, "Item granted by this benefit."),
@@ -787,10 +801,25 @@ public static class DefinitionTypes
         new("amount", new IntegerKind(), false, "Levels, points or currency amount; without it, 1."),
     ]);
 
+    private static readonly ObjectKind LifepathRankBenefit = new(
+    [
+        new("min_rank", new IntegerKind(), true, "Minimum final career rank for these extra benefit rolls."),
+        new("count", new IntegerKind(), true, "Extra benefit rolls at or above the rank."),
+    ]);
+
+    private static readonly ObjectKind LifepathMaterialRollModifier = new(
+    [
+        new("min_rank", new IntegerKind(), true, "Minimum final career rank for this material-roll modifier."),
+        new("amount", new IntegerKind(), true, "Added to the configured material benefit roll."),
+    ]);
+
     private static readonly ObjectKind LifepathBenefitTables = new(
     [
-        new("cash", new ListKind(LifepathCashBenefit), false, "Cash benefits selected by a 1D6 roll (and an optional benefit modifier)."),
-        new("material", new ListKind(LifepathMaterialBenefit), false, "Material benefits selected by a 1D6 roll (and an optional benefit modifier)."),
+        new("per_term", new IntegerKind(), true, "Benefit rolls granted for each successful career term."),
+        new("rank_benefits", new ListKind(LifepathRankBenefit), true, "Additional benefit rolls selected by final rank."),
+        new("material_roll_modifier", LifepathMaterialRollModifier, false, "Optional modifier to material benefit rolls at a rank."),
+        new("cash", new ListKind(LifepathCashBenefit), false, "Cash benefits selected by the configured benefit die."),
+        new("material", new ListKind(LifepathMaterialBenefit), false, "Material benefits selected by the configured benefit die and optional modifier."),
     ]);
 
     private static readonly ObjectKind LifepathCareer = new(
@@ -802,6 +831,7 @@ public static class DefinitionTypes
         new("commission", LifepathThrow with { }, false, "Optional commission throw when the character is rank 0."),
         new("advancement", LifepathThrow with { }, false, "Optional advancement throw when the character already has a rank."),
         new("reenlistment", LifepathThrow with { }, true, "The throw required to continue after this term."),
+        new("skill_rolls", LifepathSkillRolls, true, "Policy for base, commission and advancement skill rolls."),
         new("skills", new ListKind(LifepathSkillTable), true, "The skill and training tables available for term rolls."),
         new("ranks", new ListKind(LifepathRank), false, "Ranks and optional skill grants, indexed from 1."),
         new("benefits", LifepathBenefitTables, true, "Cash and material benefit tables used when the career ends."),
@@ -812,21 +842,32 @@ public static class DefinitionTypes
         "A data-driven term-by-term career procedure: qualification, survival, optional commission and advancement, skill tables, ageing, reenlistment and mustering-out benefits. Rolls use Engine Random through the caller's DiceRoller; choices are supplied by the CLI or Game.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("start_age", new IntegerKind(), false, "Age at the start of the first term; without it, 18."),
-            new("term_years", new IntegerKind(), false, "Years added by each term; without it, 4."),
-            new("max_terms", new IntegerKind(), false, "Maximum terms before retirement; without it, 7."),
+            new("start_age", new IntegerKind(), true, "Age at the start of the first term."),
+            new("term_years", new IntegerKind(), true, "Years added by each term."),
+            new("max_terms", new IntegerKind(), true, "Maximum terms before retirement."),
+            new("qualification_previous_career_modifier", new IntegerKind(), true, "Modifier applied once per distinct career already completed when qualifying for a new career."),
+            new("dice", new ObjectKind([
+                new("career", LifepathDice, true, "Dice for raw qualification, survival, commission, advancement and reenlistment throws."),
+                new("skill", LifepathDice, true, "Dice for each skill-table selection."),
+                new("aging", LifepathDice, true, "Dice for ageing effects."),
+                new("benefit", LifepathDice, true, "Dice for cash and material benefits."),
+            ]), true, "Dice shapes used by the lifepath's raw throws and tables; existing check definitions own their own dice."),
+            new("survival_natural_failure", new IntegerKind(), false, "Optional raw career-die total that automatically fails survival."),
+            new("reenlistment_natural_success", new IntegerKind(), false, "Optional raw career-die total that automatically succeeds reenlistment."),
             new("aging", new ObjectKind([
                 new("start_age", new IntegerKind(), true, "Age at which ageing begins."),
                 new("start_term", new IntegerKind(), true, "First term that rolls on the ageing table."),
+                new("term_modifier", new IntegerKind(), true, "Modifier multiplied by the term number and added to the ageing roll."),
+                new("zero_ends", new BooleanKind(), true, "Whether ageing that reduces any attribute to zero ends prior history."),
                 new("effects", new ListKind(new ObjectKind([
-                    new("min", new IntegerKind(), true, "Lowest modified 2D6 result that selects this row."),
-                    new("max", new IntegerKind(), true, "Highest modified 2D6 result that selects this row."),
+                    new("min", new IntegerKind(), true, "Lowest modified ageing result that selects this row."),
+                    new("max", new IntegerKind(), true, "Highest modified ageing result that selects this row."),
                     new("changes", new ListKind(new ObjectKind([
                         new("stat", new StatKind(true), true, "Physical or mental attribute changed by ageing."),
                         new("amount", new IntegerKind(), true, "Amount subtracted from the attribute."),
                     ])), true, "Attribute changes; an empty list means no effect."),
-                ])), true, "Ageing rows selected by modified 2D6."),
-            ]), false, "Ageing policy; the character's term count is subtracted from a 2D6 roll."),
+                ])), true, "Ageing rows selected by the configured ageing-die result."),
+            ]), true, "Ageing policy; its term modifier is applied to the configured ageing die."),
             new("careers", new ListKind(LifepathCareer), true, "Careers available to choose term by term."),
         ],
         """
@@ -837,7 +878,11 @@ public static class DefinitionTypes
           "start_age": 18,
           "term_years": 4,
           "max_terms": 7,
-          "aging": { "start_age": 34, "start_term": 4, "effects": [ { "min": 1, "max": 12, "changes": [] } ] },
+          "qualification_previous_career_modifier": -2,
+          "dice": { "career": { "count": 2, "sides": 6 }, "skill": { "count": 1, "sides": 6 }, "aging": { "count": 2, "sides": 6 }, "benefit": { "count": 1, "sides": 6 } },
+          "survival_natural_failure": 2,
+          "reenlistment_natural_success": 12,
+          "aging": { "start_age": 34, "start_term": 4, "term_modifier": -1, "zero_ends": true, "effects": [ { "min": 1, "max": 12, "changes": [] } ] },
           "careers": [
             {
               "id": "scout",
@@ -845,8 +890,9 @@ public static class DefinitionTypes
               "qualification": { "stat": "int", "target": 6 },
               "survival": { "stat": "end", "target": 7 },
               "reenlistment": { "target": 6 },
+              "skill_rolls": { "base": 1, "no_commission": 2, "commission": 1, "advancement": 1 },
               "skills": [ { "id": "personal", "name": "Personal development", "entries": [ { "roll": 1, "kind": "attribute", "stat": "str" }, { "roll": 2, "kind": "attribute", "stat": "dex" }, { "roll": 3, "kind": "attribute", "stat": "end" }, { "roll": 4, "kind": "skill", "stat": "gun_combat" }, { "roll": 5, "kind": "skill", "stat": "athletics" }, { "roll": 6, "kind": "skill", "stat": "melee_combat" } ] } ],
-              "benefits": { "cash": [ { "roll": 1, "currency": "credits", "amount": 1000 } ], "material": [ { "roll": 1, "kind": "attribute", "stat": "edu" } ] }
+              "benefits": { "per_term": 1, "rank_benefits": [], "cash": [ { "roll": 1, "currency": "credits", "amount": 1000 } ], "material": [ { "roll": 1, "kind": "attribute", "stat": "edu" } ] }
             }
           ]
         }

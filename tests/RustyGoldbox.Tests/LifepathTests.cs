@@ -17,7 +17,7 @@ public sealed class LifepathTests
         using TempModules scratch = new();
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Fixture, "--name", "Original", "--lifepath", "careers", "--career", "maker", "--terms", "1",
-                "--skill-table", "professional,professional", "--benefit", "material", "--seed", "2", "--out", "maker.json", "--json"],
+                "--skill-table", "professional", "--benefit", "material", "--seed", "2", "--out", "maker.json", "--json"],
             ["character", "show", "maker.json", "--module", Fixture, "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
@@ -28,13 +28,14 @@ public sealed class LifepathTests
         Assert.Empty(problems);
         Assert.Equal(22, character.Age);
         LifepathTerm term = Assert.Single(character.CareerTerms);
-        Assert.Equal(["skill:professional", "skill:professional", "benefit:material"], term.Choices);
-        Assert.Contains(term.Results, result => result == "benefit item toolkit");
+        Assert.Equal(["skill:professional", "benefit:material"], term.Choices);
+        Assert.Contains(term.Results, result => result == "benefit attribute body +1");
         Assert.Equal(1, character.StatBonuses["craft"]);
-        Assert.Equal("toolkit", Assert.Single(character.Equipment).Id);
+        Assert.Empty(character.Equipment);
         Assert.NotNull(term.Qualification);
         Assert.NotNull(term.Survival);
         Assert.NotNull(term.Aging);
+        Assert.Equal(0, term.Aging!.Modifier);
     }
 
     [Fact]
@@ -43,13 +44,32 @@ public sealed class LifepathTests
         using TempModules scratch = new();
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Scifi, "--name", "Retired", "--attributes", "str=10,dex=10,end=10,int=10,edu=10,soc=10",
-                "--lifepath", "prior_history", "--career", "scout", "--terms", "1", "--skill-table", "personal,personal", "--seed", "5", "--out", "retired.json", "--json"],
+                "--lifepath", "prior_history", "--career", "scout", "--terms", "1", "--skill-table", "personal", "--benefit", "cash", "--seed", "5", "--out", "retired.json", "--json"],
             ["character", "show", "retired.json", "--module", Scifi, "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
         Assert.Contains("\"benefits_lost\": true", transcript, StringComparison.Ordinal);
         Assert.Contains("\"success\": false", transcript, StringComparison.Ordinal);
         Assert.Contains("survival failed; career ended", transcript, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OneSkillAndBenefitChoiceRepeatAcrossPolicyRolls()
+    {
+        using TempModules scratch = new();
+        string transcript = CliTranscript.Run(scratch.Root,
+            ["character", "new", "--module", Scifi, "--name", "Vance", "--priority", "end,dex,str,int,edu,soc",
+                "--lifepath", "prior_history", "--career", "marine", "--terms", "1", "--skill-table", "personal",
+                "--benefit", "cash", "--seed", "3", "--out", "vance.json", "--json"]);
+
+        Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
+        ModuleSet set = ModuleLoader.Load(Scifi, []);
+        List<ModuleDiagnostic> problems = [];
+        Character character = CharacterFile.Read(Path.Combine(scratch.Root, "vance.json"), set, problems)!;
+
+        Assert.Empty(problems);
+        LifepathTerm term = Assert.Single(character.CareerTerms);
+        Assert.Equal(["skill:personal", "skill:personal", "skill:personal", "benefit:cash"], term.Choices);
     }
 
     [Fact]
@@ -83,7 +103,7 @@ public sealed class LifepathTests
         using TempModules scratch = new();
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Fixture, "--name", "Multi", "--lifepath", "careers", "--career", "maker",
-                "--terms", "2", "--skill-table", "professional,professional,professional,professional", "--benefit", "cash,cash",
+                "--terms", "2", "--skill-table", "professional", "--benefit", "cash",
                 "--seed", "2", "--out", "multi.json", "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
@@ -98,7 +118,7 @@ public sealed class LifepathTests
         Assert.Null(character.CareerTerms[1].Qualification);
         Assert.NotNull(character.CareerTerms[0].Aging);
         Assert.NotNull(character.CareerTerms[1].Aging);
-        Assert.Equal(50, character.Balances["credits"]);
+        Assert.Equal(100, character.Balances["credits"]);
     }
 
     [Fact]

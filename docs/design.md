@@ -271,10 +271,12 @@ several creation definitions and mark one the default.
 
 A character-creation definition may also name a **lifepath** definition. It
 describes term careers as data: qualification, survival, optional commission
-and advancement, reenlistment, skill-table rolls, ageing changes and
-mustering-out cash or material benefits. `goldbox character new` and the Game
-party command supply career, table and benefit choices; every throw uses the
-Engine-backed dice stream and a character file records its age, choices, roll
+and advancement, reenlistment, configured dice and skill-table rolls, ageing
+changes and mustering-out cash or material benefits. `goldbox character new`
+and the Game party command supply career, table and benefit choices; a single
+table or benefit choice repeats when the selected policy needs more rolls, and
+explicit sequences remain available. Every throw uses the Engine-backed dice
+stream and a character file records its age, choices, roll
 totals, results and whether a failed term ended the career. The procedure
 raises existing attributes or stat bonuses, balances and equipment, so it does
 not introduce a second character progression owner.

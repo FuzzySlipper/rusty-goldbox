@@ -73,7 +73,7 @@ public static partial class CharacterRules
             return false;
         }
 
-        int maximum = lifepath.Json.TryGetProperty("max_terms", out JsonElement max) ? max.GetInt32() : 7;
+        int maximum = lifepath.Json.GetProperty("max_terms").GetInt32();
         if (careers.Count > maximum)
         {
             problems.Add(new ModuleDiagnostic("character.lifepath-terms", $"{lifepath.QualifiedId} allows at most {maximum} terms, but {careers.Count} were requested.", lifepath.Module, lifepath.File, "$.max_terms"));
@@ -81,10 +81,16 @@ public static partial class CharacterRules
         }
 
         character.Lifepath = lifepath;
-        character.Age = lifepath.Json.TryGetProperty("start_age", out JsonElement startAge) ? startAge.GetInt32() : 18;
+        character.Age = lifepath.Json.GetProperty("start_age").GetInt32();
         character.CareerTerms.Clear();
         character.LifepathEnded = false;
 
+        JsonElement dicePolicy = lifepath.Json.GetProperty("dice");
+        (int Count, int Sides) careerDice = DiceShape(dicePolicy, "career");
+        (int Count, int Sides) skillDice = DiceShape(dicePolicy, "skill");
+        (int Count, int Sides) agingDice = DiceShape(dicePolicy, "aging");
+        (int Count, int Sides) benefitDice = DiceShape(dicePolicy, "benefit");
+        int previousCareerModifier = lifepath.Json.GetProperty("qualification_previous_career_modifier").GetInt32();
         Evaluator evaluator = new(rules, dice);
         int tableIndex = 0;
         int previousCareerCount = 0;
@@ -122,7 +128,7 @@ public static partial class CharacterRules
 
             if (enteringCareer)
             {
-                qualification = ResolveThrow(rules, lifepath, careerData.GetProperty("qualification"), $"$.careers[{CareerIndex(lifepath, careerId)}].qualification", evaluator, character, dice, "qualification", -2 * previousCareerCount);
+                qualification = ResolveThrow(rules, lifepath, careerData.GetProperty("qualification"), $"$.careers[{CareerIndex(lifepath, careerId)}].qualification", evaluator, character, dice, careerDice, "qualification", previousCareerModifier * previousCareerCount);
             }
 
             if (qualification is LifepathRoll enlistment && !enlistment.Success)
@@ -134,8 +140,9 @@ public static partial class CharacterRules
             }
             else
             {
-                survival = ResolveThrow(rules, lifepath, careerData.GetProperty("survival"), $"$.careers[{CareerIndex(lifepath, careerId)}].survival", evaluator, character, dice, "survival");
-                if (IsNaturalTwo(dice))
+                survival = ResolveThrow(rules, lifepath, careerData.GetProperty("survival"), $"$.careers[{CareerIndex(lifepath, careerId)}].survival", evaluator, character, dice, careerDice, "survival");
+                if (lifepath.Json.TryGetProperty("survival_natural_failure", out JsonElement naturalFailure)
+                    && IsNatural(dice, careerDice, naturalFailure.GetInt32()))
                 {
                     survival = survival with { Success = false };
                     results.Add("survival failed; career ended");
@@ -155,7 +162,7 @@ public static partial class CharacterRules
                     int rank = rankBefore;
                     if (careerData.TryGetProperty("commission", out JsonElement commissionRule) && rank == 0)
                     {
-                        commission = ResolveThrow(rules, lifepath, commissionRule, $"$.careers[{CareerIndex(lifepath, careerId)}].commission", evaluator, character, dice, "commission");
+                        commission = ResolveThrow(rules, lifepath, commissionRule, $"$.careers[{CareerIndex(lifepath, careerId)}].commission", evaluator, character, dice, careerDice, "commission");
                         if (commission.Success)
                         {
                             rank = 1;
@@ -165,7 +172,7 @@ public static partial class CharacterRules
 
                     if (careerData.TryGetProperty("advancement", out JsonElement advancementRule) && rank >= 1)
                     {
-                        advancement = ResolveThrow(rules, lifepath, advancementRule, $"$.careers[{CareerIndex(lifepath, careerId)}].advancement", evaluator, character, dice, "advancement");
+                        advancement = ResolveThrow(rules, lifepath, advancementRule, $"$.careers[{CareerIndex(lifepath, careerId)}].advancement", evaluator, character, dice, careerDice, "advancement");
                         if (advancement.Success)
                         {
                             rank++;
@@ -173,20 +180,20 @@ public static partial class CharacterRules
                         }
                     }
 
-                    int skillRolls = 1;
-                    if (!careerData.TryGetProperty("commission", out _) && !careerData.TryGetProperty("advancement", out _))
-                    {
-                        skillRolls++;
-                    }
+                    JsonElement skillRollPolicy = careerData.GetProperty("skill_rolls");
+                    int skillRolls = careerData.TryGetProperty("commission", out _)
+                        || careerData.TryGetProperty("advancement", out _)
+                        ? skillRollPolicy.GetProperty("base").GetInt32()
+                        : skillRollPolicy.GetProperty("no_commission").GetInt32();
 
                     if (commission?.Success == true)
                     {
-                        skillRolls++;
+                        skillRolls += skillRollPolicy.GetProperty("commission").GetInt32();
                     }
 
                     if (advancement?.Success == true)
                     {
-                        skillRolls++;
+                        skillRolls += skillRollPolicy.GetProperty("advancement").GetInt32();
                     }
 
                     for (int skillRoll = 0; skillRoll < skillRolls; skillRoll++)
@@ -197,7 +204,7 @@ public static partial class CharacterRules
                             return false;
                         }
 
-                        int roll = checked((int)dice.Roll(1, 6));
+                        int roll = checked((int)dice.Roll(skillDice.Count, skillDice.Sides));
                         JsonElement entry = SelectEntry(table.GetProperty("entries"), roll);
                         string stat = entry.GetProperty("stat").GetString()!;
                         int amount = entry.TryGetProperty("amount", out JsonElement amountElement) ? amountElement.GetInt32() : 1;
@@ -206,10 +213,12 @@ public static partial class CharacterRules
                         results.Add(result);
                     }
 
-                    int termYears = lifepath.Json.TryGetProperty("term_years", out JsonElement years) ? years.GetInt32() : 4;
+                    int termYears = lifepath.Json.GetProperty("term_years").GetInt32();
                     character.Age += termYears;
-                    aging = ApplyAging(rules, lifepath, character, dice, number, results);
-                    if (aging is not null && character.Attributes.Any(attribute => attribute.Value <= 0))
+                    aging = ApplyAging(rules, lifepath, character, dice, agingDice, number, results);
+                    if (aging is not null
+                        && lifepath.Json.GetProperty("aging").GetProperty("zero_ends").GetBoolean()
+                        && character.Attributes.Any(attribute => attribute.Value <= 0))
                     {
                         results.Add("ageing crisis; career ended");
                         ended = true;
@@ -218,12 +227,13 @@ public static partial class CharacterRules
 
                     if (!ended && number < careers.Count)
                     {
-                        LifepathRoll reenlistment = ResolveThrow(rules, lifepath, careerData.GetProperty("reenlistment"), $"$.careers[{CareerIndex(lifepath, careerId)}].reenlistment", evaluator, character, dice, "reenlistment");
-                        bool naturalTwelve = IsNaturalTwelve(dice);
-                        if (!reenlistment.Success && naturalTwelve)
+                        LifepathRoll reenlistment = ResolveThrow(rules, lifepath, careerData.GetProperty("reenlistment"), $"$.careers[{CareerIndex(lifepath, careerId)}].reenlistment", evaluator, character, dice, careerDice, "reenlistment");
+                        bool naturalSuccess = lifepath.Json.TryGetProperty("reenlistment_natural_success", out JsonElement naturalReenlistment)
+                            && IsNatural(dice, careerDice, naturalReenlistment.GetInt32());
+                        if (!reenlistment.Success && naturalSuccess)
                         {
                             reenlistment = reenlistment with { Success = true };
-                            results.Add("natural 12 requires another term");
+                            results.Add($"natural {naturalReenlistment.GetInt32()} requires another term");
                         }
                         else if (!reenlistment.Success)
                         {
@@ -254,7 +264,7 @@ public static partial class CharacterRules
             }
         }
 
-        if (!ApplyBenefits(rules, lifepath, character, requestedBenefits, dice, problems))
+        if (!ApplyBenefits(rules, lifepath, character, requestedBenefits, dice, benefitDice, problems))
         {
             return false;
         }
@@ -271,6 +281,7 @@ public static partial class CharacterRules
         Evaluator evaluator,
         Character character,
         DiceRoller dice,
+        (int Count, int Sides) careerDice,
         string kind,
         int extraModifier = 0)
     {
@@ -284,7 +295,7 @@ public static partial class CharacterRules
             return new LifepathRoll(kind, result.Roll, result.Bonus + result.Modifier, result.Total, result.Target, result.Success);
         }
 
-        decimal roll = dice.Roll(2, 6);
+        decimal roll = dice.Roll(careerDice.Count, careerDice.Sides);
         decimal modifier = extraModifier + fixedModifier;
         if (rule.TryGetProperty("stat", out JsonElement stat))
         {
@@ -296,17 +307,24 @@ public static partial class CharacterRules
         return new LifepathRoll(kind, roll, modifier, total, target, total >= target);
     }
 
-    private static LifepathRoll? ApplyAging(RuleSet rules, Definition lifepath, Character character, DiceRoller dice, int term, List<string> results)
+    private static LifepathRoll? ApplyAging(
+        RuleSet rules,
+        Definition lifepath,
+        Character character,
+        DiceRoller dice,
+        (int Count, int Sides) agingDice,
+        int term,
+        List<string> results)
     {
-        if (!lifepath.Json.TryGetProperty("aging", out JsonElement aging)
-            || character.Age < aging.GetProperty("start_age").GetInt32()
+        JsonElement aging = lifepath.Json.GetProperty("aging");
+        if (character.Age < aging.GetProperty("start_age").GetInt32()
             || term < aging.GetProperty("start_term").GetInt32())
         {
             return null;
         }
 
-        int modifier = -term;
-        decimal raw = dice.Roll(2, 6);
+        int modifier = checked(aging.GetProperty("term_modifier").GetInt32() * term);
+        decimal raw = dice.Roll(agingDice.Count, agingDice.Sides);
         int total = checked((int)raw + modifier);
         JsonElement selected = aging.GetProperty("effects").EnumerateArray()
             .FirstOrDefault(effect => total >= effect.GetProperty("min").GetInt32() && total <= effect.GetProperty("max").GetInt32());
@@ -326,7 +344,14 @@ public static partial class CharacterRules
         return new LifepathRoll("aging", raw, modifier, total, 0, true);
     }
 
-    private static bool ApplyBenefits(RuleSet rules, Definition lifepath, Character character, IReadOnlyList<string>? requested, DiceRoller dice, List<ModuleDiagnostic> problems)
+    private static bool ApplyBenefits(
+        RuleSet rules,
+        Definition lifepath,
+        Character character,
+        IReadOnlyList<string>? requested,
+        DiceRoller dice,
+        (int Count, int Sides) benefitDice,
+        List<ModuleDiagnostic> problems)
     {
         if (character.CareerTerms.Count == 0)
         {
@@ -345,10 +370,31 @@ public static partial class CharacterRules
 
             JsonElement benefits = career.Value.GetProperty("benefits");
             int rank = group.Last().RankAfter;
-            int count = group.Count() + (rank >= 6 ? 3 : rank >= 5 ? 2 : rank >= 4 ? 1 : 0);
+            int count = checked(group.Count() * benefits.GetProperty("per_term").GetInt32());
+            foreach (JsonElement rankBenefit in benefits.GetProperty("rank_benefits").EnumerateArray())
+            {
+                if (rank >= rankBenefit.GetProperty("min_rank").GetInt32())
+                {
+                    count = checked(count + rankBenefit.GetProperty("count").GetInt32());
+                }
+            }
+
+            int materialModifier = 0;
+            if (benefits.TryGetProperty("material_roll_modifier", out JsonElement materialRollModifier)
+                && rank >= materialRollModifier.GetProperty("min_rank").GetInt32())
+            {
+                materialModifier = materialRollModifier.GetProperty("amount").GetInt32();
+            }
+
             for (int benefitIndex = 0; benefitIndex < count; benefitIndex++)
             {
-                string? selectedKind = choiceIndex < choices.Count ? choices[choiceIndex++] : null;
+                string? selectedKind = choices.Count switch
+                {
+                    0 => null,
+                    1 => choices[0],
+                    _ when choiceIndex < choices.Count => choices[choiceIndex++],
+                    _ => choices[^1],
+                };
                 if (selectedKind is null)
                 {
                     bool hasCash = benefits.TryGetProperty("cash", out _);
@@ -362,7 +408,8 @@ public static partial class CharacterRules
                     return false;
                 }
 
-                int roll = checked((int)dice.Roll(1, 6)) + (selectedKind == "material" && rank >= 5 ? 1 : 0);
+                int roll = checked((int)dice.Roll(benefitDice.Count, benefitDice.Sides))
+                    + (selectedKind == "material" ? materialModifier : 0);
                 JsonElement entry = SelectEntry(table, roll);
                 string result;
                 if (selectedKind == "cash")
@@ -413,7 +460,7 @@ public static partial class CharacterRules
             }
         }
 
-        if (choiceIndex < choices.Count)
+        if (choices.Count > 1 && choiceIndex < choices.Count)
         {
             problems.Add(new ModuleDiagnostic("character.lifepath-benefit", $"Received {choices.Count} benefit choices, but only {choiceIndex} benefit rolls were needed. Remove the extras from --benefit.", lifepath.Module, lifepath.File, "$.careers"));
             return false;
@@ -443,7 +490,9 @@ public static partial class CharacterRules
     private static JsonElement SelectSkillTable(Definition lifepath, JsonElement career, IReadOnlyList<string>? requested, ref int index, string careerId, List<ModuleDiagnostic> problems, List<string> choices)
     {
         JsonElement tables = career.GetProperty("skills");
-        string? selected = index < (requested?.Count ?? 0) ? requested![index++] : null;
+        string? selected = requested is { Count: > 0 }
+            ? requested[Math.Min(index++, requested.Count - 1)]
+            : null;
         if (selected is null && tables.GetArrayLength() == 1)
         {
             selected = tables[0].GetProperty("id").GetString();
@@ -522,14 +571,18 @@ public static partial class CharacterRules
         return 0;
     }
 
-    private static bool IsNaturalTwo(DiceRoller dice)
+    private static (int Count, int Sides) DiceShape(JsonElement dicePolicy, string name)
     {
-        return dice.Rolls.LastOrDefault() is DiceRoll roll && roll.Faces.Count == 2 && roll.Faces.Sum() == 2;
+        JsonElement shape = dicePolicy.GetProperty(name);
+        return (shape.GetProperty("count").GetInt32(), shape.GetProperty("sides").GetInt32());
     }
 
-    private static bool IsNaturalTwelve(DiceRoller dice)
+    private static bool IsNatural(DiceRoller dice, (int Count, int Sides) shape, int total)
     {
-        return dice.Rolls.LastOrDefault() is DiceRoll roll && roll.Faces.Count == 2 && roll.Faces.Sum() == 12;
+        return dice.Rolls.LastOrDefault() is DiceRoll roll
+            && roll.Faces.Count == shape.Count
+            && roll.Faces.All(face => face >= 1 && face <= shape.Sides)
+            && roll.Faces.Sum() == total;
     }
 
     private static string BenefitKinds(JsonElement benefits)

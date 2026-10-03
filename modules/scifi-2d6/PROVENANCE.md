@@ -25,8 +25,8 @@ and its section 15 notices are kept in `LICENSE-OGL.txt`.
 | Definitions | Source (Cepheus Engine SRD) |
 | --- | --- |
 | `attributes/`, `creation/standard` (six characteristics, 2D6 each, assigned) | Chapter 1: Character Creation, Characteristic Generation |
-| `lifepath/prior_history` qualification, survival, commission, advancement, reenlistment, four-year terms, ageing and mustering-out tables | Chapter 1: Character Creation, Careers; Qualifying and the Draft; Terms of Service; Survival; Commission and Advancement; Aging; Re-enlistment and Retirement; Mustering Out Benefits |
-| `lifepath/prior_history` personal, service, specialist and advanced table shapes and 1D6 selection | Chapter 1: Character Creation, Skills and Training |
+| `lifepath/prior_history` qualification, survival, commission, advancement, reenlistment, four-year terms, configured career/ageing dice, ageing and mustering-out tables | Chapter 1: Character Creation, Careers; Qualifying and the Draft; Terms of Service; Survival; Commission and Advancement; Aging; Re-enlistment and Retirement; Mustering Out Benefits |
+| `lifepath/prior_history` personal, service, specialist and advanced table shapes and configured 1D6 skill/benefit selection | Chapter 1: Character Creation, Skills and Training |
 | `derived/*_dm` (DM = characteristic / 3, rounded down, − 2) | Chapter 1: Characteristic Modifiers |
 | `derived/` skills (unskilled −3) | Chapter 2: Skills |
 | `checks/` (2D6 + skill + DM, 8+; Effect is the margin) | Chapter 2: Skills (checks); Chapter 5: Attack |
@@ -39,8 +39,11 @@ The lifepath contains four careers (Scout, Marine, Mercenary and Rogue) and
 condenses their SRD career tables to the four skill stats and equipment
 already distributed by this module. The names and rules rows are adapted OGC;
 the derived skill IDs and the material item mappings are this module's
-original implementation choices. Career state and all roll evidence are
-product data, not code in the module.
+original implementation choices. The career policy explicitly records its dice
+shapes, qualification modifier, natural outcomes, skill-roll counts, rank
+benefit thresholds and material-roll modifier so Core does not supply
+Cepheus-specific defaults. Career state and all roll evidence are product data,
+not code in the module.
 
 ## Simplifications
 

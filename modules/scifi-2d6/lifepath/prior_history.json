@@ -5,9 +5,20 @@
   "start_age": 18,
   "term_years": 4,
   "max_terms": 7,
+  "qualification_previous_career_modifier": -2,
+  "dice": {
+    "career": { "count": 2, "sides": 6 },
+    "skill": { "count": 1, "sides": 6 },
+    "aging": { "count": 2, "sides": 6 },
+    "benefit": { "count": 1, "sides": 6 }
+  },
+  "survival_natural_failure": 2,
+  "reenlistment_natural_success": 12,
   "aging": {
     "start_age": 34,
     "start_term": 4,
+    "term_modifier": -1,
+    "zero_ends": true,
     "effects": [
       { "min": -6, "max": -6, "changes": [
         { "stat": "str", "amount": 2 }, { "stat": "dex", "amount": 2 }, { "stat": "end", "amount": 2 }, { "stat": "int", "amount": 1 }
@@ -40,6 +51,7 @@
       "qualification": { "stat": "int", "target": 6 },
       "survival": { "stat": "end", "target": 7 },
       "reenlistment": { "target": 6 },
+      "skill_rolls": { "base": 1, "no_commission": 2, "commission": 1, "advancement": 1 },
       "ranks": [
         { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
       ],
@@ -66,6 +78,13 @@
         ] }
       ],
       "benefits": {
+        "per_term": 1,
+        "rank_benefits": [
+          { "min_rank": 4, "count": 1 },
+          { "min_rank": 5, "count": 1 },
+          { "min_rank": 6, "count": 1 }
+        ],
+        "material_roll_modifier": { "min_rank": 5, "amount": 1 },
         "cash": [
           { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
           { "roll": 3, "currency": "credits", "amount": 10000 }, { "roll": 4, "currency": "credits", "amount": 20000 },
@@ -86,6 +105,7 @@
       "commission": { "stat": "edu", "target": 6 },
       "advancement": { "stat": "soc", "target": 7 },
       "reenlistment": { "target": 6 },
+      "skill_rolls": { "base": 1, "no_commission": 2, "commission": 1, "advancement": 1 },
       "ranks": [
         { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
       ],
@@ -112,6 +132,13 @@
         ] }
       ],
       "benefits": {
+        "per_term": 1,
+        "rank_benefits": [
+          { "min_rank": 4, "count": 1 },
+          { "min_rank": 5, "count": 1 },
+          { "min_rank": 6, "count": 1 }
+        ],
+        "material_roll_modifier": { "min_rank": 5, "amount": 1 },
         "cash": [
           { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
           { "roll": 3, "currency": "credits", "amount": 10000 }, { "roll": 4, "currency": "credits", "amount": 20000 },
@@ -132,6 +159,7 @@
       "commission": { "stat": "int", "target": 7 },
       "advancement": { "stat": "int", "target": 6 },
       "reenlistment": { "target": 5 },
+      "skill_rolls": { "base": 1, "no_commission": 2, "commission": 1, "advancement": 1 },
       "ranks": [
         { "rank": 3, "name": "Major", "skill": "tactics", "amount": 1 }
       ],
@@ -158,6 +186,13 @@
         ] }
       ],
       "benefits": {
+        "per_term": 1,
+        "rank_benefits": [
+          { "min_rank": 4, "count": 1 },
+          { "min_rank": 5, "count": 1 },
+          { "min_rank": 6, "count": 1 }
+        ],
+        "material_roll_modifier": { "min_rank": 5, "amount": 1 },
         "cash": [
           { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
           { "roll": 3, "currency": "credits", "amount": 5000 }, { "roll": 4, "currency": "credits", "amount": 5000 },
@@ -178,6 +213,7 @@
       "commission": { "stat": "str", "target": 6 },
       "advancement": { "stat": "int", "target": 7 },
       "reenlistment": { "target": 4 },
+      "skill_rolls": { "base": 1, "no_commission": 2, "commission": 1, "advancement": 1 },
       "ranks": [
         { "rank": 2, "name": "Soldier", "skill": "gun_combat", "amount": 1 }
       ],
@@ -204,6 +240,13 @@
         ] }
       ],
       "benefits": {
+        "per_term": 1,
+        "rank_benefits": [
+          { "min_rank": 4, "count": 1 },
+          { "min_rank": 5, "count": 1 },
+          { "min_rank": 6, "count": 1 }
+        ],
+        "material_roll_modifier": { "min_rank": 5, "amount": 1 },
         "cash": [
           { "roll": 1, "currency": "credits", "amount": 1000 }, { "roll": 2, "currency": "credits", "amount": 5000 },
           { "roll": 3, "currency": "credits", "amount": 5000 }, { "roll": 4, "currency": "credits", "amount": 5000 },

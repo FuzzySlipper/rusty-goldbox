@@ -55,8 +55,9 @@ internal static class GoldboxCli
               Where experience is split between classes, --class fighter,thief starts with
               both, as the race's multiclasses allow.
               With --lifepath, --career chooses one career per term (or repeat one with --terms);
-              --skill-table supplies the visible table choice for each actual skill roll and
-              --benefit chooses cash or material for each mustering-out roll. The saved character
+              --skill-table supplies the visible table choice for each actual skill roll (one
+              choice repeats when the policy asks for more), and --benefit chooses cash or
+              material for each mustering-out roll (one choice repeats too). The saved character
               records every term roll, choice and result in career_terms.
           goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]
               Adds experience, gains every level reached and saves the file. Where the

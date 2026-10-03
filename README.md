@@ -109,8 +109,10 @@ dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --modul
 
 When a character-creation definition names a `lifepath`, `--career` chooses
 the career for each term (one choice repeats with `--terms`),
-`--skill-table` supplies the visible table choice for each actual 1D6 skill
-roll, and `--benefit` chooses cash or material for each mustering-out roll.
+`--skill-table` supplies the visible table choice for each actual configured
+skill-die roll (one choice repeats when the policy asks for more rolls), and
+`--benefit` chooses cash or material for each mustering-out roll (one choice
+also repeats).
 The saved character keeps its age, term choices, roll totals and results in
 `career_terms`; `goldbox character show --json` and the Game party projection
 expose that ledger.

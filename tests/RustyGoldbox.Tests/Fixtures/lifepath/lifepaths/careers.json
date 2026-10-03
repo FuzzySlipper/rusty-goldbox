@@ -5,9 +5,18 @@
   "start_age": 18,
   "term_years": 4,
   "max_terms": 2,
+  "qualification_previous_career_modifier": 0,
+  "dice": {
+    "career": { "count": 1, "sides": 6 },
+    "skill": { "count": 1, "sides": 6 },
+    "aging": { "count": 1, "sides": 6 },
+    "benefit": { "count": 1, "sides": 6 }
+  },
   "aging": {
     "start_age": 18,
     "start_term": 1,
+    "term_modifier": 0,
+    "zero_ends": false,
     "effects": [
       { "min": -6, "max": 12, "changes": [] }
     ]
@@ -19,6 +28,7 @@
       "qualification": { "stat": "body", "target": 1 },
       "survival": { "stat": "mind", "target": 1 },
       "reenlistment": { "target": 1 },
+      "skill_rolls": { "base": 1, "no_commission": 1, "commission": 1, "advancement": 1 },
       "skills": [
         {
           "id": "personal",
@@ -46,6 +56,8 @@
         }
       ],
       "benefits": {
+        "per_term": 1,
+        "rank_benefits": [],
         "cash": [
           { "roll": 1, "currency": "credits", "amount": 10 },
           { "roll": 2, "currency": "credits", "amount": 20 },

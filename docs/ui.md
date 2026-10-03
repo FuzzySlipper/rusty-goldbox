@@ -27,7 +27,8 @@ creation). Core checks the roll; its notes say what to fix.
 When `creation.lifepath` is present, the party projection also carries
 `lifepath` with its careers and available skill tables. The party controls
 send `lifepath`, `careers`, `terms`, `skillTables` and `benefits` in the same
-`roll` command; Core performs the actual throws and returns each member's
+`roll` command; one selected skill or benefit table can repeat for all rolls
+that policy produces, while explicit sequences remain available. Core performs the actual throws and returns each member's
 `age`, `lifepath` and `careerTerms`, including roll objects, selected tables,
 benefit choices, results and `benefitsLost` for a failed term. The DOM displays
 that ledger after the character is rolled and owns none of the career state.

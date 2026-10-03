@@ -584,6 +584,35 @@ public sealed class RuleSetBuilder
                 Error(lifepath, "lifepath.terms", "$.max_terms", "A lifepath must allow at least one term.");
             }
 
+            JsonElement dice = lifepath.Json.GetProperty("dice");
+            foreach (string dieName in new[] { "career", "skill", "aging", "benefit" })
+            {
+                JsonElement die = dice.GetProperty(dieName);
+                if (die.GetProperty("count").GetInt32() <= 0)
+                {
+                    Error(lifepath, "lifepath.dice", $"$.dice.{dieName}.count", "A lifepath die count must be positive.");
+                }
+
+                if (die.GetProperty("sides").GetInt32() <= 0)
+                {
+                    Error(lifepath, "lifepath.dice", $"$.dice.{dieName}.sides", "A lifepath die must have positive sides.");
+                }
+            }
+
+            foreach (string natural in new[] { "survival_natural_failure", "reenlistment_natural_success" })
+            {
+                if (lifepath.Json.TryGetProperty(natural, out JsonElement total)
+                    && (total.GetInt32() < dice.GetProperty("career").GetProperty("count").GetInt32()
+                        || total.GetInt32() > dice.GetProperty("career").GetProperty("count").GetInt32() * dice.GetProperty("career").GetProperty("sides").GetInt32()))
+                {
+                    Error(lifepath, "lifepath.dice", $"$.{natural}", $"{natural} must be a possible total of the configured career die.");
+                }
+            }
+
+            int skillMaximum = dice.GetProperty("skill").GetProperty("count").GetInt32() * dice.GetProperty("skill").GetProperty("sides").GetInt32();
+            int benefitMaximum = dice.GetProperty("benefit").GetProperty("count").GetInt32() * dice.GetProperty("benefit").GetProperty("sides").GetInt32();
+            JsonElement aging = lifepath.Json.GetProperty("aging");
+
             JsonElement careers = lifepath.Json.GetProperty("careers");
             if (careers.GetArrayLength() == 0)
             {
@@ -609,6 +638,15 @@ public sealed class RuleSetBuilder
                     }
                 }
 
+                JsonElement skillRolls = career.GetProperty("skill_rolls");
+                foreach (string rollKind in new[] { "base", "no_commission", "commission", "advancement" })
+                {
+                    if (skillRolls.GetProperty(rollKind).GetInt32() < 0)
+                    {
+                        Error(lifepath, "lifepath.skill-rolls", $"{careerPath}.skill_rolls.{rollKind}", "A skill-roll count cannot be negative.");
+                    }
+                }
+
                 JsonElement skills = career.GetProperty("skills");
                 if (skills.GetArrayLength() == 0)
                 {
@@ -628,14 +666,19 @@ public sealed class RuleSetBuilder
 
                     HashSet<int> rolls = [];
                     JsonElement entries = table.GetProperty("entries");
+                    if (entries.GetArrayLength() != skillMaximum)
+                    {
+                        Error(lifepath, "lifepath.table-roll", $"{tablePath}.entries", $"A skill table for the configured die needs exactly {skillMaximum} entries, one for each total from 1 through {skillMaximum}.");
+                    }
+
                     for (int entryIndex = 0; entryIndex < entries.GetArrayLength(); entryIndex++)
                     {
                         JsonElement entry = entries[entryIndex];
                         string entryPath = $"{tablePath}.entries[{entryIndex}]";
                         int roll = entry.GetProperty("roll").GetInt32();
-                        if (roll is < 1 or > 6 || !rolls.Add(roll))
+                        if (roll < 1 || roll > skillMaximum || !rolls.Add(roll))
                         {
-                            Error(lifepath, "lifepath.table-roll", $"{entryPath}.roll", "A skill table must have one distinct entry for each 1D6 result from 1 through 6.");
+                            Error(lifepath, "lifepath.table-roll", $"{entryPath}.roll", $"A skill table must have one distinct entry for each configured skill-die total from 1 through {skillMaximum}.");
                         }
 
                         CheckLifepathRaise(lifepath, entry, entryPath, entry.GetProperty("kind").GetString()!);
@@ -663,6 +706,39 @@ public sealed class RuleSetBuilder
                 }
 
                 JsonElement benefits = career.GetProperty("benefits");
+                if (benefits.GetProperty("per_term").GetInt32() < 0)
+                {
+                    Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits.per_term", "Benefits per successful term cannot be negative.");
+                }
+
+                JsonElement rankBenefits = benefits.GetProperty("rank_benefits");
+                HashSet<int> rankBenefitRanks = [];
+                for (int rankBenefitIndex = 0; rankBenefitIndex < rankBenefits.GetArrayLength(); rankBenefitIndex++)
+                {
+                    JsonElement rankBenefit = rankBenefits[rankBenefitIndex];
+                    string rankBenefitPath = $"{careerPath}.benefits.rank_benefits[{rankBenefitIndex}]";
+                    if (rankBenefit.GetProperty("min_rank").GetInt32() < 1 || !rankBenefitRanks.Add(rankBenefit.GetProperty("min_rank").GetInt32()))
+                    {
+                        Error(lifepath, "lifepath.benefits", $"{rankBenefitPath}.min_rank", "A rank benefit threshold must be distinct and positive.");
+                    }
+
+                    if (rankBenefit.GetProperty("count").GetInt32() < 0)
+                    {
+                        Error(lifepath, "lifepath.benefits", $"{rankBenefitPath}.count", "A rank benefit count cannot be negative.");
+                    }
+                }
+
+                int materialModifier = 0;
+                if (benefits.TryGetProperty("material_roll_modifier", out JsonElement materialRollModifier))
+                {
+                    if (materialRollModifier.GetProperty("min_rank").GetInt32() < 1)
+                    {
+                        Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits.material_roll_modifier.min_rank", "A material-roll rank threshold must be positive.");
+                    }
+
+                    materialModifier = materialRollModifier.GetProperty("amount").GetInt32();
+                }
+
                 if (!benefits.TryGetProperty("cash", out _) && !benefits.TryGetProperty("material", out _))
                 {
                     Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits", $"Career '{id}' needs a cash or material benefit table.");
@@ -675,7 +751,7 @@ public sealed class RuleSetBuilder
                         Error(lifepath, "lifepath.benefits", $"{careerPath}.benefits.cash", "A cash benefit table needs at least one row.");
                     }
 
-                    CheckLifepathCashBenefits(lifepath, cash, $"{careerPath}.benefits.cash");
+                    CheckLifepathCashBenefits(lifepath, cash, $"{careerPath}.benefits.cash", benefitMaximum);
                 }
 
                 if (benefits.TryGetProperty("material", out JsonElement material))
@@ -691,9 +767,9 @@ public sealed class RuleSetBuilder
                         JsonElement benefit = material[benefitIndex];
                         string path = $"{careerPath}.benefits.material[{benefitIndex}]";
                         int roll = benefit.GetProperty("roll").GetInt32();
-                        if (roll is < 1 or > 7 || !rolls.Add(roll))
+                        if (roll < 1 || roll > benefitMaximum + Math.Max(materialModifier, 0) || !rolls.Add(roll))
                         {
-                            Error(lifepath, "lifepath.benefit-roll", $"{path}.roll", "A material benefit table must have one distinct entry for each 1D6 result (or a result modified up to 7).");
+                            Error(lifepath, "lifepath.benefit-roll", $"{path}.roll", $"A material benefit table must have one distinct entry for each configured benefit-die total (and its configured modifier).");
                         }
 
                         string kind = benefit.GetProperty("kind").GetString()!;
@@ -718,12 +794,11 @@ public sealed class RuleSetBuilder
 
                     if (!rolls.Contains(1))
                     {
-                        Error(lifepath, "lifepath.benefit-roll", $"{careerPath}.benefits.material", "A material benefit table needs a row for 1 so every 1D6 result selects a benefit.");
+                        Error(lifepath, "lifepath.benefit-roll", $"{careerPath}.benefits.material", "A material benefit table needs a row for 1 so every configured benefit-die result selects a benefit.");
                     }
                 }
             }
 
-            if (lifepath.Json.TryGetProperty("aging", out JsonElement aging))
             {
                 if (aging.GetProperty("start_age").GetInt32() < 0)
                 {
@@ -765,23 +840,23 @@ public sealed class RuleSetBuilder
         bool hasCheck = roll.TryGetProperty("check", out _);
         if (hasStat && hasCheck)
         {
-            Error(lifepath, "lifepath.throw", path, "A career throw needs exactly one of \"stat\" (a 2D6 characteristic throw) or \"check\" (an existing check definition).");
+            Error(lifepath, "lifepath.throw", path, "A career throw needs exactly one of \"stat\" (a configured characteristic throw) or \"check\" (an existing check definition).");
         }
 
-        // Re-enlistment is commonly a raw 2D6 throw with no characteristic.
+        // Re-enlistment is commonly a raw configured career throw with no characteristic.
         if (!hasStat && !hasCheck && !path.EndsWith(".reenlistment", StringComparison.Ordinal))
         {
-            Error(lifepath, "lifepath.throw", path, "A career throw needs \"stat\" (a 2D6 characteristic throw) or \"check\" (an existing check definition); only reenlistment may be a raw 2D6 throw.");
+            Error(lifepath, "lifepath.throw", path, "A career throw needs \"stat\" (a configured characteristic throw) or \"check\" (an existing check definition); only reenlistment may be a raw career throw.");
         }
 
         if (hasStat && !roll.TryGetProperty("target", out _))
         {
-            Error(lifepath, "lifepath.throw", path, "A stat career throw needs \"target\": the number a 2D6 total must reach.");
+            Error(lifepath, "lifepath.throw", path, "A stat career throw needs \"target\": the number the configured career-die total must reach.");
         }
 
         if (!hasStat && !hasCheck && !roll.TryGetProperty("target", out _))
         {
-            Error(lifepath, "lifepath.throw", path, "A raw reenlistment throw needs \"target\": the number a 2D6 total must reach.");
+            Error(lifepath, "lifepath.throw", path, "A raw reenlistment throw needs \"target\": the number the configured career-die total must reach.");
         }
     }
 
@@ -803,7 +878,7 @@ public sealed class RuleSetBuilder
         }
     }
 
-    private void CheckLifepathCashBenefits(Definition lifepath, JsonElement cash, string path)
+    private void CheckLifepathCashBenefits(Definition lifepath, JsonElement cash, string path, int maximum)
     {
         HashSet<int> rolls = [];
         for (int index = 0; index < cash.GetArrayLength(); index++)
@@ -811,9 +886,9 @@ public sealed class RuleSetBuilder
             JsonElement benefit = cash[index];
             string at = $"{path}[{index}]";
             int roll = benefit.GetProperty("roll").GetInt32();
-            if (roll is < 1 or > 7 || !rolls.Add(roll))
+            if (roll < 1 || roll > maximum || !rolls.Add(roll))
             {
-                Error(lifepath, "lifepath.benefit-roll", $"{at}.roll", "A cash benefit table must have one distinct entry for each 1D6 result (or a result modified up to 7).");
+                Error(lifepath, "lifepath.benefit-roll", $"{at}.roll", $"A cash benefit table must have one distinct entry for each configured benefit-die total from 1 through {maximum}.");
             }
 
             if (benefit.GetProperty("amount").GetInt32() < 0)
@@ -824,7 +899,7 @@ public sealed class RuleSetBuilder
 
         if (!rolls.Contains(1))
         {
-            Error(lifepath, "lifepath.benefit-roll", path, "A cash benefit table needs a row for 1 so every 1D6 result selects a benefit.");
+            Error(lifepath, "lifepath.benefit-roll", path, "A cash benefit table needs a row for 1 so every configured benefit-die result selects a benefit.");
         }
     }
 
