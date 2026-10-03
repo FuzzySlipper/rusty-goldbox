@@ -213,11 +213,12 @@ class) and otherwise from the class's own `xp` table; a class with no levels
 left leaves the next level waiting for another class. Features fill the
 grants of creation, the advancement and the class level in that order. A
 character file stores its choices, its tracks' current values (and the level
-track's maximum), each level's class, gain and features, and the module IDs
-and versions it was made under. Reading it needs each of those
+track's maximum), each level's class, gain and features, staged creation's
+evaluated choice values, and the module IDs and versions it was made under. Reading it needs each of those
 modules loaded at a compatible version; extra modules, such as a campaign that
-requires the ruleset, are fine. Derived values are never stored; the sheet
-computes them.
+requires the ruleset, are fine. Ordinary derived values are never stored; the
+sheet computes them, while staged creation keeps its evaluated first-stage
+values so a later choice uses the same Engine rolls.
 
 Candidate modules whose manifests have errors are skipped during resolution
 and named in "not found" messages; their own errors are reported when they
@@ -262,7 +263,8 @@ creation is rolled with `roll` first; the party member then carries its actual
 attributes and `skillPoints` budgets/base values in the projection. The DOM
 submits a second `skills` action with profession and personal allocations, and
 `GameSession` sends that choice to `CharacterRules` before the character can
-enter the campaign. The character file persists the committed allocation.
+enter the campaign. The character file persists the pending first-stage values
+and the committed allocation.
 
 `SceneView` draws play in a window at the top left of the screen
 (`SceneView.Window`; the Engine measures camera viewports and sprite

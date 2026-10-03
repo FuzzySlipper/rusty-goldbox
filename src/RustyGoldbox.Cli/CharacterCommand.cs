@@ -410,16 +410,23 @@ internal static class CharacterCommand
                     return $"--skill amount '{number}' must be a nonnegative number in '{value}'.\n{Usage}";
                 }
 
-                switch (kind)
+                try
                 {
-                    case "profession":
-                        profession += points;
-                        break;
-                    case "personal":
-                        personal += points;
-                        break;
-                    default:
-                        return $"--skill allocation '{kind}' must be profession or personal in '{value}'.\n{Usage}";
+                    switch (kind)
+                    {
+                        case "profession":
+                            profession = checked(profession + points);
+                            break;
+                        case "personal":
+                            personal = checked(personal + points);
+                            break;
+                        default:
+                            return $"--skill allocation '{kind}' must be profession or personal in '{value}'.\n{Usage}";
+                    }
+                }
+                catch (OverflowException)
+                {
+                    return $"--skill allocation in '{value}' is too large to calculate safely.\n{Usage}";
                 }
             }
 

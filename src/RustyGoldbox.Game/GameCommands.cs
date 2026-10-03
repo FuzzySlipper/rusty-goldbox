@@ -217,7 +217,11 @@ internal static class GameCommands
 
     private static List<SkillAllocation> Skills(JsonElement payload)
     {
-        JsonElement value = payload.GetProperty("skills");
+        if (!payload.TryGetProperty("skills", out JsonElement value))
+        {
+            throw new PayloadException("\"skills\" must be an array of objects with skill, profession and personal numbers");
+        }
+
         if (value.ValueKind != JsonValueKind.Array)
         {
             throw new PayloadException("\"skills\" must be an array of objects with skill, profession and personal numbers");

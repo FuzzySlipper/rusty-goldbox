@@ -25,6 +25,7 @@ public sealed class GameTests
     [InlineData("""{ "action": "roll", "name": " ", "race": "classic:human", "class": "classic:fighter" }""", "\"name\" must be non-empty text")]
     [InlineData("""{ "action": "roll", "name": "A", "race": "classic:human", "class": "classic:fighter", "features": [1] }""", "\"features\" must be an array of non-empty text")]
     [InlineData("""{ "action": "roll", "name": "A", "skills": [1] }""", "Each \"skills\" entry must have a non-empty text \"skill\".")]
+    [InlineData("""{ "action": "skills", "member": 0 }""", "\"skills\" must be an array of objects with skill, profession and personal numbers")]
     [InlineData("""{ "action": "drop", "member": "0" }""", "\"member\" must be a whole number")]
     [InlineData("""{ "action": "open", "campaign": "x", "seed": 7 }""", "\"seed\" must be non-empty text")]
     [InlineData("""{ "action": "save", "slot": "../escape" }""", "isn't a save slot name")]
@@ -95,6 +96,22 @@ public sealed class GameTests
             Assert.Equal(90, draft["skillPoints"]!["personal"]!.GetValue<double>());
             Assert.Equal(24, draft["skillPoints"]!["skills"]!.AsArray().Single(skill => skill!["id"]!.GetValue<string>() == "dodge")!["current"]!.GetValue<double>());
 
+            Run(session, engine, """{ "action": "begin" }""");
+            Assert.Equal(Screen.Party, session.Screen);
+            Assert.Contains("staged skill choices", Assert.Single(session.Notes), StringComparison.Ordinal);
+
+            Run(session, engine, """
+                {
+                  "action": "skills",
+                  "member": 0,
+                  "skills": [
+                    { "skill": "sword", "profession": 79228162514264337593543950335 },
+                    { "skill": "shield", "profession": 79228162514264337593543950335 }
+                  ]
+                }
+                """);
+            Assert.Contains("too large", Assert.Single(session.Notes), StringComparison.Ordinal);
+
             Run(session, engine, """
                 {
                   "action": "skills",
@@ -112,6 +129,9 @@ public sealed class GameTests
             Assert.Contains("Committed staged skill points", Assert.Single(session.Notes), StringComparison.Ordinal);
             Character character = Assert.Single(session.Party);
             Assert.Equal(205, new Core.Rules.Evaluator(session.Set!.Rules!, null).Stat(character.ToCreature(), "sword").Number);
+
+            Run(session, engine, """{ "action": "begin" }""");
+            Assert.Equal(Screen.Play, session.Screen);
         });
     }
 

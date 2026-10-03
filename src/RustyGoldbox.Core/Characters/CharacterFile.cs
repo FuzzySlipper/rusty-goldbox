@@ -74,6 +74,19 @@ public static class CharacterFile
             new("profession", new Definitions.NumberKind(), true, "Profession points spent on the skill."),
             new("personal", new Definitions.NumberKind(), true, "Personal points spent on the skill."),
         ])), false, "Profession and personal points already committed by staged creation."),
+        new("skill_point_options", new Definitions.ObjectKind(
+        [
+            new("profession", new Definitions.NumberKind(), true, "The evaluated profession budget from the first creation stage."),
+            new("personal", new Definitions.NumberKind(), true, "The evaluated personal budget from the first creation stage."),
+            new("skills", new Definitions.ListKind(new Definitions.ObjectKind(
+            [
+                new("id", new Definitions.TextKind(), true, "Derived skill ID."),
+                new("base", new Definitions.NumberKind(), true, "The evaluated skill base from the first creation stage."),
+                new("current", new Definitions.NumberKind(), true, "The evaluated current skill value from the first creation stage."),
+                new("profession", new Definitions.BooleanKind(), true, "Whether the selected profession allows points on this skill."),
+            ])), true, "The evaluated skill choices."),
+        ]), false, "Evaluated staged skill budgets, bases and profession eligibility."),
+        new("skill_points_committed", new Definitions.BooleanKind(), false, "Whether the staged skill choices have been committed."),
         new("skill_marks", new Definitions.MapKind(new Definitions.StatKind(false), new Definitions.IntegerKind()), false, "Successful skill uses waiting for an improvement check."),
         new("milestone_features", new Definitions.ListKind(new Definitions.ReferenceKind("feature")), false, "Features granted by milestones outside class levels."),
         new("tracks", new Definitions.MapKind(new Definitions.TextKind(), new Definitions.ObjectKind(
@@ -237,6 +250,30 @@ public static class CharacterFile
                 }
 
                 writer.WriteEndObject();
+            }
+
+            if (character.SkillPointData is SkillPointOptions options)
+            {
+                writer.WriteStartObject("skill_point_options");
+                writer.WriteNumber("profession", options.Profession);
+                writer.WriteNumber("personal", options.Personal);
+                writer.WriteStartArray("skills");
+                foreach (SkillPointOption skill in options.Skills)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("id", skill.Skill);
+                    writer.WriteNumber("base", skill.Base);
+                    writer.WriteNumber("current", skill.Current);
+                    writer.WriteBoolean("profession", skill.ProfessionAllowed);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                if (character.SkillPointsCommitted)
+                {
+                    writer.WriteBoolean("skill_points_committed", true);
+                }
             }
 
             if (character.SkillMarks.Count > 0)
@@ -435,6 +472,7 @@ public static class CharacterFile
             ReadAttributes(root, character);
             ReadStatBonuses(root, character);
             ReadSkillAllocations(root, character);
+            ReadSkillPointOptions(root, character);
             ReadSkillMarks(root, character);
             ReadList(root, "milestone_features", DefinitionTypes.Feature, character.MilestoneFeatures);
             ReadTracks(root, character);
@@ -509,6 +547,13 @@ public static class CharacterFile
                 }
 
                 character.Portrait = asset;
+            }
+
+            List<ModuleDiagnostic> stagedProblems = [];
+            CharacterRules.ValidateSkillPointState(_rules, character, stagedProblems);
+            foreach (ModuleDiagnostic problem in stagedProblems)
+            {
+                Error(problem.JsonPath ?? "$.skill_point_options", problem.Message);
             }
 
             if (problems.Count == _before)
@@ -998,6 +1043,56 @@ public static class CharacterFile
                 }
 
                 character.SkillAllocations[entry.Name] = new SkillAllocation(entry.Name, professionPoints, personalPoints);
+            }
+        }
+
+        private void ReadSkillPointOptions(JsonElement root, Character character)
+        {
+            character.SkillPointsCommitted = Flag(root, "skill_points_committed");
+            if (!root.TryGetProperty("skill_point_options", out JsonElement options))
+            {
+                return;
+            }
+
+            if (options.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.skill_point_options", "\"skill_point_options\" must be an object with profession, personal and skills.");
+                return;
+            }
+
+            decimal? profession = Number(options, "profession", "$.skill_point_options");
+            decimal? personal = Number(options, "personal", "$.skill_point_options");
+            if (!options.TryGetProperty("skills", out JsonElement skills) || skills.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.skill_point_options.skills", "\"skills\" must be an array of { \"id\", \"base\", \"current\", \"profession\" }.");
+                return;
+            }
+
+            List<SkillPointOption> offered = [];
+            int index = 0;
+            foreach (JsonElement entry in skills.EnumerateArray())
+            {
+                string at = $"$.skill_point_options.skills[{index}]";
+                index++;
+                if (entry.ValueKind != JsonValueKind.Object
+                    || !entry.TryGetProperty("id", out JsonElement id)
+                    || id.ValueKind != JsonValueKind.String
+                    || string.IsNullOrWhiteSpace(id.GetString())
+                    || Number(entry, "base", at) is not decimal baseChance
+                    || Number(entry, "current", at) is not decimal current
+                    || !entry.TryGetProperty("profession", out JsonElement allowed)
+                    || (allowed.ValueKind != JsonValueKind.True && allowed.ValueKind != JsonValueKind.False))
+                {
+                    Error(at, "Each staged skill option needs text id, numeric base/current and a true/false profession field.");
+                    continue;
+                }
+
+                offered.Add(new SkillPointOption(id.GetString()!, baseChance, current, allowed.GetBoolean()));
+            }
+
+            if (profession is decimal professionPoints && personal is decimal personalPoints && problems.Count == _before)
+            {
+                character.SkillPointData = new SkillPointOptions(professionPoints, personalPoints, offered);
             }
         }
 

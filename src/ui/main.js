@@ -312,7 +312,7 @@ export function mountProductUi(root, context) {
 
     const memberKey = `${index}:${member.name}:${(member.attributes ?? []).join('|')}`;
     const committed = new Map((member.skillAllocations ?? []).map((allocation) => [allocation.id, allocation]));
-    const hasCommitted = committed.size > 0;
+    const hasCommitted = Boolean(skillPoints.committed) || committed.size > 0;
     const fields = [];
     const rows = skillPoints.skills.map((skill) => {
       const saved = committed.get(skill.id) ?? {};

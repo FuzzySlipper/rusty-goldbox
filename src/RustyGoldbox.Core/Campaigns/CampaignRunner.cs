@@ -45,6 +45,15 @@ public sealed partial class CampaignRunner
         state.Party.AddRange(party);
         foreach (Character character in state.Party)
         {
+            if (character.HasPendingSkillPoints)
+            {
+                throw new RuleFailure(new ModuleDiagnostic(
+                    "play.skill-points",
+                    $"{character.Name} still has staged skill choices; commit them before starting the campaign with character skills.",
+                    character.Creation.Module,
+                    character.Creation.File));
+            }
+
             // A new adventure: only a character already calling on a former class forfeits its experience.
             character.ForfeitsExperience = character.UsesFormerClasses;
         }

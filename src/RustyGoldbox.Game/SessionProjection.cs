@@ -426,6 +426,7 @@ internal static class SessionProjection
             {
                 ["profession"] = (double)skillPoints.Profession,
                 ["personal"] = (double)skillPoints.Personal,
+                ["committed"] = character.SkillPointsCommitted,
                 ["skills"] = new JsonArray(skillPoints.Skills.Select(skill => (JsonNode)new JsonObject
                 {
                     ["id"] = skill.Skill,

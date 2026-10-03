@@ -423,6 +423,19 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 ok = true,
                 saved_to = path is null ? null : Display(path),
                 character = JsonDocument.Parse(CharacterFile.ToJson(character)).RootElement,
+                skill_points = character.SkillPointData is SkillPointOptions options ? new
+                {
+                    profession = options.Profession,
+                    personal = options.Personal,
+                    committed = character.SkillPointsCommitted,
+                    skills = options.Skills.Select(skill => new
+                    {
+                        id = skill.Skill,
+                        @base = skill.Base,
+                        current = skill.Current,
+                        profession = skill.ProfessionAllowed,
+                    }),
+                } : null,
                 next_level_experience = character.NextLevelExperience(rules),
                 level_waiting = character.LevelWaiting(rules),
                 class_progress = !rules.ExperienceSplit ? null : character.ClassProgress().Select(progress => new { @class = progress.Class.QualifiedId, experience = progress.Experience, next_level_experience = progress.Next }),
@@ -492,7 +505,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             writer.WriteLine($"  features: {string.Join(", ", character.Features.Select(feature => $"{feature.Name} ({feature.Json.GetProperty("kind").GetString()})"))}");
         }
 
-        if (character.SkillAllocations.Count == 0 && StagedSkillPointData(rules, character) is { } skillPoints)
+        if (!character.SkillPointsCommitted && StagedSkillPointData(rules, character) is { } skillPoints)
         {
             writer.WriteLine($"  skill points: profession {skillPoints.Profession}, personal {skillPoints.Personal}; allocate with character skills");
             writer.WriteLine($"  staged skills: {string.Join(", ", skillPoints.Skills.Select(skill => $"{skill.Skill} {skill.Current} (base {skill.Base}{(skill.ProfessionAllowed ? ", profession" : "")})"))}");

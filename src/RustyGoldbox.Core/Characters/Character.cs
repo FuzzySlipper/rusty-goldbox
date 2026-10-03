@@ -138,6 +138,15 @@ public sealed class Character
     /// <summary>Profession and personal points already committed during staged creation.</summary>
     public Dictionary<string, SkillAllocation> SkillAllocations { get; } = [];
 
+    /// <summary>The budgets, base values and profession eligibility rolled before staged skill choices.</summary>
+    public SkillPointOptions? SkillPointData { get; set; }
+
+    /// <summary>Whether the staged skill choices have been committed.</summary>
+    public bool SkillPointsCommitted { get; set; }
+
+    /// <summary>Whether this character still needs to commit its staged skill choices.</summary>
+    public bool HasPendingSkillPoints => SkillPointData is not null && !SkillPointsCommitted;
+
     /// <summary>Successful uses waiting for an improvement check, by skill ID.</summary>
     public Dictionary<string, int> SkillMarks { get; } = [];
 
@@ -180,6 +189,10 @@ public sealed class Character
             Lifepath = Lifepath, Age = Age, LifepathEnded = LifepathEnded,
             Experience = Experience, Portrait = Portrait, Npc = Npc,
             UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
+            SkillPointsCommitted = SkillPointsCommitted,
+            SkillPointData = SkillPointData is SkillPointOptions options
+                ? new SkillPointOptions(options.Profession, options.Personal, options.Skills.ToList())
+                : null,
             Prepared = Prepared?.ToList(),
         };
         copy.Levels.AddRange(Levels);

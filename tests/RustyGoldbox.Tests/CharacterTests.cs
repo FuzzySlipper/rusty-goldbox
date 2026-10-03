@@ -447,6 +447,119 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void CharacterCliRejectsOverflowingSkillAllocation()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        (int code, string output) = CampaignTests.Run(scratch, "character", "new", "--module", module,
+            "--creation", "staged", "--feature", "staged_soldier", "--skill",
+            "axe=profession:79228162514264337593543950335+profession:79228162514264337593543950335");
+
+        Assert.Equal(GoldboxCli.Usage, code);
+        Assert.Contains("too large to calculate safely", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StagedRollValuesPersistAcrossTheChoiceCommit()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/int.json", """{ "type": "attribute", "id": "int", "name": "Intelligence", "min": 3, "max": 18, "default": 10 }""");
+        modules.Write("rules/skill.json", """{ "type": "derived", "id": "skill", "name": "Skill", "value": "1d6" }""");
+        modules.Write("rules/profession.json", """{ "type": "feature", "id": "profession", "name": "Profession", "kind": "staged-profession", "skills": ["skill"] }""");
+        modules.Write("rules/staged.json", """
+            { "type": "character-creation", "id": "staged", "name": "Staged", "attributes": ["str", "int"],
+              "method": "roll", "attribute_roll": "10",
+              "skill_points": { "profession": "1d6", "personal": "1d6", "skills": { "skill": "1d6" } },
+              "features": [ { "kind": "staged-profession", "count": 1 } ] }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        Dictionary<string, decimal> attributes = new() { ["str"] = 10, ["int"] = 10 };
+        Character character = WithDice(1, dice => CharacterRules.Create(set.Rules!, Character.StampsOf(set),
+            new CreationRequest("Rook", "warrior", null, Attributes: attributes, Creation: "staged", Features: ["profession"]), dice, []))!;
+        SkillPointOptions before = character.SkillPointData!;
+        List<ModuleDiagnostic> problems = [];
+        SkillPointOptions shown = CharacterRules.GetSkillPointOptions(set.Rules!, character, problems)!;
+        Assert.Empty(problems);
+        Assert.Equal(before.Profession, shown.Profession);
+        Assert.Equal(before.Personal, shown.Personal);
+        Assert.Equal(before.Skills.Select(skill => (skill.Skill, skill.Base, skill.Current, skill.ProfessionAllowed)),
+            shown.Skills.Select(skill => (skill.Skill, skill.Base, skill.Current, skill.ProfessionAllowed)));
+
+        bool applied = WithDice(2, dice => CharacterRules.ApplySkillPoints(set.Rules!, character,
+            [new SkillAllocation("skill", before.Profession, before.Personal)], dice, problems));
+        Assert.True(applied);
+        Assert.Empty(problems);
+        SkillPointOption option = Assert.Single(character.SkillPointData!.Skills);
+        Assert.Equal((option.Base, option.Current), (before.Skills[0].Base, before.Skills[0].Current));
+        Assert.Equal(before.Profession, character.SkillPointData.Profession);
+        Assert.Equal(before.Personal, character.SkillPointData.Personal);
+    }
+
+    [Fact]
+    public void CharacterFileRejectsForgedStagedAllocationAndBonus()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 100), new SkillAllocation("spear", Profession: 150), new SkillAllocation("brawl", Personal: 100)]))!;
+        string path = Path.Combine(scratch.Root, "forged.json");
+        System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
+        forged["skill_allocations"]!["axe"]!["profession"] = 999;
+        forged["stat_bonuses"]!["axe"] = 1234;
+        File.WriteAllText(path, forged.ToJsonString());
+
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(CharacterFile.Read(path, set, problems));
+        Assert.Contains(problems, problem => problem.JsonPath == "$.skill_allocations" && problem.Message.Contains("budget", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.JsonPath == "$.stat_bonuses.axe" && problem.Message.Contains("require", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CharacterNewJsonIncludesStagedOptions()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        (int code, string output) = CampaignTests.Run(scratch, "character", "new", "--module", module, "--creation", "staged",
+            "--name", "Rook", "--feature", "staged_soldier", "--attributes", "str=12,con=12,siz=12,int=10,pow=12,dex=12,cha=12", "--json");
+        Assert.Equal(0, code);
+        System.Text.Json.JsonElement json = System.Text.Json.JsonDocument.Parse(output).RootElement;
+        System.Text.Json.JsonElement options = json.GetProperty("skill_points");
+        Assert.Equal(250, options.GetProperty("profession").GetDecimal());
+        Assert.Equal(100, options.GetProperty("personal").GetDecimal());
+        Assert.Contains(options.GetProperty("skills").EnumerateArray(), skill => skill.GetProperty("id").GetString() == "dodge" && skill.GetProperty("base").GetDecimal() == 24 && skill.GetProperty("profession").GetBoolean());
+    }
+
+    [Fact]
+    public void PendingStagedCharacterCannotStartCampaignThroughCli()
+    {
+        using TempModules scratch = new();
+        string campaign = scratch.Module("staged-campaign", "campaign", requires: $"{TempModules.Require("universal-d100", "0.1.0")}, {TempModules.Require("placeholder-art", "0.1.0")}");
+        scratch.Write("staged-campaign/campaign.json", """
+            { "type": "campaign", "id": "start", "name": "Staged campaign", "start": { "area": "hall", "entry": "start" }, "party": { "min": 1, "max": 1 } }
+            """);
+        scratch.Write("staged-campaign/hall.json", """
+            { "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "start": { "at": [0, 0], "facing": "east" } } }
+            """);
+        (int created, string creationOutput) = CampaignTests.Run(scratch, "character", "new", "--module", Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100"),
+            "--creation", "staged", "--name", "Rook", "--feature", "staged_soldier", "--attributes", "str=12,con=12,siz=12,int=10,pow=12,dex=12,cha=12", "--out", "rook.json");
+        Assert.True(created == 0, creationOutput);
+
+        (int code, string output) = CampaignTests.Run(scratch, "play", "--campaign", campaign, "--party", "rook.json",
+            "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+        Assert.Equal(1, code);
+        Assert.Contains("staged skill choices", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ToughnessRaisesTheMaximumEachTimeItIsTaken()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);
@@ -667,10 +780,15 @@ public sealed class CharacterTests
 
     private static T WithDice<T>(Func<DiceRoller, T> work)
     {
+        return WithDice(1, work);
+    }
+
+    private static T WithDice<T>(ulong seed, Func<DiceRoller, T> work)
+    {
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "tests"));
+            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, "tests"));
             return work(new DiceRoller(engine.Random, stream));
         });
     }

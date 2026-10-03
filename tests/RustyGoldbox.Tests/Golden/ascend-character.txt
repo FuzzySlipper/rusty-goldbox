@@ -230,6 +230,7 @@ $ goldbox character show ilse.json --module tests/RustyGoldbox.Tests/Fixtures/as
     "equipment": [],
     "conditions": []
   },
+  "skill_points": null,
   "next_level_experience": 3000,
   "level_waiting": false,
   "class_progress": null,

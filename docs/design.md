@@ -264,8 +264,9 @@ profession and personal budget expressions and a map of derived-skill base
 expressions. After the attributes and profession features are known, the CLI
 and Game show those actual values and accept separate point allocations;
 profession points are accepted only for skills listed by the chosen profession,
-while personal points may use any listed skill. The committed allocation and
-the resulting stat bonus are saved with the character. A ruleset may offer
+while personal points may use any listed skill. The evaluated budgets, base
+values and profession eligibility are saved with a pending draft, then the
+committed allocation and resulting stat bonus are saved with the character. A ruleset may offer
 several creation definitions and mark one the default.
 
 A character-creation definition may also name a **lifepath** definition. It
