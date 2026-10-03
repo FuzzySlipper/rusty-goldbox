@@ -1,0 +1,21 @@
+{
+  "type": "action",
+  "id": "close_to_range",
+  "name": "Close to range",
+  "cost": {
+    "move": 1
+  },
+  "target": "enemy",
+  "parameters": [
+    "range"
+  ],
+  "valid_target": "combat.distance > use.range or not combat.sight",
+  "prefer": "0 - combat.distance",
+  "always": [
+    {
+      "op": "move",
+      "distance": "floor(self.speed / 5)",
+      "within": "use.range"
+    }
+  ]
+}

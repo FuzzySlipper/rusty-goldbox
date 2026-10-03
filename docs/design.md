@@ -233,8 +233,10 @@ A combat definition may put its fights on a **field**: a grid of cells with
 a distance metric (diagonal steps counting 1, or only straight steps). The
 sides start at opposite edges; an action's `range` limits its targets to that
 many cells, `combat.distance` and `combat.nearest` read how far apart
-creatures are, and the `move` operation steps the actor toward or away from
-its target through free cells, so movement costs whatever budget the moving
+creatures are and `combat.sight` whether one sees the other, and the `move`
+operation steps the actor toward its target (until `within` range and in
+sight, so a caster stops at casting range) or away from it (until `beyond`
+a distance) through free cells, so movement costs whatever budget the moving
 action costs. The field declares kinds of **terrain** by one-character keys
 (impassable, costing more movement to enter, blocking sight) and an
 encounter lays them out as rows of text, so the same field can be a corridor

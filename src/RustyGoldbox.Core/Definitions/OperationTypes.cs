@@ -78,10 +78,12 @@ public static class OperationTypes
 
     public static DefinitionType Move { get; } = new(
         "move",
-        "Moves the creature acting on the combat field, cell by cell, toward its target (stopping within 1) or away from it. Creatures still fighting block cells. In a fight without a field it does nothing.",
+        "Moves the creature acting on the combat field, cell by cell, toward its target the cheapest way round obstacles (stopping once within reach and in sight) or away from it. Creatures still fighting and impassable terrain block cells. In a fight without a field it does nothing.",
         [
-            new("distance", new ExpressionKind(ExprType.Number, ActionRoots), true, "Most cells to move, for example \"floor(self.speed / 5)\"."),
+            new("distance", new ExpressionKind(ExprType.Number, ActionRoots), true, "Most movement to spend: 1 a cell, or the terrain's cost to enter. For example \"floor(self.speed / 5)\"."),
             new("toward", new EnumKind(["target", "away"]), false, "Toward the action's target (the default) or away from it."),
+            new("within", new ExpressionKind(ExprType.Number, ActionRoots), false, "Moving toward: stop once the target is this close and in sight, for example \"use.range\" to close only to shooting range; without it, 1 (adjacent)."),
+            new("beyond", new ExpressionKind(ExprType.Number, ActionRoots), false, "Moving away: stop once at least this far, for example \"3\" to keep out of a charge; without it, use the whole distance."),
         ],
         """{ "op": "move", "distance": "floor(self.speed / 5)" }""");
 

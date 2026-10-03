@@ -75,78 +75,76 @@ Round 1.
   Kara rolls 7 for initiative.  [1d20: 6 = 6]
   Cinder imp 1 rolls 2 for initiative.  [1d20: 2 = 2]
   Cinder imp 2 rolls 8 for initiative.  [1d20: 8 = 8]
-  Cinder imp 2 uses Advance on Kara.
-  Cinder imp 2 moves 6 cells to (1, 0).
+  Cinder imp 2 uses Close to range on Kara.
+  Cinder imp 2 moves 2 cells to (6, 0).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 18 + 3 = 21 against 11: success.  [1d20: 18 = 18]
   Kara loses 1 hit points (11 left).
   Kara is Burning.  [1d4: 4 = 4]
   Kara loses 4 hit points (7 left).
+  Kara uses Advance on Cinder imp 2.
+  Kara moves 5 cells to (5, 0).
   Kara uses Melee attack (Longsword) on Cinder imp 2.
   Kara rolls Attack: 11 + 4 = 15 against 14: success.  [1d20: 11 = 11]
   Cinder imp 2 loses 6 hit points (3 left).  [1d8: 3 = 3]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
   Kara rolls Save to end: 15 against 10: success.  [1d20: 15 = 15]
   Kara is no longer Burning.
-  Cinder imp 1 uses Advance on Kara.
-  Cinder imp 1 moves 6 cells to (1, 1).
   Cinder imp 1 uses Ember on Kara.
   Cinder imp 1 rolls Attack: 5 + 3 = 8 against 11: failure.  [1d20: 5 = 5]
 Round 2.
   Cinder imp 2 uses Skitter on Kara.
   Kara reacts to Cinder imp 2: Attack of opportunity.
   Kara uses Melee attack (Longsword) on Cinder imp 2.
-  Kara rolls Attack: 2 + 4 + 2 modifiers = 8 against 14: failure.  [1d20: 2 = 2]
-  Cinder imp 2 moves 2 cells to (3, 0).
+  Kara rolls Attack: 2 + 4 = 6 against 14: failure.  [1d20: 2 = 2]
+  Cinder imp 2 moves 1 cell to (7, 0).
   Cinder imp 2 uses Ember on Kara.
   Cinder imp 2 rolls Attack: 14 + 3 = 17 against 11: success.  [1d20: 14 = 14]
   Kara loses 1 hit points (6 left).
   Kara is Burning.  [1d4: 1 = 1]
   Kara loses 1 hit points (5 left).
-  Kara uses Melee attack (Longsword) on Cinder imp 1.
-  Kara rolls Attack: 10 + 4 + 2 modifiers = 16 against 14: success.  [1d20: 10 = 10]
-  Cinder imp 1 loses 5 hit points (4 left).  [1d8: 2 = 2]
-  Kara uses Aim on Kara.
-  Kara is Focused for 1 round.
+  Kara uses Advance on Cinder imp 1.
+  Kara moves 1 cell to (6, 0).
+  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Kara rolls Attack: 10 + 4 = 14 against 14: success.  [1d20: 10 = 10]
+  Cinder imp 2 loses 5 hit points (-2 left).  [1d8: 2 = 2]
+  Cinder imp 2 is out of the fight.
   Kara rolls Save to end: 8 against 10: failure.  [1d20: 8 = 8]
   Cinder imp 1 uses Skitter on Kara.
   Kara reacts to Cinder imp 1: Attack of opportunity.
   Kara uses Melee attack (Longsword) on Cinder imp 1.
-  Kara rolls Attack: 8 + 4 + 2 modifiers = 14 against 14: success.  [1d20: 8 = 8]
-  Cinder imp 1 loses 4 hit points (0 left).  [1d8: 1 = 1]
-  Cinder imp 1 is out of the fight.
+  Kara rolls Attack: 8 + 4 = 12 against 14: failure.  [1d20: 8 = 8]
+  Cinder imp 1 moves 2 cells to (7, 3).
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 5 + 3 = 8 against 11: failure.  [1d20: 5 = 5]
 Round 3.
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 8 + 3 = 11 against 11: success.  [1d20: 8 = 8]
-  Kara loses 1 hit points (4 left).  [1d6: 1 = 1]
-  Cinder imp 2 uses Advance on Kara.
-  Cinder imp 2 moves 2 cells to (1, 0).
-  Kara loses 1 hit points (3 left).
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
-  Kara rolls Attack: 5 + 4 + 2 modifiers = 11 against 14: failure.  [1d20: 5 = 5]
+  Kara loses 1 hit points (4 left).
+  Kara uses Advance on Cinder imp 1.
+  Kara moves 2 cells to (6, 2).
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
+  Kara rolls Attack: 8 + 4 = 12 against 14: failure.  [1d20: 8 = 8]
+  Kara rolls Save to end: 15 against 10: success.  [1d20: 15 = 15]
+  Kara is no longer Burning.
+  Cinder imp 1 uses Skitter on Kara.
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 5 + 3 = 8 against 11: failure.  [1d20: 5 = 5]
+Round 4.
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
+  Kara rolls Attack: 16 + 4 = 20 against 14: success.  [1d20: 16 = 16]
+  Cinder imp 1 loses 5 hit points (4 left).  [1d8: 2 = 2]
   Kara uses Aim on Kara.
   Kara is Focused for 1 round.
-  Kara rolls Save to end: 16 against 10: success.  [1d20: 16 = 16]
-  Kara is no longer Burning.
-Round 4.
-  Cinder imp 2 uses Skitter on Kara.
-  Kara reacts to Cinder imp 2: Attack of opportunity.
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
-  Kara rolls Attack: 6 + 4 + 2 modifiers = 12 against 14: failure.  [1d20: 6 = 6]
-  Cinder imp 2 moves 2 cells to (3, 0).
-  Cinder imp 2 uses Ember on Kara.
-  Cinder imp 2 rolls Attack: 6 + 3 = 9 against 11: failure.  [1d20: 6 = 6]
-  Kara uses Advance on Cinder imp 2.
-  Kara moves 2 cells to (2, 1).
-  Kara uses Melee attack (Longsword) on Cinder imp 2.
+  Cinder imp 1 uses Skitter on Kara.
+  Cinder imp 1 uses Ember on Kara.
+  Cinder imp 1 rolls Attack: 6 + 3 = 9 against 11: failure.  [1d20: 6 = 6]
+Round 5.
+  Kara uses Melee attack (Longsword) on Cinder imp 1.
   Kara rolls Attack: 10 + 4 + 2 modifiers = 16 against 14: success.  [1d20: 10 = 10]
-  Cinder imp 2 loses 6 hit points (-3 left).  [1d8: 3 = 3]
-  Cinder imp 2 is out of the fight.
+  Cinder imp 1 loses 6 hit points (-2 left).  [1d8: 3 = 3]
+  Cinder imp 1 is out of the fight.
   Kara is no longer Focused.
-Party wins after 4 rounds.
-Party: Kara 3/12
-Cinder imps: Cinder imp 1 0/9 (out), Cinder imp 2 -3/9 (out)
+Party wins after 5 rounds.
+Party: Kara 4/12
+Cinder imps: Cinder imp 1 -2/9 (out), Cinder imp 2 -2/9 (out)
 [exit 0]
 
 $ goldbox sim combat --module tests/RustyGoldbox.Tests/Fixtures/ascend --party kara.json,mender.json --encounter bullies --seed 14

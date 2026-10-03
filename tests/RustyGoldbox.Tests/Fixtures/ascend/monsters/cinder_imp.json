@@ -19,7 +19,8 @@
       "action": "ember"
     },
     {
-      "action": "advance"
+      "action": "close_to_range",
+      "range": "6"
     }
   ]
 }

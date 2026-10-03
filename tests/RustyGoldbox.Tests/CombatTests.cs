@@ -399,6 +399,41 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void MovesStopInRangeAndSightOrKeepTheirDistance()
+    {
+        using TempModules modules = new();
+        string root = TerrainRuleset(modules);
+        modules.Write("rules/open.json", """{ "type": "encounter", "id": "open", "name": "Open", "monsters": [ { "monster": "dummy", "count": "1" } ] }""");
+        modules.Write("rules/pillared.json", """
+            { "type": "encounter", "id": "pillared", "name": "Pillared", "monsters": [ { "monster": "dummy", "count": "1" } ], "terrain": [".....", "...#.", "....."] }
+            """);
+        modules.Write("rules/close_in.json", """
+            { "type": "action", "id": "close_in", "name": "Close in", "cost": { "turn": 1 }, "target": "enemy", "valid_target": "combat.distance > 2 or not combat.sight",
+              "always": [ { "op": "move", "distance": "6", "within": "2" } ] }
+            """);
+        modules.Write("rules/back_off.json", """
+            { "type": "action", "id": "back_off", "name": "Back off", "cost": { "turn": 1 }, "target": "enemy", "valid_target": "combat.distance < 3",
+              "always": [ { "op": "move", "toward": "away", "distance": "6", "beyond": "3" } ] }
+            """);
+        modules.Write("rules/spotter.json", """
+            { "type": "monster", "id": "spotter", "name": "Spotter", "tracks": { "hit_points": "50" }, "stats": { "str": "15" }, "actions": [ { "action": "close_in" } ], "xp": 0 }
+            """);
+        modules.Write("rules/skirmisher.json", """
+            { "type": "monster", "id": "skirmisher", "name": "Skirmisher", "tracks": { "hit_points": "50" }, "stats": { "str": "15" },
+              "actions": [ { "action": "back_off" }, { "action": "walk" } ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+
+        // Two cells short of the dummy is close enough...
+        Assert.Contains("Spotter moves 2 cells to (2, 1).", FightOn(rules, "open", "spotter"));
+        // ...unless a pillar blocks the line from there: round it to the nearest cell two away with a clear line.
+        Assert.Contains("Spotter moves 4 cells to (3, 2).", FightOn(rules, "pillared", "spotter"));
+        // Walks up, then backs off only until three away.
+        Assert.Equal(["Skirmisher moves 3 cells to (3, 1).", "Skirmisher moves 2 cells to (1, 1)."],
+            FightOn(rules, "open", "skirmisher", rounds: 2).Where(line => line.StartsWith("Skirmisher moves", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void TerrainIsCheckedAgainstTheField()
     {
         using TempModules modules = new();
@@ -459,8 +494,8 @@ public sealed class CombatTests
         return root;
     }
 
-    /// <summary>One round of the maze combat: the monster against the encounter, on its terrain.</summary>
-    private static List<string> FightOn(RuleSet rules, string encounterId, string monster)
+    /// <summary>Rounds of the maze combat (one by default): the monster against the encounter, on its terrain.</summary>
+    private static List<string> FightOn(RuleSet rules, string encounterId, string monster, int rounds = 1)
     {
         Definition combat = rules.Find(DefinitionTypes.Combat, "maze", out _)!;
         Definition encounter = rules.Find(DefinitionTypes.Encounter, encounterId, out _)!;
@@ -472,7 +507,7 @@ public sealed class CombatTests
             [
                 new CombatSide("Them", [Combatant.FromMonster(rules, fighter, fighter.Name, evaluator)]),
                 new CombatSide("Dummies", Encounters.Spawn(rules, encounter, dice)),
-            ], dice, 1, encounter);
+            ], dice, rounds, encounter);
         });
         return result.Facts.Select(fact => fact.Describe()).ToList();
     }

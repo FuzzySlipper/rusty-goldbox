@@ -63,6 +63,12 @@ public sealed class CombatRunner
         return _field is not null && from.Position is Cell a && to.Position is Cell b ? _field.Distance(a, b) : 1;
     }
 
+    /// <summary>Whether nothing on the field blocks the line of sight between two creatures; without a field, always.</summary>
+    private bool CanSee(Creature from, Creature to)
+    {
+        return _field is null || from.Position is not Cell a || to.Position is not Cell b || _field.CanSee(a, b);
+    }
+
     /// <summary>How far a creature is from its nearest enemy still fighting (0 with none).</summary>
     private decimal Nearest(Creature creature)
     {
@@ -100,7 +106,7 @@ public sealed class CombatRunner
         RollSurprise();
 
         // Budgets start full, so reactions can be taken before a creature's first turn.
-        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest);
+        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest, CanSee);
         foreach (Combatant member in Everyone)
         {
             Refill(member);
@@ -113,7 +119,7 @@ public sealed class CombatRunner
         while (winner is null && StandingSides() > 1 && round < maxRounds)
         {
             round++;
-            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest);
+            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest, CanSee);
             Record(new RoundFact(round));
             if (order is null || rollEachRound)
             {
@@ -523,7 +529,7 @@ public sealed class CombatRunner
         if (_field is not null && kind != "self" && action.Json.TryGetProperty("range", out _))
         {
             decimal range = Number(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
-            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range && Sees(actor, candidate)).ToList();
+            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range && CanSee(actor.Creature, candidate.Creature)).ToList();
         }
 
         if (action.Json.TryGetProperty("valid_target", out _))
@@ -548,12 +554,6 @@ public sealed class CombatRunner
             "hurt_ally" => [candidates.OrderByDescending(Missing).First()],
             _ => [candidates[0]],
         };
-    }
-
-    /// <summary>Whether nothing on the field blocks the line of sight between two creatures.</summary>
-    private bool Sees(Combatant from, Combatant to)
-    {
-        return _field is null || from.Creature.Position is not Cell a || to.Creature.Position is not Cell b || _field.CanSee(a, b);
     }
 
     /// <summary>What a creature has left on the combat's track.</summary>
@@ -780,10 +780,11 @@ public sealed class CombatRunner
     /// <summary>
     /// The move operation: the actor spends up to the distance in movement
     /// (1 a cell, or the terrain's cost) stepping toward its target along the
-    /// cheapest way round obstacles, stopping once within 1, or away from it,
-    /// each step to the open cell that most increases the distance. Creatures
-    /// still fighting and impassable terrain block cells. Without a field it
-    /// does nothing.
+    /// cheapest way round obstacles, stopping once within its "within" (1 by
+    /// default) and in sight, or away from it, each step to the open cell
+    /// that most increases the distance, stopping once at least "beyond".
+    /// Creatures still fighting and impassable terrain block cells. Without a
+    /// field it does nothing.
     /// </summary>
     private void Move(Definition owner, JsonElement operation, string path, Scope scope, Combatant actor, Combatant? target)
     {
@@ -794,14 +795,16 @@ public sealed class CombatRunner
 
         bool away = operation.TryGetProperty("toward", out JsonElement toward) && toward.GetString() == "away";
         decimal allowed = Number(owner, $"{path}.distance", scope);
+        decimal within = operation.TryGetProperty("within", out _) ? Number(owner, $"{path}.within", scope) : 1;
+        decimal? beyond = operation.TryGetProperty("beyond", out _) ? Number(owner, $"{path}.beyond", scope) : null;
         HashSet<Cell> blocked = Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
             .Select(member => member.Creature.Position!.Value)
             .ToHashSet();
-        Dictionary<Cell, int>? toGoal = away ? null : CostsToReach(goal, blocked);
+        Dictionary<Cell, int>? toGoal = away ? null : CostsToReach(goal, within, blocked);
         Cell here = start;
         decimal spent = 0;
         int steps = 0;
-        while (away || _field.Distance(here, goal) > 1)
+        while (away ? beyond is not decimal far || _field.Distance(here, goal) < far : !(_field.Distance(here, goal) <= within && _field.CanSee(here, goal)))
         {
             Cell? next = away ? StepAway(here, goal, blocked) : StepToward(here, toGoal!);
             if (next is not Cell step || spent + _field.Cost(step) > allowed)
@@ -839,10 +842,11 @@ public sealed class CombatRunner
     }
 
     /// <summary>
-    /// The least movement from each open cell to a cell within 1 of the goal
-    /// (0 there), going round impassable terrain and <paramref name="blocked"/> cells.
+    /// The least movement from each open cell to a cell within
+    /// <paramref name="within"/> of the goal and in sight of it (0 there),
+    /// going round impassable terrain and <paramref name="blocked"/> cells.
     /// </summary>
-    private Dictionary<Cell, int> CostsToReach(Cell goal, HashSet<Cell> blocked)
+    private Dictionary<Cell, int> CostsToReach(Cell goal, decimal within, HashSet<Cell> blocked)
     {
         Dictionary<Cell, int> costs = [];
         PriorityQueue<Cell, int> frontier = new();
@@ -851,7 +855,7 @@ public sealed class CombatRunner
             for (int y = 0; y < _field.Height; y++)
             {
                 Cell cell = new(x, y);
-                if (_field.Distance(cell, goal) <= 1 && cell != goal && _field.Passable(cell) && !blocked.Contains(cell))
+                if (_field.Distance(cell, goal) <= within && cell != goal && _field.Passable(cell) && !blocked.Contains(cell) && _field.CanSee(cell, goal))
                 {
                     costs[cell] = 0;
                     frontier.Enqueue(cell, 0);

@@ -23,7 +23,7 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 /// surprised in it, how far apart two creatures are, and how far a creature
 /// is from its nearest standing enemy. Without a field everyone is 1 apart.
 /// </summary>
-public sealed record CombatMoment(int Round, bool SurpriseRound, Func<Creature, Creature, decimal> Distance, Func<Creature, decimal> Nearest);
+public sealed record CombatMoment(int Round, bool SurpriseRound, Func<Creature, Creature, decimal> Distance, Func<Creature, decimal> Nearest, Func<Creature, Creature, bool> Sight);
 
 public sealed record Scope(
     Creature? Self,
@@ -425,6 +425,10 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                         return Value.Of(fight.SurpriseRound);
                     case "nearest":
                         return Value.Of(fight.Nearest(scope.Self ?? throw new ExpressionException("combat.nearest needs a self creature.", path.Column)));
+                    case "sight":
+                        Creature looking = scope.Self ?? throw new ExpressionException("combat.sight needs a self creature.", path.Column);
+                        Creature seen = scope.Target ?? throw new ExpressionException("combat.sight needs a target creature; it is read where an action looks at its target.", path.Column);
+                        return Value.Of(fight.Sight(looking, seen));
                     default:
                         Creature from = scope.Self ?? throw new ExpressionException("combat.distance needs a self creature.", path.Column);
                         Creature to = scope.Target ?? throw new ExpressionException("combat.distance needs a target creature; it is read where an action looks at its target.", path.Column);
