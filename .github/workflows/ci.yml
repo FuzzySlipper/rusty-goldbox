@@ -33,6 +33,9 @@ jobs:
       - name: Test
         run: dotnet test tests/RustyGoldbox.Tests
 
+      - name: Check the browser UI module
+        run: node --input-type=module --check < src/ui/main.js
+
       - name: Build the Game
         run: rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
 

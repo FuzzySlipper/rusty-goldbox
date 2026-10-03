@@ -346,7 +346,7 @@ export function mountProductUi(root, context) {
             profession: Number(field.profession.value),
             personal: Number(field.personal.value),
           })),
-        })))]
+        }))))];
 
     function pointInput(key, initial, allowed) {
       const input = element('input', { type: 'number', min: '0', step: 'any', value: String(skillDrafts.get(key) ?? initial), size: '5' });
