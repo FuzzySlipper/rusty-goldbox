@@ -99,6 +99,7 @@ export function mountProductUi(root, context) {
         element('div', { style: 'opacity:.8' }, member.attributes.join(' ')),
         ...(member.features?.length ? [element('div', {}, `Features: ${member.features.join(', ')}`)] : []),
         element('div', {}, `Equipment: ${member.equipment.map((equipment) => equipment.name).join(', ') || 'none'}`),
+        ...renderSpells(member, index),
         row(item,
           button('Give/take', () => send({ action: 'equip', member: index, item: item.value })),
           button('Drop', () => send({ action: 'drop', member: index })))));
@@ -184,6 +185,30 @@ export function mountProductUi(root, context) {
     };
   };
 
+  /** A checkbox per spell the member could know, checked for those it knows; a change sets the whole list. */
+  const renderSpells = (member, index) => {
+    const castable = member.castable ?? [];
+    if (castable.length === 0) {
+      return [];
+    }
+
+    const boxes = castable.map((spell) => {
+      const box = element('input', { type: 'checkbox', 'aria-label': `${member.name} knows ${spell.name}` });
+      box.checked = (member.spells ?? []).some((known) => known.id === spell.id);
+      return { spell, box };
+    });
+    for (const { box } of boxes) {
+      box.addEventListener('change', () => send({
+        action: 'spells',
+        member: index,
+        spells: boxes.filter((entry) => entry.box.checked).map((entry) => entry.spell.id),
+      }));
+    }
+
+    return [row(element('span', {}, `${member.name}'s spells:`),
+      ...boxes.map(({ spell, box }) => element('label', { style: 'margin-right:8px' }, box, ` ${spell.name}`)))];
+  };
+
   const renderPlay = (view) => {
     const menu = row(...(view.menu ?? []).map((option) =>
       button(`${option.number}. ${option.label}`, () => send({ action: 'play', command: `choose ${option.number}` }))));
@@ -196,6 +221,7 @@ export function mountProductUi(root, context) {
       menu, moves, row(command),
       log,
       element('div', { style: 'opacity:.8' }, (view.party ?? []).map((member) => `${member.name} ${member.tracks.join(' ')}`).join(' · ')),
+      ...(view.party ?? []).flatMap((member, index) => renderSpells(member, index)),
       row(slot, button('Save', () => send({ action: 'save', slot: slot.value })), button('Quit', () => send({ action: 'quit' }))));
   };
 

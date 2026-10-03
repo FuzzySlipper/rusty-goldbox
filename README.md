@@ -32,7 +32,7 @@ reload it; module edits reload as content bundles without a restart. See
 `rusty dev --help` for `--bind-host`, `--live-debug` and `--debugger`.
 
 The first-person view draws in the top-left window and the panel sits beside it. Open a campaign, roll a party (and give it
-equipment), then play with the buttons, a typed command, or the keys: arrows
+equipment and spells), then play with the buttons, a typed command, or the keys: arrows
 or WASD move and turn, X turns around, L looks, digits choose menu options.
 A fight plays back on its own screen; Enter, Space or the button skips it and
 then returns to the corridor.

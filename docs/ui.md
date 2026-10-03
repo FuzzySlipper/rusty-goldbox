@@ -18,6 +18,11 @@ feature a grant takes and, under creation by boosts, for each boost that
 offers a choice, in the order Core takes them (race, creation features, class,
 creation). Core checks the roll; its notes say what to fix.
 
+Each member in the party and play projections carries the spells it knows and
+the ones it could (`spells`, `castable`); the panel shows a checkbox per
+castable spell on both screens and sends the whole checked list as a `spells`
+action, which Core checks.
+
 Keep only browser assets in `src/ui/`. The host admits every staged file by its
 content type; documentation belongs under `docs/`.
 

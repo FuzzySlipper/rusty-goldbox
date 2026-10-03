@@ -207,8 +207,8 @@ input, lets the fight playback advance, advances animations, and republishes
 only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
-claims (`{ "action": ..., fields }`: refresh, open, roll, equip, drop, begin,
-play, save, load, quit), plus digital intents mapped from keys: arrows and
+claims (`{ "action": ..., fields }`: refresh, open, roll, equip, spells, drop,
+begin, play, continue, save, load, quit), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
 turns a bad one into a note; a key intent acts on a key press or on a UI claim

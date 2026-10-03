@@ -361,6 +361,12 @@ public static class CharacterRules
         return null;
     }
 
+    /// <summary>The spells the character could know, in the module set's order: those <see cref="SpellProblem"/> has nothing against.</summary>
+    public static List<Definition> CastableSpells(RuleSet rules, Character character)
+    {
+        return rules.OfType(DefinitionTypes.Spell).Where(spell => SpellProblem(rules, character, spell) is null).ToList();
+    }
+
     /// <summary>Gives the character these spells to know, in order; problems name each one it can't.</summary>
     public static bool SetSpells(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
     {

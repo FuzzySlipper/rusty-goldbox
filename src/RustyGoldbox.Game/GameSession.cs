@@ -176,6 +176,31 @@ internal sealed class GameSession(ModuleLibrary library)
         equipment.Add(found);
     }
 
+    /// <summary>
+    /// Sets the spells a party member knows, while making the party or between
+    /// fights in play; a list Core refuses leaves them as they were.
+    /// </summary>
+    public void SetSpells(int member, IReadOnlyList<string> spells)
+    {
+        Notes.Clear();
+        List<Character>? party = Screen switch
+        {
+            Screen.Party => Party,
+            Screen.Play => Runner!.State.Party,
+            _ => null,
+        };
+        if (party is null || member < 0 || member >= party.Count)
+        {
+            return;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        if (!CharacterRules.SetSpells(Set!.Rules!, party[member], spells, problems))
+        {
+            Notes.AddRange(problems.Select(problem => problem.Message));
+        }
+    }
+
     public void Begin(IEngineContext engine)
     {
         Notes.Clear();
