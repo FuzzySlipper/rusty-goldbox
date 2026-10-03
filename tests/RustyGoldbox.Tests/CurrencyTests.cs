@@ -93,4 +93,27 @@ public sealed class CurrencyTests
             Assert.Contains(problems, problem => problem.JsonPath == "$.balances");
         });
     }
+
+    [Fact]
+    public void CliJsonTempleIncludesTheServiceCurrency()
+    {
+        using TempModules modules = new();
+        string campaign = ShopTests.Fixture(modules);
+        modules.Write("rules/silver.json", """{ "type": "currency", "id": "silver", "name": "Silver" }""");
+        modules.Write("tale/shrine.json", """{ "type": "event", "id": "shrine", "kind": "temple", "text": "Silver shrine.", "services": [{ "label": "Mend", "cost": "0", "currency": "rules:silver", "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "0" }] }] }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "shrine" }""");
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
+        Assert.Empty(set.Diagnostics);
+        ShopTests.Party(modules, campaign, set);
+        modules.Write("temple.script", "status\n");
+
+        (int code, string output) = CampaignTests.Run(modules, "play", "--campaign", campaign, "--modules", ".", "--party", "a.json,b.json", "--script", "temple.script", "--json");
+        Assert.True(code == 0, output);
+        using JsonDocument transcript = JsonDocument.Parse(output);
+        JsonElement temple = transcript.RootElement.GetProperty("transcript").EnumerateArray()
+            .SelectMany(step => step.GetProperty("facts").EnumerateArray())
+            .First(fact => fact.GetProperty("kind").GetString() == "temple")
+            .GetProperty("temple");
+        Assert.Equal("rules:silver", temple.GetProperty("services")[0].GetProperty("currency").GetString());
+    }
 }
