@@ -47,8 +47,8 @@ export function mountProductUi(root, context) {
   const portrait = element('select', { 'aria-label': 'Portrait' });
   const lifepathCareer = element('select', { 'aria-label': 'Career' });
   const lifepathTerms = element('input', { type: 'number', min: '1', value: '1', size: '3', 'aria-label': 'Career terms' });
-  const lifepathTables = element('input', { value: 'personal,personal', size: '18', 'aria-label': 'Skill tables in roll order' });
-  const lifepathBenefits = element('input', { value: 'cash', size: '12', 'aria-label': 'Benefit tables in roll order' });
+  const lifepathTables = element('select', { 'aria-label': 'Skill table' });
+  const lifepathBenefits = element('select', { 'aria-label': 'Benefit kind' });
   // Feature and boost choices, kept by slot so a choice survives re-renders.
   const choiceSelects = new Map();
   // Skill amounts are a local draft until the player submits the Core action.
@@ -74,6 +74,7 @@ export function mountProductUi(root, context) {
     rerenderParty();
   });
   portrait.addEventListener('change', () => rerenderParty());
+  lifepathCareer.addEventListener('change', () => rerenderParty());
   const command = element('input', { size: '14', placeholder: 'command', 'aria-label': 'Play command' });
   command.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && command.value.trim().length > 0) {
@@ -201,8 +202,8 @@ export function mountProductUi(root, context) {
       choices.rows,
       ...(view.lifepath ? [row(element('span', {}, 'Career:'), lifepathCareer,
         element('span', {}, 'Terms:'), lifepathTerms,
-        element('span', {}, 'Skill tables:'), lifepathTables,
-        element('span', {}, 'Benefits:'), lifepathBenefits)] : []),
+        element('span', {}, 'Skill table:'), lifepathTables,
+        element('span', {}, 'Benefit:'), lifepathBenefits)] : []),
       row(button('Roll', () => send({
         action: 'roll',
         name: name.value,
@@ -217,8 +218,8 @@ export function mountProductUi(root, context) {
           lifepath: view.lifepath.id,
           careers: lifepathCareer.value ? [lifepathCareer.value] : [],
           terms: Number(lifepathTerms.value) || 1,
-          skillTables: lifepathTables.value.split(',').map((value) => value.trim()).filter(Boolean),
-          benefits: lifepathBenefits.value.split(',').map((value) => value.trim()).filter(Boolean),
+          skillTables: lifepathTables.value ? [lifepathTables.value] : [],
+          benefits: lifepathBenefits.value ? [lifepathBenefits.value] : [],
         } : {}),
       }))),
       row(button('Begin', () => send({ action: 'begin' })), button('Back', () => send({ action: 'quit' }))));
@@ -248,10 +249,14 @@ export function mountProductUi(root, context) {
         lifepathCareer.value = view.lifepath.careers[0].id;
       }
       const selected = (view.lifepath.careers ?? []).find((career) => career.id === lifepathCareer.value);
-      if (selected?.skillTables?.length && !lifepathTables.value.trim()) {
-        lifepathTables.value = selected.skillTables[0];
-      }
-      rows.append(element('div', { style: 'opacity:.8' }, `${view.lifepath.name}: actual 2D6 rolls are recorded in each character's prior-history ledger; choose a career, skill tables and benefit tables before rolling.`));
+      const tableChoices = (selected?.skillTables ?? []).map((table) => typeof table === 'string' ? { id: table, name: table } : table);
+      fill(lifepathTables, tableChoices);
+      const benefitChoices = (view.lifepath.benefitKinds ?? [
+        { id: 'cash', name: 'Cash' },
+        { id: 'material', name: 'Material' },
+      ]).map((benefit) => typeof benefit === 'string' ? { id: benefit, name: benefit } : benefit);
+      fill(lifepathBenefits, benefitChoices);
+      rows.append(element('div', { style: 'opacity:.8' }, `${view.lifepath.name}: choose one career, skill table and benefit kind; the selected choices repeat for the policy's actual rolls.`));
     }
 
     const grants = [...creation.grants.map((grant) => ({ grant, creation: true })), ...(chosenClass?.grants ?? []).map((grant) => ({ grant, creation: false }))];
