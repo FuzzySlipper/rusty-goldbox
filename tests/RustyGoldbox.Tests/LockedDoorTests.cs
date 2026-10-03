@@ -4,6 +4,7 @@ using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Core.Rules;
 using static RustyGoldbox.Tests.TempModules;
 
 namespace RustyGoldbox.Tests;
@@ -87,5 +88,33 @@ public sealed class LockedDoorTests
         CampaignState restored = SaveFile.Read(Encoding.UTF8.GetBytes(json), "save.json", set, saveProblems)!;
         Assert.Empty(saveProblems);
         Assert.Equal(state.OpenedDoors, restored.OpenedDoors);
+    }
+
+    [Fact]
+    public void DoorCheckFailuresNameTheCheckDefinition()
+    {
+        using TempModules modules = new();
+        string campaign = modules.Module("tale", "campaign", requires: $"{Require("classic", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("tale/pick_lock.json", """{ "type": "check", "id": "pick_lock", "name": "Pick lock", "roll": "1", "bonus": "1 / (self.str - self.str)", "target": "1", "succeeds": "at-least" }""");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|  D  |", "+--+--+"], "doors": [{ "id": "gate", "at": [0, 0], "facing": "east", "pick": "pick_lock" }], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+        ModuleSet set = ModuleLoader.Load(campaign, [Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+
+        using TempModules scratch = new();
+        CampaignTests.WriteParty(scratch, Rules.ClassicPath);
+        List<ModuleDiagnostic> characterProblems = [];
+        Character party = CharacterFile.Read(Path.Combine(scratch.Root, "ada.json"), set, characterProblems)!;
+        Assert.Empty(characterProblems);
+        Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, tale, [party], 19);
+        CampaignRunner runner = new(set.Rules, state);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        RuleFailure failure = Assert.Throws<RuleFailure>(() => host.Call(engine => runner.Execute("pick", engine.Random)));
+        Assert.Equal("event.evaluate", failure.Diagnostic.Rule);
+        Assert.Equal("tale", failure.Diagnostic.Module);
+        Assert.Equal(Path.Combine(modules.Root, "tale/pick_lock.json"), failure.Diagnostic.File);
+        Assert.Equal("$", failure.Diagnostic.JsonPath);
     }
 }
