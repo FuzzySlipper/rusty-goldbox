@@ -117,4 +117,99 @@ public sealed class LockedDoorTests
         Assert.Equal(Path.Combine(modules.Root, "tale/pick_lock.json"), failure.Diagnostic.File);
         Assert.Equal("$", failure.Diagnostic.JsonPath);
     }
+
+    [Fact]
+    public void EventDoorTeleportDoesNotContinueTheOriginalMove()
+    {
+        using TempModules modules = new();
+        string campaign = EventDoorCampaign(modules);
+        modules.Write("tale/unlock_event.json", """{ "type": "event", "id": "unlock_event", "kind": "open", "door": "gate", "next": "warp" }""");
+        modules.Write("tale/warp.json", """{ "type": "event", "id": "warp", "kind": "teleport", "area": "yard", "entry": "in" }""");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|  D  |", "+--+--+"], "doors": [{ "id": "gate", "at": [0, 0], "facing": "east", "event": "unlock_event" }], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/yard.json", """{ "type": "area", "id": "yard", "name": "Yard", "map": ["+--+--+", "|     |", "+--+--+"], "cells": [{ "at": [1, 0], "event": "arrived" }], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/arrived.json", """{ "type": "event", "id": "arrived", "kind": "text", "text": "The yard cell fires." }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+
+        (ModuleSet set, Character party) = LoadEventDoorParty(modules, campaign);
+        RuleSet rules = set.Rules!;
+        Definition tale = rules.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(rules, tale, [party], 23);
+        CampaignRunner runner = new(rules, state);
+        Definition hall = rules.Find(DefinitionTypes.Area, "tale:hall", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        Assert.Contains(facts, fact => fact is ArrivedFact { Area: "Yard", X: 0, Y: 0 });
+        Assert.DoesNotContain(facts, fact => fact is MovedFact);
+        Assert.DoesNotContain(facts, fact => fact is TextFact { Text: "The yard cell fires." });
+        Assert.Equal("tale:yard", state.Area.QualifiedId);
+        Assert.Equal((0, 0), (state.X, state.Y));
+        Assert.Contains(state.OpenedDoors, key => key == state.EdgeKey(hall, new AreaEdge(0, 0, Facing.East)));
+    }
+
+    [Fact]
+    public void EventDoorEndDoesNotContinueTheOriginalMove()
+    {
+        using TempModules modules = new();
+        string campaign = EventDoorCampaign(modules);
+        modules.Write("tale/unlock_event.json", """{ "type": "event", "id": "unlock_event", "kind": "open", "door": "gate", "next": "finish" }""");
+        modules.Write("tale/finish.json", """{ "type": "event", "id": "finish", "kind": "end", "text": "The gate closes behind you." }""");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|  D  |", "+--+--+"], "doors": [{ "id": "gate", "at": [0, 0], "facing": "east", "event": "unlock_event" }], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+
+        (ModuleSet set, Character party) = LoadEventDoorParty(modules, campaign);
+        RuleSet rules = set.Rules!;
+        Definition tale = rules.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(rules, tale, [party], 29);
+        CampaignRunner runner = new(rules, state);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        Assert.Contains(facts, fact => fact is EndedFact { Text: "The gate closes behind you." });
+        Assert.DoesNotContain(facts, fact => fact is MovedFact);
+        Assert.True(state.Ended);
+        Assert.Equal((0, 0), (state.X, state.Y));
+    }
+
+    [Fact]
+    public void EventDoorMenuDoesNotContinueTheOriginalMove()
+    {
+        using TempModules modules = new();
+        string campaign = EventDoorCampaign(modules);
+        modules.Write("tale/unlock_event.json", """{ "type": "event", "id": "unlock_event", "kind": "open", "door": "gate", "next": "choice" }""");
+        modules.Write("tale/choice.json", """{ "type": "event", "id": "choice", "kind": "menu", "text": "Continue?", "options": [{ "label": "Yes" }] }""");
+        modules.Write("tale/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|  D  |", "+--+--+"], "doors": [{ "id": "gate", "at": [0, 0], "facing": "east", "event": "unlock_event" }], "entries": { "in": { "at": [0, 0], "facing": "east" } } }""");
+        modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 } }""");
+
+        (ModuleSet set, Character party) = LoadEventDoorParty(modules, campaign);
+        RuleSet rules = set.Rules!;
+        Definition tale = rules.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(rules, tale, [party], 31);
+        CampaignRunner runner = new(rules, state);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        Assert.Contains(facts, fact => fact is MenuFact { Text: "Continue?" });
+        Assert.DoesNotContain(facts, fact => fact is MovedFact);
+        Assert.NotNull(state.PendingMenu);
+        Assert.Equal((0, 0), (state.X, state.Y));
+    }
+
+    private static string EventDoorCampaign(TempModules modules)
+    {
+        modules.Module("art", "assets");
+        return modules.Module("tale", "campaign", requires: $"{Require("classic", "*")}, {Require("art", "*")}");
+    }
+
+    private static (ModuleSet Set, Character Party) LoadEventDoorParty(TempModules modules, string campaign)
+    {
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        using TempModules scratch = new();
+        CampaignTests.WriteParty(scratch, Rules.ClassicPath);
+        List<ModuleDiagnostic> characterProblems = [];
+        Character party = CharacterFile.Read(Path.Combine(scratch.Root, "ada.json"), set, characterProblems)!;
+        Assert.Empty(characterProblems);
+        return (set, party);
+    }
 }

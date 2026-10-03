@@ -228,10 +228,25 @@ public sealed partial class CampaignRunner
 
     private void Move(Facing direction, DiceRoller dice, List<PlayFact> facts)
     {
-        AreaMap map = Map(_state.Area);
+        Definition area = _state.Area;
+        int startX = _state.X;
+        int startY = _state.Y;
+        AreaMap map = Map(area);
         Edge raw = map.EdgeOf(_state.X, _state.Y, direction);
         Edge edge = EdgeFor(map, _state.X, _state.Y, direction);
         if (raw == Edge.Door && edge == Edge.Door && !Open(direction, "move", dice, facts))
+        {
+            return;
+        }
+
+        if (_state.Area != area
+            || _state.X != startX
+            || _state.Y != startY
+            || _state.Ended
+            || _state.PendingMenu is not null
+            || _state.PendingShop is not null
+            || _state.PendingTemple is not null
+            || _state.PendingTraining is not null)
         {
             return;
         }
