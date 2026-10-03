@@ -331,6 +331,9 @@ public static partial class CharacterRules
             .Where(feature => feature.Json.TryGetProperty("skills", out _))
             .SelectMany(feature => feature.Json.GetProperty("skills").EnumerateArray().Select(skill => skill.GetString()!))
             .ToHashSet(StringComparer.Ordinal);
+        HashSet<string> configuredSkills = config.GetProperty("skills").EnumerateObject()
+            .Select(entry => entry.Name)
+            .ToHashSet(StringComparer.Ordinal);
         Dictionary<string, SkillPointOption> offered = [];
         foreach (SkillPointOption option in options.Skills)
         {
@@ -339,6 +342,11 @@ public static partial class CharacterRules
             {
                 problems.Add(new ModuleDiagnostic("character.skill-points", $"The saved staged skill options list '{option.Skill}' more than once.", character.Creation.Module, character.Creation.File, at));
                 continue;
+            }
+
+            if (!configuredSkills.Contains(option.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{option.Skill}' is not declared in {character.Creation.QualifiedId}'s skill_points.skills.", character.Creation.Module, character.Creation.File, at));
             }
 
             if (!rules.Stats.TryGetValue(option.Skill, out Stat? stat) || stat.IsAttribute)
@@ -414,18 +422,81 @@ public static partial class CharacterRules
             }
         }
 
+        if (!character.SkillPointsCommitted)
+        {
+            foreach (SkillPointOption option in options.Skills)
+            {
+                decimal actual = character.StatBonuses.GetValueOrDefault(option.Skill);
+                if (actual != 0)
+                {
+                    problems.Add(new ModuleDiagnostic("character.skill-points", $"Pending staged skill '{option.Skill}' has a saved stat bonus {actual}; commit its choices before adding bonuses.", character.Creation.Module, character.Creation.File, $"$.stat_bonuses.{option.Skill}"));
+                }
+            }
+        }
+
+        ValidatePersistedSkillCurrentValues(rules, character, options, configuredSkills, problems);
+    }
+
+    private static void ValidatePersistedSkillCurrentValues(
+        RuleSet rules,
+        Character character,
+        SkillPointOptions options,
+        IReadOnlySet<string> configuredSkills,
+        List<ModuleDiagnostic> problems)
+    {
+        Creature baseline = character.ToCreature();
+        baseline.AdvancementBonuses.Clear();
+        Evaluator evaluator = new(rules, null);
         try
         {
             foreach (SkillPointOption option in options.Skills)
             {
-                SkillAllocation allocation = allocations.GetValueOrDefault(option.Skill) ?? new SkillAllocation(option.Skill);
-                decimal expected = character.SkillPointsCommitted
-                    ? checked(option.Base - option.Current + allocation.Profession + allocation.Personal)
-                    : 0;
-                decimal actual = character.StatBonuses.GetValueOrDefault(option.Skill);
-                if (actual != expected)
+                if (!configuredSkills.Contains(option.Skill)
+                    || !rules.Stats.TryGetValue(option.Skill, out Stat? stat)
+                    || stat.IsAttribute)
                 {
-                    problems.Add(new ModuleDiagnostic("character.skill-points", $"Saved stat bonus for '{option.Skill}' is {actual}, but the staged values require {expected}.", character.Creation.Module, character.Creation.File, $"$.stat_bonuses.{option.Skill}"));
+                    continue;
+                }
+
+                string path = $"$.skill_points.skills.{option.Skill}";
+                try
+                {
+                    decimal baseValue = evaluator.Evaluate(rules.Expression(character.Creation, path), baseline, null).Number;
+                    if (baseValue != option.Base)
+                    {
+                        problems.Add(new ModuleDiagnostic(
+                            "character.skill-points",
+                            $"Saved base value for '{option.Skill}' is {option.Base}, but the persisted character state evaluates it as {baseValue}.",
+                            character.Creation.Module,
+                            character.Creation.File,
+                            $"$.skill_point_options.skills.{option.Skill}.base"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                    // A base expression that needs a dice stream cannot be
+                    // replayed at save load; the recorded value remains the
+                    // first-stage context.
+                }
+
+                try
+                {
+                    decimal current = evaluator.Stat(baseline, option.Skill).Number;
+                    if (current != option.Current)
+                    {
+                        problems.Add(new ModuleDiagnostic(
+                            "character.skill-points",
+                            $"Saved current value for '{option.Skill}' is {option.Current}, but the persisted character state evaluates it as {current} before staged points.",
+                            character.Creation.Module,
+                            character.Creation.File,
+                            $"$.skill_point_options.skills.{option.Skill}.current"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                    // A current expression that needs a dice stream cannot be
+                    // replayed at save load; the recorded value remains the
+                    // first-stage context.
                 }
             }
         }

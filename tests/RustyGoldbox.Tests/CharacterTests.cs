@@ -514,13 +514,102 @@ public sealed class CharacterTests
         string path = Path.Combine(scratch.Root, "forged.json");
         System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
         forged["skill_allocations"]!["axe"]!["profession"] = 999;
-        forged["stat_bonuses"]!["axe"] = 1234;
+        System.Text.Json.Nodes.JsonObject axe = forged["skill_point_options"]!["skills"]!.AsArray()
+            .Single(skill => skill!["id"]!.GetValue<string>() == "axe")!.AsObject();
+        axe["base"] = 999;
+        axe["current"] = 0;
+        forged["stat_bonuses"]!["axe"] = 1998;
         File.WriteAllText(path, forged.ToJsonString());
 
         List<ModuleDiagnostic> problems = [];
         Assert.Null(CharacterFile.Read(path, set, problems));
         Assert.Contains(problems, problem => problem.JsonPath == "$.skill_allocations" && problem.Message.Contains("budget", StringComparison.Ordinal));
-        Assert.Contains(problems, problem => problem.JsonPath == "$.stat_bonuses.axe" && problem.Message.Contains("require", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.JsonPath == "$.skill_point_options.skills.axe.current" && problem.Message.Contains("persisted character state", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CharacterFileRejectsAnUnlistedStagedSkillOption()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("sword", Personal: 100)]))!;
+        string path = Path.Combine(scratch.Root, "forged-option.json");
+        System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
+        forged["skill_point_options"]!["skills"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject
+        {
+            ["id"] = "armour",
+            ["base"] = 15,
+            ["current"] = 15,
+            ["profession"] = false,
+        });
+        File.WriteAllText(path, forged.ToJsonString());
+
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(CharacterFile.Read(path, set, problems));
+        Assert.Contains(problems, problem => problem.JsonPath == "$.skill_point_options.skills.armour" && problem.Message.Contains("not declared", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CharacterFileRejectsForgedStagedCurrentValueWithConsistentBonus()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("sword", Personal: 100)]))!;
+        string path = Path.Combine(scratch.Root, "forged-current.json");
+        System.Text.Json.Nodes.JsonNode forged = System.Text.Json.Nodes.JsonNode.Parse(CharacterFile.ToJson(character))!;
+        System.Text.Json.Nodes.JsonObject sword = forged["skill_point_options"]!["skills"]!.AsArray()
+            .Single(skill => skill!["id"]!.GetValue<string>() == "sword")!.AsObject();
+        sword["base"] = 999;
+        sword["current"] = 0;
+        forged["stat_bonuses"]!["sword"] = 1099;
+        File.WriteAllText(path, forged.ToJsonString());
+
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(CharacterFile.Read(path, set, problems));
+        Assert.Contains(problems, problem => problem.JsonPath == "$.skill_point_options.skills.sword.current" && problem.Message.Contains("persisted character state", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CommittedStagedCharacterCanImproveSaveAndLoad()
+    {
+        using TempModules scratch = new();
+        string module = Path.Combine(Rules.RepositoryRoot, "modules", "universal-d100");
+        ModuleSet set = ModuleLoader.Load(module, []);
+        Character character = Create(set, new CreationRequest("Rook", null, null,
+            Attributes: new Dictionary<string, decimal>
+            {
+                ["str"] = 12, ["con"] = 12, ["siz"] = 12, ["int"] = 10, ["pow"] = 12, ["dex"] = 12, ["cha"] = 12,
+            },
+            Creation: "staged", Features: ["staged_warrior"], SkillPoints:
+            [new SkillAllocation("axe", Profession: 250), new SkillAllocation("brawl", Personal: 100)]))!;
+        List<ModuleDiagnostic> problems = [];
+        Assert.True(CharacterRules.MarkSkillUse(set.Rules!, character, "sword", problems));
+        Assert.Empty(problems);
+        List<SkillImprovement> improvements = WithDice(1, dice => CharacterRules.ImproveMarkedSkills(set.Rules!, character, dice, problems));
+        Assert.Empty(problems);
+        Assert.True(Assert.Single(improvements).Improved);
+
+        string path = Path.Combine(scratch.Root, "improved.json");
+        File.WriteAllText(path, CharacterFile.ToJson(character));
+        Character? loaded = CharacterFile.Read(path, set, problems);
+
+        Assert.True(loaded is not null, string.Join("\n", problems.Select(problem => $"{problem.JsonPath}: {problem.Message}")));
+        Assert.Empty(problems);
+        Assert.Equal(character.StatBonuses["sword"], loaded.StatBonuses["sword"]);
     }
 
     [Fact]
