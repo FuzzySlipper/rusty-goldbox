@@ -80,12 +80,13 @@ seed 1
     Skeleton 1 is out of the fight.
     Party wins after 2 rounds.
   Combat with Crypt guard: the party wins.
+  Experience: Ada 14, Brom 14.
   The party finds 90 gold, Dagger.  [2d6: 6+3 = 9]
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
   The rattling stops. A draught rises from somewhere to the west.
 > status
-  Ada (hit points 8/8) | Brom (hit points 8/8, 1st level spells 1/1) | gold 215 + 115 | carrying Dagger
+  Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 215 + 115 | carrying Dagger
 > around
   The party faces north.
 > forward

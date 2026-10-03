@@ -1,0 +1,27 @@
+seed 1
+  The party is in Hall at [0, 0], facing east.
+  The town thanks you.
+  Experience: Kara 1000, Ilse 1000.
+  Kara has the experience for a new level, which needs choices: level 1 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Ilse has the experience for a new level, which needs choices: level 2 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+> status
+  Kara (hit points 12/12, 1000 xp, level ready) | Ilse (1st circle slots 1/1, hit points 9/9, 1000 xp, level ready) | gold 60 + 40
+> level 1
+  Can't: Warrior level 2 grants 1 combat feat for Kara, so choose one with --feature. Open to the character: ascend:press_the_advantage, ascend:weapon_focus.
+> level 1 --feature weapon_focus
+  Kara reaches level 2 (Warrior 2): +3 hit points.  [1d10: 1 = 1]
+> level 1
+  Can't: Kara doesn't have the experience for another level.
+> level 2 --class warrior --feature improved_initiative
+  Ilse reaches level 2 (Warrior 1): +4 hit points.  [1d10: 1 = 1]
+> forward
+  The party moves to [1, 0], facing east.
+  Experience: Kara 2000, Ilse 2000.
+  Kara has the experience for a new level, which needs choices: level 1 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Ilse has the experience for a new level, which needs choices: level 2 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+> level 1
+  Can't: level 3 (ascend:standard) grants 1 feat or combat feat for Kara, so choose one with --feature. Open to the character: ascend:great_fortitude, ascend:lightning_reflexes, ascend:press_the_advantage, ascend:second_wind, ascend:toughness.
+> level 1 --feature great_fortitude
+  Kara reaches level 3 (Warrior 3): +9 hit points.  [1d10: 7 = 7]
+> status
+  Kara (hit points 24/24, 3000 xp) | Ilse (1st circle slots 1/1, hit points 13/13, 3000 xp, level ready) | gold 60 + 40

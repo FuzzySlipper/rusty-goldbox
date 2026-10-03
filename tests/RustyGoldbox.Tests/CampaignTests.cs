@@ -189,6 +189,38 @@ public sealed class CampaignTests
     }
 
     [Fact]
+    public void ExperienceEarnedInPlayGainsLevelsOrWaitsForChoices()
+    {
+        string fixtures = Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures");
+        string ascend = Path.Combine(fixtures, "ascend");
+        using TempModules modules = new();
+        string campaign = modules.Module("deeds", "campaign", requires: $"{Require("ascend", "*")}, {Require("placeholder-art", "*")}");
+        modules.Write("deeds/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+--+", "|     |", "+--+--+"], "entries": { "in": { "at": [0, 0], "facing": "east" } }, "cells": [ { "at": [1, 0], "event": "praise" } ] }""");
+        modules.Write("deeds/campaign.json", """{ "type": "campaign", "id": "deeds", "name": "Deeds", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 4 }, "intro": "thanks" }""");
+        modules.Write("deeds/thanks.json", """{ "type": "event", "id": "thanks", "kind": "experience", "amount": "2000", "text": "The town thanks you." }""");
+        modules.Write("deeds/praise.json", """{ "type": "event", "id": "praise", "kind": "experience", "amount": "2000", "each": true }""");
+        using TempModules scratch = new();
+        Run(scratch, "character", "new", "--module", ascend, "--class", "warrior", "--race", "folk", "--name", "Kara", "--attributes", "might=16,grace=12,grit=14,wit=12", "--feature", "iron_will,improved_initiative", "--out", "kara.json");
+        Run(scratch, "character", "new", "--module", ascend, "--class", "adept", "--race", "folk", "--name", "Ilse", "--attributes", "might=9,grace=12,grit=16,wit=16", "--feature", "lightning_reflexes", "--out", "ilse.json");
+        File.WriteAllText(Path.Combine(scratch.Root, "deeds.script"), string.Join("\n",
+            "status",
+            "level 1",            // refused: a warrior level grants a combat feat
+            "level 1 --feature weapon_focus",
+            "level 1",            // nothing more yet
+            "level 2 --class warrior --feature improved_initiative",
+            "forward",            // 2000 each: level 3, where the advancement grants a feat too
+            "level 1",
+            "level 1 --feature great_fortitude",
+            "status") + "\n");
+
+        (int code, string output) = Run(scratch, "play", "--campaign", campaign, "--party", "kara.json,ilse.json", "--script", "deeds.script",
+            "--modules", fixtures, "--modules", Path.Combine(Rules.RepositoryRoot, "modules"));
+
+        Assert.Equal(0, code);
+        Golden.Verify("ascend-experience.txt", output.Replace(scratch.Root, "<scratch>", StringComparison.Ordinal).Replace(modules.Root, "<modules>", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void HandEditedSavesAreRefusedWithTheirPath()
     {
         using TempModules scratch = new();

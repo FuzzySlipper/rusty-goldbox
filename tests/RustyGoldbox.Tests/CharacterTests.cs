@@ -126,6 +126,30 @@ public sealed class CharacterTests
     }
 
     [Fact]
+    public void ExperienceAwardedInPlayLevelsWithoutChoicesAndOtherwiseWaits()
+    {
+        ModuleSet classic = ModuleLoader.Load(Rules.ClassicPath, []);
+        Character fighter = Create(classic, new CreationRequest("Ada", "fighter", "human", Attributes: new Dictionary<string, decimal> { ["str"] = 16, ["dex"] = 13, ["con"] = 15, ["int"] = 10, ["wis"] = 9, ["cha"] = 11 }))!;
+
+        // Classic levels need no choices, so the level comes at once.
+        List<LevelGain> gains = WithDice(dice => CharacterRules.Award(classic.Rules!, fighter, 2001, dice));
+        Assert.Equal(2, Assert.Single(gains).Level);
+        Assert.False(CharacterRules.ReadyToLevel(classic.Rules!, fighter));
+
+        // Ascend's levels take a class (and here a feat): the experience is kept, the level waits, and a failed try changes nothing.
+        ModuleSet set = ModuleLoader.Load(Ascend, []);
+        Character warrior = Create(set, new CreationRequest("x", "warrior", "folk", Attributes: Scores(12, 13, 10, 10), Features: ["iron_will", "improved_initiative"]))!;
+        Assert.Empty(WithDice(dice => CharacterRules.Award(set.Rules!, warrior, 1000, dice)));
+        Assert.True(CharacterRules.ReadyToLevel(set.Rules!, warrior));
+        string before = CharacterFile.ToJson(warrior);
+        List<ModuleDiagnostic> problems = [];
+        Assert.Null(WithDice(dice => CharacterRules.AddExperience(set.Rules!, warrior, 0, dice, problems)));
+        Assert.Equal(before, CharacterFile.ToJson(warrior));
+        Assert.NotNull(WithDice(dice => CharacterRules.AddExperience(set.Rules!, warrior, 0, dice, [], features: ["weapon_focus"])));
+        Assert.Equal(2, warrior.Level);
+    }
+
+    [Fact]
     public void HitPointBonusesFollowTheStatsTheyRead()
     {
         ModuleSet set = ModuleLoader.Load(Ascend, []);

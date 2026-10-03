@@ -150,12 +150,17 @@ and runs the fight inside the Engine tool host; run k uses random scope
 ## Campaigns
 
 `CampaignRunner` owns play: it takes one command at a time (`forward`,
-`back`, `left`, `right`, `around`, `choose <n>`, `look`, `status`) and
-returns `PlayFact`s. Moving checks the edge on that side; entering a cell
+`back`, `left`, `right`, `around`, `choose <n>`, `look`, `status`,
+`level <member>`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu waits for a choice, the chain ends, or the adventure does. A
 combat event fights the party against an encounter with `CombatRunner`, and
-the party keeps the damage. `CampaignRunner` gives command *n* a dice stream
+the party keeps the damage. Felled monsters' experience, and an experience
+event's, go to the party through `CharacterRules.Award`: shared among the
+survivors or the whole party as the advancement's `experience_to` says,
+taking levels that need no choice at once and leaving the rest for the
+`level` command, whose choices `CharacterRules.AddExperience` takes all or
+nothing. `CampaignRunner` gives command *n* a dice stream
 scoped `goldbox.play.<n>` from the campaign's seed, which a save records with
 the command count; that is what makes a resumed save roll as an unbroken run.
 

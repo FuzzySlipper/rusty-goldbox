@@ -220,8 +220,12 @@ export function mountProductUi(root, context) {
       element('pre', { id: 'rusty-goldbox-map', style: 'margin:0 0 6px;line-height:1.05' }, view.map ?? ''),
       menu, moves, row(command),
       log,
-      element('div', { style: 'opacity:.8' }, (view.party ?? []).map((member) => `${member.name} ${member.tracks.join(' ')}`).join(' · ')),
+      element('div', { style: 'opacity:.8' }, (view.party ?? []).map((member) => `${member.name} ${member.tracks.join(' ')} ${member.experience} xp${member.levelReady ? ' (level ready)' : ''}`).join(' · ')),
       ...(view.party ?? []).flatMap((member, index) => renderSpells(member, index)),
+      // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
+      row(...(view.party ?? []).flatMap((member, index) => member.levelReady
+        ? [button(`Level up ${member.name}`, () => send({ action: 'play', command: `level ${index + 1}` }))]
+        : [])),
       row(slot, button('Save', () => send({ action: 'save', slot: slot.value })), button('Quit', () => send({ action: 'quit' }))));
   };
 

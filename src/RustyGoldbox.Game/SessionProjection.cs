@@ -260,6 +260,8 @@ internal static class SessionProjection
             ["spells"] = new JsonArray(character.Spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
             ["castable"] = new JsonArray(CharacterRules.CastableSpells(rules, character).Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
             ["gold"] = (double)character.Gold,
+            ["experience"] = (double)character.Experience,
+            ["levelReady"] = CharacterRules.ReadyToLevel(rules, character),
             ["portrait"] = character.Portrait?.QualifiedId,
         };
     }

@@ -351,11 +351,15 @@ Combat is built so that no die convention is assumed:
   backdrop and an event trigger with a facing or once-only flag. Areas have
   named entry points.
 - **Events.** These are UA-style event chains, written as data. Event types
-  include text, question/menu, combat, treasure, give/take item, shop,
+  include text, question/menu, combat, treasure, experience, give/take item, shop,
   temple, training, rest, NPC join/leave, set/test variable, teleport, a
   conditional branch, chain-to, and end adventure. Each event names its
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
   branch can be guarded by an expression.
+- **Experience** comes from felled monsters and experience events, shared
+  among the survivors (or the whole party, as the ruleset says). A level that
+  needs no choice is taken at once; one that does (a feat, a boost, the class
+  of the next level) waits until the player takes it with its choices.
 - **Variables** are global or area-scoped. Each is declared with a type and an
   initial value; undeclared variables fail validation. Expressions read them
   as `campaign.var.<name>`.

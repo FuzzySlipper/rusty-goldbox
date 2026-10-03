@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, look, status";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...]";
 
     private const int MaxChainLength = 10_000;
 
@@ -119,6 +119,9 @@ public sealed class CampaignRunner
                 break;
             case "status" when words.Length == 1:
                 facts.Add(Status());
+                break;
+            case "level" when words.Length >= 2 && int.TryParse(words[1], out int member):
+                Level(member, words[2..], dice, facts);
                 break;
             default:
                 facts.Add(new RefusedFact($"'{command}' is not a command. Commands: {CommandList}."));
@@ -257,6 +260,16 @@ public sealed class CampaignRunner
                 return Next(evt, "$.next");
             case "treasure":
                 return Treasure(evt, dice, facts);
+            case "experience":
+                if (json.TryGetProperty("text", out JsonElement said))
+                {
+                    facts.Add(new TextFact(said.GetString()!));
+                }
+
+                decimal amount = Located(evt, "$.amount", () => Evaluate(evt, "$.amount", dice).Number);
+                bool each = json.TryGetProperty("each", out JsonElement everyone) && everyone.GetBoolean();
+                Award(evt, "$.amount", amount, each, _state.Party.Select(_ => true).ToList(), dice, facts);
+                return Next(evt, "$.next");
             case "rest":
                 Evaluator evaluator = new(_rules, null);
                 for (int i = 0; i < json.GetProperty("tracks").GetArrayLength(); i++)
@@ -323,6 +336,91 @@ public sealed class CampaignRunner
         return Next(evt, "$.next");
     }
 
+    /// <summary>
+    /// Gives experience to the party: the whole amount to each, or an even
+    /// share (rounding down) to those the ruleset's experience_to names
+    /// (<paramref name="standing"/> for survivors). Levels that need no
+    /// choice come at once; the others wait for a level command.
+    /// </summary>
+    private void Award(Definition owner, string path, decimal amount, bool each, List<bool> standing, DiceRoller dice, List<PlayFact> facts)
+    {
+        bool toParty = _rules.Advancement?.Json.TryGetProperty("experience_to", out JsonElement to) == true && to.GetString() == "party";
+        List<int> sharing = Enumerable.Range(0, _state.Party.Count).Where(index => each || toParty || standing[index]).ToList();
+        if (sharing.Count == 0)
+        {
+            facts.Add(new ExperienceFact([]));
+            return;
+        }
+
+        decimal share = each ? amount : decimal.Floor(amount / sharing.Count);
+        facts.Add(new ExperienceFact(sharing.Select(index => (_state.Party[index].Name, share)).ToList()));
+        foreach (int index in sharing)
+        {
+            Character character = _state.Party[index];
+            int before = dice.Rolls.Count;
+            List<LevelGain> gains = Located(owner, path, () => CharacterRules.Award(_rules, character, share, dice));
+            ReportLevels(character, index + 1, gains, before, dice, facts);
+        }
+    }
+
+    /// <summary>The level command: takes the levels a character has the experience for, with the choices they need.</summary>
+    private void Level(int member, string[] options, DiceRoller dice, List<PlayFact> facts)
+    {
+        if (member < 1 || member > _state.Party.Count)
+        {
+            facts.Add(new RefusedFact($"{member} is not a party member; members are 1 to {_state.Party.Count}."));
+            return;
+        }
+
+        Dictionary<string, string> given = [];
+        for (int index = 0; index < options.Length; index++)
+        {
+            if (options[index] is not ("--class" or "--feature" or "--boosts") || index + 1 >= options.Length || given.ContainsKey(options[index]))
+            {
+                facts.Add(new RefusedFact($"level takes a member number, then --class <id>, --feature <id>,... and --boosts <id>,..., each once."));
+                return;
+            }
+
+            given[options[index]] = options[++index];
+        }
+
+        Character character = _state.Party[member - 1];
+        string? nextClass = given.GetValueOrDefault("--class");
+        if (nextClass is null && !CharacterRules.ReadyToLevel(_rules, character))
+        {
+            facts.Add(new RefusedFact($"{character.Name} doesn't have the experience for another level."));
+            return;
+        }
+
+        static List<string>? List(string? text) => text?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+        List<ModuleDiagnostic> problems = [];
+        int before = dice.Rolls.Count;
+        if (CharacterRules.AddExperience(_rules, character, 0, dice, problems, nextClass, List(given.GetValueOrDefault("--feature")), List(given.GetValueOrDefault("--boosts"))) is not List<LevelGain> gains)
+        {
+            facts.Add(new RefusedFact(string.Join(" ", problems.Select(problem => problem.Message))));
+            return;
+        }
+
+        ReportLevels(character, member, gains, before, dice, facts);
+    }
+
+    /// <summary>A fact for each level gained, then one if another level still waits for choices.</summary>
+    private void ReportLevels(Character character, int member, List<LevelGain> gains, int rollsBefore, DiceRoller dice, List<PlayFact> facts)
+    {
+        string track = _rules.LevelTrack?.Name.ToLowerInvariant() ?? "level track";
+        for (int index = 0; index < gains.Count; index++)
+        {
+            LevelGain gain = gains[index];
+            LevelFact fact = new(character.Name, member, gain.Level, $"{gain.Class.Name} {character.ClassLevels().GetValueOrDefault(gain.Class)}", gain.Amount, track);
+            facts.Add(index == 0 ? fact with { Rolls = dice.Rolls.Skip(rollsBefore).ToList() } : fact);
+        }
+
+        if (CharacterRules.ReadyToLevel(_rules, character))
+        {
+            facts.Add(new LevelFact(character.Name, member, character.Level + 1, "", 0, track, Waiting: true));
+        }
+    }
+
     /// <summary>Who is in a fight and where they start on its track, for presenting it.</summary>
     private List<FightMember> Members(Definition combat, Definition encounter, List<CombatSide> sides)
     {
@@ -384,6 +482,14 @@ public sealed class CampaignRunner
             _ => FightOutcome.Lost,
         };
         facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter)));
+
+        // Every monster felled is worth its experience, whoever won.
+        decimal earned = sides[1].Members.Where(member => member.Defeated && member.Creature.Monster is not null)
+            .Sum(member => member.Creature.Monster!.Json.GetProperty("xp").GetDecimal());
+        if (earned > 0)
+        {
+            Award(evt, "$.encounter", earned, false, sides[0].Members.Select(member => !member.Defeated).ToList(), dice, facts);
+        }
         if (outcome == FightOutcome.Won)
         {
             return Next(evt, "$.on_win");
@@ -470,7 +576,8 @@ public sealed class CampaignRunner
                 .Select(track => (Track: track, Max: evaluator.TrackMax(creature, track)))
                 .Where(entry => entry.Max != 0)
                 .Select(entry => $"{entry.Track.Name.ToLowerInvariant()} {Fact(creature.Track(entry.Track.Id).Current ?? 0)}/{Fact(entry.Max)}"));
-            lines.Add($"{character.Name} ({tracks})");
+            string ready = CharacterRules.ReadyToLevel(_rules, character) ? ", level ready" : "";
+            lines.Add($"{character.Name} ({tracks}, {Fact(character.Experience)} xp{ready})");
         }
 
         lines.Add($"gold {string.Join(" + ", _state.Party.Select(character => Fact(character.Gold)))}");

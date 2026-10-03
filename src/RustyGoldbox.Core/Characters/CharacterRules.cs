@@ -642,6 +642,120 @@ public static class CharacterRules
         IReadOnlyList<string>? features = null,
         IReadOnlyList<string>? boosts = null)
     {
+        // All or nothing: a level that can't be taken leaves the character as it was.
+        LevelSnapshot before = LevelSnapshot.Of(character);
+        List<LevelGain>? gains = Gain(rules, character, experience, dice, problems, nextClass, features, boosts);
+        if (gains is null)
+        {
+            before.Restore(character);
+        }
+
+        return gains;
+    }
+
+    /// <summary>
+    /// Adds experience earned in play. Levels it reaches are taken at once when
+    /// they need no choice; otherwise they wait (<see cref="ReadyToLevel"/>)
+    /// for <see cref="AddExperience"/> with no more experience and the choices.
+    /// Where each level's class is chosen (experience by character), every
+    /// level waits.
+    /// </summary>
+    public static List<LevelGain> Award(RuleSet rules, Character character, decimal experience, DiceRoller dice)
+    {
+        bool classChosen = rules.Advancement?.Json.GetProperty("experience").GetString() == "character";
+        if (!classChosen && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
+        {
+            return gains;
+        }
+
+        character.Experience = checked(character.Experience + experience);
+        if (rules.ExperienceSplit)
+        {
+            Share(character, experience);
+        }
+
+        return [];
+    }
+
+    /// <summary>Whether the character has the experience for a level it hasn't taken.</summary>
+    public static bool ReadyToLevel(RuleSet rules, Character character)
+    {
+        if (rules.ExperienceSplit)
+        {
+            return character.ClassProgress().Any(progress => progress.Next is decimal needed && progress.Experience >= needed);
+        }
+
+        return character.NextLevelExperience(rules) is decimal next && character.Experience >= next;
+    }
+
+    /// <summary>With experience split, divides experience evenly (rounding down) between the classes the character advances in.</summary>
+    private static void Share(Character character, decimal experience)
+    {
+        List<Definition> advancing = character.AdvancingClasses();
+        decimal share = decimal.Floor(experience / advancing.Count);
+        foreach (Definition each in advancing)
+        {
+            character.ClassExperience[each] = checked(character.ClassExperience.GetValueOrDefault(each) + share);
+        }
+    }
+
+    /// <summary>What levelling changes, kept so a level that can't be taken can be undone.</summary>
+    private sealed record LevelSnapshot(
+        List<LevelTaken> Levels,
+        Dictionary<Definition, decimal> ClassExperience,
+        List<Definition> LeftClasses,
+        decimal Experience,
+        Dictionary<string, decimal> Attributes,
+        Dictionary<string, (decimal? Current, decimal? Max)> Tracks)
+    {
+        public static LevelSnapshot Of(Character character)
+        {
+            return new LevelSnapshot(
+                [.. character.Levels],
+                new(character.ClassExperience),
+                [.. character.LeftClasses],
+                character.Experience,
+                new(character.Attributes),
+                character.Tracks.ToDictionary(entry => entry.Key, entry => (entry.Value.Current, entry.Value.Max)));
+        }
+
+        public void Restore(Character character)
+        {
+            character.Levels.Clear();
+            character.Levels.AddRange(Levels);
+            character.ClassExperience.Clear();
+            foreach ((Definition each, decimal experience) in ClassExperience)
+            {
+                character.ClassExperience[each] = experience;
+            }
+
+            character.LeftClasses.Clear();
+            character.LeftClasses.AddRange(LeftClasses);
+            character.Experience = Experience;
+            character.Attributes.Clear();
+            foreach ((string id, decimal score) in Attributes)
+            {
+                character.Attributes[id] = score;
+            }
+
+            character.Tracks.Clear();
+            foreach ((string id, (decimal? current, decimal? max)) in Tracks)
+            {
+                character.Tracks[id] = new TrackValue { Current = current, Max = max };
+            }
+        }
+    }
+
+    private static List<LevelGain>? Gain(
+        RuleSet rules,
+        Character character,
+        decimal experience,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems,
+        string? nextClass,
+        IReadOnlyList<string>? features,
+        IReadOnlyList<string>? boosts)
+    {
         Queue<string> boostChoices = new(boosts ?? []);
         List<Definition>? choices = FindFeatures(rules, features, problems);
         if (choices is null)
@@ -677,14 +791,8 @@ public static class CharacterRules
                     }
                 }
 
-                List<Definition> advancing = character.AdvancingClasses();
-                decimal share = decimal.Floor(experience / advancing.Count);
-                foreach (Definition each in advancing)
-                {
-                    character.ClassExperience[each] = checked(character.ClassExperience.GetValueOrDefault(each) + share);
-                }
-
-                foreach (Definition each in advancing)
+                Share(character, experience);
+                foreach (Definition each in character.AdvancingClasses())
                 {
                     while (character.ClassProgress().First(progress => progress.Class == each) is { Next: decimal needed } progress && progress.Experience >= needed)
                     {

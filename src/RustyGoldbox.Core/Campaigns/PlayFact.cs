@@ -130,6 +130,26 @@ public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList
     };
 }
 
+/// <summary>Experience the party earned, and each character's share.</summary>
+public sealed record ExperienceFact(IReadOnlyList<(string Who, decimal Amount)> Shares) : PlayFact
+{
+    public override string Kind => "experience";
+
+    public override string Describe() => Shares.Count == 0
+        ? "No one is standing to share the experience."
+        : $"Experience: {string.Join(", ", Shares.Select(share => $"{share.Who} {N(share.Amount)}"))}.";
+}
+
+/// <summary>A level a character gained in play, or one it has the experience for but needs choices to take.</summary>
+public sealed record LevelFact(string Who, int Member, int Level, string Class, decimal Gain, string Track, bool Waiting = false) : PlayFact
+{
+    public override string Kind => "level";
+
+    public override string Describe() => Waiting
+        ? $"{Who} has the experience for a new level, which needs choices: level {Member} [--class <id>] [--feature <id>,...] [--boosts <id>,...]."
+        : $"{Who} reaches level {Level} ({Class}): +{N(Gain)} {Track}.";
+}
+
 public sealed record EndedFact(string Text) : PlayFact
 {
     public override string Kind => "ended";

@@ -87,6 +87,17 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "loot", "kind": "treasure", "gold": "2d6 * 10", "items": ["classic:dagger"] }""");
 
+    public static DefinitionType Experience { get; } = new(
+        "experience",
+        "Awards experience to the party, as for a quest done or a puzzle solved. Characters gain the levels it reaches that need no choice; the others wait for a level command.",
+        [
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign), true, "Experience awarded, for example \"500\"; split as fights' awards are (see the advancement's experience_to) unless each is true."),
+            new("each", new BooleanKind(), false, "If true, every character gets the whole amount. Without it, the amount is shared."),
+            new("text", new TextKind(), false, "What the party sees first."),
+            Next,
+        ],
+        """{ "type": "event", "id": "quest_done", "kind": "experience", "amount": "500", "text": "The abbot thanks you.", "next": "abbey" }""");
+
     public static DefinitionType End { get; } = new(
         "end",
         "Ends the adventure.",
@@ -104,7 +115,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

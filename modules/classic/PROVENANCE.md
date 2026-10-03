@@ -83,4 +83,7 @@ small:
   count by hit dice band. Magic missile's missiles each go to the weakest foe
   in range, so they spread once one falls; the caster doesn't choose.
 - Monsters' hit points are their hit dice rolled as written, with no minimum.
+- In play, felled monsters' experience is shared evenly among the characters
+  still standing. Experience for treasure brought home (p. 124) and the
+  bonus for a high prime requisite are not awarded yet.
 - Armour movement limits, thief skills and turning undead are not modelled yet.
