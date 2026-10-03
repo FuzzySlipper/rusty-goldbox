@@ -2,10 +2,12 @@
   "type": "combat",
   "id": "conflict",
   "name": "Conflict",
-  "initiative": "self.notice",
+  "initiative": "0",
   "initiative_by": "creature",
   "initiative_order": "highest-first",
   "initiative_each": "combat",
+  "initiative_mode": "elective",
+  "initiative_score": "self.fight - target.athletics",
   "round_seconds": 6,
   "field": {
     "width": 3,

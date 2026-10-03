@@ -542,6 +542,36 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void ElectiveInitiativeLetsTheLastActorChooseByScore()
+    {
+        using TempModules modules = new();
+        string root = DuelRuleset(modules);
+        modules.Write("rules/popcorn.json", """
+            { "type": "combat", "id": "popcorn", "name": "Popcorn", "initiative_mode": "elective", "initiative_score": "target.str",
+              "round_seconds": 6, "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "popcorn", out _)!;
+        Definition hexer = rules.Find(DefinitionTypes.Monster, "hexer", out _)!;
+        Definition dummy = rules.Find(DefinitionTypes.Monster, "dummy", out _)!;
+
+        CombatResult result = WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            return CombatRunner.Run(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, hexer, "First", evaluator), Combatant.FromMonster(rules, dummy, "Second", evaluator)]),
+                new CombatSide("Monsters", [Combatant.FromMonster(rules, hexer, "Third", evaluator), Combatant.FromMonster(rules, dummy, "Fourth", evaluator)]),
+            ], dice, 1);
+        });
+
+        Assert.Empty(result.Facts.OfType<InitiativeFact>());
+        Assert.Equal(["First", "Third"], result.Facts.OfType<ActionFact>().Select(fact => fact.Who));
+        Assert.Equal(["First chooses Third next (score 15).", "Third chooses Second next (score 5).", "Second chooses Fourth next (score 5)."],
+            result.Facts.OfType<InitiativeChoiceFact>().Select(fact => fact.Describe()).Take(3));
+    }
+
+    [Fact]
     public void AnEncounterCanChooseStartingCellsAndForceSurprise()
     {
         using TempModules modules = new();

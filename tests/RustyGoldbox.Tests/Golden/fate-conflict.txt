@@ -67,67 +67,83 @@ error[character.class]
 $ goldbox sim combat --module modules/fate-condensed --party ruth.json,ethan.json --encounter cult_cell --seed 1
 seed 1
 Round 1.
-  Ruth rolls 2 for initiative.
-  Ethan rolls 3 for initiative.
-  Cultist 1 rolls 1 for initiative.
-  Cultist 2 rolls 1 for initiative.
-  Cultist 3 rolls 1 for initiative.
-  Thug rolls 0 for initiative.
-  Ethan uses Shoot on Cultist 1.
-  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 3: style.  [4dF: + - + - = 0; 4dF: + + + - = 2]
+  Ruth uses Fight on Cultist 1.
+  Ruth rolls Fight: 0 + 4 + 2 modifiers = 6 against 3: style.  [4dF: + - + - = 0; 4dF: + + + - = 2]
   Cultist 1 is Taken out.
   Cultist 1 is out of the fight.
-  Ruth uses Fight on Cultist 2.
-  Ruth rolls Fight: -1 + 4 + 2 modifiers = 5 against 0: style.  [4dF: - + - 0 = -1; 4dF: - + - 0 = -1]
-  Cultist 2 is Taken out.
-  Cultist 2 is out of the fight.
+  Ruth chooses Cultist 2 next (score 3).
+  Cultist 2 uses Fight on Ethan.
+  Cultist 2 rolls Fight: -1 + 1 = 0 against 2: failure.  [4dF: - + - 0 = -1; 4dF: - + - 0 = -1]
+  Cultist 2 chooses Cultist 3 next (score 0).
   Cultist 3 uses Fight on Ethan.
   Cultist 3 rolls Fight: 0 + 1 = 1 against 5: failure.  [4dF: + - - + = 0; 4dF: + + 0 0 = 2]
+  Cultist 3 chooses Thug next (score 0).
   Thug uses Fight on Ethan.
   Thug rolls Fight: -3 + 2 = -1 against 3: failure.  [4dF: - - 0 - = -3; 4dF: - - + + = 0]
-Round 2.
-  Ethan uses Shoot on Cultist 3.
+  Thug chooses Ethan next (score -1).
+  Ethan uses Shoot on Cultist 2.
   Ethan rolls Shoot: 3 + 4 + 2 modifiers = 9 against -1: style.  [4dF: + 0 + + = 3; 4dF: 0 - - 0 = -2]
+  Cultist 2 is Taken out.
+  Cultist 2 is out of the fight.
+Round 2.
+  Ethan chooses Cultist 3 next (score 0).
+  Cultist 3 uses Fight on Ethan.
+  Cultist 3 rolls Fight: 2 + 1 = 3 against 2: success.  [4dF: + + - + = 2; 4dF: 0 0 0 - = -1]
+  Ethan loses 1 physical stress (2 left).
+  Cultist 3 chooses Thug next (score 0).
+  Thug uses Fight on Ethan.
+  Thug rolls Fight: -1 + 2 = 1 against 3: failure.  [4dF: 0 - 0 0 = -1; 4dF: 0 + 0 - = 0]
+  Thug chooses Ruth next (score -1).
+  Ruth uses Fight on Cultist 3.
+  Ruth rolls Fight: 0 + 4 + 2 modifiers = 6 against 1: style.  [4dF: 0 + 0 - = 0; 4dF: + - 0 0 = 0]
   Cultist 3 is Taken out.
   Cultist 3 is out of the fight.
-  Ruth uses Fight on Thug.
-  Ruth rolls Fight: 2 + 4 + 2 modifiers = 8 against 0: style.  [4dF: + + - + = 2; 4dF: 0 0 0 - = -1]
+  Ruth chooses Ethan next (score 1).
+  Ethan uses Shoot on Thug.
+  Ethan rolls Shoot: 1 + 4 + 2 modifiers = 7 against 3: style.  [4dF: 0 + 0 0 = 1; 4dF: + 0 0 + = 2]
   Thug is Taken out.
   Thug is out of the fight.
 Party wins after 2 rounds.
-Party: Ruth 7/7, Ethan 3/3
+Party: Ruth 7/7, Ethan 2/3
 Cult cell: Cultist 1 1/1 (out), Cultist 2 1/1 (out), Cultist 3 1/1 (out), Thug 2/2 (out)
 [exit 0]
 
 $ goldbox sim combat --module modules/fate-condensed --party ruth.json,ethan.json --encounter ghoul --seed 2
 seed 2
 Round 1.
-  Ruth rolls 2 for initiative.
-  Ethan rolls 3 for initiative.
-  Ghoul rolls 2 for initiative.
-  Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 6: tie.  [4dF: + + - - = 0; 4dF: + + + + = 4]
   Ruth uses Fight on Ghoul.
-  Ruth rolls Fight: -2 + 4 + 2 modifiers = 4 against 0: style.  [4dF: 0 0 - - = -2; 4dF: - + - - = -2]
+  Ruth rolls Fight: 0 + 4 + 2 modifiers = 6 against 6: tie.  [4dF: + + - - = 0; 4dF: + + + + = 4]
+  Ruth chooses Ghoul next (score 2).
+  Ghoul uses Fight on Ethan.
+  Ghoul rolls Fight: -2 + 2 = 0 against 1: failure.  [4dF: 0 0 - - = -2; 4dF: - + - - = -2]
+  Ghoul chooses Ethan next (score -1).
+  Ethan uses Shoot on Ghoul.
+  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 2: style.  [4dF: + + - - = 0; 4dF: 0 - 0 + = 0]
   Ghoul is Hurt (mild consequence).
   Ghoul loses 2 physical stress (1 left).
-  Ghoul uses Fight on Ethan.
-  Ghoul rolls Fight: 0 + 2 = 2 against 3: failure.  [4dF: + + - - = 0; 4dF: 0 - 0 + = 0]
 Round 2.
-  Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: -2 + 4 + 2 modifiers = 4 against 2: success.  [4dF: - - - + = -2; 4dF: + - - + = 0]
-  Ghoul is Badly hurt (moderate consequence).
+  Ethan chooses Ghoul next (score -1).
+  Ghoul uses Fight on Ethan.
+  Ghoul rolls Fight: -2 + 2 = 0 against 3: failure.  [4dF: - - - + = -2; 4dF: + - - + = 0]
+  Ghoul chooses Ruth next (score -1).
   Ruth uses Fight on Ghoul.
   Ruth rolls Fight: -1 + 4 + 2 modifiers = 5 against 4: success.  [4dF: 0 - + - = -1; 4dF: 0 + + 0 = 2]
   Ghoul loses 1 physical stress (0 left).
-  Ghoul uses Fight on Ethan.
-  Ghoul rolls Fight: 2 + 2 = 4 against 4: tie.  [4dF: + - + + = 2; 4dF: 0 + + - = 1]
-Round 3.
+  Ruth chooses Ethan next (score 1).
   Ethan uses Shoot on Ghoul.
-  Ethan rolls Shoot: -3 + 4 + 2 modifiers = 3 against 0: style.  [4dF: - - 0 - = -3; 4dF: - + - - = -2]
+  Ethan rolls Shoot: 2 + 4 + 2 modifiers = 8 against 3: style.  [4dF: + - + + = 2; 4dF: 0 + + - = 1]
   Ghoul is Maimed (severe consequence).
+Round 3.
+  Ethan chooses Ghoul next (score -1).
+  Ghoul uses Fight on Ethan.
+  Ghoul rolls Fight: -3 + 2 = -1 against 1: failure.  [4dF: - - 0 - = -3; 4dF: - + - - = -2]
+  Ghoul chooses Ruth next (score -1).
   Ruth uses Fight on Ghoul.
   Ruth rolls Fight: 0 + 4 + 2 modifiers = 6 against 2: style.  [4dF: + - 0 0 = 0; 4dF: 0 - + 0 = 0]
+  Ghoul is Badly hurt (moderate consequence).
+  Ruth chooses Ethan next (score 1).
+  Ethan uses Shoot on Ghoul.
+  Ethan rolls Shoot: 0 + 4 + 2 modifiers = 6 against 5: success.  [4dF: + 0 0 - = 0; 4dF: 0 + + + = 3]
   Ghoul is Taken out.
   Ghoul is out of the fight.
 Party wins after 3 rounds.

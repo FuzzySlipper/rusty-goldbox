@@ -10,8 +10,9 @@ public readonly record struct Cell(int X, int Y);
 public sealed record Terrain(char Key, string Name, bool Passable, int Cost, bool BlocksSight);
 
 /// <summary>
-/// A combat definition's field: a grid of cells, and how distance is counted
-/// on it ("chebyshev": a diagonal step is 1; "manhattan": only straight steps).
+/// A combat definition's field: a grid of cells or shared zone cells, and how
+/// distance is counted on it ("chebyshev": a diagonal step is 1;
+/// "manhattan": only straight steps).
 /// The first side starts on the left edge and the second on the right, rank
 /// after rank inward; further sides fill in after them. An encounter may lay
 /// the field's terrain over it; every other cell is open ground.

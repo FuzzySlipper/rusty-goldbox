@@ -35,6 +35,7 @@ public sealed class CombatRunner
     private readonly List<CombatSide> _sides;
     private readonly CombatSetup? _setup;
     private int? _fledSide;
+    private Combatant? _lastActor;
     private readonly List<CombatFact> _facts = [];
     private readonly Definition _track;
     private readonly CombatField? _field;
@@ -133,7 +134,7 @@ public sealed class CombatRunner
 
         int round = 0;
         int? winner = Winner();
-        bool rollEachRound = _combat.Json.GetProperty("initiative_each").GetString() == "round";
+        bool rollEachRound = _combat.Json.TryGetProperty("initiative_each", out JsonElement initiativeEach) && initiativeEach.GetString() == "round";
         List<Combatant>? order = null;
         while (winner is null && StandingSides() > 1 && round < maxRounds)
         {
@@ -147,38 +148,25 @@ public sealed class CombatRunner
                     member.Creature.Rolled.Clear();
                 }
             }
-            if (order is null || rollEachRound)
+            if (!ElectiveInitiative && (order is null || rollEachRound))
             {
                 order = TurnOrder();
             }
 
             HashSet<Combatant> tookTurns = [];
-            foreach (Combatant combatant in order)
+            if (ElectiveInitiative)
             {
-                if (StandingSides() <= 1)
-                {
-                    break;
-                }
-
-                if (TakeTurn(combatant))
-                {
-                    tookTurns.Add(combatant);
-                }
-                else if (DownedConditions && !combatant.Escaped && !tookTurns.Contains(combatant))
-                {
-                    // A creature that fell keeps its place, where its conditions run.
-                    DownedTurn(combatant);
-                    tookTurns.Add(combatant);
-                }
+                RunElectiveRound(tookTurns);
             }
-
-            // Those not in the order (down from the start, or dropped by a new roll) run theirs last.
-            if (DownedConditions && StandingSides() > 1)
+            else
             {
-                foreach (Combatant downed in Everyone.Where(member => member.Defeated && !member.Escaped && !tookTurns.Contains(member)).ToList())
+                foreach (Combatant combatant in order!)
                 {
-                    DownedTurn(downed);
+                    RunTurn(combatant, tookTurns);
                 }
+
+                // Those not in the order (down from the start, or dropped by a new roll) run theirs last.
+                RunDownedTurns(tookTurns);
             }
 
             winner = Winner();
@@ -186,6 +174,72 @@ public sealed class CombatRunner
 
         Record(new EndFact(winner is int side ? _sides[side].Name : null, round));
         return new CombatResult(_facts, winner, round, _sides, _track, _fledSide);
+    }
+
+    private bool ElectiveInitiative => _combat.Json.TryGetProperty("initiative_mode", out JsonElement mode) && mode.GetString() == "elective";
+
+    private void RunTurn(Combatant combatant, HashSet<Combatant> tookTurns)
+    {
+        if (StandingSides() <= 1)
+        {
+            return;
+        }
+
+        if (TakeTurn(combatant))
+        {
+            tookTurns.Add(combatant);
+        }
+        else if (DownedConditions && !combatant.Escaped && !tookTurns.Contains(combatant))
+        {
+            // A creature that fell keeps its place, where its conditions run.
+            DownedTurn(combatant);
+            tookTurns.Add(combatant);
+        }
+    }
+
+    private void RunDownedTurns(HashSet<Combatant> tookTurns)
+    {
+        if (DownedConditions && StandingSides() > 1)
+        {
+            foreach (Combatant downed in Everyone.Where(member => member.Defeated && !member.Escaped && !tookTurns.Contains(member)).ToList())
+            {
+                DownedTurn(downed);
+            }
+        }
+    }
+
+    private void RunElectiveRound(HashSet<Combatant> tookTurns)
+    {
+        while (StandingSides() > 1 && NextElective(_lastActor, tookTurns) is Combatant next)
+        {
+            RunTurn(next, tookTurns);
+            _lastActor = next;
+        }
+
+        RunDownedTurns(tookTurns);
+    }
+
+    private Combatant? NextElective(Combatant? last, HashSet<Combatant> tookTurns)
+    {
+        List<Combatant> candidates = Everyone.Where(member => !member.Defeated && !tookTurns.Contains(member)).ToList();
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        if (last is null || last.Defeated || !_combat.Json.TryGetProperty("initiative_score", out _))
+        {
+            return candidates[0];
+        }
+
+        int before = _dice.Rolls.Count;
+        (Combatant Member, decimal Score, int Index) best = candidates
+            .Select((member, index) => (Member: member, Score: Number(_combat, "$.initiative_score", new Scope(last.Creature, member.Creature)), Index: index))
+            .OrderByDescending(entry => entry.Score)
+            .ThenBy(entry => entry.Index)
+            .First();
+        Record(new InitiativeChoiceFact(last.Name, best.Member.Name, best.Score), before);
+        return best.Member;
     }
 
     /// <summary>

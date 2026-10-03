@@ -46,8 +46,9 @@ leaves out what needs a table to decide:
 - Aspects, invokes, compels and fate points are not modelled. Create an
   advantage gives its creator +2 on its attacks for the next exchange (two
   with style), standing in for an aspect with free invokes.
-- Turn order uses Notice (the Fate Core way) rather than the default elective
-  ("popcorn") order, which needs players choosing who goes next.
+- Turn order uses the default elective ("popcorn") order: after the first
+  actor, the current actor chooses who goes next. The headless AI uses the
+  declared initiative_score policy to make that choice.
 - Conflicts use three shared zones in the combat field; everyone in one zone
   can reach everyone there (distance 0), and moving between zones is part of a
   movement action. Ties and success with style give no boost. Defending is

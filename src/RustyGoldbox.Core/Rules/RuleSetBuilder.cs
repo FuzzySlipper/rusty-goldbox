@@ -716,6 +716,18 @@ public sealed class RuleSetBuilder
             {
                 Error(combat, "combat.round-limit", "$.round_limit", "round_limit must be at least 1.");
             }
+
+            bool elective = combat.Json.TryGetProperty("initiative_mode", out JsonElement mode) && mode.GetString() == "elective";
+            if (!elective)
+            {
+                foreach (string field in new[] { "initiative", "initiative_by", "initiative_order", "initiative_each" })
+                {
+                    if (!combat.Json.TryGetProperty(field, out _))
+                    {
+                        Error(combat, "combat.initiative", $"$.{field}", $"Rolled initiative needs \"{field}\"; use initiative_mode \"elective\" when the last actor chooses the next creature.");
+                    }
+                }
+            }
         }
 
         HashSet<string> budget = _rules.OfType(DefinitionTypes.Combat)

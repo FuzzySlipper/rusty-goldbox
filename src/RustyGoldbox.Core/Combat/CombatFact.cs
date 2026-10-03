@@ -41,6 +41,13 @@ public sealed record InitiativeFact(string Who, decimal Value) : CombatFact
     public override string Describe() => $"{Who} rolls {N(Value)} for initiative.";
 }
 
+public sealed record InitiativeChoiceFact(string Who, string Next, decimal Score) : CombatFact
+{
+    public override string Kind => "initiative_choice";
+
+    public override string Describe() => $"{Who} chooses {Next} next (score {N(Score)}).";
+}
+
 public sealed record TurnSkippedFact(string Who, string Reason) : CombatFact
 {
     public override string Kind => "turn_skipped";
