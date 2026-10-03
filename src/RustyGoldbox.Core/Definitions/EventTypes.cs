@@ -124,6 +124,21 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "next": "farewell" }""");
 
+    public static DefinitionType Temple { get; } = new(
+        "temple",
+        "Offers priced services on a chosen party member. Waits for serve <service> <member> or leave.",
+        [
+            new("text", new TextKind(), true, "The greeting."),
+            new("services", new ListKind(new ObjectKind(
+            [
+                new("label", new TextKind(), true, "The service name."),
+                new("cost", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign), true, "Gold charged; may read the chosen character as self and campaign variables. Must evaluate to a nonnegative number."),
+                new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign, ["heal", "remove_condition"])), true, "Operations on the chosen character; heal requires a track and to, if given, must be self."),
+            ])), true, "Services in order, numbered from 1."),
+            Next, Picture, Sound, Music,
+        ],
+        """{ "type": "event", "id": "temple", "kind": "temple", "text": "Welcome.", "services": [{ "label": "Healing", "cost": "10", "operations": [{ "op": "heal", "track": "classic:hit_points", "amount": "1d8" }] }] }""");
+
     public static DefinitionType End { get; } = new(
         "end",
         "Ends the adventure.",
@@ -141,7 +156,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"] }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Branch, Teleport, Treasure, Rest, Experience, Shop, Temple, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

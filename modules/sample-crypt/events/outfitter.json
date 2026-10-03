@@ -7,5 +7,5 @@
     { "item": "classic:dagger" },
     { "item": "classic:long_sword", "when": "campaign.var.guards_defeated" }
   ],
-  "next": "farewell"
+  "next": "temple"
 }

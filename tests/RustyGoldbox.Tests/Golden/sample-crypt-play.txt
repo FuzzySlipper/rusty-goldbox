@@ -127,6 +127,12 @@ seed 1
   A travelling outfitter offers supplies by the crypt gate. Gold: 339. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.
+  The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
+> serve 1 1
+  Ada receives Healing for 5 gold.  [1d8: 6 = 6]
+  The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
+> leave
+  The party leaves the temple.
   The outfitter wishes you safe travels.
 > left
   The party faces north.
@@ -165,6 +171,12 @@ seed 1
   A travelling outfitter offers supplies by the crypt gate. Gold: 240. Buy: [1] Dagger 2 gold. Sell: [1] Long sword (Ada) 7.5 gold  [2] Chain mail (Ada) 37.5 gold  [3] Shield (Ada) 6 gold  [4] Heavy mace (Brom) 5 gold  [5] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.
+  The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
+> serve 1 1
+  Ada receives Healing for 5 gold.  [1d8: 8 = 8]
+  The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
+> leave
+  The party leaves the temple.
   The outfitter wishes you safe travels.
 > left
   The party faces north.

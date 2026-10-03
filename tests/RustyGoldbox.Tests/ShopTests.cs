@@ -184,7 +184,7 @@ public sealed class ShopTests
         });
     }
 
-    private static string Fixture(TempModules modules)
+    internal static string Fixture(TempModules modules)
     {
         Rules.WriteSmallRuleset(modules);
         modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "c", "name": "C", "attributes": ["str"], "attribute_roll": "10", "assignment": "in-order", "starting_gold": { "warrior": "5" } }""");
@@ -202,7 +202,7 @@ public sealed class ShopTests
         return campaign;
     }
 
-    private static List<Character> Party(TempModules scratch, string campaign, ModuleSet set)
+    internal static List<Character> Party(TempModules scratch, string campaign, ModuleSet set)
     {
         List<Character> party = [];
         foreach (string name in new[] { "A", "B" })

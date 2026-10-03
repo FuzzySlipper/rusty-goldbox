@@ -117,6 +117,16 @@ internal static class SessionProjection
                 ["stock"] = Offers(shop.Stock),
                 ["carried"] = Offers(shop.Carried),
             } : null;
+            projection["temple"] = runner.Temple() is TempleFact temple ? new JsonObject
+            {
+                ["text"] = temple.Text,
+                ["services"] = new JsonArray(temple.Services.Select(service => (JsonNode)new JsonObject
+                {
+                    ["number"] = service.Number,
+                    ["label"] = service.Label,
+                    ["prices"] = new JsonArray(service.Prices.Select(price => (JsonNode)JsonValue.Create(price)!).ToArray()),
+                }).ToArray()),
+            } : null;
             projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);

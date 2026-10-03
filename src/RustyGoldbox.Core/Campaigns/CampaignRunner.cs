@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, choose <n>, buy <n>, sell <n>, serve <service> <member>, leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -114,6 +114,12 @@ public sealed partial class CampaignRunner
             return facts;
         }
 
+        if (_state.PendingTemple is not null && verb is not ("serve" or "leave" or "look" or "status"))
+        {
+            facts.Add(new RefusedFact("leave the temple first, or use serve <service> <member>."));
+            return facts;
+        }
+
         switch (verb)
         {
             case "forward" or "back" when words.Length == 1:
@@ -134,7 +140,17 @@ public sealed partial class CampaignRunner
                 Sell(carried, facts);
                 break;
             case "leave" when words.Length == 1:
-                LeaveShop(dice, facts);
+                if (_state.PendingTemple is not null)
+                {
+                    LeaveTemple(dice, facts);
+                }
+                else
+                {
+                    LeaveShop(dice, facts);
+                }
+                break;
+            case "serve" when words.Length == 3 && int.TryParse(words[1], out int service) && int.TryParse(words[2], out int patient):
+                Serve(service, patient, dice, facts);
                 break;
             case "look" when words.Length == 1:
                 facts.Add(Look());
@@ -144,6 +160,11 @@ public sealed partial class CampaignRunner
                 if (Shop() is ShopFact shop)
                 {
                     facts.Add(shop);
+                }
+
+                if (Temple() is TempleFact temple)
+                {
+                    facts.Add(temple);
                 }
 
                 break;
@@ -285,6 +306,10 @@ public sealed partial class CampaignRunner
             case "shop":
                 _state.PendingShop = evt;
                 facts.Add(Shop()!);
+                return null;
+            case "temple":
+                _state.PendingTemple = evt;
+                facts.Add(Temple()!);
                 return null;
             case "set":
                 Definition variable = _rules.Reference(evt, "$.variable");

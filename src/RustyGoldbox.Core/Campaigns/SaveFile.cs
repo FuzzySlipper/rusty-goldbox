@@ -26,7 +26,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "picture", "music", "inventory", "ended", "party",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "fired", "pending_menu", "pending_shop", "pending_temple", "picture", "music", "inventory", "ended", "party",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -96,6 +96,7 @@ public static class SaveFile
             }
 
             writer.WriteString("pending_shop", state.PendingShop?.QualifiedId);
+            writer.WriteString("pending_temple", state.PendingTemple?.QualifiedId);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);
             writer.WriteStartArray("inventory");
@@ -368,6 +369,24 @@ public static class SaveFile
                 if (state.PendingMenu is not null)
                 {
                     Error("$.pending_shop", "A save cannot wait at a menu and a shop at the same time; clear one pending event.");
+                }
+            }
+
+            if (!root.TryGetProperty("pending_temple", out JsonElement temple) || temple.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
+            {
+                Error("$.pending_temple", "pending_temple must be a temple event ID, or null.");
+            }
+            else if (temple.ValueKind == JsonValueKind.String)
+            {
+                state.PendingTemple = Find(root, "pending_temple", DefinitionTypes.Event);
+                if (state.PendingTemple is not null && state.PendingTemple.Json.GetProperty("kind").GetString() != "temple")
+                {
+                    Error("$.pending_temple", "The pending event must have kind temple.");
+                }
+
+                if (state.PendingMenu is not null || state.PendingShop is not null)
+                {
+                    Error("$.pending_temple", "A save can wait at only one menu, shop or temple.");
                 }
             }
 

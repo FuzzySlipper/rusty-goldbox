@@ -76,21 +76,12 @@ public sealed partial class CampaignRunner
         }
 
         ShopOffer offer = stock[number - 1];
-        decimal gold = Located(shop, "$", () => _state.Party.Sum(character => character.Gold));
-        if (_state.Party.Count == 0 || gold < offer.Price)
+        if (!CanPay(shop, offer.Item.Name, offer.Price, facts))
         {
-            facts.Add(new RefusedFact($"{offer.Item.Name} costs {Fact(offer.Price)} gold; the party has {Fact(gold)}."));
             return;
         }
 
-        // Spend the pooled purse in party order; characters remain the only gold owners.
-        decimal left = offer.Price;
-        foreach (var character in _state.Party)
-        {
-            decimal paid = Math.Min(Math.Max(0, character.Gold), left);
-            character.Gold -= paid;
-            left -= paid;
-        }
+        Pay(offer.Price);
 
         _state.Inventory.Add(offer.Item);
         facts.Add(new TradeFact(true, offer.Item.Name, offer.Price));

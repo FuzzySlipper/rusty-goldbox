@@ -136,6 +136,15 @@ public sealed record TradeFact(bool Bought, string Item, decimal Gold) : PlayFac
     public override string Describe() => $"The party {(Bought ? "buys" : "sells")} {Item} for {N(Gold)} gold.";
 }
 
+public sealed record TempleOffer(int Number, string Label, IReadOnlyList<decimal> Prices);
+
+public sealed record TempleFact(string Text, IReadOnlyList<TempleOffer> Services) : PlayFact
+{
+    public override string Kind => "temple";
+
+    public override string Describe() => $"{Text} {string.Join("  ", Services.Select(service => $"[{service.Number}] {service.Label}: {string.Join(", ", service.Prices.Select((price, member) => $"member {member + 1} {N(price)} gold"))}"))}. Commands: serve <service> <member>, leave.";
+}
+
 public enum FightOutcome
 {
     Won,

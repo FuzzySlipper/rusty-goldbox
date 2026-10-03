@@ -187,9 +187,9 @@ public sealed record ModifierKind(Roots Roots = Roots.Self) : FieldKind
 /// An operation: <c>{ "op": name, ...its fields }</c>. Its expressions may read
 /// <see cref="Roots"/>; inside a check's outcomes they may also read check.
 /// </summary>
-public sealed record OperationKind(Roots Roots) : FieldKind
+public sealed record OperationKind(Roots Roots, IReadOnlyList<string>? Allowed = null) : FieldKind
 {
-    public override string Describe() => "operation { \"op\": name, ...fields } (see `goldbox schema operations`)";
+    public override string Describe() => $"operation {{ \"op\": name, ...fields }} (see `goldbox schema operations`){(Allowed is null ? "" : $"; allowed: {string.Join(", ", Allowed)}; heal requires track")}";
 }
 
 /// <summary>

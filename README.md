@@ -185,3 +185,11 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `docs/agent-review/` | Review workflow and lane packets |
 
 Read [AGENTS.md](AGENTS.md) before changing anything.
+
+Temples offer numbered services through `serve <service> <member>` and `leave`.
+Service expressions read the chosen character as `self` and campaign variables;
+`heal` names its track and `remove_condition` names a condition. The campaign
+runner uses existing character tracks, conditions and pooled character gold;
+`CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
+healing with combat. Saves retain an open temple and Game projections expose
+prices for each member.

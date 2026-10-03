@@ -30,7 +30,9 @@ left
 forward       # [1,2]
 buy 1         # a dagger at its listed cost
 sell 1        # sell one carried item at half cost
-leave         # the shop's farewell, then movement resumes
+leave         # the outfitter sends the party to the shrine
+serve 1 1     # healing at the gate shrine
+leave         # leave the shrine
 left
 forward       # [1,1]
 right

@@ -829,11 +829,8 @@ public sealed class CombatRunner
             {
                 Definition track = operation.TryGetProperty("track", out _) ? _rules.Reference(owner, $"{path}.track") : _track;
                 decimal amount = Math.Max(0, Number(owner, $"{path}.amount", scope));
-                TrackValue value = who.Creature.Track(track.Id);
-                decimal current = value.Current ?? 0;
-                decimal raised = Math.Max(current, Math.Min(_evaluator.TrackRestoreCap(who.Creature, track), current + amount));
-                value.Current = raised;
-                Record(new HealFact(who.Name, track, raised - current, raised), before);
+                decimal healed = TrackOperations.Heal(_evaluator, who.Creature, track, amount);
+                Record(new HealFact(who.Name, track, healed, who.Creature.Track(track.Id).Current!.Value), before);
                 break;
             }
 

@@ -549,3 +549,11 @@ regression checks for module and rules behavior.
   it.
 - Importing UA/Dungeon Craft data files or keeping compatibility with them.
 - Save migration across module versions.
+
+Temples offer numbered services through `serve <service> <member>` and `leave`.
+Service expressions read the chosen character as `self` and campaign variables;
+`heal` names its track and `remove_condition` names a condition. The campaign
+runner uses existing character tracks, conditions and pooled character gold;
+`CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
+healing with combat. Saves retain an open temple and Game projections expose
+prices for each member.

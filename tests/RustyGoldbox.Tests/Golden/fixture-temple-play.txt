@@ -1,0 +1,29 @@
+$ goldbox character new --module tale --modules . --class warrior --race folk --name A --seed 1 --out a.json
+A: Folk Warrior 1 (0 xp, highest level)
+  hit points 6/6
+  gold 5
+  str            10     Strength
+  hit            0      Hit bonus
+  strong         false  Strong
+Saved to a.json.
+  seed 1: 1d10: 6 = 6
+[exit 0]
+
+$ goldbox play --campaign tale --modules . --party a.json --seed 1 --script services.script
+seed 1
+  The party is in Hall at [0, 0], facing east.
+  Welcome to the shrine. [1] Mend: member 1 2 gold  [2] Cure: member 1 0 gold. Commands: serve <service> <member>, leave.
+> serve 1 1
+  A receives Mend for 2 gold.
+  Welcome to the shrine. [1] Mend: member 1 2 gold  [2] Cure: member 1 0 gold. Commands: serve <service> <member>, leave.
+> serve 2 1
+  A receives Cure for 0 gold.
+  Welcome to the shrine. [1] Mend: member 1 2 gold  [2] Cure: member 1 0 gold. Commands: serve <service> <member>, leave.
+> status
+  A (hit points 6/6, 0 xp) | gold 3
+  Welcome to the shrine. [1] Mend: member 1 2 gold  [2] Cure: member 1 0 gold. Commands: serve <service> <member>, leave.
+> leave
+  The party leaves the temple.
+  Safe travels.
+[exit 0]
+

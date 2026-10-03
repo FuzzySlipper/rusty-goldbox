@@ -560,6 +560,14 @@ public sealed class GameTests
             Assert.Equal(1m, Projected()["shop"]!["gold"]!.GetValue<decimal>());
             Run(session, engine, """{ "action": "play", "command": "leave" }""");
             Assert.Null(Projected()["shop"]);
+            Assert.NotNull(Projected()["temple"]);
+            session.Runner.State.Party[0].Gold = 5;
+            session.Runner.State.Party[0].Tracks["hit_points"].Current = 0;
+            Run(session, engine, """{ "action": "play", "command": "serve 1 1" }""");
+            Assert.True(session.Runner.State.Party[0].Tracks["hit_points"].Current > 0);
+            Assert.Equal(0, session.Runner.State.Party[0].Gold);
+            Run(session, engine, """{ "action": "play", "command": "leave" }""");
+            Assert.Null(Projected()["temple"]);
             Assert.Contains("The outfitter wishes you safe travels.", session.Log);
         });
     }

@@ -204,7 +204,7 @@ public static class DefinitionReader
 
                     break;
                 case OperationKind operation:
-                    ReadOperation(value, operation.Roots, path);
+                    ReadOperation(value, operation, path);
                     break;
                 case UseKind:
                     ReadUse(value, path);
@@ -214,8 +214,9 @@ public static class DefinitionReader
             }
         }
 
-        private void ReadOperation(JsonElement value, Roots roots, string path)
+        private void ReadOperation(JsonElement value, OperationKind kind, string path)
         {
+            Roots roots = kind.Roots;
             if (!ExpectKind(value, JsonValueKind.Object, path, new OperationKind(roots)))
             {
                 return;
@@ -233,6 +234,17 @@ public static class DefinitionReader
             {
                 Error("definition.operation", $"{path}.op", $"'{name.GetString()}' is not an operation. Operations: {ops}. Run `goldbox schema operations` for their fields.");
                 return;
+            }
+
+            if (kind.Allowed is not null && !kind.Allowed.Contains(operation.Name))
+            {
+                Error("definition.operation", $"{path}.op", $"This service allows only {string.Join(", ", kind.Allowed)} operations.");
+                return;
+            }
+
+            if (kind.Allowed is not null && operation == OperationTypes.Heal && !value.TryGetProperty("track", out _))
+            {
+                Error("definition.field-required", $"{path}.track", "A service heal needs an explicit track; there is no combat track here.");
             }
 
             // Operation fields read what their surroundings allow: without a target
