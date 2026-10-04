@@ -43,6 +43,7 @@ In priority order:
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring and testing CLI over Core. |
 | `src/ui/` | DOM companion: the panels around the Engine view, laid out for the window's shape. |
 | `modules/` | First-party module sources, one directory per module. |
+| `campaigns/` | Retained editable campaign sources, with story canon and attribution outside runtime module directories. |
 | `tests/` | Focused checks: module fixtures, expression cases and golden play transcripts. |
 
 This is the intended shape; [architecture.md](architecture.md) records what

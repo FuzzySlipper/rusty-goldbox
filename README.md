@@ -69,6 +69,12 @@ installed.
 
 ## Authoring modules
 
+Retained campaign canon lives beside its editable content. The
+[Blackapple Brugh source](campaigns/blackapple-brugh/README.md) records its
+story, characters, source adaptation, and licence. Shared canon has one editor;
+chapter and art authors use its stable IDs and handoff contracts. These
+documents describe the story rather than holding runtime game state.
+
 `goldbox` is the authoring CLI. From the repository root:
 
 ```bash
@@ -213,6 +219,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), fight playback and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
 | `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
+| `campaigns/` | Retained editable campaign source, including shared story canon and source attribution |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `Directory.Build.props` | Engine SDK/runtime pin |
