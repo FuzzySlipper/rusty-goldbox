@@ -148,6 +148,7 @@ img.gb-picture { object-fit: contain; }
 
 /* Map, or foes in combat */
 .gb-map { flex: 1; min-height: 4em; }
+.gb-frame[data-screen="combat"][data-arrangement="standard"] .gb-map { min-height: 10em; }
 .gb-map pre { flex: 1; min-height: 0; margin: 0; padding: .3em; overflow: hidden; line-height: 1; font-size: .85em; display: grid; place-items: center; }
 .gb-foes { list-style: none; margin: 0; padding: .3em .5em; overflow: auto; display: grid; gap: .25em; align-content: start; }
 .gb-foes li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 .4em; align-items: center; }
