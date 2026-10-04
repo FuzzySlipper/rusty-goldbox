@@ -54,8 +54,9 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
-| `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding and inspection; shares its module search paths with module loading |
+| `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
 | `src/RustyGoldbox.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
+| `src/RustyGoldbox.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export; Engine owns the container format and identity |
 | `src/RustyGoldbox.Cli/AuthoringKit/` | Embedded, copyable draft workflow and brief/canon/chapter/encounter/art/handoff/revision prompts, discovered through the installed authoring commands |
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |

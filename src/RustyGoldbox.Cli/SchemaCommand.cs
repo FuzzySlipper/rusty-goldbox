@@ -247,6 +247,11 @@ internal static class SchemaCommand
                 },
                 editableDirectories = RustyGoldbox.Core.Authoring.Workspace.EditableDirectoryNames,
                 generatedDirectories = new[] { ".goldbox/staged", "exports" },
+                commands = new object[]
+                {
+                    new { name = "workspace build", description = "Validate each explicit authored module and replace staging with its runtime files." },
+                    new { name = "workspace export", description = "Build first, then pack each staged module independently into exports as an Engine container." },
+                },
                 example = System.Text.Json.JsonDocument.Parse(WorkspaceExample).RootElement,
             });
             return GoldboxCli.Ok;
@@ -260,6 +265,8 @@ internal static class SchemaCommand
         output.Line("    modules (required): explicit module source directories; canon, prompts and art stay outside them.");
         output.Line("    staging (required): generated clean staging directory, commonly .goldbox/staged.");
         output.Line("    exports (required): generated exported container directory, commonly exports.");
+        output.Line("Run `goldbox workspace build` to validate and stage only authoring.modules; run `goldbox workspace export` to pack each staged module independently.");
+        output.Line("Build reports included runtime files and unresolved dependencies as JSON. A generated root must stay outside module sources and editable roots before it can be cleaned.");
         output.Line();
         output.Line("Editable roots created by `goldbox workspace new`: canon, art/references, art/accepted, art/rejected, prompts, scripts.");
         output.Line("These roots are discoverable conventions; only runtime module directories and their required licence/provenance files are distributed.");

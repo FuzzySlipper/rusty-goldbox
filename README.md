@@ -97,6 +97,8 @@ through the CLI:
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- workspace new my-campaign
 dotnet run --project src/RustyGoldbox.Cli -- workspace inspect my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace build my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace export my-campaign --json
 dotnet run --project src/RustyGoldbox.Cli -- schema workspace --json
 ```
 
@@ -104,6 +106,10 @@ The optional `authoring` object in `goldbox.json` lists each owned module source
 directory and the generated staging/export locations. The existing top-level
 `modules` array remains the dependency search path. Workspace inspection
 reports both, so a copied workspace can be resumed from its files.
+Build validates the explicit authored modules and replaces their generated
+staging tree; export independently packs each staged module through the pinned
+Engine packer. Canon, prompts and source art remain editable outside the
+runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
 
 The installed CLI also carries a draft authoring kit. `goldbox authoring list
 --json` discovers its resources, `goldbox authoring show workflow` prints the

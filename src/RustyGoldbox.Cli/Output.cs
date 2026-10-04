@@ -171,6 +171,107 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
     }
 
+    public int WorkspaceBuilt(WorkspaceBuildResult? result, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        List<ModuleDiagnostic> allDiagnostics = [.. diagnostics];
+        if (result is not null)
+        {
+            allDiagnostics.AddRange(result.Diagnostics);
+        }
+
+        bool ok = result is not null && result.IsValid && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = result is null ? null : WorkspaceJson(result.Workspace),
+                modules = result?.Modules.Select(BuildModuleJson) ?? [],
+                unresolvedDependencies = result?.UnresolvedDependencies.Select(DependencyJson) ?? [],
+                diagnostics = allDiagnostics.Select(ToJson),
+            });
+        }
+        else if (result is not null)
+        {
+            writer.WriteLine($"Workspace build {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
+            foreach (WorkspaceBuiltModule module in result.Modules)
+            {
+                writer.WriteLine($"  {module.Manifest.Id} {module.Manifest.Version} ({ModuleKinds.Name(module.Manifest.Kind)})");
+                writer.WriteLine($"    source:  {Display(module.SourceDirectory)}");
+                writer.WriteLine($"    staging: {Display(module.StagedDirectory)}");
+                writer.WriteLine($"    included runtime files: {module.IncludedFiles.Count}");
+                foreach (WorkspaceDependency dependency in module.Dependencies)
+                {
+                    writer.WriteLine($"    requires {dependency.Id} {dependency.Range} -> {dependency.ResolvedVersion}");
+                }
+            }
+
+            WriteUnresolved(result.UnresolvedDependencies);
+            if (allDiagnostics.Count > 0)
+            {
+                WriteDiagnostics(allDiagnostics);
+            }
+        }
+        else
+        {
+            WriteDiagnostics(allDiagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceExported(
+        WorkspaceBuildResult? result,
+        IReadOnlyList<WorkspaceExport> exports,
+        IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        List<ModuleDiagnostic> allDiagnostics = [.. diagnostics];
+        if (result is not null)
+        {
+            allDiagnostics.AddRange(result.Diagnostics);
+        }
+
+        bool ok = result is not null && result.IsValid && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = result is null ? null : WorkspaceJson(result.Workspace),
+                modules = result?.Modules.Select(BuildModuleJson) ?? [],
+                exports = exports.Select(export => new
+                {
+                    id = export.Module.Id,
+                    version = export.Module.Version.ToString(),
+                    kind = ModuleKinds.Name(export.Module.Kind),
+                    container = Display(export.Container),
+                }),
+                unresolvedDependencies = result?.UnresolvedDependencies.Select(DependencyJson) ?? [],
+                diagnostics = allDiagnostics.Select(ToJson),
+            });
+        }
+        else if (result is not null)
+        {
+            writer.WriteLine($"Workspace export {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
+            foreach (WorkspaceExport export in exports)
+            {
+                writer.WriteLine($"  {export.Module.Id} {export.Module.Version} ({ModuleKinds.Name(export.Module.Kind)}) -> {Display(export.Container)}");
+            }
+
+            WriteUnresolved(result.UnresolvedDependencies);
+            if (allDiagnostics.Count > 0)
+            {
+                WriteDiagnostics(allDiagnostics);
+            }
+        }
+        else
+        {
+            WriteDiagnostics(allDiagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
     public int Validated(ModuleSet set)
     {
         if (json)
@@ -339,6 +440,67 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 new { name = "docs", path = Display(Path.Combine(workspace.RootDirectory, "docs")), exists = Directory.Exists(Path.Combine(workspace.RootDirectory, "docs")) },
             },
         };
+    }
+
+    private object WorkspaceJson(Workspace workspace)
+    {
+        return new
+        {
+            root = Display(workspace.RootDirectory),
+            manifest = Display(workspace.ManifestPath),
+            searchDirectories = workspace.ModuleDirectories.Select(Display),
+            authoring = workspace.Authoring is AuthoringWorkspace authoring
+                ? new
+                {
+                    modules = authoring.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+                    staging = Display(authoring.StagingDirectory),
+                    exports = Display(authoring.ExportsDirectory),
+                }
+                : null,
+        };
+    }
+
+    private object BuildModuleJson(WorkspaceBuiltModule module)
+    {
+        return new
+        {
+            id = module.Manifest.Id,
+            version = module.Manifest.Version.ToString(),
+            kind = ModuleKinds.Name(module.Manifest.Kind),
+            source = Display(module.SourceDirectory),
+            staging = Display(module.StagedDirectory),
+            includedFiles = module.IncludedFiles,
+            requires = module.Dependencies.Select(DependencyJson),
+        };
+    }
+
+    private static object DependencyJson(WorkspaceDependency dependency)
+    {
+        return new
+        {
+            module = dependency.RequiredBy,
+            id = dependency.Id,
+            range = dependency.Range,
+            resolvedVersion = dependency.ResolvedVersion,
+            rule = dependency.Rule,
+            jsonPath = dependency.JsonPath,
+            message = dependency.Message,
+        };
+    }
+
+    private void WriteUnresolved(IReadOnlyList<WorkspaceDependency> dependencies)
+    {
+        if (dependencies.Count == 0)
+        {
+            return;
+        }
+
+        writer.WriteLine("Unresolved module dependencies:");
+        foreach (WorkspaceDependency dependency in dependencies)
+        {
+            writer.WriteLine($"  {dependency.RequiredBy} requires {dependency.Id ?? "(unknown)"} {dependency.Range ?? "(unknown range)"}");
+            writer.WriteLine($"    {dependency.Message}");
+        }
     }
 
     private object ToJson(ModuleDiagnostic diagnostic)

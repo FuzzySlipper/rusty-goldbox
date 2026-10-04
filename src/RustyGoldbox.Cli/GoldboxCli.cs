@@ -32,6 +32,10 @@ internal static class GoldboxCli
               Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
           goldbox workspace inspect [<path>]
               Finds the nearest goldbox.json and lists dependency search paths, authored modules, editable roots and outputs.
+          goldbox workspace build [<path>]
+              Validates each authored runtime module and prepares a clean staging tree; canon, prompts and source art stay outside it.
+          goldbox workspace export [<path>]
+              Builds the workspace, then independently packs each staged module into the configured exports directory.
           goldbox authoring list [--json]
           goldbox authoring show <resource> [--json]
           goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]

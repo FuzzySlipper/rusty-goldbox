@@ -1,4 +1,5 @@
 using Rusty.Engine.Testing;
+using RustyGoldbox.Core.Authoring;
 using RustyGoldbox.Core.Modules;
 
 namespace RustyGoldbox.Cli;
@@ -12,6 +13,13 @@ internal static class ModuleSets
     {
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine => ModuleLoader.Load(path, searchDirectories, engine.Content, extensions));
+    }
+
+    /// <summary>Builds an authoring workspace with the same Engine content service the CLI uses for module loads.</summary>
+    public static WorkspaceBuildResult BuildWorkspace(Workspace workspace)
+    {
+        using EngineTestHost host = EngineTestHost.Create();
+        return host.Call(engine => WorkspaceBuilder.Build(workspace, engine.Content));
     }
 
     /// <summary>The extension IDs given with <c>--extension</c>, which may repeat or list several: <c>--extension a,b</c>.</summary>
