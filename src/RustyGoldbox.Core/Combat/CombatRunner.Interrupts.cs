@@ -43,6 +43,15 @@ public sealed partial class CombatRunner
         bool AlreadyPaid = false,
         int OperationFrameStart = 0);
 
+    private sealed record CheckOperationContext(
+        Definition Owner,
+        string Path,
+        Scope Scope,
+        Combatant Actor,
+        Combatant? Target,
+        Combatant? Source,
+        bool IsOperation);
+
     private sealed class OperationFrame
     {
         public required Definition Owner { get; init; }
@@ -150,6 +159,8 @@ public sealed partial class CombatRunner
         public required IReadOnlyList<PostRollCandidate> Candidates { get; init; }
         public ActionContinuation? Action { get; init; }
         public required CombatOperationState Operation { get; init; }
+        public required CheckOperationContext Context { get; init; }
+        public int OperationFrameStart { get; init; }
     }
 
     private sealed class PendingInitiativeFrame
@@ -879,18 +890,55 @@ public sealed partial class CombatRunner
     {
         Definition check = _rules.Find(DefinitionTypes.Check, saved.CheckId, out string? problem)
             ?? throw new ArgumentException(problem ?? $"Unknown check '{saved.CheckId}'.", nameof(state));
-        string? actorId = state.PendingOperation?.ActorId ?? state.PendingDecision?.ActorId;
-        Combatant by = Find(actorId ?? "") ?? throw new ArgumentException($"Unknown post-roll actor '{actorId}'.", nameof(state));
-        string? targetId = state.PendingOperation?.TargetId;
-        Combatant against = Find(targetId ?? "") ?? by;
-        CheckResult initial = new(saved.Roll, saved.Bonus, saved.Modifier, saved.Total, saved.Target, saved.Margin, saved.Success, saved.Tier);
         CombatOperationState operation = state.PendingOperation
-            ?? new CombatOperationState(check.QualifiedId, "$.check", by.Id, against.Id, by.Id, state.PendingDecision?.ActionId, UseId: state.PendingOperation?.UseId);
+            ?? new CombatOperationState(
+                check.QualifiedId,
+                "$.check",
+                state.PendingDecision?.ActorId ?? "",
+                null,
+                state.PendingDecision?.ActorId,
+                state.PendingDecision?.ActionId);
+        string? byId = saved.ById ?? state.PendingDecision?.ActorId ?? operation.ActorId;
+        Combatant by = Find(byId ?? "")
+            ?? Find(state.PendingDecision?.ActorId ?? "")
+            ?? Find(operation.ActorId)
+            ?? throw new ArgumentException($"Unknown post-roll actor '{byId}'.", nameof(state));
+        string? againstId = saved.AgainstId ?? operation.TargetId;
+        Combatant against = Find(againstId ?? "") ?? Find(operation.TargetId ?? "") ?? by;
+        CheckResult initial = new(saved.Roll, saved.Bonus, saved.Modifier, saved.Total, saved.Target, saved.Margin, saved.Success, saved.Tier);
         // Candidate values were evaluated once when the choice was offered.
         // Rebuilding them from the definition would re-run dice expressions
         // in cost, score or bonus and could change the offered menu.
         List<PostRollCandidate> candidates = RestorePostRollCandidates(check, state.PendingDecision?.Options);
         ActionContinuation? action = RestoreActionContinuation(operation, null, state);
+        Definition owner = _rules.Definitions.FirstOrDefault(definition => definition.QualifiedId == operation.OwnerId) ?? check;
+        Combatant operationActor = Find(operation.ActorId) ?? action?.Actor ?? by;
+        Combatant? operationTarget = operation.TargetId is string targetId
+            ? Find(targetId) ?? action?.Target
+            : action?.Target;
+        Combatant? operationSource = operation.SourceId is string sourceId ? Find(sourceId) : null;
+        IReadOnlyDictionary<string, CompiledExpression>? use = operation.UseId is string useId
+            ? FindUseById(useId)?.Use.Parameters
+            : action?.Use.Parameters;
+        OperationFrame? operationFrame = operation.ListPath is string listPath
+            ? _operationFrames.LastOrDefault(frame => frame.Owner.QualifiedId == owner.QualifiedId && frame.Path == listPath)
+            : null;
+        Scope scope = operationFrame?.Scope
+            ?? new Scope(
+                operationActor.Creature,
+                operationTarget?.Creature,
+                use,
+                FromScopeCheck(operation.Check),
+                Outer: FromScopeCheck(operation.Outer),
+                ConditionValues: operation.ConditionValues);
+        CheckOperationContext context = new(
+            owner,
+            operation.Path,
+            scope,
+            operationActor,
+            operationTarget,
+            operationSource,
+            operation.ListPath is not null);
 
         _pendingPostRollFrame = new PendingPostRollFrame
         {
@@ -901,6 +949,8 @@ public sealed partial class CombatRunner
             Candidates = candidates,
             Action = action,
             Operation = operation,
+            Context = context,
+            OperationFrameStart = action?.OperationFrameStart ?? 0,
         };
         _pendingOperation = operation;
         _operationStack = state.OperationStack.Count == 0 ? [operation] : state.OperationStack.ToList();
@@ -1090,17 +1140,30 @@ public sealed partial class CombatRunner
         return candidates;
     }
 
-    private void SuspendPostRoll(Definition check, Combatant by, Combatant against, CheckResult result, IReadOnlyList<PostRollCandidate> candidates)
+    private void SuspendPostRoll(
+        Definition check,
+        Combatant by,
+        Combatant against,
+        CheckResult result,
+        IReadOnlyList<PostRollCandidate> candidates,
+        CheckOperationContext? checkContext)
     {
-        CombatOperationState operation = _pendingOperation
-            ?? new CombatOperationState(
-                check.QualifiedId,
-                "$.check",
-                by.Id,
-                against.Id,
-                by.Id,
-                _actionContinuation?.Use.Action.QualifiedId,
-                UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use));
+        CheckOperationContext context = checkContext
+            ?? new CheckOperationContext(check, "$.check", new Scope(by.Creature, against.Creature), by, against, null, IsOperation: false);
+        OperationFrame? operationFrame = context.IsOperation ? _operationFrames.LastOrDefault() : null;
+        CombatOperationState operation = new(
+            context.Owner.QualifiedId,
+            context.Path,
+            context.Actor.Id,
+            context.Target?.Id,
+            context.Source?.Id,
+            _actionContinuation?.Use.Action.QualifiedId,
+            PendingDamage: null,
+            UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use),
+            ListPath: operationFrame?.Path,
+            Check: ToScopeCheck(context.Scope.Check),
+            Outer: ToScopeCheck(context.Scope.Outer),
+            ConditionValues: context.Scope.ConditionValues);
         CombatCheckState committed = new(
             check.QualifiedId,
             result.Roll,
@@ -1114,7 +1177,9 @@ public sealed partial class CombatRunner
             null,
             _facts.FindLastIndex(fact => fact is CheckFact { Who: var who, Check: var name }
                 && who == by.Name
-                && name == check.Name));
+                && name == check.Name),
+            by.Id,
+            against.Id);
         _pendingPostRollFrame = new PendingPostRollFrame
         {
             Check = check,
@@ -1124,6 +1189,8 @@ public sealed partial class CombatRunner
             Candidates = candidates,
             Action = _actionContinuation,
             Operation = operation,
+            Context = context,
+            OperationFrameStart = _actionContinuation?.OperationFrameStart ?? 0,
         };
         _pendingOperation = operation;
         _operationStack = _operationStack.Count == 0 ? [operation] : _operationStack;
@@ -1368,12 +1435,50 @@ public sealed partial class CombatRunner
         _pendingPostRollFrame = null;
         _suspending = false;
         CheckResult result = selected is null ? frame.Initial : ApplyPostRollOption(frame.Check, frame.By, frame.Against, frame.Initial, selected);
-        if (frame.Action is not null)
+        if (frame.Context.IsOperation)
+        {
+            ResumeCheckOperation(frame.Context, result);
+            if (!_suspending)
+            {
+                ResumeOperationFrames(frame.OperationFrameStart);
+                if (!_suspending && frame.Action is not null)
+                {
+                    ContinueRemainingTargets(frame.Action);
+                }
+            }
+        }
+        else if (frame.Action is not null)
         {
             ContinueAction(frame.Action, result);
         }
 
+        if (!_suspending && frame.Context.IsOperation)
+        {
+            _actionContinuation = null;
+            _pendingOperation = null;
+            _operationStack = [];
+        }
+
         return CompleteSuspendedAction();
+    }
+
+    private void ResumeCheckOperation(CheckOperationContext context, CheckResult result)
+    {
+        JsonElement operation = JsonAtPath(context.Owner.Json, context.Path);
+        if (!operation.TryGetProperty("outcomes", out JsonElement outcomes)
+            || !outcomes.TryGetProperty(result.Tier, out JsonElement operations))
+        {
+            return;
+        }
+
+        RunOperations(
+            context.Owner,
+            operations,
+            $"{context.Path}.outcomes.{result.Tier}",
+            context.Scope with { Check = result, Outer = context.Scope.Check },
+            context.Actor,
+            context.Target,
+            context.Source);
     }
 
     private CombatCommandResult SubmitInitiativeDecision(CombatCommand.Decide command)
@@ -1644,7 +1749,19 @@ public sealed partial class CombatRunner
                 decimal extra = action.Use.Action.Json.TryGetProperty("check_bonus", out _)
                     ? Number(action.Use.Action, "$.check_bonus", scope)
                     : 0;
-                result = MakeCheck(_rules.Reference(action.Use.Action, "$.check"), action.Actor, action.Target, extra);
+                result = MakeCheck(
+                    _rules.Reference(action.Use.Action, "$.check"),
+                    action.Actor,
+                    action.Target,
+                    extra,
+                    new CheckOperationContext(
+                        action.Use.Action,
+                        "$.check",
+                        scope,
+                        action.Actor,
+                        action.Target,
+                        null,
+                        IsOperation: false));
             }
 
             if (result is not null
