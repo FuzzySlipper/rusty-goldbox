@@ -431,7 +431,15 @@ internal static class SessionProjection
             };
         }
 
-        return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame, ["animation"] = animation };
+        return new JsonObject
+        {
+            ["url"] = url,
+            ["width"] = width,
+            ["height"] = height,
+            ["frame"] = frame,
+            ["animation"] = animation,
+            ["sampling"] = Media.SamplingOf(asset),
+        };
     }
 
     /// <summary>

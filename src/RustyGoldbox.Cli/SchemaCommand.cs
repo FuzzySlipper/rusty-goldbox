@@ -340,6 +340,8 @@ internal static class SchemaCommand
 
     private const string ImageExample = """{ "type": "asset", "id": "tavern", "media": "image", "file": "pictures/tavern.png" }""";
 
+    private const string IllustratedExample = """{ "type": "asset", "id": "wylda", "media": "image", "file": "pictures/wylda.png", "sampling": "linear" }""";
+
     private const string AudioExample = """{ "type": "asset", "id": "creak", "media": "audio", "file": "sounds/creak.ogg" }""";
 
     private const string SheetExample = """{ "type": "asset", "id": "fire", "media": "sheet", "file": "pictures/fire.png", "frame_size": [64, 64], "animations": { "burn": { "frames": [0, 1, 2, 3], "fps": 8 } } }""";
@@ -351,8 +353,9 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 media = Media.Types,
+                sampling = new { modes = Media.SamplingModes, defaultMode = Media.SamplingModes[0] },
                 slots = Media.Slots.Select(slot => new { name = slot.Name, description = slot.Description, accepts = slot.Accepts }),
-                examples = new[] { ImageExample, SheetExample, AudioExample }.Select(example => System.Text.Json.JsonDocument.Parse(example).RootElement),
+                examples = new[] { ImageExample, IllustratedExample, SheetExample, AudioExample }.Select(example => System.Text.Json.JsonDocument.Parse(example).RootElement),
             });
             return GoldboxCli.Ok;
         }
@@ -363,6 +366,7 @@ internal static class SchemaCommand
         output.Line("Media:");
         output.Line("  image  one picture; optional named \"regions\" (pixel rectangles) for uses that need them.");
         output.Line("  sheet  equal frames (\"frame_size\"), optionally animated; \"faces\", \"anchor\" and \"height\" let it stand in the world.");
+        output.Line("  visual sampling  omit \"sampling\" or use \"nearest\" for pixel art; use \"linear\" for smoothly scaled illustrations.");
         output.Line($"  audio  a sound or music: {string.Join(", ", Media.AudioFormats)}.");
         output.Line();
         output.Line("Slots:");
@@ -374,6 +378,7 @@ internal static class SchemaCommand
 
         output.Line();
         output.Line($"Example image: {ImageExample}");
+        output.Line($"Example illustrated image: {IllustratedExample}");
         output.Line($"Example sheet: {SheetExample}");
         output.Line($"Example audio: {AudioExample}");
         output.Line("Fields: `goldbox schema asset`.");

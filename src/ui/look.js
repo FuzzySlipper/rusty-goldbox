@@ -87,6 +87,9 @@ export const BASE_LOOK = `
 .gb-row { display: flex; flex-wrap: wrap; gap: .3em; align-items: center; margin: .25em 0; }
 .gb-muted { color: var(--gb-muted); }
 .gb-picture { image-rendering: pixelated; display: block; }
+.gb-picture[data-gb-sampling="linear"] { image-rendering: auto; }
+.gb-picture-sheet-image { display: block; position: absolute; max-width: none; image-rendering: pixelated; }
+.gb-picture[data-gb-sampling="linear"] > .gb-picture-sheet-image { image-rendering: auto; }
 img.gb-picture { object-fit: contain; }
 .gb-fill { width: 100%; height: auto; }
 
@@ -174,24 +177,26 @@ export function skinLook(skin) {
     return '';
   }
 
+  const imageRendering = (picture) => picture?.sampling === 'linear' ? 'auto' : 'pixelated';
   const colors = Object.entries(skin.colors ?? {}).map(([name, value]) => `--gb-${name.replace('_', '-')}:${value};`).join('');
   let css = `[data-goldbox-panel]{${colors}}`;
   if (skin.panel?.url) {
     css += '[data-goldbox-panel] .gb-panel:not(.gb-view){background:linear-gradient(var(--gb-background),var(--gb-background)),'
-      + `url("${skin.panel.url}") 0 0 / ${skin.panel.width * 2}px ${skin.panel.height * 2}px repeat;image-rendering:pixelated}`;
+      + `url("${skin.panel.url}") 0 0 / ${skin.panel.width * 2}px ${skin.panel.height * 2}px repeat;image-rendering:${imageRendering(skin.panel)}}`;
   }
 
   if (skin.frame?.picture?.url) {
     const width = skin.frame.slice * 2;
     css += `[data-goldbox-panel] .gb-panel{border:${width}px solid transparent;box-shadow:none;`
       + `border-image:url("${skin.frame.picture.url}") ${skin.frame.slice} / ${width}px stretch}`
+      + `[data-goldbox-panel] .gb-panel{image-rendering:${imageRendering(skin.frame.picture)}}`
       + '[data-goldbox-panel] .gb-view{box-shadow:0 0 0 100vmax var(--gb-inset)}';
   }
 
   if (skin.button?.picture?.url) {
     const width = skin.button.slice;
     css += `[data-goldbox-panel] button{border:${width}px solid transparent;box-shadow:none;`
-      + `border-image:url("${skin.button.picture.url}") ${skin.button.slice} fill / ${width}px stretch;image-rendering:pixelated}`;
+      + `border-image:url("${skin.button.picture.url}") ${skin.button.slice} fill / ${width}px stretch;image-rendering:${imageRendering(skin.button.picture)}}`;
   }
 
   return css;

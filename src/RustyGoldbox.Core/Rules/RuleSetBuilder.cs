@@ -1512,7 +1512,7 @@ public sealed class RuleSetBuilder
             Error(asset, "asset.audio", "$.file", $"'{file}' is not audio the Engine decodes; use {string.Join(", ", Media.AudioFormats)}.");
         }
 
-        foreach (string field in Media.SheetFields.Append("regions").Where(field => asset.Json.TryGetProperty(field, out _)))
+        foreach (string field in Media.SheetFields.Append("regions").Append("sampling").Where(field => asset.Json.TryGetProperty(field, out _)))
         {
             Error(asset, "asset.audio", $"$.{field}", $"\"{field}\" is for pictures; this asset is audio.");
         }
@@ -1578,7 +1578,38 @@ public sealed class RuleSetBuilder
             if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
             {
                 Error(asset, "asset.regions", $"$.regions.{region.Name}", $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
+                continue;
             }
+
+            CheckLinearCrop(asset, $"$.regions.{region.Name}", rect[0], rect[1], rect[2], rect[3], width, height, "region");
+        }
+    }
+
+    /// <summary>
+    /// The pinned Engine rejects a degenerate sprite-atlas UV rectangle. A
+    /// half-pixel inset keeps linear filtering inside a crop, but a one-pixel
+    /// cropped axis would collapse when both edges move inward. Reject that
+    /// one concrete case at the module boundary so the DOM and Engine retain
+    /// the same authored sampling policy.
+    /// </summary>
+    private void CheckLinearCrop(Definition asset, string path, int x, int y, int cropWidth, int cropHeight, int imageWidth, int imageHeight, string kind)
+    {
+        if (!asset.Json.TryGetProperty("sampling", out JsonElement sampling)
+            || sampling.ValueKind != JsonValueKind.String
+            || sampling.GetString() != "linear")
+        {
+            return;
+        }
+
+        string? axis = x > 0 || cropWidth < imageWidth
+            ? cropWidth == 1 ? "width" : null
+            : null;
+        axis ??= y > 0 || cropHeight < imageHeight
+            ? cropHeight == 1 ? "height" : null
+            : null;
+        if (axis is not null)
+        {
+            Error(asset, "asset.sampling", path, $"linear sampling cannot safely filter a one-pixel cropped {kind} on its {axis} axis: the pinned Engine rejects a degenerate sprite-atlas UV rectangle (CSHARP_SPRITE_ATLAS_FRAME: DegenerateRect). Use \"nearest\" for this crop or make its {axis} dimension at least 2 pixels.");
         }
     }
 
@@ -1679,6 +1710,8 @@ public sealed class RuleSetBuilder
             Error(asset, "asset.sheet", "$.frame_size", $"[{frameWidth}, {frameHeight}] must divide the {width} x {height} image into whole frames.");
             return;
         }
+
+        CheckLinearCrop(asset, "$.frame_size", 0, 0, frameWidth, frameHeight, width, height, "sheet frame");
 
         int cells = width / frameWidth * (height / frameHeight);
         int count = cells;

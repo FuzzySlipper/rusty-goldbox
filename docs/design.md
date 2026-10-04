@@ -147,6 +147,14 @@ class needs no patch to the ruleset's character creation.
   campaign or extension, since rulesets carry no art) says which sheet draws a
   monster or a class, and optionally the picture that lists it. A character
   may have a portrait, chosen at creation and kept in its file and saves.
+- Visual assets may declare `sampling: "linear"` for smoothly scaled
+  illustrations; omitted sampling or `"nearest"` preserves pixel-art edges.
+  The same policy follows the asset through Engine textures and DOM pictures,
+  including sheet frames. Linear cropped regions and frames use half-pixel
+  isolation. A one-pixel cropped axis cannot be isolated with the pinned
+  Engine's nondegenerate atlas rectangles, so validation directs the author
+  to nearest sampling or a wider crop. Whole images retain their ordinary
+  dimensions; this restriction applies only to that cropped-axis case.
 
 ### Rules as data
 

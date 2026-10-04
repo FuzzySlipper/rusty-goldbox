@@ -17,6 +17,10 @@ public static class Media
     /// <summary>The media an asset can be.</summary>
     public static IReadOnlyList<string> Types { get; } = ["image", "sheet", "audio"];
 
+    /// <summary>How a visual asset is sampled when it is scaled.</summary>
+    /// <remarks>Nearest is the default so existing pixel art keeps its authored look.</remarks>
+    public static IReadOnlyList<string> SamplingModes { get; } = ["nearest", "linear"];
+
     /// <summary>The audio formats the Engine decodes, by the bytes a file starts with.</summary>
     public static IReadOnlyList<string> AudioFormats { get; } = ["Ogg (Vorbis or Opus)", "WAV", "FLAC"];
 
@@ -42,6 +46,14 @@ public static class Media
     public static Slot? FindSlot(string name) => Slots.FirstOrDefault(slot => slot.Name == name);
 
     public static string MediaOf(Definition asset) => asset.Json.GetProperty("media").GetString()!;
+
+    /// <summary>The authored sampling mode, defaulting to nearest for existing assets.</summary>
+    public static string SamplingOf(Definition asset)
+    {
+        return asset.Json.TryGetProperty("sampling", out JsonElement sampling)
+            ? sampling.GetString()!
+            : SamplingModes[0];
+    }
 
     /// <summary>Why <paramref name="asset"/> can't fill <paramref name="slot"/>, or null when it can.</summary>
     public static string? Problem(string slot, Definition asset)

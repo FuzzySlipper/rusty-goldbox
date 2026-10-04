@@ -131,6 +131,10 @@ public sealed class CliTests
             Core.Definitions.DefinitionTypes.All.Select(type => type.Name),
             json.RootElement.GetProperty("types").EnumerateArray().Select(type => type.GetProperty("name").GetString()));
         Assert.Contains("levels (required)", RunInRepository("schema", "class").Output, StringComparison.Ordinal);
+        string mediaSchema = RunInRepository("schema", "media", "--json").Output;
+        using JsonDocument media = JsonDocument.Parse(mediaSchema);
+        Assert.Equal(["nearest", "linear"], media.RootElement.GetProperty("sampling").GetProperty("modes").EnumerateArray().Select(mode => mode.GetString()));
+        Assert.Contains("sampling", RunInRepository("schema", "asset").Output, StringComparison.Ordinal);
         Assert.Contains("table(id, key, ...)", RunInRepository("schema", "expressions").Output, StringComparison.Ordinal);
     }
 

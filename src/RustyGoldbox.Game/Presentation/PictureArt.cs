@@ -54,11 +54,14 @@ internal sealed class PictureArt : IDisposable
         {
             int x = index % columns * frameWidth;
             int y = index / columns * frameHeight;
-            frames[index] = new SpriteAtlasFrame(
+            frames[index] = TextureSampling.Frame(
+                asset,
                 (uint)index,
-                new Vector2((float)x / image.Width, (float)y / image.Height),
-                new Vector2((float)(x + frameWidth) / image.Width, (float)(y + frameHeight) / image.Height),
-                true,
+                x,
+                y,
+                frameWidth,
+                frameHeight,
+                image,
                 new Vector2(frameWidth, frameHeight));
         }
 

@@ -584,6 +584,7 @@ public static class DefinitionTypes
         + "audio is Ogg (Vorbis or Opus), WAV or FLAC, the formats the Engine decodes.",
         [
             new("media", new EnumKind(Media.Types), true, "What the file is: \"image\" (one picture, optionally with named regions), \"sheet\" (equal frames, optionally animated) or \"audio\" (a sound or music)."),
+            new("sampling", new EnumKind(Media.SamplingModes), false, "Visual scaling: \"nearest\" keeps pixel art sharp (the default), while \"linear\" smoothly scales illustrated art. Omit it for nearest. A linear sheet frame or named region cut from a larger image needs at least 2 pixels on every cropped axis; use nearest for a one-pixel crop."),
             new("file", new TextKind(), true, "Path of the file inside this module, with forward slashes: a PNG for an image or sheet; an Ogg, WAV or FLAC file for audio."),
             new("regions", new MapKind(new TextKind(), new ListKind(new IntegerKind(), 4)), false,
                 "image only: named pixel rectangles [x, y, width, height] inside the image. A wall set needs wall and door, and may have floor and ceiling."),

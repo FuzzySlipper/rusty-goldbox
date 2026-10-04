@@ -49,10 +49,11 @@ export const formatBalances = (balances) => {
 export const trackText = (track) => `${track.name} ${track.current ?? '-'}${track.max === null || track.max === undefined ? '' : `/${track.max}`}`;
 
 /**
- * Any picture the projection carries ({ url, width, height, frame, animation }),
- * drawn pixel-sharp: an image whole, a sheet's frame cropped from it, playing
- * its animation. Nothing without one. Every panel picture goes through here, so
- * a new kind of media is drawn in one place.
+ * Any picture the projection carries ({ url, width, height, frame, animation,
+ * sampling }), drawn with the authored sampling policy: an image whole, a
+ * sheet's frame cropped from it, playing its animation. Nothing without one.
+ * Every panel picture goes through here, so a new kind of media is drawn in one
+ * place.
  *
  * A number size fits the picture in a size-pixel square. The size 'fill' makes
  * it as wide as its container, keeping its shape, so it scales with the panel.
@@ -62,36 +63,41 @@ export function picture(media, label, size) {
     return [];
   }
 
+  const sampling = media.sampling === 'linear' ? 'linear' : 'nearest';
+  const imageAttributes = { 'data-gb-sampling': sampling, class: 'gb-picture' };
   const filling = size === 'fill';
   if (!media.frame) {
     if (filling) {
-      return [element('img', { src: media.url, alt: label, class: 'gb-picture gb-fill' })];
+      return [element('img', { src: media.url, alt: label, ...imageAttributes, class: 'gb-picture gb-fill' })];
     }
 
     // Within a size-pixel square, keeping the image's shape.
     const fit = media.width && media.height ? size / Math.max(media.width, media.height) : 1;
     const width = media.width ? Math.round(media.width * fit) : size;
     const height = media.height ? Math.round(media.height * fit) : size;
-    return [element('img', { src: media.url, alt: label, width, height, class: 'gb-picture' })];
+    return [element('img', { src: media.url, alt: label, width, height, ...imageAttributes })];
   }
 
   const [frameWidth, frameHeight] = media.frame;
   const columns = Math.max(1, Math.floor(media.width / frameWidth));
   const rows = Math.max(1, Math.floor(media.height / frameHeight));
-  const node = element('div', { role: 'img', 'aria-label': label, class: 'gb-picture' });
+  const node = element('div', { role: 'img', 'aria-label': label, ...imageAttributes });
+  const image = element('img', { src: media.url, alt: '', draggable: 'false', class: 'gb-picture-sheet-image' });
+  node.append(image);
+  node.style.position = 'relative';
+  node.style.overflow = 'hidden';
   if (filling) {
-    // Percentages scale the sheet with the box; the box keeps the frame's shape.
+    // The clipped image scales the sheet with the box; the box keeps the frame's shape.
     node.classList.add('gb-fill');
     node.style.aspectRatio = `${frameWidth} / ${frameHeight}`;
-    node.style.background = `url("${media.url}") 0 0 / ${columns * 100}% ${rows * 100}% no-repeat`;
   } else {
     const scale = size / Math.max(frameWidth, frameHeight);
     node.style.width = `${frameWidth * scale}px`;
     node.style.height = `${frameHeight * scale}px`;
-    node.style.background = `url("${media.url}") 0 0 / ${media.width * scale}px ${media.height * scale}px no-repeat`;
   }
 
-  showFrame(node, columns, rows, 0);
+  const frameInfo = { media, columns, rows, frameWidth, frameHeight, filling, size };
+  showFrame(node, frameInfo, 0);
   if (media.animation?.frames?.length) {
     // Re-renders keep a picture's clock, so the animation runs on instead of restarting.
     const key = `${media.url}|${label}`;
@@ -99,20 +105,46 @@ export function picture(media, label, size) {
       started.set(key, performance.now());
     }
 
-    animated.set(node, { media, columns, rows, start: started.get(key) });
+    animated.set(node, { frameInfo, start: started.get(key) });
     startAnimating();
   }
 
   return [node];
 }
 
-function showFrame(node, columns, rows, frame) {
-  const column = frame % columns;
-  const line = Math.floor(frame / columns);
-  // Percent positions put 0% at the first frame and 100% at the last.
-  const x = columns > 1 ? (column / (columns - 1)) * 100 : 0;
-  const y = rows > 1 ? (line / (rows - 1)) * 100 : 0;
-  node.style.backgroundPosition = `${x}% ${y}%`;
+function showFrame(node, frameInfo, frame) {
+  const { media, columns, rows, frameWidth, frameHeight, filling, size } = frameInfo;
+  const image = node.firstElementChild;
+  if (!image) {
+    return;
+  }
+
+  const column = Math.max(0, Math.min(columns - 1, frame % columns));
+  const line = Math.max(0, Math.min(rows - 1, Math.floor(frame / columns)));
+  const x = column * frameWidth;
+  const y = line * frameHeight;
+  const linear = media.sampling === 'linear';
+  // A half source pixel keeps an interpolated frame away from its neighbour.
+  // Core rejects the only unsafe case (a one-pixel cropped axis), so these
+  // interiors remain positive and the DOM follows the Engine UV policy.
+  const insetX = linear && (x > 0 || frameWidth < media.width) && frameWidth > 1 ? 0.5 : 0;
+  const insetY = linear && (y > 0 || frameHeight < media.height) && frameHeight > 1 ? 0.5 : 0;
+  const interiorWidth = frameWidth - insetX * 2;
+  const interiorHeight = frameHeight - insetY * 2;
+  if (filling) {
+    image.style.width = `${media.width / interiorWidth * 100}%`;
+    image.style.height = `${media.height / interiorHeight * 100}%`;
+    image.style.left = `${-(x + insetX) / interiorWidth * 100}%`;
+    image.style.top = `${-(y + insetY) / interiorHeight * 100}%`;
+  } else {
+    const scale = size / Math.max(frameWidth, frameHeight);
+    const scaleX = frameWidth * scale / interiorWidth;
+    const scaleY = frameHeight * scale / interiorHeight;
+    image.style.width = `${media.width * scaleX}px`;
+    image.style.height = `${media.height * scaleY}px`;
+    image.style.left = `${-(x + insetX) * scaleX}px`;
+    image.style.top = `${-(y + insetY) * scaleY}px`;
+  }
 }
 
 // Animated panel pictures and what each plays; one ticker steps them all while any is on the page.
@@ -127,15 +159,16 @@ function startAnimating() {
 
   ticking = true;
   const step = (now) => {
-    for (const [node, { media, columns, rows, start }] of animated) {
+    for (const [node, { frameInfo, start }] of animated) {
       if (!node.isConnected) {
         animated.delete(node);
         continue;
       }
 
+      const { media } = frameInfo;
       const { frames, fps, loop } = media.animation;
       const played = Math.floor(((now - start) / 1000) * fps);
-      showFrame(node, columns, rows, frames[loop ? played % frames.length : Math.min(played, frames.length - 1)]);
+      showFrame(node, frameInfo, frames[loop ? played % frames.length : Math.min(played, frames.length - 1)]);
     }
 
     if (animated.size > 0) {

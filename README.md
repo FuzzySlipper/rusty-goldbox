@@ -314,3 +314,10 @@ in the Game, selects the member's text and picture over the shared area. Results
 belong to the existing character and survive save/load and NPC dismissal.
 Use `reset: true` on an expedition-entry event when the same scope must be
 rolled again; ordinary same-scope room events preserve the result.
+
+Illustrated image and sheet assets can declare `"sampling": "linear"`;
+omitting it keeps nearest sampling for pixel art. `goldbox schema media --json`
+lists the modes and examples. Engine scene textures and DOM pictures use the
+same authored policy, with isolated sheet frames and named regions. Validation
+identifies one-pixel linear crops that the pinned Engine cannot represent and
+suggests nearest sampling or a wider crop.
