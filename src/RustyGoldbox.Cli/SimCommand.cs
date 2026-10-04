@@ -13,7 +13,7 @@ namespace RustyGoldbox.Cli;
 internal static class SimCommand
 {
     private const string Usage =
-        "Usage: goldbox sim combat --module <path> --party <file>[,<file>...] --encounter <id> [--combat <id>] [--seed <n>] [--runs <k>] [--max-rounds <n>] [--modules <dir>]... [--extension <id>]...";
+        "Usage: goldbox sim combat --module <path> --party <file>[,<file>...] --encounter <id> [--combat <id>] [--seed <n>] [--runs <k>] [--max-rounds <n>] [--trace] [--modules <dir>]... [--extension <id>]...";
 
     public static int Run(IReadOnlyList<string> args, Output output, string workingDirectory)
     {
@@ -22,7 +22,7 @@ internal static class SimCommand
             return output.UsageError(Usage);
         }
 
-        (Arguments parsed, string? error) = Arguments.Parse(args.Skip(1), ["--module", "--modules", "--extension", "--party", "--encounter", "--combat", "--seed", "--runs", "--max-rounds"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args.Skip(1), ["--module", "--modules", "--extension", "--party", "--encounter", "--combat", "--seed", "--runs", "--max-rounds"], ["--trace"]);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null || parsed.Single("--party") is null || parsed.Single("--encounter") is null))
         {
             error = Usage;
@@ -91,7 +91,14 @@ internal static class SimCommand
                         new("Party", party.Select(character => Combatant.FromCharacter(rules, character)).ToList()),
                         new(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
                     ]);
-                    all.Add(CombatRunner.Run(rules, combat, sides, dice, roundLimit, encounter));
+                    all.Add(CombatRunner.Run(
+                        rules,
+                        combat,
+                        sides,
+                        dice,
+                        roundLimit,
+                        encounter,
+                        collectBehaviorTraces: parsed.Has("--trace")));
                 }
 
                 return all;
@@ -99,11 +106,11 @@ internal static class SimCommand
 
             if (runs == 1)
             {
-                output.CombatTranscript(rules, results[0], seed);
+                output.CombatTranscript(rules, results[0], seed, parsed.Has("--trace"));
             }
             else
             {
-                output.CombatSummary(results, seed);
+                output.CombatSummary(results, seed, parsed.Has("--trace"));
             }
 
             return GoldboxCli.Ok;
