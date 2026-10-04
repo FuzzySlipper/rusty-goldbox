@@ -1,5 +1,6 @@
 using Rusty.Engine;
 using Rusty.Engine.Testing;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
@@ -156,6 +157,53 @@ public sealed class CombatOperationResumeTests
         Assert.True(branchHeal < outerHeal, string.Join(Environment.NewLine, uninterrupted.Facts));
     }
 
+    [Fact]
+    public void NestedSkillCheckMarksImprovementOnceWithOrWithoutPostRollAfterJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = WriteSkillPostRollRuleset(modules);
+        ModuleSet set = ModuleLoader.Load(root, []);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attacker = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guard = rules.Find(DefinitionTypes.Monster, "guard_monster", out _)!;
+
+        SkillMarkResult? declined = null;
+        foreach (bool accept in new[] { false, true })
+        {
+            SkillMarkResult uninterrupted = RunSkillPostRoll(set, combat, attacker, guard, accept, restore: false);
+            SkillMarkResult restored = RunSkillPostRoll(set, combat, attacker, guard, accept, restore: true);
+
+            Assert.Equal(uninterrupted.Facts, restored.Facts);
+            Assert.Equal(uninterrupted.SkillMark, restored.SkillMark);
+            Assert.Equal(uninterrupted.SkillMarkCount, restored.SkillMarkCount);
+            Assert.Equal(uninterrupted.CheckTotal, restored.CheckTotal);
+            Assert.Equal(uninterrupted.CheckSuccess, restored.CheckSuccess);
+            Assert.Equal(uninterrupted.CheckFactCount, restored.CheckFactCount);
+            Assert.Equal(uninterrupted.PostRollFactCount, restored.PostRollFactCount);
+            Assert.Equal(uninterrupted.PendingCheckRolls, restored.PendingCheckRolls);
+            Assert.Equal(uninterrupted.DrawCursorAtOffer, uninterrupted.DrawCursorAfterChoice);
+            Assert.Equal(restored.DrawCursorAtOffer, restored.DrawCursorAfterChoice);
+            Assert.Equal(uninterrupted.DrawCursorAfterChoice, restored.DrawCursorAfterChoice);
+            Assert.Equal(1, uninterrupted.SkillMark);
+            Assert.Equal(1, uninterrupted.SkillMarkCount);
+            Assert.True(uninterrupted.CheckSuccess);
+            Assert.Equal(1, uninterrupted.CheckFactCount);
+            Assert.Equal(accept ? 1 : 0, uninterrupted.PostRollFactCount);
+
+            if (accept)
+            {
+                Assert.NotNull(declined);
+                Assert.Equal(declined!.CheckTotal + 4, uninterrupted.CheckTotal);
+            }
+            else
+            {
+                declined = uninterrupted;
+            }
+        }
+    }
+
     private static PostRollResult RunNestedPostRoll(
         RuleSet rules,
         Definition combat,
@@ -298,6 +346,18 @@ public sealed class CombatOperationResumeTests
         long DrawCursorAfterChoice,
         CombatDecisionKind? NextDecisionKind);
 
+    private sealed record SkillMarkResult(
+        IReadOnlyList<string> Facts,
+        int SkillMark,
+        int SkillMarkCount,
+        decimal CheckTotal,
+        bool CheckSuccess,
+        int CheckFactCount,
+        int PostRollFactCount,
+        IReadOnlyList<string> PendingCheckRolls,
+        long DrawCursorAtOffer,
+        long DrawCursorAfterChoice);
+
     private static string WriteNestedPostRollRuleset(TempModules modules)
     {
         string root = WritePostRollBasics(modules);
@@ -356,6 +416,136 @@ public sealed class CombatOperationResumeTests
               "post_roll": [ { "name": "Lucky", "track": "luck", "cost": "1", "bonus": "4", "score": "1" } ] }
             """);
         return root;
+    }
+
+    private static string WriteSkillPostRollRuleset(TempModules modules)
+    {
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/craft.json", """{ "type": "derived", "id": "craft", "name": "Craft", "value": "self.str" }""");
+        modules.Write("rules/creation.json", """{ "type": "character-creation", "id": "standard", "name": "Standard", "attributes": ["str"], "attribute_roll": "10", "default": true }""");
+        modules.Write("rules/advancement.json", """
+            { "type": "advancement", "id": "improving", "name": "Improving skills", "kind": "improvement",
+              "improvement": { "checks": [ { "skill": "craft", "when": "true", "amount": "1" } ] } }
+            """);
+        modules.Write("rules/luck.json", """
+            { "type": "track", "id": "luck", "name": "Luck", "max": "1", "start": "1", "min": "0" }
+            """);
+        WriteCombat(modules, "duel");
+        modules.Write("rules/post_check.json", """
+            { "type": "check", "id": "post_check", "name": "Post check", "roll": "1d4", "skill": "craft", "target": "1", "succeeds": "at-least",
+              "post_roll": [ { "name": "Lucky", "track": "luck", "cost": "1", "bonus": "4", "score": "1" } ] }
+            """);
+        modules.Write("rules/nested_skill_post_roll.json", """
+            { "type": "action", "id": "nested_skill_post_roll", "name": "Nested skill post-roll", "cost": { "turn": 1 }, "target": "enemy",
+              "always": [
+                { "op": "if", "when": "self.str >= 10", "then": [
+                  { "op": "check", "by": "self", "check": "post_check", "outcomes": {
+                    "success": [ { "op": "heal", "amount": "2", "to": "self" } ]
+                  } }
+                ] },
+                { "op": "heal", "amount": "3", "to": "self" }
+              ] }
+            """);
+        WriteMonster(modules, "attacker", "Attacker", "nested_skill_post_roll", []);
+        WriteMonster(modules, "guard_monster", "Guard", null, []);
+        return root;
+    }
+
+    private static SkillMarkResult RunSkillPostRoll(
+        ModuleSet set,
+        Definition combat,
+        Definition attackerDefinition,
+        Definition guardDefinition,
+        bool accept,
+        bool restore)
+    {
+        using EngineTestHost host = EngineTestHost.Create();
+        return host.Call(engine =>
+        {
+            const ulong seed = 7799;
+            const string scope = "operation-skill-post-roll";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            RuleSet rules = set.Rules!;
+            Character character = CreateImprovementCharacter(set, engine.Random, "skill-post-roll-character");
+            Evaluator evaluator = new(rules, dice);
+            Combatant template = Combatant.FromMonster(rules, attackerDefinition, character.Name, evaluator);
+            template.Creature.Track("hit_points").Current = 5;
+            Combatant attacker = new(character.Name, template.Creature, template.Uses) { Character = character };
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(guard.Id, CombatControlMode.Manual));
+
+            CombatDecision action = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            CombatActionChoice nested = Assert.Single(action.Actions);
+            CombatCommandResult waiting = runner.Submit(new CombatCommand.UseAction(attacker.Id, nested.Id, [guard.Id]));
+            CombatDecision offered = AssertDecision(waiting.Observation, CombatDecisionKind.PostRoll);
+            CombatDecisionOption option = Assert.Single(offered.Options!);
+            CombatContinuationState saved = RoundTrip(runner.Capture());
+            Assert.Single(saved.PendingCheckRolls);
+
+            DiceRoller activeDice = dice;
+            CombatRunner active = runner;
+            Character activeCharacter = character;
+            if (restore)
+            {
+                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                Evaluator restoredEvaluator = new(rules, activeDice);
+                activeCharacter = CreateImprovementCharacter(set, engine.Random, "skill-post-roll-character-restored");
+                Combatant restoredTemplate = Combatant.FromMonster(rules, attackerDefinition, activeCharacter.Name, restoredEvaluator);
+                restoredTemplate.Creature.Track("hit_points").Current = 5;
+                Combatant restoredAttacker = new(activeCharacter.Name, restoredTemplate.Creature, restoredTemplate.Uses) { Character = activeCharacter };
+                active = CombatRunner.Restore(rules, combat,
+                [
+                    new CombatSide("Attackers", [restoredAttacker]),
+                    new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+                ], activeDice, saved);
+                CombatDecision restoredOffered = AssertDecision(active.Observe(), CombatDecisionKind.PostRoll);
+                Assert.Equal(offered.Id, restoredOffered.Id);
+                option = Assert.Single(restoredOffered.Options!);
+            }
+
+            CombatCommandResult completed = active.Submit(new CombatCommand.Decide(offered.Id, accept ? option.Id : null));
+            Assert.True(completed.Accepted, completed.Reason);
+            return SkillMarkSnapshot(completed.Observation, activeCharacter, saved, activeDice);
+        });
+    }
+
+    private static Character CreateImprovementCharacter(ModuleSet set, Rusty.Engine.IRandomService random, string scope)
+    {
+        List<ModuleDiagnostic> problems = [];
+        Character character = CharacterRules.Create(
+            set.Rules!,
+            Character.StampsOf(set),
+            new CreationRequest("Ada", "warrior", null, Attributes: new Dictionary<string, decimal> { ["str"] = 15 }),
+            new DiceRoller(random, 7798, scope),
+            problems)!;
+        Assert.Empty(problems);
+        return character;
+    }
+
+    private static SkillMarkResult SkillMarkSnapshot(
+        CombatObservation observation,
+        Character character,
+        CombatContinuationState saved,
+        DiceRoller dice)
+    {
+        CheckFact check = Assert.Single(observation.Facts.OfType<CheckFact>());
+        return new SkillMarkResult(
+            observation.Facts.Select(fact => $"{fact.Kind}|{fact.Describe()}|{string.Join(",", fact.Rolls.Select(roll => roll.ToString()))}").ToArray(),
+            character.SkillMarks.GetValueOrDefault("craft"),
+            character.SkillMarks.Count,
+            check.Result.Total,
+            check.Result.Success,
+            observation.Facts.Count(fact => fact is CheckFact),
+            observation.Facts.Count(fact => fact is PostRollFact),
+            saved.PendingCheckRolls.Select(roll => roll.ToString()).ToArray(),
+            saved.NextRandomKey,
+            dice.NextRandomKey);
     }
 
     private static ScenarioResult RunTailAction(
