@@ -78,8 +78,8 @@ an optional reward, or a safe retreat; it does not need to be a mandatory fight.
 | Beat | Scene and play | Reads | Writes / consequence |
 | --- | --- | --- | --- |
 | `beat.return_triage` | **Account for people.** The party returns to a safe room, treats injuries and fear, and records every rescued, missing, and unaccounted-for child. The village has experienced only a short day. | all `child_<source_name>` and `double_<source_name>` variables, `recovery_flags` | `recovery_flags.returned`; parents and services become available. |
-| `beat.double_resolution` | **What happened to the masks?** For each surviving or escaped double, the party can expose it publicly, contain it with the priory and manor, release it to the forest, or hide the truth. The choice changes trust and the epilogue booleans. | the seven `double_<source_name>` variables, `village_trust`, evidence | Set each double variable to `contained`, `escaped`, `exposed`, `masked`, or `removed`; an unresolved account remains `unknown`; `village_trust` shifts. Set `epilogue_doubles_contained` or `epilogue_masks_escaped` from those seven values. |
-| `beat.family_return` | **Families respond.** Parents receive children who are actually returned. The Figworts, Goodall family, and poorer households respond differently; a partial rescue is still acknowledged. | the seven `child_<source_name>` variables, `figwort_stance` | `family_reactions`; rewards and services reflect actual children returned. |
+| `beat.double_resolution` | **What happened to the masks?** For each surviving or escaped double, the party can expose it publicly, contain it with the priory and manor, release it to the forest, or hide the truth. The choice changes trust and the epilogue booleans. | the seven `double_<source_name>` variables, `village_trust`, evidence | Set each double variable to `contained`, `escaped`, `exposed`, `masked`, or `removed`; an unresolved account remains `unknown`; `village_trust` shifts. For a removal, retain the optional matching `double_<source_name>_removal_cause` scalar; retain `_evidence` when a scene establishes the identity or disposition. Set `epilogue_doubles_contained` or `epilogue_masks_escaped` from those seven values. |
+| `beat.family_return` | **Families respond.** Parents receive children who are actually returned. The Figworts, Goodall family, and poorer households respond differently; a partial rescue is still acknowledged. | the seven `child_<source_name>` variables, `figwort_stance` | Set a child scalar to `returned` only after its actual family handoff; leave it `freed`, `captive`, or `unknown` when that handoff did not happen. `family_reactions`; rewards and services reflect actual children returned. |
 | `beat.final_choice` | **Resolution.** The party chooses whether to publish the truth, protect the village with a partial story, accept a court bargain, or leave with unresolved survivors. | eligibility variables in [endings.md](endings.md) | Set exactly one scalar `ending_id`, then write independent scalar epilogue booleans; campaign ends or returns to a postscript. |
 
 ## Recovery and progression rules
@@ -92,9 +92,11 @@ an optional reward, or a safe retreat; it does not need to be a mandatory fight.
   supplies a safe rest and makes the remaining child statuses visible.
 * The party earns its first advancement for establishing the mirror lead and
   protecting at least one person in Act I or II. It earns the second for a
-  meaningful Brugh rescue or negotiated escape. Reaching level 3 is expected by
-  the final resolution, but the campaign remains completable when a party has
-  fewer levels after setbacks.
+  meaningful Brugh rescue or negotiated escape. Author those rewards as
+  ordinary fifth-srd `Experience` events and XP values, not as a
+  campaign-specific milestone advancement event. Reaching level 3 is expected
+  by the final resolution, but the campaign remains completable when a party
+  has fewer levels after setbacks.
 * Rest, temple care, shops, and training are useful services in Blackapple and
   at Hen's Teeth. Their prices and exact operations belong to the fifth-srd
   data conversion. The narrative never requires a specific gold total.

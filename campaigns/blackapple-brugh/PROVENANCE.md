@@ -88,12 +88,15 @@ Rusty Goldbox additions include:
   position owner;
 * non-graphic sensitive-content handling, opt-out/leave paths, and original
   paired palace/underground presentation direction; and
-* any original campaign prose, data, maps, geometry, code, or art created for
-  Rusty Goldbox.
+* any original campaign prose, data, maps, geometry, or art created for Rusty
+  Goldbox.
 
-These additions and any adapted material are released under CC BY-SA 4.0 in
-the campaign module. `fifth-srd` remains a separately licensed required
-ruleset module. It is not relicensed by this notice.
+The retained campaign prose, data, maps, geometry, and art adaptations and
+original additions in these companion modules are released under CC BY-SA 4.0.
+Core, CLI, and Game implementation code remains under the repository's own
+licence and is outside this campaign attribution notice; no source-derived C#
+or other implementation code is imported. `fifth-srd` remains a separately
+licensed required ruleset module. It is not relicensed by this notice.
 
 ## Planned module boundaries
 

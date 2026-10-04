@@ -56,7 +56,7 @@ will reject.
 | Investigation | `scene.arrival`, `scene.hub_investigation`, `scene.environs_hooks` | Arrival and evidence gathering. |
 | Rescue | `scene.brugh_search`, `scene.children_rescue` | Search, release, and escape. |
 | Resolution | `scene.return_resolution` | Village accounting and ending selection. |
-| State | `state.children_status`, `state.doubles_status`, `state.glamour_truth` | Persistent campaign facts described below. |
+| State | `child_*`, `double_*`, `ending_id`, `epilogue_*`, `state.glamour_truth` | Scalar campaign facts described below; member perception remains the #9362 seam. |
 
 Child IDs are immutable and identify the real children, regardless of who is
 wearing the matching mask:
@@ -102,15 +102,16 @@ The return contract also uses these existing scalar variables:
 ## State contract
 
 The canon names story facts; Core remains the sole owner of their runtime
-values. The implementation may choose the concrete representation after it has
-checked the current save and variable contracts, but it must preserve these
-semantics:
+values. Runtime definitions use the exact scalar variables in the contract
+above, backed by the existing campaign `Variables` maps; they do not add a
+keyed child/double collection or a parallel dictionary. They must preserve
+these semantics:
 
-* `state.children_status` is the canon grouping for the seven
+* The child-status group is the canon grouping for the seven
   `child_<source_name>` scalar variables in the table above. Each has the value
   `captive`, `freed`, `returned`, or `unknown`; a child is not counted as
   returned merely because the party saw the child.
-* `state.doubles_status` is the canon grouping for the seven
+* The double-status group is the canon grouping for the seven
   `double_<source_name>` scalar variables in the table above. Each has the
   value `masked`, `exposed`, `contained`, `escaped`, `removed`, or `unknown`.
   `masked` means the identity is not resolved; `exposed` means the identity is
@@ -133,9 +134,10 @@ semantics:
   Figwort family's current request (`watch`, `rescue`, `protect`, or
   `reconcile`). `state.elf_lord_reaction` records the current court stance
   (`curious`, `amused`, `suspicious`, `hostile`, or `bargaining`).
-* `state.recovery_flags` records concrete setbacks that have been resolved,
-  such as a sickened member receiving care, a separated member rejoining, or a
-  closed route being reopened. It is not a second event log.
+* `state.recovery_flags` is a canon grouping for individual scalar recovery
+  booleans, such as a sickened member receiving care, a separated member
+  rejoining, or a closed route being reopened. It is not a keyed collection or
+  a second event log.
 * `ending_id` is set exactly once: during return resolution for a living party,
   or at terminal defeat before return as `ending.lost_in_brugh`. It is one of
   the stable primary ending IDs in [endings.md](endings.md). The return scene
