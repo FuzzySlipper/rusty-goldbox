@@ -158,7 +158,7 @@ export function createOverlay(send, ui) {
     ...view.temple.services.map((service) => element('div', {},
       element('h3', {}, service.label),
       row(...service.prices.map((price, index) => button(`${view.party[index]?.name ?? index + 1}: ${price} ${currencyName(service.currency)}`,
-        play(`serve ${service.number} ${index + 1}`), { 'data-focus-key': `temple:${service.number}:${index}` })))))),
+        play(`serve ${service.number} ${index + 1}`), { 'data-focus-key': `temple:${service.number}:${index}` }))))),
     row(button('Leave temple', play('leave'))));
 
   const training = (view) => frame('Trainer', '',
