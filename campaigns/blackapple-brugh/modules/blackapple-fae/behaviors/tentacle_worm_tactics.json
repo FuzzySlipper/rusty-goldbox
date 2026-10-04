@@ -17,7 +17,11 @@
             "dice": "1d4"
           },
           "target": "enemy",
-          "target_score": "0 - combat.distance"
+          "target_score": "0 - combat.distance",
+          "destination": {
+            "kind": "toward",
+            "distance": "1"
+          }
         }
       ],
       "fallback": "next"

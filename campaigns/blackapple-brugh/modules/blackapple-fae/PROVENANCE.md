@@ -57,8 +57,10 @@ containment, and retreat alternatives around these recipes.
 The extension reuses fifth-srd attacks, saves, movement, and Core's existing
 combat-behavior interpreter. Each source creature has a short authored policy
 that proposes its actual action and selects a nearby enemy through the common
-legal-action resolver. Pixies, hounds, doubles and guards approach their target;
-the pit worm and pantry pudding stay at their keyed hazard. The Elf Lord first
+legal-action resolver. Pixies, hounds, doubles, guards and the pit worm approach
+their target within the combat field. All creatures remain at their keyed
+campaign locations; the pantry pudding's current policy waits for a target in
+range. The Elf Lord first
 uses his existing prepared Magic Missile while resources permit, then his
 dagger. Negotiation and avoidance remain campaign choices before these policies
 are reached; no policy turns a friendly scene into a fight.
