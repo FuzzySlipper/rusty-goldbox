@@ -15,8 +15,11 @@ internal sealed class ExpressionChecker(
     IReadOnlyList<string> useParameters,
     IReadOnlyList<string> conditionValues,
     Func<Definition, ExprType?> derivedType,
-    Func<Definition, bool> isInferring)
+    Func<Definition, bool> isInferring,
+    IReadOnlyList<string>? behaviorParameters = null)
 {
+    private readonly IReadOnlyList<string> _behaviorParameters = behaviorParameters ?? [];
+
     public Dictionary<Expr, CompiledTable> Tables { get; } = new(ReferenceEqualityComparer.Instance);
 
     public ExprType Check(Expr expr)
@@ -63,11 +66,12 @@ internal sealed class ExpressionChecker(
             "condition" => Roots.Condition,
             "item" => Roots.Item,
             "combat" => Roots.Combat,
+            "behavior" => Roots.Behavior,
             _ => Roots.None,
         };
         if (root == Roots.None)
         {
-            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, self.rolled.<check>, use.<parameter>, check.<result>, outer.<result>, campaign.var.<name>, class.level, condition.<value>, item.<field> and combat.<field>.", path.Column);
+            throw new ExpressionException($"'{path.Root}' is not something an expression can read. Reads are self.<stat>, target.<stat>, self.condition.<id>, self.rolled.<check>, use.<parameter>, behavior.<parameter>, check.<result>, outer.<result>, campaign.var.<name>, class.level, condition.<value>, item.<field> and combat.<field>.", path.Column);
         }
 
         if (!roots.HasFlag(root))
@@ -82,6 +86,17 @@ internal sealed class ExpressionChecker(
             {
                 string known = useParameters.Count == 0 ? "This action has no parameters." : $"Parameters: {string.Join(", ", useParameters)}.";
                 throw new ExpressionException($"'{path.Name}' is not a parameter of this action. {known} Declare it in the action's \"parameters\".", path.Column);
+            }
+
+            return ExprType.Number;
+        }
+
+        if (root == Roots.Behavior)
+        {
+            if (!_behaviorParameters.Contains(path.Name))
+            {
+                string known = _behaviorParameters.Count == 0 ? "This behavior has no parameters." : $"Parameters: {string.Join(", ", _behaviorParameters)}.";
+                throw new ExpressionException($"'{path.Name}' is not a parameter of this combat behavior. {known} Declare it in the behavior's \"parameters\".", path.Column);
             }
 
             return ExprType.Number;
@@ -346,7 +361,7 @@ internal sealed class ExpressionChecker(
             throw new ExpressionException($"{function.Name}() goes over self's classes, but this field can't read self.", call.Column);
         }
 
-        ExpressionChecker inner = new(rules, module, roots | Roots.Class, useParameters, conditionValues, derivedType, isInferring);
+        ExpressionChecker inner = new(rules, module, roots | Roots.Class, useParameters, conditionValues, derivedType, isInferring, _behaviorParameters);
         Expect(inner.Check(call.Arguments[0]), ExprType.Number, call.Arguments[0].Column, $"{function.Name}()");
         foreach ((Expr expr, CompiledTable table) in inner.Tables)
         {
@@ -372,7 +387,7 @@ internal sealed class ExpressionChecker(
                 : "carried() reads the party's items, but this field isn't a campaign expression.", call.Column);
         }
 
-        ExpressionChecker inner = new(rules, module, roots | Roots.Item, useParameters, conditionValues, derivedType, isInferring);
+        ExpressionChecker inner = new(rules, module, roots | Roots.Item, useParameters, conditionValues, derivedType, isInferring, _behaviorParameters);
         Expect(inner.Check(call.Arguments[0]), ExprType.Boolean, call.Arguments[0].Column, $"{function.Name}()");
         foreach ((Expr expr, CompiledTable table) in inner.Tables)
         {

@@ -31,7 +31,7 @@ changes shape:
 | --- | --- | --- |
 | hero | view (`.gb-view`) | Shares the main column with the log by the log share |
 | flow | log (`panels/log.js`) | Under the view: the play or fight log as a page of text, the last action's notes, the waiting menu as numbered choices, and the `Party:` command line; the newest line stays in sight as the panel resizes unless the player scrolled back |
-| count-driven | portraits (`panels/portraits.js`) | Cards sized by party size and the portrait scale; in play a card opens that member's sheet, in combat it shows the party's side and who acts |
+| count-driven | portraits (`panels/portraits.js`) | Cards sized by the visible page and portrait scale; previous/next controls reach every member, and the panel scrolls independently; in play a card opens that member's sheet, in combat it shows the party's side and who acts |
 | fill | map (`panels/map.js`) | The area map in play, its text sized to fill the panel; the other sides of the fight in combat |
 | strip | status (`panels/status.js`), controls (`panels/controls.js`) | Fixed thickness: where the party is and the ≡ Menu; the movement pad and the commands that fit what the party is doing |
 | overlay | `panels/overlays.js` | Covers the view: the game menu (save, quit, sound and look) or a member's sheet when the player opens one, else the shop, temple or trainer the party is at |
@@ -55,8 +55,19 @@ to the skin's.
 The title and party screens are one framed sheet over the whole window, with
 the menu's sound and look settings at the foot.
 
-Which overlay the player opened is the UI's only state of its own, and it is
-presentation: game state stays in the projection.
+The open overlay, roster page, scroll position and keyboard focus are
+presentation state. The roster shows six cards per page, retains each card's
+full party index, and restores its scroll and focus when the projection
+updates. Six is a page size; the campaign's rules decide party size. Game
+state stays in the projection.
+
+During a live fight the controls identify the active combatant and its
+remaining budgets. They render Core's legal action and target choices,
+authored movement paths, End turn, per-member manual/automatic control and any
+pending optional decision. Target preference belongs to automatic policy;
+manual choices use the legal targets in the projection. The menu can save
+while a turn or optional decision waits. Animation skip only advances the
+presentation of committed facts.
 
 Each campaign on the title screen lists the extensions the player may add
 (`extensions`: installed extension modules built on its ruleset that it

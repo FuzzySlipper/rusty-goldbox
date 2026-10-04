@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "phase_watcher",
+  "monster": "tactical-bestiaire:phase_watcher",
+  "sprite": "placeholder-art:magic_user",
+  "icon": "placeholder-art:magic_user_portrait"
+}

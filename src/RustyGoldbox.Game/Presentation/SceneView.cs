@@ -72,7 +72,21 @@ internal sealed class SceneView : IDisposable
         if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
         {
             CampaignState state = runner.State;
-            if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
+            if (session.Screen == Screen.Combat && session.Combat is CombatObservation live && session.CombatMetadata is PendingCombatState pending)
+            {
+                _showingCombat = true;
+                CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
+                _combat.Show(
+                    live,
+                    id => LiveKind(rules, pending, id),
+                    kind => SpriteFor(rules, session.Set, kind),
+                    key => field is not null && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
+                    field,
+                    Floor(rules, session.Set, state.Area),
+                    facts);
+                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(session.ViewAspect), CombatScene.FieldOfView)));
+            }
+            else if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
             {
                 _showingCombat = true;
                 _combat.Show(
@@ -386,6 +400,31 @@ internal sealed class SceneView : IDisposable
     private SpriteArt? SpriteFor(RuleSet rules, ModuleSet set, Definition kind)
     {
         return rules.Figures.TryGetValue(kind, out Definition? sprite) ? SpriteArtOf(rules, set, sprite) : null;
+    }
+
+    private static Definition? LiveKind(RuleSet rules, PendingCombatState pending, string id)
+    {
+        for (int index = 0; index < pending.Participants.Count; index++)
+        {
+            PendingCombatantSource source = pending.Participants[index];
+            if (source.Id != id || index >= pending.Members.Count)
+            {
+                continue;
+            }
+
+            PendingFightMember member = pending.Members[index];
+            if (member.MonsterId is string monster)
+            {
+                return rules.Find(DefinitionTypes.Monster, monster, out _);
+            }
+
+            if (member.ClassId is string characterClass)
+            {
+                return rules.Find(DefinitionTypes.Class, characterClass, out _);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>A figure-ready sheet's frames and animations, admitted once per asset content.</summary>

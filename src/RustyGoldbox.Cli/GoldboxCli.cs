@@ -19,14 +19,15 @@ internal static class GoldboxCli
               "modules" directory of the nearest goldbox.json, else ".".
           goldbox module validate <path> [--modules <dir>]...
           goldbox module deps <path> [--modules <dir>]...
-          goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]...
-              Lists the resolved definitions and stats, or shows the selected ones.
+          goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--trace] [--modules <dir>]...
+              Lists the resolved definitions and stats, or shows the selected ones. With --trace,
+              combat-behavior selections include authored guards, scores, plan steps and source paths.
           goldbox module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...
               Validates the module, then packs it into an Engine content container
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
-          goldbox schema [<type> | workspace | module | expressions | operations | events | media]
+          goldbox schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
               The format reference: definition types with fields and examples.
           goldbox workspace new <dir>
               Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
@@ -43,6 +44,7 @@ internal static class GoldboxCli
               Discovers or copies the embedded draft campaign-authoring kit;
               copied files include the brief, canon, chapter, encounter, art,
               handoff, workflow and revision templates.
+              `live-combat` adds the suspended combat script and JSON observation schema.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
@@ -102,21 +104,28 @@ internal static class GoldboxCli
               Prints the derived sheet.
 
           goldbox sim combat --module <path> --party <file>,... --encounter <id> [--seed <n>]
-                [--runs <k>] [--max-rounds <n>] [--combat <id>]   (rounds default to the combat's round_limit)
+                [--runs <k>] [--max-rounds <n>] [--combat <id>] [--trace]   (rounds default to the combat's round_limit)
               Fights the party against the encounter with the ruleset's combat loop. One run
-              prints the transcript; more print outcomes and distributions. Run k uses the
-              random scope goldbox.sim.<k>, so each run repeats for a seed.
+              prints the transcript; more print outcomes and distributions. --trace adds a
+              side-effect-free resolved-action projection. Run k uses the random scope goldbox.sim.<k>,
+              so each run repeats for a seed.
 
           goldbox map render <area> --module <path> [--player]
               Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
-          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--fail-on-refusal]
-          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--fail-on-refusal]
+          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace] [--fail-on-refusal]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal]
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Commands include equip <member> <item-id> and unequip <member> <item-id>
-              (one-based party members; item IDs can be local or module:id), plus movement, event,
-              shop, temple, training and status commands. Gear changes transfer one existing carried
+              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
+              Commands include equip <member> <item-id> and unequip <member> <item-id>
+              (one-based party members; item IDs can be local or module:id). Gear changes transfer one existing carried
               copy and are refused during live combat or while a pending interaction owns the command.
-              --save writes the state at the end; --load continues a save exactly.
+              Add --combat-control manual to suspend the party at a fight. Combat commands include
+              combat inspect, combat control <actor-id> auto|manual, combat action <actor-id> <action-id>
+              [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] (quote IDs containing spaces), combat move, combat end-turn, combat decide and
+              combat auto-step (one automatic turn, then manual control); `goldbox schema live-combat`
+              shows the complete grammar and JSON shape. Use combat control ... auto for a persistent takeover.
+              --save writes the state at the end, including a pending fight; --load continues a save exactly.
+              --fail-on-refusal turns scripted command refusals into diagnostics and exit code 1.
 
         Every command accepts --json for structured output.
 

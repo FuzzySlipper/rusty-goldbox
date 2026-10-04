@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "id": "tactical-expedition",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "The Tactical Gallery",
+  "requires": [
+    {
+      "id": "classic",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "tactical-bestiaire",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "placeholder-art",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original Rusty Goldbox campaign content written to exercise authored tactical behaviors, companion controller changes and independent module containers. See PROVENANCE.md."
+}

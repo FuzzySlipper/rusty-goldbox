@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using RustyGoldbox.Core.Campaigns;
@@ -689,6 +690,166 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
     }
 
+    /// <summary>
+    /// Shows authored behavior decisions structurally. This reads expressions
+    /// and source locations only; evaluating a policy against a combat snapshot
+    /// belongs to Core's live trace and is exposed by play/sim when available.
+    /// </summary>
+    public void BehaviorDiagnostics(RuleSet rules, IReadOnlyList<Definition> definitions)
+    {
+        IReadOnlyList<Definition> behaviors = definitions.Where(definition => definition.Type == DefinitionTypes.CombatBehavior).ToList();
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = true,
+                mode = "authored",
+                sideEffectFree = true,
+                definitions = behaviors.Select(BehaviorJson),
+            });
+            return;
+        }
+
+        if (behaviors.Count == 0)
+        {
+            writer.WriteLine("No combat-behavior definitions were selected.");
+            return;
+        }
+
+        writer.WriteLine("Authored combat behavior diagnostics (source only; no combat state or dice):");
+        foreach (Definition behavior in behaviors)
+        {
+            writer.WriteLine($"{behavior.QualifiedId}  {Display(behavior.File)}");
+            string name = StringProperty(behavior.Json, "name") ?? behavior.Name;
+            string defaultFallback = StringProperty(behavior.Json, "fallback") ?? "end-turn";
+            writer.WriteLine($"  name {name}; fallback {defaultFallback}");
+            if (!behavior.Json.TryGetProperty("rules", out JsonElement rulesElement) || rulesElement.ValueKind != JsonValueKind.Array)
+            {
+                writer.WriteLine("  rules: none");
+                continue;
+            }
+
+            int index = 0;
+            foreach (JsonElement rule in rulesElement.EnumerateArray())
+            {
+                string path = $"$.rules[{index}]";
+                string when = ExpressionProperty(rule, "when") ?? "(always)";
+                string score = ExpressionProperty(rule, "score") ?? ExpressionProperty(rule, "priority") ?? "(none)";
+                string commitment = StringProperty(rule, "commit") ?? "step";
+                string fallback = StringProperty(rule, "fallback") ?? "end_turn";
+                writer.WriteLine($"  {path} guard {when}; score {score}; commit {commitment}; fallback {fallback}");
+                if (rule.TryGetProperty("steps", out JsonElement steps) && steps.ValueKind == JsonValueKind.Array)
+                {
+                    int stepIndex = 0;
+                    foreach (JsonElement step in steps.EnumerateArray())
+                    {
+                        string action = StepProperty(step, "action") ?? StepProperty(step, "spell") ?? StepProperty(step, "name") ?? "(movement/fallback)";
+                        string target = StringProperty(step, "target") ?? "(default)";
+                        writer.WriteLine($"    {path}.steps[{stepIndex}] action {action}; target {target}");
+                        stepIndex++;
+                    }
+                }
+
+                index++;
+            }
+        }
+    }
+
+    private object BehaviorJson(Definition definition)
+    {
+        List<object> rules = [];
+        if (definition.Json.TryGetProperty("rules", out JsonElement rulesElement) && rulesElement.ValueKind == JsonValueKind.Array)
+        {
+            int index = 0;
+            foreach (JsonElement rule in rulesElement.EnumerateArray())
+            {
+                List<object> steps = [];
+                if (rule.TryGetProperty("steps", out JsonElement stepElement) && stepElement.ValueKind == JsonValueKind.Array)
+                {
+                    int stepIndex = 0;
+                    foreach (JsonElement step in stepElement.EnumerateArray())
+                    {
+                        steps.Add(new
+                        {
+                            source = new { module = definition.Module, file = Display(definition.File), jsonPath = $"$.rules[{index}].steps[{stepIndex}]" },
+                            action = StepProperty(step, "action"),
+                            spell = StepProperty(step, "spell"),
+                            name = StepProperty(step, "name"),
+                            target = StringProperty(step, "target"),
+                            targetScore = ExpressionProperty(step, "target_score"),
+                            destination = step.TryGetProperty("destination", out JsonElement destination) ? destination : (JsonElement?)null,
+                        });
+                        stepIndex++;
+                    }
+                }
+
+                rules.Add(new
+                {
+                    source = new { module = definition.Module, file = Display(definition.File), jsonPath = $"$.rules[{index}]" },
+                    guard = ExpressionProperty(rule, "when"),
+                    priority = ExpressionProperty(rule, "priority"),
+                    score = ExpressionProperty(rule, "score"),
+                    commitment = StringProperty(rule, "commit"),
+                    fallback = StringProperty(rule, "fallback"),
+                    steps,
+                });
+                index++;
+            }
+        }
+
+        return new
+        {
+            id = definition.QualifiedId,
+            type = definition.Type.Name,
+            name = StringProperty(definition.Json, "name") ?? definition.Name,
+            parameters = definition.Json.TryGetProperty("parameters", out JsonElement parameters) ? parameters : (JsonElement?)null,
+            fallback = StringProperty(definition.Json, "fallback"),
+            source = new { module = definition.Module, file = Display(definition.File), jsonPath = "$" },
+            rules,
+        };
+    }
+
+    private static string? StringProperty(JsonElement value, string name)
+    {
+        return value.TryGetProperty(name, out JsonElement property) && property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+    }
+
+    private static string? ExpressionProperty(JsonElement value, string name)
+    {
+        if (!value.TryGetProperty(name, out JsonElement property))
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : property.ValueKind is JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False
+                ? property.GetRawText()
+                : null;
+    }
+
+    private static string? StepProperty(JsonElement step, string name)
+    {
+        if (!step.TryGetProperty(name, out JsonElement property))
+        {
+            return null;
+        }
+
+        if (property.ValueKind == JsonValueKind.String)
+        {
+            return property.GetString();
+        }
+
+        if (property.ValueKind == JsonValueKind.Object)
+        {
+            return StringProperty(property, name);
+        }
+
+        return null;
+    }
+
     /// <summary>Rule problems that stop a command, such as a class requirement the character misses.</summary>
     public int Problems(IReadOnlyList<ModuleDiagnostic> problems)
     {
@@ -847,20 +1008,38 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return CharacterRules.GetSkillPointOptions(rules, character, problems);
     }
 
-    public void CombatTranscript(RuleSet rules, CombatResult result, ulong seed)
+    public void CombatTranscript(RuleSet rules, CombatResult result, ulong seed, bool trace = false)
     {
         Evaluator evaluator = new(rules, null);
         if (json)
         {
-            WriteJson(new
+            object summary = new
             {
                 ok = true,
                 seed,
-                winner = result.Winner is int side ? result.Sides[side].Name : null,
+                winner = result.Winner is int summarySide ? result.Sides[summarySide].Name : null,
                 rounds = result.Rounds,
                 facts = result.Facts.Select(fact => new { kind = fact.Kind, text = fact.Describe(), rolls = fact.Rolls.Select(RollJson) }),
                 combatants = Combatants(rules, result, evaluator),
-            });
+            };
+            if (trace)
+            {
+                WriteJson(new
+                {
+                    ok = true,
+                    seed,
+                    winner = result.Winner is int winnerSide ? result.Sides[winnerSide].Name : null,
+                    rounds = result.Rounds,
+                    facts = result.Facts.Select(fact => new { kind = fact.Kind, text = fact.Describe(), rolls = fact.Rolls.Select(RollJson) }),
+                    combatants = Combatants(rules, result, evaluator),
+                    trace = SimulationTrace(rules, result),
+                });
+            }
+            else
+            {
+                WriteJson(summary);
+            }
+
             return;
         }
 
@@ -878,9 +1057,20 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 $"{member.Name} {TrackText(member, result.Track, evaluator)}{(member.Escaped ? " (fled)" : member.Defeated ? " (out)" : "")}"));
             writer.WriteLine($"{side.Name}: {members}");
         }
+
+        if (trace)
+        {
+            writer.WriteLine(result.BehaviorTraces is { Count: > 0 }
+                ? "trace (side-effect-free authored AI decisions):"
+                : "trace (side-effect-free resolved actions; Core behavior trace unavailable):");
+            foreach (object entry in SimulationTrace(rules, result))
+            {
+                writer.WriteLine($"  {JsonSerializer.Serialize(entry, JsonOptions)}");
+            }
+        }
     }
 
-    public void CombatSummary(IReadOnlyList<CombatResult> results, ulong seed)
+    public void CombatSummary(IReadOnlyList<CombatResult> results, ulong seed, bool trace = false)
     {
         List<string> sideNames = results[0].Sides.Select(side => side.Name).ToList();
         Dictionary<string, int> wins = sideNames.Select((name, index) => (name, index)).ToDictionary(entry => entry.name, entry => results.Count(result => result.Winner == entry.index));
@@ -890,16 +1080,33 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         Dictionary<string, int> survived = partyNames.Select((name, index) => (name, index)).ToDictionary(entry => entry.name, entry => results.Count(result => !result.Sides[0].Members[entry.index].Defeated));
         if (json)
         {
-            WriteJson(new
+            if (trace)
             {
-                ok = true,
-                seed,
-                runs = results.Count,
-                wins,
-                undecided,
-                rounds = new { min = rounds.Min(), mean = rounds.Average(), max = rounds.Max() },
-                party_survival = survived,
-            });
+                WriteJson(new
+                {
+                    ok = true,
+                    seed,
+                    runs = results.Count,
+                    wins,
+                    undecided,
+                    rounds = new { min = rounds.Min(), mean = rounds.Average(), max = rounds.Max() },
+                    party_survival = survived,
+                    trace = results.Select(result => SimulationTrace(result)).ToList(),
+                });
+            }
+            else
+            {
+                WriteJson(new
+                {
+                    ok = true,
+                    seed,
+                    runs = results.Count,
+                    wins,
+                    undecided,
+                    rounds = new { min = rounds.Min(), mean = rounds.Average(), max = rounds.Max() },
+                    party_survival = survived,
+                });
+            }
             return;
         }
 
@@ -920,9 +1127,79 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             writer.WriteLine($"  {name} still fighting at the end: {alive} ({Percent(alive, count)})");
         }
+
+        if (trace)
+        {
+            writer.WriteLine("trace (side-effect-free authored AI decisions):");
+            for (int index = 0; index < results.Count; index++)
+            {
+                writer.WriteLine($"  run {index + 1}:");
+                foreach (object entry in SimulationTrace(results[index]))
+                {
+                    writer.WriteLine($"    {JsonSerializer.Serialize(entry, JsonOptions)}");
+                }
+            }
+        }
     }
 
-    public void PlayTranscript(CampaignState state, IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript)
+    private IEnumerable<object> SimulationTrace(RuleSet rules, CombatResult result)
+    {
+        if (result.BehaviorTraces is { Count: > 0 } behaviorTraces)
+        {
+            foreach (CombatBehaviorTrace behaviorTrace in behaviorTraces)
+            {
+                yield return TraceJson(behaviorTrace);
+            }
+
+            yield break;
+        }
+
+        List<Definition> actions = rules.OfType(DefinitionTypes.Action).ToList();
+        foreach (ActionFact fact in result.Facts.OfType<ActionFact>())
+        {
+            Definition? source = actions.FirstOrDefault(action => action.Id == fact.Action || action.Name.Equals(fact.Action, StringComparison.OrdinalIgnoreCase));
+            yield return new
+            {
+                actorId = fact.Who,
+                selected = new { action = fact.Action, target = fact.Target },
+                source = source is null ? null : new { module = source.Module, file = Display(source.File), jsonPath = "$" },
+                guard = (object?)null,
+                score = (decimal?)null,
+                alternatives = Array.Empty<object>(),
+                plan = new { status = "resolved", abandonment = (string?)null },
+                note = "Resolved combat facts do not expose an authored policy proposal; behavior traces are supplied by Core when available.",
+            };
+        }
+    }
+
+    private IEnumerable<object> SimulationTrace(CombatResult result)
+    {
+        if (result.BehaviorTraces is { Count: > 0 } behaviorTraces)
+        {
+            foreach (CombatBehaviorTrace behaviorTrace in behaviorTraces)
+            {
+                yield return TraceJson(behaviorTrace);
+            }
+
+            yield break;
+        }
+
+        foreach (ActionFact fact in result.Facts.OfType<ActionFact>())
+        {
+            yield return new
+            {
+                actorId = fact.Who,
+                selected = new { action = fact.Action, target = fact.Target },
+                source = (object?)null,
+                guard = (object?)null,
+                score = (decimal?)null,
+                alternatives = Array.Empty<object>(),
+                plan = new { status = "resolved", abandonment = (string?)null },
+            };
+        }
+    }
+
+    public void PlayTranscript(CampaignState state, IReadOnlyList<PlayStep> transcript)
     {
         if (json)
         {
@@ -931,14 +1208,14 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
 
         writer.WriteLine($"seed {state.Seed}");
-        foreach ((string? command, List<PlayFact> facts) in transcript)
+        foreach (PlayStep step in transcript)
         {
-            if (command is not null)
+            if (step.Command is not null)
             {
-                writer.WriteLine($"> {command}");
+                writer.WriteLine($"> {step.Command}");
             }
 
-            foreach (PlayFact fact in facts)
+            foreach (PlayFact fact in step.Facts)
             {
                 if (fact is FightFact fight)
                 {
@@ -952,10 +1229,20 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 string factRolls = fact.Rolls.Count == 0 ? "" : $"  [{string.Join("; ", fact.Rolls)}]";
                 writer.WriteLine($"  {fact.Describe()}{factRolls}");
             }
+
+            if (step.Error is string error)
+            {
+                writer.WriteLine($"  error[combat.script] {error}");
+            }
+
+            if (step.Combat is CampaignCombatCommandResult combat)
+            {
+                WriteCombat(combat, step.Trace, step.BehaviorTrace);
+            }
         }
     }
 
-    public int PlayFailure(CampaignState state, IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    public int PlayFailure(CampaignState state, IReadOnlyList<PlayStep> transcript, IReadOnlyList<ModuleDiagnostic> diagnostics)
     {
         if (json)
         {
@@ -972,7 +1259,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
 
     private object PlayJson(
         CampaignState state,
-        IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript,
+        IReadOnlyList<PlayStep> transcript,
         IReadOnlyList<ModuleDiagnostic>? diagnostics)
     {
         return diagnostics is null
@@ -980,7 +1267,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             {
                 ok = true,
                 seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                transcript = transcript.Select(PlayStepJson),
+                transcript = transcript.Select(StepJson),
                 position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
                 ended = state.Ended,
             }
@@ -988,23 +1275,41 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             {
                 ok = false,
                 seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                transcript = transcript.Select(PlayStepJson),
+                transcript = transcript.Select(StepJson),
                 position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
                 ended = state.Ended,
                 diagnostics = diagnostics.Select(ToJson),
             };
     }
 
-    private static object PlayStepJson((string? Command, List<PlayFact> Facts) step)
+    private object StepJson(PlayStep step)
     {
-        return new
+        Dictionary<string, object?> result = new(StringComparer.Ordinal)
         {
-            command = step.Command,
-            facts = step.Facts.Select(PlayFactJson),
+            ["command"] = step.Command,
+            ["facts"] = step.Facts.Select(FactJson),
         };
+        if (step.Error is string error)
+        {
+            result["error"] = error;
+        }
+
+        if (step.Combat is CampaignCombatCommandResult combat)
+        {
+            result["combat"] = CombatJson(combat);
+            if (step.Trace)
+            {
+                result["trace"] = step.BehaviorTrace is CombatBehaviorTrace behavior
+                    ? TraceJson(behavior)
+                    : TraceJson(combat.Observation);
+                result["behaviorTraces"] = combat.Observation.BehaviorTraces.Select(TraceJson);
+            }
+        }
+
+        return result;
     }
 
-    private static object PlayFactJson(PlayFact fact)
+    private static object FactJson(PlayFact fact)
     {
         return new
         {
@@ -1077,6 +1382,269 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
                 carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
             } : null,
+        };
+    }
+
+    private static object CombatJson(CampaignCombatCommandResult result)
+    {
+        CombatObservation observation = result.Observation;
+        return new
+        {
+            accepted = result.Accepted,
+            reason = result.Reason,
+            phase = observation.Phase.ToString(),
+            round = observation.Round,
+            activeActorId = observation.ActiveActorId,
+            winner = observation.Winner,
+            fledSide = observation.FledSide,
+            pendingDecision = observation.PendingDecision is CombatDecision decision ? DecisionJson(decision) : null,
+            combatants = observation.Combatants.Select(CombatantJson),
+            facts = observation.Facts.Select(fact => new { kind = fact.Kind, text = fact.Describe(), rolls = fact.Rolls.Select(RollJson) }),
+        };
+    }
+
+    private static object TraceJson(CombatObservation observation)
+    {
+        CombatDecision? decision = observation.PendingDecision;
+        return new
+        {
+            sideEffectFree = true,
+            source = (object?)null,
+            guard = (object?)null,
+            score = (decimal?)null,
+            plan = (object?)null,
+            selected = decision is null ? null : new
+            {
+                decisionId = decision.Id,
+                actorId = decision.ActorId,
+                actionId = decision.ActionId,
+            },
+            alternatives = decision?.Actions.Select(action => new
+            {
+                id = action.Id,
+                actionId = action.ActionId,
+                name = action.Name,
+                reason = (string?)null,
+                score = (decimal?)null,
+            }),
+            note = "Core behavior trace is unavailable for this observation.",
+        };
+    }
+
+    private static object DecisionJson(CombatDecision decision)
+    {
+        return new
+        {
+            id = decision.Id,
+            kind = decision.Kind.ToString(),
+            actorId = decision.ActorId,
+            round = decision.Round,
+            canEndTurn = decision.CanEndTurn,
+            actionId = decision.ActionId,
+            maximumTargets = decision.MaximumTargets,
+            operationOwner = decision.OperationOwner,
+            operationPath = decision.OperationPath,
+            actions = decision.Actions.Select(action => new
+            {
+                id = action.Id,
+                actionId = action.ActionId,
+                name = action.Name,
+                spellId = action.SpellId,
+                cost = action.Cost,
+                targetKind = action.TargetKind,
+                targetMode = action.TargetMode,
+                portionCount = action.PortionCount,
+                targets = action.Targets.Select(target => new
+                {
+                    id = target.Id,
+                    name = target.Name,
+                    side = target.Side,
+                    defeated = target.Defeated,
+                    escaped = target.Escaped,
+                    position = CellJson(target.Position),
+                    track = target.Track,
+                    maximumTrack = target.MaximumTrack,
+                }),
+                moves = action.Moves.Select(move => new { destination = CellJson(move.Destination), path = move.Path.Select(point => CellJson(point)), cost = move.Cost }),
+            }),
+            moves = decision.Moves.Select(move => new { destination = CellJson(move.Destination), path = move.Path.Select(point => CellJson(point)), cost = move.Cost }),
+            options = decision.Options?.Select(option => new
+            {
+                id = option.Id,
+                name = option.Name,
+                kind = option.Kind,
+                qualifiedId = option.QualifiedId,
+                targetId = option.TargetId,
+                trackId = option.TrackId,
+                cost = option.Cost,
+                bonus = option.Bonus,
+                reroll = option.Reroll,
+                score = option.Score,
+            }),
+            interrupt = decision.Interrupt,
+            check = decision.Check,
+        };
+    }
+
+    private static object CombatantJson(CombatantObservation combatant)
+    {
+        return new
+        {
+            id = combatant.Id,
+            name = combatant.Name,
+            side = combatant.Side,
+            controller = combatant.Controller.ToString(),
+            defeated = combatant.Defeated,
+            escaped = combatant.Escaped,
+            surprisedRounds = combatant.SurprisedRounds,
+            position = CellJson(combatant.Position),
+            budget = combatant.Budget,
+            tracks = combatant.Tracks,
+        };
+    }
+
+    private static object? CellJson(Cell? cell) => cell is Cell point ? new { x = point.X, y = point.Y } : null;
+
+    private void WriteCombat(CampaignCombatCommandResult result, bool trace, CombatBehaviorTrace? behaviorTrace)
+    {
+        CombatObservation observation = result.Observation;
+        string state = $"combat {observation.Phase} round {observation.Round}";
+        if (observation.ActiveActorId is string actor)
+        {
+            state += $" active {actor}";
+        }
+
+        writer.WriteLine($"  {state}.");
+        if (result.Reason is string reason)
+        {
+            writer.WriteLine($"  combat {(result.Accepted ? "accepted" : "refused")}: {reason}");
+        }
+
+        if (observation.PendingDecision is CombatDecision decision)
+        {
+            writer.WriteLine($"  decision {decision.Id} ({decision.Kind}) for {decision.ActorId}");
+            if (decision.Actions.Count > 0)
+            {
+                writer.WriteLine($"    actions: {string.Join(", ", decision.Actions.Select(action => $"{action.Id} [{action.Name}]"))}");
+            }
+
+            if (decision.Moves.Count > 0)
+            {
+                writer.WriteLine($"    moves: {string.Join(", ", decision.Moves.Select(move => $"{move.Destination.X},{move.Destination.Y} ({move.Cost})"))}");
+            }
+        }
+
+        if (trace && observation.BehaviorTraces.Count > 0)
+        {
+            foreach (CombatBehaviorTrace decisionTrace in observation.BehaviorTraces)
+            {
+                WriteBehaviorTrace(decisionTrace);
+            }
+        }
+        else if (trace && behaviorTrace is CombatBehaviorTrace decisionTrace)
+        {
+            WriteBehaviorTrace(decisionTrace);
+        }
+        else if (trace)
+        {
+            writer.WriteLine("  trace: observation-only; Core behavior trace is unavailable for this observation.");
+        }
+    }
+
+    private void WriteBehaviorTrace(CombatBehaviorTrace decisionTrace)
+    {
+        string sourcePath = decisionTrace.StepPath is null ? "" : $" {decisionTrace.StepPath}";
+        string source = decisionTrace.BehaviorFile is null
+            ? "(source unavailable)"
+            : $"{Display(decisionTrace.BehaviorFile)}{sourcePath}";
+        writer.WriteLine($"  trace: {decisionTrace.ActorId} {decisionTrace.BehaviorId ?? "(no behavior)"} source {source}");
+        writer.WriteLine($"    selected action {decisionTrace.ActionId ?? "(fallback)"}, target {decisionTrace.TargetId ?? "(none)"}, rank {decisionTrace.Rank?.ToString(CultureInfo.InvariantCulture) ?? "(none)"}");
+        foreach (CombatBehaviorAlternativeTrace alternative in decisionTrace.Alternatives)
+        {
+            writer.WriteLine($"    alternative {alternative.RulePath}/{alternative.StepPath}: {alternative.Status} {alternative.Reason ?? ""}".TrimEnd());
+        }
+    }
+
+    private object TraceJson(CombatBehaviorTrace trace)
+    {
+        CombatBehaviorAlternativeTrace? selectedAlternative = trace.Alternatives.FirstOrDefault(alternative => alternative.Status == "selected");
+        return new
+        {
+            sideEffectFree = true,
+            actorId = trace.ActorId,
+            round = trace.Round,
+            behaviorId = trace.BehaviorId,
+            source = trace.BehaviorModule is null && trace.BehaviorFile is null
+                ? null
+                : new
+                {
+                    module = trace.BehaviorModule,
+                    file = trace.BehaviorFile is null ? null : Display(trace.BehaviorFile),
+                    jsonPath = selectedAlternative?.StepPath ?? trace.StepPath ?? "$",
+                },
+            guard = selectedAlternative?.Guard,
+            guardResult = selectedAlternative?.GuardResult,
+            rulePath = selectedAlternative?.RulePath,
+            priority = selectedAlternative?.Priority,
+            priorityValue = selectedAlternative?.PriorityValue,
+            score = selectedAlternative?.Score ?? selectedAlternative?.Priority,
+            scoreValue = selectedAlternative?.ScoreValue ?? selectedAlternative?.PriorityValue,
+            selected = trace.RuleIndex is not null || trace.StepIndex is not null
+                ? new
+                {
+                    ruleIndex = trace.RuleIndex,
+                    stepIndex = trace.StepIndex,
+                    stepPath = trace.StepPath,
+                    actionId = trace.ActionId,
+                    targetId = trace.TargetId,
+                    destinationKind = trace.DestinationKind,
+                    destinationDistance = trace.DestinationDistance,
+                    rank = trace.Rank,
+                    movementOnly = trace.MovementOnly,
+                }
+                : null,
+            fallback = FallbackText(trace.Fallback),
+            reason = trace.Reason,
+            abandoned = trace.Abandoned,
+            plan = new
+            {
+                status = trace.Abandoned ? "abandoned" : trace.Fallback is not null ? "fallback" : "selected",
+                ruleIndex = trace.RuleIndex,
+                stepIndex = trace.StepIndex,
+                stepPath = trace.StepPath,
+                fallback = FallbackText(trace.Fallback),
+                abandonment = trace.Abandoned ? trace.Reason : null,
+            },
+            alternatives = trace.Alternatives.Select(alternative => new
+            {
+                ruleIndex = alternative.RuleIndex,
+                stepIndex = alternative.StepIndex,
+                rulePath = alternative.RulePath,
+                stepPath = alternative.StepPath,
+                guard = alternative.Guard,
+                guardResult = alternative.GuardResult,
+                priority = alternative.Priority,
+                priorityValue = alternative.PriorityValue,
+                score = alternative.Score,
+                scoreValue = alternative.ScoreValue,
+                status = alternative.Status,
+                reason = alternative.Reason,
+                actionId = alternative.ActionId,
+                targetId = alternative.TargetId,
+                destinationKind = alternative.DestinationKind,
+                destinationDistance = alternative.DestinationDistance,
+            }),
+        };
+    }
+
+    private static string? FallbackText(CombatBehaviorFallback? fallback)
+    {
+        return fallback switch
+        {
+            CombatBehaviorFallback.EndTurn => "end-turn",
+            CombatBehaviorFallback.Flee => "flee",
+            CombatBehaviorFallback.Next => "next",
+            _ => null,
         };
     }
 

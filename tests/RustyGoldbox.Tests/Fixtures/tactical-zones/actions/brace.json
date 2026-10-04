@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "brace",
+  "name": "Brace",
+  "cost": {
+    "reaction": 0
+  },
+  "target": "self",
+  "always": [
+    {
+      "op": "reduce_damage",
+      "amount": "2",
+      "to": "self"
+    }
+  ]
+}

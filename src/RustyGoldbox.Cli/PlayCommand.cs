@@ -18,29 +18,29 @@ namespace RustyGoldbox.Cli;
 internal static class PlayCommand
 {
     private const string Usage =
-        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
-        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--fail-on-refusal] [--store <dir>]\n"
+        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--combat-control auto|manual] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
+        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--trace] [--fail-on-refusal] [--store <dir>]\n"
         + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
 
     private sealed record ScriptLine(string Text, int Number);
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store"], ["--fail-on-refusal"]);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store", "--combat-control"], ["--trace", "--fail-on-refusal"]);
         bool loading = parsed.Single("--load") is not null;
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || loading == (parsed.Single("--party") is not null)))
         {
             error = Usage;
         }
 
-        if (error is null && parsed.Has("--fail-on-refusal") && parsed.Single("--script") is null)
-        {
-            error = "--fail-on-refusal requires --script; it cannot be used with interactive input.";
-        }
-
         if (error is null && loading && parsed.Single("--seed") is not null)
         {
             error = "--seed can't be used with --load: a save continues with its own seed.";
+        }
+
+        if (error is null && parsed.Has("--fail-on-refusal") && parsed.Single("--script") is null)
+        {
+            error = "--fail-on-refusal requires --script; it cannot be used with interactive input.";
         }
 
         ulong seed = 1;
@@ -62,6 +62,12 @@ internal static class PlayCommand
         if (error is not null)
         {
             return output.UsageError(error);
+        }
+
+        CombatControlMode control = CombatControlMode.Automatic;
+        if (parsed.Single("--combat-control") is string controlText && !TryControl(controlText, out control))
+        {
+            return output.UsageError($"--combat-control must be auto or manual, but was '{controlText}'.");
         }
 
         ModuleSet set = ModuleSets.Load(
@@ -98,26 +104,52 @@ internal static class PlayCommand
             return output.UsageError($"--script: {exception.Message}");
         }
 
-        List<(string? Command, List<PlayFact> Facts)> transcript = [];
+        List<PlayStep> transcript = [];
         List<ModuleDiagnostic> refusals = [];
         CampaignRunner runner = new(rules, state);
+        runner.DefaultCombatControl = control;
+        runner.CollectCombatBehaviorTraces = parsed.Has("--trace");
+        bool invalidScript = false;
         try
         {
             host.Call(engine =>
             {
                 if (!loading)
                 {
-                    transcript.Add((null, runner.Begin(engine.Random)));
+                    transcript.Add(new PlayStep(null, runner.Begin(engine.Random)));
                 }
 
                 foreach (ScriptLine scriptLine in commands)
                 {
-                    List<PlayFact> facts = runner.Execute(scriptLine.Text, engine.Random);
-                    transcript.Add((scriptLine.Text, facts));
-                    if (parsed.Has("--fail-on-refusal"))
+                    string command = scriptLine.Text;
+                    if (!CombatScript.IsCombatCommand(command))
                     {
-                        AddRefusals(refusals, facts, scriptLine, scriptPath!, state, set.Root!.Id);
+                        List<PlayFact> facts = runner.Execute(command, engine.Random);
+                        transcript.Add(new PlayStep(command, facts));
+                        if (parsed.Has("--fail-on-refusal"))
+                        {
+                            AddRefusals(refusals, facts, scriptLine, scriptPath!, state, set.Root!.Id);
+                        }
+
+                        continue;
                     }
+
+                    (CombatScriptCommand? combatCommand, string? scriptError) = CombatScript.Parse(command);
+                    if (scriptError is not null)
+                    {
+                        invalidScript = true;
+                        transcript.Add(new PlayStep(command, [], Error: scriptError));
+                        continue;
+                    }
+
+                    CampaignCombatCommandResult result = ExecuteCombat(runner, combatCommand!, engine.Random);
+                    bool trace = parsed.Has("--trace");
+                    transcript.Add(new PlayStep(
+                        command,
+                        result.Facts,
+                        result,
+                        Trace: trace,
+                        BehaviorTrace: trace ? result.Observation.BehaviorTrace : null));
                 }
             });
         }
@@ -144,7 +176,61 @@ internal static class PlayCommand
         }
 
         output.PlayTranscript(state, transcript);
-        return GoldboxCli.Ok;
+        return invalidScript ? GoldboxCli.Invalid : GoldboxCli.Ok;
+    }
+
+    private static CampaignCombatCommandResult ExecuteCombat(CampaignRunner runner, CombatScriptCommand command, Rusty.Engine.IRandomService random)
+    {
+        if (command is CombatInspectCommand)
+        {
+            CombatObservation? observation = runner.ObserveCombat(random);
+            return observation is null
+                ? new CampaignCombatCommandResult(false, "No combat is waiting for a command.", CombatScript.EmptyObservation(), [])
+                : new CampaignCombatCommandResult(true, null, observation, []);
+        }
+
+        if (command is CombatAutoStepCommand)
+        {
+            CombatObservation? observation = runner.ObserveCombat(random);
+            if (observation is null)
+            {
+                return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", CombatScript.EmptyObservation(), []);
+            }
+
+            if (observation.ActiveActorId is not string activeActor)
+            {
+                return new CampaignCombatCommandResult(false, "Combat is advancing automatically; there is no active actor to step.", observation, []);
+            }
+
+            CombatantObservation? activeCombatant = observation.Combatants.FirstOrDefault(combatant => combatant.Id == activeActor);
+            if (activeCombatant?.Controller != CombatControlMode.Manual)
+            {
+                return new CampaignCombatCommandResult(false, $"Active actor '{activeActor}' is already automatic; use combat control {activeActor} manual before auto-step, or keep the persistent automatic controller.", observation, []);
+            }
+
+            return runner.StepCombatAutomatically(activeActor, random);
+        }
+
+        return command switch
+        {
+            CombatControlCommand control => runner.SetCombatController(control.ActorId, control.Mode, random),
+            CombatUseActionCommand action => runner.SubmitCombat(new CombatCommand.UseAction(action.ActorId, action.ActionId, action.TargetIds, action.Path), random),
+            CombatMoveCommand move => runner.SubmitCombat(new CombatCommand.Move(move.ActorId, move.ActionId, move.TargetId, move.Path), random),
+            CombatEndTurnCommand endTurn => runner.SubmitCombat(new CombatCommand.EndTurn(endTurn.ActorId), random),
+            CombatDecisionCommand decision => runner.SubmitCombat(new CombatCommand.Decide(decision.DecisionId, decision.OptionId), random),
+            _ => new CampaignCombatCommandResult(false, "The combat script command is not supported.", CombatScript.EmptyObservation(), []),
+        };
+    }
+
+    private static bool TryControl(string text, out CombatControlMode mode)
+    {
+        mode = text.ToLowerInvariant() switch
+        {
+            "auto" or "automatic" => CombatControlMode.Automatic,
+            "manual" => CombatControlMode.Manual,
+            _ => (CombatControlMode)(-1),
+        };
+        return mode is CombatControlMode.Automatic or CombatControlMode.Manual;
     }
 
     private static void AddRefusals(

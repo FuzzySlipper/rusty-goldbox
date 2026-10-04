@@ -4,6 +4,8 @@ using Rusty.Engine;
 using Rusty.Engine.Persistence;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Combat;
+using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Game;
 
@@ -165,6 +167,24 @@ internal static class GameCommands
                 case "continue":
                     session.Continue();
                     break;
+                case "combat-control":
+                    session.SetCombatController(engine, Text(payload, "actor"), CombatMode(payload));
+                    break;
+                case "combat-action":
+                    session.CombatAction(engine, Text(payload, "actor"), CombatActionId(payload), CombatTargets(payload), CombatPath(payload));
+                    break;
+                case "combat-move":
+                    IReadOnlyList<Cell>? movePath = CombatPath(payload) ?? throw new PayloadException("\"path\" must be an array of combat cells");
+                    session.CombatMove(engine, Text(payload, "actor"), CombatActionId(payload), Text(payload, "target"), movePath);
+                    break;
+                case "combat-end-turn":
+                    session.CombatEndTurn(engine, Text(payload, "actor"));
+                    break;
+                case "combat-decide":
+                    string? option = payload.TryGetProperty("option", out JsonElement optionValue) && optionValue.ValueKind != JsonValueKind.Null
+                        ? Text(payload, "option") : null;
+                    session.CombatDecide(engine, Text(payload, "decision"), option);
+                    break;
                 case "quit":
                     session.Quit();
                     session.Refresh();
@@ -189,7 +209,7 @@ internal static class GameCommands
                     SaveSettings(session, engine);
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume, skin, layout-config, ui-scale and view-aspect");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-move, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale and view-aspect");
             }
         }
         catch (PayloadException exception)
@@ -203,6 +223,74 @@ internal static class GameCommands
         return payload.TryGetProperty("volume", out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.GetDouble() is >= 0 and <= 1
             ? (float)value.GetDouble()
             : throw new PayloadException("\"volume\" must be a number from 0 to 1");
+    }
+
+    private static CombatControlMode CombatMode(JsonElement payload)
+    {
+        return Text(payload, "mode").ToLowerInvariant() switch
+        {
+            "auto" or "automatic" => CombatControlMode.Automatic,
+            "manual" => CombatControlMode.Manual,
+            string mode => throw new PayloadException($"\"mode\" must be auto or manual, not '{mode}'"),
+        };
+    }
+
+    private static string CombatActionId(JsonElement payload)
+    {
+        if (payload.TryGetProperty("choice", out JsonElement choice) && choice.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(choice.GetString()))
+        {
+            return choice.GetString()!;
+        }
+
+        if (payload.TryGetProperty("actionId", out JsonElement action) && action.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(action.GetString()))
+        {
+            return action.GetString()!;
+        }
+
+        throw new PayloadException("\"choice\" must be non-empty text");
+    }
+
+    private static IReadOnlyList<string> CombatTargets(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("targets", out JsonElement targets) || targets.ValueKind == JsonValueKind.Null)
+        {
+            return [];
+        }
+
+        return targets.ValueKind == JsonValueKind.Array
+            && targets.EnumerateArray().All(target => target.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(target.GetString()))
+            ? targets.EnumerateArray().Select(target => target.GetString()!).ToList()
+            : throw new PayloadException("\"targets\" must be an array of non-empty actor IDs");
+    }
+
+    private static IReadOnlyList<Cell>? CombatPath(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("path", out JsonElement path) || path.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (path.ValueKind != JsonValueKind.Array)
+        {
+            throw new PayloadException("\"path\" must be an array of {x,y} combat cells");
+        }
+
+        List<Cell> cells = [];
+        foreach (JsonElement entry in path.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("x", out JsonElement x)
+                || !entry.TryGetProperty("y", out JsonElement y)
+                || !x.TryGetInt32(out int cellX)
+                || !y.TryGetInt32(out int cellY))
+            {
+                throw new PayloadException("Each \"path\" entry must have whole-number x and y fields");
+            }
+
+            cells.Add(new Cell(cellX, cellY));
+        }
+
+        return cells;
     }
 
     /// <summary>The player's layout: <c>"layout": { part: number, ... }</c>, or null to go back to the skin's.</summary>

@@ -1,0 +1,53 @@
+{
+  "type": "combat-behavior",
+  "id": "skirmisher",
+  "name": "Skirmish at range",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "when": "combat.distance <= 2",
+      "priority": "20",
+      "commit": "plan",
+      "steps": [
+        {
+          "destination": {
+            "kind": "away",
+            "distance": "4"
+          },
+          "action": {
+            "action": "tactical-bestiaire:withdraw"
+          },
+          "target": "enemy",
+          "target_score": "target.hit_points"
+        },
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Needle volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy",
+          "target_score": "target.hit_points"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "priority": "10",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Needle volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy",
+          "target_score": "target.hit_points"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "type": "feature",
+  "id": "brace_guard",
+  "name": "Brace guard",
+  "kind": "combat feat",
+  "description": "When a blow lands, choose whether to brace and soften it.",
+  "reactions": [
+    "tactical-zones:brace_on_hit"
+  ]
+}

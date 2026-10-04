@@ -1,0 +1,41 @@
+$ goldbox schema live-combat
+Live combat commands are script lines under `goldbox play`:
+  combat inspect | combat control <actor-id> auto|manual | combat action <actor-id> <action-id> [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] | combat move <actor-id> <action-id> <target-id> <x,y;x,y> | combat end-turn <actor-id> | combat decide <decision-id> [option-id] | combat auto-step
+
+Use `combat inspect` to discover stable actor/action/target IDs. Paths are semicolon-separated x,y cells; submit the copied machine IDs.
+`--combat-control manual` suspends the party at a decision; enemies remain automatic. The default is automatic.
+`combat auto-step` assists one manual turn and restores manual control; use `combat control <actor-id> auto` for a persistent takeover.
+Add `--trace` for a side-effect-free decision projection; inspection and trace do not roll dice.
+
+Example JSON observation:
+{
+  "command": "combat action side-1-member-1 classic:melee_attack --target side-2-member-1",
+  "combat": {
+    "accepted": true,
+    "phase": "AwaitingAction",
+    "round": 1,
+    "activeActorId": "side-1-member-1",
+    "pendingDecision": {
+      "id": "decision:side-1-member-1:1:0",
+      "kind": "Action",
+      "actorId": "side-1-member-1",
+      "actions": [
+        {
+          "id": "side-1-member-1/use/0/classic:melee_attack",
+          "actionId": "classic:melee_attack",
+          "name": "Melee attack",
+          "cost": { "action": 1 },
+          "targets": [
+            { "id": "side-2-member-1", "name": "Target", "side": 1, "defeated": false, "escaped": false, "position": { "x": 2, "y": 1 } }
+          ],
+          "moves": []
+        }
+      ]
+    },
+    "combatants": [
+      { "id": "side-1-member-1", "side": 0, "controller": "Manual", "position": { "x": 1, "y": 1 } }
+    ]
+  }
+}
+[exit 0]
+

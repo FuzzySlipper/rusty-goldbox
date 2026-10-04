@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "id": "tactical-diagnostics",
+  "kind": "extension",
+  "version": "0.1.0",
+  "title": "Tactical diagnostics (test fixture)",
+  "requires": [
+    {
+      "id": "classic",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original test fixture for observable authored combat decisions. It contains no published rules text or tables; see PROVENANCE.md."
+}

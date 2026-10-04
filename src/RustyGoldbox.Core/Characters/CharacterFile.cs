@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
@@ -108,6 +109,7 @@ public static class CharacterFile
         ]), false, "The member's persisted perception result for the current expedition."),
         new("uses_former_classes", new Definitions.BooleanKind(), false, "Calling on dormant classes."),
         new("forfeits_experience", new Definitions.BooleanKind(), false, "Experience forfeited this adventure."),
+        new("combat_control", new Definitions.EnumKind(["automatic", "manual"]), false, "Preferred controller for the next combat; omit to use the campaign or host default."),
     ];
 
     private static readonly string[] Fields = ["format", "modules", "npc", .. DataFields.Select(field => field.Name)];
@@ -354,6 +356,11 @@ public static class CharacterFile
                 writer.WriteString("portrait", portrait.QualifiedId);
             }
 
+            if (character.CombatControlPreference is CombatControlMode preference)
+            {
+                writer.WriteString("combat_control", preference == CombatControlMode.Manual ? "manual" : "automatic");
+            }
+
             if (character.Perception is PerceptionState perception)
             {
                 writer.WriteStartObject("perception");
@@ -464,6 +471,7 @@ public static class CharacterFile
             }
 
             Character character = new() { Name = name, Modules = modules, Race = race, Creation = creation, Lifepath = lifepath };
+            character.CombatControlPreference = ReadCombatControl(root);
             if (!ReadLevels(root, character))
             {
                 return null;
@@ -1351,6 +1359,33 @@ public static class CharacterFile
             }
 
             return value.GetBoolean();
+        }
+
+        private CombatControlMode? ReadCombatControl(JsonElement root)
+        {
+            if (!root.TryGetProperty("combat_control", out JsonElement value))
+            {
+                return null;
+            }
+
+            if (value.ValueKind != JsonValueKind.String)
+            {
+                Error("$.combat_control", "\"combat_control\" must be automatic or manual.");
+                return null;
+            }
+
+            return value.GetString() switch
+            {
+                "automatic" => CombatControlMode.Automatic,
+                "manual" => CombatControlMode.Manual,
+                _ => InvalidCombatControl(),
+            };
+        }
+
+        private CombatControlMode? InvalidCombatControl()
+        {
+            Error("$.combat_control", "\"combat_control\" must be automatic or manual.");
+            return null;
         }
 
         private void Error(string jsonPath, string message)

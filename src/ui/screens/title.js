@@ -3,7 +3,7 @@ import { element, fragment, row, button, picture } from '../dom.js';
 /** The title screen: the campaigns to open (with the extensions the player may add) and a save to load. */
 export function createTitle(send) {
   // Inputs live outside the re-rendered body so typing survives updates.
-  const slot = element('input', { value: 'slot-1', size: '10', 'aria-label': 'Save slot' });
+  const slot = element('input', { value: 'slot-1', size: '10', 'aria-label': 'Save slot', 'data-focus-key': 'title:slot' });
 
   return (view) => {
     const list = element('ul', {});

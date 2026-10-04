@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "large-party",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Large party original fixture",
+  "requires": [
+    { "id": "classic", "version": "^0.1.0" },
+    { "id": "placeholder-art", "version": "^0.1.0" }
+  ],
+  "provenance": "Original test fixture written for Rusty Goldbox; see PROVENANCE.md."
+}

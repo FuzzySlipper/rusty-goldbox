@@ -1,0 +1,10 @@
+{
+  "type": "event",
+  "id": "welcome",
+  "kind": "menu",
+  "text": "The duelists invite you onto the training floor. Each turn offers three actions; use them or finish your turn when you are ready. A member who chose Brace guard can decide whether to soften a landing blow.",
+  "options": [
+    { "label": "Begin the shared-zone duel", "next": "duel" },
+    { "label": "Look around the hall" }
+  ]
+}

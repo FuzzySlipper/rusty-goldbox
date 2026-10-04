@@ -47,6 +47,7 @@ public sealed class RuleSetBuilder
         builder.CheckResting();
         builder.CheckGrants();
         builder.CheckActions();
+        builder.CheckCombatBehaviors();
         builder.CheckCampaigns();
         return builder._rules;
     }
@@ -319,7 +320,7 @@ public sealed class RuleSetBuilder
             return null;
         }
 
-        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), ConditionValues(definition), InferDerived, IsInferring);
+        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), ConditionValues(definition), InferDerived, IsInferring, BehaviorParameters(definition));
         ExprType type;
         try
         {
@@ -1281,6 +1282,11 @@ public sealed class RuleSetBuilder
                 Error(action, "action.outcomes", "$", "An action needs \"always\" operations, or a \"check\" with \"outcomes\"; otherwise it does nothing.");
             }
 
+            CheckActionLegalityExpression(action, "available", "availability");
+            CheckActionLegalityExpression(action, "valid_target", "target legality");
+            CheckActionLegalityExpression(action, "range", "range");
+            CheckActionLegalityExpression(action, "portions", "portion count");
+
             WalkOperations(action, action.Json, "$");
         }
 
@@ -1307,6 +1313,240 @@ public sealed class RuleSetBuilder
                 WalkOperations(definition, definition.Json, "$");
             }
         }
+    }
+
+    private void CheckCombatBehaviors()
+    {
+        foreach (Definition behavior in _rules.OfType(DefinitionTypes.CombatBehavior))
+        {
+            ModuleKind moduleKind = _manifests[behavior.Module].Kind;
+            if (moduleKind is not (ModuleKind.Ruleset or ModuleKind.Extension))
+            {
+                Error(behavior, "behavior.module", "$",
+                    $"Combat behavior definitions are reusable rules, so they belong in ruleset or extension modules; '{behavior.Module}' is a {ModuleKinds.Name(moduleKind)}. A campaign can assign a behavior by reference or require an extension that owns it.");
+            }
+
+            CheckBehaviorParameters(behavior);
+            if (!behavior.Json.TryGetProperty("rules", out JsonElement rules) || rules.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            for (int index = 0; index < rules.GetArrayLength(); index++)
+            {
+                JsonElement rule = rules[index];
+                if (rule.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                string path = $"$.rules[{index}]";
+                bool hasPriority = rule.TryGetProperty("priority", out JsonElement priority);
+                bool hasScore = rule.TryGetProperty("score", out JsonElement score);
+                if (hasPriority && hasScore)
+                {
+                    Error(behavior, "behavior.policy", path, "A behavior rule chooses one ordering policy: give either \"priority\" or \"score\", not both.");
+                }
+
+                CheckBehaviorExpression(behavior, $"{path}.when", rule, "when", "a guard", rejectDice: true);
+                CheckBehaviorExpression(behavior, $"{path}.priority", rule, "priority", "a priority", rejectDice: true);
+                CheckBehaviorExpression(behavior, $"{path}.score", rule, "score", "a score", rejectDice: true);
+
+                if (!rule.TryGetProperty("steps", out JsonElement steps) || steps.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                if (steps.GetArrayLength() == 0)
+                {
+                    Error(behavior, "behavior.steps", $"{path}.steps", "A behavior rule needs at least one action step; use fallback to end the turn when it has no useful action.");
+                }
+
+                for (int stepIndex = 0; stepIndex < steps.GetArrayLength(); stepIndex++)
+                {
+                    JsonElement step = steps[stepIndex];
+                    if (step.ValueKind != JsonValueKind.Object)
+                    {
+                        continue;
+                    }
+
+                    string stepPath = $"{path}.steps[{stepIndex}]";
+                    CheckBehaviorExpression(behavior, $"{stepPath}.target_score", step, "target_score", "a target score", rejectDice: true);
+                    CheckBehaviorSpell(behavior, step, stepPath);
+                    if (step.TryGetProperty("destination", out JsonElement destination))
+                    {
+                        CheckBehaviorExpression(behavior, $"{stepPath}.destination.distance", destination, "distance", "a destination distance", rejectDice: true);
+                    }
+                }
+            }
+
+            CombatBehaviorProfile? profile = CombatBehaviorProfile.Build(_rules, behavior, _diagnostics);
+            if (profile is not null && !_diagnostics.Any(diagnostic => diagnostic.Module == behavior.Module && diagnostic.File == behavior.File))
+            {
+                _rules.CombatBehaviors[behavior] = profile;
+            }
+        }
+    }
+
+    private void CheckBehaviorSpell(Definition behavior, JsonElement step, string stepPath)
+    {
+        string spellPath = $"{stepPath}.spell";
+        if (!step.TryGetProperty("spell", out _)
+            || !_rules.References.TryGetValue((behavior, spellPath), out Definition? spell)
+            || !_rules.References.TryGetValue((behavior, $"{stepPath}.action.action"), out Definition? action))
+        {
+            return;
+        }
+
+        if (!spell.Json.TryGetProperty("effect", out JsonElement effect)
+            || effect.ValueKind != JsonValueKind.Object)
+        {
+            Error(behavior, "behavior.spell", spellPath,
+                $"Spell '{spell.QualifiedId}' has no combat effect. Give it an \"effect\" action use before assigning it to this behavior step.");
+            return;
+        }
+
+        if (!_rules.References.TryGetValue((spell, "$.effect.action"), out Definition? effectAction))
+        {
+            return;
+        }
+
+        if (effectAction != action)
+        {
+            Error(behavior, "behavior.spell", spellPath,
+                $"Spell '{spell.QualifiedId}' uses action '{effectAction.QualifiedId}', but this behavior step uses '{action.QualifiedId}'. Assign the spell to a step with the same action as its effect.");
+        }
+    }
+
+    private void CheckBehaviorParameters(Definition behavior)
+    {
+        if (!behavior.Json.TryGetProperty("parameters", out JsonElement parameters)
+            || parameters.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        HashSet<string> names = [];
+        Dictionary<string, List<string>> dependencies = [];
+        foreach (JsonProperty parameter in parameters.EnumerateObject())
+        {
+            if (!names.Add(parameter.Name) || !DefinitionIds.IsValid(parameter.Name))
+            {
+                Error(behavior, "behavior.parameter", $"$.parameters.{parameter.Name}",
+                    $"'{parameter.Name}' is not a unique behavior parameter ID. Use {DefinitionIds.FormatDescription}.");
+            }
+
+            CheckBehaviorExpression(behavior, $"$.parameters.{parameter.Name}", parameters, parameter.Name, "a parameter", rejectDice: true);
+            if (_rules.TryExpression(behavior, $"$.parameters.{parameter.Name}", out CompiledExpression? expression)
+                && expression is not null)
+            {
+                dependencies[parameter.Name] = BehaviorReferences(expression.Root).Distinct(StringComparer.Ordinal).ToList();
+            }
+        }
+
+        CheckBehaviorParameterCycles(behavior, dependencies);
+    }
+
+    private void CheckBehaviorParameterCycles(Definition behavior, IReadOnlyDictionary<string, List<string>> dependencies)
+    {
+        Dictionary<string, int> marks = [];
+        HashSet<string> reported = new(StringComparer.Ordinal);
+
+        foreach (string parameter in dependencies.Keys)
+        {
+            Visit(parameter, []);
+        }
+
+        void Visit(string parameter, List<string> path)
+        {
+            if (marks.TryGetValue(parameter, out int mark))
+            {
+                if (mark == 1 && reported.Add(parameter))
+                {
+                    int start = path.IndexOf(parameter);
+                    IEnumerable<string> cycle = start >= 0
+                        ? path.Skip(start).Append(parameter)
+                        : [parameter, parameter];
+                    Error(behavior, "behavior.parameter", $"$.parameters.{parameter}",
+                        $"Behavior parameter expressions form a cycle ({string.Join(" -> ", cycle)}). Reference a self, target, combat field, or a non-cyclic parameter instead.");
+                }
+
+                return;
+            }
+
+            marks[parameter] = 1;
+            path.Add(parameter);
+            if (dependencies.TryGetValue(parameter, out List<string>? references))
+            {
+                foreach (string reference in references.Where(dependencies.ContainsKey))
+                {
+                    Visit(reference, path);
+                }
+            }
+
+            path.RemoveAt(path.Count - 1);
+            marks[parameter] = 2;
+        }
+    }
+
+    private void CheckBehaviorExpression(Definition behavior, string path, JsonElement owner, string field, string what, bool rejectDice)
+    {
+        if (!owner.TryGetProperty(field, out _)
+            || !_rules.TryExpression(behavior, path, out CompiledExpression? expression)
+            || expression is null)
+        {
+            return;
+        }
+
+        if (rejectDice && ContainsDice(expression.Root))
+        {
+            Error(behavior, "behavior.random", path,
+                $"A combat behavior {what} must be deterministic while candidates are inspected; remove dice and use a committed action/check for randomness.");
+        }
+    }
+
+    private void CheckActionLegalityExpression(Definition action, string field, string what)
+    {
+        string path = $"$.{field}";
+        if (!action.Json.TryGetProperty(field, out _)
+            || !_rules.TryExpression(action, path, out CompiledExpression? expression)
+            || expression is null
+            || !ContainsDice(expression.Root))
+        {
+            return;
+        }
+
+        Error(action, "action.random", path,
+            $"An action's {what} must be deterministic while legal choices are inspected; remove dice from this field. Randomness belongs in max_targets, checks or operations after the choice is committed.");
+    }
+
+    private static bool ContainsDice(Expr expression)
+    {
+        return expression switch
+        {
+            DiceLiteral => true,
+            UnaryExpr unary => ContainsDice(unary.Operand),
+            BinaryExpr binary => ContainsDice(binary.Left) || ContainsDice(binary.Right),
+            ConditionalExpr conditional => ContainsDice(conditional.Condition) || ContainsDice(conditional.Then) || ContainsDice(conditional.Else),
+            CallExpr call => call.Function is "roll" or "roll_keep" or "roll_count" or "roll_explode" or "roll_fudge" or "roll_pool"
+                || call.Arguments.Any(ContainsDice),
+            _ => false,
+        };
+    }
+
+    private static IEnumerable<string> BehaviorReferences(Expr expression)
+    {
+        return expression switch
+        {
+            PathExpr path when path.Root == "behavior" => [path.Name],
+            UnaryExpr unary => BehaviorReferences(unary.Operand),
+            BinaryExpr binary => BehaviorReferences(binary.Left).Concat(BehaviorReferences(binary.Right)),
+            ConditionalExpr conditional => BehaviorReferences(conditional.Condition)
+                .Concat(BehaviorReferences(conditional.Then))
+                .Concat(BehaviorReferences(conditional.Else)),
+            CallExpr call => call.Arguments.SelectMany(BehaviorReferences),
+            _ => [],
+        };
     }
 
     private static bool ContainsOperation(JsonElement element, string name)
@@ -2251,6 +2491,16 @@ public sealed class RuleSetBuilder
     {
         return definition.Json.TryGetProperty("parameters", out JsonElement parameters) && parameters.ValueKind == JsonValueKind.Array
             ? parameters.EnumerateArray().Select(parameter => parameter.GetString()!).ToList()
+            : [];
+    }
+
+    /// <summary>The named values an authored combat behavior may read as behavior.&lt;name&gt;.</summary>
+    private static List<string> BehaviorParameters(Definition definition)
+    {
+        return definition.Type == DefinitionTypes.CombatBehavior
+            && definition.Json.TryGetProperty("parameters", out JsonElement parameters)
+            && parameters.ValueKind == JsonValueKind.Object
+            ? parameters.EnumerateObject().Select(parameter => parameter.Name).ToList()
             : [];
     }
 

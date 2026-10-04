@@ -13,7 +13,14 @@ public sealed record CombatSide(string Name, IReadOnlyList<Combatant> Members);
 
 /// <summary>How a fight ended: the facts, the winning side (null if none), the rounds fought and a side that fled (if any).</summary>
 /// <param name="Track">The combat's track, which summaries show.</param>
-public sealed record CombatResult(IReadOnlyList<CombatFact> Facts, int? Winner, int Rounds, IReadOnlyList<CombatSide> Sides, Definition Track, int? FledSide = null);
+public sealed record CombatResult(
+    IReadOnlyList<CombatFact> Facts,
+    int? Winner,
+    int Rounds,
+    IReadOnlyList<CombatSide> Sides,
+    Definition Track,
+    int? FledSide = null,
+    IReadOnlyList<CombatBehaviorTrace>? BehaviorTraces = null);
 
 /// <summary>Optional encounter-specific starting positions and surprise override.</summary>
 public sealed record CombatSetup(IReadOnlyList<Cell?> Starts, int? SurprisedSide = null, decimal SurpriseRounds = 1);
@@ -28,11 +35,12 @@ public sealed record CombatSetup(IReadOnlyList<Cell?> Starts, int? SurprisedSide
 /// target, or the highest-scoring one where its uses are scored.
 /// </summary>
 /// <exception cref="RuleFailure">A rule expression failed during the fight.</exception>
-public sealed class CombatRunner
+public sealed partial class CombatRunner
 {
     private readonly RuleSet _rules;
     private readonly Definition _combat;
     private readonly Evaluator _evaluator;
+    private readonly Evaluator _previewEvaluator;
     private readonly DiceRoller _dice;
     private readonly List<CombatSide> _sides;
     private readonly CombatSetup? _setup;
@@ -43,6 +51,7 @@ public sealed class CombatRunner
     private readonly CombatField? _field;
     private Combatant? _turn;
     private PendingDamage? _pendingDamage;
+    private bool _combatInitialized;
     /// <summary>How many reactions are resolving: 0 on a turn, 1 in a reaction, 2 in a counter-reaction.</summary>
     private int _reactions;
 
@@ -55,29 +64,58 @@ public sealed class CombatRunner
         public decimal Amount { get; set; } = amount;
     }
 
-    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter, CombatSetup? setup)
+    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter, CombatSetup? setup, bool initialize)
     {
         _rules = rules;
         _combat = combat;
         _dice = dice;
         _setup = setup;
         _evaluator = new Evaluator(rules, dice);
+        _previewEvaluator = new Evaluator(rules, null);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
         _field = CombatField.Of(combat, encounter);
+        if (initialize)
+        {
+            InitializeMembers();
+        }
+        else
+        {
+            EnsureCommonActions();
+        }
+
+        AssignStableIds();
+        InitializeBehaviorController();
+    }
+
+    private void InitializeMembers()
+    {
+        HashSet<Cell> occupied = [];
         for (int side = 0; side < _sides.Count; side++)
         {
-            Cell? anchor = setup is not null && setup.Starts.Count > side ? setup.Starts[side] : null;
-            IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count, anchor);
+            Cell? anchor = _setup is not null && _setup.Starts.Count > side ? _setup.Starts[side] : null;
+            IReadOnlyList<Cell>? cells = _field?.Deploy(side, _sides[side].Members.Count, anchor, occupied);
             for (int index = 0; index < _sides[side].Members.Count; index++)
             {
                 Combatant member = _sides[side].Members[index];
                 StartCombatTracks(member);
                 // Actions every creature in these fights has come after its own.
-                member.Uses.AddRange(Combatant.ReadUses(rules, combat, "$.actions", member.Creature.Equipment)
+                member.Uses.AddRange(Combatant.ReadUses(_rules, _combat, "$.actions", member.Creature.Equipment)
                     .Where(common => !member.Uses.Any(own => own.Action == common.Action && own.Name == common.Name)));
                 member.Side = side;
                 member.Creature.Position = cells?[index];
+            }
+        }
+    }
+
+    private void EnsureCommonActions()
+    {
+        foreach (CombatSide side in _sides)
+        {
+            foreach (Combatant member in side.Members)
+            {
+                member.Uses.AddRange(Combatant.ReadUses(_rules, _combat, "$.actions", member.Creature.Equipment)
+                    .Where(common => !member.Uses.Any(own => own.Action == common.Action && own.Name == common.Name)));
             }
         }
     }
@@ -116,15 +154,17 @@ public sealed class CombatRunner
     /// <summary>How many of a creature's allies still fighting, other than itself, stand within 1 cell of a target (without a field, all of them are).</summary>
     private decimal AlliesNear(Creature creature, Creature target)
     {
-        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature);
+        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature)
+            ?? _previewOwners.GetValueOrDefault(creature);
         return Everyone.Count(member => self is not null && member != self && member.Side == self.Side && !member.Defeated
-            && member.Creature != target && Distance(member.Creature, target) <= 1);
+            && Distance(member.Creature, target) <= 1);
     }
 
     /// <summary>How far a creature is from its nearest enemy still fighting (0 with none).</summary>
     private decimal Nearest(Creature creature)
     {
-        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature);
+        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature)
+            ?? _previewOwners.GetValueOrDefault(creature);
         return Everyone.Where(member => !member.Defeated && self is not null && member.Side != self.Side)
             .Select(member => Distance(creature, member.Creature))
             .DefaultIfEmpty(0)
@@ -141,120 +181,48 @@ public sealed class CombatRunner
     }
 
     /// <summary>Fights the sides under the combat definition, on the encounter's terrain when it has some.</summary>
-    public static CombatResult Run(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, int maxRounds, Definition? encounter = null, CombatSetup? setup = null)
+    public static CombatResult Run(
+        RuleSet rules,
+        Definition combat,
+        IReadOnlyList<CombatSide> sides,
+        DiceRoller dice,
+        int maxRounds,
+        Definition? encounter = null,
+        CombatSetup? setup = null,
+        bool collectBehaviorTraces = false)
     {
-        return new CombatRunner(rules, combat, sides, dice, encounter, setup).Fight(maxRounds);
+        CombatRunner runner = new(rules, combat, sides, dice, encounter, setup, initialize: true)
+        {
+            CollectBehaviorTraces = collectBehaviorTraces,
+        };
+        return runner.Fight(maxRounds);
+    }
+
+    /// <summary>Creates a live owner. Call <see cref="Start(int)"/> to begin rolling and advancing it.</summary>
+    public static CombatRunner Create(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter = null, CombatSetup? setup = null)
+    {
+        return new CombatRunner(rules, combat, sides, dice, encounter, setup, initialize: true);
     }
 
     private IEnumerable<Combatant> Everyone => _sides.SelectMany(side => side.Members);
 
     private CombatResult Fight(int maxRounds)
     {
-        foreach (Combatant combatant in Everyone)
-        {
-            CheckDefeated(combatant);
-        }
+        return RunAllAutomatic(maxRounds);
 
-        RollSurprise();
-
-        // Budgets start full, so reactions can be taken before a creature's first turn.
-        _evaluator.Combat = new CombatMoment(0, false, Distance, Nearest, CanSee, AlliesNear);
-        foreach (Combatant member in Everyone)
-        {
-            Refill(member);
-        }
-
-        int round = 0;
-        int? winner = Winner();
-        bool rollEachRound = _combat.Json.TryGetProperty("initiative_each", out JsonElement initiativeEach) && initiativeEach.GetString() == "round";
-        List<Combatant>? order = null;
-        while (winner is null && StandingSides() > 1 && round < maxRounds)
-        {
-            round++;
-            _evaluator.Combat = new CombatMoment(round, Everyone.Any(member => member.SurprisedRounds > 0), Distance, Nearest, CanSee, AlliesNear);
-            Record(new RoundFact(round));
-            if (RolledByRound)
-            {
-                foreach (Combatant member in Everyone)
-                {
-                    member.Creature.Rolled.Clear();
-                }
-            }
-            if (!ElectiveInitiative && (order is null || rollEachRound))
-            {
-                order = TurnOrder();
-            }
-
-            HashSet<Combatant> tookTurns = [];
-            if (ElectiveInitiative)
-            {
-                RunElectiveRound(tookTurns);
-            }
-            else
-            {
-                foreach (Combatant combatant in order!)
-                {
-                    RunTurn(combatant, tookTurns);
-                }
-
-                // Those not in the order (down from the start, or dropped by a new roll) run theirs last.
-                RunDownedTurns(tookTurns);
-            }
-
-            winner = Winner();
-        }
-
-        Record(new EndFact(winner is int side ? _sides[side].Name : null, round));
-        return new CombatResult(_facts, winner, round, _sides, _track, _fledSide);
     }
 
     private bool ElectiveInitiative => _combat.Json.TryGetProperty("initiative_mode", out JsonElement mode) && mode.GetString() == "elective";
-
-    private void RunTurn(Combatant combatant, HashSet<Combatant> tookTurns)
-    {
-        if (StandingSides() <= 1)
-        {
-            return;
-        }
-
-        if (TakeTurn(combatant))
-        {
-            tookTurns.Add(combatant);
-        }
-        else if (DownedConditions && !combatant.Escaped && !tookTurns.Contains(combatant))
-        {
-            // A creature that fell keeps its place, where its conditions run.
-            DownedTurn(combatant);
-            tookTurns.Add(combatant);
-        }
-    }
-
-    private void RunDownedTurns(HashSet<Combatant> tookTurns)
-    {
-        if (DownedConditions && StandingSides() > 1)
-        {
-            foreach (Combatant downed in Everyone.Where(member => member.Defeated && !member.Escaped && !tookTurns.Contains(member)).ToList())
-            {
-                DownedTurn(downed);
-            }
-        }
-    }
-
-    private void RunElectiveRound(HashSet<Combatant> tookTurns)
-    {
-        while (StandingSides() > 1 && NextElective(_lastActor, tookTurns) is Combatant next)
-        {
-            RunTurn(next, tookTurns);
-            _lastActor = next;
-        }
-
-        RunDownedTurns(tookTurns);
-    }
 
     private Combatant? NextElective(Combatant? last, HashSet<Combatant> tookTurns)
     {
         List<Combatant> candidates = Everyone.Where(member => !member.Defeated && !tookTurns.Contains(member)).ToList();
         if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        if (ShouldSuspendInitiative(last, candidates))
         {
             return null;
         }
@@ -270,7 +238,7 @@ public sealed class CombatRunner
             .OrderByDescending(entry => entry.Score)
             .ThenBy(entry => entry.Index)
             .First();
-        Record(new InitiativeChoiceFact(last.Name, best.Member.Name, best.Score), before);
+        Record(new InitiativeChoiceFact(last.Name, best.Member.Name, best.Score), before, last, [best.Member]);
         return best.Member;
     }
 
@@ -395,7 +363,8 @@ public sealed class CombatRunner
     {
         int before = _dice.Rolls.Count;
         decimal value = Number(_combat, "$.initiative", new Scope(self.Creature, null));
-        Record(new InitiativeFact(who, value), before);
+        Combatant? subject = Everyone.FirstOrDefault(member => member.Name == who);
+        Record(new InitiativeFact(who, value), before, subject);
         return value;
     }
 
@@ -427,19 +396,19 @@ public sealed class CombatRunner
             return;
         }
 
-        foreach ((Definition reaction, UseOption use) in reactor.Reactions)
+        List<(Definition Reaction, UseOption Use)> legal = reactor.Reactions
+            .Where(entry => ReactionFits(trigger, reactor, source, entry.Reaction, fits, physical, attack))
+            .ToList();
+        if (legal.Count > 0 && reactor.Controller == CombatControlMode.Manual)
         {
-            bool counter = reaction.Json.TryGetProperty("counter", out JsonElement counters) && counters.GetBoolean();
-            if (reaction.Json.GetProperty("trigger").GetString() != trigger || (_reactions == 1 && !counter) || !Affordable(reactor, reaction) || (fits is not null && !fits(reaction))
-                || (trigger == "hit" && reaction.Json.TryGetProperty("physical", out JsonElement physicalOnly) && physicalOnly.GetBoolean() && !physical)
-                || (trigger == "hit" && reaction.Json.TryGetProperty("attack", out JsonElement attackOnly) && attackOnly.GetBoolean() && !attack)
-                || (reaction.Json.TryGetProperty("when", out _) && !Evaluate(reaction, "$.when", new Scope(reactor.Creature, source.Creature)).Boolean))
-            {
-                continue;
-            }
+            SuspendReaction(trigger, reactor, source, legal, physical, attack);
+            return;
+        }
 
+        foreach ((Definition reaction, UseOption use) in legal)
+        {
             Spend(reactor, reaction);
-            Record(new ReactionFact(reactor.Name, reaction.Name, source.Name));
+            Record(new ReactionFact(reactor.Name, reaction.Name, source.Name), subject: reactor, targets: [source]);
             _reactions++;
             try
             {
@@ -452,25 +421,6 @@ public sealed class CombatRunner
 
             return;
         }
-    }
-
-    /// <summary>Takes a creature's turn unless it is out of the fight; returns whether it had one.</summary>
-    private bool TakeTurn(Combatant actor)
-    {
-        if (actor.Defeated)
-        {
-            return false;
-        }
-
-        _turn = actor;
-        if (!RolledByRound)
-        {
-            actor.Creature.Rolled.Clear();
-        }
-        ActOnTurn(actor);
-        EndTurn(actor);
-        _turn = null;
-        return true;
     }
 
     /// <summary>Whether self.rolled counts checks over the whole round (the combat's rolled: "round") rather than since the creature's own turn began.</summary>
@@ -499,57 +449,6 @@ public sealed class CombatRunner
 
         EndTurn(downed, downed: true);
         _turn = null;
-    }
-
-    private void ActOnTurn(Combatant actor)
-    {
-        CountDown(actor, atStart: true);
-        if (actor.SurprisedRounds > 0)
-        {
-            Record(new TurnSkippedFact(actor.Name, "surprised"));
-            return;
-        }
-
-        foreach (Definition condition in actor.Creature.Conditions.ToList())
-        {
-            if (condition.Json.TryGetProperty("each_turn", out JsonElement operations))
-            {
-                RunOperations(condition, operations, "$.each_turn", ConditionScope(actor, condition), actor, null);
-                if (actor.Defeated)
-                {
-                    return;
-                }
-            }
-        }
-
-        if (ShouldFlee(actor))
-        {
-            Escape(actor);
-            return;
-        }
-
-        Definition? preventing = actor.Creature.Conditions.FirstOrDefault(condition =>
-            condition.Json.TryGetProperty("prevents_actions", out JsonElement prevents) && prevents.GetBoolean());
-        if (preventing is not null)
-        {
-            Record(new TurnSkippedFact(actor.Name, preventing.Name.ToLowerInvariant()));
-            return;
-        }
-
-        Refill(actor);
-
-        bool acted = false;
-        while (!actor.Defeated && StandingSides() > 1 && Choose(actor) is (UseOption use, List<Combatant> targets))
-        {
-            Spend(actor, use.Action);
-            Act(actor, use, targets);
-            acted = true;
-        }
-
-        if (!acted && !actor.Defeated)
-        {
-            Record(new TurnSkippedFact(actor.Name, "no action it can take"));
-        }
     }
 
     /// <summary>
@@ -603,7 +502,7 @@ public sealed class CombatRunner
             combatant.ConditionRounds.Remove(condition);
             combatant.Creature.Conditions.Remove(condition);
             combatant.Creature.ConditionValues.Remove(condition);
-            Record(new ConditionFact(combatant.Name, condition.Name, false, null));
+            Record(new ConditionFact(combatant.Name, condition.Name, false, null), subject: combatant);
         }
     }
 
@@ -613,16 +512,16 @@ public sealed class CombatRunner
     /// every such option is scored against its target (a use without one
     /// scores 0) and the highest is taken, the first on a tie.
     /// </summary>
-    private (UseOption Use, List<Combatant> Targets)? Choose(Combatant actor)
+    private (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? Choose(Combatant actor)
     {
         bool scored = actor.Uses.Any(use => use.Action.Json.TryGetProperty("score", out _));
-        (UseOption Use, List<Combatant> Targets)? best = null;
+        (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? best = null;
         decimal bestScore = 0;
-        foreach ((UseOption use, List<Combatant> targets) in Options(actor))
+        foreach ((UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor))
         {
             if (!scored)
             {
-                return (use, targets);
+                return (use, targets, spellCosts, portionCount);
             }
 
             decimal score = use.Action.Json.TryGetProperty("score", out _)
@@ -630,7 +529,7 @@ public sealed class CombatRunner
                 : 0;
             if (best is null || score > bestScore)
             {
-                best = (use, targets);
+                best = (use, targets, spellCosts, portionCount);
                 bestScore = score;
             }
         }
@@ -639,25 +538,87 @@ public sealed class CombatRunner
     }
 
     /// <summary>The uses a creature could take now, in its list's order, each with its targets.</summary>
-    private IEnumerable<(UseOption Use, List<Combatant> Targets)> Options(Combatant actor)
+    private IEnumerable<(UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)> Options(
+        Combatant actor,
+        bool preview = false,
+        bool allCandidates = false)
     {
         foreach (UseOption use in actor.Uses)
         {
-            if (!Affordable(actor, use.Action) || (use.Spell is Definition spell && (!actor.CanCast(spell) || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell)))))
+            if (!Affordable(actor, use.Action))
             {
                 continue;
             }
 
-            if (use.Action.Json.TryGetProperty("available", out _)
-                && !Evaluate(use.Action, "$.available", new Scope(actor.Creature, null)).Boolean)
+            bool available = true;
+            if (use.Action.Json.TryGetProperty("available", out _))
+            {
+                try
+                {
+                    available = PreviewBoolean(use.Action, "$.available", new Scope(actor.Creature, null, use.Parameters)) is true;
+                }
+                catch (RuleFailure)
+                {
+                    continue;
+                }
+            }
+
+            if (!available)
             {
                 continue;
             }
 
-            List<Combatant> targets = Targets(actor, use);
-            if (targets.Count > 0)
+            List<Combatant> targets;
+            try
             {
-                yield return (use, targets);
+                targets = Targets(actor, use, preview, allCandidates);
+            }
+            catch (RuleFailure)
+            {
+                continue;
+            }
+
+            if (targets.Count == 0)
+            {
+                continue;
+            }
+
+            int? portionCount = null;
+            if (use.Action.Json.TryGetProperty("portions", out _))
+            {
+                portionCount = PreviewPortionCount(actor, use);
+                if (portionCount is null)
+                {
+                    continue;
+                }
+            }
+
+            IReadOnlyDictionary<string, decimal>? spellCosts = null;
+            bool spellUnavailable = false;
+            if (use.Spell is Definition spell)
+            {
+                spellUnavailable = !actor.CanCast(spell);
+                if (!spellUnavailable && !actor.CastsLeft.ContainsKey(spell))
+                {
+                    try
+                    {
+                        // A live decision commits one spell price alongside
+                        // its offered targets. Legal action fields use the
+                        // no-dice preview path above, but a random spell
+                        // cost must be quoted once and carried into Submit.
+                        spellCosts = SpellCostValues(actor, spell);
+                        spellUnavailable = !SpellAffordable(actor, spell, spellCosts);
+                    }
+                    catch (RuleFailure)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            if (!spellUnavailable)
+            {
+                yield return (use, targets, spellCosts, portionCount);
             }
         }
     }
@@ -669,7 +630,7 @@ public sealed class CombatRunner
     /// with the least left, the first ally, the ally missing the most, or the
     /// first fallen ally.
     /// </summary>
-    private List<Combatant> Targets(Combatant actor, UseOption use)
+    private List<Combatant> Targets(Combatant actor, UseOption use, bool preview = false, bool allCandidates = false)
     {
         Definition action = use.Action;
         string kind = action.Json.GetProperty("target").GetString()!;
@@ -681,21 +642,36 @@ public sealed class CombatRunner
             "enemy" or "all_enemies" => enemies,
             "ally" or "all_allies" => allies,
             "fallen_ally" => Everyone.Where(member => member.Defeated && !member.Escaped && member.Side == actor.Side && member != actor).ToList(),
-            _ => allies.Where(member => Missing(member) > 0).ToList(),
+            _ => allies.Where(member => preview ? PreviewMissing(member) > 0 : Missing(member) > 0).ToList(),
         };
         // A range is how far it reaches and needs line of sight; without one, it reaches anyone (moving toward an enemy out of sight).
         if (_field is not null && kind != "self" && action.Json.TryGetProperty("range", out _))
         {
-            decimal range = Number(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
-            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= range && CanSee(actor.Creature, candidate.Creature)).ToList();
+            decimal? range = PreviewNumber(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
+            if (range is not decimal knownRange)
+            {
+                return [];
+            }
+
+            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= knownRange && CanSee(actor.Creature, candidate.Creature)).ToList();
         }
 
         if (action.Json.TryGetProperty("valid_target", out _))
         {
-            candidates = candidates.Where(candidate => Evaluate(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)).Boolean).ToList();
+            candidates = candidates.Where(candidate =>
+                PreviewBoolean(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)) is true).ToList();
         }
 
-        if (kind is "self" or "all_enemies" or "all_allies" || candidates.Count == 0)
+        if (preview || allCandidates)
+        {
+            return candidates;
+        }
+
+        // A capped action still needs the complete legal candidate set before
+        // Act evaluates its committed cap. Reducing an ordinary enemy/ally
+        // action to one here would make automatic max_targets actions silently
+        // affect one target even when the authored cap is larger.
+        if (kind is "self" or "all_enemies" or "all_allies" || HasMaximumTargets(action) || candidates.Count == 0)
         {
             return candidates;
         }
@@ -723,53 +699,85 @@ public sealed class CombatRunner
         return Located(_track, "$", () => _evaluator.TrackMax(combatant.Creature, _track)) - Left(combatant);
     }
 
-    private void Act(Combatant actor, UseOption use, List<Combatant> targets)
+    private void Act(
+        Combatant actor,
+        UseOption use,
+        List<Combatant> targets,
+        IReadOnlyList<Combatant>? selectedTargets = null,
+        int? committedMaxTargets = null,
+        int? rollsBefore = null,
+        bool alreadyPaid = false,
+        IReadOnlyList<DiceRoll>? committedRolls = null,
+        int? committedPortions = null,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = null)
     {
         Definition action = use.Action;
-        if (action.Json.TryGetProperty("max_targets", out _) && targets.Count > 1)
+        if (selectedTargets is not null)
         {
-            int before = _dice.Rolls.Count;
-            decimal most = Number(action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
-            IEnumerable<Combatant> ranked = action.Json.TryGetProperty("prefer", out _)
+            targets = selectedTargets.ToList();
+        }
+
+        if (action.Json.TryGetProperty("max_targets", out _))
+        {
+            int before = rollsBefore ?? _dice.Rolls.Count;
+            decimal most = committedMaxTargets is int committed
+                ? committed
+                : Number(action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
+            IEnumerable<Combatant> ranked = selectedTargets is null && action.Json.TryGetProperty("prefer", out _)
                 ? targets.OrderByDescending(target => Number(action, "$.prefer", new Scope(actor.Creature, target.Creature, use.Parameters)))
                 : targets;
             targets = ranked.Take((int)Math.Clamp(decimal.Floor(most), 0, targets.Count)).ToList();
-            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), before);
+            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), before, actor, targets, committedRolls);
         }
         else
         {
-            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))));
+            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), subject: actor, targets: targets);
         }
 
-        if (use.Spell is Definition cast)
+        if (!alreadyPaid)
         {
-            // A spell cast a number of times a day costs nothing else.
-            if (!actor.CastsLeft.ContainsKey(cast))
-            {
-                PaySpell(actor, cast);
-            }
-
-            actor.Cast(cast);
+            PayUse(actor, use, committedSpellCosts);
         }
 
         if (action.Json.TryGetProperty("portions", out _))
         {
-            Divide(actor, use, targets.FirstOrDefault());
+            Divide(actor, use, targets.FirstOrDefault(), selectedTargets, committedPortions);
             return;
         }
 
-        foreach (Combatant target in targets)
+        for (int targetIndex = 0; targetIndex < targets.Count; targetIndex++)
         {
+            Combatant target = targets[targetIndex];
             if (target.Defeated && target != actor && action.Json.GetProperty("target").GetString() != "fallen_ally")
             {
                 continue;
             }
 
+            SetActionTargetContinuation(actor, use, targets, targetIndex, alreadyPaid);
             if (!Resolve(actor, use, target))
             {
                 return;
             }
         }
+    }
+
+    private void PayUse(
+        Combatant actor,
+        UseOption use,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = null)
+    {
+        if (use.Spell is not Definition cast)
+        {
+            return;
+        }
+
+        // A spell cast a number of times a day costs nothing else.
+        if (!actor.CastsLeft.ContainsKey(cast))
+        {
+            PaySpell(actor, cast, committedSpellCosts);
+        }
+
+        actor.Cast(cast);
     }
 
     /// <summary>
@@ -779,14 +787,22 @@ public sealed class CombatRunner
     /// it would choose now, so a target a portion felled passes its share to
     /// the next. It stops when no target is left or the actor falls.
     /// </summary>
-    private void Divide(Combatant actor, UseOption use, Combatant? first)
+    private void Divide(
+        Combatant actor,
+        UseOption use,
+        Combatant? first,
+        IReadOnlyList<Combatant>? selectedTargets = null,
+        int? committedPortions = null)
     {
-        Definition action = use.Action;
         int before = _dice.Rolls.Count;
-        int count = (int)Math.Clamp(decimal.Floor(Number(action, "$.portions", new Scope(actor.Creature, null, use.Parameters))), 0, int.MaxValue);
+        int count = committedPortions
+            ?? PreviewPortionCount(actor, use)
+            ?? 0;
         for (int portion = 1; portion <= count; portion++)
         {
-            Combatant? chosen = portion == 1 && first is not null && !first.Defeated ? first : Targets(actor, use).FirstOrDefault();
+            Combatant? chosen = selectedTargets is not null && selectedTargets.Count >= portion
+                ? selectedTargets[portion - 1]
+                : portion == 1 && first is not null && !first.Defeated ? first : Targets(actor, use).FirstOrDefault();
             if (chosen is not Combatant target)
             {
                 return;
@@ -795,7 +811,7 @@ public sealed class CombatRunner
             // A single portion is just the action; only several say where each goes.
             if (count > 1)
             {
-                Record(new PortionFact(use.Name, portion, count, target.Name), portion == 1 ? before : null);
+                Record(new PortionFact(use.Name, portion, count, target.Name), portion == 1 ? before : null, actor, [target]);
             }
             if (!Resolve(actor, use, target))
             {
@@ -808,44 +824,61 @@ public sealed class CombatRunner
     private bool Resolve(Combatant actor, UseOption use, Combatant target)
     {
         Definition action = use.Action;
-
-        // An enemy it targets may interrupt first; it may not survive to act.
-        if (target != actor && target.Side != actor.Side)
+        BeginActionContinuation(actor, use, target);
+        try
         {
-            React("targeted", target, actor);
-            if (actor.Defeated)
+            // An enemy it targets may interrupt first; it may not survive to act.
+            if (target != actor && target.Side != actor.Side)
             {
-                return false;
+                React("targeted", target, actor);
+                if (actor.Defeated)
+                {
+                    return false;
+                }
             }
-        }
 
-        Scope scope = new(actor.Creature, target.Creature, use.Parameters);
-        if (action.Json.TryGetProperty("check", out _))
-        {
-            decimal extra = action.Json.TryGetProperty("check_bonus", out _) ? Number(action, "$.check_bonus", scope) : 0;
-            CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target, extra);
-            if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
-                && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
+            Scope scope = new(actor.Creature, target.Creature, use.Parameters);
+            if (action.Json.TryGetProperty("check", out _))
             {
-                RunOperations(action, operations, $"$.outcomes.{result.Tier}", scope with { Check = result }, actor, target);
+                decimal extra = action.Json.TryGetProperty("check_bonus", out _) ? Number(action, "$.check_bonus", scope) : 0;
+                CheckResult result = MakeCheck(
+                    _rules.Reference(action, "$.check"),
+                    actor,
+                    target,
+                    extra,
+                    new CheckOperationContext(action, "$.check", scope, actor, target, null, IsOperation: false));
+                if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
+                    && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
+                {
+                    RunOperations(action, operations, $"$.outcomes.{result.Tier}", scope with { Check = result }, actor, target);
+                }
             }
-        }
 
-        if (action.Json.TryGetProperty("always", out JsonElement always))
+            if (action.Json.TryGetProperty("always", out JsonElement always))
+            {
+                RunOperations(action, always, "$.always", scope, actor, target);
+            }
+
+            return true;
+        }
+        finally
         {
-            RunOperations(action, always, "$.always", scope, actor, target);
+            EndActionContinuation();
         }
-
-        return true;
     }
 
-    private CheckResult MakeCheck(Definition check, Combatant by, Combatant against, decimal extra = 0)
+    private CheckResult MakeCheck(
+        Definition check,
+        Combatant by,
+        Combatant against,
+        decimal extra = 0,
+        CheckOperationContext? context = null)
     {
         int before = _dice.Rolls.Count;
         CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
         by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
-        Record(new CheckFact(by.Name, check.Name, result), before);
-        result = PostRoll(check, by, against, result);
+        Record(new CheckFact(by.Name, check.Name, result), before, by, [against]);
+        result = PostRoll(check, by, against, result, context);
         if (result.Success && by.Character is Character character && check.Json.TryGetProperty("skill", out _))
         {
             CharacterRules.MarkSkillUse(_rules, character, check.Json.GetProperty("skill").GetString()!, []);
@@ -859,84 +892,109 @@ public sealed class CombatRunner
     /// The check fact keeps the final result while a separate fact records the
     /// resource and effect, so a transcript can explain why the result changed.
     /// </summary>
-    private CheckResult PostRoll(Definition check, Combatant by, Combatant against, CheckResult result)
+    private CheckResult PostRoll(
+        Definition check,
+        Combatant by,
+        Combatant against,
+        CheckResult result,
+        CheckOperationContext? context = null)
     {
         if (!check.Json.TryGetProperty("post_roll", out JsonElement options))
         {
             return result;
         }
 
-        int bestIndex = -1;
-        decimal bestScore = 0;
-        Definition? bestTrack = null;
-        decimal bestCost = 0;
-        for (int index = 0; index < options.GetArrayLength(); index++)
+        List<PostRollCandidate> legal = BuildPostRollCandidates(check, by, against, result);
+        if (by.Controller == CombatControlMode.Manual && legal.Count > 0)
         {
-            JsonElement option = options[index];
-            Definition track = _rules.Reference(check, $"$.post_roll[{index}].track");
-            Scope optionScope = new(by.Creature, against.Creature, Check: result);
-            decimal cost = Number(check, $"$.post_roll[{index}].cost", optionScope);
-            decimal score = Number(check, $"$.post_roll[{index}].score", optionScope);
-            if (cost <= 0 || score <= bestScore || _evaluator.TrackCurrent(by.Creature, track) < cost)
-            {
-                continue;
-            }
-
-            bestIndex = index;
-            bestScore = score;
-            bestTrack = track;
-            bestCost = cost;
+            SuspendPostRoll(check, by, against, result, legal, context);
         }
 
-        if (bestIndex < 0 || bestTrack is null)
+        PostRollCandidate? best = legal
+            .Where(candidate => candidate.Score > 0)
+            .OrderByDescending(candidate => candidate.Score)
+            .FirstOrDefault();
+        if (best is null)
         {
             return result;
         }
-
-        TrackValue resource = by.Creature.Track(bestTrack.Id);
-        resource.Current = _evaluator.TrackCurrent(by.Creature, bestTrack) - bestCost;
-        Record(new SpentFact(by.Name, bestTrack, bestCost, resource.Current.Value));
-
-        JsonElement selected = options[bestIndex];
-        string effect;
-        decimal before = result.Total;
-        int rollsBefore = _dice.Rolls.Count;
-        CheckResult changed;
-        if (selected.TryGetProperty("reroll", out JsonElement reroll) && reroll.GetBoolean())
-        {
-            changed = Located(check, $"$.post_roll[{bestIndex}]", () =>
-            {
-                decimal roll = _evaluator.Roll(check, by.Creature, against.Creature);
-                return _evaluator.ResolveCheck(check, by.Creature, against.Creature, roll, result.Bonus, result.Modifier, result.Target);
-            });
-            effect = "reroll";
-        }
-        else
-        {
-            decimal bonus = Number(check, $"$.post_roll[{bestIndex}].bonus", new Scope(by.Creature, against.Creature, Check: result));
-            changed = Located(check, $"$.post_roll[{bestIndex}].bonus", () => _evaluator.ResolveCheck(check, by.Creature, against.Creature, result.Roll, result.Bonus, result.Modifier + bonus, result.Target));
-            effect = $"+{bonus.ToString("0.############", CultureInfo.InvariantCulture)}";
-        }
-
-        string optionName = selected.TryGetProperty("name", out JsonElement name) ? name.GetString()! : effect;
-        Record(new PostRollFact(by.Name, check.Name, optionName, bestTrack, bestCost, effect, before, changed.Total), rollsBefore);
-        int fact = _facts.FindLastIndex(entry => entry is CheckFact { Who: var who, Check: var name } && who == by.Name && name == check.Name);
-        if (fact >= 0 && _facts[fact] is CheckFact original)
-        {
-            IReadOnlyList<DiceRoll> rolls = [.. original.Rolls, .. _dice.Rolls.Skip(rollsBefore)];
-            _facts[fact] = original with { Result = changed, Rolls = rolls };
-        }
-
-        return changed;
+        return ApplyPostRollOption(check, by, against, result, best);
     }
 
     private void RunOperations(Definition owner, JsonElement operations, string path, Scope scope, Combatant actor, Combatant? target, Combatant? source = null)
     {
-        int index = 0;
-        foreach (JsonElement operation in operations.EnumerateArray())
+        OperationFrame? parent = _operationFrames.LastOrDefault();
+        OperationFrame frame = new()
         {
-            Run(owner, operation, $"{path}[{index}]", scope, actor, target, source);
-            index++;
+            Owner = owner,
+            Operations = operations,
+            Path = path,
+            Scope = scope,
+            Actor = actor,
+            Target = target,
+            Source = source,
+            UseId = _actionContinuation is null ? parent?.UseId : UseId(_actionContinuation.Actor, _actionContinuation.Use),
+            ActionId = _actionContinuation?.Use.Action.QualifiedId ?? parent?.ActionId,
+        };
+        _operationFrames.Add(frame);
+        try
+        {
+            RunOperationFrame(frame, source);
+        }
+        finally
+        {
+            if (!_suspending && _operationFrames.Count > 0 && ReferenceEquals(_operationFrames[^1], frame))
+            {
+                RemoveOperationFrame(frame);
+            }
+        }
+    }
+
+    private void RunOperationFrame(OperationFrame frame, Combatant? source = null)
+    {
+        while (frame.Index < frame.Operations.GetArrayLength())
+        {
+            int index = frame.Index++;
+            SyncOperationFrames();
+            Run(
+                frame.Owner,
+                frame.Operations[index],
+                $"{frame.Path}[{index}]",
+                frame.Scope,
+                frame.Actor,
+                frame.Target,
+                source ?? frame.Source);
+        }
+
+        SyncOperationFrames();
+    }
+
+    private void ResumeOperationFramesForAction(ActionContinuation action)
+    {
+        ResumeOperationFrames(action.OperationFrameStart);
+    }
+
+    private void ResumeOperationFrames(int start)
+    {
+        if (start > _operationFrames.Count)
+        {
+            return;
+        }
+
+        while (_operationFrames.Count > start)
+        {
+            OperationFrame frame = _operationFrames[^1];
+            try
+            {
+                RunOperationFrame(frame);
+            }
+            finally
+            {
+                if (!_suspending && _operationFrames.Count > 0 && ReferenceEquals(_operationFrames[^1], frame))
+                {
+                    RemoveOperationFrame(frame);
+                }
+            }
         }
     }
 
@@ -1033,11 +1091,13 @@ public sealed class CombatRunner
                     {
                         bool physical = scope.ConditionValues?.TryGetValue("physical", out decimal marker) == true && marker > 0;
                         bool attack = scope.ConditionValues?.TryGetValue("attack", out decimal attackMarker) == true && attackMarker > 0;
+                        BeginDamageContinuation(owner, path, actor, who, damageSource, track, amount, before, physical, attack);
                         React("hit", who, damageSource, physical: physical, attack: attack);
                         amount = pending.Amount;
                     }
                     finally
                     {
+                        EndDamageContinuation();
                         _pendingDamage = previous;
                     }
                 }
@@ -1051,7 +1111,7 @@ public sealed class CombatRunner
                 }
 
                 value.Current = lowered;
-                Record(new DamageFact(who.Name, track, current - lowered, lowered), before);
+                Record(new DamageFact(who.Name, track, current - lowered, lowered), before, damageSource, [who]);
                 break;
             }
 
@@ -1060,7 +1120,7 @@ public sealed class CombatRunner
                 Definition track = operation.TryGetProperty("track", out _) ? _rules.Reference(owner, $"{path}.track") : _track;
                 decimal amount = Math.Max(0, Number(owner, $"{path}.amount", scope));
                 decimal healed = TrackOperations.Heal(_evaluator, who.Creature, track, amount);
-                Record(new HealFact(who.Name, track, healed, who.Creature.Track(track.Id).Current!.Value), before);
+                Record(new HealFact(who.Name, track, healed, who.Creature.Track(track.Id).Current!.Value), before, who);
                 break;
             }
 
@@ -1104,7 +1164,7 @@ public sealed class CombatRunner
                     who.ConditionRounds.Remove(condition);
                 }
 
-                Record(new ConditionFact(who.Name, condition.Name, true, rounds), before);
+                Record(new ConditionFact(who.Name, condition.Name, true, rounds), before, who);
                 break;
             }
 
@@ -1127,7 +1187,7 @@ public sealed class CombatRunner
                 }
 
                 value.Current = left - spend;
-                Record(new SpentFact(who.Name, resource, spend, value.Current.Value), before);
+                Record(new SpentFact(who.Name, resource, spend, value.Current.Value), before, who);
                 who.Budget[budget] = who.Budget.GetValueOrDefault(budget) + (int)amount;
                 break;
             }
@@ -1176,7 +1236,8 @@ public sealed class CombatRunner
                     value.Current = lowered;
                     if (current != lowered)
                     {
-                        Record(new DamageFact(who.Name, shield, current - lowered, lowered), before);
+                        Combatant shieldSource = source ?? actor;
+                        Record(new DamageFact(who.Name, shield, current - lowered, lowered), before, shieldSource, [who]);
                     }
                 }
 
@@ -1190,7 +1251,7 @@ public sealed class CombatRunner
                 {
                     who.ConditionRounds.Remove(condition);
                     who.Creature.ConditionValues.Remove(condition);
-                    Record(new ConditionFact(who.Name, condition.Name, false, null));
+                    Record(new ConditionFact(who.Name, condition.Name, false, null), subject: who);
                 }
 
                 break;
@@ -1207,7 +1268,12 @@ public sealed class CombatRunner
         Combatant roller = bySelf ? actor : target ?? actor;
         Combatant other = bySelf ? target ?? actor : actor;
         decimal extra = operation.TryGetProperty("bonus", out _) ? Number(owner, $"{path}.bonus", scope) : 0;
-        CheckResult result = MakeCheck(check, roller, other, extra);
+        CheckResult result = MakeCheck(
+            check,
+            roller,
+            other,
+            extra,
+            new CheckOperationContext(owner, path, scope, actor, target, source, IsOperation: true));
         if (operation.GetProperty("outcomes").TryGetProperty(result.Tier, out JsonElement operations))
         {
             RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target, source);
@@ -1225,6 +1291,13 @@ public sealed class CombatRunner
     /// </summary>
     private void Move(Definition owner, JsonElement operation, string path, Scope scope, Combatant actor, Combatant? target)
     {
+        if (_requestedPath is not null && !_requestedPathConsumed)
+        {
+            _requestedPathConsumed = true;
+            MoveAlongExplicitPath(owner, operation, path, scope, actor, target, _requestedPath);
+            return;
+        }
+
         bool fleeing = operation.TryGetProperty("toward", out JsonElement way) && way.GetString() == "away"
             && operation.TryGetProperty("escape", out JsonElement leaves) && leaves.GetBoolean();
         if (_field is null && fleeing && target != actor)
@@ -1251,50 +1324,101 @@ public sealed class CombatRunner
                 .Select(member => member.Creature.Position!.Value)
                 .ToHashSet();
         Dictionary<Cell, int>? toGoal = away ? null : CostsToReach(goal, within, blocked);
-        Cell here = start;
-        decimal spent = 0;
-        int steps = 0;
-        while (away ? beyond is not decimal far || _field.Distance(here, goal) < far : !(_field.Distance(here, goal) <= within && _field.CanSee(here, goal)))
+        MovementContinuation movement = new()
         {
-            Cell? next = away ? StepAway(here, goal, blocked) : StepToward(here, toGoal!);
-            if (next is not Cell step || spent + _field.Cost(step) > allowed)
-            {
-                break;
-            }
+            Owner = owner,
+            Path = path,
+            Scope = scope,
+            Actor = actor,
+            Target = target,
+            Start = start,
+            Here = start,
+            Allowed = allowed,
+            Within = within,
+            Beyond = beyond,
+            Away = away,
+            Provokes = provokes,
+            Escape = escape,
+            Blocked = blocked,
+            ToGoal = toGoal,
+            Enemies = Everyone.Where(member => provokes && member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList(),
+        };
+        ContinueMovement(movement);
+    }
 
-            // Enemies whose reach this step leaves may strike first.
-            foreach (Combatant enemy in Everyone.Where(member => provokes && member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList())
-            {
-                Cell watcher = enemy.Creature.Position!.Value;
-                Cell from = here;
-                React("leaves_reach", enemy, actor, reaction =>
-                {
-                    decimal reach = reaction.Json.TryGetProperty("reach", out _) ? Number(reaction, "$.reach", new Scope(enemy.Creature, null)) : 1;
-                    return _field.Distance(watcher, from) <= reach && _field.Distance(watcher, step) > reach;
-                });
-            }
-
-            if (actor.Defeated)
-            {
-                break;
-            }
-
-            here = step;
-            spent += _field.Cost(step);
-            steps++;
+    /// <summary>
+    /// Applies the path selected at the live decision boundary. The path has
+    /// already passed the no-roll legal-choice check; this method spends no
+    /// generic movement pool and only performs the authored operation's steps,
+    /// terrain costs, reactions and escape rule.
+    /// </summary>
+    private void MoveAlongExplicitPath(
+        Definition owner,
+        JsonElement operation,
+        string path,
+        Scope scope,
+        Combatant actor,
+        Combatant? target,
+        IReadOnlyList<Cell> selected)
+    {
+        if (_field is null || selected.Count == 0 || actor.Creature.Position is not Cell start || target?.Creature.Position is not Cell goal || target == actor)
+        {
+            return;
         }
 
-        if (steps > 0)
+        bool away = operation.TryGetProperty("toward", out JsonElement toward) && toward.GetString() == "away";
+        decimal allowed = Number(owner, $"{path}.distance", scope);
+        decimal within = operation.TryGetProperty("within", out _) ? Number(owner, $"{path}.within", scope) : 1;
+        decimal? beyond = operation.TryGetProperty("beyond", out _) ? Number(owner, $"{path}.beyond", scope) : null;
+        bool provokes = !operation.TryGetProperty("provokes", out JsonElement provoking) || provoking.GetBoolean();
+        bool escape = away && operation.TryGetProperty("escape", out JsonElement escaping) && escaping.GetBoolean();
+        HashSet<Cell> blocked = BlockedCellsForMove(actor);
+        MovementContinuation movement = new()
         {
-            actor.Creature.Position = here;
-            Record(new MoveFact(actor.Name, start, here, steps));
+            Owner = owner,
+            Path = path,
+            Scope = scope,
+            Actor = actor,
+            Target = target,
+            Start = start,
+            Here = start,
+            Allowed = allowed,
+            Within = within,
+            Beyond = beyond,
+            Away = away,
+            Provokes = provokes,
+            Escape = escape,
+            Blocked = blocked,
+            ToGoal = null,
+            Enemies = Everyone.Where(member => provokes && member.Side != actor.Side && !member.Defeated && member.Creature.Position is not null).ToList(),
+            Selected = selected,
+            Explicit = true,
+        };
+        ContinueExplicitMovement(movement);
+    }
+
+    private HashSet<Cell> BlockedCellsForMove(Combatant actor)
+    {
+        return _field!.Zones
+            ? []
+            : Everyone.Where(member => member != actor && !member.Defeated && member.Creature.Position is not null)
+                .Select(member => member.Creature.Position!.Value)
+                .ToHashSet();
+    }
+
+    private bool MovementDestinationAllowedForCommit(Cell destination, Cell goal, decimal within, decimal? beyond, bool away)
+    {
+        if (_field!.Zones)
+        {
+            return away ? beyond is not decimal far || _field.Distance(destination, goal) >= far : _field.Distance(destination, goal) <= within;
         }
 
-        // A creature running with nowhere further to go at the field's edge gets away.
-        if (escape && !actor.Defeated && spent < allowed && IsEdge(here) && StepAway(here, goal, blocked) is null)
+        if (away)
         {
-            Escape(actor);
+            return beyond is not decimal far || _field.Distance(destination, goal) >= far;
         }
+
+        return _field.Distance(destination, goal) <= within && _field.CanSee(destination, goal);
     }
 
     private bool IsEdge(Cell cell) => cell.X == 0 || cell.Y == 0 || cell.X == _field!.Width - 1 || cell.Y == _field.Height - 1;
@@ -1304,7 +1428,7 @@ public sealed class CombatRunner
     {
         creature.Escaped = true;
         creature.Defeated = true;
-        Record(new EscapedFact(creature.Name));
+        Record(new EscapedFact(creature.Name), subject: creature);
         if (!_sides[creature.Side].Members.Any(member => !member.Defeated))
         {
             _fledSide = creature.Side;
@@ -1450,40 +1574,62 @@ public sealed class CombatRunner
         }
 
         combatant.Defeated = defeated;
-        Record(defeated ? new DefeatedFact(combatant.Name) : new ReturnedFact(combatant.Name));
+        Record(defeated ? new DefeatedFact(combatant.Name) : new ReturnedFact(combatant.Name), subject: combatant);
         return defeated;
     }
 
     /// <summary>Whether the caster's tracks can pay every cost of the spell.</summary>
-    private bool SpellAffordable(Combatant caster, Definition spell)
+    private IReadOnlyDictionary<string, decimal> SpellCostValues(Combatant caster, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return new Dictionary<string, decimal>(StringComparer.Ordinal);
+        }
+
+        return cost.EnumerateObject().ToDictionary(
+            entry => entry.Name,
+            entry => Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null)),
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>Whether the caster's tracks can pay already evaluated spell costs.</summary>
+    private bool SpellAffordable(
+        Combatant caster,
+        Definition spell,
+        IReadOnlyDictionary<string, decimal>? committedCosts = null)
     {
         if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
         {
             return true;
         }
 
+        IReadOnlyDictionary<string, decimal> costs = committedCosts ?? SpellCostValues(caster, spell);
         return cost.EnumerateObject().All(entry =>
         {
             Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
-            return _evaluator.TrackCurrent(caster.Creature, track) >= Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            return _evaluator.TrackCurrent(caster.Creature, track) >= costs[entry.Name];
         });
     }
 
-    /// <summary>Spends the spell's cost from the caster's tracks.</summary>
-    private void PaySpell(Combatant caster, Definition spell)
+    /// <summary>Spends the already evaluated spell cost from the caster's tracks.</summary>
+    private void PaySpell(
+        Combatant caster,
+        Definition spell,
+        IReadOnlyDictionary<string, decimal>? committedCosts = null)
     {
         if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
         {
             return;
         }
 
+        IReadOnlyDictionary<string, decimal> costs = committedCosts ?? SpellCostValues(caster, spell);
         foreach (JsonProperty entry in cost.EnumerateObject())
         {
             Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
-            decimal amount = Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            decimal amount = costs[entry.Name];
             TrackValue value = caster.Creature.Track(track.Id);
             value.Current = _evaluator.TrackCurrent(caster.Creature, track) - amount;
-            Record(new SpentFact(caster.Name, track, amount, value.Current.Value));
+            Record(new SpentFact(caster.Name, track, amount, value.Current.Value), subject: caster);
         }
     }
 
@@ -1509,9 +1655,27 @@ public sealed class CombatRunner
         return standing.Count == 1 ? standing[0] : null;
     }
 
-    private void Record(CombatFact fact, int? rollsBefore = null)
+    private void Record(
+        CombatFact fact,
+        int? rollsBefore = null,
+        Combatant? subject = null,
+        IEnumerable<Combatant>? targets = null,
+        IReadOnlyList<DiceRoll>? committedRolls = null)
     {
-        if (rollsBefore is int before && _dice.Rolls.Count > before)
+        if (subject is not null || targets is not null)
+        {
+            fact = fact with
+            {
+                SubjectIds = subject is null ? fact.SubjectIds : [subject.Id],
+                TargetIds = targets is null ? fact.TargetIds : targets.Select(target => target.Id).ToList(),
+            };
+        }
+
+        if (committedRolls is not null)
+        {
+            fact = fact with { Rolls = [.. committedRolls, .._dice.Rolls.Skip(rollsBefore ?? _dice.Rolls.Count)] };
+        }
+        else if (rollsBefore is int before && _dice.Rolls.Count > before)
         {
             fact = fact with { Rolls = _dice.Rolls.Skip(before).ToList() };
         }

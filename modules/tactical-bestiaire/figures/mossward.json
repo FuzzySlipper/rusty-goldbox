@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "mossward",
+  "monster": "tactical-bestiaire:mossward",
+  "sprite": "placeholder-art:cleric",
+  "icon": "placeholder-art:cleric_portrait"
+}

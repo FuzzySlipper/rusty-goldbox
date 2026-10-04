@@ -36,6 +36,9 @@ public enum Roots
 
     /// <summary>combat.round, combat.surprise_round: the fight being resolved.</summary>
     Combat = 512,
+
+    /// <summary>behavior.&lt;parameter&gt;: a value supplied by an authored combat behavior profile.</summary>
+    Behavior = 2048,
 }
 
 /// <summary>What a definition field accepts. <see cref="Describe"/> is the text <c>goldbox schema</c> shows.</summary>
@@ -131,6 +134,11 @@ public sealed record ExpressionKind(ExprType? Expected, Roots Roots) : FieldKind
             roots.Add("combat");
         }
 
+        if (Roots.HasFlag(Roots.Behavior))
+        {
+            roots.Add("behavior.<parameter>");
+        }
+
         string reads = roots.Count == 0 ? "no reads" : "may read " + string.Join(", ", roots);
         return $"expression ({type}; {reads})";
     }
@@ -208,7 +216,7 @@ public sealed record UseKind : FieldKind
 {
     public override string Describe()
     {
-        return "use { \"action\": action reference, \"name\"?: text, \"from_item\"?: item kind, <parameter>: number expression (may read self, target), ... }";
+        return "use { \"action\": action reference, \"name\"?: text, \"from_item\"?: item kind, <parameter>: number expression (may read self, target or behavior.<parameter>), ... }";
     }
 }
 

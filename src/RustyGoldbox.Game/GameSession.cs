@@ -3,6 +3,7 @@ using Rusty.Engine;
 using Rusty.Engine.Persistence;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
@@ -38,6 +39,12 @@ internal sealed class GameSession(ModuleLibrary library)
     private const string CharacterScope = "goldbox.character";
 
     private int _rolls;
+    private int _shownCombatFacts;
+    // Presentation cursor identity: a chained live fight starts a fresh fact
+    // list even though the campaign command returns both fights together.
+    private string? _shownCombatKey;
+    private CombatObservation? _completedCombat;
+    private PendingCombatState? _completedCombatMetadata;
 
     public Screen Screen { get; private set; } = Screen.Title;
 
@@ -61,8 +68,18 @@ internal sealed class GameSession(ModuleLibrary library)
 
     public CampaignRunner? Runner { get; private set; }
 
-    /// <summary>The fight being played back on the combat screen.</summary>
+    /// <summary>The legacy committed fight being played back on the combat screen, when one exists.</summary>
     public FightReplay? Fight { get; private set; }
+
+    /// <summary>The Core-owned live combat snapshot, cached by the last Game callback.</summary>
+    // A terminal live command clears Core's pending state before the runner's
+    // cached observation is replaced. Prefer the snapshot captured from that
+    // command so the Game keeps the ended fight's stable IDs and resources on
+    // screen until Continue is pressed.
+    public CombatObservation? Combat => _completedCombat ?? Runner?.Combat;
+
+    /// <summary>The metadata captured at the live combat boundary, including after a terminal command.</summary>
+    public PendingCombatState? CombatMetadata => Runner?.State.PendingCombat ?? _completedCombatMetadata;
 
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
@@ -265,6 +282,10 @@ internal sealed class GameSession(ModuleLibrary library)
         _rolls = 0;
         Party.Clear();
         Runner = null;
+        _completedCombat = null;
+        _completedCombatMetadata = null;
+        _shownCombatFacts = 0;
+        _shownCombatKey = null;
         Screen = Screen.Party;
     }
 
@@ -446,9 +467,18 @@ internal sealed class GameSession(ModuleLibrary library)
         try
         {
             Runner = new CampaignRunner(rules, CampaignRunner.NewState(rules, Campaign, Party, Seed));
+            // The Game is the ordinary player-facing host, so party actors
+            // wait for a visible choice. Core still owns every rule and
+            // automatically advances eligible non-party actors.
+            Runner.DefaultCombatControl = CombatControlMode.Manual;
+            _completedCombat = null;
+            _completedCombatMetadata = null;
+            _shownCombatFacts = 0;
+            _shownCombatKey = null;
             Log.Clear();
             Screen = Screen.Play;
             Record(null, Runner.Begin(engine.Random));
+            SyncCombat(engine);
         }
         catch (RuleFailure failure)
         {
@@ -474,6 +504,7 @@ internal sealed class GameSession(ModuleLibrary library)
         try
         {
             Record(command, Runner!.Execute(command, engine.Random));
+            SyncCombat(engine);
         }
         catch (RuleFailure failure)
         {
@@ -481,18 +512,171 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
+    /// <summary>Changes the Core controller for one live combatant.</summary>
+    public void SetCombatController(IEngineContext engine, string actorId, CombatControlMode mode)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Combat || Runner?.State.PendingCombat is null)
+        {
+            Notes.Add("No live combat is waiting for a controller choice.");
+            return;
+        }
+
+        try
+        {
+            PendingCombatState? before = Runner.State.PendingCombat;
+            ApplyCombat(Runner.SetCombatController(actorId, mode, engine.Random), before);
+        }
+        catch (RuleFailure failure)
+        {
+            Notes.Add(Describe(failure.Diagnostic));
+        }
+    }
+
+    /// <summary>Submits an ordinary action through the Core live combat owner.</summary>
+    public void CombatAction(IEngineContext engine, string actorId, string actionId, IReadOnlyList<string> targetIds, IReadOnlyList<Cell>? path)
+    {
+        SubmitCombat(engine, new CombatCommand.UseAction(actorId, actionId, targetIds, path));
+    }
+
+    /// <summary>Submits a movement action through the Core live combat owner.</summary>
+    public void CombatMove(IEngineContext engine, string actorId, string actionId, string targetId, IReadOnlyList<Cell> path)
+    {
+        SubmitCombat(engine, new CombatCommand.Move(actorId, actionId, targetId, path));
+    }
+
+    /// <summary>Ends the active actor's turn without spending a future action.</summary>
+    public void CombatEndTurn(IEngineContext engine, string actorId)
+    {
+        SubmitCombat(engine, new CombatCommand.EndTurn(actorId));
+    }
+
+    /// <summary>Accepts or declines the current optional live decision.</summary>
+    public void CombatDecide(IEngineContext engine, string decisionId, string? optionId)
+    {
+        SubmitCombat(engine, new CombatCommand.Decide(decisionId, optionId));
+    }
+
+    private void SubmitCombat(IEngineContext engine, CombatCommand command)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Combat || Runner?.State.PendingCombat is null)
+        {
+            Notes.Add("No live combat is waiting for a command.");
+            return;
+        }
+
+        try
+        {
+            PendingCombatState? before = Runner.State.PendingCombat;
+            ApplyCombat(Runner.SubmitCombat(command, engine.Random), before);
+        }
+        catch (RuleFailure failure)
+        {
+            Notes.Add(Describe(failure.Diagnostic));
+        }
+    }
+
+    private void ApplyCombat(CampaignCombatCommandResult result, PendingCombatState? before)
+    {
+        AppendCombatFacts(result.Observation, Runner?.State.PendingCombat ?? before);
+        bool completedLive = before is not null
+            && result.Observation.Phase == CombatPhase.Ended
+            && Runner?.State.PendingCombat is null;
+        if (completedLive)
+        {
+            _completedCombat = result.Observation;
+            _completedCombatMetadata = before;
+            foreach (PlayFact fact in result.Facts)
+            {
+                Log.Add(fact.Describe());
+            }
+        }
+        else if (result.Facts.Count > 0)
+        {
+            // A terminal fight can immediately chain into another live fight.
+            // Keep its committed outcome in the log, but don't create a
+            // legacy replay while the new Core-owned fight is waiting.
+            Record(null, result.Facts, allowFightReplay: Runner?.State.PendingCombat is null);
+        }
+
+        if (!result.Accepted && result.Reason is string reason)
+        {
+            Notes.Add(reason);
+        }
+
+        if (Runner?.State.PendingCombat is not null)
+        {
+            Screen = Screen.Combat;
+            return;
+        }
+
+        // A terminal live command stays on the committed-facts combat view,
+        // keyed by the stable observation IDs, until the player continues.
+        Screen = completedLive || Fight is not null ? Screen.Combat : Screen.Play;
+    }
+
+    private void SyncCombat(IEngineContext engine)
+    {
+        if (Runner?.State.PendingCombat is not null)
+        {
+            CombatObservation? observation = Runner.ObserveCombat(engine.Random);
+            if (observation is not null)
+            {
+                AppendCombatFacts(observation, Runner.State.PendingCombat);
+                Screen = Screen.Combat;
+            }
+
+            return;
+        }
+
+        if (Fight is null && Screen == Screen.Combat)
+        {
+            Screen = Screen.Play;
+        }
+    }
+
+    private void AppendCombatFacts(CombatObservation observation, PendingCombatState? pending)
+    {
+        string? key = pending is null ? null : $"{Runner?.State.CombatSequence}:{pending.Event.QualifiedId}";
+        if (key is not null && key != _shownCombatKey)
+        {
+            _shownCombatFacts = 0;
+            _shownCombatKey = key;
+        }
+
+        IReadOnlyList<CombatFact> facts = observation.Facts;
+        foreach (CombatFact fact in facts.Skip(_shownCombatFacts))
+        {
+            Log.Add(fact.Describe());
+        }
+
+        _shownCombatFacts = facts.Count;
+        if (Log.Count > LogLines)
+        {
+            Log.RemoveRange(0, Log.Count - LogLines);
+        }
+    }
+
     public void Save(IEngineContext engine, string slot)
     {
         Notes.Clear();
-        if (Screen != Screen.Play)
+        if (Screen is not (Screen.Play or Screen.Combat) || Runner is null)
         {
             return;
         }
 
         try
         {
+            // Observation reconstructs a saved live owner without advancing
+            // it, ensuring the continuation written here is the current one.
+            if (Screen == Screen.Combat && Runner.State.PendingCombat is not null)
+            {
+                Runner.ObserveCombat(engine.Random);
+            }
+
             using SaveSlots slots = new(engine);
-            slots.Write(slot, SaveFile.ToJson(Runner!.State, Set!));
+            slots.Write(slot, SaveFile.ToJson(Runner.State, Set!));
             Notes.Add($"Saved to {SaveSlots.Location(slot)}.");
         }
         catch (Exception exception) when (exception is PersistenceStorageException or EngineCallException)
@@ -551,15 +735,34 @@ internal sealed class GameSession(ModuleLibrary library)
         Campaign = state.Campaign;
         Seed = state.Seed;
         Runner = new CampaignRunner(set.Rules!, state);
+        Runner.DefaultCombatControl = CombatControlMode.Manual;
         Log.Clear();
         Log.Add($"Loaded {SaveSlots.Location(slot)}.");
-        Screen = Screen.Play;
+        Screen = state.PendingCombat is null ? Screen.Play : Screen.Combat;
+        Fight = null;
+        _completedCombat = null;
+        _completedCombatMetadata = null;
+        _shownCombatFacts = 0;
+        _shownCombatKey = null;
+        if (Screen == Screen.Combat)
+        {
+            try
+            {
+                SyncCombat(engine);
+            }
+            catch (RuleFailure failure)
+            {
+                Notes.Add(Describe(failure.Diagnostic));
+            }
+        }
     }
 
     /// <summary>Lets time pass for the fight playback; returns whether anything new showed.</summary>
     public bool Tick(double seconds)
     {
-        return Screen == Screen.Combat && Fight!.Advance(seconds);
+        // Live combat never resolves a pending choice because time passed.
+        // Only the retained legacy playback consumes elapsed presentation time.
+        return Screen == Screen.Combat && Fight is FightReplay fight && fight.Advance(seconds);
     }
 
     /// <summary>On the combat screen: shows the rest of the fight, or once it has all shown, returns to play.</summary>
@@ -571,13 +774,30 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (!Fight!.Done)
+        if (Fight is FightReplay fight)
         {
-            Fight.Finish();
+            if (!fight.Done)
+            {
+                fight.Finish();
+                return;
+            }
+
+            Fight = null;
+            Screen = Screen.Play;
             return;
         }
 
-        Fight = null;
+        // Live combat is advanced only by a typed Core command. This button
+        // acknowledges already committed facts and never makes a choice for
+        // the player or consumes a future roll.
+        if (Runner?.State.PendingCombat is not null)
+        {
+            Notes.Add("Choose a combat action first; committed facts are already shown.");
+            return;
+        }
+
+        _completedCombat = null;
+        _completedCombatMetadata = null;
         Screen = Screen.Play;
     }
 
@@ -585,6 +805,10 @@ internal sealed class GameSession(ModuleLibrary library)
     {
         Notes.Clear();
         Fight = null;
+        _completedCombat = null;
+        _completedCombatMetadata = null;
+        _shownCombatFacts = 0;
+        _shownCombatKey = null;
         Screen = Screen.Title;
         Runner = null;
         Set = null;
@@ -645,7 +869,7 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
-    private void Record(string? command, List<PlayFact> facts)
+    private void Record(string? command, IReadOnlyList<PlayFact> facts, bool allowFightReplay = true)
     {
         if (command is not null)
         {
@@ -660,9 +884,11 @@ internal sealed class GameSession(ModuleLibrary library)
             }
 
             // A fight plays back on the combat screen; the log keeps its outcome.
-            if (fact is FightFact fight)
+            if (allowFightReplay && fact is FightFact fight)
             {
                 Fight = new FightReplay(fight);
+                _shownCombatFacts = 0;
+                _shownCombatKey = null;
                 Screen = Screen.Combat;
             }
 

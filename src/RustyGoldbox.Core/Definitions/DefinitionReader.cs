@@ -310,7 +310,7 @@ public static class DefinitionReader
                         ReadValue(property.Value, new TextKind(), at);
                         break;
                     default:
-                        ReadExpression(property.Value, new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target), at);
+                        ReadExpression(property.Value, new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Behavior), at);
                         break;
                 }
             }

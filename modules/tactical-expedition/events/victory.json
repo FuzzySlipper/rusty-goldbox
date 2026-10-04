@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "victory",
+  "kind": "end",
+  "text": "The watcher changes stance once, then falls. You leave with a working tactical recipe."
+}

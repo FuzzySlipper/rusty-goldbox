@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "join_ivy",
+  "kind": "join",
+  "npc": "ivy",
+  "next": "welcome",
+  "on_refused": "welcome"
+}

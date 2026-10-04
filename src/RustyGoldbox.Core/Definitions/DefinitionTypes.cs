@@ -13,6 +13,48 @@ public static class DefinitionTypes
     private static readonly ModifierKind Modifier = new();
     private static readonly ModifierKind ClassModifier = new(Roots.Self | Roots.Class);
     private static readonly UseKind Use = new();
+    private const Roots BehaviorRoots = Roots.Self | Roots.Target | Roots.Combat | Roots.Behavior;
+    private static readonly ExpressionKind BehaviorNumber = new(ExprType.Number, BehaviorRoots);
+    private static readonly ExpressionKind BehaviorBoolean = new(ExprType.Boolean, BehaviorRoots);
+
+    private static readonly ObjectKind BehaviorDestination = new(
+    [
+        new("kind", new EnumKind(["toward", "away", "within", "outside"]), true,
+            "How the actor should move relative to the selected target. "
+            + "toward and within stop at or inside the distance; away and outside stop at or beyond it."),
+        new("distance", BehaviorNumber, true,
+            "The preferred distance in cells, evaluated against the actor and selected target."),
+    ]);
+
+    private static readonly ObjectKind BehaviorStep = new(
+    [
+        new("action", Use, true,
+            "The existing action use to propose after movement, with the same parameters and legality as a human choice."),
+        new("target", new EnumKind(["self", "enemy", "ally", "hurt_ally", "fallen_ally"]), false,
+            "The target group to choose for this step; without it the action's own target kind and preference decide."),
+        new("target_score", BehaviorNumber, false,
+            "A score for one candidate in the target group; the highest wins, with listing order breaking ties."),
+        new("destination", BehaviorDestination, false,
+            "A preferred movement destination before this action. Movement is proposed through the shared legal resolver."),
+        new("spell", new ReferenceKind("spell"), false,
+            "An optional spell whose effect is the action use; its normal spell preparation and resource rules still apply."),
+    ]);
+
+    private static readonly ObjectKind BehaviorRule = new(
+    [
+        new("when", BehaviorBoolean, false,
+            "A guard evaluated before this rule is considered; without it the rule is always eligible."),
+        new("priority", BehaviorNumber, false,
+            "A deterministic priority. The highest eligible priority wins; omit it when using score."),
+        new("score", BehaviorNumber, false,
+            "A deterministic score for eligible alternatives. The highest score wins; omit it when using priority."),
+        new("commit", new EnumKind(["step", "plan"]), false,
+            "Whether to reassess after each step or keep this rule's remaining steps as a short commitment while they remain legal."),
+        new("steps", new ListKind(BehaviorStep), true,
+            "A fixed, short sequence of existing action uses. The sequence never loops; an invalid step uses the rule fallback."),
+        new("fallback", new EnumKind(["next", "end-turn", "flee"]), false,
+            "What to do when a step can no longer be proposed; without it the profile fallback applies."),
+    ]);
 
     private static readonly Field Boosts = new("boosts", new ListKind(new ObjectKind(
         [
@@ -165,8 +207,42 @@ public static class DefinitionTypes
     public static DefinitionType Npc { get; } = new(
         "npc",
         "A predefined character, using character data without format or modules (the loader supplies those). Export with goldbox character npc; join and dismiss events use its qualified identity.",
-        [new("character", new ObjectKind(Characters.CharacterFile.DataFields), true, "Complete character data, checked by the character reader. References must name this module or its requires. No rolling or creation happens when the NPC joins.")],
-        """{ "type": "npc", "id": "guide", "character": { "name": "Guide", "race": "rules:folk", "creation": "rules:standard", "levels": [{ "class": "rules:scout", "gain": 4 }], "experience": 0, "attributes": { "agility": 10 }, "tracks": { "health": { "current": 4, "max": 4 } }, "balances": { "gold": 0 }, "equipment": [], "conditions": [] } }""");
+        [
+            new("character", new ObjectKind(Characters.CharacterFile.DataFields), true, "Complete character data, checked by the character reader. References must name this module or its requires. No rolling or creation happens when the NPC joins."),
+            new("behavior", new ReferenceKind("combat-behavior"), false, "The authored combat behavior used when this NPC is under autonomous control; an explicit controller override wins."),
+            new("control", new EnumKind(["manual", "automatic"]), false, "The NPC's default combat controller when it joins a party; a player's explicit controller choice wins and is saved with a live combat.")
+        ],
+        """{ "type": "npc", "id": "guide", "behavior": "protective", "control": "automatic", "character": { "name": "Guide", "race": "rules:folk", "creation": "rules:standard", "levels": [{ "class": "rules:scout", "gain": 4 }], "experience": 0, "attributes": { "agility": 10 }, "tracks": { "health": { "current": 4, "max": 4 } }, "balances": { "gold": 0 }, "equipment": [], "conditions": [] } }""");
+
+    public static DefinitionType CombatBehavior { get; } = new(
+        "combat-behavior",
+        "A reusable, module-authored combat policy. It selects among legal action plans with guards and priorities or scores, can move toward a target before each action, and contains fixed short sequences without scripts or loops.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("parameters", new MapKind(new TextKind(), new ExpressionKind(ExprType.Number, BehaviorRoots)), false, "Named numeric defaults. Rules and action-use parameters read them as behavior.<name>; parameter expressions may read another named behavior parameter (cycles are rejected), and values are evaluated in the current actor and target context."),
+            new("fallback", new EnumKind(["next", "end-turn", "flee"]), false, "What autonomous control does when no rule or step can be used; without it, end-turn."),
+            new("rules", new ListKind(BehaviorRule), true, "Ordered alternatives. An eligible rule with the highest priority or score is chosen; a tie keeps definition order."),
+        ],
+        """
+        {
+          "type": "combat-behavior",
+          "id": "skirmisher",
+          "name": "Skirmisher",
+          "parameters": { "safe_distance": 3 },
+          "fallback": "end-turn",
+          "rules": [
+            {
+              "when": "self.hit_points > 0",
+              "priority": 10,
+              "commit": "plan",
+              "steps": [
+                { "destination": { "kind": "outside", "distance": "behavior.safe_distance" }, "action": { "action": "shoot", "damage": "1d6" }, "target": "enemy" }
+              ],
+              "fallback": "next"
+            }
+          ]
+        }
+        """);
 
     public static DefinitionType Resting { get; } = new(
         "resting",
@@ -411,6 +487,7 @@ public static class DefinitionTypes
             new("tracks", new MapKind(new ReferenceKind("track"), SelfNumber), false, "Maximum for each track the ruleset doesn't compute itself, for example { \"hit_points\": \"2d8\" }; rolled when the monster appears."),
             new("stats", new MapKind(new StatKind(false), new ExpressionKind(null, Roots.Self)), false, "Stat values that replace the derived ones, each of the stat's type, for example { \"ac\": \"6\", \"size\": \"'large'\" }."),
             new("actions", new ListKind(Use), true, "Actions the monster takes in combat, in order of preference, for example { \"action\": \"melee_attack\", \"name\": \"bite\", \"damage\": \"1d3\" }."),
+            new("behavior", new ReferenceKind("combat-behavior"), false, "The authored combat behavior used when this monster is under autonomous control; an explicit controller override wins."),
             new("spells", new ListKind(new ObjectKind(
             [
                 new("spell", new ReferenceKind("spell"), true, "The spell; it needs an effect."),
@@ -455,6 +532,7 @@ public static class DefinitionTypes
                 new("per_turn", FightNumber, true, "How many a creature has at the start of each turn, for example 3, \"self.actions\" so conditions can change it, or \"if combat.surprise_round then 1 else 2\"; rounded down, never below 0."),
             ])), true, "The action budget each turn, for example one action, standard + move + swift, or three actions."),
             new("track", new ReferenceKind("track"), true, "The track damage and heal act on when they don't name one, and that targeting looks at (fewest left, most missing)."),
+            new("behavior", new ReferenceKind("combat-behavior"), false, "The default authored behavior for autonomous combatants that have no creature or controller override."),
             new("defeated", new ExpressionKind(ExprType.Boolean, Roots.Self), true, "When a creature is out of the fight, for example \"self.hit_points <= 0\". Checked after every operation; a creature it no longer holds for (say, after healing) is back in the fight."),
             new("flee", new ListKind(new ObjectKind(
             [
@@ -503,14 +581,14 @@ public static class DefinitionTypes
             new("name", new TextKind(), true, "Display name."),
             new("cost", new MapKind(new TextKind(), new IntegerKind()), true, "Budget spent, by budget ID from the combat definition, for example { \"action\": 1 }."),
             new("target", new EnumKind(["enemy", "ally", "hurt_ally", "fallen_ally", "self", "all_enemies", "all_allies"]), true, "Who it targets: one enemy (by default the one with the least left on the combat's track), one ally (the first, which may be itself), the ally missing the most of it, an ally out of the fight (to bring back), itself, or everyone on a side."),
-            new("portions", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "For a single target, how many times its effect resolves, each time on the target it would choose then (by prefer or the target kind's default), so missiles go on to the next foe once one falls: \"use.missiles\" or \"1 + floor((self.level - 1) / 2)\". Worked out when it is taken."),
-            new("max_targets", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "For all_enemies or all_allies, the most creatures it affects, worked out when it is taken, for example \"2d4\"; those prefer ranks highest are chosen."),
-            new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; a target in range must also be in sight. Without it, any distance, seen or not (for moving toward an enemy)."),
-            new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; with none left, the action isn't taken."),
+            new("portions", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "How many times the effect resolves, worked out when the action is committed. This value must be deterministic while legal choices are inspected; random effects belong in max_targets, checks or operations after commitment. Automatic resolution chooses each portion with prefer or the target kind's default, so missiles can move on to the next foe when one falls: \"use.missiles\" or \"1 + floor((self.level - 1) / 2)\". A manual command may provide target IDs in portion order; repeated IDs are allowed only within this count and omitted portions keep the authored automatic choice."),
+            new("max_targets", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "The maximum number of legal targets, worked out once when the action is committed (for example \"2d4\"). A manual controller then chooses legal targets up to that committed cap; an automatic controller ranks them by prefer when present and takes the highest-ranked targets. With no max_targets, all_enemies and all_allies affect every legal target, while ordinary target kinds accept one."),
+            new("range", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Use | Roots.Combat), false, "On a combat field, the most cells away a target may be, for example \"1\" for melee or \"use.range\"; this value must be deterministic while legal choices are inspected. A target in range must also be in sight. Without it, any distance, seen or not (for moving toward an enemy)."),
+            new("valid_target", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Which candidates it may target, for example \"not target.condition.shaken\"; this value must be deterministic while legal choices are inspected. With none left, the action isn't taken."),
             new("prefer", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "For a single target, how much the creature wants each candidate; the highest is chosen, the first on a tie. Without it, the target kind's default."),
             new("score", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "How much the creature wants to take it now, against the target it would pick (the first, for a whole side). When any of a creature's uses has a score, it takes the highest-scoring use it can (a use without one scores 0; the first in its list on a tie) instead of the first, for example \"if target.hit_points * 2 < target.max_hit_points then 10 else -1\" to heal only the badly hurt."),
             new("parameters", new ListKind(new TextKind()), false, "Names uses must supply (or get from an item), read as use.<name>, for example [\"damage\"]."),
-            new("available", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Combat), false, "Whether the creature may take it now; without it, always."),
+            new("available", new ExpressionKind(ExprType.Boolean, Roots.Self | Roots.Combat), false, "Whether the creature may take it now; this value must be deterministic while legal choices are inspected. Without it, always."),
             new("check", new ReferenceKind("check"), false, "The check that decides the outcome, made by the actor against the target."),
             new("check_bonus", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Use | Roots.Combat), false, "Added to the check's roll with the modifiers, worked out against the target: a range penalty such as \"0 - 2 * floor((combat.distance - 1) / use.increment)\", or \"4\" for a blow at a fleeing foe."),
             new("outcomes", new MapKind(new TextKind(), new ListKind(new OperationKind(OperationTypes.ActionRoots | Roots.Check))), false, "Operations for each outcome tier of the check: success, failure or one of its tiers. Tiers without an entry do nothing."),
@@ -940,7 +1018,7 @@ public static class DefinitionTypes
 
     public static IReadOnlyList<DefinitionType> All { get; } =
     [
-        Attribute, Track, Currency, Derived, Table, Race, Class, Resting, Advancement, Npc, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
+        Attribute, Track, Currency, Derived, Table, Race, Class, Resting, Advancement, Npc, CombatBehavior, Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat, CharacterCreation,
         Variable, Asset, Area, Event, Campaign, Figure, Skin, Lifepath,
     ];
 

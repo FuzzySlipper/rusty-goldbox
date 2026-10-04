@@ -14,18 +14,29 @@ internal sealed class FightReplay
     private readonly Dictionary<string, decimal> _values = [];
     private readonly HashSet<string> _defeated = [];
     private readonly Dictionary<string, Cell> _positions = [];
+    private readonly Dictionary<string, List<string>> _keysByName = [];
+    private readonly List<string> _memberKeys = [];
     private readonly List<string> _lines = [];
     private double _waited;
 
     public FightReplay(FightFact fight)
     {
         Fight = fight;
-        foreach (FightMember member in fight.Members)
+        foreach ((FightMember member, int index) in fight.Members.Select((member, index) => (member, index)))
         {
-            _values[member.Name] = member.Start;
+            string key = string.IsNullOrWhiteSpace(member.Id) ? $"legacy:{member.Side}:{index}" : member.Id!;
+            while (_values.ContainsKey(key))
+            {
+                key += "-2";
+            }
+
+            _memberKeys.Add(key);
+            _keysByName.TryAdd(member.Name, []);
+            _keysByName[member.Name].Add(key);
+            _values[key] = member.Start;
             if (member.Position is Cell cell)
             {
-                _positions[member.Name] = cell;
+                _positions[key] = cell;
             }
         }
     }
@@ -39,6 +50,9 @@ internal sealed class FightReplay
 
     /// <summary>Each member's value on the fight's track, as of the facts shown.</summary>
     public IReadOnlyDictionary<string, decimal> Values => _values;
+
+    /// <summary>Stable presentation keys in the same order as <see cref="FightFact.Members"/>.</summary>
+    public IReadOnlyList<string> MemberKeys => _memberKeys;
 
     public IReadOnlySet<string> Defeated => _defeated;
 
@@ -82,26 +96,68 @@ internal sealed class FightReplay
         switch (fact)
         {
             case ActionFact action:
-                Acting = (action.Who, Acting.Count + 1);
+                Acting = (Key(fact.SubjectIds.FirstOrDefault(), action.Who), Acting.Count + 1);
                 break;
             case DamageFact damage when damage.Track == Fight.Track:
-                _values[damage.Who] = damage.Left;
+                SetValue(Key(fact.TargetIds.FirstOrDefault(), damage.Who), damage.Left);
                 break;
             case HealFact heal when heal.Track == Fight.Track:
-                _values[heal.Who] = heal.Now;
+                SetValue(Key(fact.SubjectIds.FirstOrDefault(), heal.Who), heal.Now);
                 break;
             case MoveFact move:
-                _positions[move.Who] = move.To;
+                SetPosition(Key(fact.SubjectIds.FirstOrDefault(), move.Who), move.To);
                 break;
             case DefeatedFact defeated:
-                _defeated.Add(defeated.Who);
+                AddDefeated(Key(fact.SubjectIds.FirstOrDefault(), defeated.Who));
                 break;
             case EscapedFact escaped:
-                _defeated.Add(escaped.Who);
+                AddDefeated(Key(fact.SubjectIds.FirstOrDefault(), escaped.Who));
                 break;
             case ReturnedFact returned:
-                _defeated.Remove(returned.Who);
+                RemoveDefeated(Key(fact.SubjectIds.FirstOrDefault(), returned.Who));
                 break;
+        }
+    }
+
+    private string? Key(string? id, string name)
+    {
+        if (id is string stable && _values.ContainsKey(stable))
+        {
+            return stable;
+        }
+
+        return _keysByName.TryGetValue(name, out List<string>? keys) && keys.Count == 1 ? keys[0] : null;
+    }
+
+    private void SetValue(string? key, decimal value)
+    {
+        if (key is not null)
+        {
+            _values[key] = value;
+        }
+    }
+
+    private void SetPosition(string? key, Cell position)
+    {
+        if (key is not null)
+        {
+            _positions[key] = position;
+        }
+    }
+
+    private void AddDefeated(string? key)
+    {
+        if (key is not null)
+        {
+            _defeated.Add(key);
+        }
+    }
+
+    private void RemoveDefeated(string? key)
+    {
+        if (key is not null)
+        {
+            _defeated.Remove(key);
         }
     }
 
