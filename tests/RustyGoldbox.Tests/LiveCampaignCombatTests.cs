@@ -363,6 +363,198 @@ public sealed class LiveCampaignCombatTests
     }
 
     [Fact]
+    public void MalformedCampaignSaveRejectsNullContinuationFactEntry()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 46);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
+            Assert.NotEmpty(facts);
+            facts[0] = null;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-null-fact-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == "$.pending_combat.continuation.Facts[0]"
+                && !string.IsNullOrWhiteSpace(problem.Message));
+        });
+    }
+
+    [Theory]
+    [InlineData("Kind")]
+    [InlineData("Description")]
+    [InlineData("Rolls")]
+    [InlineData("SubjectIds")]
+    [InlineData("TargetIds")]
+    public void MalformedCampaignSaveRejectsNullContinuationFactFields(string field)
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 47);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
+            Assert.NotEmpty(facts);
+            JsonObject fact = facts[0]!.AsObject();
+            fact[field] = null;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), $"bad-null-fact-{field}.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == $"$.pending_combat.continuation.Facts[0].{field}"
+                && !string.IsNullOrWhiteSpace(problem.Message));
+        });
+    }
+
+    [Fact]
+    public void CampaignSavePreservesEmptyContinuationFactDescription()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 48);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
+            Assert.NotEmpty(facts);
+            facts[0]!.AsObject()["Description"] = string.Empty;
+
+            List<ModuleDiagnostic> problems = [];
+            CampaignState loaded = SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "empty-fact-description-save.json", set, problems)!;
+            Assert.Empty(problems);
+
+            CampaignRunner resumed = new(set.Rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
+            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            Assert.NotEmpty(restored.Facts);
+            Assert.Equal(string.Empty, restored.Facts[0].Describe());
+        });
+    }
+
+    [Theory]
+    [InlineData("entry", "$.pending_combat.continuation.Facts[0].Rolls[0]")]
+    [InlineData("faces", "$.pending_combat.continuation.Facts[0].Rolls[0].Faces")]
+    public void MalformedCampaignSaveRejectsNullContinuationFactRollParts(string mutation, string expectedPath)
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 50);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject fact = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray()[0]!.AsObject();
+            JsonArray rolls = new();
+            if (mutation == "entry")
+            {
+                rolls.Add(null);
+            }
+            else
+            {
+                rolls.Add(new JsonObject
+                {
+                    ["Count"] = 1,
+                    ["Sides"] = 6,
+                    ["Faces"] = null,
+                    ["Kept"] = 1,
+                });
+            }
+
+            fact["Rolls"] = rolls;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), $"bad-fact-roll-{mutation}-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == expectedPath
+                && !string.IsNullOrWhiteSpace(problem.Message));
+        });
+    }
+
+    [Theory]
+    [InlineData("PendingInterruptRolls", "entry")]
+    [InlineData("PendingInterruptRolls", "faces")]
+    [InlineData("PendingCheckRolls", "entry")]
+    [InlineData("PendingCheckRolls", "faces")]
+    [InlineData("CommittedTargetRolls", "entry")]
+    [InlineData("CommittedTargetRolls", "faces")]
+    public void MalformedCampaignSaveRejectsNullContinuationRollParts(string field, string mutation)
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 51);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            JsonArray rolls = new();
+            if (mutation == "entry")
+            {
+                rolls.Add(null);
+            }
+            else
+            {
+                rolls.Add(new JsonObject
+                {
+                    ["Count"] = 1,
+                    ["Sides"] = 6,
+                    ["Faces"] = null,
+                    ["Kept"] = 1,
+                });
+            }
+
+            continuation[field] = rolls;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), $"bad-{field}-{mutation}-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == $"$.pending_combat.continuation.{field}[0]{(mutation == "faces" ? ".Faces" : "")}"
+                && !string.IsNullOrWhiteSpace(problem.Message));
+        });
+    }
+
+    [Fact]
     public void MalformedCampaignSaveRejectsMissingUnpreparedSpellCostQuote()
     {
         using TempModules modules = new();
