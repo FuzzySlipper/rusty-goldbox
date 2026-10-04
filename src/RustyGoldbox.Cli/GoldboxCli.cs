@@ -109,10 +109,13 @@ internal static class GoldboxCli
 
           goldbox map render <area> --module <path> [--player]
               Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
-          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>]
-          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>]
+          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--fail-on-refusal]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--fail-on-refusal]
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
+              a comment. Commands include equip <member> <item-id> and unequip <member> <item-id>
+              (one-based party members; item IDs can be local or module:id), plus movement, event,
+              shop, temple, training and status commands. Gear changes transfer one existing carried
+              copy and are refused during live combat or while a pending interaction owns the command.
               --save writes the state at the end; --load continues a save exactly.
 
         Every command accepts --json for structured output.
@@ -162,7 +165,13 @@ internal static class GoldboxCli
             case "module" when args.Count >= 2:
                 break;
             default:
-                return printer.UsageError($"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.");
+                string message = $"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.";
+                if (args.Count >= 2 && args[0] == "author" && args[1] == "build")
+                {
+                    message += " To build an authored workspace, use `goldbox workspace build <path>`.";
+                }
+
+                return printer.UsageError(message);
         }
 
         IEnumerable<string> rest = args.Skip(2);

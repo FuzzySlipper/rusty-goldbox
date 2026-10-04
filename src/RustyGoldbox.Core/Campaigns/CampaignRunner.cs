@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, equip <member> <item-id>, unequip <member> <item-id>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -172,6 +172,12 @@ public sealed partial class CampaignRunner
                 break;
             case "sell" when words.Length == 2 && int.TryParse(words[1], out int carried):
                 Sell(carried, facts);
+                break;
+            case "equip" when words.Length == 3 && int.TryParse(words[1], out int equipMember):
+                Equip(equipMember, words[2], facts);
+                break;
+            case "unequip" when words.Length == 3 && int.TryParse(words[1], out int unequipMember):
+                Unequip(unequipMember, words[2], facts);
                 break;
             case "leave" when words.Length == 1:
                 if (_state.PendingTemple is not null)

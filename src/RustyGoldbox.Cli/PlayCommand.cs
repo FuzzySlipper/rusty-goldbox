@@ -18,17 +18,24 @@ namespace RustyGoldbox.Cli;
 internal static class PlayCommand
 {
     private const string Usage =
-        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
-        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--store <dir>]\n"
+        "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
+        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--fail-on-refusal] [--store <dir>]\n"
         + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
+
+    private sealed record ScriptLine(string Text, int Number);
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store"], ["--fail-on-refusal"]);
         bool loading = parsed.Single("--load") is not null;
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || loading == (parsed.Single("--party") is not null)))
         {
             error = Usage;
+        }
+
+        if (error is null && parsed.Has("--fail-on-refusal") && parsed.Single("--script") is null)
+        {
+            error = "--fail-on-refusal requires --script; it cannot be used with interactive input.";
         }
 
         if (error is null && loading && parsed.Single("--seed") is not null)
@@ -78,10 +85,13 @@ internal static class PlayCommand
         }
 
         // Commands are read once the game is ready, so a save or party that can't load never waits on standard input.
-        List<string> commands;
+        List<ScriptLine> commands;
+        string? scriptPath = parsed.Single("--script") is string script
+            ? Path.GetFullPath(script, workingDirectory)
+            : null;
         try
         {
-            commands = ReadScript(parsed.Single("--script"), workingDirectory);
+            commands = ReadScript(scriptPath);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -89,6 +99,7 @@ internal static class PlayCommand
         }
 
         List<(string? Command, List<PlayFact> Facts)> transcript = [];
+        List<ModuleDiagnostic> refusals = [];
         CampaignRunner runner = new(rules, state);
         try
         {
@@ -99,14 +110,25 @@ internal static class PlayCommand
                     transcript.Add((null, runner.Begin(engine.Random)));
                 }
 
-                foreach (string command in commands)
+                foreach (ScriptLine scriptLine in commands)
                 {
-                    transcript.Add((command, runner.Execute(command, engine.Random)));
+                    List<PlayFact> facts = runner.Execute(scriptLine.Text, engine.Random);
+                    transcript.Add((scriptLine.Text, facts));
+                    if (parsed.Has("--fail-on-refusal"))
+                    {
+                        AddRefusals(refusals, facts, scriptLine, scriptPath!, state, set.Root!.Id);
+                    }
                 }
             });
         }
         catch (RuleFailure failure)
         {
+            if (parsed.Has("--fail-on-refusal") && refusals.Count > 0)
+            {
+                refusals.Add(failure.Diagnostic);
+                return output.PlayFailure(state, transcript, refusals);
+            }
+
             output.PlayTranscript(state, transcript);
             return output.Problems([failure.Diagnostic]);
         }
@@ -116,8 +138,32 @@ internal static class PlayCommand
             return output.Problems([problem]);
         }
 
+        if (refusals.Count > 0)
+        {
+            return output.PlayFailure(state, transcript, refusals);
+        }
+
         output.PlayTranscript(state, transcript);
         return GoldboxCli.Ok;
+    }
+
+    private static void AddRefusals(
+        List<ModuleDiagnostic> diagnostics,
+        IReadOnlyList<PlayFact> facts,
+        ScriptLine scriptLine,
+        string scriptPath,
+        CampaignState state,
+        string campaignModule)
+    {
+        foreach (RefusedFact refused in facts.OfType<RefusedFact>())
+        {
+            diagnostics.Add(new ModuleDiagnostic(
+                "play.refusal",
+                $"Script line {scriptLine.Number} command '{scriptLine.Text}' was refused: {refused.Reason} The party is in {state.Area.QualifiedId} at [{state.X}, {state.Y}], facing {Facings.Name(state.Facing)}. Use status or look in the script and `goldbox map render {state.Area.QualifiedId} --module <campaign path>` to inspect the current state and map before retrying.",
+                campaignModule,
+                scriptPath,
+                $"line {scriptLine.Number}"));
+        }
     }
 
     private static string? SlotError(string option, string? slot)
@@ -232,14 +278,16 @@ internal static class PlayCommand
         }
     }
 
-    private static List<string> ReadScript(string? script, string workingDirectory)
+    private static List<ScriptLine> ReadScript(string? scriptPath)
     {
-        IEnumerable<string> lines = script is null
+        IEnumerable<string> lines = scriptPath is null
             ? ReadAll(Console.In)
-            : File.ReadAllLines(Path.GetFullPath(script, workingDirectory));
+            : File.ReadAllLines(scriptPath);
         return lines
-            .Select(line => (line.Contains('#', StringComparison.Ordinal) ? line[..line.IndexOf('#', StringComparison.Ordinal)] : line).Trim())
-            .Where(line => line.Length > 0)
+            .Select((line, index) => new ScriptLine(
+                (line.Contains('#', StringComparison.Ordinal) ? line[..line.IndexOf('#', StringComparison.Ordinal)] : line).Trim(),
+                index + 1))
+            .Where(line => line.Text.Length > 0)
             .ToList();
     }
 

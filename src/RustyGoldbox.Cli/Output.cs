@@ -926,89 +926,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
     {
         if (json)
         {
-            WriteJson(new
-            {
-                ok = true,
-                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                transcript = transcript.Select(step => new
-                {
-                    command = step.Command,
-                    facts = step.Facts.Select(fact => new
-                    {
-                        kind = fact.Kind,
-                        text = fact.Describe(),
-                        rolls = fact.Rolls.Select(RollJson),
-                        combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
-                        media = fact is MediaFact shown ? new { picture = shown.Picture?.QualifiedId, sound = shown.Sound?.QualifiedId, music = shown.Music?.QualifiedId } : null,
-                        perception = fact is PerceptionFact perception ? new
-                        {
-                            member = perception.Member,
-                            who = perception.Who,
-                            scope = perception.Scope,
-                            mode = perception.Mode,
-                            roll = perception.Result.Roll,
-                            bonus = perception.Result.Bonus,
-                            modifier = perception.Result.Modifier,
-                            total = perception.Result.Total,
-                            target = perception.Result.Target,
-                            success = perception.Result.Success,
-                            tier = perception.Result.Tier,
-                        } : null,
-                        check = fact is SceneCheckFact sceneCheck ? new
-                        {
-                            member = sceneCheck.Member,
-                            who = sceneCheck.Who,
-                            check = sceneCheck.Check,
-                            roll = sceneCheck.Result.Roll,
-                            bonus = sceneCheck.Result.Bonus,
-                            modifier = sceneCheck.Result.Modifier,
-                            total = sceneCheck.Result.Total,
-                            target = sceneCheck.Result.Target,
-                            margin = sceneCheck.Result.Margin,
-                            success = sceneCheck.Result.Success,
-                            tier = sceneCheck.Result.Tier,
-                        } : null,
-                        damage = fact is SceneDamageFact sceneDamage ? new
-                        {
-                            member = sceneDamage.Member,
-                            who = sceneDamage.Who,
-                            track = sceneDamage.Track.QualifiedId,
-                            amount = sceneDamage.Amount,
-                            left = sceneDamage.Left,
-                        } : null,
-                        heal = fact is SceneHealFact sceneHeal ? new
-                        {
-                            member = sceneHeal.Member,
-                            who = sceneHeal.Who,
-                            track = sceneHeal.Track.QualifiedId,
-                            amount = sceneHeal.Amount,
-                            now = sceneHeal.Now,
-                        } : null,
-                        condition = fact is SceneConditionFact sceneCondition ? new
-                        {
-                            member = sceneCondition.Member,
-                            who = sceneCondition.Who,
-                            name = sceneCondition.Condition,
-                            applied = sceneCondition.Applied,
-                        } : null,
-                        view = fact is ViewFact view ? new { member = view.Member, who = view.Who, mode = view.Mode, text = view.Text, picture = view.Picture?.QualifiedId } : null,
-                        search = fact is SearchFact search ? new { direction = Facings.Name(search.Direction), found = search.Found } : null,
-                        door = fact is DoorFact door ? new { direction = Facings.Name(door.Direction), method = door.Method, opened = door.Opened } : null,
-                        party = fact is PartyFact change ? new { npc = change.Npc.QualifiedId, joined = change.Joined, members = change.Members } : null,
-                        items = fact is ItemsFact transfer ? new { given = transfer.Given, item = transfer.Item.QualifiedId, count = transfer.Count } : null,
-                        temple = fact is TempleFact temple ? new { text = temple.Text, services = temple.Services.Select(service => new { number = service.Number, label = service.Label, currency = service.Currency.QualifiedId, prices = service.Prices }) } : null,
-                        shop = fact is ShopFact shop ? new
-                        {
-                            text = shop.Text,
-                            balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
-                            stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
-                            carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
-                        } : null,
-                    }),
-                }),
-                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
-                ended = state.Ended,
-            });
+            WriteJson(PlayJson(state, transcript, null));
             return;
         }
 
@@ -1035,6 +953,131 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 writer.WriteLine($"  {fact.Describe()}{factRolls}");
             }
         }
+    }
+
+    public int PlayFailure(CampaignState state, IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        if (json)
+        {
+            WriteJson(PlayJson(state, transcript, diagnostics));
+        }
+        else
+        {
+            PlayTranscript(state, transcript);
+            WriteDiagnostics(diagnostics);
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    private object PlayJson(
+        CampaignState state,
+        IReadOnlyList<(string? Command, List<PlayFact> Facts)> transcript,
+        IReadOnlyList<ModuleDiagnostic>? diagnostics)
+    {
+        return diagnostics is null
+            ? new
+            {
+                ok = true,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(PlayStepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+            }
+            : new
+            {
+                ok = false,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(PlayStepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+                diagnostics = diagnostics.Select(ToJson),
+            };
+    }
+
+    private static object PlayStepJson((string? Command, List<PlayFact> Facts) step)
+    {
+        return new
+        {
+            command = step.Command,
+            facts = step.Facts.Select(PlayFactJson),
+        };
+    }
+
+    private static object PlayFactJson(PlayFact fact)
+    {
+        return new
+        {
+            kind = fact.Kind,
+            text = fact.Describe(),
+            rolls = fact.Rolls.Select(RollJson),
+            combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
+            media = fact is MediaFact shown ? new { picture = shown.Picture?.QualifiedId, sound = shown.Sound?.QualifiedId, music = shown.Music?.QualifiedId } : null,
+            perception = fact is PerceptionFact perception ? new
+            {
+                member = perception.Member,
+                who = perception.Who,
+                scope = perception.Scope,
+                mode = perception.Mode,
+                roll = perception.Result.Roll,
+                bonus = perception.Result.Bonus,
+                modifier = perception.Result.Modifier,
+                total = perception.Result.Total,
+                target = perception.Result.Target,
+                success = perception.Result.Success,
+                tier = perception.Result.Tier,
+            } : null,
+            check = fact is SceneCheckFact sceneCheck ? new
+            {
+                member = sceneCheck.Member,
+                who = sceneCheck.Who,
+                check = sceneCheck.Check,
+                roll = sceneCheck.Result.Roll,
+                bonus = sceneCheck.Result.Bonus,
+                modifier = sceneCheck.Result.Modifier,
+                total = sceneCheck.Result.Total,
+                target = sceneCheck.Result.Target,
+                margin = sceneCheck.Result.Margin,
+                success = sceneCheck.Result.Success,
+                tier = sceneCheck.Result.Tier,
+            } : null,
+            damage = fact is SceneDamageFact sceneDamage ? new
+            {
+                member = sceneDamage.Member,
+                who = sceneDamage.Who,
+                track = sceneDamage.Track.QualifiedId,
+                amount = sceneDamage.Amount,
+                left = sceneDamage.Left,
+            } : null,
+            heal = fact is SceneHealFact sceneHeal ? new
+            {
+                member = sceneHeal.Member,
+                who = sceneHeal.Who,
+                track = sceneHeal.Track.QualifiedId,
+                amount = sceneHeal.Amount,
+                now = sceneHeal.Now,
+            } : null,
+            condition = fact is SceneConditionFact sceneCondition ? new
+            {
+                member = sceneCondition.Member,
+                who = sceneCondition.Who,
+                name = sceneCondition.Condition,
+                applied = sceneCondition.Applied,
+            } : null,
+            view = fact is ViewFact view ? new { member = view.Member, who = view.Who, mode = view.Mode, text = view.Text, picture = view.Picture?.QualifiedId } : null,
+            search = fact is SearchFact search ? new { direction = Facings.Name(search.Direction), found = search.Found } : null,
+            door = fact is DoorFact door ? new { direction = Facings.Name(door.Direction), method = door.Method, opened = door.Opened } : null,
+            party = fact is PartyFact change ? new { npc = change.Npc.QualifiedId, joined = change.Joined, members = change.Members } : null,
+            items = fact is ItemsFact transfer ? new { given = transfer.Given, item = transfer.Item.QualifiedId, count = transfer.Count } : null,
+            temple = fact is TempleFact temple ? new { text = temple.Text, services = temple.Services.Select(service => new { number = service.Number, label = service.Label, currency = service.Currency.QualifiedId, prices = service.Prices }) } : null,
+            shop = fact is ShopFact shop ? new
+            {
+                text = shop.Text,
+                balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
+                stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
+                carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
+            } : null,
+        };
     }
 
     private static string Percent(int part, int whole) => (100.0 * part / whole).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
