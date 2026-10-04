@@ -742,12 +742,12 @@ public static class SaveFile
 
             if (continuation.NextRandomKey < 0)
             {
-                Error("$.pending_combat.continuation.next_random_key", "next_random_key cannot be negative.");
+                Error("$.pending_combat.continuation.NextRandomKey", "NextRandomKey cannot be negative.");
             }
 
             if (continuation.RandomScope is string scope && string.IsNullOrWhiteSpace(scope))
             {
-                Error("$.pending_combat.continuation.random_scope", "random_scope must be nonempty when a keyed combat continuation is used.");
+                Error("$.pending_combat.continuation.RandomScope", "RandomScope must be nonempty when a keyed combat continuation is used.");
             }
 
             if (!data.TryGetProperty("participants", out JsonElement participants) || participants.ValueKind != JsonValueKind.Array)
@@ -877,42 +877,42 @@ public static class SaveFile
 
             if (continuation.Format != 1)
             {
-                Error("$.pending_combat.continuation.format", $"Combat continuation format {continuation.Format} is not supported; expected 1.");
+                Error("$.pending_combat.continuation.Format", $"Combat continuation format {continuation.Format} is not supported; expected 1.");
             }
 
             if (continuation.MaxRounds < 1)
             {
-                Error("$.pending_combat.continuation.max_rounds", "Combat continuation max_rounds must be positive.");
+                Error("$.pending_combat.continuation.MaxRounds", "Combat continuation MaxRounds must be positive.");
             }
 
             if (!string.IsNullOrEmpty(continuation.CombatId) && continuation.CombatId != combat.QualifiedId)
             {
-                Error("$.pending_combat.continuation.combat_id", $"Combat continuation belongs to {continuation.CombatId}, not {combat.QualifiedId}.");
+                Error("$.pending_combat.continuation.CombatId", $"Combat continuation belongs to {continuation.CombatId}, not {combat.QualifiedId}.");
             }
 
             HashSet<string> continuationIds = new(StringComparer.Ordinal);
             if (continuation.Combatants is null)
             {
-                Error("$.pending_combat.continuation.combatants", "combatants must be an array.");
+                Error("$.pending_combat.continuation.Combatants", "Combatants must be an array.");
             }
             else
             {
                 for (int index = 0; index < continuation.Combatants.Count; index++)
                 {
                     CombatantState combatant = continuation.Combatants[index];
-                    string at = $"$.pending_combat.continuation.combatants[{index}]";
+                    string at = $"$.pending_combat.continuation.Combatants[{index}]";
                     if (combatant is null || string.IsNullOrWhiteSpace(combatant.Id))
                     {
                         Error(at, "Each combatant continuation must contain a nonempty ID.");
                     }
                     else if (!continuationIds.Add(combatant.Id))
                     {
-                        Error($"{at}.id", $"Combat continuation ID '{combatant.Id}' is duplicated.");
+                        Error($"{at}.Id", $"Combat continuation ID '{combatant.Id}' is duplicated.");
                     }
 
                     if (combatant is not null && combatant.Side is not (0 or 1))
                     {
-                        Error($"{at}.side", "Combatant continuation side must be 0 (party) or 1 (encounter).");
+                        Error($"{at}.Side", "Combatant continuation side must be 0 (party) or 1 (encounter).");
                     }
                 }
             }
@@ -936,7 +936,7 @@ public static class SaveFile
                         && combatant.Side != source.Side)
                     {
                         Error(
-                            $"$.pending_combat.continuation.combatants[{index}].side",
+                            $"$.pending_combat.continuation.Combatants[{index}].Side",
                             $"Combatant '{combatant.Id}' has continuation side {combatant.Side}, but its participant source is on side {source.Side}.");
                     }
                 }
@@ -944,7 +944,7 @@ public static class SaveFile
 
             if (continuation.TurnOrder is null)
             {
-                Error("$.pending_combat.continuation.turn_order", "turn_order must be an array of known combatant IDs.");
+                Error("$.pending_combat.continuation.TurnOrder", "TurnOrder must be an array of known combatant IDs.");
             }
             else
             {
@@ -952,26 +952,52 @@ public static class SaveFile
                 for (int index = 0; index < continuation.TurnOrder.Count; index++)
                 {
                     string? id = continuation.TurnOrder[index];
-                    string at = $"$.pending_combat.continuation.turn_order[{index}]";
+                    string at = $"$.pending_combat.continuation.TurnOrder[{index}]";
                     if (string.IsNullOrWhiteSpace(id))
                     {
-                        Error(at, "turn_order entries must be nonempty combatant IDs.");
+                        Error(at, "TurnOrder entries must be nonempty combatant IDs.");
                     }
                     else if (!turnOrderIds.Add(id))
                     {
-                        Error(at, $"turn_order contains duplicate combatant ID '{id}'.");
+                        Error(at, $"TurnOrder contains duplicate combatant ID '{id}'.");
                     }
                     else if (!participantIds.Contains(id))
                     {
-                        Error(at, $"turn_order names unknown combatant '{id}'.");
+                        Error(at, $"TurnOrder names unknown combatant '{id}'.");
                     }
                 }
 
                 if (continuation.TurnIndex < 0 || continuation.TurnIndex > continuation.TurnOrder.Count)
                 {
                     Error(
-                        "$.pending_combat.continuation.turn_index",
-                        $"turn_index must be between 0 and turn_order length ({continuation.TurnOrder.Count}), inclusive.");
+                        "$.pending_combat.continuation.TurnIndex",
+                        $"TurnIndex must be between 0 and TurnOrder length ({continuation.TurnOrder.Count}), inclusive.");
+                }
+            }
+
+            if (continuation.TookTurns is null)
+            {
+                Error("$.pending_combat.continuation.TookTurns", "TookTurns must be an array of known combatant IDs.");
+            }
+            else
+            {
+                HashSet<string> tookTurnIds = new(StringComparer.Ordinal);
+                for (int index = 0; index < continuation.TookTurns.Count; index++)
+                {
+                    string? id = continuation.TookTurns[index];
+                    string at = $"$.pending_combat.continuation.TookTurns[{index}]";
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        Error(at, "TookTurns entries must be nonempty combatant IDs.");
+                    }
+                    else if (!tookTurnIds.Add(id))
+                    {
+                        Error(at, $"TookTurns contains duplicate combatant ID '{id}'.");
+                    }
+                    else if (!participantIds.Contains(id))
+                    {
+                        Error(at, $"TookTurns names unknown combatant '{id}'.");
+                    }
                 }
             }
 
