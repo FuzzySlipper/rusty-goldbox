@@ -554,10 +554,15 @@ definition whose `kind` picks its fields (`goldbox schema events`).
 
 Core holds one mutable owner per domain: party and characters, the campaign
 position and variables, the active event, and the active combat. Commands in
-(move, turn, choose option, combat action) produce state changes and an
-observation record. The CLI and the Game product drive the same command
-surface. The CLI prints observations; the Game publishes them as projections
-and, later, presentation.
+(move, turn, choose option, equip or unequip one item, combat action) produce
+state changes and an observation record. The CLI and the Game product drive the
+same command surface. The CLI prints observations; the Game publishes them as
+projections and, later, presentation. `equip <member> <item-id>` and
+`unequip <member> <item-id>` use one-based party members and local or qualified
+item IDs. Each transfers one existing occurrence between party inventory and
+the selected character's equipment; equipping first applies the ruleset's
+equipment check. Both are refused while a live combat or another pending
+interaction owns commands.
 
 Every random draw goes through Engine `Random` with an explicit seed, so a
 seed and a command script fully reproduce a run. A transcript records seeds,

@@ -1203,14 +1203,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
     {
         if (json)
         {
-            WriteJson(new
-            {
-                ok = true,
-                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                transcript = transcript.Select(StepJson),
-                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
-                ended = state.Ended,
-            });
+            WriteJson(PlayJson(state, transcript, null));
             return;
         }
 
@@ -1247,6 +1240,46 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 WriteCombat(combat, step.Trace, step.BehaviorTrace);
             }
         }
+    }
+
+    public int PlayFailure(CampaignState state, IReadOnlyList<PlayStep> transcript, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        if (json)
+        {
+            WriteJson(PlayJson(state, transcript, diagnostics));
+        }
+        else
+        {
+            PlayTranscript(state, transcript);
+            WriteDiagnostics(diagnostics);
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    private object PlayJson(
+        CampaignState state,
+        IReadOnlyList<PlayStep> transcript,
+        IReadOnlyList<ModuleDiagnostic>? diagnostics)
+    {
+        return diagnostics is null
+            ? new
+            {
+                ok = true,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(StepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+            }
+            : new
+            {
+                ok = false,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(StepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+                diagnostics = diagnostics.Select(ToJson),
+            };
     }
 
     private object StepJson(PlayStep step)

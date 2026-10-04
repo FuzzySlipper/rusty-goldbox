@@ -112,16 +112,20 @@ internal static class GoldboxCli
 
           goldbox map render <area> --module <path> [--player]
               Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
-          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace]
-          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace]
+          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace] [--fail-on-refusal]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal]
               Plays a campaign from a command script (or stdin), one command per line; # starts
               a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
+              Commands include equip <member> <item-id> and unequip <member> <item-id>
+              (one-based party members; item IDs can be local or module:id). Gear changes transfer one existing carried
+              copy and are refused during live combat or while a pending interaction owns the command.
               Add --combat-control manual to suspend the party at a fight. Combat commands include
               combat inspect, combat control <actor-id> auto|manual, combat action <actor-id> <action-id>
               [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] (quote IDs containing spaces), combat move, combat end-turn, combat decide and
               combat auto-step (one automatic turn, then manual control); `goldbox schema live-combat`
               shows the complete grammar and JSON shape. Use combat control ... auto for a persistent takeover.
               --save writes the state at the end, including a pending fight; --load continues a save exactly.
+              --fail-on-refusal turns scripted command refusals into diagnostics and exit code 1.
 
         Every command accepts --json for structured output.
 
@@ -170,7 +174,13 @@ internal static class GoldboxCli
             case "module" when args.Count >= 2:
                 break;
             default:
-                return printer.UsageError($"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.");
+                string message = $"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.";
+                if (args.Count >= 2 && args[0] == "author" && args[1] == "build")
+                {
+                    message += " To build an authored workspace, use `goldbox workspace build <path>`.";
+                }
+
+                return printer.UsageError(message);
         }
 
         IEnumerable<string> rest = args.Skip(2);

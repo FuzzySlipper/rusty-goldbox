@@ -51,3 +51,9 @@ The encounters are original groupings of SRD creatures.
 - Creatures fight on a 60 by 40 foot field; ranged attacks have no long range
   or cover. Monsters use their stat block's attack bonuses and average hit
   points.
+
+- Hit-point recovery follows the SRD's Dead rule (Rules Glossary, p. 180;
+  PDF p. 179): a dead creature cannot regain hit points until it is revived.
+  The hit-point track expresses this as a zero restore cap while `dead` is
+  held; living recovery can reach the character's maximum. Revival is outside
+  this module's ordinary recovery services.

@@ -43,10 +43,18 @@ public sealed partial class CampaignRunner
             Definition track = _rules.Reference(evt, $"$.tracks[{index}]");
             foreach (Character character in _state.Party)
             {
-                if (Located(track, "$", () => evaluator.KnownTrackMax(character.ToCreature(), track)) is decimal max)
+                Creature creature = character.ToCreature();
+                Located(track, "$", () =>
                 {
-                    character.Tracks[track.Id].Current = max;
-                }
+                    if (evaluator.KnownTrackMax(creature, track) is decimal max)
+                    {
+                        decimal current = creature.Track(track.Id).Current ?? 0;
+                        TrackOperations.Heal(evaluator, creature, track, max - current);
+                        character.Tracks[track.Id] = creature.Track(track.Id);
+                    }
+
+                    return true;
+                });
             }
         }
 

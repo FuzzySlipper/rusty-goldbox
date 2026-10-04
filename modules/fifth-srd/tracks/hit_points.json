@@ -3,5 +3,6 @@
   "id": "hit_points",
   "name": "Hit points",
   "from_levels": true,
-  "min": "0"
+  "min": "0",
+  "restore_cap": "if self.condition.dead then 0 else self.max_hit_points"
 }

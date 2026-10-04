@@ -8,6 +8,29 @@ public sealed class CharacterEquipmentCliTests
     private static string Fifth => Path.Combine(Rules.RepositoryRoot, "modules", "fifth-srd");
 
     [Fact]
+    public void OriginalClassWithoutAnEquipmentRuleAcceptsAndPersistsItsLoadout()
+    {
+        string ascend = Path.Combine(Rules.RepositoryRoot, "tests", "RustyGoldbox.Tests", "Fixtures", "ascend");
+        using TempModules scratch = new();
+        (int code, string output) = Run(scratch.Root,
+            "character", "new", "--module", ascend, "--class", "warrior", "--race", "folk",
+            "--attributes", "might=16,grace=12,grit=14,wit=10", "--feature", "iron_will,weapon_focus",
+            "--equipment", "ascend:longsword,banded_mail", "--seed", "7", "--out", "warrior.json", "--json");
+
+        Assert.Equal(GoldboxCli.Ok, code);
+        using JsonDocument saved = JsonDocument.Parse(File.ReadAllText(Path.Combine(scratch.Root, "warrior.json")));
+        Assert.Equal(["ascend:longsword", "ascend:banded_mail"],
+            saved.RootElement.GetProperty("equipment").EnumerateArray().Select(item => item.GetString()));
+
+        (code, output) = Run(scratch.Root, "character", "show", "warrior.json", "--module", ascend, "--json");
+
+        Assert.Equal(GoldboxCli.Ok, code);
+        using JsonDocument loaded = JsonDocument.Parse(output);
+        Assert.Equal(["ascend:longsword", "ascend:banded_mail"],
+            loaded.RootElement.GetProperty("character").GetProperty("equipment").EnumerateArray().Select(item => item.GetString()));
+    }
+
+    [Fact]
     public void FifthFighterCanStartEquippedAndReadTheSavedLoadout()
     {
         using TempModules scratch = new();
