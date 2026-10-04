@@ -120,7 +120,7 @@ export function createOverlay(send, ui) {
     const former = who.formerClasses === 'waiting'
       ? [button('Call on former class', play(`former ${index + 1} on`), { 'data-focus-key': `member:${index}:former:on` })]
       : who.formerClasses === 'called' ? [button('Set former class aside', play(`former ${index + 1} off`), { 'data-focus-key': `member:${index}:former:off` })] : [];
-    const viewButton = who.perception ? [button(`View as ${who.name}`, play(`view ${index + 1}`), { 'data-focus-key': `member:${index}:view` })] : [];
+    const viewButton = who.view ? [button(`View as ${who.name}`, play(`view ${index + 1}`), { 'data-focus-key': `member:${index}:view` })] : [];
     const gearWaiting = Boolean(view.ended || view.menu?.length || view.shop || view.temple || view.training);
     const gearChoice = (verb, item) => {
       const action = verb.toLowerCase();

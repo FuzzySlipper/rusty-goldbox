@@ -3,5 +3,17 @@
   "id": "evt_l1_c1_attendant",
   "kind": "text",
   "text": "The attendant points toward the receiving lounge and the stair hall. He offers to take a cloak, bag, or other burden and promises a numbered ticket for anything left behind.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The shabby goat-faced attendant points out the worn reception lounge and the stair hall. He offers a numbered ticket for any cloak or bag left in the cramped coatroom.",
+      "picture": "blackapple-art:brugh_coatroom_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The composed palace attendant gestures toward the receiving lounge and stair hall. Beneath the brass lamps, he offers a numbered ticket for any cloak or bag left in his care.",
+      "picture": "blackapple-art:brugh_coatroom_glamour"
+    }
+  ],
   "next": "evt_l1_c1_menu"
 }

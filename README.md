@@ -152,6 +152,11 @@ dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --mod
 dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
 ```
 
+The Game's party creator shows the selected method's authored scores and costs.
+For point buy, enter each attribute score before **Roll**; for a standard array
+or arranged rolls, assign each score's attribute using the priority selectors.
+Core checks the submitted choices and reports any budget or assignment error.
+
 When a character-creation definition names a `lifepath`, `--career` chooses
 the career for each term (one choice repeats with `--terms`),
 `--skill-table` supplies the visible table choice for each actual configured

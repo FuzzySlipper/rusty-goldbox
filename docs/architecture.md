@@ -361,7 +361,12 @@ scope `goldbox.character.<n>` and the game starts from the same seed, so a
 session replays from it. Play commands are the same text commands `goldbox
 play` scripts use.
 
-The party screen exposes every available creation in `creations`. A staged
+The party screen exposes every available creation in `creations`, including
+the authored attribute details, standard array, assignment order, and point-buy
+base, budget and cost rows. Its score and priority controls submit those choices
+through `GameCommands` to the existing `CreationRequest`; Core applies the method
+and checks its constraints. The page retains only the player's unsent choices.
+A staged
 creation is rolled with `roll` first; the party member then carries its actual
 attributes and `skillPoints` budgets/base values in the projection. The DOM
 submits a second `skills` action with profession and personal allocations, and

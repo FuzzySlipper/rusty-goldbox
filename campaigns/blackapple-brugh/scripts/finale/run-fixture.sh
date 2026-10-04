@@ -8,8 +8,9 @@ case "$scenario" in
   truth-no-proof) expected_ending=ending.truth_without_return ;;
   elf-bargain) expected_ending=ending.elf_bargain ;;
   court-bound) expected_ending=ending.court_bound ;;
+  lost-defeat) expected_ending=ending.lost_in_brugh ;;
   *)
-    printf 'usage: %s {full-contained|partial-mixed|truth-no-proof|elf-bargain|court-bound}\n' "$0" >&2
+    printf 'usage: %s {full-contained|partial-mixed|truth-no-proof|elf-bargain|court-bound|lost-defeat}\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -34,8 +35,14 @@ find "$run_root/module/events" -type f ! -name 'evt_fin_*.json' -delete
 rm -rf "$run_root/module/areas" "$run_root/module/items" "$run_root/module/npcs"
 mkdir -p "$run_root/module/areas"
 # Fixture-only setup chains live with the scripts, outside the shipped runtime
-# event directory. Copy them into the temporary campaign used by this harness.
-cp -a "$script_dir/fixtures/." "$run_root/module/events/"
+# event directory. Copy only the selected chain into the temporary campaign so
+# a negative scenario cannot leave an unreachable reference in other fixtures.
+cp -a "$script_dir/fixtures/evt_fin_setup_${scenario_id}"*.json "$run_root/module/events/"
+if [[ "$scenario" == "lost-defeat" ]]; then
+  # This scenario deliberately enters the shipped authored defeat chain. The
+  # ordinary combat events retain their authored recovery branches.
+  cp -a "$campaign_root/modules/blackapple-brugh/events/evt_defeat_"*.json "$run_root/module/events/"
+fi
 jq -n '{type:"area", id:"blackapple", name:"Finale fixture", map:["+--+--+", "|     |", "+--+--+"], entries:{north_road:{at:[0,0], facing:"east"}}}' \
   > "$run_root/module/areas/blackapple.json"
 jq '.requires = [{id:"fifth-srd", version:"^0.1.0"}, {id:"blackapple-art", version:"^0.1.0"}, {id:"blackapple-fae", version:"^0.1.0"}]' \
@@ -63,6 +70,10 @@ save="$run_root/$scenario.save.json"
 transcript="$run_root/$scenario.json"
 revisit_save="$run_root/$scenario.revisit.save.json"
 revisit_transcript="$run_root/$scenario.revisit.json"
+revisit_script="$script_dir/revisit-guard.script"
+if [[ "$scenario" == "lost-defeat" ]]; then
+  revisit_script="$script_dir/lost-revisit.script"
+fi
 
 "$goldbox_cli" play \
   --campaign "$run_root/module" \
@@ -76,7 +87,7 @@ revisit_transcript="$run_root/$scenario.revisit.json"
   --campaign "$run_root/module" \
   --modules "$run_root/deps" \
   --modules "$repo_root/modules" \
-  --load "$save" --script "$script_dir/revisit-guard.script" \
+  --load "$save" --script "$revisit_script" \
   --save "$revisit_save" --fail-on-refusal --json > "$revisit_transcript"
 
 jq -e '.ok == true' "$transcript" >/dev/null
@@ -84,6 +95,8 @@ jq -e '.ok == true' "$revisit_transcript" >/dev/null
 jq -e --arg ending "$expected_ending" \
   '[.transcript[]?.facts[]? | select(.kind == "variable" and (.text | contains("ending_id is now " + $ending)))] | length > 0' \
   "$transcript" >/dev/null
+jq -e --arg ending "$expected_ending" '.variables.campaign.ending_id == $ending' "$save" >/dev/null
+jq -e --arg ending "$expected_ending" '.variables.campaign.ending_id == $ending' "$revisit_save" >/dev/null
 jq -e '[.transcript[]?.facts[]? | select(.kind == "treasure")] | length == 0' \
   "$revisit_transcript" >/dev/null
 for status_id in \

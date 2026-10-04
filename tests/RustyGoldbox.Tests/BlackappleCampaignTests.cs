@@ -120,6 +120,58 @@ public sealed class BlackappleCampaignTests
         Assert.True(ReadSave(resumedSave).RootElement.GetProperty("ended").GetBoolean());
     }
 
+    [Fact]
+    public void CoatroomViewsRemainSelectableAtItsWaitingMenuAndAfterReloadAndRevisit()
+    {
+        using TempModules scratch = new();
+        string party = CreateParty(scratch);
+        string[] route = File.ReadAllLines(FullSuccessLevelScript);
+        int stop = Array.FindIndex(route, line => line.StartsWith("# Prepared-entry checkpoint", StringComparison.Ordinal));
+        Assert.True(stop > 0);
+
+        string entryScript = Path.Combine(scratch.Root, "coatroom-entry.script");
+        string viewScript = Path.Combine(scratch.Root, "coatroom-view.script");
+        string revisitScript = Path.Combine(scratch.Root, "coatroom-revisit.script");
+        // The checkpoint comment precedes the midnight wait, mirror entry,
+        // and ticket choice. Stop after entry, while C1's menu is waiting.
+        File.WriteAllLines(entryScript, route[..(stop + 3)]);
+        File.WriteAllText(viewScript, "view 1\nview 4\n");
+        File.WriteAllText(revisitScript, "choose 2\nforward\nchoose 3\naround\nforward\nview 1\nview 4\n");
+
+        string entrySave = Path.Combine(scratch.Root, "coatroom-entry.json");
+        string viewedSave = Path.Combine(scratch.Root, "coatroom-viewed.json");
+        string revisitSave = Path.Combine(scratch.Root, "coatroom-revisited.json");
+        PlayJson(scratch, Play(party, entryScript, entrySave, seed: "9431"));
+        JsonElement selected = PlayJson(scratch, Load(entrySave, viewScript, viewedSave, failOnRefusal: true));
+        JsonElement revisited = PlayJson(scratch, Load(viewedSave, revisitScript, revisitSave, failOnRefusal: true));
+
+        using JsonDocument entered = ReadSave(entrySave);
+        using JsonDocument viewed = ReadSave(viewedSave);
+        using JsonDocument returned = ReadSave(revisitSave);
+        foreach (JsonElement state in new[] { entered.RootElement, viewed.RootElement, returned.RootElement })
+        {
+            Assert.Equal("blackapple-brugh:evt_l1_c1_menu", state.GetProperty("pending_menu").GetString());
+            Assert.Equal("blackapple-brugh:brugh_l1", state.GetProperty("area").GetString());
+            Assert.Equal(0, state.GetProperty("x").GetInt32());
+            Assert.Equal(0, state.GetProperty("y").GetInt32());
+            Assert.Equal(entered.RootElement.GetProperty("party").GetRawText(), state.GetProperty("party").GetRawText());
+        }
+
+        Assert.Equal(entered.RootElement.GetProperty("variables").GetRawText(), viewed.RootElement.GetProperty("variables").GetRawText());
+        Assert.Equal("blackapple-brugh:evt_l1_c1_attendant", viewed.RootElement.GetProperty("view_event").GetString());
+        Assert.Equal("blackapple-brugh:evt_l1_c1_revisit", returned.RootElement.GetProperty("view_event").GetString());
+        string fourthMode = entered.RootElement.GetProperty("party")[3].GetProperty("perception").GetProperty("mode").GetString()!;
+        Assert.Equal($"blackapple-art:brugh_coatroom_{fourthMode}", viewed.RootElement.GetProperty("picture").GetString());
+        Assert.Equal(viewed.RootElement.GetProperty("picture").GetString(), returned.RootElement.GetProperty("picture").GetString());
+        foreach (JsonElement result in new[] { selected, revisited })
+        {
+            JsonElement[] facts = result.GetProperty("transcript").EnumerateArray()
+                .SelectMany(step => step.GetProperty("facts").EnumerateArray()).ToArray();
+            Assert.Equal(2, facts.Count(fact => fact.GetProperty("kind").GetString() == "view"));
+            Assert.DoesNotContain(facts, fact => fact.GetProperty("kind").GetString() == "perception");
+        }
+    }
+
     private static string CreateParty(TempModules scratch)
     {
         // These four in-process CLI calls mirror scripts/create-party.sh exactly;
@@ -301,7 +353,7 @@ public sealed class BlackappleCampaignTests
     {
         string[] jsonCommand = [command[0], "--json", .. command.Skip(1)];
         (int code, string output) = CampaignTests.Run(scratch, jsonCommand);
-        Assert.Equal(0, code);
+        Assert.True(code == 0, output);
         return JsonDocument.Parse(output).RootElement.Clone();
     }
 

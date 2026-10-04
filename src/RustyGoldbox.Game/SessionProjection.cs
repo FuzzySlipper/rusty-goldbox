@@ -490,15 +490,8 @@ internal static class SessionProjection
             return;
         }
 
-        projection["creation"] = new JsonObject
-        {
-            ["id"] = creation.QualifiedId,
-            ["method"] = creation.Json.TryGetProperty("method", out JsonElement method) ? method.GetString() : "roll",
-            ["attributes"] = new JsonArray(creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()),
-            ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
-            ["boosts"] = Boosts(creation),
-        };
-        projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(CreationChoice).ToArray());
+        projection["creation"] = CreationChoice(rules, creation);
+        projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(definition => (JsonNode)CreationChoice(rules, definition)).ToArray());
         if (creation.Json.TryGetProperty("lifepath", out _)
             && rules.Reference(creation, "$.lifepath") is Definition lifepath)
         {
@@ -541,7 +534,7 @@ internal static class SessionProjection
         }).ToArray());
     }
 
-    private static JsonObject CreationChoice(Definition creation)
+    private static JsonObject CreationChoice(RuleSet rules, Definition creation)
     {
         JsonObject choice = new()
         {
@@ -552,6 +545,66 @@ internal static class SessionProjection
             ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
             ["boosts"] = Boosts(creation),
         };
+        JsonObject AttributeDetail(string id)
+        {
+            Definition definition = rules.Stats[id].Definition;
+            JsonObject detail = new()
+            {
+                ["id"] = id,
+                ["name"] = definition.Name,
+            };
+            if (definition.Json.TryGetProperty("min", out JsonElement minimum))
+            {
+                detail["min"] = minimum.GetDecimal();
+            }
+
+            if (definition.Json.TryGetProperty("max", out JsonElement maximum))
+            {
+                detail["max"] = maximum.GetDecimal();
+            }
+
+            return detail;
+        }
+
+        string[] attributeIds = creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => attribute.GetString()!).ToArray();
+        choice["attributeDetails"] = new JsonArray(attributeIds.Select(id => (JsonNode)AttributeDetail(id)).ToArray());
+        JsonElement ownRolls = creation.Json.TryGetProperty("attribute_rolls", out JsonElement givenRolls) ? givenRolls : default;
+        bool HasOwnRoll(string id) => ownRolls.ValueKind == JsonValueKind.Object && ownRolls.TryGetProperty(id, out _);
+        choice["arrangeableAttributes"] = new JsonArray(attributeIds
+            .Where(id => !HasOwnRoll(id))
+            .Select(id => (JsonNode)AttributeDetail(id))
+            .ToArray());
+        if (creation.Json.TryGetProperty("array", out JsonElement array))
+        {
+            choice["array"] = JsonNode.Parse(array.GetRawText());
+        }
+
+        if (creation.Json.TryGetProperty("assignment", out JsonElement assignment))
+        {
+            choice["assignment"] = assignment.GetString();
+        }
+
+        if (creation.Json.TryGetProperty("base", out JsonElement baseScore))
+        {
+            choice["base"] = baseScore.GetDecimal();
+        }
+
+        if (creation.Json.TryGetProperty("budget", out JsonElement budget))
+        {
+            choice["budget"] = budget.GetDecimal();
+        }
+
+        if (creation.Json.TryGetProperty("costs", out _)
+            && rules.Reference(creation, "$.costs") is Definition costs
+            && costs.Json.TryGetProperty("rows", out JsonElement rows))
+        {
+            choice["costs"] = new JsonObject
+            {
+                ["id"] = costs.QualifiedId,
+                ["rows"] = JsonNode.Parse(rows.GetRawText()),
+            };
+        }
+
         if (creation.Json.TryGetProperty("skill_points", out JsonElement skillPoints))
         {
             choice["skillPoints"] = JsonNode.Parse(skillPoints.GetRawText());

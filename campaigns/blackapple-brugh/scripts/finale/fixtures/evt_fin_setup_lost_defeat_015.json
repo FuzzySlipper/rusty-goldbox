@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_015",
+  "kind": "set",
+  "variable": "ending_id",
+  "value": "\"\"",
+  "next": "evt_defeat_lost_in_brugh"
+}
