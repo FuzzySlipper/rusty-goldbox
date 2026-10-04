@@ -53,7 +53,7 @@ internal static class GoldboxCli
 
           goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
-                [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--lifepath <id>]
+                [--boosts <id>,...] [--spells <id>,...] [--equipment <id>,...] [--portrait <asset>] [--lifepath <id>]
                 [--career <id>,...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]
                 [--seed <n>] [--out <file>]
               --class and --race are needed where the ruleset has classes and races.
@@ -62,7 +62,9 @@ internal static class GoldboxCli
               track, and rolls any declared starting balances. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range. --portrait gives the character a
-              portrait asset from the module set. --feature fills the choices creation and the
+              portrait asset from the module set. --equipment gives the character the listed
+              item IDs after creation, checking each against the class and race equipment rules;
+              repeat the option or comma-separate IDs. --feature fills the choices creation and the
               first level grant (a background, a feat), matched to them by kind in order.
               Where creation makes scores by boosts, --boosts names the attribute for each
               boost that offers a choice: race, creation features, class, then creation.

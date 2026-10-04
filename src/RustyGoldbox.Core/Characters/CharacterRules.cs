@@ -909,6 +909,38 @@ public static partial class CharacterRules
         return true;
     }
 
+    /// <summary>Gives the character these items in order; problems name each one it cannot equip.</summary>
+    public static bool SetEquipment(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> equipment = [];
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Item, id, "equipment", problems) is not Definition item)
+            {
+                continue;
+            }
+
+            if (EquipmentProblem(rules, character, item) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.equipment", problem, item.Module, item.File, "$.equipment"));
+            }
+            else
+            {
+                equipment.Add(item);
+            }
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        character.Equipment.Clear();
+        character.Equipment.AddRange(equipment);
+        return true;
+    }
+
     /// <summary>The character-creation definition used when none is named, or null when the set has none or several without a default.</summary>
     public static Definition? DefaultCreation(RuleSet rules) => FindCreation(rules, null, []);
 
