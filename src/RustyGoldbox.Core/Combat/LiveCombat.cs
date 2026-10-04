@@ -44,8 +44,17 @@ public sealed record CombatTargetChoice(
     decimal? Track,
     decimal? MaximumTrack);
 
-/// <summary>A destination and path that can be reached by an explicit move choice.</summary>
-public sealed record CombatMoveChoice(Cell Destination, IReadOnlyList<Cell> Path, int Cost);
+/// <summary>
+/// A destination and path that can be reached by an explicit move choice.
+/// Target IDs bind the path to the target-relative legality that produced it;
+/// generated live choices always carry the target that was used to calculate
+/// the path.
+/// </summary>
+public sealed record CombatMoveChoice(
+    Cell Destination,
+    IReadOnlyList<Cell> Path,
+    int Cost,
+    IReadOnlyList<string>? TargetIds = null);
 
 /// <summary>
 /// One legal use of an action. IDs are stable for the life of a combat and
