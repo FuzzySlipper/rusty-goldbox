@@ -101,7 +101,7 @@ public static class CharacterFile
         new("memorised", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Memorised copies."),
         new("prepared", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Unspent prepared copies; omit for the full plan."),
         new("conditions", new Definitions.ListKind(new Definitions.ReferenceKind("condition")), true, "Held conditions."),
-        new("portrait", new Definitions.ReferenceKind("asset", "portrait"), false, "Portrait art."),
+        new("portrait", new Definitions.ReferenceKind("asset", "picture"), false, "Portrait art (a picture slot; use the portrait tag to mark chooser art)."),
         new("perception", new Definitions.ObjectKind(
         [
             new("scope", new Definitions.TextKind(), true, "The module-authored expedition scope."),

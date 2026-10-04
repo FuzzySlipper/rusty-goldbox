@@ -138,6 +138,7 @@ Characters are JSON files made and advanced under a module set:
 
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/fifth-srd --class fighter --race human --feature soldier,savage_attacker,defense --equipment longsword,chain_mail --out ada.json
 dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module modules/classic --xp 5000 --seed 3
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'

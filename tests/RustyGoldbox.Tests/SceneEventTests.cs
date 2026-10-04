@@ -55,6 +55,57 @@ public sealed class SceneEventTests
         });
     }
 
+    [Theory]
+    [InlineData(20, 0, 7, true, "The constitution holds.")]
+    [InlineData(8, -20, 1, false, "The constitution fails.")]
+    public void FifthSrdSceneCheckUsesSelectedMembersDerivedSaveAndEngineD20(
+        int constitution, int modifier, int expectedBonus, bool success, string outcome)
+    {
+        using TempModules modules = new();
+        string campaign = FifthSrdFixture(modules);
+        modules.Write("tale/campaign.json", """
+            { "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" },
+              "party": { "min": 1, "max": 4 }, "intro": "constitution_save" }
+            """);
+        modules.Write("tale/constitution_save.json", $$"""
+            { "type": "event", "id": "constitution_save", "kind": "check", "check": "fifth-srd:con_save", "member": 2,
+              "modifier": "{{modifier}}", "on_success": "save_success", "on_failure": "save_failure" }
+            """);
+        modules.Write("tale/save_success.json", """{ "type": "event", "id": "save_success", "kind": "text", "text": "The constitution holds." }""");
+        modules.Write("tale/save_failure.json", """{ "type": "event", "id": "save_failure", "kind": "text", "text": "The constitution fails." }""");
+
+        string repositoryModules = Path.Combine(Rules.RepositoryRoot, "modules");
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, repositoryModules]);
+        Assert.Empty(set.Diagnostics);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            Character first = CreateFifth(set, engine.Random, "First", 14);
+            Character selected = CreateFifth(set, engine.Random, "Selected", constitution);
+            Evaluator evaluator = new(set.Rules!, null);
+            Assert.Equal(4, evaluator.Stat(first.ToCreature(), "con_save").Number);
+            Assert.Equal(expectedBonus, evaluator.Stat(selected.ToCreature(), "con_save").Number);
+
+            Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+            CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [first, selected], 9374));
+            List<PlayFact> facts = runner.Begin(engine.Random);
+            SceneCheckFact check = Assert.Single(facts.OfType<SceneCheckFact>());
+            DiceRoll roll = Assert.Single(check.Rolls);
+            Assert.Equal(1, roll.Count);
+            Assert.Equal(20, roll.Sides);
+            Assert.InRange(roll.Total, 1L, 20L);
+            Assert.Equal((decimal)roll.Total, check.Result.Roll);
+            Assert.Equal(2, check.Member);
+            Assert.Equal("Selected", check.Who);
+            Assert.Equal((decimal)expectedBonus, check.Result.Bonus);
+            Assert.Equal((decimal)modifier, check.Result.Modifier);
+            Assert.Equal(check.Result.Roll + check.Result.Bonus + check.Result.Modifier, check.Result.Total);
+            Assert.Equal(success, check.Result.Success);
+            Assert.Contains(facts, fact => fact is TextFact { Text: var text } && text == outcome);
+        });
+    }
+
     [Fact]
     public void OriginalRulesetUsesSceneVocabularyAndLivePartySizeAcrossJoinAndDismiss()
     {
@@ -201,7 +252,7 @@ public sealed class SceneEventTests
         Assert.Contains(set.Diagnostics, problem => problem.Rule == "event.effect" && problem.JsonPath == "$.operations[0].condition" && problem.Message.Contains("on_apply", StringComparison.Ordinal));
     }
 
-    private static Character CreateFifth(ModuleSet set, IRandomService random, string name)
+    private static Character CreateFifth(ModuleSet set, IRandomService random, string name, int constitution = 14)
     {
         using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(401, $"scene.fifth.{name}"));
         List<ModuleDiagnostic> problems = [];
@@ -212,7 +263,7 @@ public sealed class SceneEventTests
                 name,
                 "fighter",
                 "human",
-                Attributes: new Dictionary<string, decimal> { ["str"] = 12, ["dex"] = 12, ["con"] = 14, ["int"] = 10, ["wis"] = 10, ["cha"] = 10 },
+                Attributes: new Dictionary<string, decimal> { ["str"] = 12, ["dex"] = 12, ["con"] = constitution, ["int"] = 10, ["wis"] = 10, ["cha"] = 10 },
                 Features: ["soldier", "savage_attacker", "defense"]),
             new DiceRoller(random, stream),
             problems);

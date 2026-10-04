@@ -585,7 +585,7 @@ path and the rule that failed. Module directories resolve through
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
 | `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
 | `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
-| `goldbox character new\|skills\|level …` | Create a character (including a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
+| `goldbox character new\|skills\|level …` | Create a character (including starting equipment and a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
 | `goldbox character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
