@@ -22,6 +22,13 @@ export function createOverlay(send, ui) {
   const soundVolume = slider('sound', 'Sound');
   const skinPick = element('select', { 'aria-label': 'Skin' });
   skinPick.addEventListener('change', () => send({ action: 'skin', skin: skinPick.value || null }));
+  const uiScale = element('input', { type: 'range', min: '0.5', max: '2.5', step: '0.05', value: '1', 'aria-label': 'Interface scale' });
+  const uiScaleShown = element('output', { class: 'gb-muted' }, '1.00');
+  uiScale.addEventListener('input', () => {
+    uiScaleShown.textContent = Number(uiScale.value).toFixed(2);
+    ui.scale(Number(uiScale.value));
+  });
+  uiScale.addEventListener('change', () => send({ action: 'ui-scale', scale: Number(uiScale.value) }));
 
   // Layout sliders, one per part the projection says may be set, made once the parts arrive.
   // Dragging previews the proportions; letting go sends the whole layout, which the Game checks and keeps.
@@ -50,6 +57,11 @@ export function createOverlay(send, ui) {
       buildLayoutSliders(view.layoutParts);
     }
 
+    if (typeof view.uiScale === 'number' && document.activeElement !== uiScale) {
+      uiScale.value = String(view.uiScale);
+      uiScaleShown.textContent = view.uiScale.toFixed(2);
+    }
+
     lastLayout = view.layout ?? lastLayout;
     layoutReset.disabled = !view.layoutPicked;
     for (const [id, { input, shown }] of layoutSliders) {
@@ -75,6 +87,7 @@ export function createOverlay(send, ui) {
   const settings = element('div', {},
     element('h3', {}, 'Sound and look'),
     row(element('label', {}, 'Music', musicVolume), element('label', {}, 'Sound', soundVolume), element('label', {}, 'Skin', skinPick)),
+    row(element('label', {}, 'Interface scale', uiScale, uiScaleShown)),
     element('h3', {}, 'Layout'),
     layoutRows,
     row(layoutReset));

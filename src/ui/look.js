@@ -33,7 +33,7 @@ export const BASE_LOOK = `
 .gb-frame {
   --gb-gap: clamp(3px, .7cqmin, 8px);
   position: absolute; inset: 0; display: grid; gap: var(--gb-gap); padding: var(--gb-gap);
-  font-size: calc(clamp(11px, 1.9cqmin, 22px) * var(--gb-text-scale)); line-height: 1.2;
+  font-size: calc(clamp(11px, 1.9cqmin, 22px) * var(--gb-text-scale) * var(--rusty-ui-scale, 1)); line-height: 1.2;
 }
 .gb-frame button, .gb-frame input, .gb-frame select { font: inherit; }
 
@@ -107,6 +107,7 @@ img.gb-picture { object-fit: contain; }
 
 /* The view: the Engine draws here, so the panel is clear; its shadow paints the gaps around the other panels. */
 .gb-view { grid-area: view; background: transparent; box-shadow: 0 0 0 100vmax var(--gb-inset); }
+.gb-view-surface { position: absolute; inset: 0; }
 
 /* The log: a page of text under the view */
 .gb-log { grid-area: log; }

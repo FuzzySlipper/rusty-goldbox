@@ -12,13 +12,10 @@ imports the other modules here by relative path.
 Play and combat share one frame of panels, a CSS grid over the whole window
 (`.gb-frame`). The Engine draws the world in the **view** panel, which the
 frame leaves clear; its shadow paints the gaps between the other panels.
-Whenever the view panel moves or resizes, the UI sends its inner rectangle as
-fractions of the window from its top left (`{ action: "layout", view: { x, y,
-width, height } }`), once the layout settles and again a moment later, as
-the host drops claims made while it rebinds the runtime after a resize. The
-camera draws there. This is presentation only and
-stands in until the Engine can anchor a camera to an element (rusty-engine
-#9317). Clicks
+The UI anchors the view's inside (`.gb-view-surface`) under the name `hero`
+with `context.viewport.anchor`, and the Game anchors its camera to the same
+name, so the Engine draws the world there through every resize and layout
+change without the UI or the Game doing anything. Clicks
 on the view reach the Engine canvas; every other panel is marked
 `data-rusty-ui-interactive` so it takes its own pointer input.
 
@@ -118,10 +115,17 @@ the C# (`RustyGoldboxProduct`) and DOM callers aligned when an action or field
 changes. Dispose event listeners and subscriptions when the host unmounts the
 UI.
 
-Music and sound volume sliders, the skin select and the layout sliders sit in
-the ≡ Menu in play and at the foot of the title and party screens. The Game
-keeps the volumes, the picked skin and the player's layout for the next run
-(`PlayerSettings`). They are made once, so a drag
+Music and sound volume sliders, the skin select, the interface scale and the
+layout sliders sit in the ≡ Menu in play and at the foot of the title and
+party screens. The Game keeps the volumes, the picked skin, the interface scale
+and the player's layout for the next run (`PlayerSettings`).
+
+The interface scale is the Engine's UI scale (`context.ui.setScale`, read in
+CSS as `--rusty-ui-scale`), which every panel size is multiplied by on top of
+the layout's text and control scales. The UI applies the projection's saved
+`uiScale` when it arrives; its slider sets the scale live while dragging and
+sends `{ action: "ui-scale", scale }` on release, which the Game checks (0.5
+to 2.5) and keeps. They are made once, so a drag
 isn't interrupted by re-renders, take their values from the projection's
 `volumes` when not being dragged, and send a `volume` action (`bus` music or
 sound, `volume` from 0 to 1) on change.

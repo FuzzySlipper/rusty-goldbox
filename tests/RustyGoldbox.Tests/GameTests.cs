@@ -213,8 +213,11 @@ public sealed class GameTests
             Assert.Equal(3, session.Notes.Count);
             Assert.Equal(0.5, LogShare(session));
             Run(session, engine, """{ "action": "volume", "bus": "music", "volume": 0.25 }""");
+            Run(session, engine, """{ "action": "ui-scale", "scale": 1.5 }""");
+            Run(session, engine, """{ "action": "ui-scale", "scale": 9 }""");
+            Assert.Equal("An interface scale is from 0.5 to 2.5, not 9.", Assert.Single(session.Notes));
 
-            // The next run picks up the skin, the layout and the volume.
+            // The next run picks up the skin, the layout, the volume and the interface scale.
             GameSession next = OpenSession(scratch, engine);
             PlayerSettings.Load(engine, next);
             Assert.Empty(next.Notes);
@@ -222,34 +225,11 @@ public sealed class GameTests
             Assert.Equal(0.5, LogShare(next));
             Assert.Equal(28, SessionProjection.Build(next)["layout"]!["side_width"]!.GetValue<double>());
             Assert.Equal(0.25f, next.MusicVolume);
+            Assert.Equal(1.5, SessionProjection.Build(next)["uiScale"]!.GetValue<double>());
 
             // Reset goes back to the skin's.
             Run(next, engine, """{ "action": "layout-config", "layout": null }""");
             Assert.Equal(0.42, LogShare(next));
-        });
-    }
-
-    [Fact]
-    public void TheLayoutActionMovesTheViewAndLeavesTheNotes()
-    {
-        using TempModules scratch = new();
-        using EngineTestHost host = EngineTestHost.Create();
-        host.Call(engine =>
-        {
-            GameSession session = OpenSession(scratch, engine);
-            Assert.Equal(ViewWindow.Whole, session.View);
-            Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:nobody", "class": "classic:fighter" }""");
-            string[] notes = [.. session.Notes];
-            Assert.NotEmpty(notes);
-
-            // A resize must not wipe what the last action said.
-            Run(session, engine, """{ "action": "layout", "view": { "x": 0.01, "y": 0.08, "width": 0.66, "height": 0.55 } }""");
-            Assert.Equal(new ViewWindow(0.01f, 0.08f, 0.66f, 0.55f), session.View);
-            Assert.Equal(notes, session.Notes);
-
-            Run(session, engine, """{ "action": "layout", "view": { "x": 0.5, "y": 0, "width": 0.6, "height": 1 } }""");
-            Assert.Equal(new ViewWindow(0.01f, 0.08f, 0.66f, 0.55f), session.View);
-            Assert.Contains("\"view\" must be", Assert.Single(session.Notes), StringComparison.Ordinal);
         });
     }
 

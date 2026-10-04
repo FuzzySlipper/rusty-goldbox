@@ -6,7 +6,6 @@ using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
-using RustyGoldbox.Game.Presentation;
 
 namespace RustyGoldbox.Game;
 
@@ -68,8 +67,26 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
 
-    /// <summary>Where the DOM panels put the view; presentation only, never saved.</summary>
-    public ViewWindow View { get; set; } = ViewWindow.Whole;
+    /// <summary>The player's interface scale, which the panels give the Engine's UI scale; kept with the settings.</summary>
+    public double UiScale { get; private set; } = 1;
+
+    /// <summary>The interface scales a player may pick: the Engine allows 0.25 to 4; under half or over two and a half is no use to the panels.</summary>
+    public const double UiScaleMinimum = 0.5;
+
+    public const double UiScaleMaximum = 2.5;
+
+    /// <summary>Sets the player's interface scale.</summary>
+    public void SetUiScale(double scale)
+    {
+        Notes.Clear();
+        if (double.IsNaN(scale) || scale < UiScaleMinimum || scale > UiScaleMaximum)
+        {
+            Notes.Add($"An interface scale is from {UiScaleMinimum} to {UiScaleMaximum}, not {scale}.");
+            return;
+        }
+
+        UiScale = scale;
+    }
 
     /// <summary>The Music bus volume, from 0 (silent) to 1.</summary>
     public float MusicVolume { get; private set; } = 1;

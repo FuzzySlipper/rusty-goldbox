@@ -28,6 +28,9 @@ internal sealed class SceneView : IDisposable
     private const double EyeHeight = 0.5;
     private const double FieldOfView = 70;
 
+    /// <summary>The UI anchor the camera follows: the DOM's view panel.</summary>
+    public const string ViewAnchor = "hero";
+
     private readonly IEngineContext _engine;
     private readonly ModuleLibrary _library;
     private readonly Camera _camera;
@@ -36,7 +39,6 @@ internal sealed class SceneView : IDisposable
     private readonly CombatScene _combat;
     private readonly List<IDisposable> _retired = [];
     private readonly List<Prop> _props = [];
-    private ViewWindow _window = ViewWindow.Whole;
     private bool _showingCombat;
     private bool _showingArea;
     private string? _areaKey;
@@ -53,6 +55,8 @@ internal sealed class SceneView : IDisposable
         _library = library;
         _camera = engine.CameraView.CreateCamera(Camera(new CameraPose(Vector3.Zero, 0, 0)));
         engine.CameraView.SetActiveCamera(_camera);
+        // The camera draws over the panels' view element wherever the layout puts it; the whole window until a page anchors it.
+        engine.CameraView.SetViewportAnchor(new CameraViewportAnchorRequest(_camera, ViewAnchor));
         engine.CameraView.SetBackgroundColor(new SetBackgroundColorRequest(new Color(0.03f, 0.03f, 0.05f, 1)));
         _plain = engine.Graphics.CreateMaterial(new MaterialRequest(new Color(0.25f, 0.24f, 0.22f, 1), default, 0.95f, new Color(1, 1, 1, 1), Vector3.Zero, 0, false));
         _combat = new CombatScene(engine.Graphics, _plain);
@@ -63,7 +67,6 @@ internal sealed class SceneView : IDisposable
     public void Show(GameSession session)
     {
         List<AppearanceFact> facts = [];
-        _window = session.View;
         _showingCombat = false;
         _showingArea = false;
         if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
@@ -379,8 +382,8 @@ internal sealed class SceneView : IDisposable
             CameraBasisMode.Derived,
             default,
             new CameraProjection(CameraProjectionKind.Perspective, fieldOfView, 0, 0.05, 64),
-            // Camera viewports, like sprite placement, measure from the screen's lower left.
-            new CameraViewport(_window.X, 1 - _window.Y - _window.Height, _window.Width, _window.Height));
+            // The view anchor places it; this is where it draws when no page has anchored it.
+            CameraViewports.Full);
     }
 
     /// <summary>The sprite a monster or class is drawn with, from the set's figures.</summary>

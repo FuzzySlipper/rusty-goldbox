@@ -8,8 +8,8 @@ namespace RustyGoldbox.Game;
 
 /// <summary>
 /// The player's own settings, kept between runs in Engine persistence apart
-/// from the save slots: music and sound volume, the picked skin and the
-/// player's layout. The file is the player's, so loading takes what is
+/// from the save slots: music and sound volume, the picked skin, the
+/// interface scale and the player's layout. The file is the player's, so loading takes what is
 /// sound and turns the rest into notes.
 /// </summary>
 internal static class PlayerSettings
@@ -26,6 +26,7 @@ internal static class PlayerSettings
             ["music"] = session.MusicVolume,
             ["sound"] = session.SoundVolume,
             ["skin"] = session.PickedSkin?.Choice.Id,
+            ["ui_scale"] = session.UiScale,
             ["layout"] = session.LayoutPicked is { } layout ? new JsonObject(layout.Select(part => KeyValuePair.Create(part.Key, (JsonNode?)part.Value))) : null,
         };
         using ProductStateStore<byte[]> store = new(engine, Scope, new Utf8Codec());
@@ -77,6 +78,12 @@ internal static class PlayerSettings
             if (root.TryGetProperty("skin", out JsonElement skin) && skin.ValueKind == JsonValueKind.String)
             {
                 session.PickSkin(skin.GetString());
+                problems.AddRange(session.Notes);
+            }
+
+            if (root.TryGetProperty("ui_scale", out JsonElement scale) && scale.ValueKind == JsonValueKind.Number)
+            {
+                session.SetUiScale(scale.GetDouble());
                 problems.AddRange(session.Notes);
             }
 

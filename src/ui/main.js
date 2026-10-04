@@ -52,6 +52,11 @@ export function mountProductUi(root, context) {
     },
     // Shows proportions while the player drags a layout slider; the projection's layout returns on the next update.
     preview: (layout) => showLayout(layout),
+    // Sets the interface scale while the player drags its slider; letting go saves it.
+    scale: (scale) => {
+      savedUiScale = scale;
+      context?.ui?.setScale?.(scale);
+    },
   };
 
   // The look lives in a stylesheet of theme variables, so a skin restyles every panel at once.
@@ -71,7 +76,9 @@ export function mountProductUi(root, context) {
   const map = createMap();
   const controls = createControls(send, ui);
   const overlay = createOverlay(send, ui);
-  const view = element('section', { class: 'gb-panel gb-view', 'aria-label': 'View' });
+  // The view panel is left clear: the Engine draws the world inside it.
+  const viewSurface = element('div', { class: 'gb-view-surface' });
+  const view = element('section', { class: 'gb-panel gb-view', 'aria-label': 'View' }, viewSurface);
   const side = element('div', { class: 'gb-side' }, portraits.node, map.node, controls.node);
   const playPanels = [status.node, view, log.node, side, overlay.node];
 
@@ -85,6 +92,18 @@ export function mountProductUi(root, context) {
   const frame = element('div', { class: 'gb-frame' });
   const panel = element('div', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '' }, frame);
   root.append(skinStyle, panel);
+
+  // The player's interface scale is the Engine's UI scale, which the stylesheet multiplies every size by.
+  // The saved one is applied when it arrives; the menu slider sets it live and saves it.
+  let savedUiScale = null;
+  const applyUiScale = (scale) => {
+    if (typeof scale !== 'number' || scale === savedUiScale) {
+      return;
+    }
+
+    savedUiScale = scale;
+    context?.ui?.setScale?.(scale);
+  };
 
   // The arrangement follows the window's shape, at the projection's layout proportions.
   let layout = null;
@@ -104,45 +123,11 @@ export function mountProductUi(root, context) {
     arrange();
   };
 
-  // The Engine's camera draws where the view panel is: report its rectangle,
-  // as fractions of the window from its top left, whenever it moves or resizes.
-  // Interim until the Engine can anchor a camera to an element (rusty-engine #9317).
-  let reported = '';
-  const reportView = (again = false) => {
-    const whole = panel.getBoundingClientRect();
-    const box = view.getBoundingClientRect();
-    if (!view.isConnected || whole.width === 0 || whole.height === 0 || box.width === 0 || box.height === 0) {
-      return;
-    }
-
-    // Inside the panel's frame, so a skin's border isn't drawn over.
-    const fraction = (value, of) => Math.round(Math.min(1, Math.max(0, value / of)) * 10000) / 10000;
-    const rect = {
-      x: fraction(box.left + view.clientLeft - whole.left, whole.width),
-      y: fraction(box.top + view.clientTop - whole.top, whole.height),
-      width: fraction(view.clientWidth, whole.width),
-      height: fraction(view.clientHeight, whole.height),
-    };
-    const key = JSON.stringify(rect);
-    if (key !== reported || again) {
-      reported = key;
-      send({ action: 'layout', view: rect });
-    }
-  };
-  // Report once the layout has settled in the next frame, and again a moment
-  // after the last change: the host drops claims made while it rebinds the
-  // runtime, which a window resize can cause.
-  let settleFrame = 0;
-  let settleTimer = 0;
-  const resized = new ResizeObserver(() => {
-    arrange();
-    cancelAnimationFrame(settleFrame);
-    settleFrame = requestAnimationFrame(() => reportView());
-    clearTimeout(settleTimer);
-    settleTimer = setTimeout(() => reportView(true), 600);
-  });
+  // The Engine's camera draws over the view panel's inside, following it on
+  // every resize and layout change (SceneView anchors the camera to "hero").
+  const removeAnchor = context?.viewport?.anchor?.('hero', viewSurface);
+  const resized = new ResizeObserver(arrange);
   resized.observe(panel);
-  resized.observe(view);
   arrange();
 
   let shownScreen = null;
@@ -150,6 +135,7 @@ export function mountProductUi(root, context) {
     lastView = projection;
     applySkin(projection.skin);
     showLayout(projection.layout);
+    applyUiScale(projection.uiScale);
     const screen = projection.screen;
     const playing = screen === 'play' || screen === 'combat';
     if (screen !== shownScreen) {
@@ -196,8 +182,7 @@ export function mountProductUi(root, context) {
     dispose: () => {
       unsubscribe?.();
       resized.disconnect();
-      cancelAnimationFrame(settleFrame);
-      clearTimeout(settleTimer);
+      removeAnchor?.();
       log.dispose();
       map.dispose();
       panel.remove();
