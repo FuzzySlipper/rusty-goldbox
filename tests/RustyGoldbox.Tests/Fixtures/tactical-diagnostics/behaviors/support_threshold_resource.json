@@ -1,0 +1,38 @@
+{
+  "type": "combat-behavior",
+  "id": "support_threshold_resource",
+  "name": "Support threshold and resource choice",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "when": "target.hit_points < target.max_hit_points / 2",
+      "priority": "30",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:spell_heal",
+            "amount": "1d8"
+          },
+          "spell": "classic:cure_light_wounds",
+          "target": "ally",
+          "target_score": "target.max_hit_points - target.hit_points"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "priority": "10",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Fallback strike",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

@@ -291,7 +291,7 @@ internal static class SessionProjection
             ["winner"] = observation.Winner,
             ["fledSide"] = observation.FledSide,
             ["members"] = members,
-            ["decision"] = observation.PendingDecision is CombatDecision decision ? Decision(decision) : null,
+            ["decision"] = observation.PendingDecision is CombatDecision decision ? Decision(decision, rules) : null,
             ["log"] = Strings(observation.Facts.TakeLast(14).Select(fact => fact.Describe())),
         };
         return fight;
@@ -334,7 +334,7 @@ internal static class SessionProjection
         };
     }
 
-    private static JsonObject Decision(CombatDecision decision)
+    private static JsonObject Decision(CombatDecision decision, RuleSet rules)
     {
         return new JsonObject
         {
@@ -342,7 +342,7 @@ internal static class SessionProjection
             ["kind"] = decision.Kind.ToString().ToLowerInvariant(),
             ["actorId"] = decision.ActorId,
             ["round"] = decision.Round,
-            ["actions"] = new JsonArray(decision.Actions.Select(ActionChoice).ToArray()),
+            ["actions"] = new JsonArray(decision.Actions.Select(choice => ActionChoice(choice, rules)).ToArray()),
             ["moves"] = new JsonArray(decision.Moves.Select(MoveChoice).ToArray()),
             ["canEndTurn"] = decision.CanEndTurn,
             ["operationOwner"] = decision.OperationOwner,
@@ -360,7 +360,7 @@ internal static class SessionProjection
         };
     }
 
-    private static JsonObject ActionChoice(CombatActionChoice choice)
+    private static JsonObject ActionChoice(CombatActionChoice choice, RuleSet rules)
     {
         return new JsonObject
         {
@@ -369,6 +369,12 @@ internal static class SessionProjection
             ["name"] = choice.Name,
             ["spellId"] = choice.SpellId,
             ["cost"] = new JsonObject(choice.Cost.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),
+            ["spellCosts"] = choice.SpellCosts is null ? null : new JsonArray(choice.SpellCosts.Select(entry => (JsonNode)new JsonObject
+            {
+                ["trackId"] = entry.Key,
+                ["name"] = rules.TryTrack(entry.Key, out Definition? track, out _) ? track!.Name : entry.Key,
+                ["cost"] = (double)entry.Value,
+            }).ToArray()),
             ["targetKind"] = choice.TargetKind,
             ["targetMode"] = choice.TargetMode,
             ["portionCount"] = choice.PortionCount,

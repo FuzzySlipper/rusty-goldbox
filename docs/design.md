@@ -400,6 +400,14 @@ controller. That covers one-action rounds and several-action turns without
 making the procedure itself scriptable. Waiting for a choice does not spend
 resources, roll dice or advance a turn.
 
+Action `available`, `valid_target`, `range` and `portions` expressions must be
+deterministic. Loading rejects dice in these fields, and a value that cannot
+be inspected without dice is unavailable. Random spell costs are quoted once
+when the action is offered; the pending choice retains that price for payment
+and save/resume. Random `max_targets` is committed when the action is chosen,
+before the controller selects targets. Repeated inspection and refused
+commands neither reroll these values nor pay them.
+
 Reusable **combat behaviors** are typed module definitions. They choose finite
 sequences of existing action uses with guards, priorities or scores, target
 preferences and relative destination preferences. A behavior cannot grant an

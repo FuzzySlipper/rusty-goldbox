@@ -1,0 +1,31 @@
+{
+  "type": "combat-behavior",
+  "id": "target_loss",
+  "name": "Target loss during a committed plan",
+  "fallback": "next",
+  "rules": [
+    {
+      "priority": "20",
+      "commit": "plan",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Opening strike",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        },
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Follow-up strike",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "next"
+    }
+  ]
+}

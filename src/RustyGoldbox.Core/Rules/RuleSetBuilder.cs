@@ -1282,6 +1282,11 @@ public sealed class RuleSetBuilder
                 Error(action, "action.outcomes", "$", "An action needs \"always\" operations, or a \"check\" with \"outcomes\"; otherwise it does nothing.");
             }
 
+            CheckActionLegalityExpression(action, "available", "availability");
+            CheckActionLegalityExpression(action, "valid_target", "target legality");
+            CheckActionLegalityExpression(action, "range", "range");
+            CheckActionLegalityExpression(action, "portions", "portion count");
+
             WalkOperations(action, action.Json, "$");
         }
 
@@ -1498,6 +1503,21 @@ public sealed class RuleSetBuilder
             Error(behavior, "behavior.random", path,
                 $"A combat behavior {what} must be deterministic while candidates are inspected; remove dice and use a committed action/check for randomness.");
         }
+    }
+
+    private void CheckActionLegalityExpression(Definition action, string field, string what)
+    {
+        string path = $"$.{field}";
+        if (!action.Json.TryGetProperty(field, out _)
+            || !_rules.TryExpression(action, path, out CompiledExpression? expression)
+            || expression is null
+            || !ContainsDice(expression.Root))
+        {
+            return;
+        }
+
+        Error(action, "action.random", path,
+            $"An action's {what} must be deterministic while legal choices are inspected; remove dice from this field. Randomness belongs in max_targets, checks or operations after the choice is committed.");
     }
 
     private static bool ContainsDice(Expr expression)

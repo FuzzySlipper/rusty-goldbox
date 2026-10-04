@@ -512,16 +512,16 @@ public sealed partial class CombatRunner
     /// every such option is scored against its target (a use without one
     /// scores 0) and the highest is taken, the first on a tie.
     /// </summary>
-    private (UseOption Use, List<Combatant> Targets)? Choose(Combatant actor)
+    private (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? Choose(Combatant actor)
     {
         bool scored = actor.Uses.Any(use => use.Action.Json.TryGetProperty("score", out _));
-        (UseOption Use, List<Combatant> Targets)? best = null;
+        (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? best = null;
         decimal bestScore = 0;
-        foreach ((UseOption use, List<Combatant> targets) in Options(actor))
+        foreach ((UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor))
         {
             if (!scored)
             {
-                return (use, targets);
+                return (use, targets, spellCosts, portionCount);
             }
 
             decimal score = use.Action.Json.TryGetProperty("score", out _)
@@ -529,7 +529,7 @@ public sealed partial class CombatRunner
                 : 0;
             if (best is null || score > bestScore)
             {
-                best = (use, targets);
+                best = (use, targets, spellCosts, portionCount);
                 bestScore = score;
             }
         }
@@ -538,29 +538,87 @@ public sealed partial class CombatRunner
     }
 
     /// <summary>The uses a creature could take now, in its list's order, each with its targets.</summary>
-    private IEnumerable<(UseOption Use, List<Combatant> Targets)> Options(Combatant actor, bool preview = false)
+    private IEnumerable<(UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)> Options(
+        Combatant actor,
+        bool preview = false,
+        bool allCandidates = false)
     {
         foreach (UseOption use in actor.Uses)
         {
-            bool spellUnavailable = use.Spell is Definition spell
-                && (!actor.CanCast(spell)
-                    || (!actor.CastsLeft.ContainsKey(spell)
-                        && (preview ? !PreviewSpellAffordable(actor, spell) : !SpellAffordable(actor, spell))));
-            if (!Affordable(actor, use.Action) || spellUnavailable)
+            if (!Affordable(actor, use.Action))
             {
                 continue;
             }
 
-            if (use.Action.Json.TryGetProperty("available", out _)
-                && (preview ? PreviewBoolean(use.Action, "$.available", new Scope(actor.Creature, null)) is false : !Evaluate(use.Action, "$.available", new Scope(actor.Creature, null)).Boolean))
+            bool available = true;
+            if (use.Action.Json.TryGetProperty("available", out _))
+            {
+                try
+                {
+                    available = PreviewBoolean(use.Action, "$.available", new Scope(actor.Creature, null, use.Parameters)) is true;
+                }
+                catch (RuleFailure)
+                {
+                    continue;
+                }
+            }
+
+            if (!available)
             {
                 continue;
             }
 
-            List<Combatant> targets = Targets(actor, use, preview);
-            if (targets.Count > 0)
+            List<Combatant> targets;
+            try
             {
-                yield return (use, targets);
+                targets = Targets(actor, use, preview, allCandidates);
+            }
+            catch (RuleFailure)
+            {
+                continue;
+            }
+
+            if (targets.Count == 0)
+            {
+                continue;
+            }
+
+            int? portionCount = null;
+            if (use.Action.Json.TryGetProperty("portions", out _))
+            {
+                portionCount = PreviewPortionCount(actor, use);
+                if (portionCount is null)
+                {
+                    continue;
+                }
+            }
+
+            IReadOnlyDictionary<string, decimal>? spellCosts = null;
+            bool spellUnavailable = false;
+            if (use.Spell is Definition spell)
+            {
+                spellUnavailable = !actor.CanCast(spell);
+                if (!spellUnavailable && !actor.CastsLeft.ContainsKey(spell))
+                {
+                    try
+                    {
+                        // A live decision commits one spell price alongside
+                        // its offered targets. Legal action fields use the
+                        // no-dice preview path above, but a random spell
+                        // cost must be quoted once and carried into Submit.
+                        spellCosts = SpellCostValues(actor, spell);
+                        spellUnavailable = !SpellAffordable(actor, spell, spellCosts);
+                    }
+                    catch (RuleFailure)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            if (!spellUnavailable)
+            {
+                yield return (use, targets, spellCosts, portionCount);
             }
         }
     }
@@ -572,7 +630,7 @@ public sealed partial class CombatRunner
     /// with the least left, the first ally, the ally missing the most, or the
     /// first fallen ally.
     /// </summary>
-    private List<Combatant> Targets(Combatant actor, UseOption use, bool preview = false)
+    private List<Combatant> Targets(Combatant actor, UseOption use, bool preview = false, bool allCandidates = false)
     {
         Definition action = use.Action;
         string kind = action.Json.GetProperty("target").GetString()!;
@@ -589,23 +647,22 @@ public sealed partial class CombatRunner
         // A range is how far it reaches and needs line of sight; without one, it reaches anyone (moving toward an enemy out of sight).
         if (_field is not null && kind != "self" && action.Json.TryGetProperty("range", out _))
         {
-            decimal? range = preview
-                ? PreviewNumber(action, "$.range", new Scope(actor.Creature, null, use.Parameters))
-                : Number(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
-            if (range is decimal knownRange)
+            decimal? range = PreviewNumber(action, "$.range", new Scope(actor.Creature, null, use.Parameters));
+            if (range is not decimal knownRange)
             {
-                candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= knownRange && CanSee(actor.Creature, candidate.Creature)).ToList();
+                return [];
             }
+
+            candidates = candidates.Where(candidate => Distance(actor.Creature, candidate.Creature) <= knownRange && CanSee(actor.Creature, candidate.Creature)).ToList();
         }
 
         if (action.Json.TryGetProperty("valid_target", out _))
         {
-            candidates = candidates.Where(candidate => preview
-                ? PreviewBoolean(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)) is not false
-                : Evaluate(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)).Boolean).ToList();
+            candidates = candidates.Where(candidate =>
+                PreviewBoolean(action, "$.valid_target", new Scope(actor.Creature, candidate.Creature, use.Parameters)) is true).ToList();
         }
 
-        if (preview)
+        if (preview || allCandidates)
         {
             return candidates;
         }
@@ -650,7 +707,9 @@ public sealed partial class CombatRunner
         int? committedMaxTargets = null,
         int? rollsBefore = null,
         bool alreadyPaid = false,
-        IReadOnlyList<DiceRoll>? committedRolls = null)
+        IReadOnlyList<DiceRoll>? committedRolls = null,
+        int? committedPortions = null,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = null)
     {
         Definition action = use.Action;
         if (selectedTargets is not null)
@@ -677,12 +736,12 @@ public sealed partial class CombatRunner
 
         if (!alreadyPaid)
         {
-            PayUse(actor, use);
+            PayUse(actor, use, committedSpellCosts);
         }
 
         if (action.Json.TryGetProperty("portions", out _))
         {
-            Divide(actor, use, targets.FirstOrDefault(), selectedTargets);
+            Divide(actor, use, targets.FirstOrDefault(), selectedTargets, committedPortions);
             return;
         }
 
@@ -702,7 +761,10 @@ public sealed partial class CombatRunner
         }
     }
 
-    private void PayUse(Combatant actor, UseOption use)
+    private void PayUse(
+        Combatant actor,
+        UseOption use,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = null)
     {
         if (use.Spell is not Definition cast)
         {
@@ -712,7 +774,7 @@ public sealed partial class CombatRunner
         // A spell cast a number of times a day costs nothing else.
         if (!actor.CastsLeft.ContainsKey(cast))
         {
-            PaySpell(actor, cast);
+            PaySpell(actor, cast, committedSpellCosts);
         }
 
         actor.Cast(cast);
@@ -725,11 +787,17 @@ public sealed partial class CombatRunner
     /// it would choose now, so a target a portion felled passes its share to
     /// the next. It stops when no target is left or the actor falls.
     /// </summary>
-    private void Divide(Combatant actor, UseOption use, Combatant? first, IReadOnlyList<Combatant>? selectedTargets = null)
+    private void Divide(
+        Combatant actor,
+        UseOption use,
+        Combatant? first,
+        IReadOnlyList<Combatant>? selectedTargets = null,
+        int? committedPortions = null)
     {
-        Definition action = use.Action;
         int before = _dice.Rolls.Count;
-        int count = (int)Math.Clamp(decimal.Floor(Number(action, "$.portions", new Scope(actor.Creature, null, use.Parameters))), 0, int.MaxValue);
+        int count = committedPortions
+            ?? PreviewPortionCount(actor, use)
+            ?? 0;
         for (int portion = 1; portion <= count; portion++)
         {
             Combatant? chosen = selectedTargets is not null && selectedTargets.Count >= portion
@@ -1511,32 +1579,54 @@ public sealed partial class CombatRunner
     }
 
     /// <summary>Whether the caster's tracks can pay every cost of the spell.</summary>
-    private bool SpellAffordable(Combatant caster, Definition spell)
+    private IReadOnlyDictionary<string, decimal> SpellCostValues(Combatant caster, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return new Dictionary<string, decimal>(StringComparer.Ordinal);
+        }
+
+        return cost.EnumerateObject().ToDictionary(
+            entry => entry.Name,
+            entry => Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null)),
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>Whether the caster's tracks can pay already evaluated spell costs.</summary>
+    private bool SpellAffordable(
+        Combatant caster,
+        Definition spell,
+        IReadOnlyDictionary<string, decimal>? committedCosts = null)
     {
         if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
         {
             return true;
         }
 
+        IReadOnlyDictionary<string, decimal> costs = committedCosts ?? SpellCostValues(caster, spell);
         return cost.EnumerateObject().All(entry =>
         {
             Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
-            return _evaluator.TrackCurrent(caster.Creature, track) >= Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            return _evaluator.TrackCurrent(caster.Creature, track) >= costs[entry.Name];
         });
     }
 
-    /// <summary>Spends the spell's cost from the caster's tracks.</summary>
-    private void PaySpell(Combatant caster, Definition spell)
+    /// <summary>Spends the already evaluated spell cost from the caster's tracks.</summary>
+    private void PaySpell(
+        Combatant caster,
+        Definition spell,
+        IReadOnlyDictionary<string, decimal>? committedCosts = null)
     {
         if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
         {
             return;
         }
 
+        IReadOnlyDictionary<string, decimal> costs = committedCosts ?? SpellCostValues(caster, spell);
         foreach (JsonProperty entry in cost.EnumerateObject())
         {
             Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
-            decimal amount = Number(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            decimal amount = costs[entry.Name];
             TrackValue value = caster.Creature.Track(track.Id);
             value.Current = _evaluator.TrackCurrent(caster.Creature, track) - amount;
             Record(new SpentFact(caster.Name, track, amount, value.Current.Value), subject: caster);

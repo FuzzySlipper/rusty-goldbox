@@ -1,0 +1,27 @@
+{
+  "type": "monster",
+  "id": "diagnostic_enemy",
+  "name": "Diagnostic enemy",
+  "class": "classic:fighter",
+  "level": 1,
+  "behavior": "tactical-diagnostics:faulty_profile",
+  "tracks": {
+    "classic:hit_points": "100"
+  },
+  "stats": {
+    "ac": "7",
+    "dex": "12",
+    "str": "10",
+    "movement": "60",
+    "size": "'medium'"
+  },
+  "actions": [
+    {
+      "action": "classic:missile_attack",
+      "name": "Needle volley",
+      "damage": "1d6",
+      "increment": "6"
+    }
+  ],
+  "xp": 0
+}

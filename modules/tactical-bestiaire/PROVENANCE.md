@@ -15,6 +15,9 @@ plans:
 - `actions/withdraw.json` and `actions/approach_ally.json` are original
   compositions of the existing move operation, so destination steps can
   withdraw or reach a wounded ally without a product-specific primitive;
+- `features/warder_training.json` gives the original Ivy companion the
+  authored approach action; her healing spell and weapon use remain the
+  ordinary Classic class, spell and item definitions;
 - the `monsters/` definitions supply original tracks, stats, equipment-like
   action parameters and profile attachments; and
 - `figures/` maps each logical creature to a figure or icon in the required

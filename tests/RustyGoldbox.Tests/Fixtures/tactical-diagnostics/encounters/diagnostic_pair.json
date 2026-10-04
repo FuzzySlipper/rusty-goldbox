@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "diagnostic_pair",
+  "name": "Diagnostic pair",
+  "monsters": [
+    {
+      "monster": "tactical-diagnostics:diagnostic_enemy",
+      "count": "1"
+    }
+  ]
+}

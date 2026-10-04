@@ -1,3 +1,5 @@
+using Rusty.Engine;
+using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
@@ -202,6 +204,428 @@ public sealed class TacticalPlanTests
 
         controller.Commit(second);
         Assert.Empty(controller.States);
+    }
+
+    [Fact]
+    public void StepCommitmentReassessesAndContinuesAtTheNextStep()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/sequence.json", """
+            {
+              "type": "combat-behavior",
+              "id": "sequence",
+              "name": "Step sequence",
+              "fallback": "end-turn",
+              "rules": [
+                {
+                  "commit": "step",
+                  "steps": [
+                    { "action": { "action": "classic:close" }, "target": "enemy" },
+                    { "action": { "action": "classic:melee_attack", "damage": "1d6" }, "target": "enemy" }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "classic:standard", out _)!;
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+        Definition attack = rules.Find(DefinitionTypes.Action, "classic:melee_attack", out _)!;
+
+        Creature actorCreature = CreatureWithHitPoints("actor", 10);
+        actorCreature.Position = new Cell(0, 0);
+        Combatant actor = new("Actor", actorCreature,
+            [
+                new UseOption(close, "close", new Dictionary<string, CompiledExpression>()),
+                new UseOption(attack, "strike", profile.Rules[0].Steps[1].Parameters),
+            ],
+            "actor")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        Creature targetCreature = CreatureWithHitPoints("target", 10);
+        targetCreature.Position = new Cell(1, 0);
+        Combatant target = new("Target", targetCreature, [], "target") { Side = 1 };
+
+        CombatBehaviorController controller = new(rules, combat, CombatField.Of(combat));
+        controller.Assign(actor.Id, profile);
+        controller.Register([actor, target]);
+
+        CombatActionChoice firstChoice = new(
+            $"{actor.Id}/use/0/{close.QualifiedId}",
+            close.QualifiedId,
+            "close",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [TargetChoice(target)],
+            []);
+        CombatBehaviorProposal? firstProposal = controller.Propose(actor, Observation(actor.Id, firstChoice));
+        Assert.NotNull(firstProposal);
+        Assert.Equal(firstChoice.Id, Assert.IsType<CombatCommand.UseAction>(firstProposal!.Command).ActionId);
+        controller.Commit(firstProposal);
+
+        Assert.Equal(1, controller.States[actor.Id].StepIndex);
+        CombatActionChoice secondChoice = new(
+            $"{actor.Id}/use/1/{attack.QualifiedId}",
+            attack.QualifiedId,
+            "strike",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [TargetChoice(target)],
+            []);
+        CombatBehaviorProposal? secondProposal = controller.Propose(actor, Observation(actor.Id, secondChoice));
+
+        Assert.NotNull(secondProposal);
+        Assert.Equal(1, secondProposal!.Trace?.StepIndex);
+        Assert.Equal(secondChoice.Id, Assert.IsType<CombatCommand.UseAction>(secondProposal.Command).ActionId);
+        controller.Commit(secondProposal);
+        Assert.Empty(controller.States);
+    }
+
+    [Fact]
+    public void RangedStepMovesToAVisibleEndpointBeforeAttacking()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/screened.json", """
+            {
+              "type": "encounter",
+              "id": "screened",
+              "name": "Screened",
+              "monsters": [ { "monster": "classic:skeleton", "count": "1" } ],
+              "terrain": [
+                "..........",
+                "..#.......",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+              ]
+            }
+            """);
+        modules.Write("tactics/line_of_sight.json", """
+            {
+              "type": "combat-behavior",
+              "id": "line_of_sight",
+              "name": "Find a clear shot",
+              "rules": [
+                {
+                  "steps": [
+                    {
+                      "destination": { "kind": "within", "distance": "3" },
+                      "action": { "action": "classic:missile_attack", "damage": "1d6", "increment": "1" },
+                      "target": "enemy"
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "classic:standard", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "tactics:screened", out _)!;
+        Definition attack = rules.Find(DefinitionTypes.Action, "classic:missile_attack", out _)!;
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+        CombatField field = CombatField.Of(combat, encounter)!;
+
+        Creature actorCreature = CreatureWithHitPoints("actor", 10);
+        actorCreature.Position = new Cell(0, 1);
+        Combatant actor = new("Actor", actorCreature,
+            [
+                new UseOption(attack, "shoot", profile.Rules[0].Steps[0].Parameters),
+                new UseOption(close, "close", new Dictionary<string, CompiledExpression>()),
+            ],
+            "actor")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        Creature targetCreature = CreatureWithHitPoints("target", 10);
+        targetCreature.Position = new Cell(3, 1);
+        Combatant target = new("Target", targetCreature, [], "target") { Side = 1 };
+        Assert.False(field.CanSee(actorCreature.Position!.Value, targetCreature.Position!.Value));
+
+        CombatBehaviorController controller = new(rules, combat, field);
+        controller.Assign(actor.Id, profile);
+        controller.Register([actor, target]);
+        CombatActionChoice closeChoice = new(
+            $"{actor.Id}/use/1/{close.QualifiedId}",
+            close.QualifiedId,
+            "close",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [TargetChoice(target)],
+            [new CombatMoveChoice(new Cell(2, 0), [new Cell(1, 0), new Cell(2, 0)], 2)]);
+
+        CombatBehaviorProposal? movementProposal = controller.Propose(actor, Observation(actor.Id, closeChoice));
+        Assert.NotNull(movementProposal);
+        Assert.True(movementProposal!.MovementOnly);
+        CombatCommand.UseAction movement = Assert.IsType<CombatCommand.UseAction>(movementProposal.Command);
+        Assert.Equal(closeChoice.Id, movement.ActionId);
+        Assert.Equal([new Cell(1, 0), new Cell(2, 0)], movement.Path);
+        controller.Commit(movementProposal);
+        actorCreature.Position = new Cell(2, 0);
+
+        CombatActionChoice attackChoice = new(
+            $"{actor.Id}/use/0/{attack.QualifiedId}",
+            attack.QualifiedId,
+            "shoot",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [TargetChoice(target)],
+            []);
+        CombatBehaviorProposal? attackProposal = controller.Propose(actor, Observation(actor.Id, attackChoice));
+
+        Assert.NotNull(attackProposal);
+        Assert.False(attackProposal!.MovementOnly);
+        Assert.Equal(attackChoice.Id, Assert.IsType<CombatCommand.UseAction>(attackProposal.Command).ActionId);
+        controller.Commit(attackProposal);
+        Assert.Empty(controller.States);
+    }
+
+    [Fact]
+    public void AutomaticRunnerMovesThroughTheResolverThenUsesTheRangedStep()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/grid.json", """
+            {
+              "type": "combat",
+              "id": "grid",
+              "name": "Two-action grid",
+              "initiative": "1",
+              "initiative_by": "side",
+              "initiative_order": "highest-first",
+              "initiative_each": "round",
+              "round_seconds": 6,
+              "field": {
+                "width": 10,
+                "height": 6,
+                "metric": "chebyshev",
+                "terrain": {
+                  "#": { "name": "Pillar", "passable": false, "blocks_sight": true }
+                }
+              },
+              "budget": [
+                { "id": "action", "per_turn": 2 },
+                { "id": "reaction", "per_turn": 1 }
+              ],
+              "track": "classic:hit_points",
+              "defeated": "self.hit_points <= 0"
+            }
+            """);
+        modules.Write("tactics/screened.json", """
+            {
+              "type": "encounter",
+              "id": "screened",
+              "name": "Screened",
+              "monsters": [ { "monster": "classic:skeleton", "count": "1" } ],
+              "terrain": [
+                "..........",
+                "..#.......",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+              ]
+            }
+            """);
+        modules.Write("tactics/line_of_sight.json", """
+            {
+              "type": "combat-behavior",
+              "id": "line_of_sight",
+              "name": "Find a clear shot",
+              "rules": [
+                {
+                  "steps": [
+                    {
+                      "destination": { "kind": "within", "distance": "3" },
+                      "action": { "action": "classic:missile_attack", "damage": "1d6", "increment": "1" },
+                      "target": "enemy"
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "tactics:grid", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "tactics:screened", out _)!;
+        Definition monster = rules.Find(DefinitionTypes.Monster, "classic:skeleton", out _)!;
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+        Definition missile = rules.Find(DefinitionTypes.Action, "classic:missile_attack", out _)!;
+        Definition track = rules.Find(DefinitionTypes.Track, "classic:hit_points", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9343, "tactical-ranged-resolver"));
+            DiceRoller dice = new(engine.Random, stream);
+            Evaluator evaluator = new(rules, dice);
+            Combatant actor = Combatant.FromMonster(rules, monster, "Screened shooter", evaluator);
+            actor.Uses.RemoveAll(use => use.Action != close);
+            actor.Uses.Add(new UseOption(missile, "screened shot", profile.Rules[0].Steps[0].Parameters));
+            Combatant target = Combatant.FromMonster(rules, monster, "Pillar target", evaluator);
+            actor.Controller = CombatControlMode.Automatic;
+            target.Controller = CombatControlMode.Manual;
+            target.Creature.Track(track.Id).Max = 100;
+            target.Creature.Track(track.Id).Current = 100;
+
+            CombatRunner runner = CombatRunner.Create(
+                rules,
+                combat,
+                [
+                    new CombatSide("Party", [actor]),
+                    new CombatSide("Enemy", [target]),
+                ],
+                dice,
+                encounter,
+                new CombatSetup([new Cell(0, 1), new Cell(3, 1)], SurprisedSide: -1));
+            runner.BehaviorController.Assign(actor.Id, profile);
+            runner.CollectBehaviorTraces = true;
+
+            CombatObservation observation = runner.Start(1);
+            while (observation.PendingDecision?.ActorId != target.Id
+                && observation.Phase != CombatPhase.Ended)
+            {
+                if (observation.PendingDecision is not CombatDecision decision)
+                {
+                    break;
+                }
+
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(decision.ActorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            MoveFact move = Assert.Single(runner.Facts.OfType<MoveFact>(), fact => fact.Who == actor.Name);
+            ActionFact shot = Assert.Single(runner.Facts.OfType<ActionFact>(), fact => fact.Who == actor.Name && fact.Action == "screened shot");
+            Assert.Equal(new Cell(0, 1), move.From);
+            Assert.NotEqual(move.From, move.To);
+            Assert.Equal(target.Name, shot.Target);
+            Assert.True(CombatField.Of(combat, encounter)!.CanSee(move.To, target.Creature.Position!.Value));
+            Assert.Equal(move.To, runner.Observe().Combatants.Single(member => member.Id == actor.Id).Position);
+            Assert.Contains(runner.BehaviorTraces, trace => trace.ActorId == actor.Id && trace.MovementOnly);
+            Assert.Contains(runner.BehaviorTraces, trace => trace.ActorId == actor.Id && !trace.MovementOnly && trace.ActionId?.EndsWith(missile.QualifiedId, StringComparison.Ordinal) == true);
+        });
+    }
+
+    [Theory]
+    [InlineData("unavailable", "self.hit_points > 100", 1)]
+    [InlineData("unaffordable", "self.hit_points > 0", 0)]
+    public void RangedStepDoesNotMoveForAnIllegalIntendedAction(string caseId, string available, int budget)
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/screened_shot.json", $$"""
+            {
+              "type": "action",
+              "id": "screened_shot_{{caseId}}",
+              "name": "Screened shot",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "range": "use.increment * 10",
+              "available": "{{available}}",
+              "parameters": [ "damage", "increment" ],
+              "always": []
+            }
+            """);
+        modules.Write("tactics/encounter.json", """
+            {
+              "type": "encounter",
+              "id": "screened",
+              "name": "Screened",
+              "monsters": [ { "monster": "classic:skeleton", "count": "1" } ],
+              "terrain": [
+                "..........",
+                "..#.......",
+                "..........",
+                "..........",
+                "..........",
+                ".........."
+              ]
+            }
+            """);
+        modules.Write("tactics/behavior.json", $$"""
+            {
+              "type": "combat-behavior",
+              "id": "screened_{{caseId}}",
+              "name": "Screened shot",
+              "fallback": "end-turn",
+              "rules": [
+                {
+                  "steps": [
+                    {
+                      "destination": { "kind": "within", "distance": "3" },
+                      "action": { "action": "tactics:screened_shot_{{caseId}}", "damage": "1d6", "increment": "1" },
+                      "target": "enemy"
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "classic:standard", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "tactics:screened", out _)!;
+        Definition shot = rules.Find(DefinitionTypes.Action, $"tactics:screened_shot_{caseId}", out _)!;
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+
+        Creature actorCreature = CreatureWithHitPoints("actor", 10);
+        actorCreature.Position = new Cell(0, 1);
+        Combatant actor = new("Actor", actorCreature,
+            [
+                new UseOption(shot, "shoot", profile.Rules[0].Steps[0].Parameters),
+                new UseOption(close, "close", new Dictionary<string, CompiledExpression>()),
+            ],
+            "actor")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        actor.Budget["action"] = budget;
+        Creature targetCreature = CreatureWithHitPoints("target", 10);
+        targetCreature.Position = new Cell(3, 1);
+        Combatant target = new("Target", targetCreature, [], "target") { Side = 1 };
+        CombatField field = CombatField.Of(combat, encounter)!;
+        Assert.False(field.CanSee(actorCreature.Position.Value, targetCreature.Position.Value));
+
+        CombatBehaviorController controller = new(rules, combat, field);
+        controller.Assign(actor.Id, profile);
+        controller.Register([actor, target]);
+        CombatActionChoice closeChoice = new(
+            $"{actor.Id}/use/1/{close.QualifiedId}",
+            close.QualifiedId,
+            "close",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [TargetChoice(target)],
+            [new CombatMoveChoice(new Cell(2, 0), [new Cell(1, 0), new Cell(2, 0)], 2)]);
+
+        CombatBehaviorProposal? proposal = controller.Propose(actor, Observation(actor.Id, closeChoice));
+
+        Assert.NotNull(proposal);
+        Assert.Equal(CombatBehaviorFallback.EndTurn, proposal!.Fallback);
+        Assert.Null(proposal.Command);
+        Assert.Contains(proposal.Trace!.Alternatives, alternative => alternative.Status == "unavailable");
     }
 
     [Fact]
@@ -521,6 +945,11 @@ public sealed class TacticalPlanTests
             new Dictionary<string, int> { ["action"] = 1 },
             [targetChoice],
             moves);
+    }
+
+    private static CombatTargetChoice TargetChoice(Combatant target)
+    {
+        return new CombatTargetChoice(target.Id, target.Name, target.Side, target.Defeated, target.Escaped, target.Creature.Position, 10, 10);
     }
 
     private static Creature CreatureWithHitPoints(string label, decimal points)

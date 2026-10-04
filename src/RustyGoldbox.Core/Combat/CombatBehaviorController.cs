@@ -16,12 +16,16 @@ public sealed class CombatBehaviorState
 
     public bool Committed { get; set; }
 
+    /// <summary>Whether the committed state is waiting for a destination move before the authored step.</summary>
+    public bool MovementOnly { get; set; }
+
     public CombatBehaviorState Clone() => new()
     {
         BehaviorId = BehaviorId,
         RuleIndex = RuleIndex,
         StepIndex = StepIndex,
         Committed = Committed,
+        MovementOnly = MovementOnly,
     };
 }
 
@@ -345,12 +349,18 @@ public sealed class CombatBehaviorController
                 : null;
             bool destinationSatisfied = step.Destination is null
                 || DestinationSatisfied(actor, target, step.Destination, behavior);
+            bool actionNeedsMovement = choice is null
+                && intendedUse is not null
+                && target.Position is Cell
+                && actor.Creature.Position is Cell actorPosition
+                && !ActionLegalAt(intendedUse, actor, target, behavior, actorPosition);
             decimal? destinationDistance = step.Destination is CombatBehaviorDestination destinationForTrace && targetCreature is not null
                 ? EvaluateNumber(destinationForTrace.Distance, actor, targetCreature, behavior)
                 : null;
-            if (!destinationSatisfied && path is null && step.Destination is CombatBehaviorDestination destination
-                && (choice is not null || CanUseForMovement(actor, intendedUse, target, behavior))
-                && FindMovement(pending, actor, target, destination, behavior) is (CombatActionChoice movement, IReadOnlyList<Cell> movementPath))
+            if ((!destinationSatisfied || actionNeedsMovement)
+                && path is null
+                && step.Destination is CombatBehaviorDestination destination
+                && FindMovement(pending, actor, target, destination, behavior, intendedUse, actionNeedsMovement) is (CombatActionChoice movement, IReadOnlyList<Cell> movementPath))
             {
                 int traceIndex = alternatives.Count;
                 alternatives.Add(new CombatBehaviorAlternativeTrace(
@@ -551,16 +561,19 @@ public sealed class CombatBehaviorController
             state.RuleIndex = ruleIndex;
             state.StepIndex = stepIndex;
             state.Committed = true;
+            state.MovementOnly = true;
             _states[proposal.ActorId] = state;
             return;
         }
 
-        if (rule.Commitment == CombatBehaviorCommitment.Plan && stepIndex + 1 < rule.Steps.Count)
+        if (rule.Commitment is CombatBehaviorCommitment.Plan or CombatBehaviorCommitment.Step
+            && stepIndex + 1 < rule.Steps.Count)
         {
             state.BehaviorId = proposal.Behavior.Definition.QualifiedId;
             state.RuleIndex = ruleIndex;
             state.StepIndex = stepIndex + 1;
             state.Committed = true;
+            state.MovementOnly = false;
             _states[proposal.ActorId] = state;
         }
         else
@@ -575,7 +588,10 @@ public sealed class CombatBehaviorController
         if (state.Committed && state.RuleIndex >= 0 && state.RuleIndex < behavior.Rules.Count)
         {
             CombatBehaviorRule committed = behavior.Rules[state.RuleIndex];
-            return [(committed, state.RuleIndex)];
+            if (state.MovementOnly || committed.Commitment == CombatBehaviorCommitment.Plan)
+            {
+                return [(committed, state.RuleIndex)];
+            }
         }
         return rules;
     }
@@ -836,7 +852,9 @@ public sealed class CombatBehaviorController
         Combatant actor,
         CombatTargetChoice target,
         CombatBehaviorDestination destination,
-        CombatBehaviorProfile behavior)
+        CombatBehaviorProfile behavior,
+        UseOption? intendedUse,
+        bool requiresIntendedAction)
     {
         if (target.Position is not Cell targetCell)
         {
@@ -860,6 +878,9 @@ public sealed class CombatBehaviorController
             CombatMoveChoice? move = choice.Moves
                 .Select(candidate => (Move: candidate, Distance: Distance(candidate.Destination, targetCell)))
                 .Where(candidate => Meets(candidate.Distance, preferred, destination.Kind))
+                .Where(candidate => !requiresIntendedAction
+                    || intendedUse is not null
+                    && ActionLegalAt(intendedUse, actor, target, behavior, candidate.Move.Destination))
                 .OrderBy(candidate => candidate.Move.Cost)
                 .ThenBy(candidate => candidate.Distance)
                 .Select(candidate => (CombatMoveChoice?)candidate.Move)
@@ -873,44 +894,137 @@ public sealed class CombatBehaviorController
         return null;
     }
 
-    private bool CanUseForMovement(
+    /// <summary>
+    /// Checks the field-owned part of an action's target legality from a
+    /// hypothetical endpoint. The live resolver remains the authority for the
+    /// actual choice; this read-only check only lets a behavior choose a move
+    /// that can make a currently screened ranged action legal.
+    /// </summary>
+    private bool ActionLegalAt(
+        UseOption use,
         Combatant actor,
-        UseOption? use,
         CombatTargetChoice target,
-        CombatBehaviorProfile behavior)
+        CombatBehaviorProfile behavior,
+        Cell endpoint)
     {
-        if (use is null
-            || ActionCostUnavailable(actor, use.Action)
-            || (use.Spell is Definition spell
-                && (!actor.CanCast(spell) || !SpellAffordable(actor, spell, target, behavior, use))))
-        {
-            return false;
-        }
-
-        if (!_rules.TryExpression(use.Action, "$.available", out CompiledExpression? available)
-            || available is null)
+        if (_field is null || target.Position is not Cell targetCell)
         {
             return true;
         }
 
+        if (ActionCostUnavailable(actor, use.Action)
+            || (use.Spell is Definition spell
+                && (!actor.CanCast(spell) || !SpellAffordableAt(actor, spell, target, behavior, use, endpoint))))
+        {
+            return false;
+        }
+
         try
         {
-            return _evaluator.Evaluate(available, ScopeFor(actor, FindCreature(target.Id), behavior, use.Parameters)).Boolean;
+            if (_rules.TryExpression(use.Action, "$.available", out CompiledExpression? available)
+                && available is not null
+                && !EvaluateActionBooleanAt(available, actor, target, behavior, use, endpoint))
+            {
+                return false;
+            }
+
+            if (_rules.TryExpression(use.Action, "$.valid_target", out CompiledExpression? validTarget)
+                && validTarget is not null
+                && !EvaluateActionBooleanAt(validTarget, actor, target, behavior, use, endpoint))
+            {
+                return false;
+            }
         }
         catch (ExpressionException)
         {
-            // A guard that cannot be inspected without resolving it cannot
-            // justify spending movement before the shared resolver sees it.
             return false;
         }
+
+        if (!_rules.TryExpression(use.Action, "$.range", out CompiledExpression? range)
+            || range is null)
+        {
+            return true;
+        }
+
+        decimal knownRange;
+        try
+        {
+            knownRange = EvaluateActionNumberAt(range, actor, target, behavior, use, endpoint);
+        }
+        catch (ExpressionException)
+        {
+            return false;
+        }
+
+        return Distance(endpoint, targetCell) <= knownRange && _field.CanSee(endpoint, targetCell);
     }
 
-    private bool SpellAffordable(
+    private bool EvaluateActionBooleanAt(
+        CompiledExpression expression,
+        Combatant actor,
+        CombatTargetChoice target,
+        CombatBehaviorProfile behavior,
+        UseOption use,
+        Cell endpoint)
+    {
+        Creature? targetCreature = FindCreature(target.Id);
+        return CreateEndpointEvaluator(actor, target, endpoint).Evaluate(
+            expression,
+            ScopeFor(actor, targetCreature, behavior, use.Parameters)).Boolean;
+    }
+
+    private decimal EvaluateActionNumberAt(
+        CompiledExpression expression,
+        Combatant actor,
+        CombatTargetChoice target,
+        CombatBehaviorProfile behavior,
+        UseOption use,
+        Cell endpoint)
+    {
+        Creature? targetCreature = FindCreature(target.Id);
+        Scope scope = ScopeFor(actor, targetCreature, behavior, use.Parameters);
+        return CreateEndpointEvaluator(actor, target, endpoint).Evaluate(expression, scope).Number;
+    }
+
+    private Evaluator CreateEndpointEvaluator(Combatant actor, CombatTargetChoice target, Cell endpoint)
+    {
+        return new Evaluator(_rules, null)
+        {
+            Combat = new CombatMoment(
+                _evaluator.Combat?.Round ?? 0,
+                _evaluator.Combat?.SurpriseRound ?? false,
+                (from, to) => from == actor.Creature && to.Position is Cell toCell
+                    ? Distance(endpoint, toCell)
+                    : CombatDistance(from, to),
+                creature => creature == actor.Creature
+                    ? _actors.Values
+                        .Where(member => member != actor && member.Side != actor.Side && !member.Defeated && !member.Escaped && member.Creature.Position is Cell)
+                        .Select(member => Distance(endpoint, member.Creature.Position!.Value))
+                        .DefaultIfEmpty(0)
+                        .Min()
+                    : Nearest(creature),
+                (from, to) => from == actor.Creature && to.Position is Cell toCell
+                    ? _field!.CanSee(endpoint, toCell)
+                    : CanSee(from, to),
+                (from, to) => from == actor.Creature && to.Position is Cell toCell
+                    ? _actors.Values.Count(member => member != actor
+                        && member.Side == actor.Side
+                        && !member.Defeated
+                        && !member.Escaped
+                        && member.Creature != to
+                        && member.Creature.Position is Cell allyCell
+                        && Distance(allyCell, toCell) <= 1)
+                    : AlliesNear(from, to)),
+        };
+    }
+
+    private bool SpellAffordableAt(
         Combatant actor,
         Definition spell,
         CombatTargetChoice target,
         CombatBehaviorProfile behavior,
-        UseOption use)
+        UseOption use,
+        Cell endpoint)
     {
         if (!spell.Json.TryGetProperty("cost", out JsonElement costs)
             || actor.CastsLeft.ContainsKey(spell))
@@ -930,12 +1044,12 @@ public sealed class CombatBehaviorController
             decimal amount;
             try
             {
-                amount = _evaluator.Evaluate(expression, ScopeFor(actor, FindCreature(target.Id), behavior, use.Parameters)).Number;
+                amount = CreateEndpointEvaluator(actor, target, endpoint)
+                    .Evaluate(expression, ScopeFor(actor, FindCreature(target.Id), behavior, use.Parameters))
+                    .Number;
             }
             catch (ExpressionException)
             {
-                // A cost that cannot be inspected without resolving it cannot
-                // justify spending movement before the shared resolver checks it.
                 return false;
             }
 

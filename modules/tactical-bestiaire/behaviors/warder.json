@@ -52,6 +52,19 @@
         {
           "action": {
             "action": "classic:melee_attack",
+            "from_item": "weapon"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    },
+    {
+      "priority": "9",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
             "name": "Staff",
             "damage": "1d6"
           },

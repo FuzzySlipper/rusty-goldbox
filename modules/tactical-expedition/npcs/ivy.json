@@ -13,6 +13,9 @@
         "gain": 6
       }
     ],
+    "milestone_features": [
+      "tactical-bestiaire:warder_training"
+    ],
     "experience": 0,
     "class_experience": {
       "classic:cleric": 0
@@ -31,7 +34,7 @@
         "max": 6
       },
       "spells_1": {
-        "current": 0
+        "current": 1
       },
       "spells_2": {
         "current": 0
@@ -51,6 +54,12 @@
     },
     "equipment": [
       "classic:heavy_mace"
+    ],
+    "spells": [
+      "classic:cure_light_wounds"
+    ],
+    "memorised": [
+      "classic:cure_light_wounds"
     ],
     "conditions": []
   }
