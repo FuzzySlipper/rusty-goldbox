@@ -94,6 +94,29 @@ public sealed record TextFact(string Text) : PlayFact
     public override string Describe() => Text;
 }
 
+/// <summary>A member-specific perception check resolved for an expedition scope.</summary>
+public sealed record PerceptionFact(
+    int Member,
+    string Who,
+    string Scope,
+    string Mode,
+    CheckResult Result) : PlayFact
+{
+    public override string Kind => "perception";
+
+    public override string Describe() =>
+        $"{Who} resolves {Scope} as {Mode} (roll {N(Result.Roll)} + {N(Result.Bonus)} + {N(Result.Modifier)} = {N(Result.Total)}, needs {N(Result.Target)}).";
+}
+
+/// <summary>A presentation-only member view selection.</summary>
+public sealed record ViewFact(int Member, string Who, string Mode, string Text, Definition? Picture) : PlayFact
+{
+    public override string Kind => "view";
+
+    public override string Describe() =>
+        $"{Who}'s {Mode} view: {Text}{(Picture is Definition picture ? $" [picture {picture.QualifiedId}]" : "")}";
+}
+
 public sealed record MenuFact(string Text, IReadOnlyList<(int Number, string Label)> Options) : PlayFact
 {
     public override string Kind => "menu";

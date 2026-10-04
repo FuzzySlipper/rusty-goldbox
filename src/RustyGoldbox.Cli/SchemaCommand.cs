@@ -19,12 +19,23 @@ internal static class SchemaCommand
         }
         """;
 
+    private const string WorkspaceExample = """
+        {
+          "modules": ["modules", "../shared-rules"],
+          "authoring": {
+            "modules": ["modules/blackapple-campaign", "modules/blackapple-art"],
+            "staging": ".goldbox/staged",
+            "exports": "exports"
+          }
+        }
+        """;
+
     public static int Run(IEnumerable<string> args, Output output)
     {
         (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
         if (error is null && parsed.Positionals.Count > 1)
         {
-            error = "Usage: goldbox schema [type | module | expressions | operations | events | media]";
+            error = "Usage: goldbox schema [type | workspace | module | expressions | operations | events | media]";
         }
 
         if (error is not null)
@@ -41,6 +52,11 @@ internal static class SchemaCommand
         if (topic == "module")
         {
             return Manifest(output);
+        }
+
+        if (topic == "workspace")
+        {
+            return Workspace(output);
         }
 
         if (topic == "expressions")
@@ -67,7 +83,7 @@ internal static class SchemaCommand
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events, media.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, workspace, module, expressions, operations, events, media.");
         }
 
         return Type(output, type);
@@ -80,7 +96,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "module", "expressions", "operations", "events", "media" },
+                topics = new[] { "workspace", "module", "expressions", "operations", "events", "media" },
             });
             return GoldboxCli.Ok;
         }
@@ -97,6 +113,7 @@ internal static class SchemaCommand
         output.Line();
         output.Line("Other topics:");
         output.Line("  module              The module.json manifest.");
+        output.Line("  workspace           The goldbox.json authoring workspace.");
         output.Line("  expressions         The expression language and its functions.");
         output.Line("  operations          What actions and conditions can do: damage, heal, conditions, checks.");
         output.Line("  events              Campaign event kinds and their fields.");
@@ -194,6 +211,61 @@ internal static class SchemaCommand
         output.Line();
         output.Line("Example:");
         output.Line(ManifestExample.Trim());
+        return GoldboxCli.Ok;
+    }
+
+    private static int Workspace(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                name = "workspace",
+                file = "goldbox.json",
+                fields = new object[]
+                {
+                    new
+                    {
+                        name = "modules",
+                        required = true,
+                        kind = "array of directory paths",
+                        description = "Dependency search directories, relative to goldbox.json or absolute. Existing module commands use this list.",
+                    },
+                    new
+                    {
+                        name = "authoring",
+                        required = false,
+                        kind = "object",
+                        description = "Optional authoring source and generated-output locations. Its modules are explicit runtime module directories, not extra dependency search paths.",
+                        fields = new object[]
+                        {
+                            new { name = "modules", required = true, kind = "array of directory paths", description = "Authored module source directories; keep canon, prompts and reference art outside these directories." },
+                            new { name = "staging", required = true, kind = "directory path", description = "Generated clean module staging root." },
+                            new { name = "exports", required = true, kind = "directory path", description = "Generated exported content root." },
+                        },
+                    },
+                },
+                editableDirectories = RustyGoldbox.Core.Authoring.Workspace.EditableDirectoryNames,
+                generatedDirectories = new[] { ".goldbox/staged", "exports" },
+                example = System.Text.Json.JsonDocument.Parse(WorkspaceExample).RootElement,
+            });
+            return GoldboxCli.Ok;
+        }
+
+        output.Line("goldbox.json workspace: dependency paths plus an optional authoring layout.");
+        output.Line();
+        output.Line("Fields:");
+        output.Line("  modules (required): array of dependency search directories, relative to goldbox.json or absolute.");
+        output.Line("  authoring (optional): object describing authored runtime module sources and generated outputs.");
+        output.Line("    modules (required): explicit module source directories; canon, prompts and art stay outside them.");
+        output.Line("    staging (required): generated clean staging directory, commonly .goldbox/staged.");
+        output.Line("    exports (required): generated exported container directory, commonly exports.");
+        output.Line();
+        output.Line("Editable roots created by `goldbox workspace new`: canon, art/references, art/accepted, art/rejected, prompts, scripts.");
+        output.Line("These roots are discoverable conventions; only runtime module directories and their required licence/provenance files are distributed.");
+        output.Line();
+        output.Line("Example:");
+        output.Line(WorkspaceExample.Trim());
         return GoldboxCli.Ok;
     }
 

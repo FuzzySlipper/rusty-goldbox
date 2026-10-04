@@ -26,8 +26,12 @@ internal static class GoldboxCli
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
-          goldbox schema [<type> | module | expressions | operations | events | media]
+          goldbox schema [<type> | workspace | module | expressions | operations | events | media]
               The format reference: definition types with fields and examples.
+          goldbox workspace new <dir>
+              Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
+          goldbox workspace inspect [<path>]
+              Finds the nearest goldbox.json and lists dependency search paths, authored modules, editable roots and outputs.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
@@ -95,7 +99,7 @@ internal static class GoldboxCli
           goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>]
           goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>]
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, status.
+              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
               --save writes the state at the end; --load continues a save exactly.
 
         Every command accepts --json for structured output.
@@ -128,6 +132,8 @@ internal static class GoldboxCli
         {
             case "schema":
                 return SchemaCommand.Run(args.Skip(1), printer);
+            case "workspace":
+                return WorkspaceCommand.Run(args.Skip(1), printer, workingDirectory);
             case "eval":
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
             case "character":

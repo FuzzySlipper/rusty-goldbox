@@ -39,7 +39,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
-| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, and the creature view expressions read |
+| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger and authored perception scope/mode, and the creature view expressions read |
 | `src/RustyGoldbox.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress and lifepath age, choices, rolls and results, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
@@ -49,11 +49,13 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu or shop, party and inventory; characters own declared currency balances and equipment |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu or shop, party and inventory, current text-view event and selected member; characters own declared currency balances, equipment and perception results |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; resolves perception checks through the existing evaluator and selects authored member views without changing shared routes; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
+| `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding and inspection; shares its module search paths with module loading |
+| `src/RustyGoldbox.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
@@ -79,6 +81,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet, shop, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
+| `campaigns/` | Retained editable campaign sources; shared canon supplies authored story and ID contracts, while Core owns their runtime values |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
 | `modules/universal-d100/` | Basic Roleplaying's d100 rules from Chaosium's ORC Content Document, with `PROVENANCE.md` (ORC notices) and `LICENSE-ORC.txt`: rolled characteristics, skills by profession, dodge and shield parry, armour, major wounds |

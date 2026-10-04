@@ -14,12 +14,32 @@ public static class EventTypes
     private static readonly Field Picture = new("picture", new ReferenceKind("asset", "picture"), false, "A picture shown with the event, any visual media; it stays until the party moves or another event shows one.");
     private static readonly Field Sound = new("sound", new ReferenceKind("asset", "sound"), false, "Audio played once as the event begins.");
     private static readonly Field Music = new("music", new ReferenceKind("asset", "music"), false, "Audio that loops from this event on, until another event's music replaces it.");
+    private static readonly Field Views = new("views", new ListKind(new ObjectKind(
+    [
+        new("mode", new TextKind(), true, "The opaque mode selected by a member's persisted perception result."),
+        new("text", new TextKind(), true, "What a member in this mode sees or hears."),
+        new("picture", new ReferenceKind("asset", "picture"), false, "The logical picture shown for this mode."),
+    ])), false, "Presentation alternatives selected by the existing view <member> command; modes must be distinct.");
 
     public static DefinitionType Text { get; } = new(
         "text",
         "Shows text.",
-        [new("text", new TextKind(), true, "What the party sees or hears."), Next, Picture, Sound, Music],
-        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "picture": "crypt-art:gate", "sound": "crypt-art:creak", "next": "gate_choice" }""");
+        [new("text", new TextKind(), true, "What the party sees or hears when no member-specific view is selected."), Next, Picture, Sound, Music, Views],
+        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "picture": "crypt-art:gate", "sound": "crypt-art:creak", "next": "gate_choice", "views": [ { "mode": "truth", "text": "The gate is real." }, { "mode": "glamour", "text": "The gate is an archway." } ] }""");
+
+    public static DefinitionType Perception { get; } = new(
+        "perception",
+        "Resolves one module-authored check for every active party member and persists its opaque success or failure mode for the named expedition scope. An authored reset starts a fresh resolution even when the scope is unchanged.",
+        [
+            new("scope", new TextKind(), true, "The expedition scope. Entering a different scope clears older member results."),
+            new("check", new ReferenceKind("check"), true, "The authored check each member makes with the member as self."),
+            new("modifier", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false, "An optional extra modifier evaluated separately for each member."),
+            new("reset", new BooleanKind(), false, "If true, clears active and absent member results before this entry resolves, even when scope is unchanged."),
+            new("success_mode", new TextKind(), true, "Opaque mode stored when the member's check succeeds."),
+            new("failure_mode", new TextKind(), true, "Opaque mode stored when the member's check fails."),
+            Next,
+        ],
+        """{ "type": "event", "id": "brugh_entry", "kind": "perception", "scope": "brugh-entry", "check": "int_save", "modifier": "-2", "reset": true, "success_mode": "truth", "failure_mode": "glamour", "next": "mirror_room" }""");
 
     public static DefinitionType Menu { get; } = new(
         "menu",
@@ -250,7 +270,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

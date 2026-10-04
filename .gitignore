@@ -11,3 +11,7 @@ target/
 src/ui/generated/
 playwright-report/
 test-results/
+
+# Authoring workspace generated module staging and exports.
+**/.goldbox/staged/
+**/exports/

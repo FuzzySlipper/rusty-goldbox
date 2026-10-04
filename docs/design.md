@@ -43,6 +43,7 @@ In priority order:
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring and testing CLI over Core. |
 | `src/ui/` | DOM companion: the panels around the Engine view, laid out for the window's shape. |
 | `modules/` | First-party module sources, one directory per module. |
+| `campaigns/` | Retained editable campaign sources, with story canon and attribution outside runtime module directories. |
 | `tests/` | Focused checks: module fixtures, expression cases and golden play transcripts. |
 
 This is the intended shape; [architecture.md](architecture.md) records what
@@ -466,6 +467,15 @@ Combat is built so that no die convention is assumed:
   bring a `picture` (shown until the party moves or another event shows one),
   a `sound` (played once) and `music` (looping until another event's music);
   the play transcript names them, and saves keep the picture and music.
+- **Member perception.** A `perception` event names a check, a scope and its
+  success/failure modes, with an optional check modifier. Each active character
+  owns one persisted scope/mode result. Repeating the same scope keeps that
+  result; changing scope or authoring `reset: true` clears active and absent NPC
+  results before resolving active members through the normal evaluator and
+  Engine dice. A text event may supply `views` with distinct mode, text and
+  optional picture fields. `view <member>` selects that member's presentation;
+  the area, routes, variables and consequences remain shared. Saves retain the
+  current view event and selection. Modes and check names are authored data.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
   an item and an optional campaign guard; stock is unlimited and offered at
   the item's cost in its declared currency. A ruleset's single `economy`
@@ -536,6 +546,8 @@ path and the rule that failed. Module directories resolve through
 | Command | Purpose |
 | --- | --- |
 | `goldbox schema [type]` | Print a definition type's fields, an example and the available operations and expression functions. This is the agent's format reference. |
+| `goldbox workspace new <dir>` | Create editable canon/art/prompts/scripts directories and a workspace manifest with separate runtime module and generated output locations. |
+| `goldbox workspace inspect [path]` | Find the nearest workspace and report its authored modules, dependency paths, editable roots and generated locations. `goldbox schema workspace` describes the manifest. |
 | `goldbox module new <kind> <id>` | Scaffold a module. |
 | `goldbox module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
