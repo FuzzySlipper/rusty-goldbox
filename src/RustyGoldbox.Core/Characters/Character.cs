@@ -44,6 +44,14 @@ public sealed record LifepathTerm(
     IReadOnlyList<string> Choices,
     IReadOnlyList<string> Results);
 
+/// <summary>
+/// The module-authored perception mode a character resolved for an
+/// expedition.  Both fields are opaque campaign data: Core stores them so a
+/// member keeps the same view across rooms and saves, but it does not name or
+/// interpret any particular mode.
+/// </summary>
+public sealed record PerceptionState(string Scope, string Mode);
+
 /// <summary>A player character: its choices, scores and progress under a rule set.</summary>
 public sealed class Character
 {
@@ -189,6 +197,9 @@ public sealed class Character
 
     public Definition? Npc { get; set; }
 
+    /// <summary>The current expedition perception result, when one was resolved.</summary>
+    public PerceptionState? Perception { get; set; }
+
     internal Character Copy()
     {
         Character copy = new()
@@ -196,6 +207,7 @@ public sealed class Character
             Name = Name, Modules = Modules, Race = Race, Creation = Creation,
             Lifepath = Lifepath, Age = Age, LifepathEnded = LifepathEnded,
             Experience = Experience, Portrait = Portrait, Npc = Npc,
+            Perception = Perception,
             UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
             CombatControlPreference = CombatControlPreference,
             SkillPointsCommitted = SkillPointsCommitted,

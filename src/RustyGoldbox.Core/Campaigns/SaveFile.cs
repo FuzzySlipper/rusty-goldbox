@@ -27,7 +27,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "combat_sequence", "area", "x", "y", "facing", "variables", "found_secrets", "opened_doors", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "pending_combat", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "combat_sequence", "area", "x", "y", "facing", "variables", "found_secrets", "opened_doors", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "pending_combat", "elapsed_days", "picture", "music", "view_event", "inventory", "ended", "party", "absent_npcs",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -122,6 +122,7 @@ public static class SaveFile
             writer.WriteNumber("elapsed_days", state.ElapsedDays);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);
+            writer.WriteString("view_event", state.ViewEvent?.QualifiedId);
             writer.WriteStartArray("inventory");
             foreach (Definition item in state.Inventory)
             {
@@ -582,6 +583,7 @@ public static class SaveFile
 
             state.Picture = Media(root, "picture");
             state.Music = Media(root, "music");
+            ReadViewEvent(root, state);
 
             if (root.TryGetProperty("inventory", out JsonElement inventory) && inventory.ValueKind == JsonValueKind.Array)
             {
@@ -669,6 +671,37 @@ public static class SaveFile
             {
                 Error("$.party", $"{state.Campaign.Name} takes a party of {min} to {max}; the save has {member}.");
             }
+        }
+
+        private void ReadViewEvent(JsonElement root, CampaignState state)
+        {
+            if (!root.TryGetProperty("view_event", out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+            {
+                return;
+            }
+
+            if (value.ValueKind != JsonValueKind.String)
+            {
+                Error("$.view_event", "view_event must be a text event ID with authored views, or null.");
+                return;
+            }
+
+            Definition? eventDefinition = Find(root, "view_event", DefinitionTypes.Event);
+            if (eventDefinition is null)
+            {
+                return;
+            }
+
+            if (eventDefinition.Json.GetProperty("kind").GetString() != "text"
+                || !eventDefinition.Json.TryGetProperty("views", out JsonElement views)
+                || views.ValueKind != JsonValueKind.Array
+                || views.GetArrayLength() == 0)
+            {
+                Error("$.view_event", $"{eventDefinition.QualifiedId} is not a text event with authored views.");
+                return;
+            }
+
+            state.ViewEvent = eventDefinition;
         }
 
         private void ReadPendingCombat(JsonElement root, CampaignState state)

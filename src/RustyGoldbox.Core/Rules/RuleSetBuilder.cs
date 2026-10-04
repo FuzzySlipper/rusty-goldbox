@@ -1732,7 +1732,7 @@ public sealed class RuleSetBuilder
             Error(asset, "asset.audio", "$.file", $"'{file}' is not audio the Engine decodes; use {string.Join(", ", Media.AudioFormats)}.");
         }
 
-        foreach (string field in Media.SheetFields.Append("regions").Where(field => asset.Json.TryGetProperty(field, out _)))
+        foreach (string field in Media.SheetFields.Append("regions").Append("sampling").Where(field => asset.Json.TryGetProperty(field, out _)))
         {
             Error(asset, "asset.audio", $"$.{field}", $"\"{field}\" is for pictures; this asset is audio.");
         }
@@ -1798,7 +1798,38 @@ public sealed class RuleSetBuilder
             if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
             {
                 Error(asset, "asset.regions", $"$.regions.{region.Name}", $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
+                continue;
             }
+
+            CheckLinearCrop(asset, $"$.regions.{region.Name}", rect[0], rect[1], rect[2], rect[3], width, height, "region");
+        }
+    }
+
+    /// <summary>
+    /// The pinned Engine rejects a degenerate sprite-atlas UV rectangle. A
+    /// half-pixel inset keeps linear filtering inside a crop, but a one-pixel
+    /// cropped axis would collapse when both edges move inward. Reject that
+    /// one concrete case at the module boundary so the DOM and Engine retain
+    /// the same authored sampling policy.
+    /// </summary>
+    private void CheckLinearCrop(Definition asset, string path, int x, int y, int cropWidth, int cropHeight, int imageWidth, int imageHeight, string kind)
+    {
+        if (!asset.Json.TryGetProperty("sampling", out JsonElement sampling)
+            || sampling.ValueKind != JsonValueKind.String
+            || sampling.GetString() != "linear")
+        {
+            return;
+        }
+
+        string? axis = x > 0 || cropWidth < imageWidth
+            ? cropWidth == 1 ? "width" : null
+            : null;
+        axis ??= y > 0 || cropHeight < imageHeight
+            ? cropHeight == 1 ? "height" : null
+            : null;
+        if (axis is not null)
+        {
+            Error(asset, "asset.sampling", path, $"linear sampling cannot safely filter a one-pixel cropped {kind} on its {axis} axis: the pinned Engine rejects a degenerate sprite-atlas UV rectangle (CSHARP_SPRITE_ATLAS_FRAME: DegenerateRect). Use \"nearest\" for this crop or make its {axis} dimension at least 2 pixels.");
         }
     }
 
@@ -1900,6 +1931,8 @@ public sealed class RuleSetBuilder
             return;
         }
 
+        CheckLinearCrop(asset, "$.frame_size", 0, 0, frameWidth, frameHeight, width, height, "sheet frame");
+
         int cells = width / frameWidth * (height / frameHeight);
         int count = cells;
         if (json.TryGetProperty("frame_count", out JsonElement declared))
@@ -1998,6 +2031,12 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "text":
+                CheckTextViews(definition);
+                break;
+            case "perception":
+                CheckPerception(definition);
+                break;
             case "give" or "take":
                 if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
                 {
@@ -2053,6 +2092,48 @@ public sealed class RuleSetBuilder
             case "combat":
                 CheckCombatEvent(definition);
                 break;
+        }
+    }
+
+    private void CheckTextViews(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("views", out JsonElement views))
+        {
+            return;
+        }
+
+        if (views.GetArrayLength() == 0)
+        {
+            Error(definition, "event.views", "$.views", "A text event's views must contain at least one authored mode.");
+            return;
+        }
+
+        HashSet<string> modes = new(StringComparer.Ordinal);
+        int index = 0;
+        foreach (JsonElement view in views.EnumerateArray())
+        {
+            string mode = view.GetProperty("mode").GetString()!;
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", "A view mode must be nonempty text.");
+            }
+            else if (!modes.Add(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", $"View mode '{mode}' is repeated; each authored view needs a distinct mode.");
+            }
+
+            index++;
+        }
+    }
+
+    private void CheckPerception(Definition definition)
+    {
+        foreach (string field in new[] { "scope", "success_mode", "failure_mode" })
+        {
+            if (string.IsNullOrWhiteSpace(definition.Json.GetProperty(field).GetString()))
+            {
+                Error(definition, "event.perception", $"$.{field}", $"{field} must be nonempty text.");
+            }
         }
     }
 

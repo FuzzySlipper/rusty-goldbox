@@ -10,6 +10,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RustyGoldbox.Tests" />
+    <!-- The campaign-authoring kit must remain available to an installed or published CLI. -->
+    <EmbeddedResource Include="AuthoringKit/Resources/*.md">
+      <LogicalName>RustyGoldbox.Cli.AuthoringKit.Resources.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
     <!-- module pack runs the pinned pair's own rusty when it is installed here. -->
     <AssemblyMetadata Include="RustyEnginePairRusty" Value="$(RustyEngineCache)/pairs/$(RustyEnginePackageVersion)/runtime-pack/bin/rusty" />
     <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />

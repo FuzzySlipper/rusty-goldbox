@@ -72,6 +72,15 @@ installed.
 
 ## Authoring modules
 
+Retained campaign canon lives beside its editable content. The
+[Blackapple Brugh source](campaigns/blackapple-brugh/README.md) records its
+story, characters, source adaptation, and licence. Shared canon has one editor;
+chapter and art authors use its stable IDs and handoff contracts. These
+documents describe the story rather than holding runtime game state.
+Its [art bible](campaigns/blackapple-brugh/art/ART_BIBLE.md) defines original
+ink-and-wash references, subject continuity, paired-room geometry and intended
+runtime slots. Exact prompts and provenance remain beside the editable art.
+
 `goldbox` is the authoring CLI. From the repository root:
 
 ```bash
@@ -83,6 +92,35 @@ dotnet run --project src/RustyGoldbox.Cli -- module deps modules/my-rules --json
 
 `goldbox.json` makes `modules/` the workspace search directory, so new modules
 go there and required modules are found there. Every command accepts `--json`.
+
+An editable authoring workspace keeps canon, reference and accepted art,
+prompts, and scripts outside runtime module directories. Create or inspect it
+through the CLI:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- workspace new my-campaign
+dotnet run --project src/RustyGoldbox.Cli -- workspace inspect my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace build my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace export my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- schema workspace --json
+```
+
+The optional `authoring` object in `goldbox.json` lists each owned module source
+directory and the generated staging/export locations. The existing top-level
+`modules` array remains the dependency search path. Workspace inspection
+reports both, so a copied workspace can be resumed from its files.
+Build validates the explicit authored modules and replaces their generated
+staging tree; export independently packs each staged module through the pinned
+Engine packer. Canon, prompts and source art remain editable outside the
+runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
+
+The installed CLI also carries a draft authoring kit. `goldbox authoring list
+--json` discovers its resources, `goldbox authoring show workflow` prints the
+workflow, and `goldbox authoring copy --all --out my-campaign/prompts --json`
+copies the brief, canon, chapter, encounter, art, handoff and revision templates.
+The kit points to `goldbox schema` for format details and works outside this
+repository. Its broader campaign workflow remains a draft until the full
+demonstration and fresh-agent trials have tested it.
 
 The format is described by the tool itself, and rules can be tried against a
 module:
@@ -225,6 +263,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), presentation of committed combat facts and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
 | `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
+| `campaigns/` | Retained editable campaign source, including shared story canon and source attribution |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `Directory.Build.props` | Engine SDK/runtime pin |
@@ -278,3 +317,19 @@ campaign's party maximum/minimum and never remove player characters.
 `AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.
+
+For scenes perceived differently by party members, author a `perception` event
+with `scope`, `check`, `success_mode` and `failure_mode`, then a text event with
+matching `views`. `goldbox schema events --json` describes both and includes
+examples. `view <member>` in scripted play, or the member sheet's view control
+in the Game, selects the member's text and picture over the shared area. Results
+belong to the existing character and survive save/load and NPC dismissal.
+Use `reset: true` on an expedition-entry event when the same scope must be
+rolled again; ordinary same-scope room events preserve the result.
+
+Illustrated image and sheet assets can declare `"sampling": "linear"`;
+omitting it keeps nearest sampling for pixel art. `goldbox schema media --json`
+lists the modes and examples. Engine scene textures and DOM pictures use the
+same authored policy, with isolated sheet frames and named regions. Validation
+identifies one-pixel linear crops that the pinned Engine cannot represent and
+suggests nearest sampling or a wider crop.

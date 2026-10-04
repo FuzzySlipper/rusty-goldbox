@@ -50,12 +50,7 @@ internal sealed class SpriteArt : IDisposable
         {
             int x = index % columns * frameWidth;
             int y = index / columns * frameHeight;
-            frames[index] = new SpriteAtlasFrame(
-                (uint)index,
-                new Vector2((float)x / image.Width, (float)y / image.Height),
-                new Vector2((float)(x + frameWidth) / image.Width, (float)(y + frameHeight) / image.Height),
-                true,
-                size);
+            frames[index] = TextureSampling.Frame(asset, (uint)index, x, y, frameWidth, frameHeight, image, size);
         }
 
         // The anchor pixel's bottom edge stands on the floor, at its centre across.

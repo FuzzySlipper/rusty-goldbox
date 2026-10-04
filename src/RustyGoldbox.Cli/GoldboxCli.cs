@@ -27,8 +27,24 @@ internal static class GoldboxCli
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
-          goldbox schema [<type> | module | expressions | operations | events | media | live-combat]
-              The format reference: definition types with fields and examples, plus the live combat script.
+          goldbox schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
+              The format reference: definition types with fields and examples.
+          goldbox workspace new <dir>
+              Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
+          goldbox workspace inspect [<path>]
+              Finds the nearest goldbox.json and lists dependency search paths, authored modules, editable roots and outputs.
+          goldbox workspace build [<path>]
+              Validates each authored runtime module and prepares a clean staging tree; canon, prompts and source art stay outside it.
+          goldbox workspace export [<path>]
+              Builds the workspace, then independently packs each staged module into the configured exports directory.
+          goldbox authoring list [--json]
+          goldbox authoring show <resource> [--json]
+          goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]
+          goldbox authoring copy --all --out <dir> [--overwrite] [--json]
+              Discovers or copies the embedded draft campaign-authoring kit;
+              copied files include the brief, canon, chapter, encounter, art,
+              handoff, workflow and revision templates.
+              `live-combat` adds the suspended combat script and JSON observation schema.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
@@ -97,7 +113,8 @@ internal static class GoldboxCli
           goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace]
           goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace]
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Add --combat-control manual to suspend the party at a fight. Commands include
+              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
+              Add --combat-control manual to suspend the party at a fight. Combat commands include
               combat inspect, combat control <actor-id> auto|manual, combat action <actor-id> <action-id>
               [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] (quote IDs containing spaces), combat move, combat end-turn, combat decide and
               combat auto-step (one automatic turn, then manual control); `goldbox schema live-combat`
@@ -134,6 +151,10 @@ internal static class GoldboxCli
         {
             case "schema":
                 return SchemaCommand.Run(args.Skip(1), printer);
+            case "workspace":
+                return WorkspaceCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "authoring":
+                return AuthoringCommand.Run(args.Skip(1), printer, workingDirectory);
             case "eval":
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
             case "character":

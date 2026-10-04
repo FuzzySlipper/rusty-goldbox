@@ -23,7 +23,12 @@ public sealed class NpcTests
         host.Call(engine =>
         {
             runner.Begin(engine.Random);
-            Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is PartyFact { Joined: true });
+            List<PlayFact> recruited = runner.Execute("choose 1", engine.Random);
+            Assert.Contains(recruited, fact => fact is PartyFact { Joined: true });
+            Assert.Contains(recruited, fact => fact is PerceptionFact { Scope: "brugh-entry", Mode: "truth" });
+            PerceptionFact guidePerception = Assert.Single(recruited.OfType<PerceptionFact>(), fact => fact.Who == "Guide");
+            Assert.Equal(1m, guidePerception.Result.Roll);
+            Assert.Single(guidePerception.Rolls);
             Character guide = runner.State.Party[1];
             Assert.Equal("tale:guide", guide.Npc!.QualifiedId);
             guide.Balances["gold"] = 0;
@@ -43,9 +48,12 @@ public sealed class NpcTests
             Assert.Empty(problems);
             runner = new(set.Rules, restored);
             guide = Assert.Single(restored.AbsentNpcs);
-            runner.Execute("choose 1", engine.Random);
+            Assert.Equal(new PerceptionState("brugh-entry", "truth"), guide.Perception);
+            List<PlayFact> rejoined = runner.Execute("choose 1", engine.Random);
+            Assert.DoesNotContain(rejoined, fact => fact is PerceptionFact);
             Assert.Same(guide, restored.Party[1]);
             Assert.Empty(restored.AbsentNpcs);
+            Assert.Equal(new PerceptionState("brugh-entry", "truth"), restored.Party[1].Perception);
             Assert.Equal(0, guide.Balances["gold"]);
             Assert.Equal(1, guide.Tracks["hit_points"].Current);
             Assert.Single(guide.Equipment);
@@ -118,10 +126,13 @@ public sealed class NpcTests
         ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
         Character template = ShopTests.Party(modules, campaign, set)[0];
         template.Name = "Guide";
+        template.Perception = new PerceptionState("brugh-entry", "truth");
         modules.Write("tale/guide.json", NpcFile.ToJson(template, "guide"));
         modules.Write("tale/campaign.json", """{ "type": "campaign", "id": "tale", "name": "Tale", "start": { "area": "hall", "entry": "in" }, "party": { "min": 1, "max": 2 }, "intro": "party_choice" }""");
         modules.Write("tale/choice.json", """{ "type": "event", "id": "party_choice", "kind": "menu", "text": "Company?", "options": [{ "label": "Recruit", "next": "recruit" }, { "label": "Dismiss", "next": "dismiss" }] }""");
-        modules.Write("tale/recruit.json", """{ "type": "event", "id": "recruit", "kind": "join", "npc": "guide", "next": "party_choice", "on_refused": "party_choice" }""");
+        modules.Write("rules/perception.json", """{ "type": "check", "id": "perception", "name": "Perception", "roll": "1d1", "bonus": "self.hit", "target": "1", "succeeds": "at-least", "tiers": [] }""");
+        modules.Write("tale/sense.json", """{ "type": "event", "id": "sense", "kind": "perception", "scope": "brugh-entry", "check": "rules:perception", "success_mode": "truth", "failure_mode": "glamour", "next": "party_choice" }""");
+        modules.Write("tale/recruit.json", """{ "type": "event", "id": "recruit", "kind": "join", "npc": "guide", "next": "sense", "on_refused": "party_choice" }""");
         modules.Write("tale/dismiss.json", """{ "type": "event", "id": "dismiss", "kind": "dismiss", "npc": "guide", "next": "party_choice", "on_refused": "party_choice" }""");
         return campaign;
     }

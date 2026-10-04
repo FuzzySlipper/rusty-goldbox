@@ -321,6 +321,7 @@ public sealed class GameTests
             JsonObject projection = SessionProjection.Build(session, (set, asset) => images.Url(set, asset));
             string url = projection["party"]![0]!["portraitPicture"]!["url"]!.GetValue<string>();
             Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
+            Assert.Equal("nearest", projection["party"]![0]!["portraitPicture"]!["sampling"]!.GetValue<string>());
             // One image per asset: the chooser and the member share it.
             Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["picture"]?["url"]?.GetValue<string>() == url);
         });

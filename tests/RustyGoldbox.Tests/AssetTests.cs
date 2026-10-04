@@ -57,6 +57,77 @@ public sealed class AssetTests
     }
 
     [Fact]
+    public void VisualAssetsDeclareSamplingAndDefaultToNearest()
+    {
+        using TempModules modules = new();
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/pixel.json", """{ "type": "asset", "id": "pixel", "media": "image", "file": "a.png" }""");
+        modules.Write("art/illustrated.json", """{ "type": "asset", "id": "illustrated", "media": "image", "file": "a.png", "sampling": "linear" }""");
+
+        ModuleSet set = ModuleLoader.Load(art, []);
+        Assert.Empty(set.Diagnostics);
+        Assert.Equal("nearest", Media.SamplingOf(set.Rules!.Find(DefinitionTypes.Asset, "pixel", out _)!));
+        Assert.Equal("linear", Media.SamplingOf(set.Rules.Find(DefinitionTypes.Asset, "illustrated", out _)!));
+
+        modules.Write("art/bad.json", """{ "type": "asset", "id": "bad", "media": "image", "file": "a.png", "sampling": "cubic" }""");
+        ModuleDiagnostic diagnostic = Assert.Single(ModuleLoader.Load(art, []).Diagnostics);
+        Assert.Equal("definition.field-value", diagnostic.Rule);
+        Assert.Equal("$.sampling", diagnostic.JsonPath);
+        Assert.Contains("nearest", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("linear", diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LinearCroppedFramesInsetTheirAtlasUvWithoutChangingNearestFrames()
+    {
+        using TempModules modules = new();
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/pixel.json", """{ "type": "asset", "id": "pixel", "media": "sheet", "file": "a.png", "frame_size": [32, 48] }""");
+        modules.Write("art/smooth.json", """{ "type": "asset", "id": "smooth", "media": "sheet", "file": "a.png", "sampling": "linear", "frame_size": [32, 48] }""");
+        ModuleSet set = ModuleLoader.Load(art, []);
+        Assert.Empty(set.Diagnostics);
+        Definition pixel = set.Rules!.Find(DefinitionTypes.Asset, "pixel", out _)!;
+        Definition smooth = set.Rules.Find(DefinitionTypes.Asset, "smooth", out _)!;
+        Assert.Equal(TextureFilter.Nearest, Game.Presentation.TextureSampling.Filter(pixel));
+        Assert.Equal(TextureFilter.Linear, Game.Presentation.TextureSampling.Filter(smooth));
+
+        Rusty.Engine.SpriteAtlasFrame nearest = Game.Presentation.TextureSampling.Frame(
+            pixel, 1, 0, 48, 32, 48, (32, 96), new System.Numerics.Vector2(32, 48));
+        Rusty.Engine.SpriteAtlasFrame linear = Game.Presentation.TextureSampling.Frame(
+            smooth, 1, 0, 48, 32, 48, (32, 96), new System.Numerics.Vector2(32, 48));
+
+        Assert.Equal(new System.Numerics.Vector2(0, 0.5f), nearest.UvMin);
+        Assert.Equal(new System.Numerics.Vector2(1, 1), nearest.UvMax);
+        Assert.Equal(new System.Numerics.Vector2(0, 48.5f / 96), linear.UvMin);
+        Assert.Equal(new System.Numerics.Vector2(1, 95.5f / 96), linear.UvMax);
+    }
+
+    [Fact]
+    public void LinearOnePixelCropsGiveAnActionableEngineConstraint()
+    {
+        using TempModules modules = new();
+        string art = modules.Module("art", "assets");
+        File.Copy(Image("rgba-32x96.png"), Path.Combine(art, "a.png"));
+        modules.Write("art/smooth.json", """{ "type": "asset", "id": "smooth", "media": "sheet", "file": "a.png", "sampling": "linear", "frame_size": [1, 96] }""");
+
+        ModuleDiagnostic diagnostic = Assert.Single(ModuleLoader.Load(art, []).Diagnostics);
+        Assert.Equal(("asset.sampling", "$.frame_size"), (diagnostic.Rule, diagnostic.JsonPath));
+        Assert.Contains("CSHARP_SPRITE_ATLAS_FRAME: DegenerateRect", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("nearest", diagnostic.Message, StringComparison.Ordinal);
+
+        // The restriction belongs to the linear crop; existing nearest pixel art keeps working.
+        modules.Write("art/smooth.json", """{ "type": "asset", "id": "smooth", "media": "sheet", "file": "a.png", "frame_size": [1, 96] }""");
+        Assert.Empty(ModuleLoader.Load(art, []).Diagnostics);
+
+        modules.Write("art/region.json", """{ "type": "asset", "id": "region", "media": "image", "file": "a.png", "sampling": "linear", "regions": { "pixel": [0, 0, 1, 96] } }""");
+        diagnostic = Assert.Single(ModuleLoader.Load(art, []).Diagnostics);
+        Assert.Equal(("asset.sampling", "$.regions.pixel"), (diagnostic.Rule, diagnostic.JsonPath));
+        Assert.Contains("width", diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AudioFitsSoundAndMusicSlotsOnly()
     {
         using TempModules modules = new();
