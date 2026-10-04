@@ -38,7 +38,7 @@ export function createControls(send, ui) {
     const members = fight.members ?? [];
     const actorId = decision?.actorId ?? fight.activeActorId ?? null;
     const actor = members.find((member) => member.id === actorId) ?? fight.activeActor ?? null;
-    const turnActor = members.find((member) => member.id === fight.activeActorId) ?? null;
+    const turnActor = members.find((member) => member.id === (fight.turnActorId ?? fight.activeActorId)) ?? null;
     const actions = decision?.actions ?? [];
 
     // A projection update may replace every button. Keep the presentation
@@ -105,12 +105,17 @@ export function createControls(send, ui) {
             ? 'Portion targets'
             : targetMode === 'all' ? 'All legal targets' : targetMode === 'maximum' && commitsTargetCount ? 'Potential targets' : 'Targets'}${maximumTargets ? ` (${selectedTargets.length}/${maximumTargets}${fixedPortions ? '' : ' max'})` : ''}`),
         ...targets.map((target) => button(
-          `${target.name}${target.track === null || target.track === undefined ? '' : ` · ${target.track}`}`,
+          `${target.name}${target.track === null || target.track === undefined ? '' : ` · ${target.track}`}${fixedPortions && selectedTargets.filter((id) => id === target.id).length > 0 ? ` ×${selectedTargets.filter((id) => id === target.id).length}` : ''}`,
           () => {
+            selectedMove = null;
             const selectedIndex = selectedTargets.lastIndexOf(target.id);
-            if (selectedIndex >= 0) {
-              // Remove one allocation.  For portions, a repeated target is
-              // valid and each click represents one authored portion.
+            if (fixedPortions && selectedTargets.length < maximumTargets) {
+              // Each click assigns one authored portion. Repeated IDs are
+              // meaningful here, so a selected target can be clicked again.
+              selectedTargets = [...selectedTargets, target.id];
+            } else if (selectedIndex >= 0) {
+              // Remove one allocation. Clear targets resets the whole
+              // allocation when a portion target was chosen too many times.
               selectedTargets = [
                 ...selectedTargets.slice(0, selectedIndex),
                 ...selectedTargets.slice(selectedIndex + 1),
@@ -133,7 +138,12 @@ export function createControls(send, ui) {
             class: `${target.defeated ? 'gb-down ' : ''}${selectedTargets.includes(target.id) ? 'gb-selected' : ''}`,
             'data-focus-key': `combat:target:${target.id}`,
             title: target.id,
-          }))]
+          })),
+        ...(selectedTargets.length > 0 ? [button('Clear targets', () => {
+          selectedTargets = [];
+          selectedMove = null;
+          render(view);
+        }, { 'data-focus-key': `combat:clear-targets:${action.id}` })] : [])]
       : [];
     const allTargetsReady = !requiresAllTargets || selectedTargets.length === targets.length;
     const portionsReady = !fixedPortions || selectedTargets.length === maximumTargets;
@@ -172,7 +182,9 @@ export function createControls(send, ui) {
     const options = (decision?.options ?? []).map((option) => button(option.name, () => send({
       action: 'combat-decide', decision: decision.id, option: option.id,
     }), { 'data-focus-key': `combat:option:${option.id}` }));
-    const decline = decision?.options?.length ? [button('Decline', () => send({ action: 'combat-decide', decision: decision.id }), { 'data-focus-key': `combat:decline:${decision.id}` })] : [];
+    const decline = decision?.options?.length && (decision.kind === 'interrupt' || decision.kind === 'post_roll')
+      ? [button('Decline', () => send({ action: 'combat-decide', decision: decision.id }), { 'data-focus-key': `combat:decline:${decision.id}` })]
+      : [];
     const end = decision?.canEndTurn && actorId
       ? [button('End turn', () => send({ action: 'combat-end-turn', actor: actorId }), { 'data-focus-key': `combat:end:${actorId}` })]
       : [];

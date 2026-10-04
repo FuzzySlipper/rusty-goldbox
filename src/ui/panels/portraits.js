@@ -6,7 +6,7 @@ import { bar, vitalTrack } from './members.js';
  * In play a card opens that member's sheet; in combat the cards show the
  * party's side of the fight and who is acting.
  */
-export function createPortraits(ui) {
+export function createPortraits(send, ui) {
   // This is a presentation page size, not a party limit. A second page keeps
   // the cards readable on a narrow panel while still making every roster
   // member reachable through ordinary controls.
@@ -37,17 +37,23 @@ export function createPortraits(ui) {
   const card = (name, face, current, max, flags, onClick, index, id = null) => {
     const amount = flags.track && current !== undefined && current !== null ? `${flags.track} ${current}${max === null || max === undefined ? '' : `/${max}`}` : '';
     const label = [name, amount, flags.ready ? 'level ready' : ''].filter(Boolean).join(', ');
-    // Only a card that opens something is a button; a combat card is a plain picture.
+    const controllerText = flags.controller === 'manual'
+      ? 'Manual · Let AI control'
+      : flags.controller === 'automatic' ? 'Auto · Take control' : '';
+    const fullLabel = [label, controllerText].filter(Boolean).join(', ');
+    // Play cards open a sheet. Combat party cards are controller toggles;
+    // enemy cards are never rendered in this party roster.
     const item = element(onClick ? 'button' : 'div', {
       ...(onClick ? { type: 'button' } : {}),
       class: `gb-card${flags.acting ? ' gb-acting' : ''}${flags.down ? ' gb-down' : ''}`,
       'data-roster-index': index,
       ...(id ? { 'data-combat-id': id } : {}),
-      title: label,
-      'aria-label': label,
+      title: fullLabel,
+      'aria-label': fullLabel,
     },
       element('span', { class: 'gb-face' }, ...(face.length ? face : [name[0] ?? '?'])),
       element('span', { class: 'gb-name' }, name, ...(flags.ready ? [element('span', { class: 'gb-flag' }, ' ▲')] : [])),
+      ...(controllerText ? [element('span', { class: 'gb-amount' }, controllerText)] : []),
       ...(flags.showAmount && amount ? [element('span', { class: 'gb-amount' }, `${current}${max === null || max === undefined ? '' : `/${max}`}`)] : []),
       bar(current, max));
     if (onClick) {
@@ -84,8 +90,20 @@ export function createPortraits(ui) {
         picture(member.portraitPicture ?? member.iconPicture, `${member.name}'s portrait`, 'fill'),
         member.value,
         member.max,
-        { acting: member.acting, down: member.defeated, track: view.fight?.track, showAmount: true },
-        null,
+        {
+          acting: member.acting,
+          controller: member.controller,
+          down: member.defeated,
+          track: view.fight?.track,
+          showAmount: true,
+        },
+        member.id && member.controller
+          ? () => send({
+            action: 'combat-control',
+            actor: member.id,
+            mode: member.controller === 'manual' ? 'auto' : 'manual',
+          })
+          : null,
         page * pageSize + index,
         member.id ?? null)));
       restoreRoster(scrollTop, focused);

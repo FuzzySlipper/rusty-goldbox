@@ -270,7 +270,10 @@ internal static class SessionProjection
             metadata[source.Id] = (source, index < pending.Members.Count ? pending.Members[index] : null);
         }
 
-        JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, member, track, metadata, imageUrl)).ToArray());
+        string? decisionActorId = observation.PendingDecision?.ActorId;
+        string? turnActorId = observation.ActiveActorId;
+        string? highlightedActorId = decisionActorId ?? turnActorId;
+        JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, observation, member, highlightedActorId, track, metadata, imageUrl)).ToArray());
         JsonObject fight = new()
         {
             ["live"] = true,
@@ -279,8 +282,10 @@ internal static class SessionProjection
             ["trackId"] = track.QualifiedId,
             ["phase"] = observation.Phase.ToString().ToLowerInvariant(),
             ["round"] = observation.Round,
-            ["activeActorId"] = observation.ActiveActorId,
-            ["activeActor"] = observation.ActiveActorId is string activeId && observation.Combatants.FirstOrDefault(member => member.Id == activeId) is CombatantObservation active ? active.Name : null,
+            ["activeActorId"] = highlightedActorId,
+            ["activeActor"] = highlightedActorId is string activeId && observation.Combatants.FirstOrDefault(member => member.Id == activeId) is CombatantObservation active ? active.Name : null,
+            ["decisionActorId"] = decisionActorId,
+            ["turnActorId"] = turnActorId,
             ["done"] = observation.Phase == CombatPhase.Ended,
             ["outcome"] = observation.Phase == CombatPhase.Ended ? Outcome(observation) : null,
             ["winner"] = observation.Winner,
@@ -292,7 +297,7 @@ internal static class SessionProjection
         return fight;
     }
 
-    private static JsonObject LiveMember(GameSession session, CombatantObservation member, Definition track, Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata, Func<Definition, string?> imageUrl)
+    private static JsonObject LiveMember(GameSession session, CombatObservation observation, CombatantObservation member, string? highlightedActorId, Definition track, Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata, Func<Definition, string?> imageUrl)
     {
         RuleSet rules = session.Set!.Rules!;
         if (!metadata.TryGetValue(member.Id, out (PendingCombatantSource Source, PendingFightMember? Member) info))
@@ -315,7 +320,8 @@ internal static class SessionProjection
             ["controller"] = member.Controller.ToString().ToLowerInvariant(),
             ["defeated"] = member.Defeated,
             ["escaped"] = member.Escaped,
-            ["acting"] = member.Id == session.Combat?.ActiveActorId,
+            ["acting"] = member.Id == highlightedActorId,
+            ["turning"] = member.Id == observation.ActiveActorId,
             ["value"] = value is decimal valueNumber ? (double)valueNumber : null,
             ["max"] = info.Member?.Max is decimal maximum ? (double)maximum : null,
             ["budget"] = new JsonObject(member.Budget.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),

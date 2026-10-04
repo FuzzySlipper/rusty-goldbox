@@ -72,7 +72,7 @@ export function mountProductUi(root, context) {
 
   const status = createStatus(ui);
   const log = createLog(send);
-  const portraits = createPortraits(ui);
+  const portraits = createPortraits(send, ui);
   const map = createMap();
   const controls = createControls(send, ui);
   const overlay = createOverlay(send, ui);
