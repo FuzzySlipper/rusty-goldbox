@@ -19,7 +19,7 @@ internal static class PlayCommand
 {
     private const string Usage =
         "Usage: goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--combat-control auto|manual] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
-        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--trace] [--fail-on-refusal] [--store <dir>]\n"
+        + "       goldbox play --campaign <path> --load <save> [--script <file>] [--save <save>] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
         + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
 
     private sealed record ScriptLine(string Text, int Number);

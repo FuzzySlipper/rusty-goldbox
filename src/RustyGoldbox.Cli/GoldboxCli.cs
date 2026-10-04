@@ -113,7 +113,7 @@ internal static class GoldboxCli
           goldbox map render <area> --module <path> [--player]
               Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
           goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace] [--fail-on-refusal]
-          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal] [--modules <dir>]... [--extension <id>]...
               Plays a campaign from a command script (or stdin), one command per line; # starts
               a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
               Commands include equip <member> <item-id>, unequip <member> <item-id>, and use <member> <item-id>
