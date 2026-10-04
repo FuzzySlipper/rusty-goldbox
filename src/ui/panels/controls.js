@@ -182,7 +182,7 @@ export function createControls(send, ui) {
     const options = (decision?.options ?? []).map((option) => button(option.name, () => send({
       action: 'combat-decide', decision: decision.id, option: option.id,
     }), { 'data-focus-key': `combat:option:${option.id}` }));
-    const decline = decision?.options?.length && (decision.kind === 'interrupt' || decision.kind === 'post_roll')
+    const decline = decision?.options?.length && (decision.kind === 'interrupt' || decision.kind === 'postroll')
       ? [button('Decline', () => send({ action: 'combat-decide', decision: decision.id }), { 'data-focus-key': `combat:decline:${decision.id}` })]
       : [];
     const end = decision?.canEndTurn && actorId
