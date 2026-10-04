@@ -105,6 +105,14 @@ directory and the generated staging/export locations. The existing top-level
 `modules` array remains the dependency search path. Workspace inspection
 reports both, so a copied workspace can be resumed from its files.
 
+The installed CLI also carries a draft authoring kit. `goldbox authoring list
+--json` discovers its resources, `goldbox authoring show workflow` prints the
+workflow, and `goldbox authoring copy --all --out my-campaign/prompts --json`
+copies the brief, canon, chapter, encounter, art, handoff and revision templates.
+The kit points to `goldbox schema` for format details and works outside this
+repository. Its broader campaign workflow remains a draft until the full
+demonstration and fresh-agent trials have tested it.
+
 The format is described by the tool itself, and rules can be tried against a
 module:
 

@@ -32,6 +32,13 @@ internal static class GoldboxCli
               Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
           goldbox workspace inspect [<path>]
               Finds the nearest goldbox.json and lists dependency search paths, authored modules, editable roots and outputs.
+          goldbox authoring list [--json]
+          goldbox authoring show <resource> [--json]
+          goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]
+          goldbox authoring copy --all --out <dir> [--overwrite] [--json]
+              Discovers or copies the embedded draft campaign-authoring kit;
+              copied files include the brief, canon, chapter, encounter, art,
+              handoff, workflow and revision templates.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
@@ -134,6 +141,8 @@ internal static class GoldboxCli
                 return SchemaCommand.Run(args.Skip(1), printer);
             case "workspace":
                 return WorkspaceCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "authoring":
+                return AuthoringCommand.Run(args.Skip(1), printer, workingDirectory);
             case "eval":
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
             case "character":
