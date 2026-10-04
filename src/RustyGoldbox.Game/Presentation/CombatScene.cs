@@ -37,6 +37,7 @@ internal sealed class CombatScene : IDisposable
     private readonly Dictionary<string, Figure> _figures = [];
     private readonly List<Figure> _terrain = [];
     private FightReplay? _fight;
+    private CombatObservation? _live;
     private MeshResource? _floorMesh;
     private Appearance? _floor;
     private int _acted;
@@ -131,6 +132,35 @@ internal sealed class CombatScene : IDisposable
         return new CameraPose(Closest(target), -Pitch, 0);
     }
 
+    /// <summary>
+    /// Chooses a readable presentation floor for a fight whose ruleset does not
+    /// supply a field. The floor grows with the larger side so a campaign-sized
+    /// party gets distinct ranks instead of being placed on the six-by-five
+    /// default floor. This is presentation geometry only; Core positions are
+    /// used unchanged whenever a combat field supplies them.
+    /// </summary>
+    internal static (int Width, int Depth) FallbackSize(IReadOnlyList<FightMember> members)
+    {
+        return FallbackSize(members.Select(member => member.Side).ToList());
+    }
+
+    internal static (int Width, int Depth) FallbackSize(IReadOnlyList<CombatantObservation> members)
+    {
+        return FallbackSize(members.Select(member => member.Side).ToList());
+    }
+
+    private static (int Width, int Depth) FallbackSize(IReadOnlyList<int> sides)
+    {
+        int largestSide = sides
+            .GroupBy(side => side)
+            .Select(group => group.Count())
+            .DefaultIfEmpty(1)
+            .Max();
+        int slots = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(largestSide)));
+        int ranks = (largestSide + slots - 1) / slots;
+        return (Math.Max(Width, (ranks * 2) + 4), Math.Max(Depth, slots + 2));
+    }
+
     /// <summary>Adds the scene for <paramref name="fight"/>, building it when the fight is new.</summary>
     /// <param name="spriteFor">The sprite a monster or class is drawn with, or null.</param>
     /// <param name="terrainFor">The sprite a terrain key of the fight's field is drawn with, or null.</param>
@@ -170,6 +200,58 @@ internal sealed class CombatScene : IDisposable
         }
     }
 
+    /// <summary>
+    /// Shows a live Core observation. The scene is keyed by the combatant's
+    /// stable ID and reads positions, defeated state and active state directly
+    /// from the observation; it never infers an actor from its display name.
+    /// </summary>
+    public void Show(CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, CombatField? field, (Material Material, UvRect Frame)? floor, List<AppearanceFact> facts)
+    {
+        bool sameMembers = _live is not null
+            && _fight is null
+            && _figures.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(observation.Combatants.Select(member => member.Id));
+        if (!sameMembers)
+        {
+            BuildLive(observation, kindFor, spriteFor, terrainFor, field, floor);
+        }
+
+        facts.Add(new AppearanceFact(FloorObject, false, 0, new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One), _floor!, true, RenderLayer.Scene));
+        ulong ground = TerrainObjects;
+        foreach (Figure piece in _terrain)
+        {
+            facts.Add(new AppearanceFact(ground++, false, 0, piece.Placement, piece.Appearance, true, RenderLayer.Scene));
+        }
+
+        if (observation.Facts.Count != _acted)
+        {
+            _acted = observation.Facts.Count;
+            CombatFact? action = observation.Facts
+                .LastOrDefault(fact => fact.Kind is "action" or "portion" or "reaction" or "move");
+            HashSet<string> subjects = action?.SubjectIds.ToHashSet(StringComparer.Ordinal) ?? [];
+            foreach ((string key, Figure figure) in _figures)
+            {
+                figure.Play(subjects.Contains(key) ? "attack" : "idle");
+            }
+        }
+
+        Dictionary<string, CombatantObservation> current = observation.Combatants.ToDictionary(member => member.Id, StringComparer.Ordinal);
+        ulong id = FigureObjects;
+        foreach ((string key, Figure figure) in _figures)
+        {
+            if (current.TryGetValue(key, out CombatantObservation? member))
+            {
+                if (member.Position is Cell cell)
+                {
+                    figure.StandOn(new Vector3(cell.X + 0.5f, 0, cell.Y + 0.5f));
+                }
+
+                facts.Add(new AppearanceFact(id++, false, 0, figure.Placement, figure.Appearance, !member.Defeated && !member.Escaped, RenderLayer.Scene));
+            }
+        }
+
+        _live = observation;
+    }
+
     /// <summary>Advances the figures' animations; call in every update while the scene shows. True when a figure's frame changed.</summary>
     public bool Tick(PlaybackFrames frames)
     {
@@ -207,8 +289,11 @@ internal sealed class CombatScene : IDisposable
         Retire();
         _fight = fight;
         _acted = 0;
-        _width = fight.Fight.Field?.Width ?? Width;
-        _depth = fight.Fight.Field?.Height ?? Depth;
+        (int width, int depth) = fight.Fight.Field is CombatField field
+            ? (field.Width, field.Height)
+            : FallbackSize(fight.Fight.Members);
+        _width = width;
+        _depth = depth;
         AreaGeometry geometry = AreaMesh.Floor(_width, _depth, floor?.Frame);
         _floorMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
             geometry.Positions,
@@ -219,24 +304,35 @@ internal sealed class CombatScene : IDisposable
             geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floor!.Value.Material : _plain)).ToArray()));
         _floor = _graphics.CreateMeshAppearance(_floorMesh);
 
-        foreach (IGrouping<int, FightMember> side in fight.Fight.Members.GroupBy(member => member.Side))
+        foreach (IGrouping<int, (FightMember Member, int Index)> side in fight.Fight.Members
+            .Select((member, index) => (Member: member, Index: index))
+            .GroupBy(entry => entry.Member.Side))
         {
-            List<FightMember> members = side.ToList();
+            List<(FightMember Member, int Index)> members = side.ToList();
+            int slots = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(members.Count)));
+            int rows = Math.Max(1, _depth - 2);
+            slots = Math.Min(slots, rows);
+            int rowOffset = Math.Max(0, (rows - slots) / 2);
             for (int i = 0; i < members.Count; i++)
             {
-                // Two staggered ranks per side, spread across the field's depth.
+                // Two opposing rank columns per side. A missing field gets
+                // enough columns/depth from FallbackSize for every member;
+                // authored cells still take precedence below.
                 bool left = side.Key == 0;
-                float x = left ? 1.7f - (i % 2 * 0.4f) : Width - 1.7f + (i % 2 * 0.4f);
-                float z = 0.6f + ((Depth - 1.2f) * (i + 0.5f) / members.Count);
-                if (members[i].Position is Cell cell)
+                int rank = i / slots;
+                int row = i % slots;
+                float x = left ? 1f + rank : _width - 1f - rank;
+                float z = 1f + rowOffset + row;
+                if (members[i].Member.Position is Cell cell)
                 {
                     x = cell.X + 0.5f;
                     z = cell.Y + 0.5f;
                 }
 
-                Definition? kind = members[i].Monster ?? members[i].Class;
+                Definition? kind = members[i].Member.Monster ?? members[i].Member.Class;
                 SpriteArt? art = kind is null ? null : spriteFor(kind);
-                _figures[members[i].Name] = art is null
+                string key = fight.MemberKeys[members[i].Index];
+                _figures[key] = art is null
                     ? Figure.Block(_graphics, new Vector3(x, 0, z), SideColours[Math.Min(side.Key, 1)])
                     : new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(new Vector3(x, 0, z), Quaternion.Identity, art.Scale(faceRight: left)));
             }
@@ -249,6 +345,72 @@ internal sealed class CombatScene : IDisposable
 
         // Each terrain cell: its figure's sprite standing there, or a plain block or slab.
         foreach ((Cell cell, Terrain terrain) in fight.Fight.Field?.Terrain ?? new Dictionary<Cell, Terrain>())
+        {
+            Vector3 at = new(cell.X + 0.5f, 0, cell.Y + 0.5f);
+            SpriteArt? art = terrainFor(terrain.Key);
+            _terrain.Add(art is not null
+                ? new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(at, Quaternion.Identity, art.Scale(faceRight: true)))
+                : terrain.Passable
+                    ? Figure.Box(_graphics, at, RoughColour, new Vector3(0.95f, 0.06f, 0.95f))
+                    : Figure.Box(_graphics, at, BlockingColour, new Vector3(0.9f, 1f, 0.9f)));
+        }
+    }
+
+    private void BuildLive(CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, CombatField? field, (Material Material, UvRect Frame)? floor)
+    {
+        Retire();
+        _live = observation;
+        _acted = 0;
+        (int width, int depth) = field is not null
+            ? (field.Width, field.Height)
+            : FallbackSize(observation.Combatants);
+        _width = width;
+        _depth = depth;
+        AreaGeometry geometry = AreaMesh.Floor(_width, _depth, floor?.Frame);
+        _floorMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
+            geometry.Positions,
+            geometry.Normals,
+            geometry.Uvs,
+            geometry.Indices,
+            geometry.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
+            geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floor!.Value.Material : _plain)).ToArray()));
+        _floor = _graphics.CreateMeshAppearance(_floorMesh);
+
+        foreach (IGrouping<int, CombatantObservation> side in observation.Combatants.GroupBy(member => member.Side))
+        {
+            List<CombatantObservation> members = side.ToList();
+            int slots = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(members.Count)));
+            int rows = Math.Max(1, _depth - 2);
+            slots = Math.Min(slots, rows);
+            int rowOffset = Math.Max(0, (rows - slots) / 2);
+            for (int index = 0; index < members.Count; index++)
+            {
+                CombatantObservation member = members[index];
+                bool left = side.Key == 0;
+                int rank = index / slots;
+                int row = index % slots;
+                float x = left ? 1f + rank : _width - 1f - rank;
+                float z = 1f + rowOffset + row;
+                if (member.Position is Cell cell)
+                {
+                    x = cell.X + 0.5f;
+                    z = cell.Y + 0.5f;
+                }
+
+                Definition? kind = kindFor(member.Id);
+                SpriteArt? art = kind is null ? null : spriteFor(kind);
+                _figures[member.Id] = art is null
+                    ? Figure.Block(_graphics, new Vector3(x, 0, z), SideColours[Math.Min(side.Key, 1)])
+                    : new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(new Vector3(x, 0, z), Quaternion.Identity, art.Scale(faceRight: left)));
+            }
+        }
+
+        foreach (Figure figure in _figures.Values)
+        {
+            figure.Play("idle");
+        }
+
+        foreach ((Cell cell, Terrain terrain) in field?.Terrain ?? new Dictionary<Cell, Terrain>())
         {
             Vector3 at = new(cell.X + 0.5f, 0, cell.Y + 0.5f);
             SpriteArt? art = terrainFor(terrain.Key);
@@ -284,6 +446,7 @@ internal sealed class CombatScene : IDisposable
         _floor = null;
         _floorMesh = null;
         _fight = null;
+        _live = null;
     }
 
     /// <summary>One combatant on the field and its current animation.</summary>

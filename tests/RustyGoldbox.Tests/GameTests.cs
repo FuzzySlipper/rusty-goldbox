@@ -5,6 +5,7 @@ using Rusty.Engine;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Game;
 using RustyGoldbox.Game.Presentation;
@@ -581,7 +582,7 @@ public sealed class GameTests
     }
 
     [Fact]
-    public void AFightPlaysBackOnTheCombatScreenAndShowsThroughTheEngine()
+    public void ALiveFightWaitsForAChoiceAndShowsThroughTheEngine()
     {
         using TempModules scratch = new();
         List<string> script = File.ReadAllLines(CampaignTests.Script("crypt.script"))
@@ -591,13 +592,19 @@ public sealed class GameTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            GameSession session = OpenSession(scratch, engine);
+            GameSession session = OpenSession(scratch, engine, 1);
             for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
             {
                 Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
             }
 
+            for (int attempt = 0; attempt < 50 && session.Party.All(member => member.Name != "Brom"); attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Brom", "race": "classic:human", "class": "classic:cleric" }""");
+            }
+
             Run(session, engine, """{ "action": "equip", "member": 0, "item": "classic:long_sword" }""");
+            Run(session, engine, """{ "action": "equip", "member": 1, "item": "classic:heavy_mace" }""");
             Run(session, engine, """{ "action": "begin" }""");
 
             // Through the barred door to the guards.
@@ -607,37 +614,37 @@ public sealed class GameTests
             }
 
             Assert.Equal(Screen.Combat, session.Screen);
-            FightReplay fight = session.Fight!;
-            Assert.Equal(0, fight.Shown);
-            Assert.Contains(fight.Fight.Members, member => member.Side == 1 && member.Monster?.Id == "skeleton");
+            Assert.True(session.Fight is null, session.Fight is FightReplay ended
+                ? string.Join(" | ", ended.Fight.Facts.Select(fact => fact.Describe()))
+                : "No live combat snapshot was published.");
+            CombatObservation waiting = Assert.IsType<CombatObservation>(session.Combat);
+            CombatDecision decision = Assert.IsType<CombatDecision>(waiting.PendingDecision);
+            Assert.Equal(CombatPhase.AwaitingAction, waiting.Phase);
+            Assert.Equal(2, waiting.Combatants.Count(member => member.Side == 1));
 
-            // Play waits; the scene shows the fight through the Engine.
+            // A live fight waits; the scene shows the Core snapshot through the Engine.
             Run(session, engine, """{ "action": "play", "command": "forward" }""");
             Assert.Equal("Continue past the fight first.", Assert.Single(session.Notes));
             using SceneView view = new(engine, new ModuleLibrary(_ => Containers(scratch).Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
             view.Show(session);
 
-            Assert.True(session.Tick(1.0));
-            Assert.InRange(fight.Shown, 1, fight.Fight.Facts.Count - 1);
+            int factsBefore = waiting.Facts.Count;
+            Assert.False(session.Tick(1.0));
+            Assert.Equal(factsBefore, session.Combat!.Facts.Count);
 
-            // Skipping shows the rest; the values end where the fight left them.
-            Run(session, engine, """{ "action": "continue" }""");
-            Assert.True(fight.Done);
-            List<Core.Combat.DamageFact> lasts = fight.Fight.Facts.OfType<Core.Combat.DamageFact>()
-                .Where(fact => fact.Track == fight.Fight.Track)
-                .GroupBy(fact => fact.Who)
-                .Select(group => group.Last())
-                .ToList();
-            Assert.NotEmpty(lasts);
-            foreach (Core.Combat.DamageFact damage in lasts)
+            CombatActionChoice action = decision.Actions.First(choice => choice.Targets.Count > 0);
+            CombatTargetChoice target = action.Targets[0];
+            CombatMoveChoice? move = action.Moves.FirstOrDefault();
+            Run(session, engine, JsonSerializer.Serialize(new
             {
-                Assert.Equal(damage.Left, fight.Values[damage.Who]);
-            }
-
-            view.Show(session);
-            Run(session, engine, """{ "action": "continue" }""");
-            Assert.Equal(Screen.Play, session.Screen);
-            Assert.Null(session.Fight);
+                action = "combat-action",
+                actor = decision.ActorId,
+                choice = action.Id,
+                targets = new[] { target.Id },
+                path = move?.Path.Select(cell => new { x = cell.X, y = cell.Y }),
+            }));
+            Assert.NotNull(session.Combat);
+            Assert.True(session.Combat!.Facts.Count > factsBefore);
             view.Show(session);
         });
     }
@@ -673,6 +680,10 @@ public sealed class GameTests
             }
 
             Run(session, engine, """{ "action": "begin" }""");
+            // This renderer walk intentionally exercises the historical
+            // committed-facts presentation. Opt the whole party into Core's
+            // automatic controller before the first combat event.
+            session.Runner!.DefaultCombatControl = CombatControlMode.Automatic;
             using SceneView view = new(engine, new ModuleLibrary(_ => Containers(scratch).Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
             Core.Definitions.Definition entrance = session.Runner!.State.Area;
             string guardProp = "$.cells[2].prop.hidden";
@@ -692,7 +703,7 @@ public sealed class GameTests
             }
 
             // The party won (the seed is fixed), so the guard prop is gone and the party went down the stairs.
-            Assert.True(session.Runner.State.Ended);
+            Assert.True(session.Runner!.State.Ended);
             Assert.True(session.Runner.IsTrue(entrance, guardProp));
             Assert.NotEqual(entrance, session.Runner.State.Area);
         });
@@ -810,13 +821,13 @@ public sealed class GameTests
         });
     }
 
-    private static GameSession OpenSession(TempModules scratch, IEngineContext engine)
+    private static GameSession OpenSession(TempModules scratch, IEngineContext engine, ulong seed = 11)
     {
         List<string> containers = Containers(scratch);
         GameSession session = new(new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
         session.Refresh();
         string campaign = Assert.Single(session.Campaigns).Bundle;
-        Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = "11" }));
+        Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign, seed = seed.ToString() }));
         Assert.Equal(Screen.Party, session.Screen);
         return session;
     }

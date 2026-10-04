@@ -25,7 +25,11 @@ export function renderSpells(send, member, index) {
   }
 
   const boxes = castable.map((spell) => {
-    const box = element('input', { type: 'checkbox', 'aria-label': `${member.name} knows ${spell.name}` });
+    const box = element('input', {
+      type: 'checkbox',
+      'aria-label': `${member.name} knows ${spell.name}`,
+      'data-focus-key': `member:${index}:spell:${spell.id}`,
+    });
     box.checked = (member.spells ?? []).some((known) => known.id === spell.id);
     return { spell, box };
   });
@@ -59,7 +63,7 @@ export function renderMemorised(send, member, index) {
     element('div', {}, `Memorises: ${names(member.memorised ?? [])}${member.memorisedChosen ? '' : ' (known spells in order)'}; left today: ${names(member.prepared ?? [])}`),
     row(...options.flatMap((spell) => [
       // Adding to the default (known spells in order) starts a list of the member's own choosing.
-      button(`+ ${spell.name}`, () => submit([...plan, spell.id])),
+      button(`+ ${spell.name}`, () => submit([...plan, spell.id]), { 'data-focus-key': `member:${index}:memorise:${spell.id}:add` }),
       button(`− ${spell.name}`, () => {
         const current = member.memorisedChosen ? [...plan] : (member.memorised ?? []).map((entry) => entry.id);
         const at = current.lastIndexOf(spell.id);
@@ -67,7 +71,7 @@ export function renderMemorised(send, member, index) {
           current.splice(at, 1);
           submit(current);
         }
-      }),
+      }, { 'data-focus-key': `member:${index}:memorise:${spell.id}:remove` }),
     ])),
   ];
 }
