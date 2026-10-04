@@ -190,10 +190,16 @@ the current phase, actor, budgets, targets and legal choices without rolling.
 `Submit` checks a typed action, movement, end-turn or optional-decision command
 and resumes the same resolver. Rules decide costs, range, sight and targets;
 controller preferences do not restrict a human's legal choices. A committed
-random target limit and an optional reaction or post-roll choice retain their
-actual rolls and suspended operation data. `Capture` and `Restore` carry that
+spell price, random target limit and optional reaction or post-roll choice
+retain their actual rolls and suspended operation data. `Capture` and `Restore` carry that
 continuation without repeating deployment, surprise or completed actions.
 `Run` is the automatic driver of this owner.
+
+Candidate construction evaluates spell prices without dice. A selected legal
+spell commits a random price in its existing pending action choice; if the
+price is unaffordable, that accepted selection publishes the result without
+paying or casting. Later attempts use the same price. Automatic selection
+continues to another use when a committed price cannot be paid.
 
 Each character can retain a manual or automatic control preference in its
 save data. A campaign applies that preference when the next fight starts;

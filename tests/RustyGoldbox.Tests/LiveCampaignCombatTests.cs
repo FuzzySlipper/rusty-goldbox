@@ -555,7 +555,7 @@ public sealed class LiveCampaignCombatTests
     }
 
     [Fact]
-    public void MalformedCampaignSaveRejectsMissingUnpreparedSpellCostQuote()
+    public void CampaignSaveAllowsUncommittedSpellCostAndRestoresCommittedQuote()
     {
         using TempModules modules = new();
         string campaign = CampaignFixture(modules);
@@ -570,17 +570,49 @@ public sealed class LiveCampaignCombatTests
         host.Call(engine =>
         {
             runner.Begin(engine.Random);
-            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
-            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
-            JsonObject action = continuation["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
-            action["SpellId"] = "classic:magic_missile";
-            action["SpellCosts"] = null;
+            JsonObject uncommittedSave = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject uncommittedAction = uncommittedSave["pending_combat"]!["continuation"]!["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
+            uncommittedAction["SpellId"] = "classic:magic_missile";
+            uncommittedAction["SpellCosts"] = null;
 
-            List<ModuleDiagnostic> problems = [];
-            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-missing-spell-quote-save.json", set, problems));
-            Assert.Contains(problems, problem =>
-                problem.JsonPath?.EndsWith(".PendingDecision.Actions[0].SpellCosts", StringComparison.Ordinal) == true
-                && problem.Message.Contains("committed cost quote", StringComparison.Ordinal));
+            List<ModuleDiagnostic> uncommittedProblems = [];
+            CampaignState uncommitted = SaveFile.Read(
+                Encoding.UTF8.GetBytes(uncommittedSave.ToJsonString()),
+                "uncommitted-spell-candidate-save.json",
+                set,
+                uncommittedProblems)!;
+            Assert.Empty(uncommittedProblems);
+            CampaignRunner uncommittedRunner = new(set.Rules, uncommitted)
+            {
+                DefaultCombatControl = CombatControlMode.Manual,
+            };
+            CombatObservation uncommittedObservation = Assert.IsType<CombatObservation>(uncommittedRunner.ObserveCombat(engine.Random));
+            CombatActionChoice uncommittedChoice = Assert.Single(
+                uncommittedObservation.PendingDecision!.Actions,
+                action => action.SpellId == "classic:magic_missile");
+            Assert.Null(uncommittedChoice.SpellCosts);
+
+            JsonObject committedSave = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject committedAction = committedSave["pending_combat"]!["continuation"]!["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
+            committedAction["SpellId"] = "classic:magic_missile";
+            committedAction["SpellCosts"] = new JsonObject { ["spells_1"] = 1 };
+
+            List<ModuleDiagnostic> committedProblems = [];
+            CampaignState committed = SaveFile.Read(
+                Encoding.UTF8.GetBytes(committedSave.ToJsonString()),
+                "committed-spell-quote-save.json",
+                set,
+                committedProblems)!;
+            Assert.Empty(committedProblems);
+            CampaignRunner committedRunner = new(set.Rules, committed)
+            {
+                DefaultCombatControl = CombatControlMode.Manual,
+            };
+            CombatObservation committedObservation = Assert.IsType<CombatObservation>(committedRunner.ObserveCombat(engine.Random));
+            CombatActionChoice committedChoice = Assert.Single(
+                committedObservation.PendingDecision!.Actions,
+                action => action.SpellId == "classic:magic_missile");
+            Assert.Equal(1m, committedChoice.SpellCosts!["spells_1"]);
         });
     }
 

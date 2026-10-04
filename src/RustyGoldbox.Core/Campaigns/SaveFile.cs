@@ -1071,7 +1071,7 @@ public static class SaveFile
 
             ValidateCombatants(continuation.Combatants, $"{root}.Combatants");
             ValidateBehaviorContinuation(continuation, participantIds, root);
-            ValidateDecision(continuation.PendingDecision, participantIds, $"{root}.PendingDecision", continuation.Combatants);
+            ValidateDecision(continuation.PendingDecision, participantIds, $"{root}.PendingDecision");
             ValidateContinuationFrames(continuation, participantIds, root);
         }
 
@@ -1422,8 +1422,7 @@ public static class SaveFile
         private void ValidateDecision(
             CombatDecision? decision,
             IReadOnlySet<string> participantIds,
-            string at,
-            IReadOnlyList<CombatantState>? combatants)
+            string at)
         {
             if (decision is null)
             {
@@ -1436,8 +1435,6 @@ public static class SaveFile
             }
 
             RequiredParticipant(decision.ActorId, $"{at}.ActorId", participantIds);
-            CombatantState? actor = combatants?.FirstOrDefault(candidate =>
-                candidate is not null && string.Equals(candidate.Id, decision.ActorId, StringComparison.Ordinal));
             if (!Enum.IsDefined(decision.Kind))
             {
                 Error($"{at}.Kind", $"Decision kind {(int)decision.Kind} is not valid.");
@@ -1465,7 +1462,7 @@ public static class SaveFile
                         : null;
 
                     ValidateDecisionTargets(action.Targets, participantIds, $"{actionAt}.Targets");
-                    ValidateSpellCosts(action, spell, actor, actionAt);
+                    ValidateSpellCosts(action, spell, actionAt);
                 }
             }
 
@@ -1550,20 +1547,10 @@ public static class SaveFile
         private void ValidateSpellCosts(
             CombatActionChoice action,
             Definition? spell,
-            CombatantState? actor,
             string at)
         {
             if (action.SpellCosts is null)
             {
-                if (spell is not null
-                    && spell.Json.TryGetProperty("cost", out JsonElement spellCostDefinition)
-                    && spellCostDefinition.ValueKind == JsonValueKind.Object
-                    && spellCostDefinition.EnumerateObject().Any()
-                    && actor?.CastsLeft?.ContainsKey(spell.QualifiedId) != true)
-                {
-                    Error($"{at}.SpellCosts", "An unprepared cost-bearing spell choice must carry its committed cost quote.");
-                }
-
                 return;
             }
 

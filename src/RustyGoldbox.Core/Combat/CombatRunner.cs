@@ -512,12 +512,14 @@ public sealed partial class CombatRunner
     /// every such option is scored against its target (a use without one
     /// scores 0) and the highest is taken, the first on a tie.
     /// </summary>
-    private (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? Choose(Combatant actor)
+    private (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? Choose(
+        Combatant actor,
+        IReadOnlyList<UseOption>? excluded = null)
     {
         bool scored = actor.Uses.Any(use => use.Action.Json.TryGetProperty("score", out _));
         (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? best = null;
         decimal bestScore = 0;
-        foreach ((UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor))
+        foreach ((UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor, excluded: excluded))
         {
             if (!scored)
             {
@@ -541,10 +543,16 @@ public sealed partial class CombatRunner
     private IEnumerable<(UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)> Options(
         Combatant actor,
         bool preview = false,
-        bool allCandidates = false)
+        bool allCandidates = false,
+        IReadOnlyList<UseOption>? excluded = null)
     {
         foreach (UseOption use in actor.Uses)
         {
+            if (excluded is not null && excluded.Any(candidate => ReferenceEquals(candidate, use)))
+            {
+                continue;
+            }
+
             if (!Affordable(actor, use.Action))
             {
                 continue;
@@ -602,12 +610,12 @@ public sealed partial class CombatRunner
                 {
                     try
                     {
-                        // A live decision commits one spell price alongside
-                        // its offered targets. Legal action fields use the
-                        // no-dice preview path above, but a random spell
-                        // cost must be quoted once and carried into Submit.
-                        spellCosts = SpellCostValues(actor, spell);
-                        spellUnavailable = !SpellAffordable(actor, spell, spellCosts);
+                        // Candidate inspection must not consume the shared
+                        // random stream. Deterministic prices remain visible
+                        // and can be filtered for affordability; a random
+                        // price is committed only after this use is selected.
+                        spellCosts = PreviewSpellCostValues(actor, spell);
+                        spellUnavailable = spellCosts is not null && !SpellAffordable(actor, spell, spellCosts);
                     }
                     catch (RuleFailure)
                     {
@@ -1592,6 +1600,34 @@ public sealed partial class CombatRunner
             StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Reads a spell's price through the no-dice evaluator. A null result
+    /// means at least one price depends on a value that cannot be previewed;
+    /// the selected action must commit that price later through
+    /// <see cref="SpellCostValues"/>.
+    /// </summary>
+    private IReadOnlyDictionary<string, decimal>? PreviewSpellCostValues(Combatant caster, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return new Dictionary<string, decimal>(StringComparer.Ordinal);
+        }
+
+        Dictionary<string, decimal> values = new(StringComparer.Ordinal);
+        foreach (JsonProperty entry in cost.EnumerateObject())
+        {
+            decimal? amount = PreviewNumber(spell, $"$.cost.{entry.Name}", new Scope(caster.Creature, null));
+            if (amount is not decimal known)
+            {
+                return null;
+            }
+
+            values[entry.Name] = known;
+        }
+
+        return values;
+    }
+
     /// <summary>Whether the caster's tracks can pay already evaluated spell costs.</summary>
     private bool SpellAffordable(
         Combatant caster,
@@ -1609,6 +1645,141 @@ public sealed partial class CombatRunner
             Definition track = _rules.Reference(spell, $"$.cost.{entry.Name}");
             return _evaluator.TrackCurrent(caster.Creature, track) >= costs[entry.Name];
         });
+    }
+
+    /// <summary>
+    /// Commits the selected spell's price exactly once. Random prices are
+    /// evaluated only here, after the command has passed action and target
+    /// validation. If the committed price cannot be paid, it is retained on
+    /// the pending choice so the accepted selection and later retry cannot
+    /// roll a new price.
+    /// </summary>
+    private bool TryCommitSpellCosts(
+        Combatant actor,
+        UseOption use,
+        CombatActionChoice choice,
+        out CombatActionChoice committedChoice,
+        out IReadOnlyDictionary<string, decimal>? committedCosts,
+        out string? reason,
+        out bool newlyCommitted,
+        out bool consumedRandomness)
+    {
+        committedChoice = choice;
+        committedCosts = choice.SpellCosts;
+        reason = null;
+        newlyCommitted = false;
+        long randomBefore = _dice.NextRandomKey;
+        int rollsBefore = _dice.Rolls.Count;
+
+        bool affordable = TryResolveSpellCosts(actor, use, committedCosts, out committedCosts, out reason);
+        if (choice.SpellCosts is null && committedCosts is not null)
+        {
+            committedChoice = choice with { SpellCosts = committedCosts };
+            ReplacePendingActionChoice(committedChoice);
+            newlyCommitted = true;
+        }
+
+        consumedRandomness = _dice.NextRandomKey != randomBefore || _dice.Rolls.Count != rollsBefore;
+        return affordable;
+    }
+
+    private bool TryResolveSpellCosts(
+        Combatant actor,
+        UseOption use,
+        IReadOnlyDictionary<string, decimal>? offeredCosts,
+        out IReadOnlyDictionary<string, decimal>? committedCosts,
+        out string? reason)
+    {
+        committedCosts = offeredCosts;
+        reason = null;
+
+        if (use.Spell is not Definition spell || actor.CastsLeft.ContainsKey(spell))
+        {
+            return true;
+        }
+
+        if (committedCosts is null)
+        {
+            try
+            {
+                committedCosts = SpellCostValues(actor, spell);
+            }
+            catch (RuleFailure)
+            {
+                reason = $"{actor.Name} cannot cast {use.Name}.";
+                return false;
+            }
+        }
+
+        try
+        {
+            if (!SpellAffordable(actor, spell, committedCosts))
+            {
+                reason = CommittedSpellCostReason(actor, use, spell, committedCosts);
+                return false;
+            }
+        }
+        catch (RuleFailure)
+        {
+            // The quote may already have consumed random values. The caller
+            // records that changed state instead of returning a false refusal.
+            reason = $"{actor.Name} cannot cast {use.Name}; its committed price could not be evaluated.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private string CommittedSpellCostReason(
+        Combatant actor,
+        UseOption use,
+        Definition spell,
+        IReadOnlyDictionary<string, decimal> committedCosts)
+    {
+        List<string> amounts = [];
+        foreach ((string trackId, decimal amount) in committedCosts)
+        {
+            Definition track = _rules.Reference(spell, $"$.cost.{trackId}");
+            decimal current = _evaluator.TrackCurrent(actor.Creature, track);
+            amounts.Add($"{amount.ToString(CultureInfo.InvariantCulture)} {trackId} (has {current.ToString(CultureInfo.InvariantCulture)})");
+        }
+
+        return $"{actor.Name} cannot cast {use.Name} at its committed price ({string.Join(", ", amounts)}).";
+    }
+
+    private void ReplacePendingActionChoice(CombatActionChoice choice)
+    {
+        if (_pendingDecision is null)
+        {
+            return;
+        }
+
+        int index = _pendingDecision.Actions.ToList().FindIndex(action => action.Id == choice.Id);
+        if (index < 0)
+        {
+            return;
+        }
+
+        List<CombatActionChoice> actions = _pendingDecision.Actions.ToList();
+        actions[index] = choice;
+        _pendingDecision = _pendingDecision with { Actions = actions };
+    }
+
+    private void RemovePendingActionChoice(string actionId)
+    {
+        if (_pendingDecision is null)
+        {
+            return;
+        }
+
+        List<CombatActionChoice> actions = _pendingDecision.Actions
+            .Where(action => action.Id != actionId)
+            .ToList();
+        _pendingDecision = _pendingDecision with
+        {
+            Actions = actions,
+            Moves = actions.SelectMany(action => action.Moves).Distinct().ToList(),
+        };
     }
 
     /// <summary>Spends the already evaluated spell cost from the caster's tracks.</summary>

@@ -6,6 +6,7 @@ Use `combat inspect` to discover stable actor/action/target IDs. Paths are semic
 `--combat-control manual` suspends the party at a decision; enemies remain automatic. The default is automatic.
 `combat auto-step` assists one manual turn and restores manual control; use `combat control <actor-id> auto` for a persistent takeover.
 Add `--trace` for a side-effect-free decision projection; inspection and trace do not roll dice.
+SpellCosts contains known or committed prices; a random price stays null until a legal spell is selected. An accepted unaffordable price leaves resources unchanged, and retries use the same saved quote.
 
 Example JSON observation:
 {

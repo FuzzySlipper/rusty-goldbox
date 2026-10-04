@@ -402,11 +402,16 @@ resources, roll dice or advance a turn.
 
 Action `available`, `valid_target`, `range` and `portions` expressions must be
 deterministic. Loading rejects dice in these fields, and a value that cannot
-be inspected without dice is unavailable. Random spell costs are quoted once
-when the action is offered; the pending choice retains that price for payment
-and save/resume. Random `max_targets` is committed when the action is chosen,
-before the controller selects targets. Repeated inspection and refused
-commands neither reroll these values nor pay them.
+be inspected without dice is unavailable. Deterministic spell costs appear
+in the offered choice. A random spell cost is committed once after a legal
+action is selected; candidate inspection never rolls its price. The pending
+choice retains the committed price for payment and save/resume. If that
+price cannot be paid, committing it is an accepted selection with a visible
+result, and the actor can choose another action without spending resources.
+Retrying the same unaffordable quote is a refusal without another roll.
+Random `max_targets` is committed when the action is chosen, before the
+controller selects targets. Repeated inspection and refused commands neither
+reroll these values nor pay them.
 
 Reusable **combat behaviors** are typed module definitions. They choose finite
 sequences of existing action uses with guards, priorities or scores, target
