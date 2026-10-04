@@ -33,8 +33,11 @@ jobs:
       - name: Test
         run: dotnet test tests/RustyGoldbox.Tests
 
-      - name: Check the browser UI module
-        run: node --input-type=module --check < src/ui/main.js
+      - name: Check the browser UI modules
+        run: |
+          for module in $(find src/ui -name '*.js'); do
+            node --input-type=module --check < "$module"
+          done
 
       - name: Build the Game
         run: rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj

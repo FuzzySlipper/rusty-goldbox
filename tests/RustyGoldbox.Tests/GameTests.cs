@@ -190,6 +190,27 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void AMembersTracksReachTheProjectionAsValuesWithTheFoughtTrackVital()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Mira", "race": "classic:human", "class": "classic:magic_user" }""");
+            }
+
+            JsonArray tracks = SessionProjection.Build(session)["party"]![0]!["tracks"]!.AsArray();
+            JsonNode health = Assert.Single(tracks, track => track!["vital"]!.GetValue<bool>())!;
+            Assert.Equal("classic:hit_points", health["id"]!.GetValue<string>());
+            Assert.Equal(health["max"]!.GetValue<double>(), health["current"]!.GetValue<double>());
+            Assert.Contains(tracks, track => track!["id"]!.GetValue<string>() == "classic:spells_1" && !track["vital"]!.GetValue<bool>());
+        });
+    }
+
+    [Fact]
     public void APartyMemberChoosesSpellsItCanCast()
     {
         using TempModules scratch = new();

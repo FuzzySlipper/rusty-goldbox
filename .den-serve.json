@@ -1,0 +1,12 @@
+{
+  "project": "rusty-goldbox",
+  "serve": {
+    "command": "PATH=\"$HOME/.local/bin:$HOME/.dotnet:$PATH\" exec rusty dev --project ./src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --live-debug --bind-host {host} --port {port}",
+    "preferredPort": 4181,
+    "healthUrl": "/product-ui/main.js",
+    "readyText": "mountProductUi",
+    "reusePolicy": "broker_owned",
+    "startupTimeout": "180s",
+    "healthInterval": "250ms"
+  }
+}

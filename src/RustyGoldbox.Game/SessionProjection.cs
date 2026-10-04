@@ -86,6 +86,10 @@ internal static class SessionProjection
                     ["acting"] = fight.Acting.Who == member.Name,
                     ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
                     ["iconPicture"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? Picture(session.Set.Rules, picture, imageUrl) : null,
+                    // The party's side shows the portraits the play screen shows.
+                    ["portraitPicture"] = member.Side == 0 && session.Runner?.State.Party.FirstOrDefault(character => character.Name == member.Name)?.Portrait is Definition portrait
+                        ? Picture(session.Set!.Rules!, portrait, imageUrl)
+                        : null,
                 }).ToArray()),
                 ["log"] = Strings(fight.Lines.TakeLast(14)),
             };
@@ -405,6 +409,25 @@ internal static class SessionProjection
         return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame, ["animation"] = animation };
     }
 
+    /// <summary>
+    /// A member's tracks as values for bars and text. A vital track is one a
+    /// combat is fought on, so a portrait can show it.
+    /// </summary>
+    private static JsonArray Tracks(RuleSet rules, Character character)
+    {
+        HashSet<Definition> fought = rules.OfType(DefinitionTypes.Combat)
+            .Select(combat => rules.Reference(combat, "$.track"))
+            .ToHashSet();
+        return new JsonArray(CharacterSheet.Tracks(rules, character).Select(track => (JsonNode)new JsonObject
+        {
+            ["id"] = track.Track.QualifiedId,
+            ["name"] = track.Track.Name,
+            ["current"] = track.Current is decimal current ? (double)current : null,
+            ["max"] = track.Max is decimal max ? (double)max : null,
+            ["vital"] = fought.Contains(track.Track),
+        }).ToArray());
+    }
+
     private static JsonArray Spells(IEnumerable<Definition> spells)
     {
         return new JsonArray(spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray());
@@ -421,7 +444,7 @@ internal static class SessionProjection
             ["race"] = character.Race?.Name,
             ["class"] = character.ClassLevels().Count > 1 ? character.ClassText : character.Class?.Name,
             ["level"] = character.Level,
-            ["tracks"] = Strings(CharacterSheet.Tracks(rules, character).Select(track => $"{track.Track.Name} {Number(track.Current)}/{Number(track.Max)}")),
+            ["tracks"] = Tracks(rules, character),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
             ["skillPoints"] = skillPoints is null ? null : new JsonObject
             {

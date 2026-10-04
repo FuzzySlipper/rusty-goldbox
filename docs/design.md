@@ -41,7 +41,7 @@ In priority order:
 | `src/RustyGoldbox.Core/` | Module format and loading, the expression language, ruleset interpretation, characters, combat, the campaign/event runtime and save data. No host and no UI. |
 | `src/RustyGoldbox.Game/` | The Engine `IEngineProduct`: opens module bundles, runs Core under Engine update and input, persists saves and publishes projections. |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring and testing CLI over Core. |
-| `src/ui/` | DOM companion: a debug readout before presentation exists. |
+| `src/ui/` | DOM companion: the panels around the Engine view, laid out for the window's shape. |
 | `modules/` | First-party module sources, one directory per module. |
 | `tests/` | Focused checks: module fixtures, expression cases and golden play transcripts. |
 
