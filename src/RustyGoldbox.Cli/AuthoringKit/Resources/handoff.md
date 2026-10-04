@@ -14,9 +14,14 @@ canon: <path and sha256>
 inputs:
   - <path and purpose>
 baseline: <source revision or explicitly local source>
-tool: <goldbox version or build identity>
+tool: <published goldbox path and version>
+application_assembly: <published application assembly identity or hash>
+executable: <optional apphost or executable identity>
 status: <draft, ready-for-review, blocked, or superseded>
 ```
+
+The application assembly identifies the published CLI. An apphost or
+executable identity is supplementary and cannot stand alone.
 
 ## Worker assignment
 
@@ -43,6 +48,13 @@ returns every changed path. A planner may propose IDs and state; only the
 coordinator changes shared canon. A reader can report a contradiction without
 editing the author output.
 
+Dispatch area or chapter owners only after the shared canon, IDs, and entry and
+exit contracts are ready. The coordinator leaves each owner's runtime slice to
+that owner. A prepared prompt or planned command is not a dispatch, run, or
+assessment receipt; record the actual receipt before describing it as one. If a
+partial owner slice lacks a sibling definition, keep that as owner coordination
+until assembly validation rather than inventing a shared reference.
+
 ## Results
 
 ```yaml
@@ -67,7 +79,9 @@ whether a checkpoint is expected to end headless play. If a command needs
 `--modules <dir>`, keep that argument in the copied command and record the
 dependency staging used. If a seeded contradiction is found, identify the
 canon ID, local ID, file, and state it affects before deciding whether canon
-should change.
+should change. Run short CLI checks directly in the foreground. A background
+process without a complete completion receipt is unverified and must be rerun
+before its result is recorded as successful.
 
 ## Merge and resume
 

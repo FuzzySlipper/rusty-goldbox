@@ -9,7 +9,8 @@ workflow rather than an orchestration service.
    available to the author and reviewer.
 2. Copy `canon.md`, choose module identities, rights, ruleset dependencies,
    local IDs, variables, and cross-scene interfaces.
-3. Use `goldbox schema --json` and the relevant schema topics. Create or edit
+3. Start discovery with global `goldbox --help`, then use
+   `goldbox schema <topic> --json` for the relevant schema topics. Create or edit
    the workspace's runtime module directories; keep editable canon, prompts,
    scripts, source art, accepted art, and reports separate from generated
    staging and exports.
@@ -24,6 +25,18 @@ workflow rather than an orchestration service.
    input.
 7. Record a handoff and use `revision.md` for the next pass.
 
+## Discovery and execution receipts
+
+Use the global `goldbox --help` surface for command discovery; do not assume
+that a subcommand has its own `--help`. A prepared prompt or planned command
+is an input artifact, not evidence that a worker was dispatched, a run
+completed, or an assessment happened. Use those terms only when the matching
+dispatch, run, or assessment receipt exists. Run short CLI checks in the
+foreground. If a background process ends without complete stdout, stderr, and
+status, mark it unverified and rerun it directly. Record the published
+application assembly identity for a shipped CLI; an apphost or executable
+identity alone is incomplete.
+
 ## Coordinator with workers
 
 The coordinator owns `brief.md`, `canon.md`, module identity, shared IDs,
@@ -37,6 +50,14 @@ paths:
 | encounter | chapter state and ruleset schema | encounter/combat data and balance notes |
 | art | art brief and references | source prompts, accepted/rejected records, asset definitions |
 | validator/reader | immutable source and expected facts | receipts and findings, no author edits |
+
+Establish the shared canon, IDs, and entry and exit contracts before
+dispatching disjoint area or chapter owners. Dispatch each owner against its
+owner-clean scaffold; the coordinator does not write an owner's runtime slice
+before dispatch and then call a later revision a fresh parallel creation. A
+partial owner slice that lacks sibling definitions remains owner coordination
+until the full assembly is available for validation; do not invent shared
+references to make the partial slice load.
 
 Every worker receives an entry state, exit state, dependencies, allowed
 changes, and a next command. Workers preserve others' edits and return shared
