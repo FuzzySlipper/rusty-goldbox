@@ -610,7 +610,11 @@ public sealed partial class CombatRunner
             return candidates;
         }
 
-        if (kind is "self" or "all_enemies" or "all_allies" || candidates.Count == 0)
+        // A capped action still needs the complete legal candidate set before
+        // Act evaluates its committed cap. Reducing an ordinary enemy/ally
+        // action to one here would make automatic max_targets actions silently
+        // affect one target even when the authored cap is larger.
+        if (kind is "self" or "all_enemies" or "all_allies" || HasMaximumTargets(action) || candidates.Count == 0)
         {
             return candidates;
         }
@@ -645,7 +649,8 @@ public sealed partial class CombatRunner
         IReadOnlyList<Combatant>? selectedTargets = null,
         int? committedMaxTargets = null,
         int? rollsBefore = null,
-        bool alreadyPaid = false)
+        bool alreadyPaid = false,
+        IReadOnlyList<DiceRoll>? committedRolls = null)
     {
         Definition action = use.Action;
         if (selectedTargets is not null)
@@ -663,7 +668,7 @@ public sealed partial class CombatRunner
                 ? targets.OrderByDescending(target => Number(action, "$.prefer", new Scope(actor.Creature, target.Creature, use.Parameters)))
                 : targets;
             targets = ranked.Take((int)Math.Clamp(decimal.Floor(most), 0, targets.Count)).ToList();
-            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), before, actor, targets);
+            Record(new ActionFact(actor.Name, use.Name, string.Join(", ", targets.Select(target => target.Name))), before, actor, targets, committedRolls);
         }
         else
         {
@@ -822,68 +827,15 @@ public sealed partial class CombatRunner
             SuspendPostRoll(check, by, against, result, legal);
         }
 
-        int bestIndex = -1;
-        decimal bestScore = 0;
-        Definition? bestTrack = null;
-        decimal bestCost = 0;
-        for (int index = 0; index < options.GetArrayLength(); index++)
-        {
-            JsonElement option = options[index];
-            Definition track = _rules.Reference(check, $"$.post_roll[{index}].track");
-            Scope optionScope = new(by.Creature, against.Creature, Check: result);
-            decimal cost = Number(check, $"$.post_roll[{index}].cost", optionScope);
-            decimal score = Number(check, $"$.post_roll[{index}].score", optionScope);
-            if (cost <= 0 || score <= bestScore || _evaluator.TrackCurrent(by.Creature, track) < cost)
-            {
-                continue;
-            }
-
-            bestIndex = index;
-            bestScore = score;
-            bestTrack = track;
-            bestCost = cost;
-        }
-
-        if (bestIndex < 0 || bestTrack is null)
+        PostRollCandidate? best = legal
+            .Where(candidate => candidate.Score > 0)
+            .OrderByDescending(candidate => candidate.Score)
+            .FirstOrDefault();
+        if (best is null)
         {
             return result;
         }
-
-        TrackValue resource = by.Creature.Track(bestTrack.Id);
-        resource.Current = _evaluator.TrackCurrent(by.Creature, bestTrack) - bestCost;
-        Record(new SpentFact(by.Name, bestTrack, bestCost, resource.Current.Value), subject: by);
-
-        JsonElement selected = options[bestIndex];
-        string effect;
-        decimal before = result.Total;
-        int rollsBefore = _dice.Rolls.Count;
-        CheckResult changed;
-        if (selected.TryGetProperty("reroll", out JsonElement reroll) && reroll.GetBoolean())
-        {
-            changed = Located(check, $"$.post_roll[{bestIndex}]", () =>
-            {
-                decimal roll = _evaluator.Roll(check, by.Creature, against.Creature);
-                return _evaluator.ResolveCheck(check, by.Creature, against.Creature, roll, result.Bonus, result.Modifier, result.Target);
-            });
-            effect = "reroll";
-        }
-        else
-        {
-            decimal bonus = Number(check, $"$.post_roll[{bestIndex}].bonus", new Scope(by.Creature, against.Creature, Check: result));
-            changed = Located(check, $"$.post_roll[{bestIndex}].bonus", () => _evaluator.ResolveCheck(check, by.Creature, against.Creature, result.Roll, result.Bonus, result.Modifier + bonus, result.Target));
-            effect = $"+{bonus.ToString("0.############", CultureInfo.InvariantCulture)}";
-        }
-
-        string optionName = selected.TryGetProperty("name", out JsonElement name) ? name.GetString()! : effect;
-        Record(new PostRollFact(by.Name, check.Name, optionName, bestTrack, bestCost, effect, before, changed.Total), rollsBefore, by, [against]);
-        int fact = _facts.FindLastIndex(entry => entry is CheckFact { Who: var who, Check: var name } && who == by.Name && name == check.Name);
-        if (fact >= 0 && _facts[fact] is CheckFact original)
-        {
-            IReadOnlyList<DiceRoll> rolls = [.. original.Rolls, .. _dice.Rolls.Skip(rollsBefore)];
-            _facts[fact] = original with { Result = changed, Rolls = rolls };
-        }
-
-        return changed;
+        return ApplyPostRollOption(check, by, against, result, best);
     }
 
     private void RunOperations(Definition owner, JsonElement operations, string path, Scope scope, Combatant actor, Combatant? target, Combatant? source = null)
@@ -1526,7 +1478,12 @@ public sealed partial class CombatRunner
         return standing.Count == 1 ? standing[0] : null;
     }
 
-    private void Record(CombatFact fact, int? rollsBefore = null, Combatant? subject = null, IEnumerable<Combatant>? targets = null)
+    private void Record(
+        CombatFact fact,
+        int? rollsBefore = null,
+        Combatant? subject = null,
+        IEnumerable<Combatant>? targets = null,
+        IReadOnlyList<DiceRoll>? committedRolls = null)
     {
         if (subject is not null || targets is not null)
         {
@@ -1537,7 +1494,11 @@ public sealed partial class CombatRunner
             };
         }
 
-        if (rollsBefore is int before && _dice.Rolls.Count > before)
+        if (committedRolls is not null)
+        {
+            fact = fact with { Rolls = [.. committedRolls, .._dice.Rolls.Skip(rollsBefore ?? _dice.Rolls.Count)] };
+        }
+        else if (rollsBefore is int before && _dice.Rolls.Count > before)
         {
             fact = fact with { Rolls = _dice.Rolls.Skip(before).ToList() };
         }

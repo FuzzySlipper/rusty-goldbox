@@ -133,6 +133,263 @@ public sealed class LiveCombatInterruptTests
     }
 
     [Fact]
+    public void PostRollPolicyValuesAreCommittedBeforeJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = InterruptRuleset(modules);
+        modules.Write("rules/strike_check.json", """
+            { "type": "check", "id": "strike_check", "name": "Strike", "roll": "9", "target": "10", "succeeds": "at-least",
+              "post_roll": [ { "name": "Luck", "track": "luck", "cost": "1", "bonus": "1d4", "score": "1d6" } ] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+
+            CombatObservation turn = runner.Start(1);
+            CombatActionChoice strike = Assert.Single(AssertDecision(turn, CombatDecisionKind.Action).Actions);
+            CombatCommandResult submitted = runner.Submit(new CombatCommand.UseAction(attacker.Id, strike.Id, [guard.Id]));
+            CombatDecision offered = AssertDecision(submitted.Observation, CombatDecisionKind.PostRoll);
+            CombatDecisionOption option = Assert.Single(offered.Options!);
+            int drawsAtOffer = dice.Rolls.Count;
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+            ], dice, saved);
+            CombatDecision restoredDecision = AssertDecision(restored.Observe(), CombatDecisionKind.PostRoll);
+            Assert.Equal(drawsAtOffer, dice.Rolls.Count);
+            Assert.Equal(offered.Options, restoredDecision.Options);
+
+            CombatCommandResult accepted = restored.Submit(new CombatCommand.Decide(restoredDecision.Id, option.Id));
+            Assert.True(accepted.Accepted, accepted.Reason);
+            Assert.Equal(drawsAtOffer, dice.Rolls.Count);
+        });
+    }
+
+    [Fact]
+    public void ReactionWhenIsCommittedBeforeJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = InterruptRuleset(modules);
+        modules.Write("rules/guard_reaction.json", """
+            { "type": "reaction", "id": "guard_reaction", "name": "Guard", "trigger": "hit", "when": "1d2 >= 1", "cost": { "reaction": 1 },
+              "use": { "action": "guard" } }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(guard.Id, CombatControlMode.Manual));
+
+            CombatObservation waiting = runner.Start(1);
+            CombatDecision decision = AssertDecision(waiting, CombatDecisionKind.Interrupt);
+            int drawsAtOffer = dice.Rolls.Count;
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+            ], dice, saved);
+
+            CombatCommandResult accepted = restored.Submit(new CombatCommand.Decide(decision.Id, Assert.Single(decision.Options!).Id));
+            Assert.True(accepted.Accepted, accepted.Reason);
+            Assert.Equal(drawsAtOffer, dice.Rolls.Count);
+            Assert.Single(accepted.Observation.Facts.OfType<ReactionFact>());
+        });
+    }
+
+    [Fact]
+    public void MultiTargetInterruptResumesRemainingTargetsAfterJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = InterruptRuleset(modules);
+        modules.Write("rules/strike.json", """
+            { "type": "action", "id": "strike", "name": "Strike", "cost": { "turn": 1 }, "target": "all_enemies",
+              "always": [ { "op": "damage", "amount": "4" } ] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant first = Combatant.FromMonster(rules, guardDefinition, "First guard", evaluator);
+            Combatant second = Combatant.FromMonster(rules, guardDefinition, "Second guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [first, second]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(first.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(second.Id, CombatControlMode.Manual));
+
+            CombatObservation turn = runner.Start(1);
+            CombatActionChoice strike = Assert.Single(AssertDecision(turn, CombatDecisionKind.Action).Actions);
+            CombatCommandResult submitted = runner.Submit(new CombatCommand.UseAction(attacker.Id, strike.Id, [first.Id, second.Id]));
+            CombatDecision firstInterrupt = AssertDecision(submitted.Observation, CombatDecisionKind.Interrupt);
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Assert.Contains(saved.OperationStack, frame => frame.TargetIds?.Count == 2 && frame.TargetIndex == 0);
+
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "First guard", restoredEvaluator), Combatant.FromMonster(rules, guardDefinition, "Second guard", restoredEvaluator)]),
+            ], dice, saved);
+
+            CombatCommandResult afterFirst = restored.Submit(new CombatCommand.Decide(firstInterrupt.Id));
+            CombatDecision secondInterrupt = AssertDecision(afterFirst.Observation, CombatDecisionKind.Interrupt);
+            Assert.Equal(second.Id, secondInterrupt.Interrupt!.ReactorId);
+            CombatCommandResult finished = restored.Submit(new CombatCommand.Decide(secondInterrupt.Id));
+            Assert.True(finished.Accepted, finished.Reason);
+            Assert.Equal(2, finished.Observation.Facts.OfType<DamageFact>().Count(fact => fact.Who is "First guard" or "Second guard"));
+        });
+    }
+
+    [Fact]
+    public void CommittedTargetRollsSurviveJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = InterruptRuleset(modules);
+        modules.Write("rules/strike.json", """
+            { "type": "action", "id": "strike", "name": "Strike", "cost": { "turn": 1 }, "target": "enemy", "max_targets": "1d2",
+              "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+
+            CombatActionChoice strike = Assert.Single(AssertDecision(runner.Start(1), CombatDecisionKind.Action).Actions);
+            CombatCommandResult targetWaiting = runner.Submit(new CombatCommand.UseAction(attacker.Id, strike.Id, []));
+            CombatDecision targetDecision = AssertDecision(targetWaiting.Observation, CombatDecisionKind.Targets);
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Assert.NotEmpty(saved.CommittedTargetRolls);
+
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+            ], dice, saved);
+            CombatCommandResult finished = restored.Submit(new CombatCommand.UseAction(attacker.Id, targetDecision.ActionId!, [guard.Id]));
+            Assert.True(finished.Accepted, finished.Reason);
+            ActionFact action = Assert.Single(finished.Observation.Facts.OfType<ActionFact>(), fact => fact.Who == "Attacker");
+            Assert.Equal(saved.CommittedTargetRolls, action.Rolls);
+        });
+    }
+
+    [Fact]
+    public void NestedCounterInterruptResumesOuterDamageAfterJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = InterruptRuleset(modules);
+        modules.Write("rules/strike.json", """
+            { "type": "action", "id": "strike", "name": "Strike", "cost": { "turn": 1 }, "target": "enemy",
+              "always": [ { "op": "damage", "amount": "4" } ] }
+            """);
+        modules.Write("rules/guard.json", """
+            { "type": "action", "id": "guard", "name": "Guard", "cost": { "reaction": 0 }, "target": "enemy",
+              "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        modules.Write("rules/counter.json", """
+            { "type": "action", "id": "counter", "name": "Counter", "cost": { "reaction": 0 }, "target": "enemy",
+              "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        modules.Write("rules/counter_reaction.json", """
+            { "type": "reaction", "id": "counter_reaction", "name": "Counter", "trigger": "hit", "counter": true, "cost": { "reaction": 1 },
+              "use": { "action": "counter" } }
+            """);
+        modules.Write("rules/attacker.json", """
+            { "type": "monster", "id": "attacker", "name": "Attacker", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "15" }, "actions": [ { "action": "strike" } ], "reactions": [ "counter_reaction" ], "xp": 0 }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(guard.Id, CombatControlMode.Manual));
+
+            CombatObservation turn = runner.Start(1);
+            CombatActionChoice strike = Assert.Single(AssertDecision(turn, CombatDecisionKind.Action).Actions);
+            CombatCommandResult outerWaiting = runner.Submit(new CombatCommand.UseAction(attacker.Id, strike.Id, [guard.Id]));
+            CombatDecision outer = AssertDecision(outerWaiting.Observation, CombatDecisionKind.Interrupt);
+            CombatCommandResult nestedWaiting = runner.Submit(new CombatCommand.Decide(outer.Id, Assert.Single(outer.Options!).Id));
+            CombatDecision nested = AssertDecision(nestedWaiting.Observation, CombatDecisionKind.Interrupt);
+            Assert.Equal(attacker.Id, nested.Interrupt!.ReactorId);
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Assert.Single(saved.ParentInterrupts);
+
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+            ], dice, saved);
+            CombatCommandResult finished = restored.Submit(new CombatCommand.Decide(nested.Id));
+            Assert.True(finished.Accepted, finished.Reason);
+            Assert.Contains(finished.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == "Attacker" && fact.Amount == 1);
+            Assert.Contains(finished.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == "Guard" && fact.Amount == 4);
+        });
+    }
+
+    [Fact]
     public void PendingReactionSurvivesJsonRoundTripAndResumeWithoutReroll()
     {
         using TempModules modules = new();

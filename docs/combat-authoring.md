@@ -22,9 +22,12 @@ campaign-specific profiles. A profile is a definition with ordered rules. A
 rule may have a boolean `when`, a `priority` or `score`, and a short list of
 steps. Each step names an existing action use and may select a target or move
 first through its destination; a profile has a fixed sequence and never loops.
-Use parameters supply values such as damage, range, or a resource choice. Keep
-each sequence short and explicit. Do not encode loops, scripts, or assumptions
-about a particular C# class.
+Use parameters supply values such as damage, range, or a resource choice. The
+controller matches the action, name, spell, `from_item` kind and supplied
+parameter expressions against one of the actor's existing legal uses. A
+profile therefore selects an authored use; it cannot replace that use's
+parameters or create an unavailable action. Keep each sequence short and
+explicit. Do not encode loops, scripts, or assumptions about a particular C# class.
 
 For example, a ranged skirmisher can keep its distance while an enemy is near,
 then retreat and shoot when that enemy closes:

@@ -1422,6 +1422,7 @@ public sealed class RuleSetBuilder
         }
 
         HashSet<string> names = [];
+        Dictionary<string, List<string>> dependencies = [];
         foreach (JsonProperty parameter in parameters.EnumerateObject())
         {
             if (!names.Add(parameter.Name) || !DefinitionIds.IsValid(parameter.Name))
@@ -1431,6 +1432,55 @@ public sealed class RuleSetBuilder
             }
 
             CheckBehaviorExpression(behavior, $"$.parameters.{parameter.Name}", parameters, parameter.Name, "a parameter", rejectDice: true);
+            if (_rules.TryExpression(behavior, $"$.parameters.{parameter.Name}", out CompiledExpression? expression)
+                && expression is not null)
+            {
+                dependencies[parameter.Name] = BehaviorReferences(expression.Root).Distinct(StringComparer.Ordinal).ToList();
+            }
+        }
+
+        CheckBehaviorParameterCycles(behavior, dependencies);
+    }
+
+    private void CheckBehaviorParameterCycles(Definition behavior, IReadOnlyDictionary<string, List<string>> dependencies)
+    {
+        Dictionary<string, int> marks = [];
+        HashSet<string> reported = new(StringComparer.Ordinal);
+
+        foreach (string parameter in dependencies.Keys)
+        {
+            Visit(parameter, []);
+        }
+
+        void Visit(string parameter, List<string> path)
+        {
+            if (marks.TryGetValue(parameter, out int mark))
+            {
+                if (mark == 1 && reported.Add(parameter))
+                {
+                    int start = path.IndexOf(parameter);
+                    IEnumerable<string> cycle = start >= 0
+                        ? path.Skip(start).Append(parameter)
+                        : [parameter, parameter];
+                    Error(behavior, "behavior.parameter", $"$.parameters.{parameter}",
+                        $"Behavior parameter expressions form a cycle ({string.Join(" -> ", cycle)}). Reference a self, target, combat field, or a non-cyclic parameter instead.");
+                }
+
+                return;
+            }
+
+            marks[parameter] = 1;
+            path.Add(parameter);
+            if (dependencies.TryGetValue(parameter, out List<string>? references))
+            {
+                foreach (string reference in references.Where(dependencies.ContainsKey))
+                {
+                    Visit(reference, path);
+                }
+            }
+
+            path.RemoveAt(path.Count - 1);
+            marks[parameter] = 2;
         }
     }
 
@@ -1461,6 +1511,21 @@ public sealed class RuleSetBuilder
             CallExpr call => call.Function is "roll" or "roll_keep" or "roll_count" or "roll_explode" or "roll_fudge" or "roll_pool"
                 || call.Arguments.Any(ContainsDice),
             _ => false,
+        };
+    }
+
+    private static IEnumerable<string> BehaviorReferences(Expr expression)
+    {
+        return expression switch
+        {
+            PathExpr path when path.Root == "behavior" => [path.Name],
+            UnaryExpr unary => BehaviorReferences(unary.Operand),
+            BinaryExpr binary => BehaviorReferences(binary.Left).Concat(BehaviorReferences(binary.Right)),
+            ConditionalExpr conditional => BehaviorReferences(conditional.Condition)
+                .Concat(BehaviorReferences(conditional.Then))
+                .Concat(BehaviorReferences(conditional.Else)),
+            CallExpr call => call.Arguments.SelectMany(BehaviorReferences),
+            _ => [],
         };
     }
 

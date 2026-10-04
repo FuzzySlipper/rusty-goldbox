@@ -55,7 +55,12 @@ public sealed partial class CombatRunner
         bool Attack,
         CombatOperationState Operation);
 
-    private sealed record ReactionCandidate(Definition Reaction, UseOption Use, string OptionId, decimal Cost);
+    private sealed record ReactionCandidate(
+        Definition Reaction,
+        UseOption Use,
+        string OptionId,
+        decimal Cost,
+        int ReactionIndex = -1);
 
     private sealed record ParentInterruptFrame(PendingInterruptFrame Frame, decimal Amount, PendingDamage? Damage);
 
@@ -102,6 +107,12 @@ public sealed partial class CombatRunner
         public bool Attack { get; init; }
         public ActionContinuation? Action { get; init; }
         public MovementContinuation? Movement { get; set; }
+        /// <summary>
+        /// Dice that were already committed by the interrupted operation. A
+        /// non-null value means the frame was restored from a save and the
+        /// fresh roller does not contain these journal entries.
+        /// </summary>
+        public IReadOnlyList<DiceRoll>? PendingRolls { get; init; }
     }
 
     private sealed record PostRollCandidate(
@@ -152,7 +163,11 @@ public sealed partial class CombatRunner
             actor.Id,
             target.Id,
             actor.Id,
-            use.Action.QualifiedId);
+            use.Action.QualifiedId,
+            UseId: UseId(actor, use),
+            TargetIds: _actionContinuation?.Targets?.Select(member => member.Id).ToList(),
+            TargetIndex: _actionContinuation?.TargetIndex ?? 0,
+            AlreadyPaid: _actionContinuation?.AlreadyPaid ?? false);
         _pendingOperation = operation;
         _operationStack = [operation];
     }
@@ -199,7 +214,8 @@ public sealed partial class CombatRunner
             target.Id,
             source.Id,
             _actionContinuation?.Use.Action.QualifiedId,
-            PendingDamage: amount);
+            PendingDamage: amount,
+            UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use));
         _damageContinuation = new DamageContinuation(
             owner,
             path,
@@ -222,7 +238,11 @@ public sealed partial class CombatRunner
                 _actionContinuation.Actor.Id,
                 _actionContinuation.Target.Id,
                 _actionContinuation.Actor.Id,
-                _actionContinuation.Use.Action.QualifiedId),
+                _actionContinuation.Use.Action.QualifiedId,
+                UseId: UseId(_actionContinuation.Actor, _actionContinuation.Use),
+                TargetIds: _actionContinuation.Targets?.Select(member => member.Id).ToList(),
+                TargetIndex: _actionContinuation.TargetIndex,
+                AlreadyPaid: _actionContinuation.AlreadyPaid),
         }), operation];
     }
 
@@ -268,7 +288,9 @@ public sealed partial class CombatRunner
                 entry.Reaction,
                 entry.Use,
                 $"reaction:{reactor.Id}:{entry.Reaction.QualifiedId}",
-                ReactionCost(entry.Reaction, reactor)))
+                ReactionCost(entry.Reaction, reactor),
+                reactor.Reactions.FindIndex(candidate => ReferenceEquals(candidate.Reaction, entry.Reaction)
+                    && ReferenceEquals(candidate.Use, entry.Use))))
             .ToList();
         CombatOperationState operation = _pendingOperation
             ?? new CombatOperationState(
@@ -278,7 +300,11 @@ public sealed partial class CombatRunner
                 source.Id,
                 source.Id,
                 _actionContinuation?.Use.Action.QualifiedId,
-                PendingDamage: _pendingDamage?.Amount);
+                PendingDamage: _pendingDamage?.Amount,
+                UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use),
+                TargetIds: _actionContinuation?.Targets?.Select(member => member.Id).ToList(),
+                TargetIndex: _actionContinuation?.TargetIndex ?? 0,
+                AlreadyPaid: _actionContinuation?.AlreadyPaid ?? false);
         CombatInterruptState interrupt = new(
             trigger,
             reactor.Id,
@@ -289,7 +315,9 @@ public sealed partial class CombatRunner
             _damageContinuation?.Track.Id,
             _pendingDamage?.Amount,
             operation.OwnerId,
-            operation.Path);
+            operation.Path,
+            operation.UseId,
+            null);
         _pendingInterruptFrame = new PendingInterruptFrame
         {
             Trigger = trigger,
@@ -326,7 +354,8 @@ public sealed partial class CombatRunner
                 candidate.Reaction.QualifiedId,
                 null,
                 null,
-                candidate.Cost)).ToList(),
+                candidate.Cost,
+                Index: candidate.ReactionIndex)).ToList(),
             interrupt);
         _phase = CombatPhase.AwaitingInterrupt;
         _suspending = true;
@@ -346,11 +375,20 @@ public sealed partial class CombatRunner
     private void CaptureInterruptContinuation(CombatContinuationState state)
     {
         state.PendingInterrupt = _pendingDecision?.Interrupt;
+        state.PendingInterruptRolls = _damageContinuation is null
+            ? []
+            : _dice.Rolls.Skip(_damageContinuation.RollsBefore).ToList();
         state.PendingCheck = _pendingDecision?.Check;
+        state.PendingCheckRolls = _pendingDecision?.Check?.FactIndex is int factIndex
+            && factIndex >= 0
+            && factIndex < _facts.Count
+            ? _facts[factIndex].Rolls.ToList()
+            : [];
         state.PendingOperation = _pendingOperation;
         state.PendingMovement = _movementContinuation is null ? null : CaptureMovement(_movementContinuation);
         state.OperationStack = _operationStack.ToList();
         state.ReactionDepth = _reactions;
+        state.ParentInterrupts = _parentInterruptFrames.Select(CaptureParentInterrupt).ToList();
     }
 
     private void RestoreInterruptContinuation(CombatContinuationState state)
@@ -362,6 +400,7 @@ public sealed partial class CombatRunner
         _pendingPostRollFrame = null;
         _pendingInitiativeFrame = null;
         _movementContinuation = null;
+        _parentInterruptFrames.Clear();
         if (state.PendingDecision?.Kind == CombatDecisionKind.Interrupt && state.PendingInterrupt is CombatInterruptState interrupt)
         {
             if (interrupt.Trigger == "initiative")
@@ -382,27 +421,120 @@ public sealed partial class CombatRunner
         {
             RestoreMovement(movement, state);
         }
+
+        foreach (CombatInterruptFrameState parent in state.ParentInterrupts)
+        {
+            RestoreParentInterrupt(parent, state);
+        }
+    }
+
+    private CombatInterruptFrameState CaptureParentInterrupt(ParentInterruptFrame parent)
+    {
+        PendingInterruptFrame frame = parent.Frame;
+        IReadOnlyList<DiceRoll> pendingRolls = frame.PendingRolls
+            ?? _dice.Rolls.Skip(frame.RollsBefore).ToList();
+        CombatInterruptState interrupt = new(
+            frame.Trigger,
+            frame.Reactor.Id,
+            frame.Source.Id,
+            frame.Candidates.Count == 1 ? frame.Candidates[0].Reaction.QualifiedId : null,
+            frame.Action?.Use.Action.QualifiedId,
+            frame.Target?.Id ?? frame.Action?.Target.Id,
+            frame.Track?.Id,
+            parent.Amount,
+            frame.Operation.OwnerId,
+            frame.Operation.Path,
+            frame.Action is null ? null : UseId(frame.Action.Actor, frame.Action.Use),
+            null);
+        return new CombatInterruptFrameState
+        {
+            Interrupt = interrupt,
+            Options = frame.Candidates.Select(candidate => new CombatDecisionOption(
+                candidate.OptionId,
+                candidate.Reaction.Name,
+                "reaction",
+                candidate.Reaction.QualifiedId,
+                null,
+                null,
+                candidate.Cost,
+                Index: candidate.ReactionIndex)).ToList(),
+            Operation = frame.Operation,
+            PendingDamage = parent.Amount,
+            RollsBefore = frame.RollsBefore,
+            FactsBefore = frame.FactsBefore,
+            Physical = frame.Physical,
+            Attack = frame.Attack,
+            Action = frame.Action is null ? null : ActionOperation(frame.Action),
+            Movement = frame.Movement is null ? null : CaptureMovement(frame.Movement),
+            PendingRolls = pendingRolls.ToList(),
+        };
+    }
+
+    private void RestoreParentInterrupt(CombatInterruptFrameState saved, CombatContinuationState state)
+    {
+        CombatInterruptState interrupt = saved.Interrupt;
+        Combatant reactor = Find(interrupt.ReactorId)
+            ?? throw new ArgumentException($"Unknown parent interrupt reactor '{interrupt.ReactorId}'.", nameof(state));
+        Combatant source = Find(interrupt.SourceId)
+            ?? throw new ArgumentException($"Unknown parent interrupt source '{interrupt.SourceId}'.", nameof(state));
+        List<ReactionCandidate> candidates = RestoreReactionCandidates(reactor, saved.Options);
+        ActionContinuation? action = RestoreActionContinuation(saved.Operation, interrupt, state, saved.Action);
+        Combatant? target = interrupt.TargetId is string targetId ? Find(targetId) : null;
+        Definition? track = interrupt.TrackId is string trackId ? _rules.Find(DefinitionTypes.Track, trackId, out _) : null;
+        PendingInterruptFrame frame = new()
+        {
+            Trigger = interrupt.Trigger,
+            Reactor = reactor,
+            Source = source,
+            Candidates = candidates,
+            Operation = saved.Operation,
+            Target = target,
+            Track = track,
+            PendingDamage = saved.PendingDamage,
+            RollsBefore = saved.RollsBefore,
+            FactsBefore = saved.FactsBefore,
+            Physical = saved.Physical,
+            Attack = saved.Attack,
+            Action = action,
+            Movement = saved.Movement is CombatMovementState movement
+                ? BuildMovementContinuation(movement, state)
+                : null,
+            PendingRolls = saved.PendingRolls is { Count: > 0 } ? saved.PendingRolls : interrupt.PendingRolls,
+        };
+        _parentInterruptFrames.Add(new ParentInterruptFrame(frame, saved.PendingDamage, null));
+    }
+
+    private CombatOperationState ActionOperation(ActionContinuation action)
+    {
+        return new CombatOperationState(
+            action.Use.Action.QualifiedId,
+            "$.action",
+            action.Actor.Id,
+            action.Target.Id,
+            action.Actor.Id,
+            action.Use.Action.QualifiedId,
+            UseId: UseId(action.Actor, action.Use),
+            TargetIds: action.Targets?.Select(member => member.Id).ToList(),
+            TargetIndex: action.TargetIndex,
+            AlreadyPaid: action.AlreadyPaid);
     }
 
     private void RestoreInterrupt(CombatInterruptState interrupt, CombatContinuationState state)
     {
         Combatant reactor = Find(interrupt.ReactorId) ?? throw new ArgumentException($"Unknown interrupt reactor '{interrupt.ReactorId}'.", nameof(state));
         Combatant source = Find(interrupt.SourceId) ?? throw new ArgumentException($"Unknown interrupt source '{interrupt.SourceId}'.", nameof(state));
-        List<ReactionCandidate> candidates = reactor.Reactions
-            .Where(entry => state.PendingDecision!.Options?.Any(option => option.QualifiedId == entry.Reaction.QualifiedId) == true)
-            .Select(entry => new ReactionCandidate(
-                entry.Reaction,
-                entry.Use,
-                $"reaction:{reactor.Id}:{entry.Reaction.QualifiedId}",
-                ReactionCost(entry.Reaction, reactor)))
-            .ToList();
+        List<ReactionCandidate> candidates = RestoreReactionCandidates(reactor, state.PendingDecision?.Options);
         CombatOperationState operation = state.PendingOperation
-            ?? new CombatOperationState(interrupt.OperationOwner ?? _combat.QualifiedId, interrupt.OperationPath ?? "$", source.Id, interrupt.TargetId, interrupt.SourceId, interrupt.ActionId, PendingDamage: interrupt.PendingDamage);
-        ActionContinuation? action = null;
-        if (operation.ActorId is string actorId && Find(actorId) is Combatant actor && interrupt.ActionId is string actionId && FindUse(actor, actionId) is UseOption use && operation.TargetId is string targetId && Find(targetId) is Combatant target)
-        {
-            action = new ActionContinuation(actor, use, target, new Scope(actor.Creature, target.Creature, use.Parameters));
-        }
+            ?? new CombatOperationState(
+                interrupt.OperationOwner ?? _combat.QualifiedId,
+                interrupt.OperationPath ?? "$",
+                source.Id,
+                interrupt.TargetId,
+                interrupt.SourceId,
+                interrupt.ActionId,
+                PendingDamage: interrupt.PendingDamage,
+                UseId: interrupt.UseId);
+        ActionContinuation? action = RestoreActionContinuation(operation, interrupt, state);
 
         Definition? track = interrupt.TrackId is string trackId ? _rules.Find(DefinitionTypes.Track, trackId, out _) : null;
         Combatant? targetForDamage = interrupt.TargetId is string targetIdForDamage ? Find(targetIdForDamage) : null;
@@ -419,9 +551,92 @@ public sealed partial class CombatRunner
             RollsBefore = _dice.Rolls.Count,
             FactsBefore = _facts.Count,
             Action = action,
+            PendingRolls = state.PendingInterruptRolls.Count > 0 ? state.PendingInterruptRolls : null,
         };
         _pendingOperation = operation;
         _operationStack = state.OperationStack.Count == 0 ? [operation] : state.OperationStack.ToList();
+    }
+
+    private List<ReactionCandidate> RestoreReactionCandidates(
+        Combatant reactor,
+        IReadOnlyList<CombatDecisionOption>? options)
+    {
+        List<ReactionCandidate> candidates = [];
+        foreach (CombatDecisionOption option in options?.Where(option => option.Kind == "reaction") ?? [])
+        {
+            int index = option.Index is int offeredIndex
+                && offeredIndex >= 0
+                && offeredIndex < reactor.Reactions.Count
+                ? offeredIndex
+                : reactor.Reactions.FindIndex(entry =>
+                    entry.Reaction.QualifiedId == option.QualifiedId
+                    && (string.IsNullOrEmpty(option.Name) || entry.Reaction.Name == option.Name));
+            if (index < 0)
+            {
+                continue;
+            }
+
+            (Definition reaction, UseOption use) = reactor.Reactions[index];
+            if (option.QualifiedId is string qualifiedId
+                && !string.Equals(qualifiedId, reaction.QualifiedId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            // Cost and eligibility were committed when this option was
+            // offered. Do not call ReactionCost or evaluate its policy again
+            // while restoring a save.
+            candidates.Add(new ReactionCandidate(reaction, use, option.Id, option.Cost, index));
+        }
+
+        return candidates;
+    }
+
+    private ActionContinuation? RestoreActionContinuation(
+        CombatOperationState? operation,
+        CombatInterruptState? interrupt,
+        CombatContinuationState state,
+        CombatOperationState? explicitAction = null)
+    {
+        CombatOperationState? actionOperation = explicitAction
+            ?? state.OperationStack.LastOrDefault(frame => frame.Path == "$.action")
+            ?? (operation?.Path == "$.action" ? operation : null);
+        string? actorId = actionOperation?.ActorId ?? operation?.ActorId;
+        Combatant? actor = actorId is null ? null : Find(actorId);
+        if (actor is null)
+        {
+            return null;
+        }
+
+        string? useId = actionOperation?.UseId
+            ?? operation?.UseId
+            ?? interrupt?.UseId
+            ?? interrupt?.ActionId;
+        if (useId is null || FindUse(actor, useId) is not UseOption use)
+        {
+            return null;
+        }
+
+        string? targetId = actionOperation?.TargetId ?? operation?.TargetId ?? interrupt?.TargetId;
+        Combatant? target = targetId is null ? null : Find(targetId);
+        if (target is null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<Combatant>? targets = actionOperation?.TargetIds is { Count: > 0 } targetIds
+            ? targetIds.Select(Find).Where(member => member is not null).Cast<Combatant>().ToList()
+            : null;
+        int targetIndex = actionOperation?.TargetIndex ?? 0;
+        bool alreadyPaid = actionOperation?.AlreadyPaid ?? false;
+        return new ActionContinuation(
+            actor,
+            use,
+            target,
+            new Scope(actor.Creature, target.Creature, use.Parameters),
+            targets,
+            targetIndex,
+            alreadyPaid);
     }
 
     private void RestorePostRoll(CombatCheckState saved, CombatContinuationState state)
@@ -433,14 +648,13 @@ public sealed partial class CombatRunner
         string? targetId = state.PendingOperation?.TargetId;
         Combatant against = Find(targetId ?? "") ?? by;
         CheckResult initial = new(saved.Roll, saved.Bonus, saved.Modifier, saved.Total, saved.Target, saved.Margin, saved.Success, saved.Tier);
-        List<PostRollCandidate> candidates = BuildPostRollCandidates(check, by, against, initial);
         CombatOperationState operation = state.PendingOperation
-            ?? new CombatOperationState(check.QualifiedId, "$.check", by.Id, against.Id, by.Id, state.PendingDecision?.ActionId);
-        ActionContinuation? action = null;
-        if (state.PendingDecision?.ActionId is string actionId && FindUse(by, actionId) is UseOption use)
-        {
-            action = new ActionContinuation(by, use, against, new Scope(by.Creature, against.Creature, use.Parameters));
-        }
+            ?? new CombatOperationState(check.QualifiedId, "$.check", by.Id, against.Id, by.Id, state.PendingDecision?.ActionId, UseId: state.PendingOperation?.UseId);
+        // Candidate values were evaluated once when the choice was offered.
+        // Rebuilding them from the definition would re-run dice expressions
+        // in cost, score or bonus and could change the offered menu.
+        List<PostRollCandidate> candidates = RestorePostRollCandidates(check, state.PendingDecision?.Options);
+        ActionContinuation? action = RestoreActionContinuation(operation, null, state);
 
         _pendingPostRollFrame = new PendingPostRollFrame
         {
@@ -454,6 +668,43 @@ public sealed partial class CombatRunner
         };
         _pendingOperation = operation;
         _operationStack = state.OperationStack.Count == 0 ? [operation] : state.OperationStack.ToList();
+    }
+
+    private List<PostRollCandidate> RestorePostRollCandidates(
+        Definition check,
+        IReadOnlyList<CombatDecisionOption>? options)
+    {
+        List<PostRollCandidate> candidates = [];
+        foreach (CombatDecisionOption option in options?.Where(option => option.Kind == "post_roll") ?? [])
+        {
+            if (option.TrackId is not string trackId)
+            {
+                continue;
+            }
+
+            Definition track = _rules.Find(DefinitionTypes.Track, trackId, out string? problem)
+                ?? throw new ArgumentException(problem ?? $"Unknown post-roll track '{trackId}'.", nameof(options));
+            int index = option.Index ?? ParsePostRollIndex(option.Id);
+            candidates.Add(new PostRollCandidate(
+                index,
+                track,
+                option.Cost,
+                option.Score ?? 0,
+                option.Bonus,
+                option.Reroll,
+                option.Name,
+                option.Id));
+        }
+
+        return candidates;
+    }
+
+    private static int ParsePostRollIndex(string optionId)
+    {
+        int index = optionId.LastIndexOf(':');
+        return index >= 0 && int.TryParse(optionId[(index + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            ? parsed
+            : 0;
     }
 
     private void RestoreInitiative(CombatInterruptState interrupt, CombatContinuationState state)
@@ -508,11 +759,25 @@ public sealed partial class CombatRunner
 
     private void RestoreMovement(CombatMovementState state, CombatContinuationState continuation)
     {
+        _movementContinuation = BuildMovementContinuation(state, continuation);
+        if (_movementContinuation is null)
+        {
+            return;
+        }
+
+        if (_pendingInterruptFrame is not null)
+        {
+            _pendingInterruptFrame.Movement = _movementContinuation;
+        }
+    }
+
+    private MovementContinuation? BuildMovementContinuation(CombatMovementState state, CombatContinuationState continuation)
+    {
         Combatant actor = Find(state.ActorId) ?? throw new ArgumentException($"Unknown movement actor '{state.ActorId}'.", nameof(continuation));
         Combatant target = Find(state.TargetId) ?? throw new ArgumentException($"Unknown movement target '{state.TargetId}'.", nameof(continuation));
         if (_field is null || target.Creature.Position is not Cell goal)
         {
-            return;
+            return null;
         }
 
         HashSet<Cell> blocked = BlockedCellsForMove(actor);
@@ -520,7 +785,7 @@ public sealed partial class CombatRunner
             ?? throw new ArgumentException(problem ?? $"Unknown movement action '{state.OwnerId}'.", nameof(continuation));
         Dictionary<Cell, int>? toGoal = state.Away ? null : CostsToReach(goal, state.Within, blocked);
         Scope scope = new(actor.Creature, target.Creature);
-        _movementContinuation = new MovementContinuation
+        return new MovementContinuation
         {
             Owner = owner,
             Path = state.Path,
@@ -546,10 +811,6 @@ public sealed partial class CombatRunner
             SelectedIndex = state.SelectedIndex,
             Explicit = state.Selected is not null,
         };
-        if (_pendingInterruptFrame is not null)
-        {
-            _pendingInterruptFrame.Movement = _movementContinuation;
-        }
     }
 
     private List<PostRollCandidate> BuildPostRollCandidates(Definition check, Combatant by, Combatant against, CheckResult result)
@@ -596,7 +857,14 @@ public sealed partial class CombatRunner
     private void SuspendPostRoll(Definition check, Combatant by, Combatant against, CheckResult result, IReadOnlyList<PostRollCandidate> candidates)
     {
         CombatOperationState operation = _pendingOperation
-            ?? new CombatOperationState(check.QualifiedId, "$.check", by.Id, against.Id, by.Id, _actionContinuation?.Use.Action.QualifiedId);
+            ?? new CombatOperationState(
+                check.QualifiedId,
+                "$.check",
+                by.Id,
+                against.Id,
+                by.Id,
+                _actionContinuation?.Use.Action.QualifiedId,
+                UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use));
         CombatCheckState committed = new(
             check.QualifiedId,
             result.Roll,
@@ -606,7 +874,11 @@ public sealed partial class CombatRunner
             result.Target,
             result.Margin,
             result.Success,
-            result.Tier);
+            result.Tier,
+            null,
+            _facts.FindLastIndex(fact => fact is CheckFact { Who: var who, Check: var name }
+                && who == by.Name
+                && name == check.Name));
         _pendingPostRollFrame = new PendingPostRollFrame
         {
             Check = check,
@@ -639,7 +911,8 @@ public sealed partial class CombatRunner
                 candidate.Cost,
                 candidate.Bonus,
                 candidate.Reroll,
-                candidate.Score)).ToList(),
+                candidate.Score,
+                candidate.Index)).ToList(),
             null,
             committed,
             _actionContinuation?.Use.Action.QualifiedId);
@@ -875,8 +1148,11 @@ public sealed partial class CombatRunner
 
     private bool CanResumeReaction(Combatant reactor, Combatant source, Definition reaction)
     {
-        return !reactor.Defeated && reactor != source && Affordable(reactor, reaction)
-            && (!reaction.Json.TryGetProperty("when", out _) || Evaluate(reaction, "$.when", new Scope(reactor.Creature, source.Creature)).Boolean);
+        // The reaction's `when` was evaluated while the option was offered.
+        // Re-evaluating it here would consume dice again and could refuse a
+        // choice the caller just accepted. Stable state checks still protect
+        // a defeated reactor or an already-spent budget.
+        return !reactor.Defeated && reactor != source && Affordable(reactor, reaction);
     }
 
     private void ApplyResumedDamage(PendingInterruptFrame frame, decimal amount)
@@ -893,7 +1169,19 @@ public sealed partial class CombatRunner
         }
 
         value.Current = lowered;
-        Record(new DamageFact(target.Name, track, current - lowered, lowered), frame.RollsBefore, source, [target]);
+        if (frame.PendingRolls is IReadOnlyList<DiceRoll> committed)
+        {
+            Record(
+                new DamageFact(target.Name, track, current - lowered, lowered),
+                frame.RollsBefore,
+                source,
+                [target],
+                committed);
+        }
+        else
+        {
+            Record(new DamageFact(target.Name, track, current - lowered, lowered), frame.RollsBefore, source, [target]);
+        }
         bool fell = CheckDefeated(target);
         if (amount > 0 && target != source && target.Side != source.Side)
         {
@@ -1078,7 +1366,11 @@ public sealed partial class CombatRunner
             action.Actor.Id,
             action.Target.Id,
             action.Actor.Id,
-            action.Use.Action.QualifiedId);
+            action.Use.Action.QualifiedId,
+            UseId: UseId(action.Actor, action.Use),
+            TargetIds: action.Targets?.Select(member => member.Id).ToList(),
+            TargetIndex: action.TargetIndex,
+            AlreadyPaid: action.AlreadyPaid);
         _pendingOperation = operation;
         _operationStack = [operation];
         try

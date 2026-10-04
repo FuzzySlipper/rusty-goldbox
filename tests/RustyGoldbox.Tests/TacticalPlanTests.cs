@@ -1,5 +1,6 @@
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 using static RustyGoldbox.Tests.TempModules;
@@ -43,7 +44,7 @@ public sealed class TacticalPlanTests
         Creature actorCreature = CreatureWithHitPoints("actor", 10);
         Combatant actor = new("Actor", actorCreature,
             [
-                new UseOption(attack, "strike", new Dictionary<string, CompiledExpression>()),
+                new UseOption(attack, "strike", profile.Rules[0].Steps[0].Parameters),
                 new UseOption(close, "Close", new Dictionary<string, CompiledExpression>()),
             ],
             "actor")
@@ -138,8 +139,8 @@ public sealed class TacticalPlanTests
         Creature actorCreature = CreatureWithHitPoints("actor", 10);
         Combatant actor = new("Actor", actorCreature,
             [
-                new UseOption(close, "close", new Dictionary<string, CompiledExpression>()),
-                new UseOption(action, "strike", new Dictionary<string, CompiledExpression>()),
+                new UseOption(close, "close", profile.Rules[0].Steps[0].Parameters),
+                new UseOption(action, "strike", profile.Rules[0].Steps[1].Parameters),
             ],
             "actor")
         {
@@ -298,7 +299,7 @@ public sealed class TacticalPlanTests
         Combatant actor = new(
             "Caster",
             CreatureWithHitPoints("caster", 10),
-            [new UseOption(action, "Sleep", new Dictionary<string, CompiledExpression>(), spell)],
+            [new UseOption(action, "Sleep", profile.Rules[0].Steps[0].Parameters, spell)],
             "caster")
         {
             Side = 0,
@@ -327,6 +328,173 @@ public sealed class TacticalPlanTests
         Assert.NotNull(proposal);
         CombatCommand.UseAction command = Assert.IsType<CombatCommand.UseAction>(proposal!.Command);
         Assert.Equal([firstTarget.Id, secondTarget.Id], command.TargetIds);
+    }
+
+    [Fact]
+    public void SelectsTheAuthoredUseParametersAndItemKind()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/item_use.json", """
+            {
+              "type": "combat-behavior",
+              "id": "item_use",
+              "name": "Use the wand strike",
+              "rules": [
+                {
+                  "steps": [
+                    {
+                      "action": {
+                        "action": "classic:melee_attack",
+                        "name": "strike",
+                        "from_item": "wand",
+                        "damage": "1d6"
+                      },
+                      "target": "enemy"
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        CombatBehaviorStep step = Assert.Single(Assert.Single(profile.Rules).Steps);
+        Definition attack = rules.Find(DefinitionTypes.Action, "classic:melee_attack", out _)!;
+        CompiledExpression otherDamage = rules.Compile("1d8", "tactics", Roots.Self | Roots.Target | Roots.Behavior);
+
+        Creature actorCreature = CreatureWithHitPoints("actor", 10);
+        Combatant actor = new(
+            "Actor",
+            actorCreature,
+            [
+                new UseOption(attack, "strike", new Dictionary<string, CompiledExpression> { ["damage"] = otherDamage }, FromItem: "weapon"),
+                new UseOption(attack, "strike", new Dictionary<string, CompiledExpression> { ["damage"] = step.Parameters["damage"] }, FromItem: "wand"),
+            ],
+            "actor")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        Combatant target = new("Target", CreatureWithHitPoints("target", 10), [], "target") { Side = 1 };
+        CombatTargetChoice targetChoice = new(target.Id, target.Name, target.Side, false, false, target.Creature.Position, 10, 10);
+        CombatActionChoice firstChoice = new(
+            "actor/use/0/classic:melee_attack",
+            attack.QualifiedId,
+            "strike",
+            null,
+            new Dictionary<string, int> { ["action"] = 1 },
+            [targetChoice],
+            []);
+        CombatActionChoice secondChoice = firstChoice with { Id = "actor/use/1/classic:melee_attack" };
+        CombatObservation observation = new(
+            CombatPhase.AwaitingAction,
+            1,
+            actor.Id,
+            new CombatDecision("decision:item-use", CombatDecisionKind.Action, actor.Id, 1, [firstChoice, secondChoice], [], true),
+            null,
+            null,
+            [],
+            []);
+
+        CombatBehaviorController controller = new(rules);
+        controller.Assign(actor.Id, profile);
+        controller.Register([actor, target]);
+        CombatBehaviorProposal? proposal = controller.Propose(actor, observation);
+
+        Assert.NotNull(proposal);
+        CombatCommand.UseAction command = Assert.IsType<CombatCommand.UseAction>(proposal!.Command);
+        Assert.Equal(secondChoice.Id, command.ActionId);
+        Assert.Equal([target.Id], command.TargetIds);
+
+        Combatant mismatchedActor = new(
+            "Mismatched",
+            CreatureWithHitPoints("mismatched", 10),
+            [new UseOption(attack, "strike", new Dictionary<string, CompiledExpression> { ["damage"] = otherDamage }, FromItem: "wand")],
+            "mismatched")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        CombatActionChoice mismatchedChoice = firstChoice with { Id = "mismatched/use/0/classic:melee_attack" };
+        CombatObservation mismatchedObservation = new(
+            CombatPhase.AwaitingAction,
+            1,
+            mismatchedActor.Id,
+            new CombatDecision("decision:mismatched", CombatDecisionKind.Action, mismatchedActor.Id, 1, [mismatchedChoice], [], true),
+            null,
+            null,
+            [],
+            []);
+        controller = new CombatBehaviorController(rules);
+        controller.Assign(mismatchedActor.Id, profile);
+        controller.Register([mismatchedActor, target]);
+        CombatBehaviorProposal? rejected = controller.Propose(mismatchedActor, mismatchedObservation);
+
+        Assert.NotNull(rejected);
+        Assert.Null(rejected!.Command);
+        Assert.Equal(CombatBehaviorFallback.EndTurn, rejected.Fallback);
+        Assert.Contains(rejected.Trace!.Alternatives, alternative => alternative.Status == "unavailable");
+    }
+
+    [Fact]
+    public void EvaluatesBehaviorParametersThroughTheirDependencies()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/dependent.json", """
+            {
+              "type": "combat-behavior",
+              "id": "dependent",
+              "name": "Dependent distance",
+              "parameters": { "base_distance": 1, "preferred_distance": "behavior.base_distance + 1" },
+              "rules": [
+                {
+                  "steps": [
+                    {
+                      "destination": { "kind": "within", "distance": "behavior.preferred_distance" },
+                      "action": { "action": "classic:close" },
+                      "target": "enemy"
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+        Creature actorCreature = CreatureWithHitPoints("actor", 10);
+        actorCreature.Position = new Cell(0, 0);
+        Combatant actor = new(
+            "Actor",
+            actorCreature,
+            [new UseOption(close, "close", new Dictionary<string, CompiledExpression>())],
+            "actor")
+        {
+            Side = 0,
+            Controller = CombatControlMode.Automatic,
+        };
+        Creature targetCreature = CreatureWithHitPoints("target", 10);
+        targetCreature.Position = new Cell(2, 0);
+        Combatant target = new("Target", targetCreature, [], "target") { Side = 1 };
+        CombatActionChoice choice = ActionChoice(close, target, []);
+        CombatObservation observation = Observation(actor.Id, choice);
+
+        CombatBehaviorController controller = new(rules);
+        controller.Assign(actor.Id, profile);
+        controller.Register([actor, target]);
+        CombatBehaviorProposal? proposal = controller.Propose(actor, observation);
+
+        Assert.NotNull(proposal);
+        Assert.IsType<CombatCommand.UseAction>(proposal!.Command);
+        Assert.Equal("behavior.preferred_distance", profile.Rules[0].Steps[0].Destination!.Distance.Text);
     }
 
     private static CombatObservation Observation(string actorId, CombatActionChoice action)

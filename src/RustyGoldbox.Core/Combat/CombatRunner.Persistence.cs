@@ -34,6 +34,7 @@ public sealed partial class CombatRunner
             CommittedActorId = _pendingTargetActor?.Id,
             CommittedMaximumTargets = _pendingTargetCap,
             CommittedTargetRollStart = _pendingTargetRollStart,
+            CommittedTargetRolls = _pendingTargetRolls.ToList(),
             ReactionDepth = _reactions,
             RandomScope = _dice.RandomScope,
             NextRandomKey = _dice.NextRandomKey,
@@ -173,6 +174,7 @@ public sealed partial class CombatRunner
             };
             _facts.Add(restored);
         }
+        RestoreCommittedCheckFact(state);
 
         ClearPendingTargetSelection();
         if (state.CommittedActorId is string actorId
@@ -185,11 +187,40 @@ public sealed partial class CombatRunner
             _pendingTargetCandidates = Targets(actor, use, preview: true);
             _pendingTargetCap = state.CommittedMaximumTargets;
             _pendingTargetRollStart = state.CommittedTargetRollStart is long rollStart ? (int)rollStart : null;
+            _pendingTargetRolls = state.CommittedTargetRolls ?? [];
+            _pendingTargetRollsRestored = true;
         }
         RestoreInterruptContinuation(state);
         RestoreBehaviorContinuation(state);
         _previewOwners.Clear();
         SetCombatMoment(_round);
+    }
+
+    private void RestoreCommittedCheckFact(CombatContinuationState state)
+    {
+        CombatCheckState? saved = state.PendingCheck;
+        if (saved?.FactIndex is not int index || index < 0 || index >= _facts.Count || _facts[index].Kind != "check")
+        {
+            return;
+        }
+
+        string? actorId = state.PendingDecision?.ActorId ?? state.PendingOperation?.ActorId;
+        Combatant? actor = actorId is null ? null : Find(actorId);
+        Definition? check = _rules.Find(DefinitionTypes.Check, saved.CheckId, out _);
+        if (actor is null || check is null || _facts[index] is not RestoredCombatFact restored)
+        {
+            return;
+        }
+
+        CheckResult result = new(saved.Roll, saved.Bonus, saved.Modifier, saved.Total, saved.Target, saved.Margin, saved.Success, saved.Tier);
+        _facts[index] = new CheckFact(actor.Name, check.Name, result)
+        {
+            Rolls = state.PendingCheckRolls.Count > 0
+                ? state.PendingCheckRolls
+                : saved.Rolls ?? restored.Rolls,
+            SubjectIds = restored.SubjectIds,
+            TargetIds = restored.TargetIds,
+        };
     }
 
     private static Combatant? FindSaved(IReadOnlyDictionary<string, Combatant> members, string? id)

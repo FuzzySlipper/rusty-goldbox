@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
@@ -208,6 +209,73 @@ public sealed class LiveCampaignCombatTests
             Assert.True(right.Accepted, right.Reason);
             Assert.Equal(left.Facts.Select(fact => fact.Describe()), right.Facts.Select(fact => fact.Describe()));
             Assert.Equal(left.Observation.Facts.Select(fact => fact.Describe()), right.Observation.Facts.Select(fact => fact.Describe()));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsContinuationSideThatDisagreesWithItsSource()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 31);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject pending = save["pending_combat"]!.AsObject();
+            JsonArray participants = pending["participants"]!.AsArray();
+            JsonObject partySource = participants
+                .Select(node => node!.AsObject())
+                .First(node => node["side"]!.GetValue<int>() == 0);
+            string id = partySource["id"]!.GetValue<string>();
+            JsonArray combatants = pending["continuation"]!["Combatants"]!.AsArray();
+            JsonObject continuation = combatants
+                .Select(node => node!.AsObject())
+                .Single(node => node["Id"]!.GetValue<string>() == id);
+            continuation["Side"] = 1;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-side-save.json", set, problems));
+            Assert.Contains(problems, problem => problem.JsonPath is string path
+                && path.Contains("$.pending_combat.continuation.combatants[", StringComparison.Ordinal)
+                && path.EndsWith(".side", StringComparison.Ordinal)
+                && problem.Message.Contains("participant source", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsContinuationTurnIndexPastTurnOrder()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 37);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            int orderLength = continuation["TurnOrder"]!.AsArray().Count;
+            continuation["TurnIndex"] = orderLength + 1;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-turn-index-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == "$.pending_combat.continuation.turn_index"
+                && problem.Message.Contains("turn_order length", StringComparison.Ordinal));
         });
     }
 

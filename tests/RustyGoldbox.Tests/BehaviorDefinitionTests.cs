@@ -60,6 +60,45 @@ public sealed class BehaviorDefinitionTests
     }
 
     [Fact]
+    public void ResolvesBehaviorParameterDependenciesAndRejectsCyclesAtLoad()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/dependent.json", """
+            {
+              "type": "combat-behavior",
+              "id": "dependent",
+              "name": "Dependent",
+              "parameters": { "near": 1, "far": "behavior.near + 2" },
+              "rules": [
+                { "steps": [ { "action": { "action": "classic:melee_attack", "damage": "1d6" }, "target": "enemy" } ] }
+              ]
+            }
+            """);
+        modules.Write("tactics/cyclic.json", """
+            {
+              "type": "combat-behavior",
+              "id": "cyclic",
+              "name": "Cyclic",
+              "parameters": { "first": "behavior.second + 1", "second": "behavior.first + 1" },
+              "rules": [
+                { "steps": [ { "action": { "action": "classic:melee_attack", "damage": "1d6" }, "target": "enemy" } ] }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+
+        Assert.Contains(set.Diagnostics, diagnostic =>
+            diagnostic.Rule == "behavior.parameter"
+            && diagnostic.File!.EndsWith("cyclic.json", StringComparison.Ordinal)
+            && diagnostic.JsonPath == "$.parameters.first"
+            && diagnostic.Message.Contains("cycle", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(set.Diagnostics, diagnostic => diagnostic.File!.EndsWith("dependent.json", StringComparison.Ordinal));
+        Assert.Contains(set.Rules!.CombatBehaviors.Values, profile => profile.Definition.Id == "dependent");
+    }
+
+    [Fact]
     public void RejectsStepsWhoseSpellHasNoEffectOrUsesAnotherAction()
     {
         using TempModules modules = new();

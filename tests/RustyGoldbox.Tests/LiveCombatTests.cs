@@ -404,6 +404,139 @@ public sealed class LiveCombatTests
         });
     }
 
+    [Fact]
+    public void AutomaticMaximumTargetsKeepsAllLegalCandidatesBeforeApplyingCap()
+    {
+        using TempModules modules = new();
+        RuleSet rules = Rules.LoadValid(WriteLiveRuleset(modules, includeSpray: true, sprayMaximum: "2"));
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition targetDefinition = rules.Find(DefinitionTypes.Monster, "target", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Caster", evaluator);
+            attacker.Uses.RemoveAll(use => use.Action.Id == "strike");
+            Combatant first = Combatant.FromMonster(rules, targetDefinition, "First", evaluator);
+            Combatant second = Combatant.FromMonster(rules, targetDefinition, "Second", evaluator);
+            Combatant third = Combatant.FromMonster(rules, targetDefinition, "Third", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+                [new CombatSide("Attackers", [attacker]), new CombatSide("Targets", [first, second, third])], dice);
+
+            CombatObservation result = runner.Start(1);
+            ActionFact spray = Assert.Single(result.Facts.OfType<ActionFact>(), fact => fact.Action == "Spray");
+            Assert.Equal($"{first.Name}, {second.Name}", spray.Target);
+        });
+    }
+
+    [Fact]
+    public void SuspendedParameterizedUseRestoresTheExactUseIdentity()
+    {
+        using TempModules modules = new();
+        RuleSet rules = Rules.LoadValid(WriteDuplicateUseInterruptRuleset(modules));
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+                [new CombatSide("Attackers", [attacker]), new CombatSide("Guards", [guard])], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(guard.Id, CombatControlMode.Manual));
+
+            CombatObservation waiting = runner.Start(1);
+            CombatDecision decision = Assert.IsType<CombatDecision>(waiting.PendingDecision);
+            CombatActionChoice strong = Assert.Single(decision.Actions, action => action.Name == "Strong");
+            Assert.NotEqual(strong.Id, Assert.Single(decision.Actions, action => action.Name == "Weak").Id);
+
+            CombatCommandResult interrupted = runner.Submit(new CombatCommand.UseAction(attacker.Id, strong.Id, [guard.Id]));
+            CombatDecision reaction = Assert.IsType<CombatDecision>(interrupted.Observation.PendingDecision);
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Assert.Contains("/use/1/", saved.PendingOperation!.UseId, StringComparison.Ordinal);
+
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner restored = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+            ], dice, saved);
+
+            CombatCommand decline = new CombatCommand.Decide(reaction.Id);
+            CombatCommandResult left = runner.Submit(decline);
+            CombatCommandResult right = restored.Submit(decline);
+            Assert.True(left.Accepted, left.Reason);
+            Assert.True(right.Accepted, right.Reason);
+            Assert.Single(left.Observation.Facts.OfType<DamageFact>(), fact => fact.Amount == 7);
+            Assert.Single(right.Observation.Facts.OfType<DamageFact>(), fact => fact.Amount == 7);
+        });
+    }
+
+    [Fact]
+    public void AutomaticControllerFinishesACommittedMaximumTargetChoice()
+    {
+        using TempModules modules = new();
+        RuleSet rules = Rules.LoadValid(WriteLiveRuleset(modules, includeSpray: true, sprayMaximum: "2", targetCanAct: true));
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition targetDefinition = rules.Find(DefinitionTypes.Monster, "target", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            Combatant first = Combatant.FromMonster(rules, targetDefinition, "First", evaluator);
+            Combatant second = Combatant.FromMonster(rules, targetDefinition, "Second", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+                [new CombatSide("Attackers", [attacker]), new CombatSide("Targets", [first, second])], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(first.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(second.Id, CombatControlMode.Manual));
+
+            CombatDecision action = Assert.IsType<CombatDecision>(runner.Start(1).PendingDecision);
+            CombatActionChoice spray = Assert.Single(action.Actions, choice => choice.ActionId.EndsWith(":spray", StringComparison.Ordinal));
+            CombatCommandResult committed = runner.Submit(new CombatCommand.UseAction(attacker.Id, spray.Id, []));
+            Assert.True(committed.Accepted, committed.Reason);
+            Assert.Equal(CombatDecisionKind.Targets, committed.Observation.PendingDecision?.Kind);
+
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Automatic));
+            CombatObservation next = runner.Observe();
+            Assert.DoesNotContain(next.Facts.OfType<ActionFact>(), fact => fact.Who == attacker.Name && fact.Target.Split(", ", StringSplitOptions.RemoveEmptyEntries).Length > 2);
+            Assert.Null(runner.Capture().CommittedActorId);
+            Assert.Equal(first.Id, next.PendingDecision?.ActorId);
+            Assert.DoesNotContain(next.Facts, fact => fact.Describe().Contains("pending target", StringComparison.OrdinalIgnoreCase));
+        });
+    }
+
+    [Fact]
+    public void MovementChoicesExposeAllLegalDestinations()
+    {
+        using TempModules modules = new();
+        RuleSet rules = Rules.LoadValid(WriteWideMovementRuleset(modules));
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition targetDefinition = rules.Find(DefinitionTypes.Monster, "target", out _)!;
+
+        WithDice(dice =>
+        {
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Mover", evaluator);
+            Combatant target = Combatant.FromMonster(rules, targetDefinition, "Target", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+                [new CombatSide("Movers", [attacker]), new CombatSide("Targets", [target])], dice,
+                setup: new CombatSetup([new Cell(15, 15), new Cell(18, 15)], SurprisedSide: -1));
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+
+            CombatDecision decision = Assert.IsType<CombatDecision>(runner.Start(1).PendingDecision);
+            CombatActionChoice advance = Assert.Single(decision.Actions);
+            Assert.True(advance.Moves.Count > 64);
+        });
+    }
+
     private static string WriteCardinalityRuleset(TempModules modules)
     {
         string root = Rules.WriteSmallRuleset(modules);
@@ -453,7 +586,40 @@ public sealed class LiveCombatTests
         return root;
     }
 
-    private static string WriteLiveRuleset(TempModules modules, bool includeSpray = false, bool includeMovement = false)
+    private static string WriteDuplicateUseInterruptRuleset(TempModules modules)
+    {
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/combat.json", """
+            { "type": "combat", "id": "duel", "name": "Duel", "initiative": "self.str", "initiative_by": "creature",
+              "initiative_order": "highest-first", "initiative_each": "combat", "round_seconds": 6,
+              "budget": [ { "id": "turn", "per_turn": 1 }, { "id": "reaction", "per_turn": 1 } ],
+              "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/smite.json", """
+            { "type": "action", "id": "smite", "name": "Smite", "cost": { "turn": 1 }, "target": "enemy", "parameters": ["damage"],
+              "always": [ { "op": "damage", "amount": "use.damage" } ] }
+            """);
+        modules.Write("rules/brace.json", """
+            { "type": "action", "id": "brace", "name": "Brace", "cost": { "reaction": 0 }, "target": "self", "always": [] }
+            """);
+        modules.Write("rules/guard_reaction.json", """
+            { "type": "reaction", "id": "guard_reaction", "name": "Brace", "trigger": "targeted", "cost": { "reaction": 1 },
+              "use": { "action": "brace" } }
+            """);
+        modules.Write("rules/attacker.json", """
+            { "type": "monster", "id": "attacker", "name": "Attacker", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
+              "actions": [ { "action": "smite", "name": "Weak", "damage": "2" }, { "action": "smite", "name": "Strong", "damage": "7" } ], "xp": 0 }
+            """);
+        modules.Write("rules/guard.json", """
+            { "type": "monster", "id": "guard", "name": "Guard", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "5" }, "actions": [],
+              "reactions": [ "guard_reaction" ], "xp": 0 }
+            """);
+        return root;
+    }
+
+    private static string WriteLiveRuleset(TempModules modules, bool includeSpray = false, bool includeMovement = false, string sprayMaximum = "1d2", bool targetCanAct = false)
     {
         string root = Rules.WriteSmallRuleset(modules);
         modules.Write("rules/movement.json", """{ "type": "attribute", "id": "movement", "name": "Movement", "min": 0, "max": 100, "default": 3 }""");
@@ -470,8 +636,8 @@ public sealed class LiveCombatTests
             """);
         if (includeSpray)
         {
-            modules.Write("rules/spray.json", """
-                { "type": "action", "id": "spray", "name": "Spray", "cost": { "turn": 1 }, "target": "enemy", "max_targets": "1d2",
+            modules.Write("rules/spray.json", $$"""
+                { "type": "action", "id": "spray", "name": "Spray", "cost": { "turn": 1 }, "target": "enemy", "max_targets": "{{sprayMaximum}}",
                   "always": [ { "op": "damage", "amount": "1" } ] }
                 """);
         }
@@ -493,9 +659,36 @@ public sealed class LiveCombatTests
             { "type": "monster", "id": "attacker", "name": "Attacker", "class": "warrior", "level": 1,
               "tracks": { "hit_points": "20" }, "stats": { "str": "15", "movement": "3" }, "actions": {{actions}}, "xp": 0 }
             """);
+        string targetActions = targetCanAct ? "[ { \"action\": \"strike\" } ]" : "[]";
+        modules.Write("rules/target.json", $$"""
+            { "type": "monster", "id": "target", "name": "Target", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "5", "movement": "3" }, "actions": {{targetActions}}, "xp": 0 }
+            """);
+        return root;
+    }
+
+    private static string WriteWideMovementRuleset(TempModules modules)
+    {
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/movement.json", """{ "type": "attribute", "id": "movement", "name": "Movement", "min": 0, "max": 100, "default": 12 }""");
+        modules.Write("rules/combat.json", """
+            { "type": "combat", "id": "duel", "name": "Duel", "initiative": "self.str", "initiative_by": "creature",
+              "initiative_order": "highest-first", "initiative_each": "combat", "round_seconds": 6,
+              "field": { "width": 31, "height": 31, "metric": "manhattan" },
+              "budget": [ { "id": "turn", "per_turn": 1 } ], "track": "hit_points", "defeated": "self.hit_points <= 0" }
+            """);
+        modules.Write("rules/advance.json", """
+            { "type": "action", "id": "advance", "name": "Advance", "cost": { "turn": 1 }, "target": "enemy",
+              "valid_target": "combat.distance > 1", "always": [ { "op": "move", "distance": "self.movement", "toward": "away", "beyond": "2" } ] }
+            """);
+        modules.Write("rules/attacker.json", """
+            { "type": "monster", "id": "attacker", "name": "Mover", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "15", "movement": "12" },
+              "actions": [ { "action": "advance" } ], "xp": 0 }
+            """);
         modules.Write("rules/target.json", """
             { "type": "monster", "id": "target", "name": "Target", "class": "warrior", "level": 1,
-              "tracks": { "hit_points": "20" }, "stats": { "str": "5", "movement": "3" }, "actions": [], "xp": 0 }
+              "tracks": { "hit_points": "20" }, "stats": { "str": "5", "movement": "12" }, "actions": [], "xp": 0 }
             """);
         return root;
     }

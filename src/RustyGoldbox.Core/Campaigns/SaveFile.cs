@@ -897,15 +897,22 @@ public static class SaveFile
             }
             else
             {
-                foreach (CombatantState combatant in continuation.Combatants)
+                for (int index = 0; index < continuation.Combatants.Count; index++)
                 {
+                    CombatantState combatant = continuation.Combatants[index];
+                    string at = $"$.pending_combat.continuation.combatants[{index}]";
                     if (combatant is null || string.IsNullOrWhiteSpace(combatant.Id))
                     {
-                        Error("$.pending_combat.continuation.combatants", "Each combatant continuation must contain a nonempty ID.");
+                        Error(at, "Each combatant continuation must contain a nonempty ID.");
                     }
                     else if (!continuationIds.Add(combatant.Id))
                     {
-                        Error("$.pending_combat.continuation.combatants", $"Combat continuation ID '{combatant.Id}' is duplicated.");
+                        Error($"{at}.id", $"Combat continuation ID '{combatant.Id}' is duplicated.");
+                    }
+
+                    if (combatant is not null && combatant.Side is not (0 or 1))
+                    {
+                        Error($"{at}.side", "Combatant continuation side must be 0 (party) or 1 (encounter).");
                     }
                 }
             }
@@ -914,6 +921,58 @@ public static class SaveFile
             if (continuation.Combatants is not null && (pending.Participants.Count != continuation.Combatants.Count || !participantIds.SetEquals(continuationIds)))
             {
                 Error("$.pending_combat", "participants and continuation.combatants must contain exactly the same combatant IDs.");
+            }
+
+            if (continuation.Combatants is not null)
+            {
+                Dictionary<string, PendingCombatantSource> sources = pending.Participants
+                    .GroupBy(participant => participant.Id, StringComparer.Ordinal)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+                for (int index = 0; index < continuation.Combatants.Count; index++)
+                {
+                    CombatantState combatant = continuation.Combatants[index];
+                    if (combatant is not null
+                        && sources.TryGetValue(combatant.Id, out PendingCombatantSource? source)
+                        && combatant.Side != source.Side)
+                    {
+                        Error(
+                            $"$.pending_combat.continuation.combatants[{index}].side",
+                            $"Combatant '{combatant.Id}' has continuation side {combatant.Side}, but its participant source is on side {source.Side}.");
+                    }
+                }
+            }
+
+            if (continuation.TurnOrder is null)
+            {
+                Error("$.pending_combat.continuation.turn_order", "turn_order must be an array of known combatant IDs.");
+            }
+            else
+            {
+                HashSet<string> turnOrderIds = new(StringComparer.Ordinal);
+                for (int index = 0; index < continuation.TurnOrder.Count; index++)
+                {
+                    string? id = continuation.TurnOrder[index];
+                    string at = $"$.pending_combat.continuation.turn_order[{index}]";
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        Error(at, "turn_order entries must be nonempty combatant IDs.");
+                    }
+                    else if (!turnOrderIds.Add(id))
+                    {
+                        Error(at, $"turn_order contains duplicate combatant ID '{id}'.");
+                    }
+                    else if (!participantIds.Contains(id))
+                    {
+                        Error(at, $"turn_order names unknown combatant '{id}'.");
+                    }
+                }
+
+                if (continuation.TurnIndex < 0 || continuation.TurnIndex > continuation.TurnOrder.Count)
+                {
+                    Error(
+                        "$.pending_combat.continuation.turn_index",
+                        $"turn_index must be between 0 and turn_order length ({continuation.TurnOrder.Count}), inclusive.");
+                }
             }
 
             if (pending.Members.Count != pending.Participants.Count)

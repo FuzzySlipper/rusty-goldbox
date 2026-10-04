@@ -95,7 +95,8 @@ public sealed record CombatDecisionOption(
     decimal Cost = 0,
     decimal? Bonus = null,
     bool Reroll = false,
-    decimal? Score = null);
+    decimal? Score = null,
+    int? Index = null);
 
 /// <summary>
 /// The committed parts of a check that is waiting for a post-roll choice.
@@ -111,7 +112,9 @@ public sealed record CombatCheckState(
     decimal Target,
     decimal Margin,
     bool Success,
-    string Tier);
+    string Tier,
+    IReadOnlyList<DiceRoll>? Rolls = null,
+    int? FactIndex = null);
 
 /// <summary>
 /// The operation boundary at which a reaction is waiting. Pending damage is
@@ -128,7 +131,9 @@ public sealed record CombatInterruptState(
     string? TrackId = null,
     decimal? PendingDamage = null,
     string? OperationOwner = null,
-    string? OperationPath = null);
+    string? OperationPath = null,
+    string? UseId = null,
+    IReadOnlyList<DiceRoll>? PendingRolls = null);
 
 /// <summary>
 /// Primitive continuation data for an operation that is suspended while an
@@ -144,7 +149,41 @@ public sealed record CombatOperationState(
     string? SourceId = null,
     string? ActionId = null,
     int Index = 0,
-    decimal? PendingDamage = null);
+    decimal? PendingDamage = null,
+    string? UseId = null,
+    IReadOnlyList<string>? TargetIds = null,
+    int TargetIndex = 0,
+    bool AlreadyPaid = false);
+
+/// <summary>
+/// A suspended interrupt frame beneath the currently offered decision. The
+/// frame is deliberately primitive so nested reactions can survive a JSON
+/// save without retaining a delegate, expression closure or replay command.
+/// </summary>
+public sealed class CombatInterruptFrameState
+{
+    public CombatInterruptState Interrupt { get; set; } = new("", "", "");
+
+    public List<CombatDecisionOption> Options { get; set; } = [];
+
+    public CombatOperationState Operation { get; set; } = new("", "", "");
+
+    public decimal PendingDamage { get; set; }
+
+    public int RollsBefore { get; set; }
+
+    public int FactsBefore { get; set; }
+
+    public bool Physical { get; set; }
+
+    public bool Attack { get; set; }
+
+    public CombatOperationState? Action { get; set; }
+
+    public CombatMovementState? Movement { get; set; }
+
+    public List<DiceRoll> PendingRolls { get; set; } = [];
+}
 
 /// <summary>Primitive movement values captured while a leaves-reach reaction is answered.</summary>
 public sealed record CombatMovementState(
@@ -338,7 +377,16 @@ public sealed class CombatContinuationState
 
     public CombatInterruptState? PendingInterrupt { get; set; }
 
+    /// <summary>Committed dice journal for a pending damage interrupt.</summary>
+    public List<DiceRoll> PendingInterruptRolls { get; set; } = [];
+
     public CombatCheckState? PendingCheck { get; set; }
+
+    /// <summary>Committed dice journal for the pending check, kept separate from the observable choice record.</summary>
+    public List<DiceRoll> PendingCheckRolls { get; set; } = [];
+
+    /// <summary>All interrupt frames below the current decision, outermost first.</summary>
+    public List<CombatInterruptFrameState> ParentInterrupts { get; set; } = [];
 
     public List<CombatFactState> Facts { get; set; } = [];
 
@@ -349,6 +397,9 @@ public sealed class CombatContinuationState
     public int? CommittedMaximumTargets { get; set; }
 
     public long? CommittedTargetRollStart { get; set; }
+
+    /// <summary>Dice consumed while evaluating a committed target cap.</summary>
+    public List<DiceRoll> CommittedTargetRolls { get; set; } = [];
 
     /// <summary>The operation frame to resume after a pending interrupt, when one exists.</summary>
     public CombatOperationState? PendingOperation { get; set; }

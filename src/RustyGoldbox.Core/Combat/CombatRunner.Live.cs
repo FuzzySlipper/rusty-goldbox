@@ -26,6 +26,8 @@ public sealed partial class CombatRunner
     private List<Combatant> _pendingTargetCandidates = [];
     private int? _pendingTargetCap;
     private int? _pendingTargetRollStart;
+    private IReadOnlyList<DiceRoll> _pendingTargetRolls = [];
+    private bool _pendingTargetRollsRestored;
     private string? _lastActorId;
     private readonly Dictionary<Creature, Combatant> _previewOwners = [];
 
@@ -216,12 +218,64 @@ public sealed partial class CombatRunner
 
         if (_pendingDecision is not null && _pendingDecision.ActorId == actorId && mode == CombatControlMode.Automatic)
         {
-            _pendingDecision = null;
+            try
+            {
+                if (_pendingTargetUse is not null && _pendingTargetActor == actor)
+                {
+                    ResolveCommittedTargetsAutomatically(actor);
+                }
+                else
+                {
+                    _pendingDecision = null;
+                    ResolveAutomaticTurn(actor);
+                }
+            }
+            catch (CombatSuspendedException)
+            {
+                // The automatic takeover may expose an optional reaction or
+                // post-roll choice. Its committed operation remains live.
+                return true;
+            }
+
+            if (_phase == CombatPhase.AwaitingInterrupt)
+            {
+                return true;
+            }
+
+            FinishCurrentTurn();
             _phase = CombatPhase.Advancing;
             Advance();
         }
 
         return true;
+    }
+
+    private void ResolveCommittedTargetsAutomatically(Combatant actor)
+    {
+        if (_pendingTargetUse is not UseOption use
+            || _pendingTargetActor != actor
+            || _pendingTargetCap is not int cap)
+        {
+            return;
+        }
+
+        List<Combatant> candidates = _pendingTargetCandidates.ToList();
+        int? rollsBefore = _pendingTargetRollStart;
+        bool restoredRolls = _pendingTargetRollsRestored;
+        IReadOnlyList<DiceRoll>? committedRolls = restoredRolls ? _pendingTargetRolls : null;
+        ClearPendingTargetSelection();
+        _pendingDecision = null;
+        ResolveChosenAction(
+            actor,
+            use,
+            candidates,
+            path: null,
+            alreadyPaid: true,
+            committedMaxTargets: cap,
+            rollsBefore: restoredRolls ? null : rollsBefore,
+            committedRolls: committedRolls,
+            explicitTargets: false);
+        ResolveAutomaticTurn(actor);
     }
 
     public CombatCommandResult Submit(CombatCommand command)
@@ -400,6 +454,8 @@ public sealed partial class CombatRunner
         _pendingTargetCandidates = candidates.ToList();
         _pendingTargetCap = cap;
         _pendingTargetRollStart = rollsBefore;
+        _pendingTargetRolls = _dice.Rolls.Skip(rollsBefore).ToList();
+        _pendingTargetRollsRestored = false;
         _pendingDecision = new CombatDecision(
             $"targets:{actor.Id}:{_round}:{_facts.Count}",
             CombatDecisionKind.Targets,
@@ -439,6 +495,7 @@ public sealed partial class CombatRunner
             alreadyPaid: true,
             committedMaxTargets: cap,
             rollsBefore: rollsBefore,
+            committedRolls: null,
             explicitTargets: true);
         _pendingDecision = null;
         return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
@@ -486,8 +543,10 @@ public sealed partial class CombatRunner
         Combatant actor = _pendingTargetActor;
         UseOption use = _pendingTargetUse;
         int? rollsBefore = _pendingTargetRollStart;
+        bool restoredRolls = _pendingTargetRollsRestored;
+        IReadOnlyList<DiceRoll>? committedRolls = restoredRolls ? _pendingTargetRolls : null;
         ClearPendingTargetSelection();
-        ResolveChosenAction(actor, use, targets, command.Path, alreadyPaid: true, committedMaxTargets: cap, rollsBefore: rollsBefore, explicitTargets: true);
+        ResolveChosenAction(actor, use, targets, command.Path, alreadyPaid: true, committedMaxTargets: cap, rollsBefore: restoredRolls ? null : rollsBefore, committedRolls: committedRolls, explicitTargets: true);
         _pendingDecision = null;
         return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
     }
@@ -499,6 +558,8 @@ public sealed partial class CombatRunner
         _pendingTargetCandidates = [];
         _pendingTargetCap = null;
         _pendingTargetRollStart = null;
+        _pendingTargetRolls = [];
+        _pendingTargetRollsRestored = false;
     }
 
     private bool TryValidateExplicitTargets(
@@ -626,12 +687,66 @@ public sealed partial class CombatRunner
     private static string ActionUseId(Combatant actor, int index, UseOption use) =>
         $"{actor.Id}/use/{index}/{use.Action.QualifiedId}";
 
+    private static string ReactionUseId(Combatant actor, int index, Definition reaction) =>
+        $"{actor.Id}/reaction/{index}/{reaction.QualifiedId}";
+
+    /// <summary>Stable identity for one action use, including item-filled and reaction uses.</summary>
+    private string? UseId(Combatant actor, UseOption use)
+    {
+        for (int index = 0; index < actor.Uses.Count; index++)
+        {
+            if (ReferenceEquals(actor.Uses[index], use))
+            {
+                return ActionUseId(actor, index, use);
+            }
+        }
+
+        for (int index = 0; index < actor.Reactions.Count; index++)
+        {
+            (Definition reaction, UseOption reactionUse) = actor.Reactions[index];
+            if (ReferenceEquals(reactionUse, use))
+            {
+                return ReactionUseId(actor, index, reaction);
+            }
+        }
+
+        // UseOption is a record, so a reconstructed equivalent can still be
+        // identified when a caller did not retain the original reference.
+        for (int index = 0; index < actor.Uses.Count; index++)
+        {
+            if (Equals(actor.Uses[index], use))
+            {
+                return ActionUseId(actor, index, use);
+            }
+        }
+
+        for (int index = 0; index < actor.Reactions.Count; index++)
+        {
+            (Definition reaction, UseOption reactionUse) = actor.Reactions[index];
+            if (Equals(reactionUse, use))
+            {
+                return ReactionUseId(actor, index, reaction);
+            }
+        }
+
+        return null;
+    }
+
     private UseOption? FindUse(Combatant actor, string id)
     {
         for (int index = 0; index < actor.Uses.Count; index++)
         {
             UseOption use = actor.Uses[index];
             if (ActionUseId(actor, index, use) == id)
+            {
+                return use;
+            }
+        }
+
+        for (int index = 0; index < actor.Reactions.Count; index++)
+        {
+            (Definition reaction, UseOption use) = actor.Reactions[index];
+            if (ReactionUseId(actor, index, reaction) == id)
             {
                 return use;
             }
@@ -730,7 +845,6 @@ public sealed partial class CombatRunner
             .OrderBy(entry => entry.Value.Cost)
             .ThenBy(entry => entry.Key.X)
             .ThenBy(entry => entry.Key.Y)
-            .Take(64)
             .Select(entry => new CombatMoveChoice(entry.Key, entry.Value.Path, entry.Value.Cost))
             .ToList();
     }
@@ -1208,6 +1322,7 @@ public sealed partial class CombatRunner
         bool alreadyPaid = false,
         int? committedMaxTargets = null,
         int? rollsBefore = null,
+        IReadOnlyList<DiceRoll>? committedRolls = null,
         bool explicitTargets = false)
     {
         if (!alreadyPaid)
@@ -1220,7 +1335,7 @@ public sealed partial class CombatRunner
         _requestedTargets = targets;
         try
         {
-            Act(actor, use, targets, explicitTargets ? targets : null, committedMaxTargets, rollsBefore, alreadyPaid);
+            Act(actor, use, targets, explicitTargets ? targets : null, committedMaxTargets, rollsBefore, alreadyPaid, committedRolls);
         }
         finally
         {
@@ -1243,6 +1358,7 @@ public sealed partial class CombatRunner
         }
 
         _tookTurns.Add(_activeActor);
+        ClearPendingTargetSelection();
         _turn = null;
         _turnPrepared = false;
         _activeActor = null;

@@ -1216,7 +1216,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                     movementOnly = trace.MovementOnly,
                 }
                 : null,
-            fallback = trace.Fallback?.ToString(),
+            fallback = FallbackText(trace.Fallback),
             reason = trace.Reason,
             abandoned = trace.Abandoned,
             plan = new
@@ -1225,7 +1225,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 ruleIndex = trace.RuleIndex,
                 stepIndex = trace.StepIndex,
                 stepPath = trace.StepPath,
-                fallback = trace.Fallback?.ToString(),
+                fallback = FallbackText(trace.Fallback),
                 abandonment = trace.Abandoned ? trace.Reason : null,
             },
             alternatives = trace.Alternatives.Select(alternative => new
@@ -1247,6 +1247,17 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 destinationKind = alternative.DestinationKind,
                 destinationDistance = alternative.DestinationDistance,
             }),
+        };
+    }
+
+    private static string? FallbackText(CombatBehaviorFallback? fallback)
+    {
+        return fallback switch
+        {
+            CombatBehaviorFallback.EndTurn => "end-turn",
+            CombatBehaviorFallback.Flee => "flee",
+            CombatBehaviorFallback.Next => "next",
+            _ => null,
         };
     }
 

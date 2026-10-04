@@ -219,7 +219,7 @@ public static class DefinitionTypes
         "A reusable, module-authored combat policy. It selects among legal action plans with guards and priorities or scores, can move toward a target before each action, and contains fixed short sequences without scripts or loops.",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("parameters", new MapKind(new TextKind(), new ExpressionKind(ExprType.Number, Roots.Self | Roots.Target | Roots.Combat)), false, "Named numeric defaults. Rules and action-use parameters read them as behavior.<name>; values are evaluated in the current actor and target context."),
+            new("parameters", new MapKind(new TextKind(), new ExpressionKind(ExprType.Number, BehaviorRoots)), false, "Named numeric defaults. Rules and action-use parameters read them as behavior.<name>; parameter expressions may read another named behavior parameter (cycles are rejected), and values are evaluated in the current actor and target context."),
             new("fallback", new EnumKind(["next", "end-turn", "flee"]), false, "What autonomous control does when no rule or step can be used; without it, end-turn."),
             new("rules", new ListKind(BehaviorRule), true, "Ordered alternatives. An eligible rule with the highest priority or score is chosen; a tie keeps definition order."),
         ],

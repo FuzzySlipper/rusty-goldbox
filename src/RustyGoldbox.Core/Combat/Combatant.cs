@@ -7,7 +7,13 @@ namespace RustyGoldbox.Core.Combat;
 
 /// <summary>An action a combatant can take, with the parameters it is used with.</summary>
 /// <param name="Spell">When the use casts a spell, the spell, whose cost it also spends.</param>
-public sealed record UseOption(Definition Action, string Name, IReadOnlyDictionary<string, CompiledExpression> Parameters, Definition? Spell = null);
+/// <param name="FromItem">The authored item kind that supplied missing parameters, when this use came from equipment.</param>
+public sealed record UseOption(
+    Definition Action,
+    string Name,
+    IReadOnlyDictionary<string, CompiledExpression> Parameters,
+    Definition? Spell = null,
+    string? FromItem = null);
 
 /// <summary>A creature in a fight: its side, state for this combat, and the actions it can take.</summary>
 public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseOption> uses, string? id = null)
@@ -319,8 +325,10 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             return options;
         }
 
+        string itemKind = kind.GetString()!;
+
         // One option per equipped item of the kind that has every missing parameter.
-        foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == kind.GetString()))
+        foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == itemKind))
         {
             Dictionary<string, CompiledExpression> filled = new(given);
             foreach (string parameter in parameters.Where(parameter => !given.ContainsKey(parameter)))
@@ -334,7 +342,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             if (filled.Count == parameters.Count)
             {
                 string itemName = use.TryGetProperty("name", out _) ? name : $"{action.Name} ({item.Name})";
-                options.Add(new UseOption(action, itemName, filled));
+                options.Add(new UseOption(action, itemName, filled, FromItem: itemKind));
             }
         }
 

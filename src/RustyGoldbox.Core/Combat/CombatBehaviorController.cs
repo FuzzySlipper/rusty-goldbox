@@ -270,7 +270,7 @@ public sealed class CombatBehaviorController
             }
 
             UseOption? intendedUse = FindUse(actor, step);
-            CombatActionChoice? choice = intendedUse is not null ? FindAction(pending, step) : null;
+            CombatActionChoice? choice = intendedUse is not null ? FindAction(actor, pending, step, intendedUse) : null;
             IReadOnlyList<CombatTargetChoice> selectedTargets = [];
             CombatTargetChoice? target = null;
             if (choice is not null)
@@ -580,12 +580,36 @@ public sealed class CombatBehaviorController
         return rules;
     }
 
-    private CombatActionChoice? FindAction(CombatDecision pending, CombatBehaviorStep step)
+    private static CombatActionChoice? FindAction(
+        Combatant actor,
+        CombatDecision pending,
+        CombatBehaviorStep step,
+        UseOption intendedUse)
     {
-        return pending.Actions.FirstOrDefault(choice =>
-            (choice.ActionId == step.Action.QualifiedId || choice.ActionId == step.Action.Id)
-            && (step.Name is null || string.Equals(choice.Name, step.Name, StringComparison.Ordinal))
-            && (step.Spell is null || choice.SpellId == step.Spell.QualifiedId || choice.SpellId == step.Spell.Id));
+        foreach (CombatActionChoice choice in pending.Actions)
+        {
+            if (!ChoiceMatchesStep(choice, step))
+            {
+                continue;
+            }
+
+            if (TryExactUse(actor, choice, out UseOption? choiceUse))
+            {
+                if (ReferenceEquals(choiceUse, intendedUse))
+                {
+                    return choice;
+                }
+
+                continue;
+            }
+
+            // Older synthetic observations do not carry the live use ID. Their
+            // action/name fields are still enough when there is no exact identity
+            // to disambiguate, and the normal live snapshot always has one.
+            return choice;
+        }
+
+        return null;
     }
 
     private IReadOnlyList<CombatTargetChoice> ChooseTargets(Combatant actor, CombatActionChoice choice, CombatBehaviorStep step, CombatBehaviorProfile behavior)
@@ -612,10 +636,11 @@ public sealed class CombatBehaviorController
         // Inspecting it here would consume dice and would also guess a target
         // count that the shared resolver has not committed yet. Automatic
         // behavior therefore chooses one target for ordinary target kinds;
-        // whole-side actions retain their legal all-target set and let the
-        // resolver apply any committed cap.
+        // capped and whole-side actions retain their legal ranked set and let
+        // the resolver apply any committed cap.
         bool multiple = (use?.Action ?? step.Action).Json.TryGetProperty("target", out JsonElement targetKind)
-            && targetKind.GetString() is "all_enemies" or "all_allies";
+            && targetKind.GetString() is "all_enemies" or "all_allies"
+            || (use?.Action ?? step.Action).Json.TryGetProperty("max_targets", out _);
 
         if (step.TargetScore is CompiledExpression score)
         {
@@ -737,18 +762,73 @@ public sealed class CombatBehaviorController
 
     private static UseOption? FindUse(Combatant actor, CombatActionChoice choice, CombatBehaviorStep step)
     {
-        return actor.Uses.FirstOrDefault(use => use.Action == step.Action
-            && use.Name == choice.Name
-            && (step.Spell is null || use.Spell == step.Spell))
-            ?? actor.Uses.FirstOrDefault(use => use.Action == step.Action
-                && (step.Spell is null || use.Spell == step.Spell));
+        if (TryExactUse(actor, choice, out UseOption? exact))
+        {
+            return exact is not null && MatchesStep(exact, step) ? exact : null;
+        }
+
+        return actor.Uses.FirstOrDefault(use => MatchesChoice(use, choice) && MatchesStep(use, step));
     }
 
     private static UseOption? FindUse(Combatant actor, CombatBehaviorStep step)
     {
-        return actor.Uses.FirstOrDefault(use => use.Action == step.Action
-            && (step.Name is null || use.Name == step.Name)
-            && (step.Spell is null || use.Spell == step.Spell));
+        return actor.Uses.FirstOrDefault(use => MatchesStep(use, step));
+    }
+
+    private static bool ChoiceMatchesStep(CombatActionChoice choice, CombatBehaviorStep step)
+    {
+        return (choice.ActionId == step.Action.QualifiedId || choice.ActionId == step.Action.Id)
+            && (step.Name is null || string.Equals(choice.Name, step.Name, StringComparison.Ordinal))
+            && (step.Spell is null || choice.SpellId == step.Spell.QualifiedId || choice.SpellId == step.Spell.Id);
+    }
+
+    private static bool MatchesChoice(UseOption use, CombatActionChoice choice)
+    {
+        return (choice.ActionId == use.Action.QualifiedId || choice.ActionId == use.Action.Id)
+            && string.Equals(use.Name, choice.Name, StringComparison.Ordinal)
+            && (choice.SpellId is null
+                ? use.Spell is null
+                : use.Spell is Definition spell && (choice.SpellId == spell.QualifiedId || choice.SpellId == spell.Id));
+    }
+
+    private static bool MatchesStep(UseOption use, CombatBehaviorStep step)
+    {
+        if (use.Action != step.Action
+            || (step.Name is not null && !string.Equals(use.Name, step.Name, StringComparison.Ordinal))
+            || (step.Spell is not null && use.Spell != step.Spell)
+            || (step.FromItem is not null && !string.Equals(use.FromItem, step.FromItem, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        return step.Parameters.All(parameter =>
+            use.Parameters.TryGetValue(parameter.Key, out CompiledExpression? supplied)
+            && string.Equals(supplied.Text, parameter.Value.Text, StringComparison.Ordinal));
+    }
+
+    private static bool TryExactUse(Combatant actor, CombatActionChoice choice, out UseOption? use)
+    {
+        use = null;
+        const string marker = "/use/";
+        int markerIndex = choice.Id.IndexOf(marker, StringComparison.Ordinal);
+        if (markerIndex <= 0 || !choice.Id.StartsWith(actor.Id, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        int indexStart = markerIndex + marker.Length;
+        int separator = choice.Id.IndexOf('/', indexStart);
+        if (separator <= indexStart
+            || !int.TryParse(choice.Id[indexStart..separator], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int index)
+            || index < 0
+            || index >= actor.Uses.Count
+            || !MatchesChoice(actor.Uses[index], choice))
+        {
+            return false;
+        }
+
+        use = actor.Uses[index];
+        return true;
     }
 
     private (CombatActionChoice Choice, IReadOnlyList<Cell> Path)? FindMovement(
@@ -1011,12 +1091,69 @@ public sealed class CombatBehaviorController
     private Scope ScopeFor(Combatant? actor, Creature? target, CombatBehaviorProfile behavior, IReadOnlyDictionary<string, CompiledExpression>? use = null)
     {
         Dictionary<string, Value> parameters = [];
+        HashSet<string> evaluating = new(StringComparer.Ordinal);
         foreach ((string name, CompiledExpression expression) in behavior.Parameters)
         {
-            parameters[name] = _evaluator.Evaluate(expression, new Scope(actor?.Creature, target));
+            EvaluateBehaviorParameter(name, expression, actor, target, behavior, parameters, evaluating);
         }
 
         return new Scope(actor?.Creature, target, Use: use, BehaviorValues: parameters);
+    }
+
+    private Value EvaluateBehaviorParameter(
+        string name,
+        CompiledExpression expression,
+        Combatant? actor,
+        Creature? target,
+        CombatBehaviorProfile behavior,
+        Dictionary<string, Value> values,
+        HashSet<string> evaluating)
+    {
+        if (values.TryGetValue(name, out Value value))
+        {
+            return value;
+        }
+
+        if (!evaluating.Add(name))
+        {
+            throw new ExpressionException(
+                $"behavior.{name} depends on itself through another behavior parameter. Break the parameter cycle.",
+                expression.Root.Column);
+        }
+
+        try
+        {
+            foreach (string dependency in BehaviorReferences(expression.Root))
+            {
+                if (behavior.Parameters.TryGetValue(dependency, out CompiledExpression? dependencyExpression))
+                {
+                    EvaluateBehaviorParameter(dependency, dependencyExpression, actor, target, behavior, values, evaluating);
+                }
+            }
+
+            value = _evaluator.Evaluate(expression, new Scope(actor?.Creature, target, BehaviorValues: values));
+            values[name] = value;
+            return value;
+        }
+        finally
+        {
+            evaluating.Remove(name);
+        }
+    }
+
+    private static IEnumerable<string> BehaviorReferences(Expr expression)
+    {
+        return expression switch
+        {
+            PathExpr path when path.Root == "behavior" => [path.Name],
+            UnaryExpr unary => BehaviorReferences(unary.Operand),
+            BinaryExpr binary => BehaviorReferences(binary.Left).Concat(BehaviorReferences(binary.Right)),
+            ConditionalExpr conditional => BehaviorReferences(conditional.Condition)
+                .Concat(BehaviorReferences(conditional.Then))
+                .Concat(BehaviorReferences(conditional.Else)),
+            CallExpr call => call.Arguments.SelectMany(BehaviorReferences),
+            _ => [],
+        };
     }
 
     private Creature? FindCreature(string id)
