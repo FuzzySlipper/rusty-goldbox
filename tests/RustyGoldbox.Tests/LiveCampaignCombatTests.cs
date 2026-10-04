@@ -554,6 +554,85 @@ public sealed class LiveCampaignCombatTests
         });
     }
 
+    [Theory]
+    [InlineData("action-id-null", "$.pending_combat.continuation.PendingDecision.Actions[0].Id", "nonempty")]
+    [InlineData("action-id-empty", "$.pending_combat.continuation.PendingDecision.Actions[0].Id", "nonempty")]
+    [InlineData("action-cost-null", "$.pending_combat.continuation.PendingDecision.Actions[0].Cost", "cost must be an object")]
+    [InlineData("action-moves-null", "$.pending_combat.continuation.PendingDecision.Actions[0].Moves", "Moves must be an array")]
+    [InlineData("action-move-null", "$.pending_combat.continuation.PendingDecision.Actions[0].Moves[0]", "move choice must be an object")]
+    [InlineData("action-move-path-null", "$.pending_combat.continuation.PendingDecision.Actions[0].Moves[0].Path", "path must be an array")]
+    [InlineData("decision-moves-null", "$.pending_combat.continuation.PendingDecision.Moves", "Moves must be an array")]
+    [InlineData("decision-move-null", "$.pending_combat.continuation.PendingDecision.Moves[0]", "move choice must be an object")]
+    [InlineData("decision-move-path-null", "$.pending_combat.continuation.PendingDecision.Moves[0].Path", "path must be an array")]
+    public void MalformedCampaignSaveRejectsNullPendingDecisionShapes(string mutation, string expectedPath, string expectedMessage)
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 52);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            JsonObject decision = continuation["PendingDecision"]!.AsObject();
+            JsonObject action = decision["Actions"]!.AsArray()[0]!.AsObject();
+
+            switch (mutation)
+            {
+                case "action-id-null":
+                    action["Id"] = null;
+                    break;
+                case "action-id-empty":
+                    action["Id"] = string.Empty;
+                    break;
+                case "action-cost-null":
+                    action["Cost"] = null;
+                    break;
+                case "action-moves-null":
+                    action["Moves"] = null;
+                    break;
+                case "action-move-null":
+                    JsonArray actionNullMove = [];
+                    actionNullMove.Add(null);
+                    action["Moves"] = actionNullMove;
+                    break;
+                case "action-move-path-null":
+                    JsonArray actionNullPath = [];
+                    actionNullPath.Add(NullPathMove());
+                    action["Moves"] = actionNullPath;
+                    break;
+                case "decision-moves-null":
+                    decision["Moves"] = null;
+                    break;
+                case "decision-move-null":
+                    JsonArray decisionNullMove = [];
+                    decisionNullMove.Add(null);
+                    decision["Moves"] = decisionNullMove;
+                    break;
+                case "decision-move-path-null":
+                    JsonArray decisionNullPath = [];
+                    decisionNullPath.Add(NullPathMove());
+                    decision["Moves"] = decisionNullPath;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mutation), mutation, "Unknown pending decision mutation.");
+            }
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), $"bad-pending-decision-{mutation}-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == expectedPath
+                && problem.Message.Contains(expectedMessage, StringComparison.Ordinal));
+        });
+    }
+
     [Fact]
     public void CampaignSaveAllowsUncommittedSpellCostAndRestoresCommittedQuote()
     {
@@ -941,4 +1020,11 @@ public sealed class LiveCampaignCombatTests
 
         return party;
     }
+
+    private static JsonObject NullPathMove() => new()
+    {
+        ["Destination"] = new JsonObject { ["X"] = 0, ["Y"] = 0 },
+        ["Path"] = null,
+        ["Cost"] = 0,
+    };
 }
