@@ -39,4 +39,3 @@ Style reference only (inspect and borrow medium/palette grammar, not content or
 composition):
 
 `/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/references/blackapple_village.png`
-

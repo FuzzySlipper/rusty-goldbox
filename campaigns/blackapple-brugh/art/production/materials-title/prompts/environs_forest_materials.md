@@ -42,4 +42,3 @@ or composition):
 `/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/originals/environs_faehill.png`
 
 `/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/originals/environs_fairy_ruins.png`
-

@@ -28,4 +28,3 @@ Style references only:
 `/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/references/blackapple_village.png`
 
 `/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/originals/environs_faehill.png`
-

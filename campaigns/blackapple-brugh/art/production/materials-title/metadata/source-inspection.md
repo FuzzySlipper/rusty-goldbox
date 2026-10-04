@@ -14,4 +14,3 @@ The village atlas uses the first reference. The forest atlas uses the Faehill
 and Fairy Ruins references. The title uses the village and Faehill references.
 All generated copies remain untouched RGB originals. RGBA packing and runtime
 region declarations belong to the parent integrator.
-

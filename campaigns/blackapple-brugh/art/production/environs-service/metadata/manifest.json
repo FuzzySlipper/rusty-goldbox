@@ -26,14 +26,10 @@
   "excluded_inputs": [
     "source PDF images and excluded third-party illustrations"
   ],
-  "path_handoff_friction_receipt": "/tmp/goldbox-9305-environs-service/path-handoff-friction.txt",
   "runtime_boundary": "No pack/export/runtime acceptance claim; these are source-side originals for an independent judge.",
-  "judge_handoff": "campaigns/blackapple-brugh/art/production/environs-service/metadata/JUDGE_HANDOFF.md",
   "file_manifest": "campaigns/blackapple-brugh/art/production/environs-service/metadata/file-manifest.tsv",
-  "target_file_count": 30,
-  "file_manifest_sha256": "b9679d870c34a6835fe81cdff096f9257fdd96ca461d2e75f1c94b7b196e8816",
+  "target_file_count": 28,
+  "file_manifest_sha256": "ac59e0f0c647e2ddb692e367059f32701e3707cee8f3fd563fa3c6b19440ee55",
   "file_manifest_covers": "all files under the authorized tree except metadata/file-manifest.tsv itself and metadata/manifest.json (which contains this receipt)",
-  "target_file_count_excluding_receipt_files": 30,
-  "den_message_id": 40078,
-  "den_document_id": 2940
+  "target_file_count_excluding_receipt_files": 28
 }
