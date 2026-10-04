@@ -1437,6 +1437,7 @@ public sealed partial class CombatRunner
         CheckResult result = selected is null ? frame.Initial : ApplyPostRollOption(frame.Check, frame.By, frame.Against, frame.Initial, selected);
         if (frame.Context.IsOperation)
         {
+            MarkSuccessfulSkill(frame.Check, frame.By, result);
             ResumeCheckOperation(frame.Context, result);
             if (!_suspending)
             {
@@ -1460,6 +1461,14 @@ public sealed partial class CombatRunner
         }
 
         return CompleteSuspendedAction();
+    }
+
+    private void MarkSuccessfulSkill(Definition check, Combatant by, CheckResult result)
+    {
+        if (result.Success && by.Character is Character character && check.Json.TryGetProperty("skill", out _))
+        {
+            CharacterRules.MarkSkillUse(_rules, character, check.Json.GetProperty("skill").GetString()!, []);
+        }
     }
 
     private void ResumeCheckOperation(CheckOperationContext context, CheckResult result)
