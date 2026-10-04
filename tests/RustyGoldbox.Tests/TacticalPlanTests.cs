@@ -524,6 +524,330 @@ public sealed class TacticalPlanTests
         });
     }
 
+    [Fact]
+    public void AutomaticBehaviorSkipsAnUnaffordableCommittedSpellPriceAndUsesItsNextRule()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/mana.json", """
+            { "type": "track", "id": "mana", "name": "Mana", "max": "10", "start": "0", "min": "0" }
+            """);
+        modules.Write("tactics/grid.json", """
+            {
+              "type": "combat",
+              "id": "grid",
+              "name": "Price fallback grid",
+              "initiative": "1",
+              "initiative_by": "side",
+              "initiative_order": "highest-first",
+              "initiative_each": "round",
+              "round_seconds": 6,
+              "field": {
+                "width": 10,
+                "height": 6,
+                "metric": "chebyshev",
+                "terrain": {
+                  "#": { "name": "Pillar", "passable": false, "blocks_sight": true }
+                }
+              },
+              "budget": [
+                { "id": "action", "per_turn": 2 },
+                { "id": "reaction", "per_turn": 1 }
+              ],
+              "track": "classic:hit_points",
+              "defeated": "self.hit_points <= 0"
+            }
+            """);
+        modules.Write("tactics/prep_move.json", """
+            {
+              "type": "action",
+              "id": "prep_move",
+              "name": "Prepare position",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "valid_target": "combat.distance > 1",
+              "always": [ { "op": "move", "distance": "2", "within": "1", "provokes": false } ]
+            }
+            """);
+        modules.Write("tactics/unstable_cast.json", """
+            {
+              "type": "action",
+              "id": "unstable_cast",
+              "name": "Unstable cast",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "always": [ { "op": "damage", "amount": "1" } ]
+            }
+            """);
+        modules.Write("tactics/unstable.json", """
+            {
+              "type": "spell",
+              "id": "unstable",
+              "name": "Unstable spell",
+              "lists": { "classic:magic_user": 1 },
+              "range": "Sight",
+              "duration": "Instant",
+              "area": "One creature",
+              "casting_time": "One action",
+              "cost": { "mana": "1d2" },
+              "effect": { "action": "tactics:unstable_cast" },
+              "description": "A deliberately unstable test spell."
+            }
+            """);
+        modules.Write("tactics/fallback_attack.json", """
+            {
+              "type": "action",
+              "id": "fallback_attack",
+              "name": "Fallback attack",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "always": [ { "op": "damage", "amount": "1" } ]
+            }
+            """);
+        modules.Write("tactics/behavior.json", """
+            {
+              "type": "combat-behavior",
+              "id": "price_fallback",
+              "name": "Price fallback",
+              "fallback": "end-turn",
+              "rules": [
+                {
+                  "priority": 20,
+                  "commit": "plan",
+                  "steps": [
+                    {
+                      "destination": { "kind": "within", "distance": "1" },
+                      "action": { "action": "tactics:prep_move" },
+                      "target": "enemy"
+                    },
+                    {
+                      "action": { "action": "tactics:unstable_cast" },
+                      "spell": "tactics:unstable",
+                      "target": "enemy"
+                    }
+                  ],
+                  "fallback": "next"
+                },
+                {
+                  "priority": 10,
+                  "steps": [
+                    {
+                      "action": { "action": "tactics:fallback_attack" },
+                      "target": "enemy"
+                    }
+                  ],
+                  "fallback": "end-turn"
+                }
+              ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        CombatBehaviorProfile profile = Assert.Single(rules.CombatBehaviors.Values);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "tactics:grid", out _)!;
+        Definition prepAction = rules.Find(DefinitionTypes.Action, "tactics:prep_move", out _)!;
+        Definition unstableAction = rules.Find(DefinitionTypes.Action, "tactics:unstable_cast", out _)!;
+        Definition unstableSpell = rules.Find(DefinitionTypes.Spell, "tactics:unstable", out _)!;
+        Definition fallbackAction = rules.Find(DefinitionTypes.Action, "tactics:fallback_attack", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9343;
+            const string scope = "authored-price-fallback";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            Evaluator evaluator = new(rules, dice);
+            Creature actorCreature = CreatureWithHitPoints("actor", 10);
+            actorCreature.Track("mana").Current = 0;
+            actorCreature.Track("mana").Max = 10;
+            Combatant actor = new(
+                "Actor",
+                actorCreature,
+                [
+                    new UseOption(prepAction, "Prepare position", new Dictionary<string, CompiledExpression>()),
+                    new UseOption(unstableAction, "Unstable spell", new Dictionary<string, CompiledExpression>(), unstableSpell),
+                    new UseOption(fallbackAction, "Fallback attack", new Dictionary<string, CompiledExpression>()),
+                ],
+                "actor")
+            {
+                Side = 0,
+                Controller = CombatControlMode.Manual,
+            };
+            Combatant target = new("Target", CreatureWithHitPoints("target", 20), [], "target")
+            {
+                Side = 1,
+                Controller = CombatControlMode.Manual,
+            };
+
+            CombatRunner runner = CombatRunner.Create(
+                rules,
+                combat,
+                [new CombatSide("Party", [actor]), new CombatSide("Enemy", [target])],
+                dice,
+                setup: new CombatSetup([new Cell(0, 0), new Cell(3, 0)]));
+            runner.BehaviorController.Assign(actor.Id, profile);
+            runner.CollectBehaviorTraces = true;
+
+            CombatObservation observation = runner.Start(1);
+            while (observation.PendingDecision?.ActorId != actor.Id)
+            {
+                CombatDecision decision = Assert.IsType<CombatDecision>(observation.PendingDecision);
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(decision.ActorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            long cursorBeforeActor = dice.NextRandomKey;
+            int rollsBeforeActor = dice.Rolls.Count;
+            Assert.True(runner.SetController(actor.Id, CombatControlMode.Automatic));
+
+            Assert.Equal(cursorBeforeActor + 1, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeActor + 1, dice.Rolls.Count);
+            Assert.Single(runner.Facts.OfType<MoveFact>(), fact => fact.Who == actor.Name);
+            Assert.Single(runner.Facts.OfType<ActionFact>(), fact => fact.Who == actor.Name && fact.Action == "Fallback attack");
+            Assert.DoesNotContain(runner.Facts.OfType<ActionFact>(), fact => fact.Who == actor.Name && fact.Action == "Unstable cast");
+            Assert.Contains(runner.Facts.OfType<TurnSkippedFact>(), fact => fact.Who == actor.Name
+                && fact.Reason.Contains("committed", StringComparison.Ordinal)
+                && fact.Reason.Contains("mana", StringComparison.Ordinal));
+            Assert.DoesNotContain(runner.Facts.OfType<TurnSkippedFact>(), fact => fact.Who == actor.Name && fact.Reason.Contains("no action it can take", StringComparison.Ordinal));
+            Assert.Single(runner.BehaviorTraces, trace => trace.ActorId == actor.Id && trace.ActionId?.EndsWith(unstableAction.QualifiedId, StringComparison.Ordinal) == true);
+            Assert.Single(runner.BehaviorTraces, trace => trace.ActorId == actor.Id && trace.ActionId?.EndsWith(fallbackAction.QualifiedId, StringComparison.Ordinal) == true);
+            Assert.Single(runner.BehaviorTraces, trace => trace.ActorId == actor.Id && trace.ActionId?.EndsWith(prepAction.QualifiedId, StringComparison.Ordinal) == true);
+        });
+    }
+
+    [Fact]
+    public void FailedRandomSpellCostRemovesItsMovementAndRebuildsAggregateMoveChoices()
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: Require("classic", "*"));
+        modules.Write("tactics/mana.json", """
+            { "type": "track", "id": "mana", "name": "Mana", "max": "10", "start": "0", "min": "0" }
+            """);
+        modules.Write("tactics/fragile.json", """
+            { "type": "track", "id": "fragile", "name": "Fragile", "max": "1", "start": "0", "min": "0" }
+            """);
+        modules.Write("tactics/unstable_move.json", """
+            {
+              "type": "action",
+              "id": "unstable_move",
+              "name": "Unstable move",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "always": [ { "op": "move", "distance": "4", "within": "1", "provokes": false } ]
+            }
+            """);
+        modules.Write("tactics/unstable_move_spell.json", """
+            {
+              "type": "spell",
+              "id": "unstable_move_spell",
+              "name": "Unstable move spell",
+              "lists": { "classic:magic_user": 1 },
+              "range": "Sight",
+              "duration": "Instant",
+              "area": "One creature",
+              "casting_time": "One action",
+              "cost": { "mana": "1d2", "fragile": "1 / self.fragile" },
+              "effect": { "action": "tactics:unstable_move" },
+              "description": "A deliberately unstable movement test spell."
+            }
+            """);
+        modules.Write("tactics/fallback_move.json", """
+            {
+              "type": "action",
+              "id": "fallback_move",
+              "name": "Fallback move",
+              "cost": { "action": 1 },
+              "target": "enemy",
+              "always": [ { "op": "move", "distance": "3", "within": "2", "provokes": false } ]
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        Definition combat = rules.Find(DefinitionTypes.Combat, "classic:standard", out _)!;
+        Definition unstableAction = rules.Find(DefinitionTypes.Action, "tactics:unstable_move", out _)!;
+        Definition unstableSpell = rules.Find(DefinitionTypes.Spell, "tactics:unstable_move_spell", out _)!;
+        Definition fallbackAction = rules.Find(DefinitionTypes.Action, "tactics:fallback_move", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9343;
+            const string scope = "partial-spell-cost-moves";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            Evaluator evaluator = new(rules, dice);
+            Creature actorCreature = CreatureWithHitPoints("actor", 10);
+            actorCreature.Track("mana").Current = 0;
+            actorCreature.Track("mana").Max = 10;
+            actorCreature.Track("fragile").Current = 0;
+            actorCreature.Track("fragile").Max = 1;
+            Combatant actor = new(
+                "Actor",
+                actorCreature,
+                [
+                    new UseOption(unstableAction, "Unstable move", new Dictionary<string, CompiledExpression>(), unstableSpell),
+                    new UseOption(fallbackAction, "Fallback move", new Dictionary<string, CompiledExpression>()),
+                ],
+                "actor")
+            {
+                Side = 0,
+                Controller = CombatControlMode.Manual,
+            };
+            Combatant target = new("Target", CreatureWithHitPoints("target", 20), [], "target")
+            {
+                Side = 1,
+                Controller = CombatControlMode.Manual,
+            };
+
+            CombatRunner runner = CombatRunner.Create(
+                rules,
+                combat,
+                [new CombatSide("Party", [actor]), new CombatSide("Enemy", [target])],
+                dice,
+                setup: new CombatSetup([new Cell(0, 0), new Cell(5, 0)], SurprisedSide: -1));
+            CombatObservation observation = runner.Start(1);
+            while (observation.PendingDecision?.ActorId != actor.Id)
+            {
+                CombatDecision turn = Assert.IsType<CombatDecision>(observation.PendingDecision);
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(turn.ActorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            CombatDecision offered = Assert.IsType<CombatDecision>(observation.PendingDecision);
+            CombatActionChoice unstable = Assert.Single(offered.Actions, action => action.SpellId == unstableSpell.QualifiedId);
+            CombatActionChoice fallback = Assert.Single(offered.Actions, action => action.ActionId == fallbackAction.QualifiedId);
+            CombatMoveChoice unstableMove = unstable.Moves[0];
+            Assert.NotEmpty(fallback.Moves);
+            Assert.Contains(unstableMove, offered.Moves);
+            Assert.Contains(fallback.Moves[0], offered.Moves);
+            long cursorBeforeSubmit = dice.NextRandomKey;
+            int rollsBeforeSubmit = dice.Rolls.Count;
+
+            CombatCommandResult failed = runner.Submit(new CombatCommand.UseAction(
+                actor.Id,
+                unstable.Id,
+                [target.Id],
+                unstableMove.Path));
+
+            Assert.True(failed.Accepted, failed.Reason);
+            Assert.Equal(cursorBeforeSubmit + 1, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeSubmit + 1, dice.Rolls.Count);
+            CombatDecision remaining = Assert.IsType<CombatDecision>(failed.Observation.PendingDecision);
+            CombatActionChoice remainingFallback = Assert.Single(remaining.Actions, action => action.Id == fallback.Id);
+            Assert.DoesNotContain(remaining.Actions, action => action.Id == unstable.Id);
+            Assert.Equal(remaining.Actions.SelectMany(action => action.Moves).Distinct().ToArray(), remaining.Moves);
+            Assert.DoesNotContain(remaining.Moves, move => move.Equals(unstableMove));
+            Assert.Contains(remaining.Moves, move => move.Equals(remainingFallback.Moves[0]));
+            Assert.Empty(failed.Observation.Facts.OfType<MoveFact>());
+            Assert.Equal(new Cell(0, 0), actor.Creature.Position);
+        });
+    }
+
     [Theory]
     [InlineData("unavailable", "self.hit_points > 100", 1)]
     [InlineData("unaffordable", "self.hit_points > 0", 0)]

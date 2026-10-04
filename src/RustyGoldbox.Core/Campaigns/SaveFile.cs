@@ -1077,19 +1077,13 @@ public static class SaveFile
                 }
             }
 
-            if (continuation.Facts is null)
-            {
-                Error($"{root}.Facts", "Facts must be an array.");
-            }
+            ValidateFactStates(continuation.Facts, $"{root}.Facts");
 
-            if (continuation.PendingInterruptRolls is null)
+            ValidateDiceRolls(continuation.PendingInterruptRolls, $"{root}.PendingInterruptRolls");
+            ValidateDiceRolls(continuation.PendingCheckRolls, $"{root}.PendingCheckRolls");
+            if (continuation.CommittedTargetRolls is not null)
             {
-                Error($"{root}.PendingInterruptRolls", "PendingInterruptRolls must be an array.");
-            }
-
-            if (continuation.PendingCheckRolls is null)
-            {
-                Error($"{root}.PendingCheckRolls", "PendingCheckRolls must be an array.");
+                ValidateDiceRolls(continuation.CommittedTargetRolls, $"{root}.CommittedTargetRolls");
             }
 
             if (continuation.Controllers is null)
@@ -1110,8 +1104,75 @@ public static class SaveFile
 
             ValidateCombatants(continuation.Combatants, $"{root}.Combatants");
             ValidateBehaviorContinuation(continuation, participantIds, root);
-            ValidateDecision(continuation.PendingDecision, participantIds, $"{root}.PendingDecision", continuation.Combatants);
+            ValidateDecision(continuation.PendingDecision, participantIds, $"{root}.PendingDecision");
             ValidateContinuationFrames(continuation, participantIds, root);
+        }
+
+        private void ValidateFactStates(IReadOnlyList<CombatFactState>? facts, string at)
+        {
+            if (facts is null)
+            {
+                Error(at, "Facts must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < facts.Count; index++)
+            {
+                CombatFactState? fact = facts[index];
+                string factAt = $"{at}[{index}]";
+                if (fact is null)
+                {
+                    Error(factAt, "A combat fact continuation must be an object.");
+                    continue;
+                }
+
+                if (fact.Kind is null)
+                {
+                    Error($"{factAt}.Kind", "A combat fact continuation must have a Kind.");
+                }
+
+                if (fact.Description is null)
+                {
+                    Error($"{factAt}.Description", "A combat fact continuation must have a Description.");
+                }
+
+                ValidateDiceRolls(fact.Rolls, $"{factAt}.Rolls");
+
+                if (fact.SubjectIds is null)
+                {
+                    Error($"{factAt}.SubjectIds", "Fact subject IDs must be an array.");
+                }
+
+                if (fact.TargetIds is null)
+                {
+                    Error($"{factAt}.TargetIds", "Fact target IDs must be an array.");
+                }
+            }
+        }
+
+        private void ValidateDiceRolls(IReadOnlyList<DiceRoll>? rolls, string at)
+        {
+            if (rolls is null)
+            {
+                Error(at, "Rolls must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < rolls.Count; index++)
+            {
+                DiceRoll? roll = rolls[index];
+                string rollAt = $"{at}[{index}]";
+                if (roll is null)
+                {
+                    Error(rollAt, "A roll must be an object.");
+                    continue;
+                }
+
+                if (roll.Faces is null)
+                {
+                    Error($"{rollAt}.Faces", "Roll faces must be an array.");
+                }
+            }
         }
 
         private void ValidateCombatants(IReadOnlyList<CombatantState>? combatants, string at)
@@ -1394,8 +1455,7 @@ public static class SaveFile
         private void ValidateDecision(
             CombatDecision? decision,
             IReadOnlySet<string> participantIds,
-            string at,
-            IReadOnlyList<CombatantState>? combatants)
+            string at)
         {
             if (decision is null)
             {
@@ -1408,8 +1468,6 @@ public static class SaveFile
             }
 
             RequiredParticipant(decision.ActorId, $"{at}.ActorId", participantIds);
-            CombatantState? actor = combatants?.FirstOrDefault(candidate =>
-                candidate is not null && string.Equals(candidate.Id, decision.ActorId, StringComparison.Ordinal));
             if (!Enum.IsDefined(decision.Kind))
             {
                 Error($"{at}.Kind", $"Decision kind {(int)decision.Kind} is not valid.");
@@ -1437,7 +1495,7 @@ public static class SaveFile
                         : null;
 
                     ValidateDecisionTargets(action.Targets, participantIds, $"{actionAt}.Targets");
-                    ValidateSpellCosts(action, spell, actor, actionAt);
+                    ValidateSpellCosts(action, spell, actionAt);
                 }
             }
 
@@ -1522,20 +1580,10 @@ public static class SaveFile
         private void ValidateSpellCosts(
             CombatActionChoice action,
             Definition? spell,
-            CombatantState? actor,
             string at)
         {
             if (action.SpellCosts is null)
             {
-                if (spell is not null
-                    && spell.Json.TryGetProperty("cost", out JsonElement spellCostDefinition)
-                    && spellCostDefinition.ValueKind == JsonValueKind.Object
-                    && spellCostDefinition.EnumerateObject().Any()
-                    && actor?.CastsLeft?.ContainsKey(spell.QualifiedId) != true)
-                {
-                    Error($"{at}.SpellCosts", "An unprepared cost-bearing spell choice must carry its committed cost quote.");
-                }
-
                 return;
             }
 

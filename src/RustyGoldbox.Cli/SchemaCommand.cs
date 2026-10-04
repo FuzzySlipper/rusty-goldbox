@@ -475,6 +475,7 @@ internal static class SchemaCommand
                     new { command = "combat auto-step", description = "Advance the active manual actor through one automatic Core turn, then restore manual control." },
                 },
                 path = "A path is a semicolon-separated list of x,y cells. IDs and choices come from combat.pendingDecision; action IDs are stable machine IDs and do not include display names. CLI does not resolve rules.",
+                spellCosts = "SpellCosts contains known or committed resource prices. A random price remains null until a legal spell is selected, then is retained across save/resume. An accepted selection can report an unaffordable price without casting or spending; inspect the updated choice before retrying.",
                 example = System.Text.Json.JsonDocument.Parse(LiveCombatExample).RootElement,
                 trace = "goldbox play ... --trace adds a side-effect-free decision projection; observation never rolls dice.",
             });
@@ -488,6 +489,7 @@ internal static class SchemaCommand
         output.Line("`--combat-control manual` suspends the party at a decision; enemies remain automatic. The default is automatic.");
         output.Line("`combat auto-step` assists one manual turn and restores manual control; use `combat control <actor-id> auto` for a persistent takeover.");
         output.Line("Add `--trace` for a side-effect-free decision projection; inspection and trace do not roll dice.");
+        output.Line("SpellCosts contains known or committed prices; a random price stays null until a legal spell is selected. An accepted unaffordable price leaves resources unchanged, and retries use the same saved quote.");
         output.Line();
         output.Line("Example JSON observation:");
         output.Line(LiveCombatExample.Trim());

@@ -75,9 +75,11 @@ retains that step until its intended action runs.
 
 Keep action `available`, `valid_target`, `range` and `portions` expressions
 deterministic; validation rejects dice in these fields. Put random resolution
-in checks, operations or `max_targets`. The live decision also retains a
-spell's quoted resource cost, so inspecting, refusing or saving the choice
-does not reroll its payment.
+in checks, operations or `max_targets`. Deterministic spell costs are visible
+in the menu. Random costs are rolled only for the selected legal spell and
+retained for payment and save/resume. An unaffordable committed price leaves
+resources unchanged and permits another choice; retrying it does not reroll.
+Inspecting candidates and refusing invalid commands consumes no dice.
 
 The exact fields and legal destination kinds are those printed by `goldbox
 schema combat-behavior`; the example illustrates the ownership boundary rather than

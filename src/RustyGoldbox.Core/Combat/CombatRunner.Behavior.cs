@@ -1,4 +1,5 @@
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Combat;
 
@@ -13,6 +14,7 @@ public sealed partial class CombatRunner
     private CombatBehaviorTrace? _lastBehaviorTrace;
     private readonly List<CombatBehaviorTrace> _behaviorTraces = [];
     private bool _resolvingBehavior;
+    private HashSet<string>? _behaviorRejectedActionIds;
     private string? _pendingBehaviorActorId;
     private string? _pendingBehaviorId;
     private int? _pendingBehaviorRuleIndex;
@@ -53,6 +55,7 @@ public sealed partial class CombatRunner
     {
         CombatBehaviorController controller = EnsureBehaviorController();
         _resolvingBehavior = true;
+        _behaviorRejectedActionIds = [];
         try
         {
             if (_pendingDecision is null || _pendingDecision.ActorId != actor.Id || _pendingDecision.Kind != CombatDecisionKind.Action)
@@ -78,6 +81,7 @@ public sealed partial class CombatRunner
                 RememberBehaviorTrace(proposal.Trace);
                 if (proposal.Command is CombatCommand.UseAction command)
                 {
+                    CombatDecision? decisionBefore = _pendingDecision;
                     CombatCommandResult result;
                     try
                     {
@@ -94,6 +98,33 @@ public sealed partial class CombatRunner
                     }
 
                     ClearPendingBehaviorCommit();
+                    bool sameActionDecision = decisionBefore is CombatDecision before
+                        && before.Kind == CombatDecisionKind.Action
+                        && result.Observation.PendingDecision is CombatDecision after
+                        && after.Kind == CombatDecisionKind.Action
+                        && after.Id == before.Id
+                        && after.ActorId == actor.Id;
+                    bool retainedPriceRefusal = !result.Accepted
+                        && sameActionDecision
+                        && IsCommittedSpellPriceUnavailable(actor, command.ActionId);
+                    if (sameActionDecision && (result.Accepted || retainedPriceRefusal))
+                    {
+                        if (retainedPriceRefusal)
+                        {
+                            _behaviorRejectedActionIds?.Add(command.ActionId);
+                            RemovePendingActionChoice(command.ActionId);
+                        }
+
+                        // A legal command committed a price but did not
+                        // complete the authored step. Keep the behavior state
+                        // uncommitted so Propose can reassess the remaining
+                        // choices and its authored fallback without spending
+                        // or rerolling the retained price.
+                        RecordBehaviorTrace();
+                        retriedFallback = false;
+                        continue;
+                    }
+
                     if (!result.Accepted)
                     {
                         RememberBehaviorRefusal(proposal, result.Reason);
@@ -133,7 +164,29 @@ public sealed partial class CombatRunner
         }
         finally
         {
+            _behaviorRejectedActionIds = null;
             _resolvingBehavior = false;
+        }
+    }
+
+    private bool IsCommittedSpellPriceUnavailable(Combatant actor, string actionId)
+    {
+        CombatActionChoice? choice = _pendingDecision?.Actions.FirstOrDefault(action => action.Id == actionId);
+        UseOption? use = choice is null ? null : FindUse(actor, choice.Id);
+        if (choice?.SpellCosts is not IReadOnlyDictionary<string, decimal> costs
+            || use?.Spell is not Definition spell
+            || actor.CastsLeft.ContainsKey(spell))
+        {
+            return false;
+        }
+
+        try
+        {
+            return !SpellAffordable(actor, spell, costs);
+        }
+        catch (RuleFailure)
+        {
+            return false;
         }
     }
 

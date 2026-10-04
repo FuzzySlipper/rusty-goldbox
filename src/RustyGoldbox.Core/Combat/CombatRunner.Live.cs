@@ -475,6 +475,17 @@ public sealed partial class CombatRunner
         {
             if (HasMaximumTargets(use.Action))
             {
+                if (command.Path is not null && !ActionHasMove(use.Action))
+                {
+                    return Refused($"Action '{use.Name}' does not move.");
+                }
+
+                if (command.Path is not null
+                    && !choice.Moves.Any(move => move.Path.SequenceEqual(command.Path)))
+                {
+                    return Refused("The requested movement path is obstructed, out of range or unaffordable.");
+                }
+
                 return CommitTargetSelection(actor, use, choice, candidates);
             }
 
@@ -491,13 +502,6 @@ public sealed partial class CombatRunner
             return Refused($"{actor.Name} cannot afford {use.Name}.");
         }
 
-        if (use.Spell is Definition spell
-            && (!actor.CanCast(spell)
-                || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell, choice.SpellCosts))))
-        {
-            return Refused($"{actor.Name} cannot cast {use.Name}.");
-        }
-
         if (command.Path is not null && !ActionHasMove(use.Action))
         {
             return Refused($"Action '{use.Name}' does not move.");
@@ -509,9 +513,45 @@ public sealed partial class CombatRunner
             return Refused("The requested movement path is obstructed, out of range or unaffordable.");
         }
 
+        if (use.Spell is Definition spell && !actor.CanCast(spell))
+        {
+            return Refused($"{actor.Name} cannot cast {use.Name}.");
+        }
+
+        CombatActionChoice committedChoice = choice;
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = choice.SpellCosts;
+        if (use.Spell is Definition
+            && !TryCommitSpellCosts(
+                actor,
+                use,
+                choice,
+                out committedChoice,
+                out committedSpellCosts,
+                out string? spellReason,
+                out bool newlyCommitted,
+                out bool consumedRandomness))
+        {
+            if (newlyCommitted || consumedRandomness)
+            {
+                return AcceptedCommittedSpellPrice(
+                    actor,
+                    use,
+                    spellReason!,
+                    removeFailedChoice: (consumedRandomness && committedSpellCosts is null)
+                        || (_resolvingBehavior && newlyCommitted));
+            }
+
+            return Refused(spellReason!);
+        }
+
+        if (use.Spell is Definition)
+        {
+            choice = committedChoice;
+        }
+
         if (HasMaximumTargets(use.Action))
         {
-            return CommitExplicitTargetSelection(actor, use, targets, command.Path, choice.SpellCosts, choice.PortionCount);
+            return CommitExplicitTargetSelection(actor, use, targets, command.Path, committedSpellCosts, choice.PortionCount);
         }
 
         ResolveChosenAction(
@@ -520,7 +560,7 @@ public sealed partial class CombatRunner
             targets,
             command.Path,
             committedPortions: choice.PortionCount,
-            committedSpellCosts: choice.SpellCosts,
+            committedSpellCosts: committedSpellCosts,
             explicitTargets: true);
         _pendingDecision = null;
         return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
@@ -533,16 +573,45 @@ public sealed partial class CombatRunner
             return Refused($"{actor.Name} cannot afford {use.Name}.");
         }
 
-        if (use.Spell is Definition spell
-            && (!actor.CanCast(spell)
-                || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell, choice.SpellCosts))))
+        if (use.Spell is Definition spell && !actor.CanCast(spell))
         {
             return Refused($"{actor.Name} cannot cast {use.Name}.");
         }
 
+        CombatActionChoice committedChoice = choice;
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = choice.SpellCosts;
+        if (use.Spell is Definition
+            && !TryCommitSpellCosts(
+                actor,
+                use,
+                choice,
+                out committedChoice,
+                out committedSpellCosts,
+                out string? spellReason,
+                out bool newlyCommitted,
+                out bool consumedRandomness))
+        {
+            if (newlyCommitted || consumedRandomness)
+            {
+                return AcceptedCommittedSpellPrice(
+                    actor,
+                    use,
+                    spellReason!,
+                    removeFailedChoice: (consumedRandomness && committedSpellCosts is null)
+                        || (_resolvingBehavior && newlyCommitted));
+            }
+
+            return Refused(spellReason!);
+        }
+
+        if (use.Spell is Definition)
+        {
+            choice = committedChoice;
+        }
+
         int rollsBefore = _dice.Rolls.Count;
         Spend(actor, use.Action);
-        PayUse(actor, use, choice.SpellCosts);
+        PayUse(actor, use, committedSpellCosts);
         decimal maximum = Number(use.Action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
         int cap = (int)Math.Clamp(decimal.Floor(maximum), 0, candidates.Count);
         if (cap == 0)
@@ -741,6 +810,25 @@ public sealed partial class CombatRunner
 
     private CombatCommandResult Refused(string reason) => CombatCommandResult.Refused(reason, Observe());
 
+    private CombatCommandResult AcceptedCommittedSpellPrice(
+        Combatant actor,
+        UseOption use,
+        string reason,
+        bool removeFailedChoice = false)
+    {
+        if (removeFailedChoice)
+        {
+            if (UseId(actor, use) is string actionId)
+            {
+                _behaviorRejectedActionIds?.Add(actionId);
+                RemovePendingActionChoice(actionId);
+            }
+        }
+
+        Record(new TurnSkippedFact(actor.Name, reason), subject: actor);
+        return CombatCommandResult.AcceptedResult(Observe());
+    }
+
     private CombatDecision BuildDecision(Combatant actor)
     {
         List<CombatActionChoice> actions = [];
@@ -748,6 +836,11 @@ public sealed partial class CombatRunner
         {
             int index = actor.Uses.IndexOf(use);
             if (index < 0)
+            {
+                continue;
+            }
+
+            if (_behaviorRejectedActionIds?.Contains(ActionUseId(actor, index, use)) == true)
             {
                 continue;
             }
@@ -1386,22 +1479,33 @@ public sealed partial class CombatRunner
         }
 
         bool acted = false;
+        List<UseOption> rejectedPrices = [];
         while (!actor.Defeated && StandingSides() > 1)
         {
-            (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? chosen = Choose(actor);
+            (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? chosen = Choose(actor, rejectedPrices);
             if (chosen is not { } selected)
             {
                 break;
             }
 
             (UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) = selected;
+            if (!TryResolveSpellCosts(actor, use, spellCosts, out IReadOnlyDictionary<string, decimal>? committedSpellCosts, out _))
+            {
+                // A random price belongs to the selected action. Once this
+                // selection proves unaffordable, skip this exact use for the
+                // current automatic turn and let the normal ordering choose
+                // a different action without drawing it again.
+                rejectedPrices.Add(use);
+                continue;
+            }
+
             ResolveChosenAction(
                 actor,
                 use,
                 targets,
                 null,
                 committedPortions: portionCount,
-                committedSpellCosts: spellCosts,
+                committedSpellCosts: committedSpellCosts,
                 explicitTargets: false);
             acted = true;
         }

@@ -173,6 +173,9 @@ prints stable actor/action/target IDs, budgets and legal paths; use those IDs
 with `combat action`, `combat move`, `combat end-turn` and `combat decide`.
 `combat auto-step` assists the current manual turn through Core without
 changing the member's saved control preference.
+Inspecting choices consumes no dice. A selected spell commits any random
+resource price once, and saves retain it; an unaffordable committed price
+leaves resources unchanged so the actor can choose another action.
 `goldbox schema live-combat --json` describes the command surface. Saves retain
 the current decision, and `--trace` explains authored AI choices without
 changing the rolls. [Authoring tactical combat](docs/combat-authoring.md)

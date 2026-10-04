@@ -165,7 +165,7 @@ public sealed class CombatLegalityTests
     }
 
     [Fact]
-    public void RefusedRandomSpellCostCommandPreservesQuoteAcrossObservationAndJsonRestore()
+    public void RefusedRandomSpellCostCommandDoesNotQuoteOrConsumeRandomnessAcrossObservationAndJsonRestore()
     {
         using TempModules modules = new();
         string root = WriteSpellCostRuleset(modules);
@@ -186,16 +186,14 @@ public sealed class CombatLegalityTests
             long cursorBeforeOffer = dice.NextRandomKey;
             int rollsBeforeOffer = dice.Rolls.Count;
             CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
-            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellCosts is not null);
-            IReadOnlyDictionary<string, decimal> quote = spell.SpellCosts!;
-            decimal quotedMana = Assert.Single(quote).Value;
-            Assert.InRange(quotedMana, 1, 2);
-            Assert.Equal(cursorBeforeOffer + 1, dice.NextRandomKey);
-            Assert.Equal(rollsBeforeOffer + 1, dice.Rolls.Count);
+            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellId == "rules:spark");
+            Assert.Null(spell.SpellCosts);
+            Assert.Equal(cursorBeforeOffer, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeOffer, dice.Rolls.Count);
 
             CombatContinuationState saved = RoundTrip(runner.Capture());
             CombatActionChoice savedSpell = Assert.Single(saved.PendingDecision!.Actions, action => action.Id == spell.Id);
-            Assert.Equal(quotedMana, savedSpell.SpellCosts!["mana"]);
+            Assert.Null(savedSpell.SpellCosts);
 
             CombatObservation before = runner.Observe();
             string[] factsBefore = before.Facts.Select(FactLine).ToArray();
@@ -207,7 +205,7 @@ public sealed class CombatLegalityTests
             CombatObservation repeated = runner.Observe();
             Assert.Equal(cursorBefore, dice.NextRandomKey);
             Assert.Equal(rollsBefore, dice.Rolls.Count);
-            Assert.Equal(quotedMana, repeated.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts!["mana"]);
+            Assert.Null(repeated.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts);
 
             CombatCommandResult refused = runner.Submit(new CombatCommand.UseAction(
                 attacker.Id,
@@ -218,7 +216,27 @@ public sealed class CombatLegalityTests
             Assert.Equal(rollsBefore, dice.Rolls.Count);
             Assert.Equal(factsBefore, refused.Observation.Facts.Select(FactLine));
             Assert.Equal(manaBefore, TrackValue(refused.Observation, attacker.Id, "mana"));
-            Assert.Equal(quotedMana, refused.Observation.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts!["mana"]);
+            Assert.Null(refused.Observation.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts);
+
+            CombatCommandResult refusedPath = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                spell.Id,
+                [guard.Id],
+                [new Cell(9, 9)]));
+            Assert.False(refusedPath.Accepted, refusedPath.Reason);
+            Assert.Equal(cursorBefore, dice.NextRandomKey);
+            Assert.Equal(rollsBefore, dice.Rolls.Count);
+            Assert.Equal(factsBefore, refusedPath.Observation.Facts.Select(FactLine));
+            Assert.Null(refusedPath.Observation.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts);
+
+            CombatCommandResult refusedActor = runner.Submit(new CombatCommand.UseAction(
+                "missing-actor",
+                spell.Id,
+                [guard.Id]));
+            Assert.False(refusedActor.Accepted, refusedActor.Reason);
+            Assert.Equal(cursorBefore, dice.NextRandomKey);
+            Assert.Equal(rollsBefore, dice.Rolls.Count);
+            Assert.Equal(factsBefore, refusedActor.Observation.Facts.Select(FactLine));
 
             DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
             Evaluator restoredEvaluator = new(rules, restoredDice);
@@ -233,7 +251,7 @@ public sealed class CombatLegalityTests
                 saved);
             CombatObservation restoredOffered = restored.Observe();
             CombatActionChoice restoredSpell = Assert.Single(restoredOffered.PendingDecision!.Actions, action => action.Id == spell.Id);
-            Assert.Equal(quotedMana, restoredSpell.SpellCosts!["mana"]);
+            Assert.Null(restoredSpell.SpellCosts);
             long restoredCursorBefore = restoredDice.NextRandomKey;
             int restoredRollsBefore = restoredDice.Rolls.Count;
 
@@ -250,7 +268,7 @@ public sealed class CombatLegalityTests
             Assert.Equal(restoredRollsBefore, restoredDice.Rolls.Count);
             Assert.Equal(factsBefore, restoredRefused.Observation.Facts.Select(FactLine));
             Assert.Equal(manaBefore, TrackValue(restoredRefused.Observation, attacker.Id, "mana"));
-            Assert.Equal(quotedMana, restoredRefused.Observation.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts!["mana"]);
+            Assert.Null(restoredRefused.Observation.PendingDecision!.Actions.Single(action => action.Id == spell.Id).SpellCosts);
         });
     }
 
@@ -276,13 +294,12 @@ public sealed class CombatLegalityTests
             long cursorBeforeOffer = dice.NextRandomKey;
             int rollsBeforeOffer = dice.Rolls.Count;
             CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
-            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellCosts is not null);
-            decimal quotedMana = spell.SpellCosts!["mana"];
-            Assert.InRange(quotedMana, 1, 2);
+            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellId == "rules:spark");
+            Assert.Null(spell.SpellCosts);
             long cursorAtOffer = dice.NextRandomKey;
             int rollsAtOffer = dice.Rolls.Count;
-            Assert.Equal(cursorBeforeOffer + 1, cursorAtOffer);
-            Assert.Equal(rollsBeforeOffer + 1, rollsAtOffer);
+            Assert.Equal(cursorBeforeOffer, cursorAtOffer);
+            Assert.Equal(rollsBeforeOffer, rollsAtOffer);
             CombatContinuationState saved = RoundTrip(runner.Capture());
 
             DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
@@ -298,7 +315,7 @@ public sealed class CombatLegalityTests
                 saved);
             CombatDecision restoredOffered = AssertDecision(restored.Observe(), CombatDecisionKind.Action);
             CombatActionChoice restoredSpell = Assert.Single(restoredOffered.Actions, action => action.Id == spell.Id);
-            Assert.Equal(quotedMana, restoredSpell.SpellCosts!["mana"]);
+            Assert.Null(restoredSpell.SpellCosts);
 
             Assert.Equal(restoredOffered.Id, restored.Observe().PendingDecision!.Id);
             Assert.Equal(cursorAtOffer, dice.NextRandomKey);
@@ -309,11 +326,13 @@ public sealed class CombatLegalityTests
                 spell.Id,
                 [guard.Id]));
             Assert.True(direct.Accepted, direct.Reason);
-            Assert.Equal(cursorAtOffer, dice.NextRandomKey);
-            Assert.Equal(rollsAtOffer, dice.Rolls.Count);
+            Assert.Equal(cursorAtOffer + 1, dice.NextRandomKey);
+            Assert.Equal(rollsAtOffer + 1, dice.Rolls.Count);
 
             SpentFact directSpent = Assert.Single(direct.Observation.Facts.OfType<SpentFact>());
             Assert.Equal("mana", directSpent.Track.Id);
+            decimal quotedMana = directSpent.Amount;
+            Assert.InRange(quotedMana, 1, 2);
             Assert.Equal(quotedMana, directSpent.Amount);
             Assert.Equal(10 - quotedMana, TrackValue(direct.Observation, attacker.Id, "mana"));
             Assert.Single(direct.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == guard.Name && fact.Amount == 1);
@@ -323,13 +342,257 @@ public sealed class CombatLegalityTests
                 restoredSpell.Id,
                 [restored.Sides.Single(side => side.Name == "Guards").Members.Single().Id]));
             Assert.True(resumed.Accepted, resumed.Reason);
-            Assert.Equal(saved.NextRandomKey, restoredDice.NextRandomKey);
-            Assert.Empty(restoredDice.Rolls);
+            Assert.Equal(saved.NextRandomKey + 1, restoredDice.NextRandomKey);
+            Assert.Single(restoredDice.Rolls);
 
             SpentFact resumedSpent = Assert.Single(resumed.Observation.Facts.OfType<SpentFact>());
             Assert.Equal("mana", resumedSpent.Track.Id);
             Assert.Equal(quotedMana, resumedSpent.Amount);
             Assert.Equal(10 - quotedMana, TrackValue(resumed.Observation, attacker.Id, "mana"));
+            Assert.Single(resumed.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == "Guard" && fact.Amount == 1);
+            Assert.Equal(direct.Observation.Facts.Select(FactLine), resumed.Observation.Facts.Select(FactLine));
+        });
+    }
+
+    [Fact]
+    public void UnselectedRandomCostSpellDoesNotShiftLaterActionDraws()
+    {
+        using TempModules baselineModules = new();
+        using TempModules candidateModules = new();
+        string baselineRoot = WriteSpellCostCandidateRuleset(baselineModules, includeRandomSpell: false);
+        string candidateRoot = WriteSpellCostCandidateRuleset(candidateModules, includeRandomSpell: true);
+        RuleSet baselineRules = Rules.LoadValid(baselineRoot);
+        RuleSet candidateRules = Rules.LoadValid(candidateRoot);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            CandidateResult baseline = RunSlashCandidate(baselineRules, engine.Random, "combat-spell-candidate", automatic: false);
+            CandidateResult candidate = RunSlashCandidate(candidateRules, engine.Random, "combat-spell-candidate", automatic: false);
+
+            Assert.Equal(baseline.DamageFact, candidate.DamageFact);
+            Assert.Equal(baseline.CursorAfterAction, candidate.CursorAfterAction);
+            Assert.Equal(baseline.Rolls, candidate.Rolls);
+        });
+    }
+
+    [Fact]
+    public void AutomaticChoiceDoesNotInspectAnUnselectedRandomSpellPrice()
+    {
+        using TempModules baselineModules = new();
+        using TempModules candidateModules = new();
+        string baselineRoot = WriteSpellCostCandidateRuleset(baselineModules, includeRandomSpell: false);
+        string candidateRoot = WriteSpellCostCandidateRuleset(candidateModules, includeRandomSpell: true);
+        RuleSet baselineRules = Rules.LoadValid(baselineRoot);
+        RuleSet candidateRules = Rules.LoadValid(candidateRoot);
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            CandidateResult baseline = RunSlashCandidate(baselineRules, engine.Random, "combat-spell-automatic", automatic: true);
+            CandidateResult candidate = RunSlashCandidate(candidateRules, engine.Random, "combat-spell-automatic", automatic: true);
+
+            Assert.Equal(baseline.DamageFact, candidate.DamageFact);
+            Assert.Equal(baseline.CursorAfterAction, candidate.CursorAfterAction);
+            Assert.Equal(baseline.Rolls, candidate.Rolls);
+        });
+    }
+
+    [Fact]
+    public void ConstantSpellCostIsQuotedWithoutConsumingRandomness()
+    {
+        using TempModules modules = new();
+        string root = WriteSpellCostRuleset(modules, spellCost: "1");
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9337;
+            const string scope = "combat-spell-cost-constant";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
+                rules, combat, attackerDefinition, guardDefinition, dice);
+
+            long cursorBeforeOffer = dice.NextRandomKey;
+            int rollsBeforeOffer = dice.Rolls.Count;
+            CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellId == "rules:spark");
+            Assert.Equal(1m, spell.SpellCosts!["mana"]);
+            Assert.Equal(cursorBeforeOffer, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeOffer, dice.Rolls.Count);
+
+            CombatCommandResult accepted = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                spell.Id,
+                [guard.Id]));
+            Assert.True(accepted.Accepted, accepted.Reason);
+            Assert.Equal(cursorBeforeOffer, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeOffer, dice.Rolls.Count);
+            SpentFact spent = Assert.Single(accepted.Observation.Facts.OfType<SpentFact>());
+            Assert.Equal(1m, spent.Amount);
+            Assert.Equal(9m, TrackValue(accepted.Observation, attacker.Id, "mana"));
+        });
+    }
+
+    [Fact]
+    public void SelectedUnaffordableRandomSpellRetainsItsCommittedPriceForDrawFreeRetryAndRestore()
+    {
+        using TempModules modules = new();
+        string root = WriteSpellCostRuleset(modules, manaStart: "0");
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9337;
+            const string scope = "combat-spell-cost-unaffordable";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
+                rules, combat, attackerDefinition, guardDefinition, dice);
+
+            CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellId == "rules:spark");
+            Assert.Null(spell.SpellCosts);
+            long cursorAtOffer = dice.NextRandomKey;
+            int rollsAtOffer = dice.Rolls.Count;
+
+            CombatCommandResult selected = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                spell.Id,
+                [guard.Id]));
+            Assert.True(selected.Accepted, selected.Reason);
+            Assert.Contains("price", SelectedMessage(selected), StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(cursorAtOffer + 1, dice.NextRandomKey);
+            Assert.Equal(rollsAtOffer + 1, dice.Rolls.Count);
+            Assert.Equal(0m, TrackValue(selected.Observation, attacker.Id, "mana"));
+            Assert.Empty(selected.Observation.Facts.OfType<ActionFact>());
+            Assert.Empty(selected.Observation.Facts.OfType<SpentFact>());
+            Assert.Empty(selected.Observation.Facts.OfType<DamageFact>());
+            CombatActionChoice committed = Assert.Single(
+                selected.Observation.PendingDecision!.Actions,
+                action => action.Id == spell.Id);
+            decimal committedPrice = committed.SpellCosts!["mana"];
+            Assert.InRange(committedPrice, 1, 2);
+
+            CombatContinuationState saved = RoundTrip(runner.Capture());
+            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            Evaluator restoredEvaluator = new(rules, restoredDice);
+            CombatRunner restored = CombatRunner.Restore(
+                rules,
+                combat,
+                [
+                    new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                    new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+                ],
+                restoredDice,
+                saved);
+            CombatActionChoice restoredSpell = Assert.Single(
+                restored.Observe().PendingDecision!.Actions,
+                action => action.Id == spell.Id);
+            Assert.Equal(committedPrice, restoredSpell.SpellCosts!["mana"]);
+            long cursorBeforeRetry = restoredDice.NextRandomKey;
+            int rollsBeforeRetry = restoredDice.Rolls.Count;
+
+            CombatCommandResult retry = restored.Submit(new CombatCommand.UseAction(
+                restored.Observe().PendingDecision!.ActorId,
+                restoredSpell.Id,
+                [restored.Sides.Single(side => side.Name == "Guards").Members.Single().Id]));
+            Assert.False(retry.Accepted, retry.Reason);
+            Assert.Equal(cursorBeforeRetry, restoredDice.NextRandomKey);
+            Assert.Equal(rollsBeforeRetry, restoredDice.Rolls.Count);
+            Assert.Equal(committedPrice, retry.Observation.PendingDecision!.Actions
+                .Single(action => action.Id == spell.Id).SpellCosts!["mana"]);
+        });
+    }
+
+    [Fact]
+    public void SelectedRandomSpellCostSurvivesMaximumTargetSelectionAndJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = WriteSpellCostRuleset(modules);
+        modules.Write("rules/spark_action.json", """
+            { "type": "action", "id": "spark_action", "name": "Spark action", "cost": { "turn": 1 }, "target": "all_enemies", "max_targets": "1",
+              "always": [ { "op": "damage", "amount": "1" } ] }
+            """);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9337;
+            const string scope = "combat-spell-cost-max-target";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
+                rules, combat, attackerDefinition, guardDefinition, dice);
+
+            CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            CombatActionChoice spell = Assert.Single(offered.Actions, action => action.SpellId == "rules:spark");
+            Assert.Null(spell.SpellCosts);
+            long cursorAtOffer = dice.NextRandomKey;
+            int rollsAtOffer = dice.Rolls.Count;
+
+            CombatCommandResult committed = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                spell.Id,
+                []));
+            Assert.True(committed.Accepted, committed.Reason);
+            Assert.Equal(cursorAtOffer + 1, dice.NextRandomKey);
+            Assert.Equal(rollsAtOffer + 1, dice.Rolls.Count);
+            Assert.Equal(CombatDecisionKind.Targets, committed.Observation.PendingDecision?.Kind);
+            CombatActionChoice committedSpell = Assert.Single(
+                committed.Observation.PendingDecision!.Actions,
+                action => action.Id == spell.Id);
+            decimal quotedMana = committedSpell.SpellCosts!["mana"];
+            Assert.InRange(quotedMana, 1, 2);
+            Assert.Single(committed.Observation.Facts.OfType<SpentFact>(), fact => fact.Amount == quotedMana);
+
+            CombatContinuationState saved = RoundTrip(runner.Capture());
+            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            Evaluator restoredEvaluator = new(rules, restoredDice);
+            CombatRunner restored = CombatRunner.Restore(
+                rules,
+                combat,
+                [
+                    new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                    new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+                ],
+                restoredDice,
+                saved);
+            CombatDecision restoredTargets = AssertDecision(restored.Observe(), CombatDecisionKind.Targets);
+            CombatActionChoice restoredSpell = Assert.Single(
+                restoredTargets.Actions,
+                action => action.Id == spell.Id);
+            Assert.Equal(quotedMana, restoredSpell.SpellCosts!["mana"]);
+            long restoredCursor = restoredDice.NextRandomKey;
+            int restoredRolls = restoredDice.Rolls.Count;
+
+            CombatCommandResult direct = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                committed.Observation.PendingDecision.ActionId!,
+                [guard.Id]));
+            Assert.True(direct.Accepted, direct.Reason);
+            Assert.Equal(cursorAtOffer + 1, dice.NextRandomKey);
+            Assert.Equal(rollsAtOffer + 1, dice.Rolls.Count);
+            Assert.Single(direct.Observation.Facts.OfType<SpentFact>(), fact => fact.Amount == quotedMana);
+            Assert.Single(direct.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == guard.Name && fact.Amount == 1);
+
+            CombatCommandResult resumed = restored.Submit(new CombatCommand.UseAction(
+                restoredTargets.ActorId,
+                restoredTargets.ActionId!,
+                [restored.Sides.Single(side => side.Name == "Guards").Members.Single().Id]));
+            Assert.True(resumed.Accepted, resumed.Reason);
+            Assert.Equal(restoredCursor, restoredDice.NextRandomKey);
+            Assert.Equal(restoredRolls, restoredDice.Rolls.Count);
             Assert.Single(resumed.Observation.Facts.OfType<DamageFact>(), fact => fact.Who == "Guard" && fact.Amount == 1);
             Assert.Equal(direct.Observation.Facts.Select(FactLine), resumed.Observation.Facts.Select(FactLine));
         });
@@ -355,27 +618,108 @@ public sealed class CombatLegalityTests
         return (runner, attacker, guard);
     }
 
-    private static string WriteSpellCostRuleset(TempModules modules)
+    private static CandidateResult RunSlashCandidate(
+        RuleSet rules,
+        Rusty.Engine.IRandomService random,
+        string scope,
+        bool automatic)
+    {
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
+        DiceRoller dice = new(random, 9337, scope);
+        (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
+            rules, combat, attackerDefinition, guardDefinition, dice);
+
+        CombatObservation observation;
+        if (automatic)
+        {
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Automatic));
+            observation = runner.Start(1);
+        }
+        else
+        {
+            CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            if (offered.Actions.SingleOrDefault(action => action.SpellId == "rules:spark") is CombatActionChoice randomSpell)
+            {
+                Assert.Null(randomSpell.SpellCosts);
+            }
+
+            CombatActionChoice slash = Assert.Single(offered.Actions, action => action.ActionId == "rules:slash_action");
+            CombatCommandResult accepted = runner.Submit(new CombatCommand.UseAction(
+                attacker.Id,
+                slash.Id,
+                [guard.Id]));
+            Assert.True(accepted.Accepted, accepted.Reason);
+            observation = accepted.Observation;
+        }
+
+        DamageFact damage = Assert.Single(observation.Facts.OfType<DamageFact>(), fact => fact.Who == guard.Name);
+        return new(
+            FactLine(damage),
+            dice.NextRandomKey,
+            dice.Rolls.Select(roll => roll.ToString()).ToArray());
+    }
+
+    private static string WriteSpellCostRuleset(
+        TempModules modules,
+        string spellCost = "1d2",
+        string manaStart = "10")
     {
         string root = Rules.WriteSmallRuleset(modules);
-        modules.Write("rules/mana.json", """
-            { "type": "track", "id": "mana", "name": "Mana", "max": "10", "start": "10", "min": "0" }
+        modules.Write("rules/mana.json", $$"""
+            { "type": "track", "id": "mana", "name": "Mana", "max": "10", "start": "{{manaStart}}", "min": "0" }
             """);
         WriteCombat(modules);
         modules.Write("rules/spark_action.json", """
             { "type": "action", "id": "spark_action", "name": "Spark action", "cost": { "turn": 1 }, "target": "enemy",
               "always": [ { "op": "damage", "amount": "1" } ] }
             """);
-        modules.Write("rules/spark.json", """
+        modules.Write("rules/spark.json", $$"""
             { "type": "spell", "id": "spark", "name": "Spark", "lists": { "warrior": 1 },
               "range": "Sight", "duration": "Instant", "area": "One creature", "casting_time": "One action",
-              "cost": { "mana": "1d2" },
+              "cost": { "mana": "{{spellCost}}" },
               "effect": { "action": "spark_action" }, "description": "A small flash of disciplined energy." }
             """);
         modules.Write("rules/attacker.json", """
             { "type": "monster", "id": "attacker", "name": "Attacker", "class": "warrior", "level": 1,
               "tracks": { "hit_points": "20", "mana": "10" }, "stats": { "str": "15" },
               "spells": [ { "spell": "spark" } ], "actions": [], "xp": 0 }
+            """);
+        WriteGuard(modules);
+        return root;
+    }
+
+    private static string WriteSpellCostCandidateRuleset(TempModules modules, bool includeRandomSpell)
+    {
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/mana.json", """
+            { "type": "track", "id": "mana", "name": "Mana", "max": "10", "start": "10", "min": "0" }
+            """);
+        WriteCombat(modules);
+        modules.Write("rules/slash_action.json", """
+            { "type": "action", "id": "slash_action", "name": "Slash", "score": "10", "cost": { "turn": 1 }, "target": "enemy",
+              "always": [ { "op": "damage", "amount": "1d2" } ] }
+            """);
+        if (includeRandomSpell)
+        {
+            modules.Write("rules/spark_action.json", """
+                { "type": "action", "id": "spark_action", "name": "Spark action", "cost": { "turn": 1 }, "target": "enemy",
+                  "always": [ { "op": "damage", "amount": "1" } ] }
+                """);
+            modules.Write("rules/spark.json", """
+                { "type": "spell", "id": "spark", "name": "Spark", "lists": { "warrior": 1 },
+                  "range": "Sight", "duration": "Instant", "area": "One creature", "casting_time": "One action",
+                  "cost": { "mana": "1d2" },
+                  "effect": { "action": "spark_action" }, "description": "A small flash of disciplined energy." }
+                """);
+        }
+
+        string spells = includeRandomSpell ? "\"spells\": [ { \"spell\": \"spark\" } ]," : "\"spells\": [],";
+        modules.Write("rules/attacker.json", $$"""
+            { "type": "monster", "id": "attacker", "name": "Attacker", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20", "mana": "10" }, "stats": { "str": "15" },
+              {{spells}} "actions": [ { "action": "slash_action" } ], "xp": 0 }
             """);
         WriteGuard(modules);
         return root;
@@ -614,6 +958,13 @@ public sealed class CombatLegalityTests
     private static string FactLine(CombatFact fact) =>
         $"{fact.Kind}|{fact.Describe()}|{string.Join(",", fact.Rolls.Select(roll => roll.ToString()))}";
 
+    private static string SelectedMessage(CombatCommandResult result) =>
+        string.Join(" | ",
+            new[] { result.Reason }
+                .Where(message => message is not null)
+                .Select(message => message!)
+                .Concat(result.Observation.Facts.Select(FactLine)));
+
     private sealed record LegalityResult(
         IReadOnlyList<string> ActionIds,
         IReadOnlyList<string> TargetIdsForBlockedAction,
@@ -629,5 +980,10 @@ public sealed class CombatLegalityTests
         int RefusalCount,
         int FallbackFactCount,
         int BlockedDamageFactCount);
+
+    private sealed record CandidateResult(
+        string DamageFact,
+        long CursorAfterAction,
+        IReadOnlyList<string> Rolls);
 
 }
