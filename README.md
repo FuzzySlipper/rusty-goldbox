@@ -74,6 +74,9 @@ Retained campaign canon lives beside its editable content. The
 story, characters, source adaptation, and licence. Shared canon has one editor;
 chapter and art authors use its stable IDs and handoff contracts. These
 documents describe the story rather than holding runtime game state.
+Its [art bible](campaigns/blackapple-brugh/art/ART_BIBLE.md) defines original
+ink-and-wash references, subject continuity, paired-room geometry and intended
+runtime slots. Exact prompts and provenance remain beside the editable art.
 
 `goldbox` is the authoring CLI. From the repository root:
 
