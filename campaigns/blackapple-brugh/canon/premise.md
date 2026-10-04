@@ -62,7 +62,7 @@ use and mapped in [source-mapping.md](source-mapping.md):
 * **Rules:** the campaign depends on `fifth-srd` (SRD 5.2.1). Basic Fantasy
   class names, statistics, XP rows, and monster numbers are not copied. A
   conversion uses the ruleset's level 1–3 characters, ordinary checks,
-  conditions, rests, shops, temples, training, and combat definitions. The
+  conditions, rests, shops, temples, and combat definitions. The
   source's unusual fiction remains even when a numerical implementation is
   different.
 * **Party:** the authored opening is 4–6 active player characters. The party

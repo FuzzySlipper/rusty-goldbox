@@ -33,7 +33,7 @@ Brugh route.
 | B1 | North Road Guardhouse | **Retain, simplify.** Establishes the toll, village boundary, and first ordinary interaction. | Entry, directions, no forced combat. |
 | B2 | Agatha's Potions and Powders | **Retain, convert.** Use a guarded shop with clearly labelled side effects. | Healing, sleep, anti-undead preparation, optional clue. |
 | B3 | Goodall's Fine Trading | **Retain, convert.** Appraise and sell gems/items; make the family connection explicit. | Economy, evidence about Amelia/Bernard, reward after actual return. |
-| B4 | The Jolly Fox Inn | **Retain as hub.** Revisit between expeditions. | Safe rest, food, rumours, Alistair and Sir Ruprecht, optional training after a story milestone. |
+| B4 | The Jolly Fox Inn | **Retain as hub.** Revisit between expeditions. | Safe rest, food, rumours, Alistair and Sir Ruprecht, XP advancement after authored story rewards. |
 | B5 | Village Square | **Retain as public consequence space.** Fires, patrols, markets, and the final public choice occur here. | Visible trust changes, crowd pressure, public exposure of a double. |
 | B6 | Merchants' Guild | **Retain as optional economy scene.** The guild wants glowwood profit. | Job offer; changes `forest_stance` if accepted or refused. |
 | B7 | Hazard's Quality Goods | **Retain as supplies shop.** Keep practical gear and a readable inventory. | Buy travel gear; no unique plot gate. |
@@ -50,8 +50,9 @@ Brugh route.
 
 ### Hub services and economy
 
-The Jolly Fox is the default safe base. Its shop, rest, and training hooks use
-the existing `fifth-srd` currency and advancement definitions. Agatha and
+The Jolly Fox is the default safe base. Its shop and rest hooks use existing
+`fifth-srd` currency and recovery definitions. XP awards use the ruleset's
+immediate advancement; there is no paid training service in this adaptation. Agatha and
 Hazard are normal shops; Goodall buys high-value items under a campaign-defined
 limit and can identify magical goods. The priory is the default temple and
 recovery owner. The campaign uses ordinary gold and item costs; the source's

@@ -97,6 +97,8 @@ an optional reward, or a safe retreat; it does not need to be a mandatory fight.
   campaign-specific milestone advancement event. Reaching level 3 is expected
   by the final resolution, but the campaign remains completable when a party
   has fewer levels after setbacks.
-* Rest, temple care, shops, and training are useful services in Blackapple and
-  at Hen's Teeth. Their prices and exact operations belong to the fifth-srd
-  data conversion. The narrative never requires a specific gold total.
+* Rest, temple care and shops are useful services in Blackapple and at Hen's
+  Teeth. Their prices and exact operations belong to the fifth-srd data
+  conversion. XP grants levels through the existing immediate advancement
+  policy; this campaign does not require paid training. The narrative never
+  requires a specific gold total.
