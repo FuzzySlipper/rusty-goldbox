@@ -87,6 +87,21 @@ dotnet run --project src/RustyGoldbox.Cli -- module deps modules/my-rules --json
 `goldbox.json` makes `modules/` the workspace search directory, so new modules
 go there and required modules are found there. Every command accepts `--json`.
 
+An editable authoring workspace keeps canon, reference and accepted art,
+prompts, and scripts outside runtime module directories. Create or inspect it
+through the CLI:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- workspace new my-campaign
+dotnet run --project src/RustyGoldbox.Cli -- workspace inspect my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- schema workspace --json
+```
+
+The optional `authoring` object in `goldbox.json` lists each owned module source
+directory and the generated staging/export locations. The existing top-level
+`modules` array remains the dependency search path. Workspace inspection
+reports both, so a copied workspace can be resumed from its files.
+
 The format is described by the tool itself, and rules can be tried against a
 module:
 

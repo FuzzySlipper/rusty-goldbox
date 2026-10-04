@@ -537,6 +537,8 @@ path and the rule that failed. Module directories resolve through
 | Command | Purpose |
 | --- | --- |
 | `goldbox schema [type]` | Print a definition type's fields, an example and the available operations and expression functions. This is the agent's format reference. |
+| `goldbox workspace new <dir>` | Create editable canon/art/prompts/scripts directories and a workspace manifest with separate runtime module and generated output locations. |
+| `goldbox workspace inspect [path]` | Find the nearest workspace and report its authored modules, dependency paths, editable roots and generated locations. `goldbox schema workspace` describes the manifest. |
 | `goldbox module new <kind> <id>` | Scaffold a module. |
 | `goldbox module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |

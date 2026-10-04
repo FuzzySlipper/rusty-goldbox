@@ -5,6 +5,7 @@ using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
+using RustyGoldbox.Core.Authoring;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
@@ -56,6 +57,111 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         {
             writer.WriteLine($"Created {ModuleKinds.Name(kind)} module '{id}' at {Display(directory!)}.");
             writer.WriteLine($"Check it with: goldbox module validate {Display(directory!)}");
+        }
+        else
+        {
+            WriteDiagnostics(diagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceCreated(Workspace? workspace, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        bool ok = workspace is not null && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = workspace is null ? null : new
+                {
+                    root = Display(workspace.RootDirectory),
+                    manifest = Display(workspace.ManifestPath),
+                    modules = workspace.ModulePaths.Select(path => Display(path.FullPath)),
+                    authoring = workspace.Authoring is null ? null : new
+                    {
+                        modules = workspace.Authoring.ModulePaths.Select(path => Display(path.FullPath)),
+                        staging = Display(workspace.Authoring.StagingDirectory),
+                        exports = Display(workspace.Authoring.ExportsDirectory),
+                    },
+                },
+                diagnostics = diagnostics.Select(ToJson),
+            });
+        }
+        else if (ok)
+        {
+            writer.WriteLine($"Created authoring workspace at {Display(workspace!.RootDirectory)}.");
+            writer.WriteLine($"  inspect it with: goldbox workspace inspect {Display(workspace.RootDirectory)}");
+            writer.WriteLine($"  add runtime module paths to {Display(workspace.ManifestPath)} under authoring.modules.");
+        }
+        else
+        {
+            WriteDiagnostics(diagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceInspected(WorkspaceInspection? inspection, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        bool ok = inspection is not null && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = inspection is null ? null : WorkspaceJson(inspection),
+                diagnostics = diagnostics.Select(ToJson),
+            });
+        }
+        else if (inspection is not null)
+        {
+            Workspace workspace = inspection.Workspace;
+            writer.WriteLine($"Workspace: {Display(workspace.RootDirectory)}");
+            writer.WriteLine($"Manifest: {Display(workspace.ManifestPath)}");
+            writer.WriteLine("Module search directories:");
+            foreach (WorkspacePath path in workspace.ModulePaths)
+            {
+                writer.WriteLine($"  {Display(path.FullPath)}");
+            }
+
+            if (workspace.Authoring is AuthoringWorkspace authoring)
+            {
+                writer.WriteLine("Authored runtime modules:");
+                if (inspection.AuthoredModules.Count == 0)
+                {
+                    writer.WriteLine("  (none listed)");
+                }
+
+                foreach (WorkspaceModule module in inspection.AuthoredModules)
+                {
+                    string identity = module.Manifest is null
+                        ? "(manifest unavailable)"
+                        : $"{module.Manifest.Id} {module.Manifest.Version} ({ModuleKinds.Name(module.Manifest.Kind)})";
+                    writer.WriteLine($"  {identity}  {Display(module.Path)}");
+                }
+
+                writer.WriteLine($"Staging: {Display(authoring.StagingDirectory)}");
+                writer.WriteLine($"Exports: {Display(authoring.ExportsDirectory)}");
+            }
+            else
+            {
+                writer.WriteLine("Authoring: not configured (modules-only workspace).");
+            }
+
+            writer.WriteLine($"Documentation: {Display(Path.Combine(workspace.RootDirectory, "README.md"))} and {Display(Path.Combine(workspace.RootDirectory, "docs"))}.");
+
+            writer.WriteLine("Editable roots:");
+            foreach (WorkspaceDirectory directory in inspection.EditableDirectories)
+            {
+                writer.WriteLine($"  {directory.Name} {(directory.Exists ? "present" : "absent")}");
+            }
+
+            if (diagnostics.Count > 0)
+            {
+                WriteDiagnostics(diagnostics);
+            }
         }
         else
         {
@@ -198,6 +304,40 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             kind = ModuleKinds.Name(manifest.Kind),
             title = manifest.Title,
             path = Display(manifest.Source.Location),
+        };
+    }
+
+    private object WorkspaceJson(WorkspaceInspection inspection)
+    {
+        Workspace workspace = inspection.Workspace;
+        return new
+        {
+            root = Display(workspace.RootDirectory),
+            manifest = Display(workspace.ManifestPath),
+            modules = workspace.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+            searchDirectories = workspace.ModuleDirectories.Select(Display),
+            authoring = workspace.Authoring is AuthoringWorkspace authoring
+                ? new
+                {
+                    modules = inspection.AuthoredModules.Select(module => new
+                    {
+                        entry = module.Entry,
+                        path = Display(module.Path),
+                        id = module.Id,
+                        kind = module.Kind,
+                        version = module.Version,
+                    }),
+                    modulePaths = authoring.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+                    staging = Display(authoring.StagingDirectory),
+                    exports = Display(authoring.ExportsDirectory),
+                }
+                : null,
+            editable = inspection.EditableDirectories.Select(directory => new { name = directory.Name, path = Display(directory.Path), exists = directory.Exists }),
+            documentation = new[]
+            {
+                new { name = "README.md", path = Display(Path.Combine(workspace.RootDirectory, "README.md")), exists = File.Exists(Path.Combine(workspace.RootDirectory, "README.md")) },
+                new { name = "docs", path = Display(Path.Combine(workspace.RootDirectory, "docs")), exists = Directory.Exists(Path.Combine(workspace.RootDirectory, "docs")) },
+            },
         };
     }
 
