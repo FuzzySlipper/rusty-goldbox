@@ -1,0 +1,36 @@
+{
+  "type": "combat-behavior",
+  "id": "three_beats",
+  "name": "Three beats",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "10",
+      "commit": "plan",
+      "steps": [
+        {
+          "action": {
+            "action": "ascend:melee_attack",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        },
+        {
+          "action": {
+            "action": "ascend:melee_attack",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        },
+        {
+          "action": {
+            "action": "ascend:melee_attack",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

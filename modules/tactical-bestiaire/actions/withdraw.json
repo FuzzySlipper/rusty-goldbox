@@ -1,0 +1,19 @@
+{
+  "type": "action",
+  "id": "withdraw",
+  "name": "Withdraw",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "valid_target": "combat.distance < 4",
+  "always": [
+    {
+      "op": "move",
+      "toward": "away",
+      "distance": "floor(self.movement / 10)",
+      "beyond": "4",
+      "provokes": false
+    }
+  ]
+}

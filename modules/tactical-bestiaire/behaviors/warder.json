@@ -1,0 +1,64 @@
+{
+  "type": "combat-behavior",
+  "id": "warder",
+  "name": "Protect the wounded",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "30",
+      "commit": "plan",
+      "steps": [
+        {
+          "destination": {
+            "kind": "toward",
+            "distance": "1"
+          },
+          "action": {
+            "action": "tactical-bestiaire:approach_ally"
+          },
+          "target": "hurt_ally",
+          "target_score": "target.max_hit_points - target.hit_points"
+        },
+        {
+          "action": {
+            "action": "classic:spell_heal",
+            "amount": "1d8"
+          },
+          "spell": "classic:cure_light_wounds",
+          "target": "hurt_ally",
+          "target_score": "target.max_hit_points - target.hit_points"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "priority": "20",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:spell_heal",
+            "amount": "1d8"
+          },
+          "spell": "classic:cure_light_wounds",
+          "target": "hurt_ally",
+          "target_score": "target.max_hit_points - target.hit_points"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "priority": "10",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Staff",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

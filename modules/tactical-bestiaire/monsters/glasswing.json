@@ -1,0 +1,33 @@
+{
+  "type": "monster",
+  "id": "glasswing",
+  "name": "Glasswing",
+  "class": "classic:fighter",
+  "level": 2,
+  "behavior": "tactical-bestiaire:skirmisher",
+  "tracks": {
+    "classic:hit_points": "2d6 + 2"
+  },
+  "stats": {
+    "ac": "7",
+    "dex": "16",
+    "str": "8",
+    "movement": "120",
+    "size": "'small'"
+  },
+  "actions": [
+    {
+      "action": "classic:missile_attack",
+      "name": "Needle volley",
+      "damage": "1d6",
+      "increment": "6"
+    },
+    {
+      "action": "tactical-bestiaire:withdraw"
+    },
+    {
+      "action": "classic:close"
+    }
+  ],
+  "xp": 35
+}

@@ -1,0 +1,15 @@
+{
+  "type": "campaign",
+  "id": "tactical_expedition",
+  "name": "The Tactical Gallery",
+  "start": {
+    "area": "gallery",
+    "entry": "gate"
+  },
+  "party": {
+    "min": 1,
+    "max": 12
+  },
+  "intro": "intro",
+  "skin": "placeholder-art:stone"
+}

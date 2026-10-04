@@ -1,0 +1,27 @@
+{
+  "type": "encounter",
+  "id": "gallery",
+  "name": "Gallery sentries",
+  "monsters": [
+    {
+      "monster": "tactical-bestiaire:glasswing",
+      "count": "1"
+    },
+    {
+      "monster": "tactical-bestiaire:dusklark",
+      "count": "1"
+    },
+    {
+      "monster": "tactical-bestiaire:mossward",
+      "count": "1"
+    }
+  ],
+  "terrain": [
+    "..........",
+    "....#.....",
+    "..........",
+    ".....#....",
+    "..........",
+    ".........."
+  ]
+}

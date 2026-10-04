@@ -1,0 +1,21 @@
+{
+  "type": "monster",
+  "id": "zone_striker",
+  "name": "Zone striker",
+  "class": "ascend:warrior",
+  "level": 1,
+  "tracks": {
+    "ascend:hit_points": "12"
+  },
+  "stats": {
+    "ac": "14",
+    "might": "12",
+    "grace": "10"
+  },
+  "actions": [
+    {
+      "action": "tactical-zones:training_tap"
+    }
+  ],
+  "xp": 10
+}

@@ -1,0 +1,24 @@
+{
+  "type": "combat-behavior",
+  "id": "duelist",
+  "name": "Pick the weakest exposed foe",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "15",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Needle volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy",
+          "target_score": "0 - target.hit_points"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

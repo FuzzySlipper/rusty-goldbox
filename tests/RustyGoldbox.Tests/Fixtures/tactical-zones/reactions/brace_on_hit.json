@@ -1,0 +1,12 @@
+{
+  "type": "reaction",
+  "id": "brace_on_hit",
+  "name": "Brace on impact",
+  "trigger": "hit",
+  "cost": {
+    "reaction": 1
+  },
+  "use": {
+    "action": "tactical-zones:brace"
+  }
+}

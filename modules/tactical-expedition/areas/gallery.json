@@ -1,0 +1,60 @@
+{
+  "type": "area",
+  "id": "gallery",
+  "name": "The Tactical Gallery",
+  "wall_set": "placeholder-art:stone_wall",
+  "map": [
+    "+--+--+--+--+--+",
+    "|              |",
+    "+  +--+--+--+  +",
+    "|              |",
+    "+--+--+--+--+--+"
+  ],
+  "cells": [
+    {
+      "at": [
+        1,
+        1
+      ],
+      "zone": "gallery",
+      "backdrop": "placeholder-art:crypt",
+      "event": "sentries",
+      "once": true
+    },
+    {
+      "at": [
+        4,
+        1
+      ],
+      "zone": "gallery",
+      "backdrop": "placeholder-art:crypt",
+      "event": "watcher",
+      "once": true
+    },
+    {
+      "at": [
+        2,
+        1
+      ],
+      "zone": "gallery",
+      "backdrop": "placeholder-art:crypt",
+      "event": "briefing"
+    }
+  ],
+  "entries": {
+    "gate": {
+      "at": [
+        0,
+        1
+      ],
+      "facing": "east"
+    },
+    "far_end": {
+      "at": [
+        4,
+        1
+      ],
+      "facing": "west"
+    }
+  }
+}

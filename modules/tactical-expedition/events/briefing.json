@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "briefing",
+  "kind": "menu",
+  "text": "A warder waits by the first plinth.",
+  "options": [
+    {
+      "label": "Invite Ivy to travel with the party",
+      "next": "join_ivy"
+    },
+    {
+      "label": "Enter the gallery alone"
+    }
+  ],
+  "picture": "placeholder-art:cleric_portrait"
+}

@@ -1,0 +1,39 @@
+{
+  "type": "monster",
+  "id": "mossward",
+  "name": "Mossward",
+  "class": "classic:cleric",
+  "level": 2,
+  "behavior": "tactical-bestiaire:warder",
+  "tracks": {
+    "classic:hit_points": "2d8",
+    "classic:spells_1": "2"
+  },
+  "spells": [
+    {
+      "spell": "classic:cure_light_wounds"
+    }
+  ],
+  "stats": {
+    "ac": "5",
+    "str": "12",
+    "dex": "10",
+    "wis": "15",
+    "movement": "90",
+    "size": "'medium'"
+  },
+  "actions": [
+    {
+      "action": "tactical-bestiaire:approach_ally"
+    },
+    {
+      "action": "classic:melee_attack",
+      "name": "Staff",
+      "damage": "1d6"
+    },
+    {
+      "action": "classic:close"
+    }
+  ],
+  "xp": 40
+}

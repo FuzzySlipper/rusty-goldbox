@@ -1,0 +1,44 @@
+{
+  "type": "combat",
+  "id": "zones",
+  "name": "Shared zones",
+  "initiative": "1d20 + self.initiative_bonus",
+  "initiative_by": "creature",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "field": {
+    "width": 8,
+    "height": 4,
+    "mode": "zones",
+    "metric": "manhattan",
+    "terrain": {
+      "#": {
+        "name": "Pillar",
+        "passable": false,
+        "blocks_sight": true
+      },
+      "~": {
+        "name": "Rubble",
+        "cost": 2
+      }
+    }
+  },
+  "budget": [
+    {
+      "id": "standard",
+      "per_turn": 3
+    },
+    {
+      "id": "reaction",
+      "per_turn": 1
+    }
+  ],
+  "track": "ascend:hit_points",
+  "defeated": "self.hit_points <= 0",
+  "actions": [
+    {
+      "action": "tactical-zones:advance"
+    }
+  ]
+}
