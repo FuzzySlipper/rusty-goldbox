@@ -56,7 +56,7 @@ will reject.
 | Investigation | `scene.arrival`, `scene.hub_investigation`, `scene.environs_hooks` | Arrival and evidence gathering. |
 | Rescue | `scene.brugh_search`, `scene.children_rescue` | Search, release, and escape. |
 | Resolution | `scene.return_resolution` | Village accounting and ending selection. |
-| State | `child_*`, `double_*`, `ending_id`, `epilogue_*`, `state.glamour_truth` | Scalar campaign facts described below; member perception remains the #9362 seam. |
+| State | `child_*`, `double_*`, `ending_id`, `epilogue_*`, `state.glamour_truth` | Scalar campaign facts described below; each character owns its perception scope/mode. |
 
 Child IDs are immutable and identify the real children, regardless of who is
 wearing the matching mask:

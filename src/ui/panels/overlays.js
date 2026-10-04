@@ -120,8 +120,10 @@ export function createOverlay(send, ui) {
     const former = who.formerClasses === 'waiting'
       ? [button('Call on former class', play(`former ${index + 1} on`))]
       : who.formerClasses === 'called' ? [button('Set former class aside', play(`former ${index + 1} off`))] : [];
+    const viewButton = who.perception ? [button(`View as ${who.name}`, play(`view ${index + 1}`))] : [];
     return frame(who.name, `${kind} · ${who.experience} xp`,
       row(...(party.length > 1 ? [button('◀ Previous', step(-1)), button('Next ▶', step(1))] : []),
+        ...viewButton,
         // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
         ...(who.levelReady ? [button('Level up', play(`level ${index + 1}`))] : []),
         ...former),

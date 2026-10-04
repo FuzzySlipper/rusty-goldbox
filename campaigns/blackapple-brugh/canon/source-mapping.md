@@ -106,7 +106,7 @@ rescue. `omit` means the adaptation does not carry that source material.
 | Source section | Pages | Disposition | Canon destination |
 | --- | ---: | --- | --- |
 | Entry and exit rules | 23 | retain/adapt | `beat.portal_opening`, `beat.treasure_exit` |
-| Illusions in the Brugh | 23 | retain/adapt | `state.glamour_truth`, `fifthsave_int`, member-perception gap #9362 |
+| Illusions in the Brugh | 23 | retain/adapt | `state.glamour_truth`, `fifthsave_int`, character perception and text views |
 | Elf Lord and Moth-in-Water | 24–25 | retain/adapt | `npc.elf-lord`, `npc.moth-in-water` |
 | Brugh elves and missing children | 25 | retain/adapt | factions and seven child/double records |
 

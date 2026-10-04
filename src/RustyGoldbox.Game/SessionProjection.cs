@@ -145,11 +145,25 @@ internal static class SessionProjection
                     ["prices"] = new JsonArray(service.Prices.Select(price => (JsonNode)JsonValue.Create(price)!).ToArray()),
                 }).ToArray()),
             } : null;
-            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
+            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl, runner)).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
             projection["picture"] = state.Picture is Definition shown ? Picture(session.Set!.Rules!, shown, imageUrl) : null;
             projection["music"] = state.Music?.QualifiedId;
+            projection["viewEvent"] = state.ViewEvent?.QualifiedId;
+            projection["viewOptions"] = new JsonArray(runner.CurrentViews().Select(view => (JsonNode)Presentation(session.Set!.Rules!, view, imageUrl)).ToArray());
+            projection["view"] = state.ViewedCharacter is Character viewed
+                ? runner.ViewFor(viewed) is ViewPresentation selected
+                    ? new JsonObject
+                    {
+                        ["member"] = state.Party.IndexOf(viewed) + 1,
+                        ["who"] = viewed.Name,
+                        ["mode"] = selected.Mode,
+                        ["text"] = selected.Text,
+                        ["picture"] = selected.Picture is Definition selectedPicture ? Picture(session.Set!.Rules!, selectedPicture, imageUrl) : null,
+                    }
+                    : null
+                : null;
         }
 
         return projection;
@@ -444,10 +458,11 @@ internal static class SessionProjection
         return new JsonArray(spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray());
     }
 
-    private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl)
+    private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl, CampaignRunner? runner = null)
     {
         List<ModuleDiagnostic> skillProblems = [];
         SkillPointOptions? skillPoints = CharacterRules.GetSkillPointOptions(rules, character, skillProblems);
+        ViewPresentation? view = runner?.ViewFor(character);
         return new JsonObject
         {
             ["name"] = character.Name,
@@ -490,6 +505,12 @@ internal static class SessionProjection
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
             ["portraitPicture"] = character.Portrait is Definition portrait ? Picture(rules, portrait, imageUrl) : null,
+            ["perception"] = character.Perception is PerceptionState perception ? new JsonObject
+            {
+                ["scope"] = perception.Scope,
+                ["mode"] = perception.Mode,
+            } : null,
+            ["view"] = view is ViewPresentation selected ? Presentation(rules, selected, imageUrl) : null,
             ["age"] = character.Lifepath is null ? null : character.Age,
             ["lifepath"] = character.Lifepath?.QualifiedId,
             ["careerTerms"] = new JsonArray(character.CareerTerms.Select(term => new JsonObject
@@ -510,6 +531,16 @@ internal static class SessionProjection
                 ["choices"] = new JsonArray(term.Choices.Select(choice => (JsonNode)choice).ToArray()),
                 ["results"] = new JsonArray(term.Results.Select(result => (JsonNode)result).ToArray()),
             }).ToArray()),
+        };
+    }
+
+    private static JsonObject Presentation(RuleSet rules, ViewPresentation view, Func<Definition, string?> imageUrl)
+    {
+        return new JsonObject
+        {
+            ["mode"] = view.Mode,
+            ["text"] = view.Text,
+            ["picture"] = view.Picture is Definition picture ? Picture(rules, picture, imageUrl) : null,
         };
     }
 

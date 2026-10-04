@@ -25,7 +25,13 @@ public sealed partial class CampaignRunner
         Character character;
         if (joining)
         {
-            character = _state.AbsentNpcs.FirstOrDefault(character => character.Npc == npc) ?? _rules.Npcs[npc].Copy();
+            Character? absent = _state.AbsentNpcs.FirstOrDefault(character => character.Npc == npc);
+            character = absent ?? _rules.Npcs[npc].Copy();
+            if (absent is null)
+            {
+                character.Perception = null;
+            }
+
             _state.AbsentNpcs.Remove(character);
             _state.Party.Add(character);
         }
@@ -34,6 +40,11 @@ public sealed partial class CampaignRunner
             character = present!;
             _state.Party.Remove(character);
             _state.AbsentNpcs.Add(character);
+            if (ReferenceEquals(_state.ViewedCharacter, character))
+            {
+                _state.ViewedCharacter = null;
+                _state.Picture = null;
+            }
         }
 
         facts.Add(new PartyFact(joining, npc, character.Name, _state.Party.Count));

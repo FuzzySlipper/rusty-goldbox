@@ -4,6 +4,9 @@ using RustyGoldbox.Core.Expressions;
 
 namespace RustyGoldbox.Core.Campaigns;
 
+/// <summary>A module-authored presentation alternative for a current text event.</summary>
+public sealed record ViewPresentation(string Mode, string Text, Definition? Picture);
+
 /// <summary>Everything about a campaign in progress: the one mutable owner of play state.</summary>
 public sealed class CampaignState
 {
@@ -73,6 +76,16 @@ public sealed class CampaignState
 
     /// <summary>The picture the latest event showed, until the party moves or another replaces it.</summary>
     public Definition? Picture { get; set; }
+
+    /// <summary>The current text event's member-specific presentation alternatives.</summary>
+    public Definition? ViewEvent { get; set; }
+
+    /// <summary>
+    /// The member whose view was selected in this running session. This is a
+    /// transient object reference, deliberately omitted from saves; a player
+    /// can select the member again after loading.
+    /// </summary>
+    public Character? ViewedCharacter { get; set; }
 
     /// <summary>The music playing: the latest event's that named some.</summary>
     public Definition? Music { get; set; }

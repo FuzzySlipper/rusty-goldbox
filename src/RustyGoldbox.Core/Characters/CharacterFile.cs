@@ -101,6 +101,11 @@ public static class CharacterFile
         new("prepared", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Unspent prepared copies; omit for the full plan."),
         new("conditions", new Definitions.ListKind(new Definitions.ReferenceKind("condition")), true, "Held conditions."),
         new("portrait", new Definitions.ReferenceKind("asset", "portrait"), false, "Portrait art."),
+        new("perception", new Definitions.ObjectKind(
+        [
+            new("scope", new Definitions.TextKind(), true, "The module-authored expedition scope."),
+            new("mode", new Definitions.TextKind(), true, "The module-authored result mode."),
+        ]), false, "The member's persisted perception result for the current expedition."),
         new("uses_former_classes", new Definitions.BooleanKind(), false, "Calling on dormant classes."),
         new("forfeits_experience", new Definitions.BooleanKind(), false, "Experience forfeited this adventure."),
     ];
@@ -349,6 +354,14 @@ public static class CharacterFile
                 writer.WriteString("portrait", portrait.QualifiedId);
             }
 
+            if (character.Perception is PerceptionState perception)
+            {
+                writer.WriteStartObject("perception");
+                writer.WriteString("scope", perception.Scope);
+                writer.WriteString("mode", perception.Mode);
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndObject();
         }
     }
@@ -549,6 +562,8 @@ public static class CharacterFile
                 character.Portrait = asset;
             }
 
+            ReadPerception(root, character);
+
             List<ModuleDiagnostic> stagedProblems = [];
             CharacterRules.ValidateSkillPointState(_rules, character, stagedProblems);
             foreach (ModuleDiagnostic problem in stagedProblems)
@@ -567,6 +582,49 @@ public static class CharacterFile
             }
 
             return problems.Count > _before ? null : character;
+        }
+
+        private void ReadPerception(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("perception", out JsonElement perception))
+            {
+                return;
+            }
+
+            if (perception.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.perception", "perception must be an object with nonempty scope and mode text.");
+                return;
+            }
+
+            foreach (JsonProperty property in perception.EnumerateObject())
+            {
+                if (property.Name is not ("scope" or "mode"))
+                {
+                    Error($"$.perception.{property.Name}", $"'{property.Name}' is not a perception field. Fields: scope, mode.");
+                }
+            }
+
+            string? scope = perception.TryGetProperty("scope", out JsonElement scopeValue) && scopeValue.ValueKind == JsonValueKind.String
+                ? scopeValue.GetString()
+                : null;
+            string? mode = perception.TryGetProperty("mode", out JsonElement modeValue) && modeValue.ValueKind == JsonValueKind.String
+                ? modeValue.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(scope))
+            {
+                Error("$.perception.scope", "perception.scope must be nonempty text.");
+            }
+
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                Error("$.perception.mode", "perception.mode must be nonempty text.");
+            }
+
+            if (scope is not null && mode is not null && !string.IsNullOrWhiteSpace(scope) && !string.IsNullOrWhiteSpace(mode))
+            {
+                character.Perception = new PerceptionState(scope, mode);
+            }
         }
 
         /// <summary>Reads "levels": one { "class", "gain", "features"? } per character level, none past its class's last level.</summary>

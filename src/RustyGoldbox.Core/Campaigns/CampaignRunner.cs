@@ -21,7 +21,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -45,6 +45,10 @@ public sealed partial class CampaignRunner
         state.Party.AddRange(party);
         foreach (Character character in state.Party)
         {
+            // A character file is reusable input. Perception belongs to this
+            // expedition and must never leak from a prior campaign run.
+            character.Perception = null;
+
             if (character.HasPendingSkillPoints)
             {
                 throw new RuleFailure(new ModuleDiagnostic(
@@ -120,25 +124,25 @@ public sealed partial class CampaignRunner
         }
 
         string verb = words.Length == 0 ? "" : words[0].ToLowerInvariant();
-        if (_state.PendingMenu is not null && verb is not ("choose" or "look" or "status"))
+        if (_state.PendingMenu is not null && verb is not ("choose" or "look" or "view" or "status"))
         {
             facts.Add(new RefusedFact($"choose an option first (choose <n>)."));
             return facts;
         }
 
-        if (_state.PendingShop is not null && verb is not ("buy" or "sell" or "leave" or "look" or "status"))
+        if (_state.PendingShop is not null && verb is not ("buy" or "sell" or "leave" or "look" or "view" or "status"))
         {
             facts.Add(new RefusedFact("leave the shop first, or trade with buy <n> or sell <n>."));
             return facts;
         }
 
-        if (_state.PendingTemple is not null && verb is not ("serve" or "leave" or "look" or "status"))
+        if (_state.PendingTemple is not null && verb is not ("serve" or "leave" or "look" or "view" or "status"))
         {
             facts.Add(new RefusedFact("leave the temple first, or use serve <service> <member>."));
             return facts;
         }
 
-        if (_state.PendingTraining is not null && verb is not ("train" or "leave" or "look" or "status"))
+        if (_state.PendingTraining is not null && verb is not ("train" or "leave" or "look" or "view" or "status"))
         {
             facts.Add(new RefusedFact("leave the trainer first, or use train <member> with level choices."));
             return facts;
@@ -151,7 +155,7 @@ public sealed partial class CampaignRunner
                 break;
             case "left" or "right" or "around" when words.Length == 1:
                 _state.Facing = Facings.Turn(_state.Facing, verb == "left" ? -1 : verb == "right" ? 1 : 2);
-                _state.Picture = null;
+                ClearPresentation();
                 facts.Add(new TurnedFact(_state.Facing));
                 break;
             case "search" when words.Length is 1 or 2:
@@ -193,6 +197,9 @@ public sealed partial class CampaignRunner
                 break;
             case "look" when words.Length == 1:
                 facts.Add(Look());
+                break;
+            case "view" when words.Length == 2 && int.TryParse(words[1], out int viewedMember):
+                View(viewedMember, facts);
                 break;
             case "status" when words.Length == 1:
                 facts.Add(Status());
@@ -275,9 +282,16 @@ public sealed partial class CampaignRunner
         }
 
         (_state.X, _state.Y) = (x, y);
-        _state.Picture = null;
+        ClearPresentation();
         facts.Add(new MovedFact(x, y, _state.Facing));
         Trigger(dice, facts);
+    }
+
+    private void ClearPresentation()
+    {
+        _state.Picture = null;
+        _state.ViewEvent = null;
+        _state.ViewedCharacter = null;
     }
 
     /// <summary>Runs the event of the cell the party just entered, if its facing and once-only rules allow.</summary>
@@ -370,7 +384,16 @@ public sealed partial class CampaignRunner
         switch (json.GetProperty("kind").GetString())
         {
             case "text":
+                _state.ViewEvent = json.TryGetProperty("views", out JsonElement views)
+                    && views.ValueKind == JsonValueKind.Array
+                    && views.GetArrayLength() > 0
+                    ? evt
+                    : null;
+                _state.ViewedCharacter = null;
                 facts.Add(new TextFact(json.GetProperty("text").GetString()!));
+                return Next(evt, "$.next");
+            case "perception":
+                ResolvePerception(evt, dice, facts);
                 return Next(evt, "$.next");
             case "menu":
                 List<(int Number, string Label, int Index)> offered = Offered(evt);
@@ -417,6 +440,7 @@ public sealed partial class CampaignRunner
                 return Next(evt, "$.otherwise");
             case "teleport":
                 Definition area = _rules.Reference(evt, "$.area");
+                ClearPresentation();
                 PlaceAt(_state, area, area.Json.GetProperty("entries").GetProperty(json.GetProperty("entry").GetString()!));
                 facts.Add(new ArrivedFact(area.Name, _state.X, _state.Y, _state.Facing));
                 return Next(evt, "$.next");
@@ -447,6 +471,124 @@ public sealed partial class CampaignRunner
                 facts.Add(new EndedFact(json.GetProperty("text").GetString()!));
                 return null;
         }
+    }
+
+    /// <summary>
+    /// Resolves the current expedition's member-specific perception. Results
+    /// are stored on the existing Character objects, so duplicate names and
+    /// NPC dismissal/rejoin do not need another identity table.
+    /// </summary>
+    private void ResolvePerception(Definition evt, DiceRoller dice, List<PlayFact> facts)
+    {
+        string scope = evt.Json.GetProperty("scope").GetString()!;
+        List<Character> all = _state.Party.Concat(_state.AbsentNpcs).Distinct().ToList();
+        bool changedScope = all
+            .Select(character => character.Perception?.Scope)
+            .Where(existing => existing is not null)
+            .Any(existing => !StringComparer.Ordinal.Equals(existing, scope));
+        bool reset = evt.Json.TryGetProperty("reset", out JsonElement resetValue) && resetValue.GetBoolean();
+        if (reset || changedScope)
+        {
+            foreach (Character character in all)
+            {
+                character.Perception = null;
+            }
+        }
+
+        Definition check = _rules.Reference(evt, "$.check");
+        Evaluator evaluator = new(_rules, dice);
+        string successMode = evt.Json.GetProperty("success_mode").GetString()!;
+        string failureMode = evt.Json.GetProperty("failure_mode").GetString()!;
+        for (int index = 0; index < _state.Party.Count; index++)
+        {
+            Character character = _state.Party[index];
+            if (character.Perception is PerceptionState { Scope: var existing } && StringComparer.Ordinal.Equals(existing, scope))
+            {
+                continue;
+            }
+
+            Creature creature = character.ToCreature();
+            int before = dice.Rolls.Count;
+            decimal modifier = evt.Json.TryGetProperty("modifier", out _)
+                ? Located(evt, "$.modifier", () => evaluator.Evaluate(
+                    _rules.Expression(evt, "$.modifier"),
+                    new Scope(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area))).Number)
+                : 0;
+            CheckResult result = Located(evt, "$.check", () => evaluator.Check(check, creature, null, modifier));
+            string mode = result.Success ? successMode : failureMode;
+            character.Perception = new PerceptionState(scope, mode);
+            facts.Add(new PerceptionFact(index + 1, character.Name, scope, mode, result)
+            {
+                Rolls = dice.Rolls.Skip(before).ToList(),
+            });
+        }
+    }
+
+    /// <summary>The authored presentation alternatives on the current text event.</summary>
+    public IReadOnlyList<ViewPresentation> CurrentViews()
+    {
+        return _state.ViewEvent is Definition eventDefinition ? ViewsOf(eventDefinition) : [];
+    }
+
+    /// <summary>The authored presentation matching a character's persisted mode.</summary>
+    public ViewPresentation? ViewFor(Character character)
+    {
+        string? mode = character.Perception?.Mode;
+        return mode is null ? null : CurrentViews().FirstOrDefault(view => StringComparer.Ordinal.Equals(view.Mode, mode));
+    }
+
+    private IReadOnlyList<ViewPresentation> ViewsOf(Definition eventDefinition)
+    {
+        if (!eventDefinition.Json.TryGetProperty("views", out JsonElement views) || views.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        List<ViewPresentation> result = [];
+        int index = 0;
+        foreach (JsonElement view in views.EnumerateArray())
+        {
+            Definition? picture = view.TryGetProperty("picture", out _)
+                ? _rules.Reference(eventDefinition, $"$.views[{index}].picture")
+                : null;
+            result.Add(new ViewPresentation(view.GetProperty("mode").GetString()!, view.GetProperty("text").GetString()!, picture));
+            index++;
+        }
+
+        return result;
+    }
+
+    private void View(int member, List<PlayFact> facts)
+    {
+        if (member < 1 || member > _state.Party.Count)
+        {
+            facts.Add(new RefusedFact($"{member} is not a party member; members are 1 to {_state.Party.Count}."));
+            return;
+        }
+
+        if (_state.ViewEvent is null)
+        {
+            facts.Add(new RefusedFact("there is no member-specific view to select."));
+            return;
+        }
+
+        Character character = _state.Party[member - 1];
+        if (character.Perception is null)
+        {
+            facts.Add(new RefusedFact($"{character.Name} has no perception result for this view."));
+            return;
+        }
+
+        ViewPresentation? view = ViewFor(character);
+        if (view is null)
+        {
+            facts.Add(new RefusedFact($"the current event has no view for {character.Perception.Mode}."));
+            return;
+        }
+
+        _state.ViewedCharacter = character;
+        _state.Picture = view.Picture;
+        facts.Add(new ViewFact(member, character.Name, view.Mode, view.Text, view.Picture));
     }
 
     private Definition? Treasure(Definition evt, DiceRoller dice, List<PlayFact> facts)

@@ -99,7 +99,7 @@ internal static class GoldboxCli
           goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>]
           goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>]
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, status.
+              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
               --save writes the state at the end; --load continues a save exactly.
 
         Every command accepts --json for structured output.

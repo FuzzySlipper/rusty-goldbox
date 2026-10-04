@@ -288,3 +288,12 @@ campaign's party maximum/minimum and never remove player characters.
 `AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.
+
+For scenes perceived differently by party members, author a `perception` event
+with `scope`, `check`, `success_mode` and `failure_mode`, then a text event with
+matching `views`. `goldbox schema events --json` describes both and includes
+examples. `view <member>` in scripted play, or the member sheet's view control
+in the Game, selects the member's text and picture over the shared area. Results
+belong to the existing character and survive save/load and NPC dismissal.
+Use `reset: true` on an expedition-entry event when the same scope must be
+rolled again; ordinary same-scope room events preserve the result.

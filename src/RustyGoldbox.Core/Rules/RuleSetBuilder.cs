@@ -1778,6 +1778,12 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "text":
+                CheckTextViews(definition);
+                break;
+            case "perception":
+                CheckPerception(definition);
+                break;
             case "give" or "take":
                 if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
                 {
@@ -1833,6 +1839,48 @@ public sealed class RuleSetBuilder
             case "combat":
                 CheckCombatEvent(definition);
                 break;
+        }
+    }
+
+    private void CheckTextViews(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("views", out JsonElement views))
+        {
+            return;
+        }
+
+        if (views.GetArrayLength() == 0)
+        {
+            Error(definition, "event.views", "$.views", "A text event's views must contain at least one authored mode.");
+            return;
+        }
+
+        HashSet<string> modes = new(StringComparer.Ordinal);
+        int index = 0;
+        foreach (JsonElement view in views.EnumerateArray())
+        {
+            string mode = view.GetProperty("mode").GetString()!;
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", "A view mode must be nonempty text.");
+            }
+            else if (!modes.Add(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", $"View mode '{mode}' is repeated; each authored view needs a distinct mode.");
+            }
+
+            index++;
+        }
+    }
+
+    private void CheckPerception(Definition definition)
+    {
+        foreach (string field in new[] { "scope", "success_mode", "failure_mode" })
+        {
+            if (string.IsNullOrWhiteSpace(definition.Json.GetProperty(field).GetString()))
+            {
+                Error(definition, "event.perception", $"$.{field}", $"{field} must be nonempty text.");
+            }
         }
     }
 

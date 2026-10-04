@@ -467,6 +467,15 @@ Combat is built so that no die convention is assumed:
   bring a `picture` (shown until the party moves or another event shows one),
   a `sound` (played once) and `music` (looping until another event's music);
   the play transcript names them, and saves keep the picture and music.
+- **Member perception.** A `perception` event names a check, a scope and its
+  success/failure modes, with an optional check modifier. Each active character
+  owns one persisted scope/mode result. Repeating the same scope keeps that
+  result; changing scope or authoring `reset: true` clears active and absent NPC
+  results before resolving active members through the normal evaluator and
+  Engine dice. A text event may supply `views` with distinct mode, text and
+  optional picture fields. `view <member>` selects that member's presentation;
+  the area, routes, variables and consequences remain shared. Saves retain the
+  current view event and selection. Modes and check names are authored data.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
   an item and an optional campaign guard; stock is unlimited and offered at
   the item's cost in its declared currency. A ruleset's single `economy`

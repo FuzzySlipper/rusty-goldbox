@@ -126,7 +126,8 @@ not have two separate event chains. The current minimum paired set is C1, C2,
 C6/C7, C11, C12, C17, C26, and C27. Other rooms may use a single description
 with subtle perception cues. The per-member mode is resolved by the
 Engine-backed `fifthsave_int` rule in [premise.md](premise.md); member-keyed
-storage and view projection are the perception gap owned by child #9362.
+storage belongs to each character; text views and the ordinary member control
+select presentation over the same campaign position and routes.
 
 ## Art and map treatment
 

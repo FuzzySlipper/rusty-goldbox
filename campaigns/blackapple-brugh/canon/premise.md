@@ -90,9 +90,10 @@ use and mapped in [source-mapping.md](source-mapping.md):
   once per entry, not by hashing or alternating members. Every keyed room that
   benefits from the contrast supplies both descriptions. The mode changes what
   the character can notice and how the scene is presented; it does not create
-  separate maps, duplicate enemies, or contradictory exits. Member-keyed check
-  storage and view projection remain the concrete perception gap tracked by
-  child task #9362; child and double campaign facts use the scalar variables in
+  separate maps, duplicate enemies, or contradictory exits. The authored entry
+  invokes a `perception` event with `reset: true`; each character owns its
+  persisted scope/mode, and text `views` supply the paired presentation.
+  Child and double campaign facts use the scalar variables in
   [README.md](README.md).
 * **Mirrors:** the Figwort Manor and Hen's Teeth mirrors are one-way entry
   routes once the Elf Lord opens C1. In this digital adaptation, the prepared
