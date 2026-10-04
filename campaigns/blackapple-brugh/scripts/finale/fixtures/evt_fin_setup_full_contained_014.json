@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_014",
+  "kind": "set",
+  "variable": "double_bernard_goodall",
+  "value": "\"exposed\"",
+  "next": "evt_fin_setup_full_contained_015"
+}

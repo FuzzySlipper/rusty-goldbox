@@ -1,0 +1,603 @@
+$ goldbox play --campaign campaigns/blackapple-brugh/modules/blackapple-brugh --modules modules --modules campaigns/blackapple-brugh/modules --party mara.json,orin.json,sela.json,tamsin.json --seed 9431 --script campaigns/blackapple-brugh/scripts/routes/full-success-level.script --save full-success-level.json --fail-on-refusal
+seed 9431
+  The party is in Blackapple Village at [1, 0], facing south.
+  [picture blackapple-art:blackapple_village]
+  Seven Blackapple children have changed beyond recognition. Their families need witnesses who will listen before condemning them. Follow the north road into the village; the Jolly Fox offers shelter, the Figwort household has invited you to dinner, and the forest keeps the older story.
+  [picture blackapple-art:blackapple_village]
+  The north road drops into Blackapple, a careful village of pig farms, slate roofs, and old stories about a forest that must not be cut. Every doorway bears a little horseshoe. The guardhouse stands southwest of the north road. Follow the west lane before heading south through its gate; beyond it, the square is already whispering about the children.
+  arrival_seen is now true.
+  The sentry points out the Jolly Fox, the priory, and the manor on the hill. A folded invitation from the Figwort household asks you to hear the family out. What will you do first? [1] Ask the guard for directions  [2] Watch the village square  [3] Accept the Figwort dinner invitation  [4] Find a safe bed at the Jolly Fox
+> choose 2
+  The party chooses 2: Watch the village square.
+  [picture blackapple-art:blackapple_village]
+  A child wearing Arthur Figwort's face darts through the market, knocks over a stall, and laughs when an older vendor falls. When the vendor asks his name, the child repeats a courtly phrase that no Blackapple child would use. A crowd begins to close in. [1] Stand between the crowd and the child  [2] Call the priory clerics to separate them  [3] Leave before the crowd turns on you
+> choose 1
+  The party chooses 1: Stand between the crowd and the child.
+  evidence_double_behavior is now true.
+  first_help_done is now true.
+  village_trust is now 1.
+  [picture blackapple-art:blackapple_village]
+  You keep the vendor from striking the child. The child slips away toward the manor, still smiling, but not before you notice that the laughter never reaches his eyes. The vendor thanks you; the crowd now has a reason to listen instead of panic.
+> right
+  The party faces west.
+> forward
+  The party moves to [0, 0], facing west.
+> left
+  The party faces south.
+> forward
+  The party moves to [0, 1], facing south.
+  [picture blackapple-art:blackapple_village]
+  Two sentries stop you at the north road. They collect a small travel toll, but they are more willing to talk once they know you mean to help the village. [1] Open the toll counter (1 sp per active member)  [2] Ask what happened to the children  [3] Refuse and walk on
+> choose 2
+  The party chooses 2: Ask what happened to the children.
+  blackapple_guardhouse_question_rewarded is now true.
+  village_trust is now 2.
+  [picture blackapple-art:blackapple_village]
+  The sentry lowers his voice. Seven children have been acting unlike themselves, and the worst of them, Arthur Figwort, was sent to a sanitarium after a public outburst. The guard has no proof of fairy work, only the certainty that ordinary punishment has not helped.
+> left
+  The party faces east.
+> forward
+  The party moves to [1, 1], facing east.
+  [picture blackapple-art:blackapple_village]
+  The square remembers your first intervention. Vendors will answer questions now, although some want the families protected and others want a public culprit. Where will you take the lead next? [1] Speak with the parents  [2] Attend the Figwort dinner  [3] Take shelter at the Jolly Fox  [4] Take the forest road
+> choose 1
+  The party chooses 1: Speak with the parents.
+  [picture blackapple-art:blackapple_village]
+  The parents of Amelia, Bernard, Giles, Philip, Ursula, Stevie, and Arthur speak in low voices. Each knows a child who returned from an errand with a changed temper. A younger sibling, safely out of earshot, remembers the children reciting a mirror rhyme before they vanished from the manor. [1] Compare each family's memory  [2] Protect the frightened siblings while they talk  [3] Promise not to repeat an unproven rumor
+> choose 1
+  The party chooses 1: Compare each family's memory.
+  evidence_parent_suspicion is now true.
+  mirror_rhyme_known is now true.
+  [picture blackapple-art:blackapple_village]
+  The stories line up: the children gathered at Figwort Manor, spoke to a face in the mirror, and counted to three. The remembered words are enough to prepare a route, but not enough to prove where the children went. You now have a witness's lead rather than a village accusation.
+> right
+  The party faces south.
+> forward
+  The party moves to [1, 2], facing south.
+  [picture blackapple-art:blackapple_village]
+  The parents of Amelia, Bernard, Giles, Philip, Ursula, Stevie, and Arthur speak in low voices. Each knows a child who returned from an errand with a changed temper. A younger sibling, safely out of earshot, remembers the children reciting a mirror rhyme before they vanished from the manor. [1] Compare each family's memory  [2] Protect the frightened siblings while they talk  [3] Promise not to repeat an unproven rumor
+> choose 3
+  The party chooses 3: Promise not to repeat an unproven rumor.
+  evidence_parent_suspicion is now true.
+  mirror_rhyme_known is now true.
+  [picture blackapple-art:blackapple_village]
+  You refuse to turn suspicion into a sentence. The families still give you the rhyme and the names of all seven children, but ask that you bring back something more reliable than a rumor before anyone is confronted.
+> forward
+  The party moves to [1, 3], facing south.
+  [picture blackapple-art:blackapple_village]
+  At the southern road, the village falls behind you and the old forest begins. The Hen's Teeth lies along the Moribund Way; the Faehill is a landmark and warning, never an entrance. [1] Take the forest road  [2] Return to the Jolly Fox  [3] Return to the village square
+> choose 1
+  The party chooses 1: Take the forest road.
+  The party is in Blackapple Environs at [0, 2], facing east.
+  [picture blackapple-art:tenpenny_forest]
+  The north road narrows into the old forest. A fork leads toward the warm lights of the Hen's Teeth, while another track climbs toward the Faehill and its standing stones. Tenpenny Wood lies deeper among the living trees. Nothing here is a physical entrance to the Brugh; the forest offers warnings, witnesses, and a route back to Blackapple.
+  Which lead will you follow first? [1] Take the Moribund Way to the Hen's Teeth  [2] Watch the Faehill and its old stones  [3] Search Tenpenny Wood for the source of the dog trouble  [4] Visit the confession shrine  [5] Return to Blackapple and regroup
+> choose 1
+  The party chooses 1: Take the Moribund Way to the Hen's Teeth.
+  The party is in Blackapple Environs at [4, 1], facing east.
+  environs_hen_teeth_seen is now true.
+  [picture blackapple-art:environs_hen_teeth]
+  The Hen's Teeth is a low timber tavern two miles along the forest road. Fauns crowd the tables around a smoky hearth, while Flynn moves between them with patient, deliberate service. A large mirror hangs behind the bar. Flynn's mild manner says the house is safe; his hand never strays far from the loaded crossbow beneath the counter.
+  Flynn waits for a question that will not disturb his customers. [1] Ask Flynn about the mirror and the old rhyme  [2] Promise to protect the house and keep watch quietly  [3] Prepare the Hen's Teeth mirror route  [4] Rest by the hearth before travelling  [5] Take the road back to Blackapple
+> choose 1
+  The party chooses 1: Ask Flynn about the mirror and the old rhyme.
+  Flynn listens until the room's noise covers his answer. He confirms that the mirror is a fairy road, that Periwinkle Black sometimes arrives to smoke in the corner, and that the road opens only when the old words are spoken at the right hour. He gives you the rhyme's shape without making a promise about what waits beyond it. Faehill is a warning and a history, never the Brugh's door.
+  mirror_rhyme_known is now true.
+  evidence_fairy_mirrors is now true.
+  environs_flynn_lore_done is now true.
+  flynn_trust is now 1.
+  Flynn waits for a question that will not disturb his customers. [1] Promise to protect the house and keep watch quietly  [2] Prepare the Hen's Teeth mirror route  [3] Rest by the hearth before travelling  [4] Take the road back to Blackapple
+> choose 2
+  The party chooses 2: Prepare the Hen's Teeth mirror route.
+  mirror_route is now hen_teeth.
+  entry_ready is now true.
+  Your chosen mirror is at the Hen's Teeth. Keep the rhyme and your companions together. The old road opens at midnight. The external mirror is ingress only; the vault deep in the Brugh holds the return mirrors. Your preparation gives one explicit opening to enter together.
+  opening_xp_awarded is now true.
+  You have protected someone and established a credible mirror lead. Your growing experience will matter beyond Blackapple.
+  Experience: Mara Venn 300, Orin Reed 300, Sela Ash 300, Tamsin Vale 300.
+  Mara Venn has the experience for a new level, which needs choices: level 1 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Orin Reed has the experience for a new level, which needs choices: level 2 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Sela Ash has the experience for a new level, which needs choices: level 3 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Tamsin Vale has the experience for a new level, which needs choices: level 4 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  [picture blackapple-art:blackapple_village]
+  The families have given you a credible mirror lead. The children are prisoners beyond the glass, while their doubles remain in Blackapple. Your first investigation has reached a local resolution. You can prepare supplies and companions, or wait at your selected mirror for the midnight opening. This is the start of the rescue, not its conclusion.
+  The prepared road is one-way. The C1 entry mirror cannot bring you home; find the vault and its return mirrors. Do you enter together? [1] Wait until midnight and speak the rhyme  [2] Keep exploring and preparing
+> choose 1
+  The party chooses 1: Wait until midnight and speak the rhyme.
+  Midnight settles over your chosen mirror. Its glass gives way to a damp coatroom. This invitation is brief: enter together now or cover the mirror and remain outside.
+  portal_window_open is now true.
+  mirror_active is now true.
+  The mirror road is open. Take everyone through now? [1] Step through together  [2] Cover the mirror and postpone entry
+> choose 1
+  The party chooses 1: Step through together.
+  brugh_entered is now true.
+  brugh_exited is now false.
+  entry_portal_covered is now false.
+  Mara Venn resolves brugh as glamour (roll 1 + 0 + 0 = 1, needs 10).  [1d20: 1 = 1]
+  Orin Reed resolves brugh as truth (roll 16 + 3 + 0 = 19, needs 10).  [1d20: 16 = 16]
+  Sela Ash resolves brugh as glamour (roll 2 + -1 + 0 = 1, needs 10).  [1d20: 2 = 2]
+  Tamsin Vale resolves brugh as truth (roll 12 + 5 + 0 = 17, needs 10).  [1d20: 12 = 12]
+  The party is in Brugh Level 1 — The Court's First Face at [0, 0], facing east.
+  The mirror gives way to a narrow coatroom inside the Brugh. A half-open service panel admits a small attendant who waits for your first decision.
+  brugh_l1_arrival_seen is now true.
+  brugh_c1_seen is now true.
+  The attendant points toward the receiving lounge and the stair hall. He offers to take a cloak, bag, or other burden and promises a numbered ticket for anything left behind.
+  What will you do in the coatroom? [1] Offer a cloak and take a numbered ticket  [2] Keep every belonging and ask for directions  [3] Try the arrival mirror as an exit
+> choose 1
+  The party chooses 1: Offer a cloak and take a numbered ticket.
+  The party receives 1 × Numbered coatroom ticket.
+  brugh_l1_coat_ticketed is now true.
+  The attendant accepts the empty gesture as courtly luggage and presses a numbered ticket into your hand. The stairs and the reception lounge remain open; the mirror behind you is an entrance only.
+  entry_portal_covered is now true.
+  portal_window_open is now false.
+  mirror_active is now false.
+  A silk sheet settles over the mirror as you leave the coatroom. The attendant keeps his promise: the coatroom remains a landmark, but the way in is closed. Walk east into the reception lounge when you are ready.
+> level 1
+  Mara Venn reaches level 2 (Fighter 2): +8 hit points.
+> level 2
+  Orin Reed reaches level 2 (Rogue 2): +7 hit points.
+> level 3
+  Sela Ash reaches level 2 (Cleric 2): +7 hit points.
+> level 4
+  Tamsin Vale reaches level 2 (Wizard 2): +6 hit points.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 20/20, second wind uses 2/2, 300 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 17/17, 300 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 21/21, level 1 spell slots 3/3, 300 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 14/14, level 1 spell slots 3/3, 300 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket
+> forward
+  The party moves to [1, 0], facing east.
+  brugh_l1_c2_seen is now true.
+  The reception lounge stretches around a bronze crocodile whose polished eyes face the balcony. Music and animal noises drift down from the court above. A scratched route card lies beneath one sofa.
+  How will you read the reception lounge? [1] Study the bronze crocodile  [2] Read the scratched route card  [3] Leave toward the game room
+> choose 3
+  The party chooses 3: Leave toward the game room.
+  The reception lounge remains behind you as a shared landmark. A locked balcony door bars the royal overlook; the game room lies beyond the next opening.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 20/20, second wind uses 2/2, 300 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 17/17, 300 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 21/21, level 1 spell slots 3/3, 300 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 14/14, level 1 spell slots 3/3, 300 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket
+> pick east
+  The party opens the door east (pick).  [1d20: 13 = 13]
+> forward
+  The party moves to [2, 0], facing east.
+  brugh_l1_c3_seen is now true.
+  The royal balcony overlooks a lower ballroom where a court of moving shapes turns beneath star-like lights. Two padded chairs face the floor, but their occupants have gone. The locked door is the only ordinary way back to the lounge.
+  What will you do on the balcony? [1] Watch the lower court for a safe route  [2] Return to the reception lounge
+> choose 2
+  The party chooses 2: Return to the reception lounge.
+  You leave the balcony and return to the court's first rooms. The sightline remains useful, but the party keeps its distance from the watchers below.
+> forward
+  The party moves to [3, 0], facing east.
+  brugh_l1_c4_seen is now true.
+  The game room is painted an aggressive green. Five pale court elves pause over darts and a worn pool table, their welcome precise enough to sound like a wager. The party can play by the court's rules, cheat, or walk away.
+  How will you answer the game room's invitation? [1] Join the darts and play fairly  [2] Cheat to test the court's temper  [3] Decline and leave quietly
+> choose 3
+  The party chooses 3: Decline and leave quietly.
+  The elves call your caution dull, but they do not stop you. The library door stands open beyond the game room.
+> forward
+  The party moves to [4, 0], facing east.
+  brugh_l1_c5_seen is now true.
+  Shelves fill the library with an absurdly complete account of one charcoal burner's life. A glass-covered forest map lies on the central table. The final numbered volume sits where no ordinary reader would look, and a seam runs through the floor below it.
+  What will you investigate in the library? [1] Pull the final volume from the shelf  [2] Search the shelves and map for a safe route  [3] Leave the library
+> choose 3
+  The party chooses 3: Leave the library.
+  The library's shelves hide their route for another visit. The bluehouse corridor continues east, toward a garden that glows without a sun.
+> forward
+  The party moves to [5, 0], facing east.
+  brugh_l1_bluehouse_seen is now true.
+  A round cavern glows blue around enormous fungi. Stone paths wind between the beds toward a white gazebo, and a child in a gardener's apron works beside nervous helpers. Black-winged shapes flicker above the paths.
+  How will you cross the bluehouse? [1] Stay on the stone paths and approach Giles  [2] Cut across the fungus beds  [3] Retreat before disturbing the garden
+> choose 1
+  The party chooses 1: Stay on the stone paths and approach Giles.
+  The ward pixies ignore you while your boots stay on stone. Giles keeps his eyes down, but he recognizes the village name when you speak it. A bright thread circles his ankle.
+  Giles waits beside the gold thread. What will you do? [1] Cut the thread and bring Giles out  [2] Ask Giles what he remembers  [3] Leave him hidden and mark the safe path
+> choose 1
+  The party chooses 1: Cut the thread and bring Giles out.
+  child_giles_weadley is now freed.
+  evidence_gold_threads is now true.
+  The party receives 1 × Faded gold thread fragment.
+  The thread loses its shine as you cut it. Giles remembers Blackapple, his family, and the promise that the other children are somewhere below. He follows the party, frightened but free.
+  middle_xp_awarded is now true.
+  A named child is freed from the court. That rescue teaches the party more than another room explored.
+  Experience: Mara Venn 600, Orin Reed 600, Sela Ash 600, Tamsin Vale 600.
+  Mara Venn has the experience for a new level, which needs choices: level 1 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Orin Reed has the experience for a new level, which needs choices: level 2 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Sela Ash has the experience for a new level, which needs choices: level 3 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Tamsin Vale has the experience for a new level, which needs choices: level 4 [--class <id>] [--feature <id>,...] [--boosts <id>,...].
+  Your rescue progress is retained. If experience offers a new level, resolve its choices before the next fight. The remaining children and the vault are still ahead. Look again to continue this room's conversation, or explore the next passage.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 20/20, second wind uses 2/2, 900 xp, level ready) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 17/17, 900 xp, level ready) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 21/21, level 1 spell slots 3/3, 900 xp, level ready) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 14/14, level 1 spell slots 3/3, 900 xp, level ready) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> level 1 --feature champion
+  Mara Venn reaches level 3 (Fighter 3): +8 hit points.
+> level 2 --feature thief
+  Orin Reed reaches level 3 (Rogue 3): +7 hit points.
+> level 3 --feature life_domain
+  Sela Ash reaches level 3 (Cleric 3): +7 hit points.
+> level 4 --feature evoker
+  Tamsin Vale reaches level 3 (Wizard 3): +6 hit points.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> right
+  The party faces south.
+> forward
+  The party moves to [5, 1], facing south.
+  brugh_l1_c10_seen is now true.
+  A mushroom ambassador waits behind a low desk, its cap patched with court seals. It has no guards and no appetite for a fight; it wants to know whether the surface party will listen before the roots are disturbed.
+  How will you answer the mushroom ambassador? [1] Knock, state the party's purpose, and listen  [2] Copy the useful route ledger  [3] Threaten to break the seal  [4] Leave the ambassador in peace
+> choose 4
+  The party chooses 4: Leave the ambassador in peace.
+  The ambassador returns to its careful records as the party steps back into the corridor. The mushroom room remains available if a later visit needs a peaceful account.
+> right
+  The party faces west.
+> forward
+  The party moves to [4, 1], facing west.
+  The niche ends at a wall of ordinary stone. The library's volume sequence or a successful search must establish the hidden route before this door can be used.
+> forward
+  The party moves to [3, 1], facing west.
+  brugh_l1_c9_seen is now true.
+  The second guest room is almost identical to the first, except that a child's small boot print crosses the dust beneath one bed. Someone has used this room recently and left in a hurry.
+  What will you do in the second guest room? [1] Rest while keeping the boot print in mind  [2] Study the print and leave the room undisturbed  [3] Leave for the servant corridor
+> choose 3
+  The party chooses 3: Leave for the servant corridor.
+  You leave the second guest room and follow the corridor toward the mushroom ambassador and the lower stairs.
+> forward
+  The party moves to [2, 1], facing west.
+  brugh_l1_c8_seen is now true.
+  The first guest room has two beds and a single candle. A prayer book in the nightstand has every divine name inked over, as though the court wanted the comfort of ritual without its witness.
+  Will you use the first guest room? [1] Rest and recover here  [2] Take the redacted prayer book  [3] Leave the room
+> choose 3
+  The party chooses 3: Leave the room.
+  You leave the first guest room's candle burning for the next visitor. The second room and servant corridor are only a few steps away.
+> forward
+  The party moves to [1, 1], facing west.
+> forward
+  The party moves to [0, 1], facing west.
+  A broad stair descends through the court's floor. The party can return to Level 2 while keeping the Level 1 rooms available for another pass.
+  The stair landing is clear. What will you do? [1] Descend to Level 2  [2] Stay on Level 1
+> choose 1
+  The party chooses 1: Descend to Level 2.
+  The party is in Brugh Level 2 at [0, 0], facing south.
+  The stair from Level 1 opens into a ballroom that should not fit beneath the earth. The party remains together at the southern threshold while ash trees and impossible starlight frame the court's next rooms.
+  brugh_l2_arrival_seen is now true.
+  The ballroom offers several routes. Keep the party together while you choose. [1] Follow the timpani toward the musician's station (C12a)  [2] Cross to the dining hall (C13)  [3] Walk the servants' corridor (C14)  [4] Study the pool door (C17)  [5] Take the stair down to Level 3  [6] Retreat to Level 1 while the route is open  [7] Leave the ballroom and use its connected exits
+> choose 1
+  The party chooses 1: Follow the timpani toward the musician's station (C12a).
+  The musician's station is crowded with pipes and a bass drum. A small child keeps the timpani beat while the ibix musicians stare straight ahead. The beat is wrong in a way that a village ear would recognize.
+  Ursula's sticks hover over the drum. How will you reach her without turning the court's music into a command? [1] Tap the Blackapple bell rhythm and let Ursula answer  [2] Wait for the musicians to tire, then try again  [3] Leave the station and return to the ballroom
+> choose 1
+  The party chooses 1: Tap the Blackapple bell rhythm and let Ursula answer.
+  Mara Venn rolls Investigate evidence (member 1): 10 + 0 + 0 = 10, needs 10: success.  [1d20: 10 = 10]
+  child_ursula_cooke is now freed.
+  evidence_gold_threads is now true.
+  Ursula answers with the village rhythm. The ibix musicians keep playing, but the child's hands are her own again. She will follow the party when the court's doors open, carrying the beat as proof that she remembers home.
+  Your rescue progress is retained. If experience offers a new level, resolve its choices before the next fight. The remaining children and the vault are still ahead. Look again to continue this room's conversation, or explore the next passage.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> left
+  The party faces east.
+> forward
+  The party moves to [1, 0], facing east.
+  The timpani now keeps a quiet Blackapple beat. Ursula is no longer held at the musician's station, though the empty stool makes the court's music sound less certain.
+  The ballroom offers several routes. Keep the party together while you choose. [1] Follow the timpani toward the musician's station (C12a)  [2] Cross to the dining hall (C13)  [3] Walk the servants' corridor (C14)  [4] Study the pool door (C17)  [5] Take the stair down to Level 3  [6] Retreat to Level 1 while the route is open  [7] Leave the ballroom and use its connected exits
+> choose 2
+  The party chooses 2: Cross to the dining hall (C13).
+  The dining hall is prepared for a feast. The Elf Lord sits at the head of the table while Moth-in-Water juggles three blades beside him. Two child servers stand at attention, dressed as if the court has taught them to forget their own names.
+  The servers can only answer through their work. Which thread will you test before the court decides what the party deserves? [1] Ask the blue-vested server about a Goodall shop tally  [2] Ask the second server to count the plates in Bernard's pattern  [3] Join the meal and address the Elf Lord  [4] Decline the feast and leave the hall  [5] Return to the ballroom  [6] Leave the dining hall and use its connected exits
+> choose 1
+  The party chooses 1: Ask the blue-vested server about a Goodall shop tally.
+  Mara Venn rolls Investigate evidence (member 1): 18 + 0 + 0 = 18, needs 10: clear_evidence.  [1d20: 18 = 18]
+  child_amelia_goodall is now freed.
+  evidence_gold_threads is now true.
+  The tally reaches the number only Amelia would use, and the child whispers a correction beneath the clatter of plates. She is herself again, though the court still expects her to carry the next course. The party can keep the discovery quiet until a safe exit.
+  Your rescue progress is retained. If experience offers a new level, resolve its choices before the next fight. The remaining children and the vault are still ahead. Look again to continue this room's conversation, or explore the next passage.
+> forward
+  The party moves to [2, 0], facing east.
+  The dining hall is prepared for a feast. The Elf Lord sits at the head of the table while Moth-in-Water juggles three blades beside him. Two child servers stand at attention, dressed as if the court has taught them to forget their own names.
+  The servers can only answer through their work. Which thread will you test before the court decides what the party deserves? [1] Ask the second server to count the plates in Bernard's pattern  [2] Join the meal and address the Elf Lord  [3] Decline the feast and leave the hall  [4] Return to the ballroom  [5] Leave the dining hall and use its connected exits
+> choose 1
+  The party chooses 1: Ask the second server to count the plates in Bernard's pattern.
+  Mara Venn rolls Investigate evidence (member 1): 16 + 0 + 0 = 16, needs 10: clear_evidence.  [1d20: 16 = 16]
+  child_bernard_goodall is now freed.
+  evidence_gold_threads is now true.
+  Bernard counts the plates in his own rhythm and catches the court's substitution. He closes one hand around an invisible sling stone, then lets it fall; the sign is enough for the party to know he remembers home.
+  Your rescue progress is retained. If experience offers a new level, resolve its choices before the next fight. The remaining children and the vault are still ahead. Look again to continue this room's conversation, or explore the next passage.
+> forward
+  The party moves to [3, 0], facing east.
+  The server area is a service corridor between the court's rooms. An ibix server keeps watch beside Philip Anvil, who repeats the same court phrase whenever a plate is missing. The dumbwaiter crank turns toward the kitchen below.
+  The service corridor connects the dining hall, servant quarters, and the dumbwaiter. What will the party do? [1] Use a remembered smith rhythm to reach Philip  [2] Inspect the dumbwaiter and its live party-size limit  [3] Return to the dining hall  [4] Return to the ballroom  [5] Use the stairs to Level 3 instead  [6] Leave the service area and use its connected exits
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> choose 2
+  The party chooses 2: Inspect the dumbwaiter and its live party-size limit.
+  A sliding panel reveals a three-by-four-foot shaft. Its crank connects this service area to the kitchen below. Read the posted load warning and consider your company before taking the lift.
+  The live party count is 4. Four active travelers fit the authored lift load if one companion works the crank; no absent recruit is counted.
+  One companion can crank the lift while the others keep hold of the shaft rails. Which route will the party take? [1] Open the lift for the whole active party  [2] Use the stairs to Level 3 instead  [3] Leave the dumbwaiter closed  [4] Leave the service area and use its connected exits
+> choose 1
+  The party chooses 1: Open the lift for the whole active party.
+  route_dumbwaiter is now true.
+  The crank catches, and the dumbwaiter settles into a usable route. The party has opened the Level 2 side of the kitchen lift; every later trip still names its Level 3 arrival event explicitly.
+  The server area is a service corridor between the court's rooms. An ibix server keeps watch beside Philip Anvil, who repeats the same court phrase whenever a plate is missing. The dumbwaiter crank turns toward the kitchen below.
+  The service corridor connects the dining hall, servant quarters, and the dumbwaiter. What will the party do? [1] Use a remembered smith rhythm to reach Philip  [2] Ride the opened dumbwaiter to Level 3  [3] Return to the dining hall  [4] Return to the ballroom  [5] Use the stairs to Level 3 instead  [6] Leave the service area and use its connected exits
+> choose 1
+  The party chooses 1: Use a remembered smith rhythm to reach Philip.
+  Mara Venn rolls Investigate evidence (member 1): 13 + 0 + 0 = 13, needs 10: success.  [1d20: 13 = 13]
+  child_philip_anvil is now freed.
+  evidence_gold_threads is now true.
+  Philip answers the smith's rhythm under his breath. When the next tray arrives, he sets it down by choice rather than command and points to the crank: the kitchen below is a route, not a promise.
+  Your rescue progress is retained. If experience offers a new level, resolve its choices before the next fight. The remaining children and the vault are still ahead. Look again to continue this room's conversation, or explore the next passage.
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 0 + 0 + 0 + 0 | carrying Numbered coatroom ticket, Faded gold thread fragment
+> right
+  The party faces south.
+> right
+  The party faces west.
+> forward
+  The party moves to [2, 0], facing west.
+  The dining hall is prepared for a feast. The Elf Lord sits at the head of the table while Moth-in-Water juggles three blades beside him. Two child servers stand at attention, dressed as if the court has taught them to forget their own names.
+  The servers can only answer through their work. Which thread will you test before the court decides what the party deserves? [1] Join the meal and address the Elf Lord  [2] Decline the feast and leave the hall  [3] Return to the ballroom  [4] Leave the dining hall and use its connected exits
+> choose 4
+  The party chooses 4: Leave the dining hall and use its connected exits.
+  You finish looking around. The connected hallways lead onward.
+> left
+  The party faces south.
+> forward
+  The party moves to [2, 1], facing south.
+  The pool occupies almost the entire chamber. The safe floor ends five feet from the entrance, and the far slope disappears into deep water. A moonstone glints below the surface. The party can read the danger and leave without proving anything to the court.
+  The water is an invitation and a hazard. How will the party handle it? [1] Mark the waterline and retreat together  [2] Send the first party member to test the shallows  [3] Reach for the moonstones  [4] Return to the dining hall  [5] Return to the ballroom  [6] Leave the pool chamber and use its connected exits
+> choose 6
+  The party chooses 6: Leave the pool chamber and use its connected exits.
+  You finish looking around. The connected hallways lead onward.
+> right
+  The party faces west.
+> forward
+  The party moves to [1, 1], facing west.
+  The servant quarters are carved from rough stone and lined with bunks. No one is sleeping here. The empty room makes the court's polished costumes feel like borrowed clothes.
+  The bunks are quiet. Search for what the child servers left behind, or return to the court's public rooms. [1] Search the bunks and footlockers  [2] Return to the dining hall  [3] Return to the pool door  [4] Return to the ballroom  [5] Leave the servant quarters and use their connected exits
+> choose 1
+  The party chooses 1: Search the bunks and footlockers.
+  brugh_l2_c16_searched is now true.
+  The party receives 1 × Bernard's sling.
+  The party receives 1 × Ursula's cloth doll.
+  evidence_gold_threads is now true.
+  Behind a loose bunk board you find Bernard's sling, still marked with the Goodall shop's counting knot, and Ursula's stuffed cloth doll. The two ordinary objects make the court's seven replacements feel less like a story and more like a rescue with names.
+  The servant quarters hold only bunks and the evidence you recovered. Bernard's sling and Ursula's doll remain carried proof that the court's servers came from Blackapple.
+  The evidence is safe in the party's carried things. Choose the next room. [1] Return to the dining hall  [2] Return to the pool door  [3] Return to the ballroom  [4] Leave the servant quarters and use their connected exits
+> choose 2
+  The party chooses 2: Return to the pool door.
+  The pool occupies almost the entire chamber. The safe floor ends five feet from the entrance, and the far slope disappears into deep water. A moonstone glints below the surface. The party can read the danger and leave without proving anything to the court.
+  The water is an invitation and a hazard. How will the party handle it? [1] Mark the waterline and retreat together  [2] Send the first party member to test the shallows  [3] Reach for the moonstones  [4] Return to the dining hall  [5] Return to the ballroom  [6] Leave the pool chamber and use its connected exits
+> choose 1
+  The party chooses 1: Mark the waterline and retreat together.
+  recovery_pool is now true.
+  The party marks the safe edge with chalk and backs away. The pool remains a known hazard rather than a forced encounter, and the recovery note preserves the route for a later return.
+  The ballroom offers several routes. Keep the party together while you choose. [1] Follow the timpani toward the musician's station (C12a)  [2] Cross to the dining hall (C13)  [3] Walk the servants' corridor (C14)  [4] Study the pool door (C17)  [5] Take the stair down to Level 3  [6] Retreat to Level 1 while the route is open  [7] Leave the ballroom and use its connected exits
+> choose 5
+  The party chooses 5: Take the stair down to Level 3.
+  The party is in Brugh Level 3 — Service Rooms and Vault at [0, 1], facing south.
+  The stair ends beside a deep court pit. You gather at the threshold; lower service halls continue north.
+  brugh_l3_c18_seen is now true.
+  The pit floor is cramped and dust-covered. A tentacle worm shifts in the dark above a pouch of forgotten stones; three feet of clear wall in the south promises a route it cannot follow.
+  The pit offers a fight, a careful escape, and time to recover. What will the party do? [1] Face the tentacle worm  [2] Try to squeeze through the south opening  [3] Study the south wall before searching it  [4] Rest in the pit and tend the injuries  [5] Return to Level 2 through the upper opening
+> choose 3
+  The party chooses 3: Study the south wall before searching it.
+  evidence_brugh_danger is now true.
+  The dust breaks around a three-foot seam. Search south from this square to discover the hidden edge, then move through it normally; the door is a map secret rather than a second position.
+> right
+  The party faces west.
+> right
+  The party faces north.
+> forward
+  The party moves to [0, 0], facing north.
+  brugh_l3_c19_seen is now true.
+  The door at the end of the hall opens onto solid wall. A warning is scratched beside its ordinary-looking knob: touching it burns the hand later. A pair of gloves can prevent the contact poison.
+  The false door is a readable hazard rather than a required route. [1] Touch the knob carefully  [2] Leave the false door alone
+> choose 2
+  The party chooses 2: Leave the false door alone.
+  evidence_brugh_danger is now true.
+  The party leaves the false door untouched. Its empty space is useful evidence, and the connected corridor remains open.
+> right
+  The party faces east.
+> forward
+  The party moves to [1, 0], facing east.
+  brugh_l3_c20_seen is now true.
+  An icy blast rolls from the cold storage. A three-foot blue, winged captive watches from inside a thin circle of magical salt while frozen meat hangs from the hooks. The salt line is the bargain's visible boundary.
+  The salt line can be respected, repaired while speaking, or broken with a known consequence. [1] Speak through the circle and ask what freedom costs  [2] Break one span of salt and accept the cold risk  [3] Leave the captive and keep the cold storage sealed
+> choose 3
+  The party chooses 3: Leave the captive and keep the cold storage sealed.
+  The party leaves the cold storage sealed. The captive and the salt line remain a possible bargain on a later visit.
+> forward
+  The party moves to [2, 0], facing east.
+  brugh_l3_c21_seen is now true.
+  Onions and boiled meat fill the kitchen. The willing cook barks orders while seven-year-old Stevie Leeford carries a pan, a golden thread tied around his ankle beneath the charm.
+  Stevie watches the party while the cook turns toward the ovens. A small distraction can free the child without a fight. [1] Offer a pie and use the cook's recipe as a quiet signal  [2] Leave the kitchen and keep the child scene available
+> choose 1
+  The party chooses 1: Offer a pie and use the cook's recipe as a quiet signal.
+  Mara Venn rolls Investigate evidence (member 1): 16 + 0 + 0 = 16, needs 10: clear_evidence.  [1d20: 16 = 16]
+  child_stevie_leeford is now freed.
+  evidence_gold_threads is now true.
+  The cook turns toward the oven, and Stevie slips the golden thread from his ankle. He remembers Blackapple and stays with the party as a rescued child; no child-shaped combat was needed.
+  The kitchen door remains open to the connected service rooms. The party can continue moving normally without turning Stevie's rescue into a mandatory fight.
+> forward
+  The party moves to [3, 0], facing east.
+  brugh_l3_c21a_seen is now true.
+  route_dumbwaiter is now true.
+  The active party fits the authored 200-pound lift adaptation with one person on the crank. The dumbwaiter route is open for this expedition.
+  The crankshaft can send the party back to the Level 2 landing or wait while the party continues through the kitchen. [1] Crank the dumbwaiter back to Level 2  [2] Leave the lift and continue through Level 3
+> choose 2
+  The party chooses 2: Leave the lift and continue through Level 3.
+  You leave the crank and gather again in the service hall.
+> right
+  The party faces south.
+> right
+  The party faces west.
+> forward
+  The party moves to [2, 0], facing west.
+  Stevie's golden thread is gone. The kitchen still smells of onions, but the child remembers his way home and the party may use the service route.
+> left
+  The party faces south.
+> pick south
+  The party opens the door south (pick).  [1d20: 6 = 6; 1d20: 19 = 19]
+> forward
+  The party moves to [2, 1], facing south.
+  brugh_l3_c23_seen is now true.
+  Rows of enchanted wine fill the unlit cellar. Arthur Figwort stands watch in borrowed armor, with a golden thread tied beneath the plate around his ankle.
+  The cellar guard is charmed, but the ankle thread is exposed to a careful rescuer. [1] Use the Figwort family phrase and remove the thread  [2] Leave Arthur at his post for now  [3] Take one bottle from the cellar shelves
+> choose 1
+  The party chooses 1: Use the Figwort family phrase and remove the thread.
+  Mara Venn rolls Investigate evidence (member 1): 15 + 0 + 0 = 15, needs 10: clear_evidence.  [1d20: 15 = 15]
+  child_arthur_figwort is now freed.
+  evidence_gold_threads is now true.
+  The family phrase reaches Arthur through the charm. The thread comes free, and the wine-cellar guard remembers his name; his rescue is useful but never a condition of the vault exit.
+  The party leaves the cellar without changing Arthur's status. The route to the private chambers remains connected through the eastern hall.
+> forward
+  The party moves to [2, 2], facing south.
+> right
+  The party faces west.
+> forward
+  The party moves to [1, 2], facing west.
+  brugh_l3_c27_seen is now true.
+  The vault is bare except for three chests and four full-height mirrors covered in black sheets. The mirrors share one room and are the only return mechanism from the Brugh.
+  C27 is the Brugh's only return room. Choose treasure, face the self-adversary, or uncover the selected mundane mirror. [1] Open one of the three treasure chests  [2] Uncover Mirror #2 and face its adversary  [3] Uncover Mirror #1 — return through Hen's Teeth  [4] Leave Mirror #4 covered as an unavailable future route
+> choose 1
+  The party chooses 1: Open one of the three treasure chests.
+  The chest locks have not reset. Open one available cache or return to the mirror choice. [1] Open the first chest  [2] Open the second chest  [3] Open the third chest  [4] Return to the four mirrors
+> choose 1
+  The party chooses 1: Open the first chest.
+  brugh_l3_chest_one_taken is now true.
+  The party finds 471 gold, Gold and obsidian bracers.
+  The opened cache stays open. The party can return to the mirrors or inspect another unopened chest without changing any rescue status.
+  The chest locks have not reset. Open one available cache or return to the mirror choice. [1] Open the second chest  [2] Open the third chest  [3] Return to the four mirrors
+> choose 3
+  The party chooses 3: Return to the four mirrors.
+  C27 is the Brugh's only return room. Choose treasure, face the self-adversary, or uncover the selected mundane mirror. [1] Open one of the three treasure chests  [2] Uncover Mirror #2 and face its adversary  [3] Uncover Mirror #1 — return through Hen's Teeth  [4] Leave Mirror #4 covered as an unavailable future route
+> choose 3
+  The party chooses 3: Uncover Mirror #1 — return through Hen's Teeth.
+  The party is in Blackapple Environs at [4, 1], facing east.
+  brugh_exited is now true.
+  portal_window_open is now false.
+  mirror_active is now false.
+  You step back into the world a day later. Your hosts tend the living companions before the families gather. The dead still await a true revival; care does not erase a death. Every child and double still needs a separate account.
+  Rest period 1/1 (days); campaign time: 1 days.
+  Mara Venn recovers 0 hit points.
+  Orin Reed recovers 0 hit points.
+  Sela Ash recovers 0 hit points.
+  Tamsin Vale recovers 0 hit points.
+  Mara Venn recovers 0 level 1 spell slots.
+  Orin Reed recovers 0 level 1 spell slots.
+  Sela Ash recovers 0 level 1 spell slots.
+  Tamsin Vale recovers 0 level 1 spell slots.
+  Mara Venn recovers 0 level 2 spell slots.
+  Orin Reed recovers 0 level 2 spell slots.
+  Sela Ash recovers 0 level 2 spell slots.
+  Tamsin Vale recovers 0 level 2 spell slots.
+  Mara Venn recovers 0 level 3 spell slots.
+  Orin Reed recovers 0 level 3 spell slots.
+  Sela Ash recovers 0 level 3 spell slots.
+  Tamsin Vale recovers 0 level 3 spell slots.
+  recovery_return_triage is now true.
+  The party has reached a safe room after the one-day mortal-world compression. Before anyone calls this a victory, the return account names each real child and each matching double. A child becomes returned only after the named family handoff; a double's custody or loss is recorded separately.
+  Arthur Figwort — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Arthur Figwort to the Figwort manor now (confirm family handoff)  [2] Keep Arthur Figwort in the named safe room until a later handoff
+> status
+  Mara Venn (action surge uses 1/1, death save failures 0/3, death save successes 0/3, hit points 28/28, second wind uses 2/2, 900 xp) | Orin Reed (death save failures 0/3, death save successes 0/3, hit points 24/24, 900 xp) | Sela Ash (death save failures 0/3, death save successes 0/3, hit points 30/30, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | Tamsin Vale (death save failures 0/3, death save successes 0/3, hit points 20/20, level 1 spell slots 4/4, level 2 spell slots 2/2, 900 xp) | gold 120 + 117 + 117 + 117 | carrying Numbered coatroom ticket, Faded gold thread fragment, Bernard's sling, Ursula's cloth doll, Gold and obsidian bracers
+> choose 1
+  The party chooses 1: Hand Arthur Figwort to the Figwort manor now (confirm family handoff).
+  child_arthur_figwort is now returned.
+  Arthur is safely home. Lord and Lady Figwort give you the four hundred gold pieces they promised.
+  The party finds 400 gold.
+  Amelia Goodall — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Amelia Goodall to Ms. Goodall at her trading counter now (confirm family handoff)  [2] Keep Amelia Goodall in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Amelia Goodall to Ms. Goodall at her trading counter now (confirm family handoff).
+  child_amelia_goodall is now returned.
+  Bernard Goodall — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Bernard Goodall to Ms. Goodall at her trading counter now (confirm family handoff)  [2] Keep Bernard Goodall in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Bernard Goodall to Ms. Goodall at her trading counter now (confirm family handoff).
+  child_bernard_goodall is now returned.
+  Giles Weadley — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Giles Weadley to the Weadley household now (confirm family handoff)  [2] Keep Giles Weadley in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Giles Weadley to the Weadley household now (confirm family handoff).
+  child_giles_weadley is now returned.
+  Philip Anvil — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Philip Anvil to the Anvil household now (confirm family handoff)  [2] Keep Philip Anvil in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Philip Anvil to the Anvil household now (confirm family handoff).
+  child_philip_anvil is now returned.
+  Ursula Cooke — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Ursula Cooke to the Cooke household now (confirm family handoff)  [2] Keep Ursula Cooke in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Ursula Cooke to the Cooke household now (confirm family handoff).
+  child_ursula_cooke is now returned.
+  Stevie Leeford — freed. The thread is gone, but a family handoff has not yet been recorded. What will you do? [1] Hand Stevie Leeford to the Leeford household now (confirm family handoff)  [2] Keep Stevie Leeford in the named safe room until a later handoff
+> choose 1
+  The party chooses 1: Hand Stevie Leeford to the Leeford household now (confirm family handoff).
+  child_stevie_leeford is now returned.
+  Ms. Goodall welcomes her child home. She presses one hundred gold pieces into each traveler’s hands, grateful beyond words.
+  The party finds 400 gold.
+  goodall_reward_given is now true.
+  Goodall opens a quiet letter from her old spellcasting contacts. Each spellcaster whose current training permits a new class spell receives one lesson that can be prepared and cast; the others find no new spell in the letter.
+  Mara Venn receives no spell reward: no unknown castable spell remains at this member's highest spell level.
+  Orin Reed receives no spell reward: no unknown castable spell remains at this member's highest spell level.
+  Sela Ash learns Guiding Bolt (spell level 1).  [1d1: 1 = 1]
+  Tamsin Vale learns Scorching Ray (spell level 2).  [1d1: 1 = 1]
+  The seven children's names and current fates are set out before you. Each double has a separate account: even when its matching child is not home, you can still account for, contain, expose, release, or remove it.
+  The Arthur Figwort double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Arthur Figwort double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_arthur_figwort_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Arthur Figwort double — remains masked. No child status is changed by this choice.
+  The Amelia Goodall double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Amelia Goodall double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_amelia_goodall_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Amelia Goodall double — remains masked. No child status is changed by this choice.
+  The Bernard Goodall double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Bernard Goodall double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_bernard_goodall_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Bernard Goodall double — remains masked. No child status is changed by this choice.
+  The Giles Weadley double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Giles Weadley double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_giles_weadley_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Giles Weadley double — remains masked. No child status is changed by this choice.
+  The Philip Anvil double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Philip Anvil double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_philip_anvil_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Philip Anvil double — remains masked. No child status is changed by this choice.
+  The Ursula Cooke double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Ursula Cooke double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_ursula_cooke_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Ursula Cooke double — remains masked. No child status is changed by this choice.
+  The Stevie Leeford double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.
+  The Stevie Leeford double remains masked, and its identity is unresolved. Choose how to proceed. [1] Keep the identity masked while arranging a private handoff  [2] Record no reliable current account as unknown  [3] Expose the mask now and preserve the evidence
+> choose 1
+  The party chooses 1: Keep the identity masked while arranging a private handoff.
+  double_stevie_leeford_evidence is now identity remains unresolved; private handoff not confirmed.
+  The Stevie Leeford double — remains masked. No child status is changed by this choice.
+  return_account_complete is now true.
+  epilogue_masks_escaped is now true.
+  The fourteen children and doubles have been accounted for. The court's reaction changes which allies and terms are available; choose a response after weighing the cost. [1] Review permanent court service or a court stay for the named party  [2] Publish the verified evidence to the village and priory  [3] Protect frightened families with a private named account
+> choose 1
+  The party chooses 1: Review permanent court service or a court stay for the named party.
+  The Elf Lord offers an informed stay or permanent court service. The affected party members and the viable exit choice are named before confirmation; service is never triggered by a failed check. [1] Confirm permanent court service/stay for all named surviving party members  [2] Decline and return to the village account
+> choose 1
+  The party chooses 1: Confirm permanent court service/stay for all named surviving party members.
+  court_service_accepted is now true.
+  You confirm the court's stay or service after learning who is affected and how the exit remains possible. The agreed terms are written into the account before the final fate is decided.
+  epilogue_court_terms is now true.
+  ending_id is now ending.court_bound.
+  Your expedition ends under the Brugh court's confirmed terms. The party knowingly stays or serves, while every child's and double's account remains as written.
+  One or more doubles remain escaped, exposed, masked, or unknown. Their names and fates have been spoken above; the village receives a warning and a concrete lead for what comes next.
+  The Elf Lord's privacy or audience term is explicit. If you return, the recorded bargain will greet you rather than a hidden obligation.
+  Your return account is complete. The village knows whom you brought home, what remains unresolved, and the promises you made in the Brugh.
+  The adventure ends. The account closes with the named children, doubles, promises, and unanswered roads you chose. Your final state can be saved; another expedition would be a new adventure.
+[exit 0]
+
+$ goldbox play --campaign campaigns/blackapple-brugh/modules/blackapple-brugh --modules modules --modules campaigns/blackapple-brugh/modules --load full-success-level.json --script revisit.script --save full-success-level.revisit.json
+seed 9431
+> status
+  Can't: the adventure has ended.
+[exit 0]

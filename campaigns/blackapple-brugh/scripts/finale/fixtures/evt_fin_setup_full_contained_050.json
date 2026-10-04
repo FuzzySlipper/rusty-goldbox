@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_050",
+  "kind": "set",
+  "variable": "recovery_return_triage",
+  "value": "true",
+  "next": "evt_fin_return_start"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_004",
+  "kind": "set",
+  "variable": "child_giles_weadley",
+  "value": "\"freed\"",
+  "next": "evt_fin_setup_full_contained_005"
+}

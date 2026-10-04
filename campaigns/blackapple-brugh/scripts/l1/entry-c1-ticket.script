@@ -1,0 +1,7 @@
+# Prepared-entry checkpoint: accept the coatroom ticket, then walk into C2.
+choose 1
+choose 1
+choose 1
+forward
+choose 3
+status

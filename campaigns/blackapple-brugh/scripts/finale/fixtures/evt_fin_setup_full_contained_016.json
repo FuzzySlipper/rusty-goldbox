@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_016",
+  "kind": "set",
+  "variable": "double_bernard_goodall_removal_cause",
+  "value": "\"\"",
+  "next": "evt_fin_setup_full_contained_017"
+}

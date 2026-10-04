@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_primary_truth_without_return",
   "kind": "text",
-  "text": "Primary ending: ending.truth_without_return. The living party carries an evidence or no-proof account home without claiming that seeing a child made that child returned.",
+  "text": "The living party brings home evidence or an honest account of uncertainty. Seeing a child never counted as bringing that child home.",
   "next": "evt_fin_epilogue_contained_text_gate"
 }

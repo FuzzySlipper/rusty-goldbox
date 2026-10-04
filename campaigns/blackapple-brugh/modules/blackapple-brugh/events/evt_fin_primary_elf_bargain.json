@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_primary_elf_bargain",
   "kind": "text",
-  "text": "Primary ending: ending.elf_bargain. A named child was released by an explicit qualifying bargain, the court remains bargaining, and the village inherits a deliberate truce rather than a hidden rescue count.",
+  "text": "The Elf Lord has released a named child under the bargain you confirmed. The court remains bargaining, and the village inherits a deliberate truce; no child is counted as rescued without the family handoff.",
   "next": "evt_fin_epilogue_contained_text_gate"
 }

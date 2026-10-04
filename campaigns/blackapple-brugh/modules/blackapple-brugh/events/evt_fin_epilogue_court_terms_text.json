@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_epilogue_court_terms_text",
   "kind": "text",
-  "text": "Additive account: court terms. The Elf Lord's privacy or audience term is explicit, and a future visit begins with the recorded bargain rather than a hidden obligation.",
+  "text": "The Elf Lord's privacy or audience term is explicit. If you return, the recorded bargain will greet you rather than a hidden obligation.",
   "next": "evt_fin_close"
 }

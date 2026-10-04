@@ -1,0 +1,130 @@
+# Full ordinary route: rescue and return all seven named children, record every double, consent to court service.
+choose 2
+choose 1
+right
+forward
+left
+forward
+choose 2
+left
+forward
+choose 1
+choose 1
+right
+forward
+choose 3
+forward
+choose 1
+choose 1
+choose 1
+choose 2
+# Prepared-entry checkpoint: accept the coatroom ticket, then walk into C2.
+choose 1
+choose 1
+choose 1
+forward
+choose 3
+status
+# Leave the reception lounge, cross the ordinary C3-C5 rooms, and rescue Giles
+# from the bluehouse before continuing toward the lower stairs.
+pick east
+forward
+choose 2
+forward
+choose 3
+forward
+choose 3
+forward
+choose 1
+choose 1
+status
+right
+forward
+choose 4
+right
+forward
+forward
+choose 3
+forward
+choose 3
+forward
+forward
+choose 1
+# C12a: reach Ursula through the ordinary musician menu and finish on the shared XP boundary.
+choose 1
+choose 1
+status
+status
+
+left
+forward
+choose 2
+choose 1
+forward
+choose 1
+forward
+status
+
+choose 2
+choose 1
+choose 1
+status
+
+right
+right
+forward
+choose 4
+left
+forward
+choose 6
+right
+forward
+choose 1
+choose 2
+choose 1
+choose 5
+choose 3
+right
+right
+forward
+choose 2
+right
+forward
+choose 3
+forward
+choose 1
+forward
+choose 1
+right
+right
+forward
+left
+pick south
+forward
+choose 1
+forward
+right
+forward
+choose 1
+choose 1
+choose 3
+choose 3
+status
+
+# Hand all seven named children to family, account each independent double, then consent to court service.
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1

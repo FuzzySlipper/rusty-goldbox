@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_primary_lost_in_brugh",
   "kind": "text",
-  "text": "Primary ending: ending.lost_in_brugh. Ordinary unrecoverable defeat ended play before return; no child or double status is rewritten to make the loss look better.",
+  "text": "The Brugh overcame the party before anyone could return. No child's or double's fate is changed to soften the loss.",
   "next": "evt_fin_epilogue_contained_text_gate"
 }

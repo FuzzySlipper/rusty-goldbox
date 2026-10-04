@@ -1,0 +1,17 @@
+# Corrected ordinary route: village help, Tenpenny Wood, negotiation, recovery, return.
+choose 2
+choose 1
+right
+forward
+left
+forward
+choose 3
+left
+forward
+choose 4
+choose 1
+choose 3
+choose 1
+choose 2
+choose 3
+status

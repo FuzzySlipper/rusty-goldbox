@@ -1,0 +1,5 @@
+# C17 failed contact: take the authored damage, then use the explicit recovery choice.
+choose 4
+choose 2
+choose 1
+status

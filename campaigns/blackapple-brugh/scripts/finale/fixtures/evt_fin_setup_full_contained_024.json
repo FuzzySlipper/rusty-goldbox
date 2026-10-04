@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_024",
+  "kind": "set",
+  "variable": "double_ursula_cooke_evidence",
+  "value": "\"mask identity established by return witness\"",
+  "next": "evt_fin_setup_full_contained_025"
+}

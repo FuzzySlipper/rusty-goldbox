@@ -2,7 +2,7 @@
   "type": "event",
   "id": "evt_fin_double_philip_anvil_masked_menu",
   "kind": "menu",
-  "text": "Choose the response to the unresolved the Philip Anvil double.",
+  "text": "The Philip Anvil double remains masked, and its identity is unresolved. Choose how to proceed.",
   "options": [
     {
       "label": "Keep the identity masked while arranging a private handoff",

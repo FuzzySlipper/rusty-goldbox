@@ -103,7 +103,11 @@ public sealed class ShopStockTests
         host.Call(engine =>
         {
             runner.Begin(engine.Random);
-            Assert.Equal([0.75m, 25m], runner.Shop()!.Carried.Select(offer => offer.Price));
+            ShopFact opening = runner.Shop()!;
+            Assert.Equal([0.75m, 25m], opening.Carried.Select(offer => offer.Price));
+            Assert.Equal([true, false], opening.Carried.Select(offer => offer.Sellable));
+            Assert.Contains("cannot sell", opening.Describe(), StringComparison.Ordinal);
+            Assert.Contains("at most", opening.Carried[1].RefusalReason, StringComparison.Ordinal);
             Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("sell 2", engine.Random)));
             Assert.Equal(2, state.Inventory.Count);
             Assert.Equal(0m, party.Sum(member => member.Balances.GetValueOrDefault("silver")));
@@ -133,6 +137,10 @@ public sealed class ShopStockTests
         modules.Write("tale/stock.json", """{ "type": "variable", "id": "stock", "value_type": "number", "initial": "1.5", "scope": "area" }""");
         ModuleSet fractional = ModuleLoader.Load(campaign, [modules.Root]);
         Assert.Contains(fractional.Diagnostics, problem => problem.Rule == "event.shop.stock-integral" && problem.JsonPath == "$.items[0].stock");
+
+        modules.Write("tale/stock.json", """{ "type": "variable", "id": "stock", "value_type": "number", "initial": "1 / 2", "scope": "area" }""");
+        ModuleSet expressionFractional = ModuleLoader.Load(campaign, [modules.Root]);
+        Assert.Contains(expressionFractional.Diagnostics, problem => problem.Rule == "event.shop.stock-integral" && problem.JsonPath == "$.items[0].stock");
 
         modules.Write("tale/store.json", """{ "type": "event", "id": "store", "kind": "shop", "text": "Too large.", "items": [], "buying": { "currency": "rules:silver", "max_value": 1e100 } }""");
         ModuleSet oversized = ModuleLoader.Load(campaign, [modules.Root]);

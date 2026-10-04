@@ -1391,7 +1391,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
                 buying = shop.BuyingCurrency is Definition buyingCurrency ? new { currency = buyingCurrency.QualifiedId, max_value = shop.MaxBuyValue } : null,
                 stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, remaining = offer.Remaining }),
-                carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
+                carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder, sellable = offer.Sellable, refusalReason = offer.RefusalReason }),
             } : null,
         };
     }

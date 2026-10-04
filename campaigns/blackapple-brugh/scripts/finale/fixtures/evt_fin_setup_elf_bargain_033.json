@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_033",
+  "kind": "set",
+  "variable": "village_trust",
+  "value": "2",
+  "next": "evt_fin_setup_elf_bargain_034"
+}

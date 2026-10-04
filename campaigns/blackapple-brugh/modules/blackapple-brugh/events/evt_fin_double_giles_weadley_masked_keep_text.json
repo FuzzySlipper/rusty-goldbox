@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_giles_weadley_masked_keep_text",
   "kind": "text",
-  "text": "the Giles Weadley double — remains masked. No child status is changed by this choice.",
+  "text": "The Giles Weadley double — remains masked. No child status is changed by this choice.",
   "next": "evt_fin_double_philip_anvil"
 }

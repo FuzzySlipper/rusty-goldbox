@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_partial_mixed_041",
+  "kind": "set",
+  "variable": "epilogue_public_truth",
+  "value": "false",
+  "next": "evt_fin_setup_partial_mixed_042"
+}

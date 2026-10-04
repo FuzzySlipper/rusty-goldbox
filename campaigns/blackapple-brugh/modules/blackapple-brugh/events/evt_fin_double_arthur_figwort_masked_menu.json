@@ -2,7 +2,7 @@
   "type": "event",
   "id": "evt_fin_double_arthur_figwort_masked_menu",
   "kind": "menu",
-  "text": "Choose the response to the unresolved the Arthur Figwort double.",
+  "text": "The Arthur Figwort double remains masked, and its identity is unresolved. Choose how to proceed.",
   "options": [
     {
       "label": "Keep the identity masked while arranging a private handoff",

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_036",
+  "kind": "set",
+  "variable": "evidence_arthur_double",
+  "value": "false",
+  "next": "evt_fin_setup_court_bound_037"
+}

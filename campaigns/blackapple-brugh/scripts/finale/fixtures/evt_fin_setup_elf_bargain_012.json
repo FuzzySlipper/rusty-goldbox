@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_012",
+  "kind": "set",
+  "variable": "double_amelia_goodall_evidence",
+  "value": "\"mask identity established by return witness\"",
+  "next": "evt_fin_setup_elf_bargain_013"
+}

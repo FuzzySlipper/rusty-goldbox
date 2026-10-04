@@ -452,6 +452,8 @@ internal static class SessionProjection
             ["currency"] = offer.Currency.QualifiedId,
             ["holder"] = offer.Holder,
             ["remaining"] = offer.Remaining,
+            ["sellable"] = offer.Sellable,
+            ["refusalReason"] = offer.RefusalReason,
         }).ToArray());
     }
 

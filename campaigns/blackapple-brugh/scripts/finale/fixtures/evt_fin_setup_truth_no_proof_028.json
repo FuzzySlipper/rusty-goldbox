@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_028",
+  "kind": "set",
+  "variable": "double_stevie_leeford_removal_cause",
+  "value": "\"\"",
+  "next": "evt_fin_setup_truth_no_proof_029"
+}

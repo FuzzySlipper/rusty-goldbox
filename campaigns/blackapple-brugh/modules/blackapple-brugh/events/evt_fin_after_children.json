@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_after_children",
   "kind": "text",
-  "text": "All seven named child records are now displayed. The double records are independent: a child not returned does not prevent the party from accounting for, containing, exposing, releasing, or removing its matching double.",
+  "text": "The seven children's names and current fates are set out before you. Each double has a separate account: even when its matching child is not home, you can still account for, contain, expose, release, or remove it.",
   "next": "evt_fin_double_arthur_figwort"
 }

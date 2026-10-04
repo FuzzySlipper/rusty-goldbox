@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_036",
+  "kind": "set",
+  "variable": "evidence_arthur_double",
+  "value": "true",
+  "next": "evt_fin_setup_elf_bargain_037"
+}

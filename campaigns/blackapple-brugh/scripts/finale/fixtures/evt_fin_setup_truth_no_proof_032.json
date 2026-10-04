@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_032",
+  "kind": "set",
+  "variable": "mirror_route",
+  "value": "\"figwort\"",
+  "next": "evt_fin_setup_truth_no_proof_033"
+}

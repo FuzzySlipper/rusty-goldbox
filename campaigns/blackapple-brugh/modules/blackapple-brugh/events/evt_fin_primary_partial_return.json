@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_primary_partial_return",
   "kind": "text",
-  "text": "Primary ending: ending.partial_return. One to six named children are returned through family handoffs; each remaining captive, freed, or unknown child and each double keeps its own consequence.",
+  "text": "One to six named children are home through family handoffs. Every other captive, freed, or unknown child and each double keeps its own consequence.",
   "next": "evt_fin_epilogue_contained_text_gate"
 }

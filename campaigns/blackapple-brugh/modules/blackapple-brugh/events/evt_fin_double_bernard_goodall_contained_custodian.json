@@ -2,7 +2,7 @@
   "type": "event",
   "id": "evt_fin_double_bernard_goodall_contained_custodian",
   "kind": "menu",
-  "text": "the Bernard Goodall double — contained, but no named custodian evidence is present. Confirm who holds the double safely.",
+  "text": "The Bernard Goodall double — contained, but no named custodian evidence is present. Confirm who holds the double safely.",
   "options": [
     {
       "label": "Confirm Father Naskew at St. Ludann Priory as the named custodian",

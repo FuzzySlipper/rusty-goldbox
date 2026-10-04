@@ -1,0 +1,5 @@
+# Preconditions: load a save at C27 with pending evt_l3_c27_menu and
+# campaign.var.mirror_route == 'figwort'. The third visible option is the
+# coordinator-owned return sender; no child or Arthur prerequisite is used.
+choose 3
+status

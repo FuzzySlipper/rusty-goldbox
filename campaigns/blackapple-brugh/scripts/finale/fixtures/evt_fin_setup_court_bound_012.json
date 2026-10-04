@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_012",
+  "kind": "set",
+  "variable": "double_amelia_goodall_evidence",
+  "value": "\"Father Naskew at St. Ludann Priory\"",
+  "next": "evt_fin_setup_court_bound_013"
+}

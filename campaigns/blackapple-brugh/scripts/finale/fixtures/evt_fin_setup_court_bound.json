@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound",
+  "kind": "text",
+  "text": "Temporary authored finale fixture: explicit court-service confirmation. This setup is for CLI integration until the middle-act C27 sender is present.",
+  "next": "evt_fin_setup_court_bound_001"
+}

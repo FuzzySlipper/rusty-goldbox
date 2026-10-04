@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_038",
+  "kind": "set",
+  "variable": "evidence_parent_suspicion",
+  "value": "false",
+  "next": "evt_fin_setup_truth_no_proof_039"
+}

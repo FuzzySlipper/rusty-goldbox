@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_epilogue_removed_text",
   "kind": "text",
-  "text": "Separate removed-double paragraph: every removed record keeps its named cause and evidence. Removal is not containment, does not satisfy the loose-mask boolean, and does not prove rescue of the matching child.",
+  "text": "Every removed double has a named cause and evidence. Removal is different from containment and never means its matching child was rescued.",
   "next": "evt_fin_epilogue_disclosure_gate"
 }

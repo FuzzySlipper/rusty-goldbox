@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_amelia_goodall_masked_unknown_text",
   "kind": "text",
-  "text": "the Amelia Goodall double — unknown. The party records no reliable current account.",
+  "text": "The Amelia Goodall double — unknown. The party records no reliable current account.",
   "next": "evt_fin_double_bernard_goodall"
 }

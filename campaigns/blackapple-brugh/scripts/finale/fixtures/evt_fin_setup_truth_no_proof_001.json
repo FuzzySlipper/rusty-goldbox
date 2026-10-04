@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_001",
+  "kind": "set",
+  "variable": "child_arthur_figwort",
+  "value": "\"captive\"",
+  "next": "evt_fin_setup_truth_no_proof_002"
+}

@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_giles_weadley_escaped",
   "kind": "text",
-  "text": "the Giles Weadley double — escaped. Its matching child's status is unchanged, and the recorded route remains the named custody or evidence record.",
+  "text": "The Giles Weadley double — escaped. Its matching child's status is unchanged, and the recorded route remains the named custody or evidence record.",
   "next": "evt_fin_double_philip_anvil"
 }

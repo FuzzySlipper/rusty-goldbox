@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_004",
+  "kind": "set",
+  "variable": "child_giles_weadley",
+  "value": "\"captive\"",
+  "next": "evt_fin_setup_elf_bargain_005"
+}

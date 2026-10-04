@@ -117,9 +117,12 @@ public sealed partial class CampaignRunner
         Definition priceOwner = economy;
         string pricePath = "$.sell_fraction";
         decimal fraction = economy.Json.GetProperty("sell_fraction").GetDecimal();
+        Definition? buyingCurrency = null;
+        Definition? buyingBalance = null;
+        decimal? maximum = null;
         if (shop.Json.TryGetProperty("buying", out _))
         {
-            (fraction, _, _, _) = BuyingPolicy(shop);
+            (fraction, buyingCurrency, buyingBalance, maximum) = BuyingPolicy(shop);
             JsonElement buying = shop.Json.GetProperty("buying");
             if (buying.TryGetProperty("fraction", out _))
             {
@@ -136,7 +139,9 @@ public sealed partial class CampaignRunner
                 Definition item = items[index];
                 decimal price = Located(priceOwner, pricePath, () => checked(ItemCost(item) * fraction));
                 Definition currency = _rules.Reference(item, "$.currency");
-                carried.Add((new ShopOffer(carried.Count + 1, item, price, currency, holder), items, index));
+                ShopOffer offer = new(carried.Count + 1, item, price, currency, holder);
+                string? refusal = SellRefusal(offer, buyingCurrency, buyingBalance, maximum);
+                carried.Add((offer with { Sellable = refusal is null, RefusalReason = refusal }, items, index));
             }
         }
 
@@ -204,27 +209,16 @@ public sealed partial class CampaignRunner
         (ShopOffer offer, List<Definition> items, int index) = carried[number - 1];
         if (shop.Json.TryGetProperty("buying", out _))
         {
-            (decimal _, Definition buyingCurrency, Definition? balance, decimal? maximum) = BuyingPolicy(shop);
-            if (offer.Currency.Id != buyingCurrency.Id)
+            if (!offer.Sellable)
             {
-                facts.Add(new RefusedFact($"this shop buys only {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} is priced in {offer.Currency.Name.ToLowerInvariant()}."));
+                facts.Add(new RefusedFact(offer.RefusalReason ?? "this shop cannot buy that item."));
                 return;
             }
 
-            if (maximum is decimal maxValue && ItemCost(offer.Item) > maxValue)
-            {
-                facts.Add(new RefusedFact($"this shop buys items costing at most {Fact(maxValue)} {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} costs {Fact(ItemCost(offer.Item))}."));
-                return;
-            }
-
+            Definition? balance = BuyingPolicy(shop).Balance;
             if (balance is Definition merchantBalance)
             {
                 decimal cash = BuyingCash(merchantBalance);
-                if (cash < offer.Price)
-                {
-                    facts.Add(new RefusedFact($"this shop has {Fact(cash)} {buyingCurrency.Name.ToLowerInvariant()} left; it cannot buy {offer.Item.Name} for {Fact(offer.Price)}."));
-                    return;
-                }
 
                 // Credit the named currency before changing the merchant balance or removing the item, so an overflow can't lose it.
                 string buyingPath = shop.Json.GetProperty("buying").TryGetProperty("fraction", out _)
@@ -260,6 +254,35 @@ public sealed partial class CampaignRunner
         items.RemoveAt(index);
         facts.Add(new TradeFact(false, offer.Item.Name, offer.Currency, offer.Price));
         facts.Add(Shop()!);
+    }
+
+    private string? SellRefusal(ShopOffer offer, Definition? buyingCurrency, Definition? balance, decimal? maximum)
+    {
+        if (buyingCurrency is null)
+        {
+            return null;
+        }
+
+        if (offer.Currency.Id != buyingCurrency.Id)
+        {
+            return $"this shop buys only {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} is priced in {offer.Currency.Name.ToLowerInvariant()}.";
+        }
+
+        if (maximum is decimal maxValue && ItemCost(offer.Item) > maxValue)
+        {
+            return $"this shop buys items costing at most {Fact(maxValue)} {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} costs {Fact(ItemCost(offer.Item))}.";
+        }
+
+        if (balance is Definition merchantBalance)
+        {
+            decimal cash = BuyingCash(merchantBalance);
+            if (cash < offer.Price)
+            {
+                return $"this shop has {Fact(cash)} {buyingCurrency.Name.ToLowerInvariant()} left; it cannot buy {offer.Item.Name} for {Fact(offer.Price)}.";
+            }
+        }
+
+        return null;
     }
 
     private (decimal Fraction, Definition Currency, Definition? Balance, decimal? MaximumValue) BuyingPolicy(Definition shop)

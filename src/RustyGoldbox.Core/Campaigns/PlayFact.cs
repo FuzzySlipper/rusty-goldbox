@@ -223,8 +223,16 @@ public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnl
     }
 }
 
-/// <summary>A numbered item at its purchase or resale price; Holder names equipped gear and Remaining is finite stock when declared.</summary>
-public sealed record ShopOffer(int Number, Definition Item, decimal Price, Definition Currency, string? Holder = null, decimal? Remaining = null);
+/// <summary>A numbered item at its purchase or resale price; carried offers also state whether the shop accepts their sale and why not.</summary>
+public sealed record ShopOffer(
+    int Number,
+    Definition Item,
+    decimal Price,
+    Definition Currency,
+    string? Holder = null,
+    decimal? Remaining = null,
+    bool Sellable = true,
+    string? RefusalReason = null);
 
 public sealed record ShopFact(
     string Text,
@@ -239,7 +247,7 @@ public sealed record ShopFact(
     public override string Describe()
     {
         string Offers(IReadOnlyList<ShopOffer> offers) => offers.Count == 0 ? "none" : string.Join("  ", offers.Select(offer =>
-            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")}{(offer.Remaining is decimal remaining ? $" ({N(remaining)} left)" : "")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}"));
+            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")}{(offer.Remaining is decimal remaining ? $" ({N(remaining)} left)" : "")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}{(offer.Sellable || offer.RefusalReason is null ? "" : $" (cannot sell: {offer.RefusalReason})")}"));
         string balances = Balances.Count == 0 ? "none" : string.Join(", ", Balances.Select(entry => $"{N(entry.Value)} {entry.Key.Name.ToLowerInvariant()}"));
         return $"{Text} Balances: {balances}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
     }

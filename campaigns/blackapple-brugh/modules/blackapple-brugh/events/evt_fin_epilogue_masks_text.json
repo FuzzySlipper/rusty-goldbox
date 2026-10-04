@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_epilogue_masks_text",
   "kind": "text",
-  "text": "Additive epilogue: one or more doubles remain escaped, exposed, masked, or unknown. The loose identities are named in the preceding account; the village receives a warning and a concrete future lead.",
+  "text": "One or more doubles remain escaped, exposed, masked, or unknown. Their names and fates have been spoken above; the village receives a warning and a concrete lead for what comes next.",
   "next": "evt_fin_epilogue_removed_text_gate"
 }

@@ -1,0 +1,5 @@
+# Preconditions: load a save at C21 with pending evt_l3_c21_menu. The first
+# option uses the real investigate check and either frees Stevie or reports a
+# retryable failure. The wine branch is exercised in a separate seed.
+choose 1
+status

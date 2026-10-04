@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_stevie_leeford_exposed",
   "kind": "text",
-  "text": "the Stevie Leeford double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
+  "text": "The Stevie Leeford double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
   "next": "evt_fin_double_stevie_leeford_exposed_menu"
 }

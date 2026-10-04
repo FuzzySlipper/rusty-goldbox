@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_partial_mixed_031",
+  "kind": "set",
+  "variable": "figwort_stance",
+  "value": "\"reconcile\"",
+  "next": "evt_fin_setup_partial_mixed_032"
+}

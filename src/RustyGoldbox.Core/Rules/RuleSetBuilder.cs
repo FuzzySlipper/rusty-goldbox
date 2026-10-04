@@ -2133,6 +2133,7 @@ public sealed class RuleSetBuilder
                 }
 
                 JsonElement items = definition.Json.GetProperty("items");
+                Evaluator initialEvaluator = new(_rules, null);
                 for (int index = 0; index < items.GetArrayLength(); index++)
                 {
                     string stockPath = $"$.items[{index}].stock";
@@ -2148,10 +2149,22 @@ public sealed class RuleSetBuilder
                     }
 
                     string initial = stock.Json.GetProperty("initial").GetString()!;
-                    if (decimal.TryParse(initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out decimal initialValue)
-                        && (initialValue < 0 || decimal.Truncate(initialValue) != initialValue))
+                    if (_rules.TryExpression(stock, "$.initial", out CompiledExpression? initialExpression)
+                        && initialExpression!.Type == ExprType.Number)
                     {
-                        Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must start at a nonnegative whole number.");
+                        try
+                        {
+                            decimal initialValue = initialEvaluator.Evaluate(initialExpression, new Scope(null, null)).Number;
+                            if (initialValue < 0 || decimal.Truncate(initialValue) != initialValue)
+                            {
+                                Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must start at a nonnegative whole number.");
+                            }
+                        }
+                        catch (ExpressionException exception)
+                        {
+                            Error(definition, "event.shop.stock-integral", stockPath,
+                                $"A shop stock variable must evaluate to a nonnegative whole number: {exception.Message}");
+                        }
                     }
                     else if (double.TryParse(initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double oversized)
                         && (double.IsInfinity(oversized) || oversized > (double)decimal.MaxValue || oversized < (double)decimal.MinValue))

@@ -1,0 +1,13 @@
+# Ordinary Jolly Fox service route: refused purchase, sell, buy, leave, then rest.
+choose 4
+choose 2
+buy 1
+sell 2
+buy 1
+leave
+left
+forward
+right
+forward
+choose 1
+status

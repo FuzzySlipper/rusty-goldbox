@@ -1,0 +1,11 @@
+# C11 menu checkpoint: take the permission-gated crown, leave, return through
+# C7, and revisit C11 to show the persistent crown guard and room menu.
+choose 3
+choose 3
+around
+forward
+choose 1
+around
+forward
+choose 3
+status

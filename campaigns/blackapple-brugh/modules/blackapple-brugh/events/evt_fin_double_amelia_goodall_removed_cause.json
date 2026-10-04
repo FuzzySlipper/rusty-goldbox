@@ -2,7 +2,7 @@
   "type": "event",
   "id": "evt_fin_double_amelia_goodall_removed_cause",
   "kind": "menu",
-  "text": "the Amelia Goodall double — removed, but a named removal cause is required before the account can close.",
+  "text": "The Amelia Goodall double — removed, but a named removal cause is required before the account can close.",
   "options": [
     {
       "label": "Record removal after defensive combat",

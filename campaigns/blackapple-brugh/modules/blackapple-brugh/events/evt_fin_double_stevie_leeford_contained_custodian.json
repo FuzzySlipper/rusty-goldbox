@@ -2,7 +2,7 @@
   "type": "event",
   "id": "evt_fin_double_stevie_leeford_contained_custodian",
   "kind": "menu",
-  "text": "the Stevie Leeford double — contained, but no named custodian evidence is present. Confirm who holds the double safely.",
+  "text": "The Stevie Leeford double — contained, but no named custodian evidence is present. Confirm who holds the double safely.",
   "options": [
     {
       "label": "Confirm Father Naskew at St. Ludann Priory as the named custodian",

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_026",
+  "kind": "set",
+  "variable": "double_stevie_leeford",
+  "value": "\"exposed\"",
+  "next": "evt_fin_setup_elf_bargain_027"
+}

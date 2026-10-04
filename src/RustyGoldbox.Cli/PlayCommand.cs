@@ -150,6 +150,17 @@ internal static class PlayCommand
                         result,
                         Trace: trace,
                         BehaviorTrace: trace ? result.Observation.BehaviorTrace : null));
+                    if (parsed.Has("--fail-on-refusal") && !result.Accepted)
+                    {
+                        AddRefusal(
+                            refusals,
+                            result.Reason ?? "the combat command was refused.",
+                            scriptLine,
+                            scriptPath!,
+                            state,
+                            set.Root!.Id,
+                            "Use `combat inspect` to see the active actor, legal actions, target IDs, and paths, then retry with a valid combat choice.");
+                    }
                 }
             });
         }
@@ -243,13 +254,32 @@ internal static class PlayCommand
     {
         foreach (RefusedFact refused in facts.OfType<RefusedFact>())
         {
-            diagnostics.Add(new ModuleDiagnostic(
-                "play.refusal",
-                $"Script line {scriptLine.Number} command '{scriptLine.Text}' was refused: {refused.Reason} The party is in {state.Area.QualifiedId} at [{state.X}, {state.Y}], facing {Facings.Name(state.Facing)}. Use status or look in the script and `goldbox map render {state.Area.QualifiedId} --module <campaign path>` to inspect the current state and map before retrying.",
-                campaignModule,
+            AddRefusal(
+                diagnostics,
+                refused.Reason,
+                scriptLine,
                 scriptPath,
-                $"line {scriptLine.Number}"));
+                state,
+                campaignModule,
+                $"Use status or look in the script and `goldbox map render {state.Area.QualifiedId} --module <campaign path>` to inspect the current state and map before retrying.");
         }
+    }
+
+    private static void AddRefusal(
+        List<ModuleDiagnostic> diagnostics,
+        string reason,
+        ScriptLine scriptLine,
+        string scriptPath,
+        CampaignState state,
+        string campaignModule,
+        string guidance)
+    {
+        diagnostics.Add(new ModuleDiagnostic(
+            "play.refusal",
+            $"Script line {scriptLine.Number} command '{scriptLine.Text}' was refused: {reason} The party is in {state.Area.QualifiedId} at [{state.X}, {state.Y}], facing {Facings.Name(state.Facing)}. {guidance}",
+            campaignModule,
+            scriptPath,
+            $"line {scriptLine.Number}"));
     }
 
     private static string? SlotError(string option, string? slot)

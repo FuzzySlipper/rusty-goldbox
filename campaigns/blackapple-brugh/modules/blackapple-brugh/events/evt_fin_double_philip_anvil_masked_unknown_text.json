@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_philip_anvil_masked_unknown_text",
   "kind": "text",
-  "text": "the Philip Anvil double — unknown. The party records no reliable current account.",
+  "text": "The Philip Anvil double — unknown. The party records no reliable current account.",
   "next": "evt_fin_double_ursula_cooke"
 }

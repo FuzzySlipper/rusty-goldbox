@@ -157,11 +157,15 @@ export function createOverlay(send, ui) {
 
   const shop = (view) => {
     const offers = (list, verb) => table(list.map((offer) => [
-      `${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''}${offer.remaining === null || offer.remaining === undefined ? '' : ` · ${offer.remaining} left`}`,
+      `${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''}${offer.remaining === null || offer.remaining === undefined ? '' : ` · ${offer.remaining} left`}${verb === 'Sell' && offer.sellable === false && offer.refusalReason ? ` · unavailable: ${offer.refusalReason}` : ''}`,
       { text: `${offer.price} ${currencyName(offer.currency)}`, number: true },
       { node: (() => {
         const node = button(verb, play(`${verb.toLowerCase()} ${offer.number}`));
-        node.disabled = verb === 'Buy' && offer.remaining === 0;
+        const rejected = verb === 'Sell' && offer.sellable === false;
+        node.disabled = (verb === 'Buy' && offer.remaining === 0) || rejected;
+        if (rejected && offer.refusalReason) {
+          node.title = offer.refusalReason;
+        }
         return node;
       })() },
     ]));

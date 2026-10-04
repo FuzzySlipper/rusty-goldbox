@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_017",
+  "kind": "set",
+  "variable": "double_giles_weadley",
+  "value": "\"contained\"",
+  "next": "evt_fin_setup_court_bound_018"
+}

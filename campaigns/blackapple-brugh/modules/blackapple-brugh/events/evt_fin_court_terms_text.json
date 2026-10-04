@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_court_terms_text",
   "kind": "text",
-  "text": "The party confirms the court stay/service after seeing who is affected and how the exit remains viable. The terms are recorded as an additive court consequence before primary ending selection.",
+  "text": "You confirm the court's stay or service after learning who is affected and how the exit remains possible. The agreed terms are written into the account before the final fate is decided.",
   "next": "evt_fin_court_terms_set"
 }

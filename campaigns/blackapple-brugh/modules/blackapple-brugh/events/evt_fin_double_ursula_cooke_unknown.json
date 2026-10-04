@@ -2,6 +2,6 @@
   "type": "event",
   "id": "evt_fin_double_ursula_cooke_unknown",
   "kind": "text",
-  "text": "the Ursula Cooke double — unknown. The party has no reliable current account; this is neither contained nor silently treated as escaped.",
+  "text": "The Ursula Cooke double — unknown. The party has no reliable current account; this is neither contained nor silently treated as escaped.",
   "next": "evt_fin_double_ursula_cooke_unknown_menu"
 }
