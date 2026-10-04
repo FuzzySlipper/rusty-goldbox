@@ -17,6 +17,8 @@ public sealed record CheckResult(decimal Roll, decimal Bonus, decimal Modifier, 
 /// creature's level in that class. While a nested check resolves,
 /// <see cref="Outer"/> is the check it was made during. Inside a condition's
 /// own fields, <see cref="ConditionValues"/> are the values it was applied with.
+/// A behavior controller supplies <see cref="BehaviorValues"/> for a selected
+/// authored policy.
 /// </summary>
 /// <summary>
 /// The fight an evaluator is resolving: the round, whether anyone is
@@ -38,7 +40,8 @@ public sealed record Scope(
     Definition? Class = null,
     Definition? Item = null,
     IEnumerable<Definition>? PartyItems = null,
-    IReadOnlyDictionary<string, Value>? AreaVariables = null);
+    IReadOnlyDictionary<string, Value>? AreaVariables = null,
+    IReadOnlyDictionary<string, Value>? BehaviorValues = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -436,6 +439,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 return scope.AreaVariables is not null && scope.AreaVariables.TryGetValue(path.Name, out Value variable)
                     ? variable
                     : throw new ExpressionException($"area.var.{path.Name} has no value here: there is no current area.", path.Column);
+            }
+
+            if (path.Root == "behavior")
+            {
+                return scope.BehaviorValues is not null && scope.BehaviorValues.TryGetValue(path.Name, out Value parameter)
+                    ? parameter
+                    : throw new ExpressionException($"behavior.{path.Name} has no value here: no authored behavior parameter was supplied.", path.Column);
             }
 
             if (path.Root == "class")

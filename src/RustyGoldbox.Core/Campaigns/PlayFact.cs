@@ -191,7 +191,15 @@ public enum FightOutcome
 /// class it is, and its value on the combat's track (its maximum when the
 /// ruleset gives one).
 /// </summary>
-public sealed record FightMember(string Name, int Side, Definition? Monster, Definition? Class, decimal Start, decimal? Max, Combat.Cell? Position = null);
+public sealed record FightMember(
+    string Name,
+    int Side,
+    Definition? Monster,
+    Definition? Class,
+    decimal Start,
+    decimal? Max,
+    Combat.Cell? Position = null,
+    string? Id = null);
 
 /// <summary>A fight: who took part, what happened in order, and how it ended.</summary>
 /// <param name="Track">The combat's track (usually hit points) that <see cref="FightMember"/> values are on.</param>

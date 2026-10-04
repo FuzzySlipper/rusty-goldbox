@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Modules;
@@ -26,7 +27,7 @@ public static class SaveFile
 
     private static readonly string[] Fields =
     [
-        "format", "modules", "extensions", "campaign", "seed", "commands", "area", "x", "y", "facing", "variables", "found_secrets", "opened_doors", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
+        "format", "modules", "extensions", "campaign", "seed", "commands", "combat_sequence", "area", "x", "y", "facing", "variables", "found_secrets", "opened_doors", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "pending_combat", "elapsed_days", "picture", "music", "inventory", "ended", "party", "absent_npcs",
     ];
 
     public static string ToJson(CampaignState state, ModuleSet set)
@@ -57,6 +58,7 @@ public static class SaveFile
             writer.WriteString("campaign", state.Campaign.QualifiedId);
             writer.WriteString("seed", state.Seed.ToString(CultureInfo.InvariantCulture));
             writer.WriteNumber("commands", state.Commands);
+            writer.WriteNumber("combat_sequence", state.CombatSequence);
             writer.WriteString("area", state.Area.QualifiedId);
             writer.WriteNumber("x", state.X);
             writer.WriteNumber("y", state.Y);
@@ -116,6 +118,7 @@ public static class SaveFile
             writer.WriteString("pending_shop", state.PendingShop?.QualifiedId);
             writer.WriteString("pending_temple", state.PendingTemple?.QualifiedId);
             writer.WriteString("pending_training", state.PendingTraining?.QualifiedId);
+            WritePendingCombat(writer, state.PendingCombat);
             writer.WriteNumber("elapsed_days", state.ElapsedDays);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);
@@ -145,6 +148,79 @@ public static class SaveFile
         }
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    private static void WritePendingCombat(Utf8JsonWriter writer, PendingCombatState? pending)
+    {
+        if (pending is null)
+        {
+            writer.WriteNull("pending_combat");
+            return;
+        }
+
+        writer.WriteStartObject("pending_combat");
+        writer.WriteString("event", pending.Event.QualifiedId);
+        writer.WriteString("encounter", pending.Encounter.QualifiedId);
+        writer.WriteString("combat", pending.Combat.QualifiedId);
+        writer.WriteBoolean("finalized", pending.Finalized);
+        writer.WritePropertyName("continuation");
+        JsonSerializer.Serialize(writer, pending.Continuation);
+        writer.WriteStartArray("participants");
+        foreach (PendingCombatantSource participant in pending.Participants)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", participant.Id);
+            writer.WriteNumber("side", participant.Side);
+            writer.WriteString("name", participant.Name);
+            writer.WriteString("monster", participant.MonsterId);
+            if (participant.PartyIndex is int partyIndex)
+            {
+                writer.WriteNumber("party_index", partyIndex);
+            }
+            else
+            {
+                writer.WriteNull("party_index");
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+        writer.WriteStartArray("members");
+        foreach (PendingFightMember member in pending.Members)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("name", member.Name);
+            writer.WriteNumber("side", member.Side);
+            writer.WriteString("monster", member.MonsterId);
+            writer.WriteString("class", member.ClassId);
+            writer.WriteNumber("start", member.Start);
+            if (member.Max is decimal maximum)
+            {
+                writer.WriteNumber("max", maximum);
+            }
+            else
+            {
+                writer.WriteNull("max");
+            }
+
+            if (member.Position is Cell position)
+            {
+                writer.WriteStartObject("position");
+                writer.WriteNumber("x", position.X);
+                writer.WriteNumber("y", position.Y);
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("position");
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+        writer.WriteEndObject();
     }
 
     private static void WriteValue(Utf8JsonWriter writer, string id, Value value)
@@ -215,6 +291,7 @@ public static class SaveFile
             }
 
             int? commands = Integer(root, "commands");
+            long? combatSequence = OptionalLong(root, "combat_sequence", 0);
             int? x = Integer(root, "x");
             int? y = Integer(root, "y");
             Facing facing = Facing.North;
@@ -223,7 +300,7 @@ public static class SaveFile
                 Error("$.facing", $"'{facingText}' is not a facing: {string.Join(", ", Facings.Names)}.");
             }
 
-            if (campaign is null || area is null || commands is null || x is null || y is null || problems.Count > _before)
+            if (campaign is null || area is null || commands is null || combatSequence is null || x is null || y is null || problems.Count > _before)
             {
                 return null;
             }
@@ -239,12 +316,17 @@ public static class SaveFile
                 Error("$.commands", "commands can't be negative.");
             }
 
+            if (combatSequence < 0)
+            {
+                Error("$.combat_sequence", "combat_sequence can't be negative.");
+            }
+
             if (problems.Count > _before)
             {
                 return null;
             }
 
-            CampaignState state = new() { Campaign = campaign, Seed = seed, Area = area, X = x.Value, Y = y.Value, Facing = facing, Commands = commands.Value };
+            CampaignState state = new() { Campaign = campaign, Seed = seed, Area = area, X = x.Value, Y = y.Value, Facing = facing, Commands = commands.Value, CombatSequence = combatSequence.Value };
             ReadVariables(root, state);
             ReadFoundSecrets(root, state);
             ReadOpenedDoors(root, state);
@@ -496,6 +578,8 @@ public static class SaveFile
                 }
             }
 
+            ReadPendingCombat(root, state);
+
             state.Picture = Media(root, "picture");
             state.Music = Media(root, "music");
 
@@ -567,6 +651,17 @@ public static class SaveFile
                 Error("$.absent_npcs", $"NPC {duplicate.Key!.QualifiedId} appears more than once; keep one copy, in the party or absent.");
             }
 
+            if (state.PendingCombat is PendingCombatState pendingCombat)
+            {
+                foreach (PendingCombatantSource participant in pendingCombat.Participants.Where(participant => participant.PartyIndex is int))
+                {
+                    if (participant.PartyIndex!.Value >= state.Party.Count)
+                    {
+                        Error("$.pending_combat.participants", $"Combatant '{participant.Id}' names party_index {participant.PartyIndex.Value}, but the save has {state.Party.Count} party members.");
+                    }
+                }
+            }
+
             JsonElement size = state.Campaign.Json.GetProperty("party");
             int min = size.GetProperty("min").GetInt32();
             int max = size.GetProperty("max").GetInt32();
@@ -574,6 +669,308 @@ public static class SaveFile
             {
                 Error("$.party", $"{state.Campaign.Name} takes a party of {min} to {max}; the save has {member}.");
             }
+        }
+
+        private void ReadPendingCombat(JsonElement root, CampaignState state)
+        {
+            if (!root.TryGetProperty("pending_combat", out JsonElement data) || data.ValueKind == JsonValueKind.Null)
+            {
+                return;
+            }
+
+            if (data.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.pending_combat", "pending_combat must be an object or null.");
+                return;
+            }
+
+            if (state.PendingMenu is not null || state.PendingShop is not null || state.PendingTemple is not null || state.PendingTraining is not null)
+            {
+                Error("$.pending_combat", "A save can wait at only one interactive event or combat.");
+            }
+
+            Definition? evt = ResolveProperty(data, "event", "$.pending_combat.event", DefinitionTypes.Event);
+            Definition? encounter = ResolveProperty(data, "encounter", "$.pending_combat.encounter", DefinitionTypes.Encounter);
+            Definition? combat = ResolveProperty(data, "combat", "$.pending_combat.combat", DefinitionTypes.Combat);
+            if (evt is not null && evt.Json.GetProperty("kind").GetString() != "combat")
+            {
+                Error("$.pending_combat.event", "The pending event must have kind combat.");
+            }
+
+            if (!data.TryGetProperty("continuation", out JsonElement continuationData) || continuationData.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.pending_combat.continuation", "continuation must be a combat continuation object.");
+                return;
+            }
+
+            CombatContinuationState? continuation = null;
+            try
+            {
+                continuation = JsonSerializer.Deserialize<CombatContinuationState>(continuationData.GetRawText());
+            }
+            catch (JsonException exception)
+            {
+                Error("$.pending_combat.continuation", $"continuation is not valid combat state: {exception.Message}");
+            }
+
+            if (continuation is null || evt is null || encounter is null || combat is null)
+            {
+                return;
+            }
+
+            bool finalized = false;
+            if (data.TryGetProperty("finalized", out JsonElement finalizedValue))
+            {
+                if (finalizedValue.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                {
+                    finalized = finalizedValue.GetBoolean();
+                }
+                else
+                {
+                    Error("$.pending_combat.finalized", "finalized must be true or false.");
+                }
+            }
+
+            PendingCombatState pending = new()
+            {
+                Event = evt,
+                Encounter = encounter,
+                Combat = combat,
+                Continuation = continuation,
+                Finalized = finalized,
+            };
+
+            if (continuation.NextRandomKey < 0)
+            {
+                Error("$.pending_combat.continuation.next_random_key", "next_random_key cannot be negative.");
+            }
+
+            if (continuation.RandomScope is string scope && string.IsNullOrWhiteSpace(scope))
+            {
+                Error("$.pending_combat.continuation.random_scope", "random_scope must be nonempty when a keyed combat continuation is used.");
+            }
+
+            if (!data.TryGetProperty("participants", out JsonElement participants) || participants.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.pending_combat.participants", "participants must be an array.");
+            }
+            else
+            {
+                int index = 0;
+                HashSet<string> ids = new(StringComparer.Ordinal);
+                foreach (JsonElement participant in participants.EnumerateArray())
+                {
+                    string at = $"$.pending_combat.participants[{index}]";
+                    if (participant.ValueKind != JsonValueKind.Object
+                        || !participant.TryGetProperty("id", out JsonElement id)
+                        || id.ValueKind != JsonValueKind.String
+                        || !participant.TryGetProperty("side", out JsonElement side)
+                        || side.ValueKind != JsonValueKind.Number || !side.TryGetInt32(out int sideNumber)
+                        || !participant.TryGetProperty("name", out JsonElement name)
+                        || name.ValueKind != JsonValueKind.String)
+                    {
+                        Error(at, "Each participant must contain string id/name and integer side.");
+                        index++;
+                        continue;
+                    }
+
+                    if (sideNumber is not (0 or 1))
+                    {
+                        Error($"{at}.side", "Campaign combat participants must belong to side 0 (party) or side 1 (encounter).");
+                    }
+
+                    string participantId = id.GetString()!;
+                    if (string.IsNullOrWhiteSpace(participantId))
+                    {
+                        Error($"{at}.id", "Participant IDs must not be empty.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(name.GetString()))
+                    {
+                        Error($"{at}.name", "Participant names must not be empty.");
+                    }
+
+                    if (!ids.Add(participantId))
+                    {
+                        Error($"{at}.id", "Participant IDs must be unique.");
+                    }
+
+                    string? monster = participant.TryGetProperty("monster", out JsonElement monsterValue) && monsterValue.ValueKind != JsonValueKind.Null
+                        ? ResolveText(monsterValue, $"{at}.monster")
+                        : null;
+                    if (monster is not null && _rules.Find(DefinitionTypes.Monster, monster, out string? monsterProblem) is null)
+                    {
+                        Error($"{at}.monster", monsterProblem!);
+                    }
+
+                    int? partyIndex = null;
+                    if (participant.TryGetProperty("party_index", out JsonElement partyValue) && partyValue.ValueKind != JsonValueKind.Null)
+                    {
+                        if (!partyValue.TryGetInt32(out int parsedPartyIndex) || parsedPartyIndex < 0)
+                        {
+                            Error($"{at}.party_index", "party_index must be a nonnegative integer or null.");
+                        }
+                        else
+                        {
+                            partyIndex = parsedPartyIndex;
+                        }
+                    }
+
+                    if (sideNumber == 0 && partyIndex is null)
+                    {
+                        Error($"{at}.party_index", "A party-side combatant must name its party_index.");
+                    }
+
+                    if (sideNumber == 1 && monster is null)
+                    {
+                        Error($"{at}.monster", "An encounter-side combatant must name its monster definition.");
+                    }
+
+                    if (partyIndex is not null && monster is not null)
+                    {
+                        Error(at, "A combatant source must be either a party member or a monster, not both.");
+                    }
+
+                    pending.Participants.Add(new PendingCombatantSource(participantId, sideNumber, name.GetString()!, monster, partyIndex));
+                    index++;
+                }
+            }
+
+            if (!data.TryGetProperty("members", out JsonElement members) || members.ValueKind != JsonValueKind.Array)
+            {
+                Error("$.pending_combat.members", "members must be an array.");
+            }
+            else
+            {
+                int index = 0;
+                foreach (JsonElement member in members.EnumerateArray())
+                {
+                    string at = $"$.pending_combat.members[{index}]";
+                    if (member.ValueKind != JsonValueKind.Object
+                        || !member.TryGetProperty("name", out JsonElement name) || name.ValueKind != JsonValueKind.String
+                        || !member.TryGetProperty("side", out JsonElement side) || !side.TryGetInt32(out int sideNumber)
+                        || !member.TryGetProperty("start", out JsonElement start) || !start.TryGetDecimal(out decimal startValue))
+                    {
+                        Error(at, "Each member must contain string name and numeric side/start.");
+                        index++;
+                        continue;
+                    }
+
+                    if (sideNumber is not (0 or 1))
+                    {
+                        Error($"{at}.side", "Campaign combat members must belong to side 0 (party) or side 1 (encounter).");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(name.GetString()))
+                    {
+                        Error($"{at}.name", "Fight member names must not be empty.");
+                    }
+
+                    string? monster = ReadOptionalReference(member, "monster", $"{at}.monster", DefinitionTypes.Monster);
+                    string? characterClass = ReadOptionalReference(member, "class", $"{at}.class", DefinitionTypes.Class);
+                    decimal? maximum = ReadOptionalDecimal(member, "max", $"{at}.max");
+                    Cell? position = ReadPosition(member, $"{at}.position");
+                    pending.Members.Add(new PendingFightMember(name.GetString()!, sideNumber, monster, characterClass, startValue, maximum, position));
+                    index++;
+                }
+            }
+
+            if (continuation.Format != 1)
+            {
+                Error("$.pending_combat.continuation.format", $"Combat continuation format {continuation.Format} is not supported; expected 1.");
+            }
+
+            if (continuation.MaxRounds < 1)
+            {
+                Error("$.pending_combat.continuation.max_rounds", "Combat continuation max_rounds must be positive.");
+            }
+
+            if (!string.IsNullOrEmpty(continuation.CombatId) && continuation.CombatId != combat.QualifiedId)
+            {
+                Error("$.pending_combat.continuation.combat_id", $"Combat continuation belongs to {continuation.CombatId}, not {combat.QualifiedId}.");
+            }
+
+            HashSet<string> continuationIds = new(StringComparer.Ordinal);
+            if (continuation.Combatants is null)
+            {
+                Error("$.pending_combat.continuation.combatants", "combatants must be an array.");
+            }
+            else
+            {
+                foreach (CombatantState combatant in continuation.Combatants)
+                {
+                    if (combatant is null || string.IsNullOrWhiteSpace(combatant.Id))
+                    {
+                        Error("$.pending_combat.continuation.combatants", "Each combatant continuation must contain a nonempty ID.");
+                    }
+                    else if (!continuationIds.Add(combatant.Id))
+                    {
+                        Error("$.pending_combat.continuation.combatants", $"Combat continuation ID '{combatant.Id}' is duplicated.");
+                    }
+                }
+            }
+
+            HashSet<string> participantIds = pending.Participants.Select(participant => participant.Id).ToHashSet(StringComparer.Ordinal);
+            if (continuation.Combatants is not null && (pending.Participants.Count != continuation.Combatants.Count || !participantIds.SetEquals(continuationIds)))
+            {
+                Error("$.pending_combat", "participants and continuation.combatants must contain exactly the same combatant IDs.");
+            }
+
+            if (pending.Members.Count != pending.Participants.Count)
+            {
+                Error("$.pending_combat.members", "members and participants must contain the same number of combatants.");
+            }
+
+            state.PendingCombat = pending;
+        }
+
+        private Definition? ResolveProperty(JsonElement parent, string name, string at, DefinitionType type)
+        {
+            return parent.TryGetProperty(name, out JsonElement value) ? Resolve(value, at, type) : Fail<Definition?>(at, $"Missing {name}: a {type.Name} ID.");
+        }
+
+        private string? ReadOptionalReference(JsonElement parent, string name, string at, DefinitionType type)
+        {
+            if (!parent.TryGetProperty(name, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            return Resolve(value, at, type)?.QualifiedId;
+        }
+
+        private string? ResolveText(JsonElement value, string at)
+        {
+            return value.ValueKind == JsonValueKind.String ? value.GetString() : Fail<string?>(at, "Expected text.");
+        }
+
+        private decimal? ReadOptionalDecimal(JsonElement parent, string name, string at)
+        {
+            if (!parent.TryGetProperty(name, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            return value.TryGetDecimal(out decimal number) ? number : Fail<decimal?>(at, "Expected a decimal number or null.");
+        }
+
+        private Cell? ReadPosition(JsonElement parent, string at)
+        {
+            if (!parent.TryGetProperty("position", out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            if (value.ValueKind != JsonValueKind.Object
+                || !value.TryGetProperty("x", out JsonElement x)
+                || !x.TryGetInt32(out int xValue)
+                || !value.TryGetProperty("y", out JsonElement y)
+                || !y.TryGetInt32(out int yValue))
+            {
+                return Fail<Cell?>(at, "position must be an object with integer x and y coordinates, or null.");
+            }
+
+            return new Cell(xValue, yValue);
         }
 
         private void ReadFoundSecrets(JsonElement root, CampaignState state)
@@ -711,6 +1108,22 @@ public static class SaveFile
         private int? Integer(JsonElement root, string name)
         {
             if (root.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number))
+            {
+                return number;
+            }
+
+            Error($"$.{name}", $"\"{name}\" must be a whole number.");
+            return null;
+        }
+
+        private long? OptionalLong(JsonElement root, string name, long defaultValue)
+        {
+            if (!root.TryGetProperty(name, out JsonElement value))
+            {
+                return defaultValue;
+            }
+
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out long number))
             {
                 return number;
             }

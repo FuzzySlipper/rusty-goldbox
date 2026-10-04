@@ -1,4 +1,5 @@
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
@@ -103,6 +104,13 @@ public sealed class Character
     /// <summary>Whether the character has called on a dormant class this adventure, so it earns no experience until the adventure ends.</summary>
     public bool ForfeitsExperience { get; set; }
 
+    /// <summary>
+    /// The player's preferred controller for this character's next combat.
+    /// Null keeps the campaign or host default; the active combatant's
+    /// controller remains the authority for the current fight.
+    /// </summary>
+    public CombatControlMode? CombatControlPreference { get; set; }
+
     /// <summary>The character's level in each of its classes, in the order it took them.</summary>
     public Dictionary<Definition, int> ClassLevels()
     {
@@ -189,6 +197,7 @@ public sealed class Character
             Lifepath = Lifepath, Age = Age, LifepathEnded = LifepathEnded,
             Experience = Experience, Portrait = Portrait, Npc = Npc,
             UsesFormerClasses = UsesFormerClasses, ForfeitsExperience = ForfeitsExperience,
+            CombatControlPreference = CombatControlPreference,
             SkillPointsCommitted = SkillPointsCommitted,
             SkillPointData = SkillPointData is SkillPointOptions options
                 ? new SkillPointOptions(options.Profession, options.Personal, options.Skills.ToList())

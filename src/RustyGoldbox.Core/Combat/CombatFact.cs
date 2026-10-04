@@ -13,6 +13,12 @@ public abstract record CombatFact
     /// <summary>Dice rolled to produce this fact.</summary>
     public IReadOnlyList<DiceRoll> Rolls { get; init; } = [];
 
+    /// <summary>Stable combatant IDs represented as the fact's subjects.</summary>
+    public IReadOnlyList<string> SubjectIds { get; init; } = [];
+
+    /// <summary>Stable combatant IDs represented as the fact's targets.</summary>
+    public IReadOnlyList<string> TargetIds { get; init; } = [];
+
     public abstract string Kind { get; }
 
     public abstract string Describe();
