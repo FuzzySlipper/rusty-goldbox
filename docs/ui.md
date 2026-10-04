@@ -14,7 +14,9 @@ Play and combat share one frame of panels, a CSS grid over the whole window
 frame leaves clear; its shadow paints the gaps between the other panels.
 Whenever the view panel moves or resizes, the UI sends its inner rectangle as
 fractions of the window from its top left (`{ action: "layout", view: { x, y,
-width, height } }`), and the camera draws there. This is presentation only and
+width, height } }`), once the layout settles and again a moment later, as
+the host drops claims made while it rebinds the runtime after a resize. The
+camera draws there. This is presentation only and
 stands in until the Engine can anchor a camera to an element (rusty-engine
 #9317). Clicks
 on the view reach the Engine canvas; every other panel is marked
@@ -26,9 +28,9 @@ changes shape:
 | Class | Panel | Behaviour |
 | --- | --- | --- |
 | hero | view (`.gb-view`) | Shares the main column with the log by the log share |
-| flow | log (`panels/log.js`) | Under the view: the play or fight log as a page of text, the last action's notes, the waiting menu as numbered choices, and the `Party:` command line |
+| flow | log (`panels/log.js`) | Under the view: the play or fight log as a page of text, the last action's notes, the waiting menu as numbered choices, and the `Party:` command line; the newest line stays in sight as the panel resizes unless the player scrolled back |
 | count-driven | portraits (`panels/portraits.js`) | Cards sized by party size and the portrait scale; in play a card opens that member's sheet, in combat it shows the party's side and who acts |
-| fill | map (`panels/map.js`) | The area map in play; the other sides of the fight in combat |
+| fill | map (`panels/map.js`) | The area map in play, its text sized to fill the panel; the other sides of the fight in combat |
 | strip | status (`panels/status.js`), controls (`panels/controls.js`) | Fixed thickness: where the party is and the ≡ Menu; the movement pad and the commands that fit what the party is doing |
 | overlay | `panels/overlays.js` | Covers the view: the game menu (save, quit, sound and look) or a member's sheet when the player opens one, else the shop, temple or trainer the party is at |
 

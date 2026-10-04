@@ -19,6 +19,17 @@ export function createLog(send) {
   const prompt = element('label', { class: 'gb-prompt' }, element('span', {}, 'Party:'), command);
   const node = element('section', { class: 'gb-panel gb-log', 'aria-label': 'Log', 'data-rusty-ui-interactive': '' }, tab, page, prompt);
   let shown = '';
+  // The newest line stays in sight when the page changes size, unless the player scrolled back to read.
+  let following = true;
+  page.addEventListener('scroll', () => {
+    following = page.scrollTop + page.clientHeight >= page.scrollHeight - 4;
+  });
+  const resized = new ResizeObserver(() => {
+    if (following) {
+      page.scrollTop = page.scrollHeight;
+    }
+  });
+  resized.observe(page);
 
   const render = (view) => {
     const combat = view.screen === 'combat';
@@ -45,7 +56,8 @@ export function createLog(send) {
         return choice;
       }));
     page.scrollTop = page.scrollHeight;
+    following = true;
   };
 
-  return { node, render };
+  return { node, render, dispose: () => resized.disconnect() };
 }

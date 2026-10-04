@@ -108,7 +108,7 @@ export function mountProductUi(root, context) {
   // as fractions of the window from its top left, whenever it moves or resizes.
   // Interim until the Engine can anchor a camera to an element (rusty-engine #9317).
   let reported = '';
-  const reportView = () => {
+  const reportView = (again = false) => {
     const whole = panel.getBoundingClientRect();
     const box = view.getBoundingClientRect();
     if (!view.isConnected || whole.width === 0 || whole.height === 0 || box.width === 0 || box.height === 0) {
@@ -124,14 +124,22 @@ export function mountProductUi(root, context) {
       height: fraction(view.clientHeight, whole.height),
     };
     const key = JSON.stringify(rect);
-    if (key !== reported) {
+    if (key !== reported || again) {
       reported = key;
       send({ action: 'layout', view: rect });
     }
   };
+  // Report once the layout has settled in the next frame, and again a moment
+  // after the last change: the host drops claims made while it rebinds the
+  // runtime, which a window resize can cause.
+  let settleFrame = 0;
+  let settleTimer = 0;
   const resized = new ResizeObserver(() => {
     arrange();
-    reportView();
+    cancelAnimationFrame(settleFrame);
+    settleFrame = requestAnimationFrame(() => reportView());
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => reportView(true), 600);
   });
   resized.observe(panel);
   resized.observe(view);
@@ -188,6 +196,10 @@ export function mountProductUi(root, context) {
     dispose: () => {
       unsubscribe?.();
       resized.disconnect();
+      cancelAnimationFrame(settleFrame);
+      clearTimeout(settleTimer);
+      log.dispose();
+      map.dispose();
       panel.remove();
       skinStyle.remove();
     },

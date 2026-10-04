@@ -125,7 +125,7 @@ img.gb-picture { object-fit: contain; }
 .gb-portraits ol { list-style: none; margin: 0; padding: .3em; display: grid; gap: .3em; overflow: auto; min-height: 0;
   grid-template-columns: repeat(auto-fill, minmax(calc(4.6em * var(--gb-portrait-scale)), 1fr)); align-content: start; }
 .gb-frame[data-arrangement="tall"] .gb-portraits ol { grid-template-columns: repeat(auto-fill, minmax(calc(3.8em * var(--gb-portrait-scale)), 1fr)); }
-.gb-card { display: flex; flex-direction: column; min-width: 0; border: 2px solid var(--gb-border); background: var(--gb-inset); padding: 0; text-align: center; box-shadow: none; }
+.gb-card { display: flex; flex-direction: column; width: 100%; min-width: 0; border: 2px solid var(--gb-border); background: var(--gb-inset); padding: 0; text-align: center; box-shadow: none; }
 .gb-card.gb-acting { outline: 2px solid var(--gb-accent); outline-offset: 1px; }
 .gb-card.gb-down { filter: grayscale(1) brightness(.6); }
 .gb-card .gb-face { aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; font-size: 1.6em; color: var(--gb-muted); }
@@ -138,7 +138,7 @@ img.gb-picture { object-fit: contain; }
 
 /* Map, or foes in combat */
 .gb-map { flex: 1; min-height: 4em; }
-.gb-map pre { flex: 1; min-height: 0; margin: 0; padding: .3em; overflow: auto; line-height: 1; font-size: .85em; display: grid; place-items: center; }
+.gb-map pre { flex: 1; min-height: 0; margin: 0; padding: .3em; overflow: hidden; line-height: 1; font-size: .85em; display: grid; place-items: center; }
 .gb-foes { list-style: none; margin: 0; padding: .3em .5em; overflow: auto; display: grid; gap: .25em; align-content: start; }
 .gb-foes li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 .4em; align-items: center; }
 .gb-foes li.gb-down { opacity: .45; text-decoration: line-through; }
