@@ -117,7 +117,8 @@ runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
 The installed CLI also carries a draft authoring kit. `goldbox authoring list
 --json` discovers its resources, `goldbox authoring show workflow` prints the
 workflow, and `goldbox authoring copy --all --out my-campaign/prompts --json`
-copies the brief, canon, chapter, encounter, art, handoff and revision templates.
+copies the brief, canon, chapter, encounter, art, individual/batch image judges,
+handoff and revision templates.
 The kit points to `goldbox schema` for format details and works outside this
 repository. Its broader campaign workflow remains a draft until the full
 demonstration and fresh-agent trials have tested it.
@@ -194,6 +195,15 @@ if the party lacks the full count. Guards and menus can use
 `carried(item.id == 'dagger') > 0` for possession or `carried(item.kind == 'gear')`
 for a count. This includes the active party's equipment and excludes absent
 NPCs. The sample crypt's altar consumes its offered dagger.
+
+Scene `check` events roll a declared check for a numbered active member and
+follow its success or failure branch. Scene `effect` events apply explicit
+track damage/healing and durable condition changes through the existing
+character state. Authors supply recovery and defeat routing; timed or
+turn-hook conditions belong to combat. `party_size()` reads the live active
+count in campaign expressions, so an authored lift or passage can respond to
+recruitment and dismissal. See `goldbox schema events` and
+`goldbox schema expressions` for the fields and examples.
 
 With `--store <dir>`, `--load` and `--save` name save slots in that Engine
 persistence root instead of files, such as the Game's under `rusty dev`:

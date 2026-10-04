@@ -2037,6 +2037,12 @@ public sealed class RuleSetBuilder
             case "perception":
                 CheckPerception(definition);
                 break;
+            case "check":
+                CheckSceneCheck(definition);
+                break;
+            case "effect":
+                CheckSceneEffect(definition);
+                break;
             case "give" or "take":
                 if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
                 {
@@ -2092,6 +2098,74 @@ public sealed class RuleSetBuilder
             case "combat":
                 CheckCombatEvent(definition);
                 break;
+        }
+    }
+
+    private void CheckSceneCheck(Definition definition)
+    {
+        int member = definition.Json.GetProperty("member").GetInt32();
+        if (member < 1)
+        {
+            Error(definition, "event.check", "$.member", "A scene check member must be a positive 1-based party member number.");
+        }
+    }
+
+    private void CheckSceneEffect(Definition definition)
+    {
+        if (definition.Json.TryGetProperty("member", out JsonElement member) && member.GetInt32() < 1)
+        {
+            Error(definition, "event.effect", "$.member", "An effect member must be a positive 1-based party member number when given.");
+        }
+
+        JsonElement operations = definition.Json.GetProperty("operations");
+        if (operations.GetArrayLength() == 0)
+        {
+            Error(definition, "event.effect", "$.operations", "An effect needs at least one operation; use a text or branch event for a no-op scene step.");
+            return;
+        }
+
+        for (int index = 0; index < operations.GetArrayLength(); index++)
+        {
+            JsonElement operation = operations[index];
+            string op = operation.GetProperty("op").GetString()!;
+            string path = $"$.operations[{index}]";
+            if (op is ("damage" or "heal") && !operation.TryGetProperty("track", out _))
+            {
+                Error(definition, "event.effect", $"{path}.track", $"A campaign {op} operation needs an explicit track; there is no combat track here.");
+            }
+
+            if (op == "apply_condition")
+            {
+                if (operation.TryGetProperty("rounds", out _))
+                {
+                    Error(definition, "event.effect", $"{path}.rounds", "Timed condition rounds belong to combat turns; campaign effects use a condition's default duration instead.");
+                }
+
+                if (operation.TryGetProperty("values", out _))
+                {
+                    Error(definition, "event.effect", $"{path}.values", "Campaign effects do not keep transient condition values; define the condition's default values instead.");
+                }
+
+                if (_rules.References.TryGetValue((definition, $"{path}.condition"), out Definition? condition))
+                {
+                    if (condition.Json.TryGetProperty("instant", out JsonElement instant) && instant.GetBoolean())
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Instant conditions are combat operations; campaign effects need a condition that remains on the character.");
+                    }
+
+                    if (condition.Json.TryGetProperty("on_apply", out _))
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Conditions with on_apply need the combat operation executor; campaign effects need a durable condition without an apply hook.");
+                    }
+
+                    if (condition.Json.TryGetProperty("each_turn", out _)
+                        || condition.Json.TryGetProperty("end_of_turn", out _)
+                        || condition.Json.TryGetProperty("rounds_end", out _))
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Turn hooks and turn duration belong to combat; campaign effects need a durable condition without combat timing.");
+                    }
+                }
+            }
         }
     }
 

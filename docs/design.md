@@ -496,6 +496,16 @@ Combat is built so that no die convention is assumed:
   optional picture fields. `view <member>` selects that member's presentation;
   the area, routes, variables and consequences remain shared. Saves retain the
   current view event and selection. Modes and check names are authored data.
+- **Scene checks and effects.** A `check` event resolves a declared check for
+  one active member through the same evaluator and Engine dice as other checks,
+  then follows `on_success` or `on_failure`. An `effect` event applies explicit
+  track damage/healing or durable condition changes to one member or the active
+  party. Character tracks and conditions remain their only mutable owners.
+  Per-application condition values, durations and combat hooks are rejected
+  here; declared condition defaults remain available. The author supplies recovery and defeat branches;
+  an effect alone does not decide a ruleset's defeat policy. `party_size()` reads
+  the current active party in campaign expressions, including after recruitment
+  or dismissal.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
   an item and an optional campaign guard; stock is unlimited and offered at
   the item's cost in its declared currency. A ruleset's single `economy`

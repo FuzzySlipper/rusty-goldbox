@@ -108,6 +108,43 @@ public sealed record PerceptionFact(
         $"{Who} resolves {Scope} as {Mode} (roll {N(Result.Roll)} + {N(Result.Bonus)} + {N(Result.Modifier)} = {N(Result.Total)}, needs {N(Result.Target)}).";
 }
 
+/// <summary>A module-authored check resolved for one active party member.</summary>
+public sealed record SceneCheckFact(int Member, string Who, string Check, CheckResult Result) : PlayFact
+{
+    public override string Kind => "check";
+
+    public override string Describe() =>
+        $"{Who} rolls {Check} (member {Member}): {N(Result.Roll)} + {N(Result.Bonus)} + {N(Result.Modifier)} = {N(Result.Total)}, needs {N(Result.Target)}: {Result.Tier}.";
+}
+
+/// <summary>Damage applied by an authored noncombat effect.</summary>
+public sealed record SceneDamageFact(int Member, string Who, Definition Track, decimal Amount, decimal Left) : PlayFact
+{
+    public override string Kind => "damage";
+
+    public override string Describe() =>
+        $"{Who} loses {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Left)} left).";
+}
+
+/// <summary>Healing applied by an authored noncombat effect.</summary>
+public sealed record SceneHealFact(int Member, string Who, Definition Track, decimal Amount, decimal Now) : PlayFact
+{
+    public override string Kind => "heal";
+
+    public override string Describe() =>
+        $"{Who} regains {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Now)}).";
+}
+
+/// <summary>A condition applied or removed by an authored noncombat effect.</summary>
+public sealed record SceneConditionFact(int Member, string Who, string Condition, bool Applied) : PlayFact
+{
+    public override string Kind => Applied ? "condition_applied" : "condition_ended";
+
+    public override string Describe() => Applied
+        ? $"{Who} is {Condition}."
+        : $"{Who} is no longer {Condition}.";
+}
+
 /// <summary>A presentation-only member view selection.</summary>
 public sealed record ViewFact(int Member, string Who, string Mode, string Text, Definition? Picture) : PlayFact
 {

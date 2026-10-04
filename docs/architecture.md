@@ -61,7 +61,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
 | `src/RustyGoldbox.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
 | `src/RustyGoldbox.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export; Engine owns the container format and identity |
-| `src/RustyGoldbox.Cli/AuthoringKit/` | Embedded, copyable draft workflow and brief/canon/chapter/encounter/art/handoff/revision prompts, discovered through the installed authoring commands |
+| `src/RustyGoldbox.Cli/AuthoringKit/` | Embedded, copyable draft workflow and brief/canon/chapter/encounter/art/image-judge/handoff/revision prompts, discovered through the installed authoring commands |
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
@@ -245,6 +245,15 @@ other's saves. Pending combat saves include the active turn, budgets,
 conditions, controller state and optional decision. Live battles use Engine
 keyed random draws with a persisted scope and draw index, so inspection,
 rejected choices and save/load do not restart the battle's random sequence.
+
+`CampaignRunner.Scene.cs` resolves authored scene checks with `Evaluator.Check`
+and applies the supported scene effects through `TrackOperations` and the
+existing character/creature conversion. It publishes check, damage, healing
+and condition facts; it owns no parallel hazard state. Scene conditions must
+be durable and have no application/turn hooks, per-application values or duration;
+declared condition defaults remain available. The campaign authors
+recovery and defeat routing. Campaign expression scopes expose the current
+active count to `party_size()` rather than storing a second capacity value.
 
 ## Characters
 
