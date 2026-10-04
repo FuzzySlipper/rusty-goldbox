@@ -116,6 +116,17 @@ public sealed record CombatCheckState(
     IReadOnlyList<DiceRoll>? Rolls = null,
     int? FactIndex = null);
 
+/// <summary>Committed check values carried by an operation scope across a save.</summary>
+public sealed record CombatScopeCheckState(
+    decimal Roll,
+    decimal Bonus,
+    decimal Modifier,
+    decimal Total,
+    decimal Target,
+    decimal Margin,
+    bool Success,
+    string Tier);
+
 /// <summary>
 /// The operation boundary at which a reaction is waiting. Pending damage is
 /// carried as data so accepting or declining the choice resumes the original
@@ -153,7 +164,12 @@ public sealed record CombatOperationState(
     string? UseId = null,
     IReadOnlyList<string>? TargetIds = null,
     int TargetIndex = 0,
-    bool AlreadyPaid = false);
+    bool AlreadyPaid = false,
+    string? ListPath = null,
+    CombatScopeCheckState? Check = null,
+    CombatScopeCheckState? Outer = null,
+    IReadOnlyDictionary<string, decimal>? ConditionValues = null,
+    bool IsCursor = false);
 
 /// <summary>
 /// A suspended interrupt frame beneath the currently offered decision. The

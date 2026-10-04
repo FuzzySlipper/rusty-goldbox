@@ -840,11 +840,74 @@ public sealed partial class CombatRunner
 
     private void RunOperations(Definition owner, JsonElement operations, string path, Scope scope, Combatant actor, Combatant? target, Combatant? source = null)
     {
-        int index = 0;
-        foreach (JsonElement operation in operations.EnumerateArray())
+        OperationFrame? parent = _operationFrames.LastOrDefault();
+        OperationFrame frame = new()
         {
-            Run(owner, operation, $"{path}[{index}]", scope, actor, target, source);
-            index++;
+            Owner = owner,
+            Operations = operations,
+            Path = path,
+            Scope = scope,
+            Actor = actor,
+            Target = target,
+            Source = source,
+            UseId = _actionContinuation is null ? parent?.UseId : UseId(_actionContinuation.Actor, _actionContinuation.Use),
+            ActionId = _actionContinuation?.Use.Action.QualifiedId ?? parent?.ActionId,
+        };
+        _operationFrames.Add(frame);
+        try
+        {
+            RunOperationFrame(frame, source);
+        }
+        finally
+        {
+            if (!_suspending && _operationFrames.Count > 0 && ReferenceEquals(_operationFrames[^1], frame))
+            {
+                RemoveOperationFrame(frame);
+            }
+        }
+    }
+
+    private void RunOperationFrame(OperationFrame frame, Combatant? source = null)
+    {
+        while (frame.Index < frame.Operations.GetArrayLength())
+        {
+            int index = frame.Index++;
+            SyncOperationFrames();
+            Run(
+                frame.Owner,
+                frame.Operations[index],
+                $"{frame.Path}[{index}]",
+                frame.Scope,
+                frame.Actor,
+                frame.Target,
+                source ?? frame.Source);
+        }
+
+        SyncOperationFrames();
+    }
+
+    private void ResumeOperationFramesForAction(ActionContinuation action)
+    {
+        int start = action.OperationFrameStart;
+        if (start > _operationFrames.Count)
+        {
+            return;
+        }
+
+        while (_operationFrames.Count > start)
+        {
+            OperationFrame frame = _operationFrames[^1];
+            try
+            {
+                RunOperationFrame(frame);
+            }
+            finally
+            {
+                if (!_suspending && _operationFrames.Count > 0 && ReferenceEquals(_operationFrames[^1], frame))
+                {
+                    RemoveOperationFrame(frame);
+                }
+            }
         }
     }
 

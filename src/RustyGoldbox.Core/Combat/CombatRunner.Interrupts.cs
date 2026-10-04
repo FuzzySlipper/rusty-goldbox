@@ -24,6 +24,7 @@ public sealed partial class CombatRunner
     private Combatant? _resumedInitiative;
     private readonly List<ParentInterruptFrame> _parentInterruptFrames = [];
     private MovementContinuation? _movementContinuation;
+    private readonly List<OperationFrame> _operationFrames = [];
 
     private sealed class CombatSuspendedException : Exception
     {
@@ -39,7 +40,22 @@ public sealed partial class CombatRunner
         Scope Scope,
         IReadOnlyList<Combatant>? Targets = null,
         int TargetIndex = 0,
-        bool AlreadyPaid = false);
+        bool AlreadyPaid = false,
+        int OperationFrameStart = 0);
+
+    private sealed class OperationFrame
+    {
+        public required Definition Owner { get; init; }
+        public required JsonElement Operations { get; init; }
+        public required string Path { get; init; }
+        public required Scope Scope { get; set; }
+        public required Combatant Actor { get; init; }
+        public Combatant? Target { get; init; }
+        public Combatant? Source { get; init; }
+        public string? UseId { get; init; }
+        public string? ActionId { get; init; }
+        public int Index { get; set; }
+    }
 
     private sealed record DamageContinuation(
         Definition Owner,
@@ -156,7 +172,8 @@ public sealed partial class CombatRunner
             scope,
             previous?.Targets,
             previous?.TargetIndex ?? 0,
-            previous?.AlreadyPaid ?? false);
+            previous?.AlreadyPaid ?? false,
+            _operationFrames.Count);
         CombatOperationState operation = new(
             use.Action.QualifiedId,
             "$.action",
@@ -169,7 +186,8 @@ public sealed partial class CombatRunner
             TargetIndex: _actionContinuation?.TargetIndex ?? 0,
             AlreadyPaid: _actionContinuation?.AlreadyPaid ?? false);
         _pendingOperation = operation;
-        _operationStack = [operation];
+        _operationStack.RemoveAll(frame => frame.Path == "$.action" && frame.ActorId == actor.Id);
+        _operationStack.Add(operation);
     }
 
     private void SetActionTargetContinuation(Combatant actor, UseOption use, IReadOnlyList<Combatant> targets, int index, bool alreadyPaid)
@@ -187,12 +205,12 @@ public sealed partial class CombatRunner
 
     private void EndActionContinuation()
     {
-        _actionContinuation = null;
-        if (!_suspending)
+        if (_suspending || _actionContinuation is null)
         {
-            _pendingOperation = null;
-            _operationStack = [];
+            return;
         }
+
+        FinishActionContinuation(_actionContinuation);
     }
 
     private void BeginDamageContinuation(
@@ -215,7 +233,11 @@ public sealed partial class CombatRunner
             source.Id,
             _actionContinuation?.Use.Action.QualifiedId,
             PendingDamage: amount,
-            UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use));
+            UseId: _actionContinuation is null ? null : UseId(_actionContinuation.Actor, _actionContinuation.Use),
+            ListPath: _operationFrames.LastOrDefault()?.Path,
+            Check: ToScopeCheck(_operationFrames.LastOrDefault()?.Scope.Check),
+            Outer: ToScopeCheck(_operationFrames.LastOrDefault()?.Scope.Outer),
+            ConditionValues: _operationFrames.LastOrDefault()?.Scope.ConditionValues);
         _damageContinuation = new DamageContinuation(
             owner,
             path,
@@ -230,30 +252,17 @@ public sealed partial class CombatRunner
             attack,
             operation);
         _pendingOperation = operation;
-        _operationStack = [.. (_actionContinuation is null ? [] : new[]
-        {
-            new CombatOperationState(
-                _actionContinuation.Use.Action.QualifiedId,
-                "$.action",
-                _actionContinuation.Actor.Id,
-                _actionContinuation.Target.Id,
-                _actionContinuation.Actor.Id,
-                _actionContinuation.Use.Action.QualifiedId,
-                UseId: UseId(_actionContinuation.Actor, _actionContinuation.Use),
-                TargetIds: _actionContinuation.Targets?.Select(member => member.Id).ToList(),
-                TargetIndex: _actionContinuation.TargetIndex,
-                AlreadyPaid: _actionContinuation.AlreadyPaid),
-        }), operation];
     }
 
     private void EndDamageContinuation()
     {
-        _damageContinuation = null;
-        if (!_suspending)
+        if (_suspending)
         {
-            _pendingOperation = _actionContinuation is null ? null : _operationStack.FirstOrDefault();
-            _operationStack = _actionContinuation is null ? [] : _operationStack.Take(1).ToList();
+            return;
         }
+
+        _damageContinuation = null;
+        _pendingOperation = _actionContinuation is null ? null : _operationStack.LastOrDefault(frame => frame.Path == "$.action");
     }
 
     private bool ReactionFits(
@@ -374,6 +383,7 @@ public sealed partial class CombatRunner
 
     private void CaptureInterruptContinuation(CombatContinuationState state)
     {
+        SyncOperationFrames();
         state.PendingInterrupt = _pendingDecision?.Interrupt;
         state.PendingInterruptRolls = _damageContinuation is null
             ? []
@@ -395,6 +405,8 @@ public sealed partial class CombatRunner
     {
         _pendingOperation = state.PendingOperation;
         _operationStack = state.OperationStack.ToList();
+        _operationFrames.Clear();
+        RestoreOperationFrames(state);
         _suspending = false;
         _pendingInterruptFrame = null;
         _pendingPostRollFrame = null;
@@ -426,11 +438,13 @@ public sealed partial class CombatRunner
         {
             RestoreParentInterrupt(parent, state);
         }
+
     }
 
     private CombatInterruptFrameState CaptureParentInterrupt(ParentInterruptFrame parent)
     {
         PendingInterruptFrame frame = parent.Frame;
+        decimal amount = parent.Damage?.Amount ?? parent.Amount;
         IReadOnlyList<DiceRoll> pendingRolls = frame.PendingRolls
             ?? _dice.Rolls.Skip(frame.RollsBefore).ToList();
         CombatInterruptState interrupt = new(
@@ -441,7 +455,7 @@ public sealed partial class CombatRunner
             frame.Action?.Use.Action.QualifiedId,
             frame.Target?.Id ?? frame.Action?.Target.Id,
             frame.Track?.Id,
-            parent.Amount,
+            amount,
             frame.Operation.OwnerId,
             frame.Operation.Path,
             frame.Action is null ? null : UseId(frame.Action.Actor, frame.Action.Use),
@@ -459,7 +473,7 @@ public sealed partial class CombatRunner
                 candidate.Cost,
                 Index: candidate.ReactionIndex)).ToList(),
             Operation = frame.Operation,
-            PendingDamage = parent.Amount,
+            PendingDamage = amount,
             RollsBefore = frame.RollsBefore,
             FactsBefore = frame.FactsBefore,
             Physical = frame.Physical,
@@ -517,6 +531,222 @@ public sealed partial class CombatRunner
             TargetIds: action.Targets?.Select(member => member.Id).ToList(),
             TargetIndex: action.TargetIndex,
             AlreadyPaid: action.AlreadyPaid);
+    }
+
+    private static CombatScopeCheckState? ToScopeCheck(CheckResult? result)
+    {
+        return result is null
+            ? null
+            : new CombatScopeCheckState(
+                result.Roll,
+                result.Bonus,
+                result.Modifier,
+                result.Total,
+                result.Target,
+                result.Margin,
+                result.Success,
+                result.Tier);
+    }
+
+    private static CheckResult? FromScopeCheck(CombatScopeCheckState? result)
+    {
+        return result is null
+            ? null
+            : new CheckResult(
+                result.Roll,
+                result.Bonus,
+                result.Modifier,
+                result.Total,
+                result.Target,
+                result.Margin,
+                result.Success,
+                result.Tier);
+    }
+
+    private void FinishActionContinuation(ActionContinuation action)
+    {
+        while (_operationFrames.Count > action.OperationFrameStart)
+        {
+            RemoveOperationFrame(_operationFrames[^1]);
+        }
+
+        string? useId = UseId(action.Actor, action.Use);
+        int root = _operationStack.FindLastIndex(frame =>
+            frame.Path == "$.action"
+            && frame.ActorId == action.Actor.Id
+            && frame.TargetId == action.Target.Id
+            && frame.UseId == useId);
+        if (root >= 0)
+        {
+            _operationStack.RemoveAt(root);
+        }
+
+        if (ReferenceEquals(_actionContinuation, action))
+        {
+            _actionContinuation = null;
+        }
+
+        _pendingOperation = _operationStack.LastOrDefault();
+        if (_operationFrames.Count == 0 && !_operationStack.Any(frame => frame.Path == "$.action"))
+        {
+            _pendingOperation = null;
+            _operationStack = [];
+        }
+    }
+
+    private void RemoveOperationFrame(OperationFrame frame)
+    {
+        int stateIndex = _operationStack.FindLastIndex(state =>
+            state.IsCursor
+            && state.OwnerId == frame.Owner.QualifiedId
+            && state.ListPath == frame.Path
+            && state.ActorId == frame.Actor.Id
+            && state.TargetId == frame.Target?.Id);
+        if (stateIndex >= 0)
+        {
+            _operationStack.RemoveAt(stateIndex);
+        }
+
+        if (_operationFrames.Count > 0 && ReferenceEquals(_operationFrames[^1], frame))
+        {
+            _operationFrames.RemoveAt(_operationFrames.Count - 1);
+        }
+    }
+
+    private void SyncOperationFrames()
+    {
+        _operationStack.RemoveAll(frame => frame.IsCursor);
+        _operationStack.AddRange(_operationFrames.Select(frame => new CombatOperationState(
+            frame.Owner.QualifiedId,
+            frame.Path,
+            frame.Actor.Id,
+            frame.Target?.Id,
+            frame.Source?.Id,
+            frame.ActionId,
+            Index: frame.Index,
+            UseId: frame.UseId,
+            ListPath: frame.Path,
+            Check: ToScopeCheck(frame.Scope.Check),
+            Outer: ToScopeCheck(frame.Scope.Outer),
+            ConditionValues: frame.Scope.ConditionValues,
+            IsCursor: true)));
+    }
+
+    private void RestoreOperationFrames(CombatContinuationState state)
+    {
+        foreach (CombatOperationState saved in state.OperationStack.Where(frame => frame.IsCursor))
+        {
+            Definition? owner = _rules.Definitions.FirstOrDefault(definition => definition.QualifiedId == saved.OwnerId);
+            Combatant? actor = Find(saved.ActorId);
+            if (owner is null || actor is null || saved.ListPath is not string listPath)
+            {
+                continue;
+            }
+
+            JsonElement operations = JsonAtPath(owner.Json, listPath);
+            if (operations.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            Combatant? target = saved.TargetId is string targetId ? Find(targetId) : null;
+            Combatant? source = saved.SourceId is string sourceId ? Find(sourceId) : null;
+            IReadOnlyDictionary<string, CompiledExpression>? use = saved.UseId is string useId
+                ? FindUseById(useId)?.Use.Parameters
+                : null;
+            _operationFrames.Add(new OperationFrame
+            {
+                Owner = owner,
+                Operations = operations,
+                Path = listPath,
+                Scope = new Scope(
+                    actor.Creature,
+                    target?.Creature,
+                    use,
+                    FromScopeCheck(saved.Check),
+                    Outer: FromScopeCheck(saved.Outer),
+                    ConditionValues: saved.ConditionValues),
+                Actor = actor,
+                Target = target,
+                Source = source,
+                UseId = saved.UseId,
+                ActionId = saved.ActionId,
+                Index = Math.Clamp(saved.Index, 0, operations.GetArrayLength()),
+            });
+        }
+    }
+
+    private (Combatant Owner, UseOption Use)? FindUseById(string useId)
+    {
+        foreach (Combatant member in Everyone)
+        {
+            if (FindUse(member, useId) is UseOption use)
+            {
+                return (member, use);
+            }
+        }
+
+        return null;
+    }
+
+    private int OperationFrameStart(Combatant actor, UseOption use, Combatant target)
+    {
+        string? useId = UseId(actor, use);
+        for (int index = 0; index < _operationFrames.Count; index++)
+        {
+            OperationFrame frame = _operationFrames[index];
+            if (frame.Actor == actor
+                && frame.Target == target
+                && frame.UseId == useId)
+            {
+                return index;
+            }
+        }
+
+        return _operationFrames.Count;
+    }
+
+    private static JsonElement JsonAtPath(JsonElement root, string path)
+    {
+        if (path == "$")
+        {
+            return root;
+        }
+
+        JsonElement current = root;
+        int position = path.StartsWith("$.", StringComparison.Ordinal) ? 2 : 1;
+        while (position < path.Length)
+        {
+            if (path[position] == '.')
+            {
+                position++;
+            }
+
+            int propertyStart = position;
+            while (position < path.Length && path[position] is not ('.' or '['))
+            {
+                position++;
+            }
+
+            if (position > propertyStart)
+            {
+                current = current.GetProperty(path[propertyStart..position]);
+            }
+
+            while (position < path.Length && path[position] == '[')
+            {
+                int close = path.IndexOf(']', position + 1);
+                if (close < 0 || !int.TryParse(path[(position + 1)..close], out int index))
+                {
+                    throw new ArgumentException($"Invalid operation JSON path '{path}'.", nameof(path));
+                }
+
+                current = current.EnumerateArray().ElementAt(index);
+                position = close + 1;
+            }
+        }
+
+        return current;
     }
 
     private void RestoreInterrupt(CombatInterruptState interrupt, CombatContinuationState state)
@@ -629,14 +859,20 @@ public sealed partial class CombatRunner
             : null;
         int targetIndex = actionOperation?.TargetIndex ?? 0;
         bool alreadyPaid = actionOperation?.AlreadyPaid ?? false;
+        Scope scope = _operationFrames.FirstOrDefault(frame =>
+                frame.Actor == actor
+                && frame.Target == target
+                && frame.UseId == UseId(actor, use))?.Scope
+            ?? new Scope(actor.Creature, target.Creature, use.Parameters);
         return new ActionContinuation(
             actor,
             use,
             target,
-            new Scope(actor.Creature, target.Creature, use.Parameters),
+            scope,
             targets,
             targetIndex,
-            alreadyPaid);
+            alreadyPaid,
+            OperationFrameStart(actor, use, target));
     }
 
     private void RestorePostRoll(CombatCheckState saved, CombatContinuationState state)
@@ -1059,6 +1295,11 @@ public sealed partial class CombatRunner
             ApplyResumedDamage(frame, damage);
             if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
             {
+                ResumeOperationFramesForAction(frame.Action);
+            }
+
+            if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
+            {
                 ContinueRemainingTargets(frame.Action);
             }
         }
@@ -1069,6 +1310,27 @@ public sealed partial class CombatRunner
         else if (frame.Trigger == "leaves_reach" && frame.Movement is not null && !frame.Movement.Actor.Defeated)
         {
             ResumeMovement(frame.Movement);
+            if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
+            {
+                ResumeOperationFramesForAction(frame.Action);
+                if (_phase != CombatPhase.AwaitingInterrupt)
+                {
+                    ContinueRemainingTargets(frame.Action);
+                }
+            }
+        }
+        else if (frame.Trigger is "damaged" or "ally_defeated"
+            && frame.Action is not null
+            && !frame.Action.Actor.Defeated)
+        {
+            // These triggers fire after the current operation has already
+            // applied. Resume at the next target; rerunning the action would
+            // duplicate the operation that caused the reaction.
+            ResumeOperationFramesForAction(frame.Action);
+            if (_phase != CombatPhase.AwaitingInterrupt)
+            {
+                ContinueRemainingTargets(frame.Action);
+            }
         }
 
         if (_phase != CombatPhase.AwaitingInterrupt)
@@ -1452,10 +1714,42 @@ public sealed partial class CombatRunner
         ParentInterruptFrame parent = _parentInterruptFrames[^1];
         _parentInterruptFrames.RemoveAt(_parentInterruptFrames.Count - 1);
         PendingInterruptFrame frame = parent.Frame;
+        decimal amount = parent.Damage?.Amount ?? parent.Amount;
         if (frame.Trigger == "hit" && frame.Target is not null && frame.Track is not null)
         {
-            ApplyResumedDamage(frame, parent.Amount);
+            ApplyResumedDamage(frame, amount);
             if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
+            {
+                ResumeOperationFramesForAction(frame.Action);
+            }
+
+            if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
+            {
+                ContinueRemainingTargets(frame.Action);
+            }
+        }
+        else if (frame.Trigger == "targeted" && frame.Action is not null && !frame.Action.Actor.Defeated)
+        {
+            ContinueAction(frame.Action);
+        }
+        else if (frame.Trigger == "leaves_reach" && frame.Movement is not null && !frame.Movement.Actor.Defeated)
+        {
+            ResumeMovement(frame.Movement);
+            if (_phase != CombatPhase.AwaitingInterrupt && frame.Action is not null)
+            {
+                ResumeOperationFramesForAction(frame.Action);
+                if (_phase != CombatPhase.AwaitingInterrupt)
+                {
+                    ContinueRemainingTargets(frame.Action);
+                }
+            }
+        }
+        else if (frame.Trigger is "damaged" or "ally_defeated"
+            && frame.Action is not null
+            && !frame.Action.Actor.Defeated)
+        {
+            ResumeOperationFramesForAction(frame.Action);
+            if (_phase != CombatPhase.AwaitingInterrupt)
             {
                 ContinueRemainingTargets(frame.Action);
             }

@@ -244,8 +244,8 @@ public sealed class LiveCampaignCombatTests
             List<ModuleDiagnostic> problems = [];
             Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-side-save.json", set, problems));
             Assert.Contains(problems, problem => problem.JsonPath is string path
-                && path.Contains("$.pending_combat.continuation.combatants[", StringComparison.Ordinal)
-                && path.EndsWith(".side", StringComparison.Ordinal)
+                && path.Contains("$.pending_combat.continuation.Combatants[", StringComparison.Ordinal)
+                && path.EndsWith(".Side", StringComparison.Ordinal)
                 && problem.Message.Contains("participant source", StringComparison.Ordinal));
         });
     }
@@ -274,8 +274,37 @@ public sealed class LiveCampaignCombatTests
             List<ModuleDiagnostic> problems = [];
             Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-turn-index-save.json", set, problems));
             Assert.Contains(problems, problem =>
-                problem.JsonPath == "$.pending_combat.continuation.turn_index"
-                && problem.Message.Contains("turn_order length", StringComparison.Ordinal));
+                problem.JsonPath == "$.pending_combat.continuation.TurnIndex"
+                && problem.Message.Contains("TurnOrder length", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsUnknownTookTurnId()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 41);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonArray tookTurns = save["pending_combat"]!["continuation"]!["TookTurns"]!.AsArray();
+            int invalidIndex = tookTurns.Count;
+            tookTurns.Add("missing-combatant");
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-took-turn-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == $"$.pending_combat.continuation.TookTurns[{invalidIndex}]"
+                && problem.Message.Contains("unknown combatant", StringComparison.Ordinal));
         });
     }
 
