@@ -234,6 +234,24 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void TheViewsAspectIsKeptForTheCombatCamera()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            Run(session, engine, """{ "action": "view-aspect", "aspect": 2.35 }""");
+            Assert.Equal(2.35, session.ViewAspect);
+            Assert.Empty(session.Notes);
+
+            Run(session, engine, """{ "action": "view-aspect", "aspect": 40 }""");
+            Assert.Equal(2.35, session.ViewAspect);
+            Assert.Contains("\"aspect\" must be the view's width over its height", Assert.Single(session.Notes), StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
     public void AMembersTracksReachTheProjectionAsValuesWithTheFoughtTrackVital()
     {
         using TempModules scratch = new();

@@ -52,13 +52,83 @@ internal sealed class CombatScene : IDisposable
     /// <summary>The combat camera's vertical field of view: narrower than the corridor's, framing the field.</summary>
     public const double FieldOfView = 46;
 
-    /// <summary>Where the camera stands for the current field: straight on, centred, 30 degrees down, further back for a wider field.</summary>
-    public CameraPose Pose => PoseFor(_width, _depth);
+    /// <summary>How far the camera looks down, in degrees.</summary>
+    private const double Pitch = 30;
 
-    public static CameraPose PoseFor(int width, int depth)
+    /// <summary>How tall a figure stands, in cells, so the far row's heads stay in the frame.</summary>
+    private const double FigureHeight = 1.3;
+
+    /// <summary>How much of the frame the field may fill, leaving a margin on every side.</summary>
+    private const double Fill = 0.9;
+
+    /// <summary>Where the camera stands for the current field in a view of the given width-to-height <paramref name="aspect"/>.</summary>
+    public CameraPose PoseIn(double aspect) => PoseFor(_width, _depth, aspect);
+
+    /// <summary>
+    /// Straight on, centred and 30 degrees down, as close as it can stand
+    /// with the whole field and the figures on it inside the frame: a wide
+    /// view brings it closer, a narrow or deep one sends it back.
+    /// </summary>
+    public static CameraPose PoseFor(int width, int depth, double aspect)
     {
-        float back = 4.6f + (Math.Max(0, Math.Max(width - Width, depth - Depth)) * 1.4f);
-        return new CameraPose(new Vector3(width / 2f, 3.2f + (back - 4.6f) * 0.55f, (depth / 2f) + back), -30, 0);
+        double pitch = Pitch * Math.PI / 180;
+        Vector3 forward = new(0, (float)-Math.Sin(pitch), (float)-Math.Cos(pitch));
+        Vector3 up = new(0, (float)Math.Cos(pitch), (float)-Math.Sin(pitch));
+        Vector3 centre = new(width / 2f, 0, depth / 2f);
+        double tanY = Math.Tan(FieldOfView * Math.PI / 360);
+        double tanX = tanY * Math.Max(0.1, aspect);
+        Vector3[] corners =
+        [
+            new(0, 0, 0), new(width, 0, 0), new(0, 0, depth), new(width, 0, depth),
+            new(0, (float)FigureHeight, 0), new(width, (float)FigureHeight, 0), new(0, (float)FigureHeight, depth), new(width, (float)FigureHeight, depth),
+        ];
+
+        // Where each corner shows in the frame from an eye: -1 to 1 across and up, or null behind the camera.
+        (double X, double Y)? Seen(Vector3 eye, Vector3 corner)
+        {
+            Vector3 seen = corner - eye;
+            double ahead = Vector3.Dot(seen, forward);
+            return ahead <= 0.1 ? null : (seen.X / (ahead * tanX), Vector3.Dot(seen, up) / (ahead * tanY));
+        }
+
+        bool Fits(Vector3 eye)
+        {
+            return corners.All(corner => Seen(eye, corner) is var (x, y) && Math.Abs(x) <= Fill && Math.Abs(y) <= Fill);
+        }
+
+        // The field shrinks in the frame as the camera backs away, so the closest distance that fits is a bisection.
+        Vector3 Closest(Vector3 target)
+        {
+            double near = 0.5;
+            double far = 4 * (width + depth + 4);
+            for (int step = 0; step < 40; step++)
+            {
+                double middle = (near + far) / 2;
+                if (Fits(target - (forward * (float)middle)))
+                {
+                    far = middle;
+                }
+                else
+                {
+                    near = middle;
+                }
+            }
+
+            return target - (forward * (float)far);
+        }
+
+        // Looking down, the field's near edge sits low and the far edge high but not as far; aim
+        // a little off the centre so the field sits in the middle of the frame, then close in again.
+        Vector3 target = centre;
+        for (int pass = 0; pass < 3; pass++)
+        {
+            Vector3 eye = Closest(target);
+            List<double> heights = corners.Select(corner => Seen(eye, corner)!.Value.Y).ToList();
+            double middle = (heights.Min() + heights.Max()) / 2;
+            target += up * (float)(middle * Vector3.Distance(eye, target) * tanY);
+        }
+
+        return new CameraPose(Closest(target), -Pitch, 0);
     }
 
     /// <summary>Adds the scene for <paramref name="fight"/>, building it when the fight is new.</summary>

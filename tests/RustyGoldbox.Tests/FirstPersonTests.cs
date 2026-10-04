@@ -98,4 +98,47 @@ public sealed class FirstPersonTests
             yield return (geometry.Normals[start], centre, geometry.Uvs.Skip(start).Take(4).Min(uv => uv.X));
         }
     }
+
+    [Fact]
+    public void TheCombatCameraFramesTheFieldToTheViewsShape()
+    {
+        CameraPose narrow = CombatScene.PoseFor(15, 9, 1.0);
+        CameraPose wide = CombatScene.PoseFor(15, 9, 2.4);
+
+        // Straight on, centred, looking down; a wide view lets it stand closer than a square one.
+        Assert.Equal(7.5f, wide.Position.X, 3);
+        Assert.Equal(-30, wide.PitchDegrees, 3);
+        Assert.True(Vector3.Distance(wide.Position, new Vector3(7.5f, 0, 4.5f)) < Vector3.Distance(narrow.Position, new Vector3(7.5f, 0, 4.5f)));
+
+        // The field fills the frame: every corner is inside it, and some corner reaches its margin.
+        foreach ((CameraPose pose, double aspect) in new[] { (narrow, 1.0), (wide, 2.4) })
+        {
+            double reach = Reach(pose, 15, 9, aspect);
+            Assert.InRange(reach, 0.85, 0.9001);
+        }
+    }
+
+    /// <summary>How far toward the frame's edge the field's furthest corner (with figures standing on it) appears, from 0 at the centre to 1 at the edge.</summary>
+    private static double Reach(CameraPose pose, int width, int depth, double aspect)
+    {
+        double pitch = 30 * Math.PI / 180;
+        Vector3 forward = new(0, (float)-Math.Sin(pitch), (float)-Math.Cos(pitch));
+        Vector3 up = new(0, (float)Math.Cos(pitch), (float)-Math.Sin(pitch));
+        double tanY = Math.Tan(CombatScene.FieldOfView * Math.PI / 360);
+        double reach = 0;
+        foreach (float x in new[] { 0f, width })
+        {
+            foreach (float y in new[] { 0f, 1.3f })
+            {
+                foreach (float z in new[] { 0f, depth })
+                {
+                    Vector3 seen = new Vector3(x, y, z) - pose.Position;
+                    double ahead = Vector3.Dot(seen, forward);
+                    reach = Math.Max(reach, Math.Max(Math.Abs(seen.X) / (ahead * tanY * aspect), Math.Abs(Vector3.Dot(seen, up)) / (ahead * tanY)));
+                }
+            }
+        }
+
+        return reach;
+    }
 }

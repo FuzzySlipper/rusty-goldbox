@@ -81,7 +81,7 @@ internal sealed class SceneView : IDisposable
                     key => fight.Fight.Field is CombatField field && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
                     Floor(rules, session.Set, state.Area),
                     facts);
-                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.Pose, CombatScene.FieldOfView)));
+                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(session.ViewAspect), CombatScene.FieldOfView)));
             }
             else if (session.Screen == Screen.Play)
             {

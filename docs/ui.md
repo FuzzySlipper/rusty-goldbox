@@ -15,7 +15,12 @@ frame leaves clear; its shadow paints the gaps between the other panels.
 The UI anchors the view's inside (`.gb-view-surface`) under the name `hero`
 with `context.viewport.anchor`, and the Game anchors its camera to the same
 name, so the Engine draws the world there through every resize and layout
-change without the UI or the Game doing anything. Clicks
+change without the UI or the Game doing anything. The Game can't yet read
+the view's shape, which framing the combat field needs, so the UI sends the
+view's width over its height (`{ action: "view-aspect", aspect }`) when it
+changes and once more shortly after, as the host drops claims made while it
+rebinds the runtime; this stands in until the Engine reports an anchored
+view's rectangle (rusty-engine #9361). Clicks
 on the view reach the Engine canvas; every other panel is marked
 `data-rusty-ui-interactive` so it takes its own pointer input.
 

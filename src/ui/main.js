@@ -127,6 +127,30 @@ export function mountProductUi(root, context) {
   // every resize and layout change (SceneView anchors the camera to "hero").
   const removeAnchor = context?.viewport?.anchor?.('hero', viewSurface);
   const resized = new ResizeObserver(arrange);
+
+  // The combat camera frames the field to the view's shape, which the Game
+  // can't read yet: send the view's width over its height when it changes,
+  // and once more a moment after, as the host drops claims made while it
+  // rebinds the runtime after a resize.
+  let sentAspect = 0;
+  let aspectTimer = 0;
+  const sendAspect = (again) => {
+    if (!viewSurface.isConnected || viewSurface.clientWidth === 0 || viewSurface.clientHeight === 0) {
+      return;
+    }
+
+    const aspect = Math.round((viewSurface.clientWidth / viewSurface.clientHeight) * 100) / 100;
+    if (aspect !== sentAspect || again) {
+      sentAspect = aspect;
+      send({ action: 'view-aspect', aspect });
+    }
+  };
+  const viewResized = new ResizeObserver(() => {
+    sendAspect(false);
+    clearTimeout(aspectTimer);
+    aspectTimer = setTimeout(() => sendAspect(true), 600);
+  });
+  viewResized.observe(viewSurface);
   resized.observe(panel);
   arrange();
 
@@ -183,6 +207,8 @@ export function mountProductUi(root, context) {
       unsubscribe?.();
       resized.disconnect();
       removeAnchor?.();
+      viewResized.disconnect();
+      clearTimeout(aspectTimer);
       log.dispose();
       map.dispose();
       panel.remove();

@@ -251,7 +251,7 @@ only when something changed. Agent playtests can hold time with the Engine's
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
 begin, play, continue, save, load, quit, volume, skin, layout-config (the player's panel
-proportions) and ui-scale), plus digital intents mapped from keys: arrows and
+proportions), ui-scale and view-aspect), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
 turns a bad one into a note; a key intent acts on a key press or on a UI claim
@@ -276,7 +276,12 @@ camera to `hero` (`CameraView.SetViewportAnchor`), the UI anchors the panel's
 inside under the same name, and the Engine keeps the camera's views over that
 element through resizes with no product code; the camera's own viewport (the
 whole window) applies only until a page anchors it. The vertical field of view
-holds, so a wider panel sees more to the sides. A sprite's placement (an event
+holds, so a wider panel sees more to the sides. The combat camera frames the
+field to the view's shape (`CombatScene.PoseFor`): straight on and 30 degrees
+down, it stands as close as it can with every corner of the field, and
+figures standing on it, inside 90% of the frame, aimed so the field sits in
+the frame's middle. The view's aspect comes from the panels (`view-aspect`)
+until the Engine reports an anchored view's rectangle (rusty-engine #9361). A sprite's placement (an event
 picture's) is within the camera's viewport. The area becomes one generated mesh: each wall, door or
 secret door on a cell edge is a quad facing into that cell (back faces are not
 drawn), and each cell has a floor and a ceiling, textured from the area's
@@ -311,7 +316,7 @@ When a play command's facts include a fight (`FightFact`, which carries each
 combatant's side, monster or class, and start on the combat's track), the
 session switches to the combat screen and a `FightReplay` shows its facts one
 beat at a time. The scene draws each combatant with the sprite its monster or
-class has a `figure` for, under a camera straight on and 30 degrees down;
+class has a `figure` for, under a camera straight on and 30 degrees down, framed to the view (above);
 figures are spherical billboards so they stay upright under that camera.
 Continue (a button, Enter or Space) skips to the end, then returns to play.
 Play commands wait until then.
