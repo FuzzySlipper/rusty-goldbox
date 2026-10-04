@@ -1,5 +1,7 @@
 using System.Text.Json;
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Combat;
 
@@ -24,9 +26,10 @@ public sealed class CombatField
 
     private readonly Dictionary<Cell, Terrain> _terrain;
 
-    private CombatField(Definition combat, int width, int height, bool zones, bool diagonal, Dictionary<Cell, Terrain> terrain)
+    private CombatField(Definition combat, Definition? encounter, int width, int height, bool zones, bool diagonal, Dictionary<Cell, Terrain> terrain)
     {
         Combat = combat;
+        Encounter = encounter;
         Width = width;
         Height = height;
         Zones = zones;
@@ -36,6 +39,9 @@ public sealed class CombatField
 
     /// <summary>The combat definition the field belongs to.</summary>
     public Definition Combat { get; }
+
+    /// <summary>The encounter whose terrain was applied, when one supplied it.</summary>
+    public Definition? Encounter { get; }
 
     public int Width { get; }
 
@@ -84,7 +90,7 @@ public sealed class CombatField
             }
         }
 
-        return new CombatField(combat, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), zones, diagonal, terrain);
+        return new CombatField(combat, encounter, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), zones, diagonal, terrain);
     }
 
     /// <summary>The terrain kinds a combat definition's field declares, by key.</summary>
@@ -181,16 +187,31 @@ public sealed class CombatField
     /// Starting cells: side 0 from the left edge, side 1 from the right, each
     /// filling a column from the middle outward before moving one column in,
     /// passing over cells creatures can't stand in. When an anchor is given,
-    /// it is preferred and the remaining members fill nearby cells.
+    /// it is preferred and the remaining members fill nearby cells. A caller
+    /// may pass a reservation set shared by all sides; selected grid cells are
+    /// added to it so single-occupant fields never overlap deployments.
     /// </summary>
-    public IReadOnlyList<Cell> Deploy(int side, int count, Cell? anchor = null)
+    public IReadOnlyList<Cell> Deploy(int side, int count, Cell? anchor = null, ISet<Cell>? occupied = null)
     {
+        if (count <= 0)
+        {
+            return [];
+        }
+
         List<int> rows = Enumerable.Range(0, Height).OrderBy(row => Math.Abs(row * 2 - (Height - 1))).ThenBy(row => row).ToList();
-        List<Cell> open = Enumerable.Range(0, Width)
+        // The first two sides start at opposite edges. Later sides retain that
+        // inward preference, then visit any columns the offset skipped so a
+        // multi-sided fight can use every remaining passable cell.
+        List<int> columns = Enumerable.Range(0, Width)
             .Select(column => side % 2 == 0 ? column + (side / 2) : Width - 1 - column - (side / 2))
-            .Where(x => x >= 0 && x < Width)
+            .Where(column => column >= 0 && column < Width)
+            .Concat(Enumerable.Range(0, Width))
+            .Distinct()
+            .ToList();
+        List<Cell> open = columns
             .SelectMany(x => rows.Select(y => new Cell(x, y)))
             .Where(Passable)
+            .Where(cell => Zones || occupied is null || !occupied.Contains(cell))
             .ToList();
 
         if (anchor is Cell starting)
@@ -202,25 +223,45 @@ public sealed class CombatField
                 .ToList();
         }
 
-        if (open.Count == 0)
-        {
-            open.Add(new Cell(side % 2 == 0 ? 0 : Width - 1, rows[0]));
-        }
-
         if (Zones)
         {
-            Cell zone = anchor ?? open[0];
+            if (open.Count == 0)
+            {
+                throw DeploymentFailure(side, count, 0, zone: true);
+            }
+
+            Cell zone = anchor is Cell preferred && Contains(preferred) && Passable(preferred) ? preferred : open[0];
             return Enumerable.Repeat(zone, count).ToList();
         }
 
-        List<Cell> cells = [];
-        for (int index = 0; index < count; index++)
+        if (open.Count < count)
         {
-            // A field too full for everyone stacks the rest on the last cell.
-            cells.Add(open[Math.Min(index, open.Count - 1)]);
+            throw DeploymentFailure(side, count, open.Count);
+        }
+
+        List<Cell> cells = open.Take(count).ToList();
+        if (occupied is not null)
+        {
+            foreach (Cell cell in cells)
+            {
+                occupied.Add(cell);
+            }
         }
 
         return cells;
+    }
+
+    private RuleFailure DeploymentFailure(int side, int count, int available, bool zone = false)
+    {
+        Definition owner = Encounter ?? Combat;
+        string source = Encounter is null
+            ? $"combat {Combat.QualifiedId}"
+            : $"combat {Combat.QualifiedId} and encounter {Encounter.QualifiedId}";
+        string path = Encounter is null ? "$.field" : "$.terrain";
+        string message = zone
+            ? $"{source} has no passable zone for side {side}; add a passable cell before deploying {count} participants."
+            : $"{source} needs {count} distinct passable cells for side {side}, but only {available} remain; add passable cells or reduce the participants. Grid fields do not stack creatures.";
+        return new RuleFailure(new ModuleDiagnostic("combat.deployment", message, owner.Module, owner.File, path));
     }
 
 }

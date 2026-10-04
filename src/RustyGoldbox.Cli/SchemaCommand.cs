@@ -24,7 +24,7 @@ internal static class SchemaCommand
         (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
         if (error is null && parsed.Positionals.Count > 1)
         {
-            error = "Usage: goldbox schema [type | module | expressions | operations | events | media]";
+            error = "Usage: goldbox schema [type | module | expressions | operations | events | media | live-combat]";
         }
 
         if (error is not null)
@@ -63,11 +63,16 @@ internal static class SchemaCommand
             return MediaTopic(output);
         }
 
+        if (topic == "live-combat")
+        {
+            return LiveCombat(output);
+        }
+
         DefinitionType? type = DefinitionTypes.Find(topic);
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events, media.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, module, expressions, operations, events, media, live-combat.");
         }
 
         return Type(output, type);
@@ -80,7 +85,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "module", "expressions", "operations", "events", "media" },
+                topics = new[] { "module", "expressions", "operations", "events", "media", "live-combat" },
             });
             return GoldboxCli.Ok;
         }
@@ -100,6 +105,7 @@ internal static class SchemaCommand
         output.Line("  expressions         The expression language and its functions.");
         output.Line("  operations          What actions and conditions can do: damage, heal, conditions, checks.");
         output.Line("  events              Campaign event kinds and their fields.");
+        output.Line("  live-combat         Script commands and JSON observations for a suspended fight.");
         return GoldboxCli.Ok;
     }
 
@@ -331,6 +337,79 @@ internal static class SchemaCommand
         output.Line();
         output.Line($"Example: {ExpressionReference.Example}");
         output.Line("Try one with `goldbox eval \"<expression>\" --module <path> --context '{\"self\": {...}}'`.");
+        return GoldboxCli.Ok;
+    }
+
+    private const string LiveCombatExample = """
+        {
+          "command": "combat action side-1-member-1 classic:melee_attack --target side-2-member-1",
+          "combat": {
+            "accepted": true,
+            "phase": "AwaitingAction",
+            "round": 1,
+            "activeActorId": "side-1-member-1",
+            "pendingDecision": {
+              "id": "decision:side-1-member-1:1:0",
+              "kind": "Action",
+              "actorId": "side-1-member-1",
+              "actions": [
+                {
+                  "id": "side-1-member-1/use/0/classic:melee_attack",
+                  "actionId": "classic:melee_attack",
+                  "name": "Melee attack",
+                  "cost": { "action": 1 },
+                  "targets": [
+                    { "id": "side-2-member-1", "name": "Target", "side": 1, "defeated": false, "escaped": false, "position": { "x": 2, "y": 1 } }
+                  ],
+                  "moves": []
+                }
+              ]
+            },
+            "combatants": [
+              { "id": "side-1-member-1", "side": 0, "controller": "Manual", "position": { "x": 1, "y": 1 } }
+            ]
+          }
+        }
+        """;
+
+    private static int LiveCombat(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                name = "live-combat",
+                description = "The read-only observation and command surface for a campaign combat suspended between turns.",
+                commands = new[]
+                {
+                    new { command = "combat inspect", description = "Observe phase, active actor, legal actions, targets, moves, budgets and tracks without advancing." },
+                    new { command = "combat control <actor-id> auto|manual", description = "Change the controller for one stable Core actor ID." },
+                    new { command = "combat action <actor-id> <action-id> [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>]", description = "Submit one legal Core action and explicit targets/path." },
+                    new { command = "combat move <actor-id> <action-id> <target-id> <x,y;x,y>", description = "Submit an authored movement action and path exactly as written." },
+                    new { command = "combat end-turn <actor-id>", description = "End the active actor's turn." },
+                    new { command = "combat decide <decision-id> [option-id]", description = "Accept or decline a pending interrupt/post-roll option." },
+                    new { command = "combat auto-step", description = "Advance the active manual actor through one automatic Core turn, then restore manual control." },
+                },
+                path = "A path is a semicolon-separated list of x,y cells. Each offered move lists targetIds; choose a path associated with the action's first selected target. A mismatched pair is refused before movement, spending or random price commitment. IDs and choices come from combat.pendingDecision; action IDs are stable machine IDs and do not include display names. CLI does not resolve rules.",
+                spellCosts = "SpellCosts contains known or committed resource prices. A random price remains null until a legal spell is selected, then is retained across save/resume. An accepted selection can report an unaffordable price without casting or spending; inspect the updated choice before retrying.",
+                example = System.Text.Json.JsonDocument.Parse(LiveCombatExample).RootElement,
+                trace = "goldbox play ... --trace adds a side-effect-free decision projection; observation never rolls dice.",
+            });
+            return GoldboxCli.Ok;
+        }
+
+        output.Line("Live combat commands are script lines under `goldbox play`:");
+        output.Line($"  {CombatScript.Usage}");
+        output.Line();
+        output.Line("Use `combat inspect` to discover stable actor/action/target IDs. Paths are semicolon-separated x,y cells; submit the copied machine IDs.");
+        output.Line("Each offered move lists targetIds. Choose the target first and use its associated path; mismatched pairs are refused before movement, spending or random price commitment.");
+        output.Line("`--combat-control manual` suspends the party at a decision; enemies remain automatic. The default is automatic.");
+        output.Line("`combat auto-step` assists one manual turn and restores manual control; use `combat control <actor-id> auto` for a persistent takeover.");
+        output.Line("Add `--trace` for a side-effect-free decision projection; inspection and trace do not roll dice.");
+        output.Line("SpellCosts contains known or committed prices; a random price stays null until a legal spell is selected. An accepted unaffordable price leaves resources unchanged, and retries use the same saved quote.");
+        output.Line();
+        output.Line("Example JSON observation:");
+        output.Line(LiveCombatExample.Trim());
         return GoldboxCli.Ok;
     }
 }

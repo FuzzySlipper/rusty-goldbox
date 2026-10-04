@@ -72,7 +72,7 @@ export function mountProductUi(root, context) {
 
   const status = createStatus(ui);
   const log = createLog(send);
-  const portraits = createPortraits(ui);
+  const portraits = createPortraits(send, ui);
   const map = createMap();
   const controls = createControls(send, ui);
   const overlay = createOverlay(send, ui);
@@ -187,9 +187,23 @@ export function mountProductUi(root, context) {
       return;
     }
 
+    const sheetState = shownScreen === screen
+      ? {
+        scrollTop: sheet.scrollTop,
+        focusKey: sheet.contains(document.activeElement) ? document.activeElement?.getAttribute('data-focus-key') : null,
+      }
+      : null;
     sheetNotes.replaceChildren(...(projection.notes ?? []).map((note) => element('li', {}, note)));
     overlay.render(projection, null);
     sheetBody.replaceChildren(screen === 'title' ? renderTitle(projection) : screen === 'party' ? renderParty(projection) : '');
+    if (sheetState) {
+      sheet.scrollTop = sheetState.scrollTop;
+      if (sheetState.focusKey) {
+        const target = [...sheet.querySelectorAll('[data-focus-key]')]
+          .find((candidate) => candidate.getAttribute('data-focus-key') === sheetState.focusKey);
+        target?.focus({ preventScroll: true });
+      }
+    }
   };
 
   let unsubscribe;

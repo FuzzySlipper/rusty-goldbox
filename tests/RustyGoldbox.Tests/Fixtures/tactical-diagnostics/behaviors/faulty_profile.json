@@ -1,0 +1,38 @@
+{
+  "type": "combat-behavior",
+  "id": "faulty_profile",
+  "name": "Faulty profile for a data-only repair",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "20",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Wrong volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    },
+    {
+      "priority": "10",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Needle volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

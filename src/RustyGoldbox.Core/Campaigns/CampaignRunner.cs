@@ -13,9 +13,10 @@ namespace RustyGoldbox.Core.Campaigns;
 /// The campaign command surface: start a campaign, then take commands
 /// (move, turn, choose, look, status). Each call returns what happened as
 /// facts. The CLI and the Game drive the same commands, passing Engine
-/// Random from inside their host callback; the runner rolls command n on
-/// scope goldbox.play.n from the campaign's seed, which is what lets a saved
-/// game resume exactly.
+/// Random from inside their host callback; ordinary commands roll command n
+/// on scope goldbox.play.n from the campaign's seed. Manual live combat uses
+/// its own keyed scope and persists the next draw key, so the owner can be
+/// reconstructed on a later callback without retaining an Engine stream.
 /// </summary>
 /// <exception cref="RuleFailure">A rule expression failed; it names the definition, file and path.</exception>
 public sealed partial class CampaignRunner
@@ -28,6 +29,19 @@ public sealed partial class CampaignRunner
     private readonly RuleSet _rules;
     private readonly CampaignState _state;
     private readonly Dictionary<Definition, AreaMap> _maps = [];
+    private CombatRunner? _combat;
+    private DiceRoller? _combatDice;
+    private CombatObservation? _combatObservation;
+
+    /// <summary>
+    /// The default controller for party combatants created by this runner.
+    /// Automatic preserves the CLI's historical all-AI behaviour; Game sets
+    /// this to Manual before entering a campaign for player-controlled fights.
+    /// </summary>
+    public CombatControlMode DefaultCombatControl { get; set; } = CombatControlMode.Automatic;
+
+    /// <summary>Retains actual authored behavior proposals for CLI or test traces.</summary>
+    public bool CollectCombatBehaviorTraces { get; set; }
 
     public CampaignRunner(RuleSet rules, CampaignState state)
     {
@@ -36,6 +50,100 @@ public sealed partial class CampaignRunner
     }
 
     public CampaignState State => _state;
+
+    /// <summary>The current live combat view, or null while campaign events run.</summary>
+    public CombatObservation? Combat => _combat?.Observe() ?? _combatObservation;
+
+    /// <summary>Loads a saved live combat when needed and observes it without advancing or drawing.</summary>
+    public CombatObservation? ObserveCombat(IRandomService random)
+    {
+        if (_state.PendingCombat is null)
+        {
+            return null;
+        }
+
+        return WithDice(random, dice =>
+        {
+            EnsureCombat(random, dice);
+            return _combat!.Observe();
+        });
+    }
+
+    /// <summary>Submits one typed combat command through the campaign owner.</summary>
+    public CampaignCombatCommandResult SubmitCombat(CombatCommand command, IRandomService random)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return WithDice(random, dice => SubmitCombat(command, random, dice));
+    }
+
+    /// <summary>Changes one combatant's controller without changing its turn or resources.</summary>
+    public CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random)
+    {
+        return WithDice(random, dice => SetCombatController(actorId, mode, random, dice));
+    }
+
+    /// <summary>Temporarily resolves one manual actor's current turn automatically.</summary>
+    public CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random)
+    {
+        return WithDice(random, dice => StepCombatAutomatically(actorId, random, dice));
+    }
+
+    private CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random, DiceRoller? dice = null)
+    {
+        if (_state.PendingCombat is null)
+        {
+            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
+        }
+
+        EnsureCombat(random, dice);
+        bool changed = _combat!.SetController(actorId, mode);
+        List<PlayFact> facts = [];
+        if (!changed)
+        {
+            return new CampaignCombatCommandResult(false, $"Unknown combatant '{actorId}'.", _combat.Observe(), facts);
+        }
+
+        if (_combat.Sides.SelectMany(side => side.Members).FirstOrDefault(member => member.Id == actorId)?.Character is Character character)
+        {
+            character.CombatControlPreference = mode;
+        }
+
+        _state.PendingCombat.Continuation = _combat.Capture();
+        CombatObservation terminalObservation = _combat.Observe();
+        DiceRoller continuationDice = _combatDice ?? dice!;
+        if (_combat.Phase == CombatPhase.Ended && CompleteCombat(continuationDice, facts) is Definition next)
+        {
+            RunChain(next, continuationDice, facts);
+        }
+
+        return new CampaignCombatCommandResult(true, null, _combat?.Observe() ?? terminalObservation, facts);
+    }
+
+    private CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random, DiceRoller? dice = null)
+    {
+        if (_state.PendingCombat is null)
+        {
+            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
+        }
+
+        EnsureCombat(random, dice);
+        CombatCommandResult result = _combat!.StepAutomaticTurn(actorId);
+        List<PlayFact> facts = [];
+        if (result.Accepted)
+        {
+            _state.PendingCombat.Continuation = _combat.Capture();
+            if (_combat.Phase == CombatPhase.Ended)
+            {
+                DiceRoller continuationDice = _combatDice ?? dice!;
+                if (CompleteCombat(continuationDice, facts) is Definition next)
+                {
+                    RunChain(next, continuationDice, facts);
+                }
+            }
+        }
+
+        return new CampaignCombatCommandResult(result.Accepted, result.Reason, _combat?.Observe() ?? result.Observation, facts);
+    }
 
     /// <summary>A new campaign: the party at the start entry, variables at their initial values.</summary>
     public static CampaignState NewState(RuleSet rules, Definition campaign, IEnumerable<Character> party, ulong seed)
@@ -87,14 +195,127 @@ public sealed partial class CampaignRunner
     /// <summary>Takes the next command, rolling on its own scope.</summary>
     public List<PlayFact> Execute(string command, IRandomService random)
     {
+        // A live combat owns its own keyed cursor. Legacy text commands are
+        // only inspection/refusal while it waits, so they must not move the
+        // campaign command scope used after combat completes.
+        if (_state.Ended || _state.PendingCombat is not null)
+        {
+            return WithDice(random, dice => Execute(command, dice));
+        }
+
         _state.Commands++;
         return WithDice(random, dice => Execute(command, dice));
     }
 
-    private List<PlayFact> WithDice(IRandomService random, Func<DiceRoller, List<PlayFact>> step)
+    private T WithDice<T>(IRandomService random, Func<DiceRoller, T> step)
     {
         using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(_state.Seed, $"goldbox.play.{_state.Commands}"));
-        return step(new DiceRoller(random, stream));
+        try
+        {
+            return step(new DiceRoller(random, stream));
+        }
+        finally
+        {
+            if (_combat is not null)
+            {
+                _combatObservation = _combat.Observe();
+            }
+
+            _combat = null;
+            _combatDice = null;
+        }
+    }
+
+    private CampaignCombatCommandResult SubmitCombat(CombatCommand command, IRandomService random, DiceRoller dice)
+    {
+        if (_state.PendingCombat is null)
+        {
+            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
+        }
+
+        EnsureCombat(random, dice);
+        CombatCommandResult result = _combat!.Submit(command);
+        List<PlayFact> facts = [];
+        if (result.Accepted)
+        {
+            _state.PendingCombat.Continuation = _combat.Capture();
+            if (_combat.Phase == CombatPhase.Ended)
+            {
+                DiceRoller continuationDice = _combatDice ?? dice;
+                if (CompleteCombat(continuationDice, facts) is Definition next)
+                {
+                    RunChain(next, continuationDice, facts);
+                }
+            }
+        }
+
+        return new CampaignCombatCommandResult(result.Accepted, result.Reason, _combat?.Observe() ?? result.Observation, facts);
+    }
+
+    private CombatObservation NoCombatObservation() => new(
+        CombatPhase.NotStarted,
+        0,
+        null,
+        null,
+        null,
+        null,
+        [],
+        []);
+
+    private void EnsureCombat(IRandomService random, DiceRoller? commandDice = null)
+    {
+        if (_combat is not null)
+        {
+            return;
+        }
+
+        if (_state.PendingCombat is not PendingCombatState pending)
+        {
+            throw new InvalidOperationException("No campaign combat is pending.");
+        }
+
+        _combatDice = pending.Continuation.RandomScope is string scope
+            ? new DiceRoller(random, _state.Seed, scope, pending.Continuation.NextRandomKey)
+            : commandDice ?? throw new InvalidOperationException("A resumed combat needs its Engine random stream.");
+        (List<CombatSide> sides, _) = RestoreSides(pending);
+        _combat = CombatRunner.Restore(_rules, pending.Combat, sides, _combatDice, pending.Continuation, pending.Encounter, Setup(pending.Event));
+        _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
+        _combatObservation = _combat.Observe();
+    }
+
+    private (List<CombatSide> Sides, List<Combatant> Members) RestoreSides(PendingCombatState pending)
+    {
+        List<Combatant> party = [];
+        List<Combatant> monsters = [];
+        foreach (PendingCombatantSource source in pending.Participants)
+        {
+            Combatant member;
+            if (source.PartyIndex is int partyIndex)
+            {
+                member = Combatant.FromCharacter(_rules, _state.Party[partyIndex]);
+            }
+            else if (source.MonsterId is string monsterId)
+            {
+                Definition monster = _rules.Find(DefinitionTypes.Monster, monsterId, out string? problem)
+                    ?? throw new RuleFailure(new ModuleDiagnostic("save.combat", problem ?? $"Unknown monster '{monsterId}'.", pending.Encounter.Module, pending.Encounter.File, "$.monsters"));
+                member = Combatant.FromMonsterState(_rules, monster, source.Name);
+            }
+            else
+            {
+                throw new RuleFailure(new ModuleDiagnostic("save.combat", $"Combatant '{source.Id}' has no party or monster source.", pending.Event.Module, pending.Event.File, "$.combatants"));
+            }
+
+            if (member.Name != source.Name)
+            {
+                member = member.Renamed(source.Name);
+            }
+
+            member.Id = source.Id;
+            member.Side = source.Side;
+            (source.Side == 0 ? party : monsters).Add(member);
+        }
+
+        return ([new CombatSide("Party", party), new CombatSide(pending.Encounter.Name, monsters)], [.. party, .. monsters]);
     }
 
     private List<PlayFact> Begin(DiceRoller dice)
@@ -120,6 +341,12 @@ public sealed partial class CampaignRunner
         }
 
         string verb = words.Length == 0 ? "" : words[0].ToLowerInvariant();
+        if (_state.PendingCombat is not null && verb is not ("look" or "status"))
+        {
+            facts.Add(new RefusedFact("combat is waiting for a combat command; inspect the live combat and submit its typed action first."));
+            return facts;
+        }
+
         if (_state.PendingMenu is not null && verb is not ("choose" or "look" or "status"))
         {
             facts.Add(new RefusedFact($"choose an option first (choose <n>)."));
@@ -613,24 +840,20 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Who is in a fight and where they start on its track, for presenting it.</summary>
-    private List<FightMember> Members(Definition combat, Definition encounter, List<CombatSide> sides, CombatSetup? setup = null)
+    private List<FightMember> Members(Definition combat, IReadOnlyList<CombatSide> sides)
     {
         Definition track = _rules.Reference(combat, "$.track");
         Evaluator evaluator = new(_rules, null);
-        CombatField? field = CombatField.Of(combat, encounter);
         List<FightMember> members = [];
         for (int side = 0; side < sides.Count; side++)
         {
-            // The same starting cells the combat runner deploys to.
-            Cell? anchor = setup is not null && setup.Starts.Count > side ? setup.Starts[side] : null;
-            IReadOnlyList<Cell>? cells = field?.Deploy(side, sides[side].Members.Count, anchor);
             for (int index = 0; index < sides[side].Members.Count; index++)
             {
                 Combatant member = sides[side].Members[index];
                 Creature creature = member.Creature;
                 decimal start = evaluator.TrackCurrent(creature, track);
                 decimal? max = evaluator.KnownTrackMax(creature, track);
-                members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max, cells?[index]));
+                members.Add(new FightMember(member.Name, side, creature.Monster, creature.Monster is null ? creature.Class : null, start, max, creature.Position, member.Id));
             }
         }
 
@@ -639,36 +862,137 @@ public sealed partial class CampaignRunner
 
     private Definition? Fight(Definition evt, DiceRoller dice, List<PlayFact> facts)
     {
+        if (_state.PendingCombat is not null)
+        {
+            throw new InvalidOperationException("A campaign combat is already pending.");
+        }
+
         Definition encounter = _rules.Reference(evt, "$.encounter");
+        long combatSequence = checked(++_state.CombatSequence);
         Definition combat = evt.Json.TryGetProperty("combat", out _)
             ? _rules.Reference(evt, "$.combat")
             : _rules.OfType(DefinitionTypes.Combat).Single();
+        // Any party-side manual preference can suspend this fight, even when
+        // the campaign default is automatic. Give those fights their own
+        // persisted keyed cursor so a save can resume without replaying the
+        // caller's broader command stream.
+        DiceRoller combatDice = RequiresKeyedCombat()
+            ? dice.Keyed(_state.Seed, CombatScope(evt, combatSequence))
+            : dice;
         List<Combatant> party = _state.Party.Select(character => Combatant.FromCharacter(_rules, character)).ToList();
         List<CombatSide> sides = Encounters.Distinct(
         [
             new CombatSide("Party", party),
-            new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, dice)),
+            new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, combatDice)),
         ]);
         CombatSetup? setup = Setup(evt);
-        List<FightMember> members = Members(combat, encounter, sides, setup);
-        CombatResult result = CombatRunner.Run(_rules, combat, sides, dice, CombatRunner.RoundLimit(combat), encounter, setup);
-
-        // The party keeps what the fight did to its tracks.
-        for (int i = 0; i < _state.Party.Count; i++)
+        _combatDice = combatDice;
+        _combat = CombatRunner.Create(_rules, combat, sides, combatDice, encounter, setup);
+        _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
+        ApplyDefaultControllers(_combat);
+        PendingCombatState pending = new()
         {
-            foreach ((string id, TrackValue value) in sides[0].Members[i].Creature.Tracks)
-            {
-                _state.Party[i].Tracks[id] = new TrackValue { Current = value.Current, Max = _state.Party[i].Tracks.TryGetValue(id, out TrackValue? own) ? own.Max : null };
-            }
+            Event = evt,
+            Encounter = encounter,
+            Combat = combat,
+            Continuation = _combat.Capture(),
+        };
+        pending.Participants.AddRange(Sources(_combat.Sides));
+        pending.Members.AddRange(Members(combat, _combat.Sides).Select(ToPendingMember));
+        _state.PendingCombat = pending;
 
-            // And the prepared spells it cast.
-            if (sides[0].Members[i].Preparing.Count > 0)
+        _combat.Start(CombatRunner.RoundLimit(combat));
+        pending.Continuation = _combat.Capture();
+        return _combat.Phase == CombatPhase.Ended ? CompleteCombat(combatDice, facts) : null;
+    }
+
+    private string CombatScope(Definition evt, long combatSequence) => $"goldbox.campaign.combat.{combatSequence}.{evt.QualifiedId}";
+
+    private bool RequiresKeyedCombat()
+    {
+        return DefaultCombatControl == CombatControlMode.Manual
+            || _state.Party.Any(character => PartyCombatControl(character) == CombatControlMode.Manual);
+    }
+
+    private void ApplyDefaultControllers(CombatRunner combat)
+    {
+        IReadOnlyList<CombatSide> sides = combat.Sides;
+        foreach (CombatSide side in sides)
+        {
+            foreach (Combatant member in side.Members)
             {
-                _state.Party[i].Prepared = sides[0].Members[i].Prepared.ToList();
+                member.Controller = side == sides[0] ? PartyCombatControl(member.Character) : CombatControlMode.Automatic;
+            }
+        }
+    }
+
+    private CombatControlMode PartyCombatControl(Character? character)
+    {
+        if (character?.CombatControlPreference is CombatControlMode preference)
+        {
+            return preference;
+        }
+
+        if (character?.Npc?.Json.TryGetProperty("control", out JsonElement control) == true
+            && control.ValueKind == JsonValueKind.String)
+        {
+            return control.GetString() switch
+            {
+                "automatic" => CombatControlMode.Automatic,
+                "manual" => CombatControlMode.Manual,
+                _ => DefaultCombatControl,
+            };
+        }
+
+        return DefaultCombatControl;
+    }
+
+    private List<PendingCombatantSource> Sources(IReadOnlyList<CombatSide> sides)
+    {
+        List<PendingCombatantSource> sources = [];
+        for (int side = 0; side < sides.Count; side++)
+        {
+            foreach (Combatant member in sides[side].Members)
+            {
+                int? partyIndex = member.Character is Character character
+                    ? _state.Party.FindIndex(candidate => ReferenceEquals(candidate, character))
+                    : null;
+                sources.Add(new PendingCombatantSource(
+                    member.Id,
+                    side,
+                    member.Name,
+                    member.Creature.Monster?.QualifiedId,
+                    side == 0 && partyIndex is >= 0 ? partyIndex : null));
             }
         }
 
-        bool drawFlees = result.Winner is null && evt.Json.TryGetProperty("flee_on_draw", out JsonElement draw) && draw.GetBoolean();
+        return sources;
+    }
+
+    private static PendingFightMember ToPendingMember(FightMember member) => new(
+        member.Name,
+        member.Side,
+        member.Monster?.QualifiedId,
+        member.Class?.QualifiedId,
+        member.Start,
+        member.Max,
+        member.Position);
+
+    private Definition? CompleteCombat(DiceRoller dice, List<PlayFact> facts)
+    {
+        if (_state.PendingCombat is not PendingCombatState pending || _combat is null)
+        {
+            return null;
+        }
+
+        if (pending.Finalized)
+        {
+            return null;
+        }
+
+        CombatResult result = _combat.Result();
+        SyncParty(result.Sides[0], pending.Participants);
+        bool drawFlees = result.Winner is null && pending.Event.Json.TryGetProperty("flee_on_draw", out JsonElement draw) && draw.GetBoolean();
         FightOutcome outcome = result.FledSide is not null || drawFlees
             ? FightOutcome.Fled
             : result.Winner switch
@@ -677,38 +1001,66 @@ public sealed partial class CampaignRunner
                 null => FightOutcome.Undecided,
                 _ => FightOutcome.Lost,
             };
-        facts.Add(new FightFact(encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(combat, encounter), result.FledSide));
+        List<FightMember> members = pending.Members
+            .Select((member, index) => ToFightMember(member, index < pending.Participants.Count ? pending.Participants[index].Id : null))
+            .ToList();
+        facts.Add(new FightFact(pending.Encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(pending.Combat, pending.Encounter), result.FledSide));
 
-        // Every monster felled is worth its experience, whoever won.
-        decimal earned = sides[1].Members.Where(member => member.Defeated && !member.Escaped && member.Creature.Monster is not null)
-            .Sum(member => member.Creature.Monster!.Json.GetProperty("xp").GetDecimal());
+        decimal earned = result.Sides.Count > 1
+            ? result.Sides[1].Members.Where(member => member.Defeated && !member.Escaped && member.Creature.Monster is not null)
+                .Sum(member => member.Creature.Monster!.Json.GetProperty("xp").GetDecimal())
+            : 0;
         if (earned > 0)
         {
-            Award(evt, "$.encounter", earned, false, sides[0].Members.Select(member => !member.Defeated).ToList(), dice, facts);
-        }
-        if (outcome == FightOutcome.Won)
-        {
-            return Next(evt, "$.on_win");
+            Award(pending.Event, "$.encounter", earned, false, result.Sides[0].Members.Select(member => !member.Defeated).ToList(), dice, facts);
         }
 
-        if (outcome == FightOutcome.Undecided)
+        pending.Finalized = true;
+        Definition? next = outcome switch
         {
-            return Next(evt, "$.on_draw");
+            FightOutcome.Won => Next(pending.Event, "$.on_win"),
+            FightOutcome.Undecided => Next(pending.Event, "$.on_draw"),
+            FightOutcome.Fled => Next(pending.Event, "$.on_flee"),
+            _ => pending.Event.Json.TryGetProperty("on_lose", out _) ? Next(pending.Event, "$.on_lose") : null,
+        };
+        if (outcome == FightOutcome.Lost && next is null)
+        {
+            _state.Ended = true;
+            facts.Add(new EndedFact("The party has fallen."));
         }
 
-        if (outcome == FightOutcome.Fled)
-        {
-            return Next(evt, "$.on_flee");
-        }
+        _state.PendingCombat = null;
+        _combat = null;
+        _combatDice = null;
+        _combatObservation = null;
+        return next;
+    }
 
-        if (evt.Json.TryGetProperty("on_lose", out _))
+    private void SyncParty(CombatSide partySide, IReadOnlyList<PendingCombatantSource> sources)
+    {
+        foreach (PendingCombatantSource source in sources.Where(source => source.Side == 0 && source.PartyIndex is int))
         {
-            return Next(evt, "$.on_lose");
-        }
+            Character character = _state.Party[source.PartyIndex!.Value];
+            Combatant member = partySide.Members.Single(member => member.Id == source.Id);
+            character.Tracks.Clear();
+            foreach ((string id, TrackValue value) in member.Creature.Tracks)
+            {
+                character.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };
+            }
 
-        _state.Ended = true;
-        facts.Add(new EndedFact("The party has fallen."));
-        return null;
+            character.Conditions.Clear();
+            character.Conditions.AddRange(member.Creature.Conditions);
+            character.Equipment.Clear();
+            character.Equipment.AddRange(member.Creature.Equipment);
+            character.Prepared = member.Preparing.Count == 0 ? character.Prepared : member.Prepared.ToList();
+        }
+    }
+
+    private FightMember ToFightMember(PendingFightMember member, string? id)
+    {
+        Definition? monster = member.MonsterId is string monsterId ? _rules.Find(DefinitionTypes.Monster, monsterId, out _) : null;
+        Definition? characterClass = member.ClassId is string classId ? _rules.Find(DefinitionTypes.Class, classId, out _) : null;
+        return new FightMember(member.Name, member.Side, monster, characterClass, member.Start, member.Max, member.Position, id);
     }
 
     private CombatSetup? Setup(Definition evt)

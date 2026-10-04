@@ -1,0 +1,66 @@
+{
+  "type": "combat-behavior",
+  "id": "phase_watcher",
+  "name": "Change stance when wounded",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "when": "self.hit_points * 2 > self.max_hit_points",
+      "priority": "20",
+      "commit": "step",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Shard ray",
+            "damage": "1d8",
+            "increment": "6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "when": "self.hit_points * 2 <= self.max_hit_points",
+      "priority": "25",
+      "commit": "plan",
+      "steps": [
+        {
+          "destination": {
+            "kind": "toward",
+            "distance": "1"
+          },
+          "action": {
+            "action": "classic:close"
+          },
+          "target": "enemy"
+        },
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Rift claw",
+            "damage": "1d10"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    },
+    {
+      "when": "self.hit_points * 2 <= self.max_hit_points",
+      "priority": "24",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Rift claw",
+            "damage": "1d10"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

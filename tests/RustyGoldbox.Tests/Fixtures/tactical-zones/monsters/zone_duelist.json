@@ -1,0 +1,24 @@
+{
+  "type": "monster",
+  "id": "zone_duelist",
+  "name": "Zone duelist",
+  "class": "ascend:warrior",
+  "level": 1,
+  "behavior": "tactical-zones:three_beats",
+  "tracks": {
+    "ascend:hit_points": "12"
+  },
+  "stats": {
+    "ac": "14",
+    "might": "14",
+    "grace": "14"
+  },
+  "actions": [
+    {
+      "action": "ascend:melee_attack",
+      "name": "Training blade",
+      "damage": "1d6"
+    }
+  ],
+  "xp": 20
+}

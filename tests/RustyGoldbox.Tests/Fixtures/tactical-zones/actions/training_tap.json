@@ -1,0 +1,16 @@
+{
+  "type": "action",
+  "id": "training_tap",
+  "name": "Training tap",
+  "cost": {
+    "standard": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "always": [
+    {
+      "op": "damage",
+      "amount": "4"
+    }
+  ]
+}

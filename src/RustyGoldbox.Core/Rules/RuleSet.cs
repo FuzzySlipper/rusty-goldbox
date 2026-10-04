@@ -52,6 +52,9 @@ public sealed class RuleSet
     /// <summary>The icon asset each monster or class is listed with, from figure definitions that give one.</summary>
     public Dictionary<Definition, Definition> Icons { get; } = [];
 
+    /// <summary>Checked, reusable combat policies keyed by their module definition.</summary>
+    public Dictionary<Definition, CombatBehaviorProfile> CombatBehaviors { get; } = [];
+
     /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
     public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
 
@@ -117,6 +120,12 @@ public sealed class RuleSet
     public IReadOnlyList<Modifier> ModifiersOf(Definition definition)
     {
         return Modifiers.TryGetValue(definition, out List<Modifier>? modifiers) ? modifiers : [];
+    }
+
+    /// <summary>Gets a checked authored combat policy when one was declared.</summary>
+    public CombatBehaviorProfile? CombatBehaviorOf(Definition definition)
+    {
+        return CombatBehaviors.TryGetValue(definition, out CombatBehaviorProfile? behavior) ? behavior : null;
     }
 
     public IEnumerable<Definition> OfType(DefinitionType type) => Definitions.Where(definition => definition.Type == type);

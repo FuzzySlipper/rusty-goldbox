@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "id": "tactical-zones-trial",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Shared-zone training hall",
+  "requires": [
+    { "id": "ascend", "version": "^0.1.0" },
+    { "id": "tactical-zones", "version": "^0.1.0" },
+    { "id": "placeholder-art", "version": "^0.1.0" }
+  ],
+  "provenance": "Original integration fixture for live three-action combat in shared zones; see PROVENANCE.md."
+}

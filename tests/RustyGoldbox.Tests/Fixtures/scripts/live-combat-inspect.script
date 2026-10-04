@@ -1,0 +1,17 @@
+# Start at the sample crypt guard fight, suspend the party, and inspect legal choices.
+look
+left
+forward
+right
+forward
+forward
+forward
+right
+forward
+forward
+forward
+right
+forward
+choose 1
+forward
+combat inspect

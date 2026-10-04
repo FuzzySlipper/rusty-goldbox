@@ -1,0 +1,30 @@
+{
+  "type": "monster",
+  "id": "dusklark",
+  "name": "Dusklark",
+  "class": "classic:fighter",
+  "level": 2,
+  "behavior": "tactical-bestiaire:duelist",
+  "tracks": {
+    "classic:hit_points": "2d6 + 2"
+  },
+  "stats": {
+    "ac": "6",
+    "dex": "14",
+    "str": "10",
+    "movement": "120",
+    "size": "'small'"
+  },
+  "actions": [
+    {
+      "action": "classic:missile_attack",
+      "name": "Needle volley",
+      "damage": "1d6",
+      "increment": "6"
+    },
+    {
+      "action": "classic:close"
+    }
+  ],
+  "xp": 35
+}

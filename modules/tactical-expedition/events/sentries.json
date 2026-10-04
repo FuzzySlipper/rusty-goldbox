@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "sentries",
+  "kind": "combat",
+  "encounter": "gallery",
+  "combat": "tactical-bestiaire:tactical_grid",
+  "party_start": [
+    0,
+    1
+  ],
+  "monsters_start": [
+    9,
+    2
+  ],
+  "on_win": "sentries_down",
+  "on_lose": "retreat"
+}

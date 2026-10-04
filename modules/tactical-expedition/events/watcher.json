@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "watcher",
+  "kind": "combat",
+  "encounter": "phase",
+  "combat": "tactical-bestiaire:tactical_grid",
+  "party_start": [
+    0,
+    1
+  ],
+  "monsters_start": [
+    9,
+    2
+  ],
+  "on_win": "victory",
+  "on_lose": "retreat"
+}

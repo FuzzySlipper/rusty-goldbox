@@ -7,17 +7,33 @@ namespace RustyGoldbox.Core.Combat;
 
 /// <summary>An action a combatant can take, with the parameters it is used with.</summary>
 /// <param name="Spell">When the use casts a spell, the spell, whose cost it also spends.</param>
-public sealed record UseOption(Definition Action, string Name, IReadOnlyDictionary<string, CompiledExpression> Parameters, Definition? Spell = null);
+/// <param name="FromItem">The authored item kind that supplied missing parameters, when this use came from equipment.</param>
+public sealed record UseOption(
+    Definition Action,
+    string Name,
+    IReadOnlyDictionary<string, CompiledExpression> Parameters,
+    Definition? Spell = null,
+    string? FromItem = null);
 
 /// <summary>A creature in a fight: its side, state for this combat, and the actions it can take.</summary>
-public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseOption> uses)
+public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseOption> uses, string? id = null)
 {
     public string Name { get; } = name;
+
+    /// <summary>
+    /// Stable combat identity. It is intentionally separate from <see cref="Name"/>:
+    /// encounters can contain repeated display names and a save can restore the
+    /// same member after a campaign roster changes.
+    /// </summary>
+    public string Id { get; internal set; } = id ?? string.Empty;
 
     public Creature Creature { get; } = creature;
 
     /// <summary>The persistent character behind this combatant, when it is a party member.</summary>
     public Character? Character { get; init; }
+
+    /// <summary>Whether this member's next turn is supplied by the live caller or the automatic policy.</summary>
+    public CombatControlMode Controller { get; set; } = CombatControlMode.Automatic;
 
     /// <summary>What it can take, in order of preference; the fight adds its combat definition's actions every creature has.</summary>
     public List<UseOption> Uses { get; } = uses.ToList();
@@ -111,7 +127,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
 
         renamed.Conditions.AddRange(Creature.Conditions);
         renamed.Equipment.AddRange(Creature.Equipment);
-        Combatant copy = new(newName, renamed, Uses) { Character = Character };
+        Combatant copy = new(newName, renamed, Uses, Id) { Character = Character, Controller = Controller };
         copy.Reactions.AddRange(Reactions);
         copy.Preparing.UnionWith(Preparing);
         copy.Prepared.AddRange(Prepared);
@@ -143,6 +159,16 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             .SelectMany(source => ReadUses(rules, source, "$.actions", creature.Equipment)));
         uses = uses.DistinctBy(use => (use.Action, use.Name)).ToList();
         Combatant combatant = new(character.Name, creature, uses) { Character = character };
+        if (character.Npc?.Json.TryGetProperty("control", out JsonElement control) == true
+            && control.ValueKind == JsonValueKind.String)
+        {
+            combatant.Controller = control.GetString() switch
+            {
+                "automatic" => CombatControlMode.Automatic,
+                "manual" => CombatControlMode.Manual,
+                _ => combatant.Controller,
+            };
+        }
         combatant.AddReactions(rules, creature.ClassLevels.Keys.Concat(creature.Features.Distinct()));
         combatant.Preparing.UnionWith(character.Spells.Where(spell => CharacterRules.NeedsPreparing(rules, character, spell)));
         combatant.Prepared.AddRange(CharacterRules.PreparedLeft(rules, character));
@@ -189,6 +215,42 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
         {
             combatant.CastsLeft[spell] = count;
         }
+        return combatant;
+    }
+
+    /// <summary>
+    /// Rebuilds a monster's definition-backed actions without starting any
+    /// tracks or evaluating a random expression. A continuation restore calls
+    /// this source builder, then overwrites every mutable combat value from
+    /// its saved <see cref="CombatantState"/>.
+    /// </summary>
+    internal static Combatant FromMonsterState(RuleSet rules, Definition monster, string name)
+    {
+        Creature creature = new(name);
+        creature.Become(rules, monster);
+        List<UseOption> uses = [];
+        Dictionary<Definition, int> casts = [];
+        if (monster.Json.TryGetProperty("spells", out JsonElement spells))
+        {
+            for (int index = 0; index < spells.GetArrayLength(); index++)
+            {
+                Definition spell = rules.Reference(monster, $"$.spells[{index}].spell");
+                uses.AddRange(ReadUse(rules, spell, spell.Json.GetProperty("effect"), "$.effect", []).Select(use => use with { Name = spell.Name, Spell = spell }));
+                if (spells[index].TryGetProperty("per_day", out JsonElement perDay))
+                {
+                    casts[spell] = perDay.GetInt32();
+                }
+            }
+        }
+
+        uses.AddRange(ReadUses(rules, monster, "$.actions", []));
+        Combatant combatant = new(name, creature, uses);
+        combatant.AddReactions(rules, [monster]);
+        foreach ((Definition spell, int count) in casts)
+        {
+            combatant.CastsLeft[spell] = count;
+        }
+
         return combatant;
     }
 
@@ -263,8 +325,10 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             return options;
         }
 
+        string itemKind = kind.GetString()!;
+
         // One option per equipped item of the kind that has every missing parameter.
-        foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == kind.GetString()))
+        foreach (Definition item in equipment.Where(item => item.Json.GetProperty("kind").GetString() == itemKind))
         {
             Dictionary<string, CompiledExpression> filled = new(given);
             foreach (string parameter in parameters.Where(parameter => !given.ContainsKey(parameter)))
@@ -278,7 +342,7 @@ public sealed class Combatant(string name, Creature creature, IReadOnlyList<UseO
             if (filled.Count == parameters.Count)
             {
                 string itemName = use.TryGetProperty("name", out _) ? name : $"{action.Name} ({item.Name})";
-                options.Add(new UseOption(action, itemName, filled));
+                options.Add(new UseOption(action, itemName, filled, FromItem: itemKind));
             }
         }
 

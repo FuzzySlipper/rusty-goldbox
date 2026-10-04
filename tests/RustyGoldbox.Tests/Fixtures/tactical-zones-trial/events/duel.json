@@ -1,0 +1,13 @@
+{
+  "type": "event",
+  "id": "duel",
+  "kind": "combat",
+  "combat": "tactical-zones:zones",
+  "encounter": "duel",
+  "party_start": [0, 0],
+  "monsters_start": [1, 0],
+  "on_win": "victory",
+  "on_lose": "loss",
+  "on_draw": "draw",
+  "on_flee": "draw"
+}

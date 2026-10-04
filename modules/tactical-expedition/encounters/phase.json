@@ -1,0 +1,19 @@
+{
+  "type": "encounter",
+  "id": "phase",
+  "name": "The wounded watcher",
+  "monsters": [
+    {
+      "monster": "tactical-bestiaire:phase_watcher",
+      "count": "1"
+    }
+  ],
+  "terrain": [
+    "..........",
+    "...##.....",
+    "..........",
+    ".....##...",
+    "..........",
+    ".........."
+  ]
+}

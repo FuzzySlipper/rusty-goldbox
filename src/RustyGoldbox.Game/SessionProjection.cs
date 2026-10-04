@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
@@ -80,30 +81,9 @@ internal static class SessionProjection
 
         if (session.Screen == Screen.Combat)
         {
-            FightReplay fight = session.Fight!;
-            projection["fight"] = new JsonObject
-            {
-                ["encounter"] = fight.Fight.Encounter,
-                ["track"] = fight.Fight.Track.Name,
-                ["done"] = fight.Done,
-                ["outcome"] = fight.Done ? fight.Fight.Describe() : null,
-                ["members"] = new JsonArray(fight.Fight.Members.Select(member => (JsonNode)new JsonObject
-                {
-                    ["name"] = member.Name,
-                    ["side"] = member.Side,
-                    ["value"] = (double)fight.Values[member.Name],
-                    ["max"] = member.Max is decimal max ? (double)max : null,
-                    ["defeated"] = fight.Defeated.Contains(member.Name),
-                    ["acting"] = fight.Acting.Who == member.Name,
-                    ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
-                    ["iconPicture"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? Picture(session.Set.Rules, picture, imageUrl) : null,
-                    // The party's side shows the portraits the play screen shows.
-                    ["portraitPicture"] = member.Side == 0 && session.Runner?.State.Party.FirstOrDefault(character => character.Name == member.Name)?.Portrait is Definition portrait
-                        ? Picture(session.Set!.Rules!, portrait, imageUrl)
-                        : null,
-                }).ToArray()),
-                ["log"] = Strings(fight.Lines.TakeLast(14)),
-            };
+            projection["fight"] = session.Combat is CombatObservation live
+                ? LiveFight(session, live, imageUrl)
+                : LegacyFight(session, session.Fight!, imageUrl);
         }
 
         if (session.Screen == Screen.Play)
@@ -220,13 +200,218 @@ internal static class SessionProjection
         {
             Screen.Title => $"{session.Campaigns.Count} campaign(s) available",
             Screen.Party => $"{session.Campaign!.Name}: making a party ({session.Party.Count})",
-            Screen.Combat => session.Fight!.Done
-                ? $"{session.Campaign!.Name}: {session.Fight.Fight.Describe()}"
-                : $"{session.Campaign!.Name}: fighting {session.Fight.Fight.Encounter}",
+            Screen.Combat when session.Fight is FightReplay fight => fight.Done
+                ? $"{session.Campaign!.Name}: {fight.Fight.Describe()}"
+                : $"{session.Campaign!.Name}: fighting {fight.Fight.Encounter}",
+            Screen.Combat when session.Combat is CombatObservation live => $"{session.Campaign!.Name}: fighting{(live.ActiveActorId is string actor ? $" · {actor}" : "")}",
             _ => session.Runner!.State.Ended
                 ? $"{session.Campaign!.Name}: the adventure is over"
                 : $"{session.Campaign!.Name}: {session.Runner.State.Area.Name} [{session.Runner.State.X}, {session.Runner.State.Y}] facing {Facings.Name(session.Runner.State.Facing)}",
         };
+    }
+
+    private static JsonObject LegacyFight(GameSession session, FightReplay fight, Func<Definition, string?> imageUrl)
+    {
+        return new JsonObject
+        {
+            ["encounter"] = fight.Fight.Encounter,
+            ["track"] = fight.Fight.Track.Name,
+            ["done"] = fight.Done,
+            ["outcome"] = fight.Done ? fight.Fight.Describe() : null,
+            ["members"] = new JsonArray(fight.Fight.Members.Select((member, index) => (JsonNode)new JsonObject
+            {
+                ["id"] = fight.MemberKeys[index],
+                ["name"] = member.Name,
+                ["side"] = member.Side,
+                ["value"] = (double)fight.Values[fight.MemberKeys[index]],
+                ["max"] = member.Max is decimal max ? (double)max : null,
+                ["defeated"] = fight.Defeated.Contains(fight.MemberKeys[index]),
+                ["acting"] = fight.Acting.Who == fight.MemberKeys[index],
+                ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
+                ["iconPicture"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? Picture(session.Set.Rules, picture, imageUrl) : null,
+                ["portraitPicture"] = PortraitFor(session, member) is Definition portrait
+                    ? Picture(session.Set!.Rules!, portrait, imageUrl)
+                    : null,
+            }).ToArray()),
+            ["log"] = Strings(fight.Lines.TakeLast(14)),
+        };
+    }
+
+    private static Definition? PortraitFor(GameSession session, FightMember member)
+    {
+        if (member.Side != 0)
+        {
+            return null;
+        }
+
+        if (member.Id is string id
+            && id.StartsWith("side-1-member-", StringComparison.Ordinal)
+            && int.TryParse(id["side-1-member-".Length..], out int oneBased)
+            && oneBased > 0
+            && session.Runner is CampaignRunner runner
+            && oneBased <= runner.State.Party.Count)
+        {
+            return runner.State.Party[oneBased - 1].Portrait;
+        }
+
+        return session.Runner?.State.Party.FirstOrDefault(character => character.Name == member.Name)?.Portrait;
+    }
+
+    private static JsonObject LiveFight(GameSession session, CombatObservation observation, Func<Definition, string?> imageUrl)
+    {
+        CampaignRunner runner = session.Runner!;
+        PendingCombatState pending = session.CombatMetadata!;
+        RuleSet rules = session.Set!.Rules!;
+        Definition track = rules.Reference(pending.Combat, "$.track");
+        Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata = [];
+        for (int index = 0; index < pending.Participants.Count; index++)
+        {
+            PendingCombatantSource source = pending.Participants[index];
+            metadata[source.Id] = (source, index < pending.Members.Count ? pending.Members[index] : null);
+        }
+
+        string? decisionActorId = observation.PendingDecision?.ActorId;
+        string? turnActorId = observation.ActiveActorId;
+        string? highlightedActorId = decisionActorId ?? turnActorId;
+        JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, observation, member, highlightedActorId, track, metadata, imageUrl)).ToArray());
+        JsonObject fight = new()
+        {
+            ["live"] = true,
+            ["encounter"] = pending.Encounter.Name,
+            ["track"] = track.Name,
+            ["trackId"] = track.QualifiedId,
+            ["phase"] = observation.Phase.ToString().ToLowerInvariant(),
+            ["round"] = observation.Round,
+            ["activeActorId"] = highlightedActorId,
+            ["activeActor"] = highlightedActorId is string activeId && observation.Combatants.FirstOrDefault(member => member.Id == activeId) is CombatantObservation active ? active.Name : null,
+            ["decisionActorId"] = decisionActorId,
+            ["turnActorId"] = turnActorId,
+            ["done"] = observation.Phase == CombatPhase.Ended,
+            ["outcome"] = observation.Phase == CombatPhase.Ended ? Outcome(observation) : null,
+            ["winner"] = observation.Winner,
+            ["fledSide"] = observation.FledSide,
+            ["members"] = members,
+            ["decision"] = observation.PendingDecision is CombatDecision decision ? Decision(decision, rules) : null,
+            ["log"] = Strings(observation.Facts.TakeLast(14).Select(fact => fact.Describe())),
+        };
+        return fight;
+    }
+
+    private static JsonObject LiveMember(GameSession session, CombatObservation observation, CombatantObservation member, string? highlightedActorId, Definition track, Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata, Func<Definition, string?> imageUrl)
+    {
+        RuleSet rules = session.Set!.Rules!;
+        if (!metadata.TryGetValue(member.Id, out (PendingCombatantSource Source, PendingFightMember? Member) info))
+        {
+            throw new InvalidOperationException($"Live combat observation contains unknown combatant ID '{member.Id}'.");
+        }
+        decimal? value = member.Tracks.TryGetValue(track.Id, out decimal? current)
+            ? current
+            : member.Tracks.TryGetValue(track.QualifiedId, out decimal? qualifiedCurrent) ? qualifiedCurrent : null;
+        Definition? kind = info.Member?.MonsterId is string monsterId
+            ? rules.Find(DefinitionTypes.Monster, monsterId, out _)
+            : info.Member?.ClassId is string classId ? rules.Find(DefinitionTypes.Class, classId, out _) : null;
+        Definition? icon = kind is not null && rules.Icons.TryGetValue(kind, out Definition? shown) ? shown : null;
+        Definition? portrait = info.Source.PartyIndex is int partyIndex && partyIndex < session.Runner!.State.Party.Count
+            ? session.Runner.State.Party[partyIndex].Portrait
+            : null;
+        return new JsonObject
+        {
+            ["id"] = member.Id,
+            ["name"] = member.Name,
+            ["side"] = member.Side,
+            ["controller"] = member.Controller.ToString().ToLowerInvariant(),
+            ["defeated"] = member.Defeated,
+            ["escaped"] = member.Escaped,
+            ["acting"] = member.Id == highlightedActorId,
+            ["turning"] = member.Id == observation.ActiveActorId,
+            ["value"] = value is decimal valueNumber ? (double)valueNumber : null,
+            ["max"] = info.Member?.Max is decimal maximum ? (double)maximum : null,
+            ["budget"] = new JsonObject(member.Budget.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),
+            ["position"] = member.Position is Cell position ? new JsonObject { ["x"] = position.X, ["y"] = position.Y } : null,
+            ["icon"] = icon?.QualifiedId,
+            ["iconPicture"] = icon is null ? null : Picture(rules, icon, imageUrl),
+            ["portraitPicture"] = portrait is null ? null : Picture(rules, portrait, imageUrl),
+        };
+    }
+
+    private static JsonObject Decision(CombatDecision decision, RuleSet rules)
+    {
+        return new JsonObject
+        {
+            ["id"] = decision.Id,
+            ["kind"] = decision.Kind.ToString().ToLowerInvariant(),
+            ["actorId"] = decision.ActorId,
+            ["round"] = decision.Round,
+            ["actions"] = new JsonArray(decision.Actions.Select(choice => ActionChoice(choice, rules)).ToArray()),
+            ["moves"] = new JsonArray(decision.Moves.Select(MoveChoice).ToArray()),
+            ["canEndTurn"] = decision.CanEndTurn,
+            ["operationOwner"] = decision.OperationOwner,
+            ["operationPath"] = decision.OperationPath,
+            ["actionId"] = decision.ActionId,
+            ["maximumTargets"] = decision.MaximumTargets,
+            ["options"] = decision.Options is null ? null : new JsonArray(decision.Options.Select(DecisionOption).ToArray()),
+            ["check"] = decision.Check is CombatCheckState check ? new JsonObject
+            {
+                ["id"] = check.CheckId, ["roll"] = (double)check.Roll, ["bonus"] = (double)check.Bonus,
+                ["modifier"] = (double)check.Modifier, ["total"] = (double)check.Total,
+                ["target"] = (double)check.Target, ["margin"] = (double)check.Margin,
+                ["success"] = check.Success, ["tier"] = check.Tier,
+            } : null,
+        };
+    }
+
+    private static JsonObject ActionChoice(CombatActionChoice choice, RuleSet rules)
+    {
+        return new JsonObject
+        {
+            ["id"] = choice.Id,
+            ["actionId"] = choice.ActionId,
+            ["name"] = choice.Name,
+            ["spellId"] = choice.SpellId,
+            ["cost"] = new JsonObject(choice.Cost.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),
+            ["spellCosts"] = choice.SpellCosts is null ? null : new JsonArray(choice.SpellCosts.Select(entry => (JsonNode)new JsonObject
+            {
+                ["trackId"] = entry.Key,
+                ["name"] = rules.TryTrack(entry.Key, out Definition? track, out _) ? track!.Name : entry.Key,
+                ["cost"] = (double)entry.Value,
+            }).ToArray()),
+            ["targetKind"] = choice.TargetKind,
+            ["targetMode"] = choice.TargetMode,
+            ["portionCount"] = choice.PortionCount,
+            ["targets"] = new JsonArray(choice.Targets.Select(target => new JsonObject
+            {
+                ["id"] = target.Id, ["name"] = target.Name, ["side"] = target.Side,
+                ["defeated"] = target.Defeated, ["escaped"] = target.Escaped,
+                ["track"] = target.Track is decimal current ? (double)current : null,
+                ["max"] = target.MaximumTrack is decimal maximum ? (double)maximum : null,
+                ["position"] = target.Position is Cell position ? new JsonObject { ["x"] = position.X, ["y"] = position.Y } : null,
+            }).ToArray()),
+            ["moves"] = new JsonArray(choice.Moves.Select(MoveChoice).ToArray()),
+        };
+    }
+
+    private static JsonObject MoveChoice(CombatMoveChoice move) => new()
+    {
+        ["destination"] = new JsonObject { ["x"] = move.Destination.X, ["y"] = move.Destination.Y },
+        ["path"] = new JsonArray(move.Path.Select(cell => (JsonNode)new JsonObject { ["x"] = cell.X, ["y"] = cell.Y }).ToArray()),
+        ["cost"] = move.Cost,
+        ["targetIds"] = move.TargetIds is null ? null : new JsonArray(move.TargetIds.Select(targetId => (JsonNode)targetId).ToArray()),
+    };
+
+    private static JsonObject DecisionOption(CombatDecisionOption option) => new()
+    {
+        ["id"] = option.Id, ["name"] = option.Name, ["kind"] = option.Kind,
+        ["qualifiedId"] = option.QualifiedId, ["targetId"] = option.TargetId,
+        ["trackId"] = option.TrackId, ["cost"] = (double)option.Cost,
+        ["bonus"] = option.Bonus is decimal bonus ? (double)bonus : null,
+        ["reroll"] = option.Reroll, ["score"] = option.Score is decimal score ? (double)score : null,
+    };
+
+    private static string Outcome(CombatObservation observation)
+    {
+        return observation.Winner is int winner
+            ? winner == 0 ? "The party won." : "The party lost."
+            : observation.FledSide is int fled ? $"Side {fled} fled." : "The fight ended.";
     }
 
     private static JsonArray Strings(IEnumerable<string> lines) => new(lines.Select(line => (JsonNode)line).ToArray());

@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "sentries_down",
+  "kind": "text",
+  "text": "The sentries' shared missile action exposed two policies: one kept its distance while the other picked a different mark."
+}

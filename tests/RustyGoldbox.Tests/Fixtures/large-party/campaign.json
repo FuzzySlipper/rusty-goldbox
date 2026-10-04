@@ -1,0 +1,8 @@
+{
+  "type": "campaign",
+  "id": "large_party",
+  "name": "The Large Party Trial",
+  "start": { "area": "hall", "entry": "gate" },
+  "party": { "min": 10, "max": 12 },
+  "intro": "welcome"
+}

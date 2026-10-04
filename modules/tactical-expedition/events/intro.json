@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "intro",
+  "kind": "text",
+  "text": "The gallery is a lesson in distance, cover, and the moment a plan changes.",
+  "picture": "placeholder-art:crypt",
+  "music": "placeholder-art:battle_music",
+  "next": "briefing"
+}

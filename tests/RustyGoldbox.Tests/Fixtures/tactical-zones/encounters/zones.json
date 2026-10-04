@@ -1,0 +1,17 @@
+{
+  "type": "encounter",
+  "id": "zones",
+  "name": "Shared-zone duelists",
+  "monsters": [
+    {
+      "monster": "tactical-zones:zone_duelist",
+      "count": "2"
+    }
+  ],
+  "terrain": [
+    "........",
+    "........",
+    "........",
+    "........"
+  ]
+}

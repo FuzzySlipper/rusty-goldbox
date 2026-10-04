@@ -1,0 +1,23 @@
+{
+  "type": "combat-behavior",
+  "id": "fallback",
+  "name": "Fallback when the intended use is unavailable",
+  "fallback": "flee",
+  "rules": [
+    {
+      "priority": "20",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Ranged only",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "flee"
+    }
+  ]
+}

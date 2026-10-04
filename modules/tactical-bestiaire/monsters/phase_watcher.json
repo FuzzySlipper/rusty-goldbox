@@ -1,0 +1,35 @@
+{
+  "type": "monster",
+  "id": "phase_watcher",
+  "name": "Phase watcher",
+  "class": "classic:fighter",
+  "level": 3,
+  "behavior": "tactical-bestiaire:phase_watcher",
+  "tracks": {
+    "classic:hit_points": "4d8"
+  },
+  "stats": {
+    "ac": "4",
+    "dex": "13",
+    "str": "15",
+    "movement": "90",
+    "size": "'medium'"
+  },
+  "actions": [
+    {
+      "action": "classic:missile_attack",
+      "name": "Shard ray",
+      "damage": "1d8",
+      "increment": "6"
+    },
+    {
+      "action": "classic:melee_attack",
+      "name": "Rift claw",
+      "damage": "1d10"
+    },
+    {
+      "action": "classic:close"
+    }
+  ],
+  "xp": 75
+}

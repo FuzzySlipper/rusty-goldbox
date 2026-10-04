@@ -35,11 +35,53 @@ public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, in
 /// calls are callback-confined, so use it only inside the host callback that
 /// supplied <paramref name="random"/>.
 /// </summary>
-public sealed class DiceRoller(IRandomService random, Rng stream)
+public sealed class DiceRoller
 {
+    private readonly IRandomService _random;
+    private readonly Rng? _stream;
+    private readonly ulong? _seed;
+    private readonly string? _scope;
+    private long _nextKey;
     private readonly List<DiceRoll> _rolls = [];
 
+    public DiceRoller(IRandomService random, Rng stream)
+    {
+        _random = random;
+        _stream = stream;
+    }
+
+    /// <summary>
+    /// Creates a callback-confined roller whose individual draws are keyed by
+    /// their persisted ordinal. Unlike an Engine stream, this roller has no
+    /// disposable cursor to retain between callbacks.
+    /// </summary>
+    public DiceRoller(IRandomService random, ulong seed, string scope, long nextKey = 0)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+        if (nextKey < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(nextKey), "A keyed dice cursor cannot be negative.");
+        }
+
+        _random = random;
+        _seed = seed;
+        _scope = scope;
+        _nextKey = nextKey;
+    }
+
     public IReadOnlyList<DiceRoll> Rolls => _rolls;
+
+    /// <summary>The deterministic keyed scope, or null for a legacy stream roller.</summary>
+    public string? RandomScope => _scope;
+
+    /// <summary>The next keyed draw ordinal, or zero for a legacy stream roller.</summary>
+    public long NextRandomKey => _nextKey;
+
+    /// <summary>Whether this roller can be reconstructed without retaining an Engine stream.</summary>
+    public bool IsKeyed => _scope is not null;
+
+    /// <summary>Creates another keyed roller over the same Engine random service.</summary>
+    public DiceRoller Keyed(ulong seed, string scope, long nextKey = 0) => new(_random, seed, scope, nextKey);
 
     public long Roll(int count, int sides) => Roll(count, sides, count);
 
@@ -67,7 +109,7 @@ public sealed class DiceRoller(IRandomService random, Rng stream)
         List<int> faces = [];
         for (int i = 0; i < count; i++)
         {
-            faces.Add((int)random.NextBoundedU32(new ScopedRngBoundedRequest(stream, 3)).Value - 1);
+            faces.Add((int)Next(3) - 1);
         }
 
         DiceRoll roll = new(count, 3, faces, count, Fudge: true);
@@ -81,7 +123,7 @@ public sealed class DiceRoller(IRandomService random, Rng stream)
         int left = count;
         while (left > 0)
         {
-            int face = (int)random.NextBoundedU32(new ScopedRngBoundedRequest(stream, (uint)sides)).Value + 1;
+            int face = (int)Next(sides) + 1;
             faces.Add(face);
             left--;
             if (again is int threshold && face >= threshold)
@@ -93,5 +135,21 @@ public sealed class DiceRoller(IRandomService random, Rng stream)
         DiceRoll roll = new(count, sides, faces, keep, atLeast, again, cancel);
         _rolls.Add(roll);
         return roll.Total;
+    }
+
+    private uint Next(int exclusiveMaximum)
+    {
+        if (exclusiveMaximum < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exclusiveMaximum), "Dice need at least one side.");
+        }
+
+        if (_scope is string scope && _seed is ulong seed)
+        {
+            long key = _nextKey++;
+            return checked((uint)_random.DrawKeyed(new KeyedRngRequest(seed, scope, $"draw:{key}", 0, exclusiveMaximum - 1)).Value);
+        }
+
+        return checked((uint)_random.NextBoundedU32(new ScopedRngBoundedRequest(_stream!, (uint)exclusiveMaximum)).Value);
     }
 }

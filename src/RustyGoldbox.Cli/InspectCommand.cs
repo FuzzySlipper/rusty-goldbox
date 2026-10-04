@@ -9,10 +9,10 @@ internal static class InspectCommand
 {
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules", "--extension"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--modules", "--extension"], ["--trace"]);
         if (error is null && parsed.Positionals.Count is < 1 or > 2)
         {
-            error = "Usage: goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--modules <dir>]... [--extension <id>]...";
+            error = "Usage: goldbox module inspect <path> [<type> | <id> | <module>:<id>] [--trace] [--modules <dir>]... [--extension <id>]...";
         }
 
         if (error is not null)
@@ -32,7 +32,15 @@ internal static class InspectCommand
         RuleSet rules = set.Rules;
         if (parsed.Positionals.Count == 1)
         {
-            output.DefinitionList(rules, rules.Definitions, includeStats: true);
+            if (parsed.Has("--trace"))
+            {
+                output.BehaviorDiagnostics(rules, rules.OfType(DefinitionTypes.CombatBehavior).ToList());
+            }
+            else
+            {
+                output.DefinitionList(rules, rules.Definitions, includeStats: true);
+            }
+
             return GoldboxCli.Ok;
         }
 
@@ -40,7 +48,16 @@ internal static class InspectCommand
         DefinitionType? type = DefinitionTypes.Find(selector);
         if (type is not null)
         {
-            output.DefinitionList(rules, rules.OfType(type).ToList(), includeStats: false);
+            List<Definition> definitions = rules.OfType(type).ToList();
+            if (parsed.Has("--trace") && type == DefinitionTypes.CombatBehavior)
+            {
+                output.BehaviorDiagnostics(rules, definitions);
+            }
+            else
+            {
+                output.DefinitionList(rules, definitions, includeStats: false);
+            }
+
             return GoldboxCli.Ok;
         }
 
@@ -53,7 +70,14 @@ internal static class InspectCommand
             return output.UsageError($"Nothing matches '{selector}'. Select a definition type ({types}), an ID, or module:id. Run without a selector to list everything.");
         }
 
-        output.Definitions(rules, matches);
+        if (parsed.Has("--trace") && matches.All(definition => definition.Type == DefinitionTypes.CombatBehavior))
+        {
+            output.BehaviorDiagnostics(rules, matches);
+        }
+        else
+        {
+            output.Definitions(rules, matches);
+        }
         return GoldboxCli.Ok;
     }
 

@@ -393,9 +393,40 @@ general operation over a ruleset-specific special case, but don't build a
 universal effect system ahead of a concrete need.
 
 The combat procedure (rounds, initiative, the per-turn action budget and
-movement) is a fixed C# loop with ruleset-supplied formulas and budgets. That
-covers 1e one-action rounds and 3.5e standard/move/swift actions without
-making the loop itself scriptable.
+movement) is a fixed, resumable Core procedure with ruleset-supplied formulas
+and budgets. A controller chooses from the current legal commands; the same
+resolver applies commands from a player, a CLI script or an automatic
+controller. That covers one-action rounds and several-action turns without
+making the procedure itself scriptable. Waiting for a choice does not spend
+resources, roll dice or advance a turn.
+
+An offered movement path retains the target IDs used to calculate its legal
+destinations. An explicit path must match the action's first selected target;
+Core checks that pair before moving, spending a budget or committing a random
+price. Game controls show paths for the selected target, and automatic
+controllers use the same association.
+
+Action `available`, `valid_target`, `range` and `portions` expressions must be
+deterministic. Loading rejects dice in these fields, and a value that cannot
+be inspected without dice is unavailable. Deterministic spell costs appear
+in the offered choice. A random spell cost is committed once after a legal
+action is selected; candidate inspection never rolls its price. The pending
+choice retains the committed price for payment and save/resume. If that
+price cannot be paid, committing it is an accepted selection with a visible
+result, and the actor can choose another action without spending resources.
+Retrying the same unaffordable quote is a refusal without another roll.
+Random `max_targets` is committed when the action is chosen, before the
+controller selects targets. Repeated inspection and refused commands neither
+reroll these values nor pay them.
+
+Reusable **combat behaviors** are typed module definitions. They choose finite
+sequences of existing action uses with guards, priorities or scores, target
+preferences and relative destination preferences. A behavior cannot grant an
+action, waive its costs or change its effects. The ruleset's combat procedure
+still decides what is legal and resolves each committed choice. Unavailable
+plans take their authored fallback; no executable module scripts or authored
+loops are loaded. See [combat-authoring.md](combat-authoring.md) for the agent
+authoring workflow and examples.
 
 Combat is built so that no die convention is assumed:
 
@@ -436,10 +467,10 @@ Combat is built so that no die convention is assumed:
 - **Pools are declared, not built in.** Damage and heal act on a named
   track, or the combat's default one; costs that spend a pool are operations
   on it (an action can spend fatigue to hit harder).
-- **Services resolve, facts record.** The loop and operations change state
-  in one place (the combat runner); each change is recorded as a fact, and
-  the facts in order are the transcript. Reactions will subscribe to facts
-  rather than being special cases in the loop.
+- **Services resolve, facts record.** The combat owner and operations change
+  state in one place; each committed change is recorded as a fact, and the
+  facts in order are the transcript. Presentation consumes committed facts.
+  Skipping an animation never selects an unresolved player decision.
 - **Kit and rules.** Core owns the mechanism (turn order, budgets, targeting,
   durations, when operations run); ruleset data owns every number and word.
   Core names no class, stat, condition or die size.

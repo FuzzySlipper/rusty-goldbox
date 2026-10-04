@@ -98,7 +98,7 @@ export function createOverlay(send, ui) {
     row(button('Quit to title', () => send({ action: 'quit' }))));
 
   const frame = (heading, detail, ...body) => {
-    const close = button('✕', () => ui.close(), { class: 'gb-close', 'aria-label': 'Close' });
+    const close = button('✕', () => ui.close(), { class: 'gb-close', 'aria-label': 'Close', 'data-focus-key': 'overlay:close' });
     return [
       element('h2', {}, element('span', {}, heading), element('small', {}, detail ?? '', ' ', close)),
       element('div', { class: 'gb-body' }, ...body),
@@ -118,12 +118,12 @@ export function createOverlay(send, ui) {
     const step = (by) => () => ui.open({ kind: 'member', index: (index + by + party.length) % party.length });
     const kind = [who.race, who.class && `${who.class} ${who.level}`].filter(Boolean).join(' ');
     const former = who.formerClasses === 'waiting'
-      ? [button('Call on former class', play(`former ${index + 1} on`))]
-      : who.formerClasses === 'called' ? [button('Set former class aside', play(`former ${index + 1} off`))] : [];
+      ? [button('Call on former class', play(`former ${index + 1} on`), { 'data-focus-key': `member:${index}:former:on` })]
+      : who.formerClasses === 'called' ? [button('Set former class aside', play(`former ${index + 1} off`), { 'data-focus-key': `member:${index}:former:off` })] : [];
     return frame(who.name, `${kind} · ${who.experience} xp`,
-      row(...(party.length > 1 ? [button('◀ Previous', step(-1)), button('Next ▶', step(1))] : []),
+      row(...(party.length > 1 ? [button('◀ Previous', step(-1), { 'data-focus-key': `member:${index}:previous` }), button('Next ▶', step(1), { 'data-focus-key': `member:${index}:next` })] : []),
         // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
-        ...(who.levelReady ? [button('Level up', play(`level ${index + 1}`))] : []),
+        ...(who.levelReady ? [button('Level up', play(`level ${index + 1}`), { 'data-focus-key': `member:${index}:level` })] : []),
         ...former),
       element('div', { class: 'gb-columns' },
         element('div', {},
@@ -158,19 +158,21 @@ export function createOverlay(send, ui) {
     ...view.temple.services.map((service) => element('div', {},
       element('h3', {}, service.label),
       row(...service.prices.map((price, index) => button(`${view.party[index]?.name ?? index + 1}: ${price} ${currencyName(service.currency)}`,
-        play(`serve ${service.number} ${index + 1}`)))))),
+        play(`serve ${service.number} ${index + 1}`), { 'data-focus-key': `temple:${service.number}:${index}` }))))),
     row(button('Leave temple', play('leave'))));
 
   const training = (view) => frame('Trainer', '',
     element('p', {}, view.training),
-    row(...(view.party ?? []).map((who, index) => button(`Train ${who.name}`, play(`train ${index + 1}`)))),
+    row(...(view.party ?? []).map((who, index) => button(`Train ${who.name}`, play(`train ${index + 1}`), { 'data-focus-key': `training:${index}` }))),
     row(button('Leave trainer', play('leave'))));
 
   const render = (view, open) => {
     syncSettings(view);
     if (open?.kind === 'menu') {
       // The menu is the same nodes every time; leave it in place so its controls keep their state.
-      saving.hidden = view.screen !== 'play';
+      // A pending live combat is a save boundary too. Keep the menu usable
+      // over the fight so saving never requires resolving a player's choice.
+      saving.hidden = view.screen !== 'play' && view.screen !== 'combat';
       if (node.dataset.showing !== 'menu') {
         node.dataset.showing = 'menu';
         // The title screen borrows the settings; take them back.
@@ -182,7 +184,21 @@ export function createOverlay(send, ui) {
       return;
     }
 
-    node.dataset.showing = '';
+    const showing = open?.kind === 'member' && view.screen === 'play'
+      ? `member:${open.index}`
+      : view.screen === 'play' && view.shop ? 'shop'
+        : view.screen === 'play' && view.temple ? 'temple'
+          : view.screen === 'play' && view.training ? 'training' : '';
+    const previousShowing = node.dataset.showing;
+    const previousBody = node.querySelector('.gb-body');
+    const previousFocus = document.activeElement;
+    const previousState = previousShowing === showing && previousBody
+      ? {
+        scrollTop: previousBody.scrollTop,
+        focusKey: node.contains(previousFocus) ? previousFocus?.getAttribute('data-focus-key') : null,
+      }
+      : null;
+    node.dataset.showing = showing;
     let content = null;
     if (open?.kind === 'member' && view.screen === 'play') {
       content = member(view, open.index);
@@ -194,6 +210,17 @@ export function createOverlay(send, ui) {
 
     node.hidden = !content;
     node.replaceChildren(...(content ?? []));
+    if (content && previousState) {
+      const body = node.querySelector('.gb-body');
+      if (body) {
+        body.scrollTop = previousState.scrollTop;
+      }
+      if (previousState.focusKey) {
+        const target = [...node.querySelectorAll('[data-focus-key]')]
+          .find((candidate) => candidate.getAttribute('data-focus-key') === previousState.focusKey);
+        target?.focus({ preventScroll: true });
+      }
+    }
   };
 
   return { node, render, settings };

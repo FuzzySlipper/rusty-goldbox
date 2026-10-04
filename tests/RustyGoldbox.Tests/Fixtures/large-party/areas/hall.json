@@ -1,0 +1,13 @@
+{
+  "type": "area",
+  "id": "hall",
+  "name": "The Trial Hall",
+  "map": [
+    "+--+--+--+",
+    "|        |",
+    "+--+--+--+"
+  ],
+  "entries": {
+    "gate": { "at": [0, 0], "facing": "east" }
+  }
+}

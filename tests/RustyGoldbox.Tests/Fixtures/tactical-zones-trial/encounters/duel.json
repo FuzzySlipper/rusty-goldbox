@@ -1,0 +1,15 @@
+{
+  "type": "encounter",
+  "id": "duel",
+  "name": "Shared-zone training duel",
+  "monsters": [
+    { "monster": "tactical-zones:zone_striker", "count": "1" },
+    { "monster": "tactical-zones:zone_duelist", "count": "1" }
+  ],
+  "terrain": [
+    "........",
+    "........",
+    "........",
+    "........"
+  ]
+}

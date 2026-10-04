@@ -68,6 +68,9 @@ public sealed class CampaignState
 
     public Definition? PendingTraining { get; set; }
 
+    /// <summary>The event currently suspended by a live combat, if any.</summary>
+    public PendingCombatState? PendingCombat { get; set; }
+
     /// <summary>Fictional campaign time in days, advanced by authored training and rest.</summary>
     public decimal ElapsedDays { get; set; }
 
@@ -81,4 +84,7 @@ public sealed class CampaignState
 
     /// <summary>Commands taken so far; command n rolls on random scope goldbox.play.n.</summary>
     public int Commands { get; set; }
+
+    /// <summary>Monotonic identity for each combat started by this campaign.</summary>
+    public long CombatSequence { get; set; }
 }

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "tactical-bestiaire",
+  "kind": "extension",
+  "version": "0.1.0",
+  "title": "Tactical Bestiaire",
+  "requires": [
+    {
+      "id": "classic",
+      "version": "^0.1.0"
+    },
+    {
+      "id": "placeholder-art",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original Rusty Goldbox extension content: creatures, tactical profiles and figure mappings written for the tactical combat authoring example. It uses Classic's licensed action and rules definitions and Placeholder art by logical reference; see PROVENANCE.md."
+}

@@ -122,8 +122,14 @@ img.gb-picture { object-fit: contain; }
 .gb-log .gb-prompt { flex: none; display: flex; gap: .4em; align-items: center; padding: .15em .6em; border-top: 2px solid var(--gb-border); background: var(--gb-page); color: var(--gb-page-link); }
 .gb-log .gb-prompt input { flex: 1; min-width: 0; background: none; border: 0; color: var(--gb-page-text); padding: 0; }
 
-/* Portraits */
-.gb-portraits ol { list-style: none; margin: 0; padding: .3em; display: grid; gap: .3em; overflow: auto; min-height: 0;
+/* Portraits. The roster viewport owns scrolling; its page controls keep a
+   larger party reachable without shrinking cards into unreadable tiles. */
+.gb-portraits { min-height: 0; }
+.gb-roster-nav { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .4em; padding: .15em .3em 0; }
+.gb-roster-nav button { min-width: 2em; padding: 0 .3em; line-height: 1.1; }
+.gb-roster-page { flex: 1; color: var(--gb-muted); text-align: center; font-size: .8em; font-variant-numeric: tabular-nums; }
+.gb-roster-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.gb-portraits ol { list-style: none; margin: 0; padding: .3em; display: grid; gap: .3em; min-height: min-content;
   grid-template-columns: repeat(auto-fill, minmax(calc(4.6em * var(--gb-portrait-scale)), 1fr)); align-content: start; }
 .gb-frame[data-arrangement="tall"] .gb-portraits ol { grid-template-columns: repeat(auto-fill, minmax(calc(3.8em * var(--gb-portrait-scale)), 1fr)); }
 .gb-card { display: flex; flex-direction: column; width: 100%; min-width: 0; border: 2px solid var(--gb-border); background: var(--gb-inset); padding: 0; text-align: center; box-shadow: none; }
@@ -139,6 +145,7 @@ img.gb-picture { object-fit: contain; }
 
 /* Map, or foes in combat */
 .gb-map { flex: 1; min-height: 4em; }
+.gb-frame[data-screen="combat"][data-arrangement="standard"] .gb-map { min-height: 10em; }
 .gb-map pre { flex: 1; min-height: 0; margin: 0; padding: .3em; overflow: hidden; line-height: 1; font-size: .85em; display: grid; place-items: center; }
 .gb-foes { list-style: none; margin: 0; padding: .3em .5em; overflow: auto; display: grid; gap: .25em; align-content: start; }
 .gb-foes li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 .4em; align-items: center; }
@@ -148,12 +155,17 @@ img.gb-picture { object-fit: contain; }
 .gb-foes .gb-bar { grid-column: 1 / -1; }
 
 /* Controls */
-.gb-controls { flex: none; flex-direction: row; gap: .4em; padding: .4em; align-items: start; font-size: calc(1em * var(--gb-control-scale)); }
+.gb-controls { flex: 0 1 auto; min-height: 0; max-height: min(42cqh, 28em); flex-direction: row; gap: .4em; padding: .4em; align-items: start; font-size: calc(1em * var(--gb-control-scale)); overflow: hidden; }
 .gb-pad { display: grid; grid-template-columns: repeat(3, 2em); grid-auto-rows: 2em; gap: .15em; flex: none; }
 .gb-pad button { padding: 0; }
-.gb-commands { flex: 1; display: flex; flex-direction: column; gap: .2em; min-width: 0; }
+.gb-commands { flex: 1; display: flex; flex-direction: column; gap: .2em; min-width: 0; min-height: 0; overflow: auto; }
 .gb-commands button { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gb-combat-summary { display: flex; flex-wrap: wrap; gap: .15em .35em; line-height: 1.25; }
+.gb-combat-label { color: var(--gb-muted); font-size: .8em; letter-spacing: .06em; text-transform: uppercase; margin-top: .15em; }
+.gb-commands .gb-selected { border-color: var(--gb-accent); color: var(--gb-accent); }
+.gb-commands .gb-down { opacity: .45; text-decoration: line-through; }
 .gb-frame[data-arrangement="tall"] .gb-commands { flex-direction: row; flex-wrap: wrap; }
+.gb-frame[data-arrangement="tall"] .gb-combat-summary { width: 100%; }
 
 /* Overlays: shop, temple, trainer, a character, the game menu */
 .gb-overlay { z-index: 3; margin: clamp(4px, 3%, 32px); overflow: hidden; box-shadow: 0 0 0 4px var(--gb-inset), 0 12px 40px #000c; }

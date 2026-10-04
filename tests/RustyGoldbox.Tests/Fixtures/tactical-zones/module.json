@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "id": "tactical-zones",
+  "kind": "extension",
+  "version": "0.1.0",
+  "title": "Tactical zones (test fixture)",
+  "requires": [
+    {
+      "id": "ascend",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Original test fixture for a zones field and three-action economy. It contains no published rules text or tables; see PROVENANCE.md."
+}

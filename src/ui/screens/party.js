@@ -8,22 +8,22 @@ import { renderSpells, renderMemorised } from '../panels/members.js';
  */
 export function createParty(send, rerender) {
   // Inputs live outside the re-rendered body so typing survives updates.
-  const name = element('input', { value: 'Ada', size: '10', 'aria-label': 'Character name' });
-  const race = element('select', { 'aria-label': 'Race' });
-  const characterClass = element('select', { 'aria-label': 'Class' });
-  const creation = element('select', { 'aria-label': 'Character creation' });
-  const portrait = element('select', { 'aria-label': 'Portrait' });
-  const lifepathCareer = element('select', { 'aria-label': 'Career' });
-  const lifepathTerms = element('input', { type: 'number', min: '1', value: '1', size: '3', 'aria-label': 'Career terms' });
-  const lifepathTables = element('select', { 'aria-label': 'Skill table' });
-  const lifepathBenefits = element('select', { 'aria-label': 'Benefit kind' });
+  const name = element('input', { value: 'Ada', size: '10', 'aria-label': 'Character name', 'data-focus-key': 'party:new:name' });
+  const race = element('select', { 'aria-label': 'Race', 'data-focus-key': 'party:new:race' });
+  const characterClass = element('select', { 'aria-label': 'Class', 'data-focus-key': 'party:new:class' });
+  const creation = element('select', { 'aria-label': 'Character creation', 'data-focus-key': 'party:new:creation' });
+  const portrait = element('select', { 'aria-label': 'Portrait', 'data-focus-key': 'party:new:portrait' });
+  const lifepathCareer = element('select', { 'aria-label': 'Career', 'data-focus-key': 'party:new:career' });
+  const lifepathTerms = element('input', { type: 'number', min: '1', value: '1', size: '3', 'aria-label': 'Career terms', 'data-focus-key': 'party:new:terms' });
+  const lifepathTables = element('select', { 'aria-label': 'Skill table', 'data-focus-key': 'party:new:skill-table' });
+  const lifepathBenefits = element('select', { 'aria-label': 'Benefit kind', 'data-focus-key': 'party:new:benefit' });
   // Feature and boost choices, kept by slot so a choice survives re-renders.
   const choiceSelects = new Map();
   // Skill amounts are a local draft until the player submits the Core action.
   const skillDrafts = new Map();
   const choiceSelect = (key, label) => {
     if (!choiceSelects.has(key)) {
-      const select = element('select', { 'aria-label': label });
+      const select = element('select', { 'aria-label': label, 'data-focus-key': `party:choice:${key}` });
       select.addEventListener('change', () => rerender());
       choiceSelects.set(key, select);
     }
@@ -55,7 +55,10 @@ export function createParty(send, rerender) {
     fill(portrait, [{ id: '', name: '(no portrait)' }, ...(view.portraits ?? [])]);
     const members = element('ol', {});
     (view.party ?? []).forEach((member, index) => {
-      const item = element('select', { 'aria-label': `Item for ${member.name}` });
+      const item = element('select', {
+        'aria-label': `Item for ${member.name}`,
+        'data-focus-key': `party:${index}:item`,
+      });
       fill(item, view.items ?? []);
       members.append(element('li', {},
         element('div', { class: 'gb-row' },
@@ -70,11 +73,33 @@ export function createParty(send, rerender) {
         ...renderSpells(send, member, index),
         ...renderMemorised(send, member, index),
         row(item,
-          button('Give/take', () => send({ action: 'equip', member: index, item: item.value })),
-          button('Drop', () => send({ action: 'drop', member: index })))));
+          button('Give/take', () => send({ action: 'equip', member: index, item: item.value }), { 'data-focus-key': `party:${index}:equip` }),
+          button('Drop', () => send({ action: 'drop', member: index }), { 'data-focus-key': `party:${index}:drop` }))));
     });
     const size = view.partySize ?? { min: 1, max: 1 };
     const choices = renderChoices(view, selectedCreation);
+    const roll = button('Roll', () => send({
+      action: 'roll',
+      name: name.value,
+      ...(selectedCreation?.id ? { creation: selectedCreation.id } : {}),
+      // A ruleset without races or classes has none to send.
+      ...((view.races ?? []).length > 0 ? { race: race.value } : {}),
+      ...((view.classes ?? []).length > 0 ? { class: characterClass.value } : {}),
+      ...(portrait.value ? { portrait: portrait.value } : {}),
+      ...(choices.features().length > 0 ? { features: choices.features() } : {}),
+      ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),
+      ...(view.lifepath ? {
+        lifepath: view.lifepath.id,
+        careers: lifepathCareer.value ? [lifepathCareer.value] : [],
+        terms: Number(lifepathTerms.value) || 1,
+        skillTables: lifepathTables.value ? [lifepathTables.value] : [],
+        benefits: lifepathBenefits.value ? [lifepathBenefits.value] : [],
+      } : {}),
+    }), { 'data-focus-key': 'party:new:roll' });
+    if ((view.party ?? []).length >= size.max) {
+      roll.disabled = true;
+      roll.title = 'Campaign maximum reached';
+    }
     const chosen = (view.portraits ?? []).find((entry) => entry.id === portrait.value);
     const creationControl = creationChoices.length > 1
       ? [element('span', {}, 'Creation:'), creation]
@@ -90,24 +115,7 @@ export function createParty(send, rerender) {
         element('span', {}, 'Terms:'), lifepathTerms,
         element('span', {}, 'Skill table:'), lifepathTables,
         element('span', {}, 'Benefit:'), lifepathBenefits)] : []),
-      row(button('Roll', () => send({
-        action: 'roll',
-        name: name.value,
-        ...(selectedCreation?.id ? { creation: selectedCreation.id } : {}),
-        // A ruleset without races or classes has none to send.
-        ...((view.races ?? []).length > 0 ? { race: race.value } : {}),
-        ...((view.classes ?? []).length > 0 ? { class: characterClass.value } : {}),
-        ...(portrait.value ? { portrait: portrait.value } : {}),
-        ...(choices.features().length > 0 ? { features: choices.features() } : {}),
-        ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),
-        ...(view.lifepath ? {
-          lifepath: view.lifepath.id,
-          careers: lifepathCareer.value ? [lifepathCareer.value] : [],
-          terms: Number(lifepathTerms.value) || 1,
-          skillTables: lifepathTables.value ? [lifepathTables.value] : [],
-          benefits: lifepathBenefits.value ? [lifepathBenefits.value] : [],
-        } : {}),
-      }))),
+      row(roll),
       row(button('Begin', () => send({ action: 'begin' })), button('Back', () => send({ action: 'quit' }))));
   };
 
@@ -232,10 +240,17 @@ export function createParty(send, rerender) {
             profession: Number(field.profession.value),
             personal: Number(field.personal.value),
           })),
-        }))))];
+        }, { 'data-focus-key': `party:${index}:skills` }))))];
 
     function pointInput(key, initial, allowed) {
-      const input = element('input', { type: 'number', min: '0', step: 'any', value: String(skillDrafts.get(key) ?? initial), size: '5' });
+      const input = element('input', {
+        type: 'number',
+        min: '0',
+        step: 'any',
+        value: String(skillDrafts.get(key) ?? initial),
+        size: '5',
+        'data-focus-key': key,
+      });
       input.disabled = !allowed;
       input.addEventListener('input', () => skillDrafts.set(key, input.value));
       return input;
