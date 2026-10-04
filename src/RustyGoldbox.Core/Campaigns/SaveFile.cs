@@ -1489,20 +1489,28 @@ public static class SaveFile
                         continue;
                     }
 
+                    if (string.IsNullOrWhiteSpace(action.Id))
+                    {
+                        Error($"{actionAt}.Id", "Action choice IDs must be nonempty.");
+                    }
+
                     ResolveReference(action.ActionId, $"{actionAt}.ActionId", DefinitionTypes.Action);
                     Definition? spell = action.SpellId is string spellId
                         ? ResolveReference(spellId, $"{actionAt}.SpellId", DefinitionTypes.Spell)
                         : null;
 
+                    if (action.Cost is null)
+                    {
+                        Error($"{actionAt}.Cost", "Action cost must be an object.");
+                    }
+
                     ValidateDecisionTargets(action.Targets, participantIds, $"{actionAt}.Targets");
+                    ValidateMoveChoices(action.Moves, $"{actionAt}.Moves");
                     ValidateSpellCosts(action, spell, actionAt);
                 }
             }
 
-            if (decision.Moves is null)
-            {
-                Error($"{at}.Moves", "Moves must be an array.");
-            }
+            ValidateMoveChoices(decision.Moves, $"{at}.Moves");
 
             if (decision.Options is not null)
             {
@@ -1642,6 +1650,31 @@ public static class SaveFile
                 if (target.Side is not (0 or 1))
                 {
                     Error($"{targetAt}.Side", "Target choice side must be 0 or 1.");
+                }
+            }
+        }
+
+        private void ValidateMoveChoices(IReadOnlyList<CombatMoveChoice>? moves, string at)
+        {
+            if (moves is null)
+            {
+                Error(at, "Moves must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < moves.Count; index++)
+            {
+                CombatMoveChoice? move = moves[index];
+                string moveAt = $"{at}[{index}]";
+                if (move is null)
+                {
+                    Error(moveAt, "A move choice must be an object.");
+                    continue;
+                }
+
+                if (move.Path is null)
+                {
+                    Error($"{moveAt}.Path", "A move choice path must be an array.");
                 }
             }
         }

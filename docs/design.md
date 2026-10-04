@@ -442,6 +442,12 @@ controller. That covers one-action rounds and several-action turns without
 making the procedure itself scriptable. Waiting for a choice does not spend
 resources, roll dice or advance a turn.
 
+An offered movement path retains the target IDs used to calculate its legal
+destinations. An explicit path must match the action's first selected target;
+Core checks that pair before moving, spending a budget or committing a random
+price. Game controls show paths for the selected target, and automatic
+controllers use the same association.
+
 Action `available`, `valid_target`, `range` and `portions` expressions must be
 deterministic. Loading rejects dice in these fields, and a value that cannot
 be inspected without dice is unavailable. Deterministic spell costs appear

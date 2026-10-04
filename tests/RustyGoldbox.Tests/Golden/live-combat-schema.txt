@@ -3,6 +3,7 @@ Live combat commands are script lines under `goldbox play`:
   combat inspect | combat control <actor-id> auto|manual | combat action <actor-id> <action-id> [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] | combat move <actor-id> <action-id> <target-id> <x,y;x,y> | combat end-turn <actor-id> | combat decide <decision-id> [option-id] | combat auto-step
 
 Use `combat inspect` to discover stable actor/action/target IDs. Paths are semicolon-separated x,y cells; submit the copied machine IDs.
+Each offered move lists targetIds. Choose the target first and use its associated path; mismatched pairs are refused before movement, spending or random price commitment.
 `--combat-control manual` suspends the party at a decision; enemies remain automatic. The default is automatic.
 `combat auto-step` assists one manual turn and restores manual control; use `combat control <actor-id> auto` for a persistent takeover.
 Add `--trace` for a side-effect-free decision projection; inspection and trace do not roll dice.

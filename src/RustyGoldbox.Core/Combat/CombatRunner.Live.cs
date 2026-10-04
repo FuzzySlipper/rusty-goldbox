@@ -480,10 +480,9 @@ public sealed partial class CombatRunner
                     return Refused($"Action '{use.Name}' does not move.");
                 }
 
-                if (command.Path is not null
-                    && !choice.Moves.Any(move => move.Path.SequenceEqual(command.Path)))
+                if (command.Path is not null)
                 {
-                    return Refused("The requested movement path is obstructed, out of range or unaffordable.");
+                    return Refused("Choose targets before selecting a movement path.");
                 }
 
                 return CommitTargetSelection(actor, use, choice, candidates);
@@ -497,20 +496,20 @@ public sealed partial class CombatRunner
             return Refused(cardinalityReason!);
         }
 
-        if (!Affordable(actor, use.Action))
-        {
-            return Refused($"{actor.Name} cannot afford {use.Name}.");
-        }
-
         if (command.Path is not null && !ActionHasMove(use.Action))
         {
             return Refused($"Action '{use.Name}' does not move.");
         }
 
         if (command.Path is not null
-            && !choice.Moves.Any(move => move.Path.SequenceEqual(command.Path)))
+            && !HasMovementPath(choice, targets[0].Id, command.Path))
         {
-            return Refused("The requested movement path is obstructed, out of range or unaffordable.");
+            return Refused("The requested movement path is obstructed, out of range or unaffordable for the selected target.");
+        }
+
+        if (!Affordable(actor, use.Action))
+        {
+            return Refused($"{actor.Name} cannot afford {use.Name}.");
         }
 
         if (use.Spell is Definition spell && !actor.CanCast(spell))
@@ -712,9 +711,9 @@ public sealed partial class CombatRunner
 
         CombatActionChoice? committedChoice = _pendingDecision.Actions.FirstOrDefault(action => action.Id == _pendingDecision.ActionId);
         if (command.Path is not null
-            && (committedChoice is null || !committedChoice.Moves.Any(move => move.Path.SequenceEqual(command.Path))))
+            && (committedChoice is null || !HasMovementPath(committedChoice, targets[0].Id, command.Path)))
         {
-            return Refused("The requested movement path is obstructed, out of range or unaffordable.");
+            return Refused("The requested movement path is obstructed, out of range or unaffordable for the selected target.");
         }
 
         Combatant actor = _pendingTargetActor;
@@ -737,6 +736,18 @@ public sealed partial class CombatRunner
         _pendingTargetRollStart = null;
         _pendingTargetRolls = [];
         _pendingTargetRollsRestored = false;
+    }
+
+    private static bool HasMovementPath(
+        CombatActionChoice choice,
+        string targetId,
+        IReadOnlyList<Cell> path)
+    {
+        return choice.Moves.Any(move =>
+            move.Path.SequenceEqual(path)
+            && (move.TargetIds is IReadOnlyList<string> associated
+                ? associated.Contains(targetId, StringComparer.Ordinal)
+                : choice.Targets.Count == 1 && choice.Targets[0].Id == targetId));
     }
 
     private bool TryValidateExplicitTargets(
@@ -1044,7 +1055,7 @@ public sealed partial class CombatRunner
             .OrderBy(entry => entry.Value.Cost)
             .ThenBy(entry => entry.Key.X)
             .ThenBy(entry => entry.Key.Y)
-            .Select(entry => new CombatMoveChoice(entry.Key, entry.Value.Path, entry.Value.Cost))
+            .Select(entry => new CombatMoveChoice(entry.Key, entry.Value.Path, entry.Value.Cost, [target.Id]))
             .ToList();
     }
 

@@ -178,6 +178,9 @@ dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-cryp
 For manual battle scripts, add `--combat-control manual`. `combat inspect`
 prints stable actor/action/target IDs, budgets and legal paths; use those IDs
 with `combat action`, `combat move`, `combat end-turn` and `combat decide`.
+Each offered path lists its legal target IDs. Choose the target first and use
+a path associated with it; a mismatched pair is refused before movement or
+spending.
 `combat auto-step` assists the current manual turn through Core without
 changing the member's saved control preference.
 Inspecting choices consumes no dice. A selected spell commits any random

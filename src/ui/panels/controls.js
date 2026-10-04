@@ -13,7 +13,7 @@ export function createControls(send, ui) {
   // Keep target IDs in click order.  Portion actions use that order to map
   // each authored portion to a target, and may intentionally repeat an ID.
   let selectedTargets = [];
-  let selectedMove = null;
+  let selectedMoveKey = null;
   let selectedDecision = null;
 
   const text = (value, fallback = '') => value === undefined || value === null ? fallback : String(value);
@@ -47,7 +47,7 @@ export function createControls(send, ui) {
       selectedDecision = decision?.id ?? null;
       selectedAction = actions[0]?.id ?? null;
       selectedTargets = [];
-      selectedMove = null;
+      selectedMoveKey = null;
     }
     const action = actions.find((choice) => choice.id === selectedAction) ?? null;
     const targets = action?.targets ?? [];
@@ -89,7 +89,7 @@ export function createControls(send, ui) {
       () => {
         selectedAction = choice.id;
         selectedTargets = [];
-        selectedMove = null;
+        selectedMoveKey = null;
         render(view);
       },
       {
@@ -107,7 +107,7 @@ export function createControls(send, ui) {
         ...targets.map((target) => button(
           `${target.name}${target.track === null || target.track === undefined ? '' : ` · ${target.track}`}${fixedPortions && selectedTargets.filter((id) => id === target.id).length > 0 ? ` ×${selectedTargets.filter((id) => id === target.id).length}` : ''}`,
           () => {
-            selectedMove = null;
+            selectedMoveKey = null;
             const selectedIndex = selectedTargets.lastIndexOf(target.id);
             if (fixedPortions && selectedTargets.length < maximumTargets) {
               // Each click assigns one authored portion. Repeated IDs are
@@ -141,7 +141,7 @@ export function createControls(send, ui) {
           })),
         ...(selectedTargets.length > 0 ? [button('Clear targets', () => {
           selectedTargets = [];
-          selectedMove = null;
+          selectedMoveKey = null;
           render(view);
         }, { 'data-focus-key': `combat:clear-targets:${action.id}` })] : [])]
       : [];
@@ -150,7 +150,20 @@ export function createControls(send, ui) {
     const useReady = action
       && (commitsTargetCount || targets.length === 0 || (selectedTargets.length > 0 && allTargetsReady && portionsReady));
     const submittedTargets = commitsTargetCount ? [] : [...selectedTargets];
-    const selectedPath = action?.moves?.[selectedMove]?.path;
+    const moveTargetIds = (move) => Array.isArray(move.targetIds) ? move.targetIds : [];
+    const moveKey = (move) => `${moveTargetIds(move).join(',')}:${cellText(move.destination)}:${(move.path ?? []).map((cell) => `${cell.x},${cell.y}`).join(';')}`;
+    const selectedMoveTarget = action && !commitsTargetCount && selectedTargets.length > 0
+      ? selectedTargets[0]
+      : null;
+    const availableMoves = action
+      ? selectedMoveTarget === null
+        ? []
+        : (action.moves ?? []).filter((move) => moveTargetIds(move).includes(selectedMoveTarget))
+      : (decision?.kind === 'movement' ? decision.moves ?? [] : []);
+    if (selectedMoveKey !== null && !availableMoves.some((move) => moveKey(move) === selectedMoveKey)) {
+      selectedMoveKey = null;
+    }
+    const selectedPath = availableMoves.find((move) => moveKey(move) === selectedMoveKey)?.path;
     const useLabel = commitsTargetCount
       ? `Commit ${action?.name ?? 'action'} (roll target count)`
       : targets.length === 0 ? `Use ${action?.name ?? 'action'}`
@@ -160,11 +173,12 @@ export function createControls(send, ui) {
         'data-focus-key': `combat:use:${action.id}`,
       })]
       : [];
-    const moves = (action?.moves ?? (decision?.kind === 'movement' ? decision.moves : [])).map((move, index) => button(
+    const moves = availableMoves.map((move, index) => button(
       `${action ? 'Path' : 'Move'} ${cellText(move.destination)}${move.cost === undefined ? '' : ` · ${move.cost}`}`,
       () => {
         if (action) {
-          selectedMove = selectedMove === index ? null : index;
+          const key = moveKey(move);
+          selectedMoveKey = selectedMoveKey === key ? null : key;
           render(view);
           return;
         }
@@ -175,8 +189,8 @@ export function createControls(send, ui) {
         });
       },
       {
-        'aria-pressed': String(action && selectedMove === index),
-        class: action && selectedMove === index ? 'gb-selected' : '',
+        'aria-pressed': String(action && selectedMoveKey === moveKey(move)),
+        class: action && selectedMoveKey === moveKey(move) ? 'gb-selected' : '',
         'data-focus-key': `combat:move:${index}:${cellText(move.destination)}`,
       }));
     const options = (decision?.options ?? []).map((option) => button(option.name, () => send({

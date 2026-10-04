@@ -420,6 +420,7 @@ internal static class SessionProjection
         ["destination"] = new JsonObject { ["x"] = move.Destination.X, ["y"] = move.Destination.Y },
         ["path"] = new JsonArray(move.Path.Select(cell => (JsonNode)new JsonObject { ["x"] = cell.X, ["y"] = cell.Y }).ToArray()),
         ["cost"] = move.Cost,
+        ["targetIds"] = move.TargetIds is null ? null : new JsonArray(move.TargetIds.Select(targetId => (JsonNode)targetId).ToArray()),
     };
 
     private static JsonObject DecisionOption(CombatDecisionOption option) => new()

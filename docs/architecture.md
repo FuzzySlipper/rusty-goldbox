@@ -200,7 +200,10 @@ The owner advances until a manual decision or the outcome. `Observe` copies
 the current phase, actor, budgets, targets and legal choices without rolling.
 `Submit` checks a typed action, movement, end-turn or optional-decision command
 and resumes the same resolver. Rules decide costs, range, sight and targets;
-controller preferences do not restrict a human's legal choices. A committed
+offered paths carry their legal target IDs, and an explicit target/path pair is
+checked before budget, position or random-price changes. The Game projects this
+association so its controls offer paths for the selected target.
+Controller preferences do not restrict a human's legal choices. A committed
 spell price, random target limit and optional reaction or post-roll choice
 retain their actual rolls and suspended operation data. `Capture` and `Restore` carry that
 continuation without repeating deployment, surprise or completed actions.

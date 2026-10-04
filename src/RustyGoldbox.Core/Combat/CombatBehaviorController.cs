@@ -877,6 +877,7 @@ public sealed class CombatBehaviorController
 
             CombatMoveChoice? move = choice.Moves
                 .Select(candidate => (Move: candidate, Distance: Distance(candidate.Destination, targetCell)))
+                .Where(candidate => MoveMatchesTarget(choice, candidate.Move, target.Id))
                 .Where(candidate => Meets(candidate.Distance, preferred, destination.Kind))
                 .Where(candidate => !requiresIntendedAction
                     || intendedUse is not null
@@ -1109,11 +1110,19 @@ public sealed class CombatBehaviorController
         decimal preferred = EvaluateNumber(destination.Distance, actor, FindCreature(target.Id), behavior);
         return choice.Moves
             .Select(move => (Move: move, Distance: Distance(move.Destination, targetCell)))
+            .Where(entry => MoveMatchesTarget(choice, entry.Move, target.Id))
             .Where(entry => Meets(entry.Distance, preferred, destination.Kind))
             .OrderBy(entry => entry.Move.Cost)
             .ThenBy(entry => entry.Distance)
             .Select(entry => (IReadOnlyList<Cell>)entry.Move.Path)
             .FirstOrDefault();
+    }
+
+    private static bool MoveMatchesTarget(CombatActionChoice choice, CombatMoveChoice move, string targetId)
+    {
+        return move.TargetIds is IReadOnlyList<string> associated
+            ? associated.Contains(targetId, StringComparer.Ordinal)
+            : choice.Targets.Count == 1 && choice.Targets[0].Id == targetId;
     }
 
     private bool DestinationSatisfied(Combatant actor, CombatTargetChoice target, CombatBehaviorDestination destination, CombatBehaviorProfile behavior)

@@ -164,6 +164,136 @@ public sealed class CombatLegalityTests
         });
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClassicCloseRejectsAPathForAnotherTargetWithoutMutatingCombat(bool standaloneMoveCommand)
+    {
+        using TempModules modules = new();
+        string tactics = modules.Module("tactics", "extension", requires: TempModules.Require("classic", "*"));
+        modules.Write("tactics/cross_targets.json", """
+            {
+              "type": "combat",
+              "id": "cross_targets",
+              "name": "Cross-target movement",
+              "initiative": "1",
+              "initiative_by": "side",
+              "initiative_order": "highest-first",
+              "initiative_each": "combat",
+              "round_seconds": 6,
+              "field": {
+                "width": 10,
+                "height": 6,
+                "metric": "manhattan",
+                "terrain": { "#": { "name": "Pillar", "passable": false, "blocks_sight": true } }
+              },
+              "budget": [ { "id": "action", "per_turn": 1 }, { "id": "reaction", "per_turn": 1 } ],
+              "track": "classic:hit_points",
+              "defeated": "self.hit_points <= 0"
+            }
+            """);
+
+        ModuleSet set = ModuleLoader.Load(tactics, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        Definition combat = rules.Find(DefinitionTypes.Combat, "tactics:cross_targets", out _)!;
+        Definition close = rules.Find(DefinitionTypes.Action, "classic:close", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            const ulong seed = 9341;
+            const string scope = "cross-target-close";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            Creature actorCreature = new("Mover");
+            actorCreature.Track("hit_points").Current = 20;
+            actorCreature.Track("hit_points").Max = 20;
+            actorCreature.Values["movement"] = 120;
+            Combatant actor = new(
+                "Mover",
+                actorCreature,
+                [new UseOption(close, "Close", new Dictionary<string, CompiledExpression>())],
+                "mover")
+            {
+                Side = 0,
+                Controller = CombatControlMode.Manual,
+            };
+            Combatant firstTarget = new("First target", CreatureWithHitPoints("first", 20), [], "target-a")
+            {
+                Side = 1,
+                Controller = CombatControlMode.Manual,
+            };
+            Combatant secondTarget = new("Second target", CreatureWithHitPoints("second", 20), [], "target-b")
+            {
+                Side = 2,
+                Controller = CombatControlMode.Manual,
+            };
+            CombatRunner runner = CombatRunner.Create(
+                rules,
+                combat,
+                [
+                    new CombatSide("Mover", [actor]),
+                    new CombatSide("First", [firstTarget]),
+                    new CombatSide("Second", [secondTarget]),
+                ],
+                dice,
+                setup: new CombatSetup([
+                    new Cell(0, 0),
+                    new Cell(5, 0),
+                    new Cell(0, 5),
+                ]));
+            Assert.True(runner.SetController(actor.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(firstTarget.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(secondTarget.Id, CombatControlMode.Manual));
+
+            CombatObservation observation = runner.Start(1);
+            while (observation.PendingDecision?.ActorId != actor.Id)
+            {
+                CombatDecision turn = Assert.IsType<CombatDecision>(observation.PendingDecision);
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(turn.ActorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            CombatDecision decision = Assert.IsType<CombatDecision>(observation.PendingDecision);
+            CombatActionChoice closeChoice = Assert.Single(decision.Actions, action => action.ActionId == close.QualifiedId);
+            CombatTargetChoice first = Assert.Single(closeChoice.Targets, target => target.Id == firstTarget.Id);
+            CombatTargetChoice second = Assert.Single(closeChoice.Targets, target => target.Id == secondTarget.Id);
+            CombatMoveChoice pathForFirst = Assert.Single(closeChoice.Moves, move => move.Destination == new Cell(4, 0));
+            CombatMoveChoice pathForSecond = Assert.Single(closeChoice.Moves, move => move.Destination == new Cell(0, 4));
+            Assert.NotEqual(pathForFirst.Path, pathForSecond.Path);
+            Assert.Contains(pathForFirst, decision.Moves);
+            Assert.Contains(pathForSecond, decision.Moves);
+
+            long cursorBeforeMismatch = dice.NextRandomKey;
+            int rollsBeforeMismatch = dice.Rolls.Count;
+            int budgetBeforeMismatch = observation.Combatants.Single(member => member.Id == actor.Id).Budget["action"];
+            Cell positionBeforeMismatch = observation.Combatants.Single(member => member.Id == actor.Id).Position!.Value;
+            string[] factsBeforeMismatch = observation.Facts.Select(FactLine).ToArray();
+
+            CombatCommand MismatchedCommand(string targetId, IReadOnlyList<Cell> path) => standaloneMoveCommand
+                ? new CombatCommand.Move(actor.Id, closeChoice.Id, targetId, path)
+                : new CombatCommand.UseAction(actor.Id, closeChoice.Id, [targetId], path);
+
+            CombatCommandResult mismatched = runner.Submit(MismatchedCommand(second.Id, pathForFirst.Path));
+            Assert.False(mismatched.Accepted, mismatched.Reason);
+            Assert.Equal(decision.Id, mismatched.Observation.PendingDecision?.Id);
+            Assert.Equal(cursorBeforeMismatch, dice.NextRandomKey);
+            Assert.Equal(rollsBeforeMismatch, dice.Rolls.Count);
+            Assert.Equal(budgetBeforeMismatch, mismatched.Observation.Combatants.Single(member => member.Id == actor.Id).Budget["action"]);
+            Assert.Equal(positionBeforeMismatch, mismatched.Observation.Combatants.Single(member => member.Id == actor.Id).Position);
+            Assert.Equal(factsBeforeMismatch, mismatched.Observation.Facts.Select(FactLine));
+
+            CombatCommandResult accepted = runner.Submit(MismatchedCommand(first.Id, pathForFirst.Path));
+            Assert.True(accepted.Accepted, accepted.Reason);
+            Assert.Equal(budgetBeforeMismatch - 1, accepted.Observation.Combatants.Single(member => member.Id == actor.Id).Budget["action"]);
+            Assert.Equal(pathForFirst.Destination, accepted.Observation.Combatants.Single(member => member.Id == actor.Id).Position);
+            MoveFact moved = Assert.Single(accepted.Observation.Facts.OfType<MoveFact>(), fact => fact.Who == actor.Name);
+            Assert.Equal(pathForFirst.Destination, moved.To);
+            Assert.Equal(firstTarget.Name, accepted.Observation.Facts.OfType<ActionFact>().Single(fact => fact.Who == actor.Name).Target);
+        });
+    }
+
     [Fact]
     public void RefusedRandomSpellCostCommandDoesNotQuoteOrConsumeRandomnessAcrossObservationAndJsonRestore()
     {
@@ -954,6 +1084,14 @@ public sealed class CombatLegalityTests
 
     private static decimal? TrackValue(CombatObservation observation, string id, string trackId = "hit_points") =>
         observation.Combatants.Single(member => member.Id == id).Tracks[trackId];
+
+    private static Creature CreatureWithHitPoints(string label, decimal points)
+    {
+        Creature creature = new(label);
+        creature.Track("hit_points").Current = points;
+        creature.Track("hit_points").Max = points;
+        return creature;
+    }
 
     private static string FactLine(CombatFact fact) =>
         $"{fact.Kind}|{fact.Describe()}|{string.Join(",", fact.Rolls.Select(roll => roll.ToString()))}";
