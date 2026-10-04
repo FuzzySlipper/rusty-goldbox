@@ -3,6 +3,7 @@ using System.Text.Json;
 using Rusty.Engine;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
+using RustyGoldbox.Game.Presentation;
 
 namespace RustyGoldbox.Game;
 
@@ -174,8 +175,12 @@ internal static class GameCommands
                 case "skin":
                     session.PickSkin(payload.TryGetProperty("skin", out JsonElement skin) && skin.ValueKind != JsonValueKind.Null ? Text(payload, "skin") : null);
                     break;
+                case "layout":
+                    // Interim until the Engine can anchor a camera to a UI element (rusty-engine #9317).
+                    session.View = View(payload);
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume and skin");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume, skin and layout");
             }
         }
         catch (PayloadException exception)
@@ -189,6 +194,32 @@ internal static class GameCommands
         return payload.TryGetProperty("volume", out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.GetDouble() is >= 0 and <= 1
             ? (float)value.GetDouble()
             : throw new PayloadException("\"volume\" must be a number from 0 to 1");
+    }
+
+    /// <summary>The view panel's rectangle: <c>"view": { x, y, width, height }</c>, fractions of the window from its top left.</summary>
+    private static ViewWindow View(JsonElement payload)
+    {
+        const string Shape = "\"view\" must be { \"x\", \"y\", \"width\", \"height\" }: fractions of the window from its top left, inside it";
+        if (!payload.TryGetProperty("view", out JsonElement view) || view.ValueKind != JsonValueKind.Object)
+        {
+            throw new PayloadException(Shape);
+        }
+
+        float Part(string name)
+        {
+            return view.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.GetDouble() is >= 0 and <= 1
+                ? (float)value.GetDouble()
+                : throw new PayloadException(Shape);
+        }
+
+        ViewWindow window = new(Part("x"), Part("y"), Part("width"), Part("height"));
+        // A little slack for rounding in the browser's measurements.
+        if (window.Width <= 0 || window.Height <= 0 || window.X + window.Width > 1.001f || window.Y + window.Height > 1.001f)
+        {
+            throw new PayloadException(Shape);
+        }
+
+        return window;
     }
 
     private static string Slot(JsonElement payload)

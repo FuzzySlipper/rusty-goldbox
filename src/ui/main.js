@@ -90,8 +90,38 @@ export function mountProductUi(root, context) {
   const arrange = () => {
     frame.dataset.arrangement = arrangementFor(panel.clientWidth, panel.clientHeight, layout);
   };
-  const resized = new ResizeObserver(arrange);
+
+  // The Engine's camera draws where the view panel is: report its rectangle,
+  // as fractions of the window from its top left, whenever it moves or resizes.
+  // Interim until the Engine can anchor a camera to an element (rusty-engine #9317).
+  let reported = '';
+  const reportView = () => {
+    const whole = panel.getBoundingClientRect();
+    const box = view.getBoundingClientRect();
+    if (!view.isConnected || whole.width === 0 || whole.height === 0 || box.width === 0 || box.height === 0) {
+      return;
+    }
+
+    // Inside the panel's frame, so a skin's border isn't drawn over.
+    const fraction = (value, of) => Math.round(Math.min(1, Math.max(0, value / of)) * 10000) / 10000;
+    const rect = {
+      x: fraction(box.left + view.clientLeft - whole.left, whole.width),
+      y: fraction(box.top + view.clientTop - whole.top, whole.height),
+      width: fraction(view.clientWidth, whole.width),
+      height: fraction(view.clientHeight, whole.height),
+    };
+    const key = JSON.stringify(rect);
+    if (key !== reported) {
+      reported = key;
+      send({ action: 'layout', view: rect });
+    }
+  };
+  const resized = new ResizeObserver(() => {
+    arrange();
+    reportView();
+  });
   resized.observe(panel);
+  resized.observe(view);
   arrange();
 
   let shownScreen = null;

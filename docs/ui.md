@@ -11,7 +11,12 @@ imports the other modules here by relative path.
 
 Play and combat share one frame of panels, a CSS grid over the whole window
 (`.gb-frame`). The Engine draws the world in the **view** panel, which the
-frame leaves clear; its shadow paints the gaps between the other panels. Clicks
+frame leaves clear; its shadow paints the gaps between the other panels.
+Whenever the view panel moves or resizes, the UI sends its inner rectangle as
+fractions of the window from its top left (`{ action: "layout", view: { x, y,
+width, height } }`), and the camera draws there. This is presentation only and
+stands in until the Engine can anchor a camera to an element (rusty-engine
+#9317). Clicks
 on the view reach the Engine canvas; every other panel is marked
 `data-rusty-ui-interactive` so it takes its own pointer input.
 

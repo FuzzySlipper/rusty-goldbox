@@ -249,7 +249,8 @@ only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
-begin, play, continue, save, load, quit), plus digital intents mapped from keys: arrows and
+begin, play, continue, save, load, quit, volume, skin, and layout, which says where the view
+panel is), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
 turns a bad one into a note; a key intent acts on a key press or on a UI claim
@@ -269,10 +270,15 @@ submits a second `skills` action with profession and personal allocations, and
 enter the campaign. The character file persists the pending first-stage values
 and the committed allocation.
 
-`SceneView` draws play in a window at the top left of the screen
-(`SceneView.Window`; the Engine measures camera viewports and sprite
-placement from the lower left, and a sprite's placement is within the
-camera's viewport). The area becomes one generated mesh: each wall, door or
+`SceneView` draws play and combat in the DOM's view panel: the panels report
+its rectangle with the `layout` action (`ViewWindow`, fractions of the window
+from its top left, kept on the session and never saved), and the camera's
+viewport follows it, the whole window until the first report. The vertical
+field of view holds, so a wider panel sees more to the sides. The Engine
+measures camera viewports and sprite placement from the lower left, and a
+sprite's placement (an event picture's) is within the camera's viewport. This
+report stands in until the Engine can anchor a camera to a UI element
+(rusty-engine #9317). The area becomes one generated mesh: each wall, door or
 secret door on a cell edge is a quad facing into that cell (back faces are not
 drawn), and each cell has a floor and a ceiling, textured from the area's
 wall set's regions or a plain material. The mesh is rebuilt only when the area

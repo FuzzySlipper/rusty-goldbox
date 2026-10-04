@@ -20,9 +20,6 @@ namespace RustyGoldbox.Game.Presentation;
 /// </summary>
 internal sealed class SceneView : IDisposable
 {
-    /// <summary>The view window, as fractions of the screen from its top left.</summary>
-    public static readonly (float X, float Y, float Width, float Height) Window = (0.01f, 0.02f, 0.47f, 0.62f);
-
     private static readonly Transform Placed = new(Vector3.Zero, Quaternion.Identity, Vector3.One);
 
     private const ulong AreaObject = 1;
@@ -39,6 +36,7 @@ internal sealed class SceneView : IDisposable
     private readonly CombatScene _combat;
     private readonly List<IDisposable> _retired = [];
     private readonly List<Prop> _props = [];
+    private ViewWindow _window = ViewWindow.Whole;
     private bool _showingCombat;
     private bool _showingArea;
     private string? _areaKey;
@@ -65,6 +63,7 @@ internal sealed class SceneView : IDisposable
     public void Show(GameSession session)
     {
         List<AppearanceFact> facts = [];
+        _window = session.View;
         _showingCombat = false;
         _showingArea = false;
         if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
@@ -372,7 +371,8 @@ internal sealed class SceneView : IDisposable
         _shownPicture = null;
     }
 
-    private static CameraDescriptor Camera(CameraPose pose, double fieldOfView = FieldOfView)
+    /// <summary>A camera drawing into the view panel; its vertical field of view holds, so a wider panel sees more to the sides.</summary>
+    private CameraDescriptor Camera(CameraPose pose, double fieldOfView = FieldOfView)
     {
         return new CameraDescriptor(
             pose,
@@ -380,7 +380,7 @@ internal sealed class SceneView : IDisposable
             default,
             new CameraProjection(CameraProjectionKind.Perspective, fieldOfView, 0, 0.05, 64),
             // Camera viewports, like sprite placement, measure from the screen's lower left.
-            new CameraViewport(Window.X, 1 - Window.Y - Window.Height, Window.Width, Window.Height));
+            new CameraViewport(_window.X, 1 - _window.Y - _window.Height, _window.Width, _window.Height));
     }
 
     /// <summary>The sprite a monster or class is drawn with, from the set's figures.</summary>

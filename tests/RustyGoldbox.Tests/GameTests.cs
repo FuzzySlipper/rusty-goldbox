@@ -190,6 +190,30 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void TheLayoutActionMovesTheViewAndLeavesTheNotes()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            Assert.Equal(ViewWindow.Whole, session.View);
+            Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:nobody", "class": "classic:fighter" }""");
+            string[] notes = [.. session.Notes];
+            Assert.NotEmpty(notes);
+
+            // A resize must not wipe what the last action said.
+            Run(session, engine, """{ "action": "layout", "view": { "x": 0.01, "y": 0.08, "width": 0.66, "height": 0.55 } }""");
+            Assert.Equal(new ViewWindow(0.01f, 0.08f, 0.66f, 0.55f), session.View);
+            Assert.Equal(notes, session.Notes);
+
+            Run(session, engine, """{ "action": "layout", "view": { "x": 0.5, "y": 0, "width": 0.6, "height": 1 } }""");
+            Assert.Equal(new ViewWindow(0.01f, 0.08f, 0.66f, 0.55f), session.View);
+            Assert.Contains("\"view\" must be", Assert.Single(session.Notes), StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
     public void AMembersTracksReachTheProjectionAsValuesWithTheFoughtTrackVital()
     {
         using TempModules scratch = new();

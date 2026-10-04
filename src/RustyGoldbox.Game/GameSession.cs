@@ -6,6 +6,7 @@ using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
+using RustyGoldbox.Game.Presentation;
 
 namespace RustyGoldbox.Game;
 
@@ -66,6 +67,9 @@ internal sealed class GameSession(ModuleLibrary library)
 
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
+
+    /// <summary>Where the DOM panels put the view; presentation only, never saved.</summary>
+    public ViewWindow View { get; set; } = ViewWindow.Whole;
 
     /// <summary>The Music bus volume, from 0 (silent) to 1.</summary>
     public float MusicVolume { get; private set; } = 1;
