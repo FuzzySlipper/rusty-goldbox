@@ -20,7 +20,12 @@
       "label": "Ask Goodall to appraise the closed-eye pendant",
       "when": "carried(item.id == 'truth_token') > 0",
       "next": "evt_vil_goodall_appraise"
+    },
+    {
+      "label": "Ask Goodall to appraise Agatha's carried preparations",
+      "when": "carried(item.id == 'agatha_bed_time_tea') > 0 or carried(item.id == 'agatha_berserker_juice') > 0 or carried(item.id == 'agatha_love_potion_eight') > 0 or carried(item.id == 'agatha_right_rain') > 0 or carried(item.id == 'agatha_possum_powder') > 0 or carried(item.id == 'agatha_lichguard') > 0",
+      "next": "evt_vil_goodall_appraise_preparations"
     }
   ],
-  "picture": "blackapple-art:blackapple_village"
+  "picture": "blackapple-art:blackapple_goodall_shop"
 }

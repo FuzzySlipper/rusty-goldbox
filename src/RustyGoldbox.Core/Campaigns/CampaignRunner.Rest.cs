@@ -24,6 +24,7 @@ public sealed partial class CampaignRunner
             for (int period = 0; period < periods; period++)
             {
                 _state.ElapsedDays = Located(evt, "$.periods", () => checked(_state.ElapsedDays + days));
+                ExpireConditions(facts);
                 int before = dice.Rolls.Count;
                 bool interrupted = json.TryGetProperty("wandering", out _) && Located(evt, "$.wandering.when", () => Evaluate(evt, "$.wandering.when", dice).Boolean);
                 facts.Add(new TextFact($"Rest period {period + 1}/{periods} ({policy.Json.GetProperty("unit").GetString()}); campaign time: {Fact(_state.ElapsedDays)} days{(interrupted ? "; interrupted by a wandering encounter" : "")}.") { Rolls = dice.Rolls.Skip(before).ToList() });

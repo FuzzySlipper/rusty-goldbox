@@ -1,0 +1,29 @@
+{
+  "task": "9305 environs service",
+  "role": "palette references only",
+  "inspected_before_generation": true,
+  "excluded_inputs": [
+    "source PDF pages, maps, covers, and excluded third-party illustrations"
+  ],
+  "references": [
+    {
+      "role": "palette_reference_inspected_before_generation",
+      "logical_id": "tenpenny_forest",
+      "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/candidates/tenpenny_forest-candidate.png",
+      "native_alias_path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/raw/tenpenny_forest-exec-7e375491.png",
+      "sha256": "7236221591bcb70b69c3959c21a8767ab3bd172e85620dcdfa6be68150f0ac1d",
+      "dimensions": "1672x941",
+      "inspection": "viewed at high display detail before generation; used only to observe the established forest ink-wash palette and amber/cool contrast",
+      "passed_to_image_gen": false
+    },
+    {
+      "role": "palette_reference_inspected_before_generation",
+      "logical_id": "blackapple_village",
+      "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/references/blackapple_village.png",
+      "sha256": "84228a63470eb76f8c7874d7d149dbbc89a8eebf9135ad20f3d1e3aee880a8cb",
+      "dimensions": "1672x940",
+      "inspection": "viewed at high display detail before generation; used only to observe the established village amber/ochre, moss, slate, and paper-grain palette",
+      "passed_to_image_gen": false
+    }
+  ]
+}

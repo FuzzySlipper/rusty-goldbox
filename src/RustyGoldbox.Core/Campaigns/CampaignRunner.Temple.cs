@@ -112,13 +112,7 @@ public sealed partial class CampaignRunner
         }
 
         CurrencyLedger.Pay(_state.Party, currency.Id, price);
-        foreach ((string id, TrackValue value) in creature.Tracks)
-        {
-            character.Tracks[id] = value;
-        }
-
-        character.Conditions.Clear();
-        character.Conditions.AddRange(creature.Conditions);
+        SyncCharacter(character, creature);
         facts.Add(new TextFact($"{character.Name} receives {label} for {Fact(price)} {currency.Name.ToLowerInvariant()}.") { Rolls = dice.Rolls.Skip(before).ToList() });
         facts.Add(Temple()!);
     }

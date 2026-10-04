@@ -3,6 +3,6 @@
   "id": "evt_env_faehill_scene",
   "kind": "text",
   "text": "The Faehill rises above a clearing of standing stones. Local history says Ludann once settled a bargain between the first woodcutters and a fairy forest, with a squirrel and a black apple as witnesses. The old court was banished beneath the hill long ago, but the mound is not a physical Brugh entrance. Digging or cutting into it would break the living bargain rather than open a road.",
-  "picture": "blackapple-art:tenpenny_forest",
+  "picture": "blackapple-art:environs_faehill",
   "next": "evt_env_faehill_choice"
 }

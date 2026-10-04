@@ -1,0 +1,459 @@
+{
+  "logical_id": "environs_hen_teeth",
+  "runtime_id": "environs_hen_teeth",
+  "slot": "wide picture context",
+  "scope": "campaigns/blackapple-brugh/art/production/environs-service",
+  "prompt": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/prompts/environs_hen_teeth.md",
+    "sha256": "619db6f79b23c06f7520f50d248d467a2bf2f4307346d38cf39c91ac2c3b87ce",
+    "bytes": 1387,
+    "written_before_generation": true,
+    "exact_prompt_file_only": true,
+    "written_mtime_utc": "2026-10-04T09:06:54.246501Z"
+  },
+  "generation": {
+    "tool": "built-in Codex image_gen",
+    "mode": "new image generation",
+    "transparent_background": false,
+    "call_started_utc": "2026-10-04T09:07:03.702Z",
+    "native_output_path": "/home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a/exec-019e99f4-8ccb-4315-8150-93a4c54e6fe5.png",
+    "native_output_preserved_by_tool": true,
+    "native_output_hint": "Generated images are saved to /home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a; this asset remains at the native path recorded above.",
+    "model_sampler_seed": "not exposed by built-in result; no values guessed",
+    "imagegen_input_paths": [],
+    "palette_references_inspected_only": [
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/candidates/tenpenny_forest-candidate.png",
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/references/blackapple_village.png"
+    ],
+    "palette_references_passed_to_imagegen": false,
+    "source_pdf_image_inputs": []
+  },
+  "raw": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/raw/environs_hen_teeth-exec-019e99f4.png",
+    "sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a",
+    "bytes": 2798462,
+    "native_tool_path": "/home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a/exec-019e99f4-8ccb-4315-8150-93a4c54e6fe5.png",
+    "native_copy_observed": true,
+    "png": {
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bit_depth": 8,
+      "color_type": 2,
+      "interlace": 0,
+      "chunks": [
+        {
+          "type": "IHDR",
+          "bytes": 13
+        },
+        {
+          "type": "caBX",
+          "bytes": 21881
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 23496
+        },
+        {
+          "type": "IEND",
+          "bytes": 0
+        }
+      ]
+    }
+  },
+  "canonical_original": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/originals/environs_hen_teeth.png",
+    "sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a",
+    "bytes": 2798462,
+    "png": {
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bit_depth": 8,
+      "color_type": 2,
+      "interlace": 0,
+      "chunks": [
+        {
+          "type": "IHDR",
+          "bytes": 13
+        },
+        {
+          "type": "caBX",
+          "bytes": 21881
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 23496
+        },
+        {
+          "type": "IEND",
+          "bytes": 0
+        }
+      ]
+    }
+  },
+  "canonical_byte_identity": {
+    "raw_to_original_equal": true,
+    "raw_sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a",
+    "original_sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a",
+    "raw_bytes": 2798462,
+    "original_bytes": 2798462
+  },
+  "corrections": {
+    "targeted_correction_count": 0,
+    "independent_finding_triggered": false,
+    "selection_status": "selected original after display inspection; no correction applied"
+  },
+  "inspection": {
+    "display_and_original_resolution_checked": true,
+    "notes": "The oval mirror is the dominant bar landmark, Flynn is readable at the bar, forest windows and amber hearth establish the separate forest tavern, and no lettering is visible."
+  },
+  "source_evidence": [
+    "/tmp/blackapple-r21.txt:380-454 (A3 Hen's Teeth interior, mirror, Flynn, faun patrons)",
+    "campaigns/blackapple-brugh/canon/locations.md:68-69",
+    "campaigns/blackapple-brugh/art/production/art-inventory.md:113"
+  ],
+  "runtime_boundary": {
+    "target_native_dimensions": "1672x941",
+    "actual_dimensions": "1672x941",
+    "within_target_tolerance": true,
+    "packed": false,
+    "runtime_acceptance_claimed": false
+  }
+}

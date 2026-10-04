@@ -13,7 +13,7 @@
     "|           |",
     "+--+--+--+--+"
   ],
-  "wall_set": "blackapple-art:brugh_materials",
+  "wall_set": "blackapple-art:blackapple_village_materials",
   "cells": [
     {
       "at": [1, 0],
@@ -35,19 +35,19 @@
     {
       "at": [2, 1],
       "zone": "jolly-fox",
-      "backdrop": "blackapple-art:blackapple_village",
+      "backdrop": "blackapple-art:blackapple_jolly_fox",
       "event": "evt_vil_jolly_fox"
     },
     {
       "at": [3, 1],
       "zone": "figwort-manor",
-      "backdrop": "blackapple-art:blackapple_village",
+      "backdrop": "blackapple-art:blackapple_figwort_manor",
       "event": "evt_vil_figwort_manor"
     },
     {
       "at": [0, 2],
       "zone": "priory",
-      "backdrop": "blackapple-art:blackapple_village",
+      "backdrop": "blackapple-art:blackapple_priory",
       "event": "evt_vil_priory"
     },
     {

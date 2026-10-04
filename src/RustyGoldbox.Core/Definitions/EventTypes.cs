@@ -217,28 +217,43 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "study", "kind": "improve", "text": "You reflect on what you learned.", "next": "road" }""");
 
+    public static DefinitionType SpellReward { get; } = new(
+        "spell_reward",
+        "Awards one unknown spell to each named party member, or every member when member is omitted. The ruleset chooses the highest-level spell that member can cast; the final draw is uniform among that level's unknown spells.",
+        [
+            new("text", new TextKind(), false, "What the party sees before the individual reward facts."),
+            new("member", new IntegerKind(), false, "Party member number; omit to award every active party member."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "The recovered scroll reveals a new lesson.", "member": 1, "next": "road" }""");
+
     public static DefinitionType Shop { get; } = new(
         "shop",
-        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction, or at an optional authored buying rate and cash balance. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
+        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction, or at an optional authored buying rate, cash balance and maximum item value. A stock reference uses a numeric campaign or area variable and decrements after each successful purchase. Waits for buy <n>, sell <n> or leave; omitted stock is unlimited.",
         [
             new("text", new TextKind(), true, "The shopkeeper's greeting."),
             new("items", new ListKind(new ObjectKind(
             [
                 new("item", new ReferenceKind("item"), true, "An item for sale, at its cost."),
                 new("when", Guard, false, "Offered only when this campaign condition holds."),
+                new("stock", new ReferenceKind("variable"), false, "A numeric campaign or area variable holding the remaining whole copies; each successful purchase lowers it by one. Omit for unlimited stock."),
             ])), true, "Stock in order; buy takes the number shown. An empty list is a shop that only buys."),
             new("buying", new ObjectKind(
             [
-                new("fraction", new NumberKind(), true, "The fraction of an item's cost the shop pays, from 0 to 1."),
+                new("fraction", new NumberKind(), false, "The fraction of an item's cost the shop pays, from 0 to 1; omit to use the ruleset economy's sell_fraction."),
                 new("currency", new ReferenceKind("currency"), true, "The only currency this shop buys."),
-                new("balance", new ReferenceKind("variable"), true, "A numeric campaign or area variable holding the shop's remaining cash."),
-            ]), false, "Optional buying policy. It changes only this shop's carried-item quotes; without it, the ruleset economy's sell_fraction and unlimited buying apply."),
+                new("balance", new ReferenceKind("variable"), false, "A numeric campaign or area variable holding the shop's remaining cash; omit for unlimited buying cash."),
+                new("max_value", new NumberKind(), false, "The highest item cost this shop buys, in the item's declared buying currency; omit for no item-value limit."),
+            ]), false, "Optional buying policy. Currency is required when present; fraction defaults to the ruleset economy's sell_fraction, balance defaults to unlimited buying cash, and max_value omits the item-value limit when absent."),
             Next,
             Picture,
             Sound,
             Music,
         ],
-        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "buying": { "fraction": 0.9, "currency": "classic:gold", "balance": "merchant_cash" }, "next": "farewell" }""");
+        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger", "stock": "preparations" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "buying": { "fraction": 0.9, "currency": "classic:gold", "balance": "merchant_cash", "max_value": 50 }, "next": "farewell" }""");
 
     public static DefinitionType Temple { get; } = new(
         "temple",
@@ -298,7 +313,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Check, Effect, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Check, Effect, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, SpellReward, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

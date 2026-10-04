@@ -62,74 +62,97 @@ public sealed partial class CampaignRunner
         JsonElement operations = evt.Json.GetProperty("operations");
         foreach ((Character character, int member) in targets)
         {
-            Creature creature = character.ToCreature();
-            Evaluator evaluator = new(_rules, dice);
-            for (int index = 0; index < operations.GetArrayLength(); index++)
-            {
-                JsonElement operation = operations[index];
-                string path = $"$.operations[{index}]";
-                string op = operation.GetProperty("op").GetString()!;
-                int before = dice.Rolls.Count;
-                switch (op)
-                {
-                    case "damage":
-                    {
-                        Definition track = _rules.Reference(evt, $"{path}.track");
-                        decimal amount = Located(evt, $"{path}.amount", () => Math.Max(0, evaluator.Evaluate(
-                            _rules.Expression(evt, $"{path}.amount"), SceneScope(creature)).Number));
-                        decimal applied = Located(evt, path, () => TrackOperations.Damage(evaluator, creature, track, amount));
-                        facts.Add(new SceneDamageFact(member, character.Name, track, applied, creature.Track(track.Id).Current ?? 0)
-                        {
-                            Rolls = dice.Rolls.Skip(before).ToList(),
-                        });
-                        break;
-                    }
-                    case "heal":
-                    {
-                        Definition track = _rules.Reference(evt, $"{path}.track");
-                        decimal amount = Located(evt, $"{path}.amount", () => Math.Max(0, evaluator.Evaluate(
-                            _rules.Expression(evt, $"{path}.amount"), SceneScope(creature)).Number));
-                        decimal applied = Located(evt, path, () => TrackOperations.Heal(evaluator, creature, track, amount));
-                        facts.Add(new SceneHealFact(member, character.Name, track, applied, creature.Track(track.Id).Current ?? 0)
-                        {
-                            Rolls = dice.Rolls.Skip(before).ToList(),
-                        });
-                        break;
-                    }
-                    case "apply_condition":
-                    {
-                        Definition condition = _rules.Reference(evt, $"{path}.condition");
-                        if (!creature.Conditions.Contains(condition))
-                        {
-                            creature.Conditions.Add(condition);
-                        }
-
-                        facts.Add(new SceneConditionFact(member, character.Name, condition.Name, true)
-                        {
-                            Rolls = dice.Rolls.Skip(before).ToList(),
-                        });
-                        break;
-                    }
-                    case "remove_condition":
-                    {
-                        Definition condition = _rules.Reference(evt, $"{path}.condition");
-                        if (creature.Conditions.Remove(condition))
-                        {
-                            facts.Add(new SceneConditionFact(member, character.Name, condition.Name, false)
-                            {
-                                Rolls = dice.Rolls.Skip(before).ToList(),
-                            });
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            SyncCharacter(character, creature);
+            ApplySceneOperations(evt, "$.operations", operations, character, member, dice, facts, null);
         }
 
         return Next(evt, "$.next");
+    }
+
+    private void ApplySceneOperations(
+        Definition owner,
+        string operationsPath,
+        JsonElement operations,
+        Character character,
+        int member,
+        DiceRoller dice,
+        List<PlayFact> facts,
+        decimal? durationDays)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(_rules, dice);
+        for (int index = 0; index < operations.GetArrayLength(); index++)
+        {
+            JsonElement operation = operations[index];
+            string path = $"{operationsPath}[{index}]";
+            string op = operation.GetProperty("op").GetString()!;
+            int before = dice.Rolls.Count;
+            switch (op)
+            {
+                case "damage":
+                {
+                    Definition track = _rules.Reference(owner, $"{path}.track");
+                    decimal amount = Located(owner, $"{path}.amount", () => Math.Max(0, evaluator.Evaluate(
+                        _rules.Expression(owner, $"{path}.amount"), SceneScope(creature)).Number));
+                    decimal applied = Located(owner, path, () => TrackOperations.Damage(evaluator, creature, track, amount));
+                    facts.Add(new SceneDamageFact(member, character.Name, track, applied, creature.Track(track.Id).Current ?? 0)
+                    {
+                        Rolls = dice.Rolls.Skip(before).ToList(),
+                    });
+                    break;
+                }
+                case "heal":
+                {
+                    Definition track = _rules.Reference(owner, $"{path}.track");
+                    decimal amount = Located(owner, $"{path}.amount", () => Math.Max(0, evaluator.Evaluate(
+                        _rules.Expression(owner, $"{path}.amount"), SceneScope(creature)).Number));
+                    decimal applied = Located(owner, path, () => TrackOperations.Heal(evaluator, creature, track, amount));
+                    facts.Add(new SceneHealFact(member, character.Name, track, applied, creature.Track(track.Id).Current ?? 0)
+                    {
+                        Rolls = dice.Rolls.Skip(before).ToList(),
+                    });
+                    break;
+                }
+                case "apply_condition":
+                {
+                    Definition condition = _rules.Reference(owner, $"{path}.condition");
+                    if (!creature.Conditions.Contains(condition))
+                    {
+                        creature.Conditions.Add(condition);
+                    }
+
+                    if (durationDays is decimal duration)
+                    {
+                        character.ConditionExpiryDays[condition] = checked(_state.ElapsedDays + duration);
+                    }
+                    else
+                    {
+                        character.ConditionExpiryDays.Remove(condition);
+                    }
+
+                    facts.Add(new SceneConditionFact(member, character.Name, condition.Name, true)
+                    {
+                        Rolls = dice.Rolls.Skip(before).ToList(),
+                    });
+                    break;
+                }
+                case "remove_condition":
+                {
+                    Definition condition = _rules.Reference(owner, $"{path}.condition");
+                    character.ConditionExpiryDays.Remove(condition);
+                    if (creature.Conditions.Remove(condition))
+                    {
+                        facts.Add(new SceneConditionFact(member, character.Name, condition.Name, false)
+                        {
+                            Rolls = dice.Rolls.Skip(before).ToList(),
+                        });
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        SyncCharacter(character, creature);
     }
 
     private Scope SceneScope(Creature creature)
@@ -153,5 +176,9 @@ public sealed partial class CampaignRunner
 
         character.Conditions.Clear();
         character.Conditions.AddRange(creature.Conditions);
+        foreach (Definition condition in character.ConditionExpiryDays.Keys.Where(condition => !character.Conditions.Contains(condition)).ToList())
+        {
+            character.ConditionExpiryDays.Remove(condition);
+        }
     }
 }

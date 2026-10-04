@@ -3,6 +3,6 @@
   "id": "evt_vil_sanitarium_expose_revisit_text",
   "kind": "text",
   "text": "The sanitarium's records still identify the patient as the exposed Arthur double. No new interview changes the status or creates a safe custodian; the real Arthur remains captive somewhere beyond the mirror.",
-  "picture": "blackapple-art:blackapple_village",
+  "picture": "blackapple-art:environs_sanitarium",
   "next": "evt_vil_sanitarium_return"
 }

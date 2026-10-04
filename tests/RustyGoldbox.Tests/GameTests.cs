@@ -212,12 +212,14 @@ public sealed class GameTests
             Assert.Equal(2, SessionProjection.Build(session)["inventory"]![0]!["count"]!.GetValue<int>());
             Evaluator evaluator = new(session.Set.Rules, null);
             decimal before = evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number;
+            Assert.Equal(before.ToString(System.Globalization.CultureInfo.InvariantCulture), SessionProjection.Build(session)["party"]![0]!["derived"]![0]!["value"]!.GetValue<string>());
 
             Run(session, engine, """{ "action": "play", "command": "equip 1 classic:chain_mail" }""");
             Assert.Single(session.Runner.State.Inventory);
             Assert.Single(session.Runner.State.Party[0].Equipment, item => item == mail);
             decimal wearing = evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number;
             Assert.NotEqual(before, wearing);
+            Assert.Equal(wearing.ToString(System.Globalization.CultureInfo.InvariantCulture), SessionProjection.Build(session)["party"]![0]!["derived"]![0]!["value"]!.GetValue<string>());
             Assert.Equal(1, SessionProjection.Build(session)["inventory"]![0]!["count"]!.GetValue<int>());
 
             Run(session, engine, """{ "action": "save", "slot": "gear" }""");

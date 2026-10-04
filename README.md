@@ -129,6 +129,8 @@ module:
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- schema
 dotnet run --project src/RustyGoldbox.Cli -- schema class
+dotnet run --project src/RustyGoldbox.Cli -- schema item --json
+dotnet run --project src/RustyGoldbox.Cli -- schema events --json
 dotnet run --project src/RustyGoldbox.Cli -- module inspect modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval "self.thac0" --module modules/classic --context '{"self": {"class": "fighter", "level": 5}}'
 dotnet run --project src/RustyGoldbox.Cli -- eval --check attack --module modules/classic --seed 7 --context '{"self": {"class": "fighter", "level": 5, "str": 17}, "target": {"monster": "ogre"}}'
@@ -160,6 +162,11 @@ The saved character keeps its age, term choices, roll totals and results in
 `career_terms`; `goldbox character show --json` and the Game party projection
 expose that ledger.
 
+Derived definitions may set `show_on_sheet: true`. The member projection then
+evaluates and exposes that named value in `derived`; the member sheet renders
+the same list. This is an authored display flag and uses the existing
+evaluator, so adding a derived value does not require a named stat in C#.
+
 Campaigns play from command scripts, and save and resume:
 
 ```bash
@@ -184,11 +191,17 @@ shows how to add reusable profiles and data-only enemies; the original
 
 The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
 stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
-scripts and the Game's shop buttons. Declared currency balances stay on
-characters and purchases join party inventory; selling equipped gear removes it
-from its wearer. Each item names its payment currency, and the ruleset declares
-resale in `economy.sell_fraction` (`goldbox schema economy`),
-and `goldbox schema events` describes the shop format. Areas can mark secret
+scripts and the Game's shop buttons. A stock entry can name a numeric campaign
+or area variable holding a nonnegative whole scalar count; each successful buy
+decrements it, while omitted stock is unlimited. Declared currency balances stay
+on characters and purchases join party inventory; selling equipped gear removes
+it from its wearer. Each item names its payment currency, and the ruleset
+declares resale in `economy.sell_fraction` (`goldbox schema economy`). A shop's
+optional `buying` policy requires a currency, defaults its fraction to the
+ruleset `sell_fraction` (0.5 in classic and fifth-srd), and may name a numeric
+cash `balance` or `max_value`; omitted balance means unlimited cash and omitted
+maximum means no value limit. `goldbox schema events` describes these fields
+and the input diagnostics identify `$.items[i].stock` or `$.buying.*`. Areas can mark secret
 doors with `SS`; `search [direction]` uses the area's search check and saves
 discovered edges. `DD` edges may be declared as locked doors with key, pick,
 force or event mechanisms; `open`, `pick` and `force` use those declarations
@@ -201,6 +214,24 @@ the same choices. Class and race restrictions still apply, and saves retain
 both equipped and carried copies. A shop can override its buying rate and
 use a numeric campaign or area variable for its remaining cash with `buying`;
 `goldbox schema events` includes the policy and an example.
+
+Carried consumables use `use <member> <item-id>` with a one-based active member
+and a local or qualified item ID. One carried copy is consumed and the item's
+existing scene operations run outside combat and pending menu, shop, temple or
+training interactions; an equipped copy cannot be used. The item schema's
+minimal form is:
+
+```json
+{ "type": "item", "id": "healing_draught", "name": "Healing draught", "kind": "consumable", "cost": 5, "currency": "gold", "weight": 1, "use": { "operations": [{ "op": "heal", "track": "hit_points", "amount": "1d8 + 1" }] } }
+```
+
+`use.duration_days` is a nonnegative expression evaluated once on use with
+the selected member as `self`; only authored rest and training advance
+fictional `ElapsedDays`. An applied condition stores its absolute expiry in
+the saved character's `condition_expiry` map. Combat rounds, transient
+condition values and turn hooks are rejected for this campaign-time use.
+`goldbox schema item --json` prints the fields and example, and errors identify
+paths such as `$.use.operations[0].track` and `$.use.duration_days`.
 
 Campaign `give` and `take` events name an `item` and an optional positive
 `count` (one by default). Giving adds carried copies. Taking removes carried
@@ -218,6 +249,21 @@ turn-hook conditions belong to combat. `party_size()` reads the live active
 count in campaign expressions, so an authored lift or passage can respond to
 recruitment and dismissal. See `goldbox schema events` and
 `goldbox schema expressions` for the fields and examples.
+
+`spell_reward` is the data event for a ruleset-selected lesson. It may name a
+positive `member` or award every active member. For each member it uses the
+ruleset's castable eligibility, keeps the highest level on an active class list,
+then filters known spells and draws once among that level's unknown spells.
+The selected definition is added to the ordinary known list, so casting,
+preparation and save/load use it. No eligible spell emits a visible no-op fact
+and consumes no random draw. Gate a one-time reward with the authored event
+trigger or variable path; `spell_reward` has no generic once flag. Its minimal
+authoring form is `{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "A lesson takes hold.", "next": "road" }`.
+
+For scripted runs, `--fail-on-refusal` converts a refusal into a diagnostic and
+exit code 1. Otherwise refusals remain transcript facts, which keeps a script
+readable while allowing authors to choose whether a refusal should fail a
+headless check.
 
 With `--store <dir>`, `--load` and `--save` name save slots in that Engine
 persistence root instead of files, such as the Game's under `rusty dev`:

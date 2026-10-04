@@ -195,6 +195,9 @@ public sealed class Character
 
     public List<Definition> Conditions { get; } = [];
 
+    /// <summary>Absolute fictional campaign days when durable conditions end, keyed on this character's conditions.</summary>
+    public Dictionary<Definition, decimal> ConditionExpiryDays { get; } = [];
+
     public Definition? Npc { get; set; }
 
     /// <summary>The current expedition perception result, when one was resolved.</summary>
@@ -223,6 +226,11 @@ public sealed class Character
         copy.Spells.AddRange(Spells);
         copy.Memorised.AddRange(Memorised);
         copy.Conditions.AddRange(Conditions);
+        foreach (var entry in ConditionExpiryDays)
+        {
+            copy.ConditionExpiryDays.Add(entry.Key, entry.Value);
+        }
+
         copy.MilestoneFeatures.AddRange(MilestoneFeatures);
         foreach (var entry in ClassExperience)
         {

@@ -1,9 +1,8 @@
-# Blackapple Brugh selected production art brief
+# Blackapple Brugh selected production art
 
-This is the selected production brief for #9305. It names the art that the
-campaign needs to ship and the consumers that make each asset necessary. It is
-not a catalogue of every possible NPC portrait, monster figure, decorative
-prop, or future UI treatment.
+This selected production inventory names the art that the campaign uses and
+the consumers that make each asset necessary. It is not a catalogue of every
+possible NPC portrait, monster figure, decorative prop, or future UI treatment.
 
 The brief is bounded by `../ART_BIBLE.md`, the canonical runtime and scene
 contracts in `../../canon/`, and the Engine media contract. The source PDF's
@@ -53,7 +52,7 @@ composite, paint, or otherwise edit the pixels.
 
 | Selected use | Slot and native target | Ordinary-context requirement |
 | --- | --- | --- |
-| Village, forest, and Brugh event picture | `media: "image"`, `slot: picture`; 1672 x 941 target (the accepted village image is 1672 x 940) | Whole image remains readable around 320 x 180; one focal action and quiet margins; no identity plate or second picture. |
+| Village, forest, and Brugh event picture | `media: "image"`, `slot: picture`; 1672 x 941 target (the current village picture is 1672 x 940) | Whole image remains readable around 320 x 180; one focal action and quiet margins; no identity plate or second picture. |
 | Recruit portrait | `media: "image"`, `slot: picture`, `tags: ["portrait"]`; 1024 x 1536 | Wylda and Ned remain identifiable in the ordinary party portrait at about 48 x 71 CSS pixels and the member sheet portrait at 64 x 96 CSS pixels; crown, eyes, shoulders, and identity cue stay readable in the full vertical frame. |
 | Ibix double | `media: "sheet"`, `slot: figure`; one 1024 x 1536 transparent frame, `faces: "left"`, bottom-centre anchor | `height: 0.75` Engine cells; feet and full child-scale silhouette remain visible. |
 | Village material atlas | `media: "image"`, `slot: wall_set`; 1024 x 1024 target, four 512 x 512 regions | Named `wall`, `door`, `floor`, `ceiling` regions tile without seams or bleed in `area.blackapple`. |
@@ -62,11 +61,8 @@ composite, paint, or otherwise edit the pixels.
 | Campaign title | `media: "image"`, `slot: picture`; 1600 x 400 | Village edge, forest, Faehill, and black-apple cue leave quiet space for the existing title/start controls. No baked lettering. |
 | Skin | Existing `darkfairytale` theme with Blackapple palette | Palette configuration only; no local CSS renderer, panel image, frame image, button image, font, audio, or video is selected. |
 
-Any later human/world figure would be a separate scoped need. No human figure
-is selected here. If one becomes necessary, its initial target is `0.85` to
-`0.9` Engine cells with headroom and must be labelled **unverified until
-rendered**; the earlier 1.5–1.8 cell targets are retired because they clip in
-the current one-cell ceiling view.
+No additional human/world figure slot is selected here. Recruit portraits
+remain picture assets; the authored figure consumer is the Ibix sheet below.
 
 ## Stable selected IDs
 
@@ -76,22 +72,22 @@ runtime ID used by module definitions.
 
 | Logical ID | Runtime ID and slot | Selected consumer and reuse rule |
 | --- | --- | --- |
-| `asset.wylda-portrait` | `wylda_portrait`, portrait picture | Existing accepted reference; Wylda party card, manor conversation, and entry preparation only. |
+| `asset.wylda-portrait` | `wylda_portrait`, portrait picture | Selected reference; Wylda party card, manor conversation, and entry preparation only. |
 | `asset.master-ned-portrait` | `master_ned_portrait`, portrait picture | Mandatory recruit portrait for C26 rescue and the optional companion sheet; no human figure is required. |
-| `asset.blackapple-village` | `blackapple_village`, wide picture | Existing accepted outdoor village anchor for arrival, square, market/road, parents, and public consequence when that shared exterior is materially correct. |
+| `asset.blackapple-village` | `blackapple_village`, wide picture | Selected outdoor village anchor for arrival, square, market/road, parents, and public consequence when that shared exterior is materially correct. |
 | `asset.tenpenny-forest` | `tenpenny_forest`, wide picture | Selected forest-path anchor for A5 and compatible ordinary forest travel; it is not the Hen's Teeth, Faehill, ruins, shrine, or Brugh. |
-| `asset.ibix-double-figure` | `ibix_double_figure`, one-frame figure sheet | Existing accepted generic figure for all seven doubles at a distance; identity remains in the named child/double record, scene, and object. `height: 0.75` cells is pending ordinary rendering verification. |
-| `asset.brugh-reception-truth` | `brugh_reception_truth`, wide picture | Existing accepted C2 truth picture. It is not a generic Brugh room. |
-| `asset.brugh-reception-glamour` | `brugh_reception_glamour`, wide picture | Existing accepted C2 glamour picture; same arch, mirror, table, doorway, camera, and exits as truth. |
+| `asset.ibix-double-figure` | `ibix_double_figure`, one-frame figure sheet | Current generic figure mapping for the seven named double records and their combat/room consumers, and for the C1 coatroom attendant prop. The attendant is a separate Ibix figure from the seven child/double records; identity remains in each named record, scene, and object. Authored figure height is `0.75` cells. |
+| `asset.brugh-reception-truth` | `brugh_reception_truth`, wide picture | Selected C2 truth picture. It is not a generic Brugh room. |
+| `asset.brugh-reception-glamour` | `brugh_reception_glamour`, wide picture | Selected C2 glamour picture; same arch, mirror, table, doorway, camera, and exits as truth. |
 | `asset.brugh-materials` | `brugh_materials`, wall set | Selected shared Brugh structural atlas. Its 1254 x 1254 regions are `wall [0,0,627,627]`, `door [627,0,627,627]`, `floor [0,627,627,627]`, `ceiling [627,627,627,627]`; ordinary wall-view validation is required before runtime export. |
 | `asset.blackapple-village-materials` | `blackapple_village_materials`, wall set | Selected village atlas for `area.blackapple`; low timber/limewash wall, village door, muddy/stone floor, timber eave. |
 | `asset.environs-forest-materials` | `environs_forest_materials`, wall set | Selected forest atlas for `area.environs`; living-tree boundary, rough gate, leaf/soil floor, branch canopy. |
-| `asset.blackapple-title` | `blackapple_title`, wide title picture | Selected title image; no lettering, logo, or UI. The accepted village picture is not silently cropped into this role. |
+| `asset.blackapple-title` | `blackapple_title`, wide title picture | Selected title image; no lettering, logo, or UI. The village picture is not silently cropped into this role. |
 
 The selected source images retain their original prompts, tool metadata, source
 hashes, runtime hashes, and judge records in their existing provenance files
-and temporary/Den receipts. This brief keeps only the selected ID and its
-consumer contract.
+and Den evidence. This brief keeps only the selected ID and its consumer
+contract.
 
 ## Selected village and forest contexts
 
@@ -101,7 +97,7 @@ outdoor village and forest anchors are reused only for the rows named here.
 
 | Runtime ID | Consumers | Brief and reuse boundary |
 | --- | --- | --- |
-| `blackapple_village` | B1/B5/B6/B13/B17 outdoor approach, arrival, public square, market/road, parents | Existing accepted amber village exterior. Indoor service rooms use their own selected picture below. |
+| `blackapple_village` | B1/B5/B6/B13/B17 outdoor approach, arrival, public square, market/road, parents | Selected amber village exterior. Indoor service rooms use their own selected picture below. |
 | `blackapple_jolly_fox` | B4 safe village hub, rest, rumours | Warm village tavern interior; not the forest tavern. |
 | `blackapple_figwort_manor` | B16 dinner, Wylda recruitment, Figwort mirror, Arthur return | Fashion-conscious manor room with the oval mirror landmark. |
 | `blackapple_priory` | B9/B10 care, double containment, all living return triage | Plain clean sanctuary and care room with a visible safe exit. |
@@ -129,7 +125,7 @@ Bernard identities.
 | Truth runtime ID | Glamour runtime ID | Consumer | Required visual identity |
 | --- | --- | --- | --- |
 | `brugh_coatroom_truth` | `brugh_coatroom_glamour` | C1 | One-way entry mirror, attendant, cloak hooks, and portal cover; damp threshold versus polished court welcome. |
-| `brugh_reception_truth` | `brugh_reception_glamour` | C2 | Existing accepted pair: arch left, oval mirror right, long table centre, rear doorway. |
+| `brugh_reception_truth` | `brugh_reception_glamour` | C2 | Selected pair: arch left, oval mirror right, long table centre, rear doorway. |
 | `brugh_bluehouse_truth` | `brugh_bluehouse_glamour` | C6 | Giles, fixed fungal paths, greenhouse arch, and ward-pixie risk. |
 | `brugh_white_lady_truth` | `brugh_white_lady_glamour` | C7 | Courtly lady versus non-graphic ghoul reading; optional encounter and exit remain visible. |
 | `brugh_frog_prince_truth` | `brugh_frog_prince_glamour` | C11 | Deceptive promise and poison lesson; consent-forward, no required kiss. |
@@ -142,6 +138,9 @@ Bernard identities.
 No other room receives a speculative truth/glamour pair. Its ordinary view is
 the selected Brugh wall set plus its authored map geometry, text, and named
 objects. This keeps C1–C27 coherent without showing a wrong-room picture.
+The default world remains shared: a member's authored truth or glamour picture
+is a view over the same map, exits, objects, and consequences, not a separate
+physical state.
 
 ## C1–C27 selected coverage
 
@@ -153,7 +152,7 @@ generic backdrop substitution.
 
 | Scene | Selected visual treatment | Scene identity / named object |
 | --- | --- | --- |
-| C1 Coatroom | `brugh_coatroom_truth/glamour` + `brugh_materials` | Entry mirror, attendant, cloak choice, one-way portal. |
+| C1 Coatroom | `brugh_coatroom_truth/glamour` + `brugh_materials` + `ibix_double_figure` prop at authored `height: 0.75` | Entry mirror, Ibix attendant, cloak choice, one-way portal; the attendant is separate from the seven child/double records. |
 | C2 Reception Lounge | `brugh_reception_truth/glamour` + `brugh_materials` | First paired perception scene; crocodile is an explicit optional prop/encounter. |
 | C3 Royal Balcony | `brugh_materials` with balcony map geometry and text | Railing, locked access, and ballroom overlook; no ballroom picture substitution. |
 | C4 Game Room | `brugh_materials` with game-room geometry and text | Darts/game table, court etiquette, and leave route. |
@@ -188,7 +187,9 @@ generic backdrop substitution.
 
 Each child is distinguished in the single room picture when one is selected,
 the authored scene text, and a named object or memory. There is no separate
-child portrait requirement and no simultaneous seven-portrait view.
+child portrait requirement and no simultaneous seven-portrait view. The seven
+double records use the generic `ibix_double_figure` mapping in their room and
+combat consumers; their names and evidence remain authored state.
 
 | Child scalar | Scene and selected identity cue | Double treatment |
 | --- | --- | --- |
@@ -229,7 +230,7 @@ contexts, not new art requirements.
 2. Inspect the original at native size and at its ordinary display size. A
    pair is judged together for fixed camera, landmarks, exits, body placement,
    and material-only truth/glamour drift. A single room is judged for its own
-   map geometry and named object; no generic wrong-room picture passes.
+   map geometry and named object; reject a generic wrong-room picture.
 3. Check the single event picture path in the ordinary product. Check Wylda
    and Ned in the actual party portrait projection, each selected wall atlas
    in its area, and Ibix in the one-cell wall view. A source image alone is not
@@ -242,7 +243,7 @@ contexts, not new art requirements.
    corrections for that asset, preserve every attempt and prompt, and stop
    after the second. Do not regenerate for taste or broaden the selected set.
 
-The selected references, prompts, raw outputs, and temporary/Den judge receipts
+The selected references, prompts, raw outputs, and Den evidence receipts
 remain the provenance record. This document records only the selected
 production IDs and durable consumer constraints; runtime export still requires
 the gates above.

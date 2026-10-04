@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "blackapple_optional_grave_protected",
+  "scope": "area",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "The optional cemetery scene recorded Agatha's Lichguard protection on one fresh grave."
+}

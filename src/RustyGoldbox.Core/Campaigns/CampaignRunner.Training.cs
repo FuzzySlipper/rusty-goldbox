@@ -57,6 +57,7 @@ public sealed partial class CampaignRunner
 
         CurrencyLedger.Pay(_state.Party, currency.Id, price);
         _state.ElapsedDays = elapsed;
+        ExpireConditions(facts);
         facts.Add(new TextFact($"{character.Name} trains for {Fact(days)} days and {Fact(price)} {currency.Name.ToLowerInvariant()}. Campaign time: {Fact(elapsed)} days.") { Rolls = dice.Rolls.Skip(before).ToList() });
         facts.Add(Training()!);
     }

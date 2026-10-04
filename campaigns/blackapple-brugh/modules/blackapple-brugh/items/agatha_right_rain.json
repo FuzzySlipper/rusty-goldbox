@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "agatha_right_rain",
+  "name": "Agatha's Right Rain",
+  "kind": "consumable",
+  "cost": 5,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1,
+  "use": {
+    "operations": [
+      {
+        "op": "heal",
+        "track": "fifth-srd:hit_points",
+        "amount": "1"
+      }
+    ]
+  }
+}

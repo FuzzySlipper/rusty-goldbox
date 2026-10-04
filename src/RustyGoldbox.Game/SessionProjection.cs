@@ -113,6 +113,8 @@ internal static class SessionProjection
                 ["balances"] = Balances(shop.Balances),
                 ["stock"] = Offers(shop.Stock),
                 ["carried"] = Offers(shop.Carried),
+                ["buyingCurrency"] = shop.BuyingCurrency?.QualifiedId,
+                ["buyingMaxValue"] = shop.MaxBuyValue,
             } : null;
             projection["temple"] = runner.Temple() is TempleFact temple ? new JsonObject
             {
@@ -133,6 +135,7 @@ internal static class SessionProjection
                     ["id"] = items.Key,
                     ["name"] = items.First().Name,
                     ["count"] = items.Count(),
+                    ["usable"] = items.First().Json.TryGetProperty("use", out _),
                 }).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
@@ -447,6 +450,7 @@ internal static class SessionProjection
             ["price"] = offer.Price,
             ["currency"] = offer.Currency.QualifiedId,
             ["holder"] = offer.Holder,
+            ["remaining"] = offer.Remaining,
         }).ToArray());
     }
 
@@ -638,6 +642,19 @@ internal static class SessionProjection
     /// A member's tracks as values for bars and text. A vital track is one a
     /// combat is fought on, so a portrait can show it.
     /// </summary>
+    private static JsonArray SheetValues(RuleSet rules, Character character)
+    {
+        Evaluator evaluator = new(rules, null);
+        Creature creature = character.ToCreature();
+        return new JsonArray(rules.OfType(DefinitionTypes.Derived)
+            .Where(stat => stat.Json.TryGetProperty("show_on_sheet", out JsonElement shown) && shown.GetBoolean())
+            .Select(stat => (JsonNode)new JsonObject
+            {
+                ["name"] = stat.Name,
+                ["value"] = evaluator.Stat(creature, stat.Id).ToString(),
+            }).ToArray());
+    }
+
     private static JsonArray Tracks(RuleSet rules, Character character)
     {
         HashSet<Definition> fought = rules.OfType(DefinitionTypes.Combat)
@@ -672,6 +689,8 @@ internal static class SessionProjection
             ["level"] = character.Level,
             ["tracks"] = Tracks(rules, character),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
+            ["derived"] = SheetValues(rules, character),
+            ["conditions"] = Strings(character.Conditions.Select(condition => condition.Name)),
             ["skillPoints"] = skillPoints is null ? null : new JsonObject
             {
                 ["profession"] = (double)skillPoints.Profession,

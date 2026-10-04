@@ -101,6 +101,7 @@ public static class CharacterFile
         new("memorised", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Memorised copies."),
         new("prepared", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Unspent prepared copies; omit for the full plan."),
         new("conditions", new Definitions.ListKind(new Definitions.ReferenceKind("condition")), true, "Held conditions."),
+        new("condition_expiry", new Definitions.MapKind(new Definitions.ReferenceKind("condition"), new Definitions.NumberKind()), false, "Absolute fictional campaign days when held durable conditions end; every key must also be in conditions."),
         new("portrait", new Definitions.ReferenceKind("asset", "picture"), false, "Portrait art (a picture slot; use the portrait tag to mark chooser art)."),
         new("perception", new Definitions.ObjectKind(
         [
@@ -351,6 +352,17 @@ public static class CharacterFile
             }
 
             WriteReferences(writer, "conditions", character.Conditions);
+            if (character.ConditionExpiryDays.Count > 0)
+            {
+                writer.WriteStartObject("condition_expiry");
+                foreach ((Definition condition, decimal days) in character.ConditionExpiryDays.OrderBy(entry => entry.Key.QualifiedId, StringComparer.Ordinal))
+                {
+                    writer.WriteNumber(condition.QualifiedId, days);
+                }
+
+                writer.WriteEndObject();
+            }
+
             if (character.Portrait is Definition portrait)
             {
                 writer.WriteString("portrait", portrait.QualifiedId);
@@ -525,6 +537,7 @@ public static class CharacterFile
             }
 
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
+            ReadConditionExpiry(root, character);
             ReadList(root, "spells", DefinitionTypes.Spell, character.Spells);
             for (int index = 0; index < character.Spells.Count; index++)
             {
@@ -632,6 +645,44 @@ public static class CharacterFile
             if (scope is not null && mode is not null && !string.IsNullOrWhiteSpace(scope) && !string.IsNullOrWhiteSpace(mode))
             {
                 character.Perception = new PerceptionState(scope, mode);
+            }
+        }
+
+        private void ReadConditionExpiry(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("condition_expiry", out JsonElement expiry))
+            {
+                return;
+            }
+
+            if (expiry.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.condition_expiry", "condition_expiry must be an object mapping condition IDs to absolute fictional campaign days.");
+                return;
+            }
+
+            foreach (JsonProperty entry in expiry.EnumerateObject())
+            {
+                string path = $"$.condition_expiry.{entry.Name}";
+                Definition? condition = Resolve(entry.Name, path, DefinitionTypes.Condition);
+                if (condition is null)
+                {
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetDecimal(out decimal days) || days < 0)
+                {
+                    Error(path, "A condition expiry must be a nonnegative number of absolute fictional campaign days.");
+                    continue;
+                }
+
+                if (!character.Conditions.Contains(condition))
+                {
+                    Error(path, $"Condition expiry names {condition.QualifiedId}, but that condition is not held in conditions.");
+                    continue;
+                }
+
+                character.ConditionExpiryDays[condition] = days;
             }
         }
 

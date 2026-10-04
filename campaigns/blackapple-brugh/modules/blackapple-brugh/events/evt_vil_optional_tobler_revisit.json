@@ -3,6 +3,7 @@
   "id": "evt_vil_optional_tobler_revisit",
   "kind": "menu",
   "text": "The question from Tobler's shop stays with your papers. Return to the cemetery or leave the matter unresolved.",
+  "picture": "blackapple-art:blackapple_tobler_shop",
   "options": [
     {
       "label": "Walk through the cemetery after dark",

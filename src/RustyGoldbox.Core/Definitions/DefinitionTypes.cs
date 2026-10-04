@@ -116,9 +116,10 @@ public static class DefinitionTypes
         [
             new("name", new TextKind(), true, "Display name."),
             new("value", new ExpressionKind(null, Roots.Self), true, "How the value is computed. May read self only; derived values must not depend on each other in a loop."),
+            new("show_on_sheet", new BooleanKind(), false, "Show this named derived value on the ordinary member sheet. Useful for equipment effects such as armour class; omitted values stay internal to the rules."),
         ],
         """
-        { "type": "derived", "id": "thac0", "name": "To hit AC 0", "value": "table(thac0, self.class, self.level)" }
+        { "type": "derived", "id": "thac0", "name": "To hit AC 0", "value": "table(thac0, self.class, self.level)", "show_on_sheet": true }
         """);
 
     public static DefinitionType Table { get; } = new(
@@ -428,7 +429,7 @@ public static class DefinitionTypes
 
     public static DefinitionType Item { get; } = new(
         "item",
-        "An item type: weapons, armour and gear. Modifiers apply while the item is equipped.",
+        "An item type: weapons, armour and gear. Modifiers apply while equipped; an optional use describes a carried consumable.",
         [
             new("name", new TextKind(), true, "Display name."),
             new("kind", new TextKind(), true, "What sort of item it is, in the ruleset's own words, for example \"weapon\" or \"armour\". Uses with from_item match it."),
@@ -437,9 +438,17 @@ public static class DefinitionTypes
             new("weight", new NumberKind(), true, "Weight, in the ruleset's unit."),
             new("parameters", new MapKind(new TextKind(), CombatNumber), false, "Values the item gives actions used with it (uses with from_item), for example { \"damage\": \"1d8\" }. May read target, for example to deal more against large creatures."),
             new("modifiers", new ListKind(Modifier), false, "Modifiers while equipped, for example armour lowering \"ac\"."),
+            new("use", new ObjectKind(
+            [
+                new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign | Roots.Area, ["damage", "heal", "apply_condition", "remove_condition"])), true,
+                    "Existing track and condition operations performed on the selected party member; damage and heal need an explicit track."),
+                new("duration_days", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false,
+                    "Optional nonnegative fictional campaign-day expression for conditions applied by this item; evaluated once on use, with time advancing only through authored rest or training."),
+            ]), false,
+                "A carried consumable use. One inventory copy is consumed for one selected member; campaign use does not support combat rounds or transient condition values."),
         ],
         """
-        { "type": "item", "id": "long_sword", "name": "Long sword", "kind": "weapon", "cost": 15, "currency": "gold", "weight": 7, "parameters": { "damage": "if target.size == 'large' then 1d12 else 1d8" } }
+        { "type": "item", "id": "healing_draught", "name": "Healing draught", "kind": "consumable", "cost": 5, "currency": "gold", "weight": 1, "use": { "operations": [ { "op": "heal", "track": "hit_points", "amount": "1d8 + 1" } ] } }
         """);
 
     public static DefinitionType Economy { get; } = new(

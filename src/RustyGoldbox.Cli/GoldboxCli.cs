@@ -116,9 +116,10 @@ internal static class GoldboxCli
           goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal]
               Plays a campaign from a command script (or stdin), one command per line; # starts
               a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
-              Commands include equip <member> <item-id> and unequip <member> <item-id>
+              Commands include equip <member> <item-id>, unequip <member> <item-id>, and use <member> <item-id>
               (one-based party members; item IDs can be local or module:id). Gear changes transfer one existing carried
-              copy and are refused during live combat or while a pending interaction owns the command.
+              copy; use consumes one existing carried item with a declared use on the selected member. These commands are
+              refused during live combat or while a pending interaction owns the command.
               Add --combat-control manual to suspend the party at a fight. Combat commands include
               combat inspect, combat control <actor-id> auto|manual, combat action <actor-id> <action-id>
               [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] (quote IDs containing spaces), combat move, combat end-turn, combat decide and

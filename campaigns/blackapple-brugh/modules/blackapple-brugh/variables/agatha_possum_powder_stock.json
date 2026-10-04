@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "agatha_possum_powder_stock",
+  "value_type": "number",
+  "initial": "6",
+  "description": "Remaining Possum Powder doses at Agatha's counter; the source caps sales at six doses to this party."
+}

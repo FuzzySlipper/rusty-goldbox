@@ -1,6 +1,7 @@
 using System.Text.Json;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
+using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Campaigns;
@@ -17,18 +18,34 @@ public sealed partial class CampaignRunner
 
         IReadOnlyDictionary<Definition, decimal> balances = Located(shop, "$", () => CurrencyLedger.Snapshot(_state.Party, _rules));
         string text = shop.Json.GetProperty("text").GetString()!;
+        decimal? maximum = null;
+        Definition? buyingCurrency = null;
         if (shop.Json.TryGetProperty("buying", out _))
         {
-            (decimal _, Definition currency, Definition balance) = BuyingPolicy(shop);
-            text += $" Buying cash: {Fact(BuyingCash(balance))} {currency.Name.ToLowerInvariant()}.";
+            (decimal _, Definition currency, Definition? balance, maximum) = BuyingPolicy(shop);
+            buyingCurrency = currency;
+            if (balance is Definition merchantBalance)
+            {
+                text += $" Buying cash: {Fact(BuyingCash(merchantBalance))} {currency.Name.ToLowerInvariant()}.";
+            }
+
+            if (maximum is decimal maxValue)
+            {
+                text += $" Buys items up to {Fact(maxValue)} {currency.Name.ToLowerInvariant()}.";
+            }
         }
 
-        return new ShopFact(text, balances, Stock(shop), Carried().Select(entry => entry.Offer).ToList());
+        return new ShopFact(text, balances, Stock(shop), Carried().Select(entry => entry.Offer).ToList(), maximum, buyingCurrency);
     }
 
     private List<ShopOffer> Stock(Definition shop)
     {
-        List<ShopOffer> offered = [];
+        return StockEntries(shop).Select(entry => entry.Offer).ToList();
+    }
+
+    private List<(ShopOffer Offer, Definition? StockVariable)> StockEntries(Definition shop)
+    {
+        List<(ShopOffer Offer, Definition? StockVariable)> offered = [];
         JsonElement items = shop.Json.GetProperty("items");
         for (int index = 0; index < items.GetArrayLength(); index++)
         {
@@ -39,10 +56,58 @@ public sealed partial class CampaignRunner
 
             Definition item = _rules.Reference(shop, $"$.items[{index}].item");
             Definition currency = _rules.Reference(item, "$.currency");
-            offered.Add(new ShopOffer(offered.Count + 1, item, item.Json.GetProperty("cost").GetDecimal(), currency));
+            string stockPath = $"$.items[{index}].stock";
+            Definition? stockVariable = _rules.References.GetValueOrDefault((shop, stockPath));
+            decimal? remaining = StockRemaining(shop, stockPath, stockVariable);
+            offered.Add((new ShopOffer(offered.Count + 1, item, ItemCost(item), currency, Remaining: remaining), stockVariable));
         }
 
         return offered;
+    }
+
+    private decimal? StockRemaining(Definition shop, string path, Definition? variable)
+    {
+        if (variable is null)
+        {
+            return null;
+        }
+
+        Dictionary<string, Value> values = VariableValues(variable);
+        if (!values.TryGetValue(variable.Id, out Value value)
+            || value.Type != ExprType.Number
+            || value.Number < 0
+            || decimal.Truncate(value.Number) != value.Number
+            )
+        {
+            throw new RuleFailure(new ModuleDiagnostic(
+                "event.shop.stock",
+                $"Stock variable '{variable.QualifiedId}' must be a nonnegative whole number.",
+                shop.Module,
+                shop.File,
+                path));
+        }
+
+        return value.Number;
+    }
+
+    private void DecrementStock(Definition variable, decimal remaining)
+    {
+        VariableValues(variable)[variable.Id] = Value.Of(remaining - 1);
+    }
+
+    private decimal ItemCost(Definition item)
+    {
+        if (item.Json.GetProperty("cost").TryGetDecimal(out decimal cost))
+        {
+            return cost;
+        }
+
+        throw new RuleFailure(new ModuleDiagnostic(
+            "event.shop.item-cost",
+            $"Item '{item.QualifiedId}' has a cost outside the decimal currency range.",
+            item.Module,
+            item.File,
+            "$.cost"));
     }
 
     private List<(ShopOffer Offer, List<Definition> Items, int Index)> Carried()
@@ -54,9 +119,13 @@ public sealed partial class CampaignRunner
         decimal fraction = economy.Json.GetProperty("sell_fraction").GetDecimal();
         if (shop.Json.TryGetProperty("buying", out _))
         {
-            (fraction, _, _) = BuyingPolicy(shop);
-            priceOwner = shop;
-            pricePath = "$.buying.fraction";
+            (fraction, _, _, _) = BuyingPolicy(shop);
+            JsonElement buying = shop.Json.GetProperty("buying");
+            if (buying.TryGetProperty("fraction", out _))
+            {
+                priceOwner = shop;
+                pricePath = "$.buying.fraction";
+            }
         }
 
         List<(ShopOffer, List<Definition>, int)> carried = [];
@@ -65,7 +134,7 @@ public sealed partial class CampaignRunner
             for (int index = 0; index < items.Count; index++)
             {
                 Definition item = items[index];
-                decimal price = Located(priceOwner, pricePath, () => checked(item.Json.GetProperty("cost").GetDecimal() * fraction));
+                decimal price = Located(priceOwner, pricePath, () => checked(ItemCost(item) * fraction));
                 Definition currency = _rules.Reference(item, "$.currency");
                 carried.Add((new ShopOffer(carried.Count + 1, item, price, currency, holder), items, index));
             }
@@ -87,22 +156,32 @@ public sealed partial class CampaignRunner
             return;
         }
 
-        List<ShopOffer> stock = Stock(shop);
+        List<(ShopOffer Offer, Definition? StockVariable)> stock = StockEntries(shop);
         if (number < 1 || number > stock.Count)
         {
             facts.Add(new RefusedFact($"{number} is not stock offered by this shop; use status to see buy numbers."));
             return;
         }
 
-        ShopOffer offer = stock[number - 1];
+        (ShopOffer offer, Definition? stockVariable) = stock[number - 1];
+        if (offer.Remaining is 0)
+        {
+            facts.Add(new RefusedFact($"{offer.Item.Name} is sold out."));
+            return;
+        }
+
         if (!CanPay(shop, offer.Item.Name, offer.Currency, offer.Price, facts))
         {
             return;
         }
 
         CurrencyLedger.Pay(_state.Party, offer.Currency.Id, offer.Price);
-
         _state.Inventory.Add(offer.Item);
+        if (stockVariable is Definition variable && offer.Remaining is decimal remaining)
+        {
+            DecrementStock(variable, remaining);
+        }
+
         facts.Add(new TradeFact(true, offer.Item.Name, offer.Currency, offer.Price));
         facts.Add(Shop()!);
     }
@@ -125,27 +204,48 @@ public sealed partial class CampaignRunner
         (ShopOffer offer, List<Definition> items, int index) = carried[number - 1];
         if (shop.Json.TryGetProperty("buying", out _))
         {
-            (decimal _, Definition buyingCurrency, Definition balance) = BuyingPolicy(shop);
+            (decimal _, Definition buyingCurrency, Definition? balance, decimal? maximum) = BuyingPolicy(shop);
             if (offer.Currency.Id != buyingCurrency.Id)
             {
                 facts.Add(new RefusedFact($"this shop buys only {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} is priced in {offer.Currency.Name.ToLowerInvariant()}."));
                 return;
             }
 
-            decimal cash = BuyingCash(balance);
-            if (cash < offer.Price)
+            if (maximum is decimal maxValue && ItemCost(offer.Item) > maxValue)
             {
-                facts.Add(new RefusedFact($"this shop has {Fact(cash)} {buyingCurrency.Name.ToLowerInvariant()} left; it cannot buy {offer.Item.Name} for {Fact(offer.Price)}."));
+                facts.Add(new RefusedFact($"this shop buys items costing at most {Fact(maxValue)} {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} costs {Fact(ItemCost(offer.Item))}."));
                 return;
             }
 
-            // Credit the named currency before changing the merchant balance or removing the item, so an overflow can't lose it.
-            Located(shop, "$.buying.fraction", () =>
+            if (balance is Definition merchantBalance)
             {
-                CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
-                SetBuyingCash(balance, checked(cash - offer.Price));
-                return true;
-            });
+                decimal cash = BuyingCash(merchantBalance);
+                if (cash < offer.Price)
+                {
+                    facts.Add(new RefusedFact($"this shop has {Fact(cash)} {buyingCurrency.Name.ToLowerInvariant()} left; it cannot buy {offer.Item.Name} for {Fact(offer.Price)}."));
+                    return;
+                }
+
+                // Credit the named currency before changing the merchant balance or removing the item, so an overflow can't lose it.
+                string buyingPath = shop.Json.GetProperty("buying").TryGetProperty("fraction", out _)
+                    ? "$.buying.fraction"
+                    : "$.buying";
+                Located(shop, buyingPath, () =>
+                {
+                    CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
+                    SetBuyingCash(merchantBalance, checked(cash - offer.Price));
+                    return true;
+                });
+            }
+            else
+            {
+                // Credit the named currency before removing the item, so an overflow can't lose it.
+                Located(shop, "$.buying", () =>
+                {
+                    CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
+                    return true;
+                });
+            }
         }
         else
         {
@@ -162,31 +262,63 @@ public sealed partial class CampaignRunner
         facts.Add(Shop()!);
     }
 
-    private (decimal Fraction, Definition Currency, Definition Balance) BuyingPolicy(Definition shop)
+    private (decimal Fraction, Definition Currency, Definition? Balance, decimal? MaximumValue) BuyingPolicy(Definition shop)
     {
         JsonElement buying = shop.Json.GetProperty("buying");
+        decimal fraction = _rules.Economy!.Json.GetProperty("sell_fraction").GetDecimal();
+        if (buying.TryGetProperty("fraction", out JsonElement fractionValue))
+        {
+            if (!fractionValue.TryGetDecimal(out fraction))
+            {
+                throw new RuleFailure(new ModuleDiagnostic(
+                    "event.shop.buying-fraction",
+                    "A shop buying fraction must fit the decimal currency range.",
+                    shop.Module,
+                    shop.File,
+                    "$.buying.fraction"));
+            }
+        }
+
+        decimal? maximum = null;
+        if (buying.TryGetProperty("max_value", out JsonElement maximumValue))
+        {
+            if (!maximumValue.TryGetDecimal(out decimal max))
+            {
+                throw new RuleFailure(new ModuleDiagnostic(
+                    "event.shop.buying-max-value",
+                    "A shop maximum item value must fit the decimal currency range.",
+                    shop.Module,
+                    shop.File,
+                    "$.buying.max_value"));
+            }
+
+            maximum = max;
+        }
+
+        Definition? balance = _rules.References.GetValueOrDefault((shop, "$.buying.balance"));
         return (
-            buying.GetProperty("fraction").GetDecimal(),
+            fraction,
             _rules.Reference(shop, "$.buying.currency"),
-            _rules.Reference(shop, "$.buying.balance"));
+            balance,
+            maximum);
     }
 
     private decimal BuyingCash(Definition balance)
     {
-        Dictionary<string, Value> values = balance.Json.TryGetProperty("scope", out JsonElement scope)
-            && scope.GetString() == "area"
-            ? _state.ValuesFor(_state.Area)
-            : _state.Variables;
-        return values[balance.Id].Number;
+        return VariableValues(balance)[balance.Id].Number;
     }
 
     private void SetBuyingCash(Definition balance, decimal value)
     {
-        Dictionary<string, Value> values = balance.Json.TryGetProperty("scope", out JsonElement scope)
+        VariableValues(balance)[balance.Id] = Value.Of(value);
+    }
+
+    private Dictionary<string, Value> VariableValues(Definition variable)
+    {
+        return variable.Json.TryGetProperty("scope", out JsonElement scope)
             && scope.GetString() == "area"
             ? _state.ValuesFor(_state.Area)
             : _state.Variables;
-        values[balance.Id] = Value.Of(value);
     }
 
     private void LeaveShop(DiceRoller dice, List<PlayFact> facts)

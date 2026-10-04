@@ -1610,6 +1610,10 @@ public sealed class RuleSetBuilder
             {
                 CheckEvent(definition);
             }
+            else if (definition.Type == DefinitionTypes.Item)
+            {
+                CheckItem(definition);
+            }
             else if (definition.Type == DefinitionTypes.Asset)
             {
                 string file = definition.Json.GetProperty("file").GetString()!;
@@ -2099,6 +2103,9 @@ public sealed class RuleSetBuilder
             case "training" when !Characters.CharacterRules.RequiresTraining(_rules):
                 Error(definition, "event.training", "$", "A training event needs advancement.training with cost and days expressions in its ruleset.");
                 break;
+            case "spell_reward" when definition.Json.TryGetProperty("member", out JsonElement member) && member.GetInt32() < 1:
+                Error(definition, "event.spell-reward", "$.member", "A spell reward member number must be at least 1; omit it to reward every active party member.");
+                break;
             case "shop":
                 if (_rules.Economy is null)
                 {
@@ -2106,15 +2113,51 @@ public sealed class RuleSetBuilder
                 }
 
                 if (definition.Json.TryGetProperty("buying", out JsonElement buying)
-                    && (!buying.GetProperty("fraction").TryGetDecimal(out decimal fraction) || fraction is < 0 or > 1))
+                    && buying.TryGetProperty("fraction", out JsonElement fractionValue)
+                    && (!fractionValue.TryGetDecimal(out decimal fraction) || fraction is < 0 or > 1))
                 {
                     Error(definition, "event.shop.buying-fraction", "$.buying.fraction", "A shop buying fraction must be from 0 to 1, for example 0.9 for ninety percent of the item's cost.");
+                }
+
+                if (definition.Json.TryGetProperty("buying", out buying)
+                    && buying.TryGetProperty("max_value", out JsonElement maximum)
+                    && (!maximum.TryGetDecimal(out decimal maxValue) || maxValue < 0))
+                {
+                    Error(definition, "event.shop.buying-max-value", "$.buying.max_value", "A shop maximum item value must be a nonnegative decimal number that fits the currency range.");
                 }
 
                 if (_rules.References.TryGetValue((definition, "$.buying.balance"), out Definition? balance)
                     && balance.Json.GetProperty("value_type").GetString() != "number")
                 {
                     Error(definition, "event.shop.buying-balance", "$.buying.balance", "A shop buying balance must reference a numeric campaign or area variable.");
+                }
+
+                JsonElement items = definition.Json.GetProperty("items");
+                for (int index = 0; index < items.GetArrayLength(); index++)
+                {
+                    string stockPath = $"$.items[{index}].stock";
+                    if (!_rules.References.TryGetValue((definition, stockPath), out Definition? stock))
+                    {
+                        continue;
+                    }
+
+                    if (stock.Json.GetProperty("value_type").GetString() != "number")
+                    {
+                        Error(definition, "event.shop.stock-type", stockPath, "A shop stock reference must name a numeric campaign or area variable.");
+                        continue;
+                    }
+
+                    string initial = stock.Json.GetProperty("initial").GetString()!;
+                    if (decimal.TryParse(initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out decimal initialValue)
+                        && (initialValue < 0 || decimal.Truncate(initialValue) != initialValue))
+                    {
+                        Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must start at a nonnegative whole number.");
+                    }
+                    else if (double.TryParse(initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double oversized)
+                        && (double.IsInfinity(oversized) || oversized > (double)decimal.MaxValue || oversized < (double)decimal.MinValue))
+                    {
+                        Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must fit the decimal range and start at a nonnegative whole number.");
+                    }
                 }
 
                 break;
@@ -2202,6 +2245,76 @@ public sealed class RuleSetBuilder
                     }
                 }
             }
+        }
+    }
+
+    private void CheckItem(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("use", out JsonElement use))
+        {
+            return;
+        }
+
+        JsonElement operations = use.GetProperty("operations");
+        if (operations.GetArrayLength() == 0)
+        {
+            Error(definition, "item.use", "$.use.operations", "A consumable use needs at least one operation; omit use for equipment.");
+            return;
+        }
+
+        bool hasDuration = use.TryGetProperty("duration_days", out _);
+
+        bool hasCondition = false;
+        for (int index = 0; index < operations.GetArrayLength(); index++)
+        {
+            JsonElement operation = operations[index];
+            string path = $"$.use.operations[{index}]";
+            string op = operation.GetProperty("op").GetString()!;
+            if (op is ("damage" or "heal") && !operation.TryGetProperty("track", out _))
+            {
+                Error(definition, "item.use", $"{path}.track", $"A consumable {op} operation needs an explicit track; there is no combat track here.");
+            }
+
+            if (op != "apply_condition")
+            {
+                continue;
+            }
+
+            hasCondition = true;
+            if (operation.TryGetProperty("rounds", out _))
+            {
+                Error(definition, "item.use", $"{path}.rounds", "Timed condition rounds belong to combat turns; consumable uses use duration_days for fictional campaign time.");
+            }
+
+            if (operation.TryGetProperty("values", out _))
+            {
+                Error(definition, "item.use", $"{path}.values", "Consumable uses do not keep transient condition values; define the condition's durable state instead.");
+            }
+
+            if (_rules.References.TryGetValue((definition, $"{path}.condition"), out Definition? condition))
+            {
+                if (condition.Json.TryGetProperty("instant", out JsonElement instant) && instant.GetBoolean())
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Instant conditions are combat operations; consumable uses need a condition that remains on the character.");
+                }
+
+                if (condition.Json.TryGetProperty("on_apply", out _))
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Conditions with on_apply need the combat operation executor; consumable uses need a durable condition without an apply hook.");
+                }
+
+                if (condition.Json.TryGetProperty("each_turn", out _)
+                    || condition.Json.TryGetProperty("end_of_turn", out _)
+                    || condition.Json.TryGetProperty("rounds_end", out _))
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Turn hooks and turn duration belong to combat; consumable uses need a durable condition without combat timing.");
+                }
+            }
+        }
+
+        if (hasDuration && !hasCondition)
+        {
+            Error(definition, "item.use", "$.use.duration_days", "duration_days applies to an apply_condition operation; omit it for an immediate track change.");
         }
     }
 

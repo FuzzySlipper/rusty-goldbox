@@ -134,3 +134,37 @@ work gloves; source cursed behaviour is omitted. The object-level omissions
 and coin/gem conversion are recorded in `canon/source-mapping.md` in the
 editable workspace. These objects use ordinary item/trade owners, not hidden
 magical effects or a new economy.
+
+## Village service definitions
+
+The six `agatha_*` item definitions adapt Agatha's Potions and Powders, printed
+pp. 12–13. Their source prices are retained and each shop entry starts with
+six doses, matching the source's per-party sales cap. The carried uses call
+Core's existing track and durable-condition operations. Bed Time Tea heals
+`1d4` immediately and applies a random `(1d4 + 4) / 24` day sleep condition;
+this moves the source's end-of-sleep healing to the use moment because this
+campaign has no delayed callback. Berserker Juice uses a one-hour fictional
+condition with existing attack, dueling-damage and AC modifiers; the source's
+mind-save bonus, forced ten-round target selection, concentration blocking and
+fatigue are omitted.
+Love Potion #8 records a one-day, consent-forward social condition without an
+implicit target or forced input. Right Rain heals one hit point. Possum Powder
+blocks actions for one fictional day while leaving the character alive, with
+the source's minor headache omitted. Lichguard has no self-use field: it is a
+plain saleable powder consumed by the cemetery event, which records protection
+of one fresh grave against a skeleton or zombie and names the cause. It does
+not resurrect, affect stronger undead, or create an undead encounter.
+
+Goodall retains the source's 10% selling fee and 1,400-gold campaign cash
+ledger. Her ordinary appraisal event states the actual carried preparation
+effects and that the closed-eye pendant's modifier applies only while equipped;
+it creates no identification state. Once Amelia or Bernard is actually handed
+home, the campaign gives the one-time gold reward and runs Core's generic
+`spell_reward` event for every active spellcaster. The event adds a highest
+level unknown class spell directly to the character's known, castable spell
+list, a saved digital counterpart to the source's scroll-like lesson.
+
+Hazard's shop uses the source's 75% used-goods rate and a `max_value` of 50
+fifth-srd gold. It omits a second merchant balance, so the existing economy
+and party ledger remain the only money owner. These service adaptations and
+their source page map are maintained in `canon/source-mapping.md`.

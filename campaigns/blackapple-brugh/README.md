@@ -58,6 +58,8 @@ names mapped deliberately in the implementation; for example,
   area, event, variable and parallel-worker interfaces.
 * [art/ART_BIBLE.md](art/ART_BIBLE.md) — style, identities, reference images,
   original generation prompts and independent judging requirements.
+* [art/production/art-inventory.md](art/production/art-inventory.md) — selected
+  runtime consumers, shared structural art and the C1–C27 visual mapping.
 
 ## Edit and export
 
@@ -83,6 +85,35 @@ For a repeatable four-member CLI party, run `scripts/create-party.sh`, with
 `GOLDBOX_CLI=/path/to/goldbox` if needed. `PARTY_DIR` chooses the generated
 output directory and `RULESET_PATH` can point to an installed ruleset
 container. Ordinary Game creation uses the campaign's authored party limits.
+
+## Current authored runtime recipes
+
+Agatha's optional service is a shop event with six explicit offers:
+`agatha_bed_time_tea`, `agatha_berserker_juice`, `agatha_love_potion_eight`,
+`agatha_right_rain`, `agatha_possum_powder`, and `agatha_lichguard`. Each offer
+names its own numeric stock variable, initialized to six, so a successful
+`buy <n>` consumes one remaining dose. The consumable definitions carry their
+existing scene operations; `use <member> <item-id>` consumes one carried copy
+outside combat and pending menu, shop, temple or training interactions, and a
+`use.duration_days` expression is evaluated once for conditions that rest or
+training should expire. Lichguard is the powder used by the cemetery event's
+named grave-protection consequence; it has no authored combat effect.
+
+The Goodall family reward is data-gated by `goodall_reward_given`: returning
+Amelia or Bernard grants the authored gold reward once, then reaches the
+`spell_reward` event. That event awards each eligible active spellcaster one
+unknown, class-appropriate spell selected by the required ruleset data; it
+does not name a fixed spell list. Use `goldbox schema item --json` and
+`goldbox schema events --json` when adding another item or event so the
+operation, stock and reward fields stay discoverable from the CLI.
+
+Brugh truth and glamour pictures are per-member authored views over one shared
+map, exits, named objects and consequence state. The member's view selection
+does not create a second room or reroll an existing route. The selected
+`ibix_double_figure` sheet is the current generic figure mapping for the seven
+double records and their combat/room consumers, and for the C1 coatroom
+attendant prop; that attendant is a separate Ibix figure from the seven named
+child/double records. Its authored figure height is `0.75` Engine cells.
 
 ## Editing contract
 

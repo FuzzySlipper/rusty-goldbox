@@ -101,6 +101,38 @@ rescue. `omit` means the adaptation does not carry that source material.
 | B16 Figwort Manor | 20–22 | retain/adapt | family dinner, Wylda, entry mirror |
 | B17 Smithson the Leper | 22 | retain/adapt | respectful disease scene and warning |
 
+#### Service and reward conversions
+
+The three shop rows above now have concrete data owners. Agatha's six
+preparations are carried items with six copies of each stock variable, so the
+player can buy a dose, use it on a willing active member, and see the existing
+track or condition facts. The item conversions deliberately name the changed
+parts of the source procedure:
+
+| Source preparation | Source page and price | Digital definition and explicit change |
+| --- | --- | --- |
+| Bed Time Tea | p. 12, 2 gp | `agatha_bed_time_tea` heals `1d4` immediately and applies `agatha_deep_sleep` for `(1d4 + 4) / 24` fictional days. The source heals at the end of the sleep; immediate healing is the selected low-level conversion because Core has no delayed callback or sleep clock. |
+| Berserker Juice | p. 12, 6 gp | `agatha_berserker_juice` applies a one-hour (`1 / 24` day) condition with existing melee, finesse, ranged, dueling-damage, and AC modifiers. The source's mind-save bonus, ten-round forced charge, concentration restriction, and fatigue aftermath are omitted because consumable use has no combat-round, effect subtype, or autonomous-target owner. |
+| Love Potion #8 | pp. 12–13, 80 gp | `agatha_love_potion_eight` applies a one-day, consent-forward social condition to the selected drinker. The first-person meeting is available as fiction; no invisible target, forced player action, or autonomous charm controller is invented. |
+| Right Rain | p. 13, 5 gp | `agatha_right_rain` immediately heals one hit point through the existing track operation. |
+| Possum Powder | p. 13, 10 gp | `agatha_possum_powder` applies a one-day `prevents_actions` condition while the character remains alive. The source's death-like pulse and minor headache are stated adaptations, not the `dead` condition. |
+| Lichguard | p. 13, 3 gp | `agatha_lichguard` remains a plain saleable powder. A carried dose is taken by the existing cemetery event and records one protected fresh grave and a named cause; the campaign claims only prevention of a skeleton or zombie, with no resurrection, stronger-undead protection, or new undead generator. |
+
+Goodall's p. 13 cash ledger remains a 0.9 sale fraction with a 1,400-gold
+campaign balance. Her ordinary appraisal menu describes the actual carried
+preparations and the pendant's equipped-only modifier without an identification
+flag. After Amelia or Bernard is actually handed home, her one-time p. 13
+family reward marks the handoff and runs the generic `spell_reward` event for
+each active spellcaster: the Engine selects one unknown highest-level class
+spell that is already usable by the ruleset. This is the digital counterpart
+to the source's scroll-like lesson and is saved directly in the character's
+known spells.
+
+Hazard's p. 16 used-goods rule is represented by the existing shop buying
+policy at 0.75 of declared cost and `max_value: 50` in fifth-srd gold. The
+omitted balance means the campaign does not invent a second cash ledger; the
+only finite preparation ledger is Agatha's six-dose-per-item stock.
+
 ### Brugh overview and denizens
 
 | Source section | Pages | Disposition | Canon destination |

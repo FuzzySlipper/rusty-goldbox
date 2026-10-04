@@ -400,12 +400,25 @@ not invent competing names.
 | court_service_accepted | boolean/false | Player explicitly accepted permanent court service or a stay |
 | elf_lord_reaction | text/curious | curious, amused, suspicious, hostile, bargaining |
 | return_account_complete | boolean/false | All fourteen status records displayed and answered |
+| goodall_reward_given | boolean/false | The one-time named Goodall handoff reward, including each eligible active spellcaster's direct spell lesson, has been granted |
+| agatha_bed_time_tea_stock | number/6 | Remaining Bed Time Tea doses at Agatha's counter |
+| agatha_berserker_juice_stock | number/6 | Remaining Berserker Juice doses at Agatha's counter |
+| agatha_love_potion_stock | number/6 | Remaining Love Potion #8 doses at Agatha's counter |
+| agatha_right_rain_stock | number/6 | Remaining Right Rain doses at Agatha's counter |
+| agatha_possum_powder_stock | number/6 | Remaining Possum Powder doses at Agatha's counter |
+| agatha_lichguard_stock | number/6 | Remaining Lichguard doses at Agatha's counter |
 
 Workers may add area-scoped variables only for private map details, with an
 area prefix (blackapple_, environs_, brugh_l1_, brugh_l2_, or brugh_l3_) and no
 cross-area reads. A cross-area need must use this inventory or be proposed to
 the coordinator before authoring. Quest IDs remain canon labels; cross-area
 effects use the named evidence, stance, route, recovery, or status scalar.
+
+The optional cemetery service also uses the area-scoped records
+`blackapple_optional_grave_protected` and
+`blackapple_optional_grave_protection_cause`. They record one explicit
+Lichguard application and its named cause; they do not create an undead
+generator or a combat effect.
 
 ## Worker contracts
 

@@ -4,5 +4,5 @@
   "kind": "treasure",
   "currency": "fifth-srd:gold",
   "amount": "100 * party_size()",
-  "next": "evt_fin_after_children"
+  "next": "evt_fin_goodall_reward_mark"
 }

@@ -22,7 +22,7 @@ namespace RustyGoldbox.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, equip <member> <item-id>, unequip <member> <item-id>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, equip <member> <item-id>, unequip <member> <item-id>, use <member> <item-id>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -406,6 +406,9 @@ public sealed partial class CampaignRunner
             case "unequip" when words.Length == 3 && int.TryParse(words[1], out int unequipMember):
                 Unequip(unequipMember, words[2], facts);
                 break;
+            case "use" when words.Length == 3 && int.TryParse(words[1], out int useMember):
+                Use(useMember, words[2], dice, facts);
+                break;
             case "leave" when words.Length == 1:
                 if (_state.PendingTemple is not null)
                 {
@@ -699,6 +702,8 @@ public sealed partial class CampaignRunner
                 return Milestone(evt, dice, facts);
             case "improve":
                 return Improve(evt, dice, facts);
+            case "spell_reward":
+                return SpellReward(evt, dice, facts);
             case "rest":
                 return Rest(evt, dice, facts);
             case "combat":
@@ -1194,14 +1199,7 @@ public sealed partial class CampaignRunner
         {
             Character character = _state.Party[source.PartyIndex!.Value];
             Combatant member = partySide.Members.Single(member => member.Id == source.Id);
-            character.Tracks.Clear();
-            foreach ((string id, TrackValue value) in member.Creature.Tracks)
-            {
-                character.Tracks[id] = new TrackValue { Current = value.Current, Max = value.Max };
-            }
-
-            character.Conditions.Clear();
-            character.Conditions.AddRange(member.Creature.Conditions);
+            SyncCharacter(character, member.Creature);
             character.Equipment.Clear();
             character.Equipment.AddRange(member.Creature.Equipment);
             character.Prepared = member.Preparing.Count == 0 ? character.Prepared : member.Prepared.ToList();

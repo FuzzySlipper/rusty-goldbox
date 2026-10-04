@@ -112,6 +112,13 @@ its manifest `requires` list. It does not carry C# or other executable rules.
 If a new primitive is required for a source-faithful behavior, the Core task
 and its schema/tests own that change; the module remains data.
 
+The village service data remains in the campaign module: Agatha's six
+preparation items and stock variables, Goodall's named-handoff reward gate and
+appraisal prose, Hazard's 75%/50-gold buying policy, and the cemetery's
+Lichguard proof record. The source pages and every timing, target, undead and
+cash-limit change are recorded in `canon/source-mapping.md`; no service adds a
+second inventory, clock, cash owner or combat loop.
+
 ## Licence summary for maintainers
 
 The source-derived and original adaptation portions of this campaign use the

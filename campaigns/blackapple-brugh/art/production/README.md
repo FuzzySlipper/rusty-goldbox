@@ -4,7 +4,7 @@ Selected collection and exact consumers are in `art-inventory.md`.
 `runtime-index.json` links included runtime definitions to their native source
 images. Batch directories retain prompts, original images, raw generated
 outputs, rejected attempts and correction lineage. Editable material is
-excluded from playable module containers; only the asset module's accepted
+excluded from playable module containers; only the asset module's selected
 media, definitions and notices are packed.
 
 Opaque RGB sources receive an all-255 alpha channel with FFmpeg, without
@@ -24,6 +24,6 @@ regions; no external image processor invents a renderer or container identity.
 
 Truth/glamour images are judged together with fixed room landmarks and are
 presented through Core's persisted per-member perception. Image/source
-judgments, ordinary Engine observations, captures and temporal experiment
-reports are retained in Den. A packed image and a source judgment alone do
-not establish ordinary player-visible acceptance.
+judgments, ordinary Engine observations and captures are retained as Den
+evidence. A packed image and a source judgment alone do not establish ordinary
+player-visible acceptance.

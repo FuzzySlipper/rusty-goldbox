@@ -130,7 +130,7 @@ export function createOverlay(send, ui) {
     };
     const equipment = [
       ...(who.equipment ?? []).map((item) => [item.name, 'Equipped', gearChoice('Unequip', item)]),
-      ...(view.inventory ?? []).map((item) => [`${item.name}${item.count > 1 ? ` × ${item.count}` : ''}`, 'Carried', gearChoice('Equip', item)]),
+      ...(view.inventory ?? []).map((item) => [`${item.name}${item.count > 1 ? ` × ${item.count}` : ''}`, 'Carried', gearChoice(item.usable ? 'Use' : 'Equip', item)]),
     ];
     return frame(who.name, `${kind} · ${who.experience} xp`,
       row(...(party.length > 1 ? [button('◀ Previous', step(-1), { 'data-focus-key': `member:${index}:previous` }), button('Next ▶', step(1), { 'data-focus-key': `member:${index}:next` })] : []),
@@ -142,9 +142,11 @@ export function createOverlay(send, ui) {
         element('div', {},
           ...picture(who.portraitPicture, `${who.name}'s portrait`, 96),
           element('h3', {}, 'Tracks'), table((who.tracks ?? []).map((track) => [trackText(track)])),
+          ...(who.conditions?.length ? [element('div', {}, who.conditions.join(', '))] : []),
           element('h3', {}, 'Money'), element('div', {}, formatBalances(who.balances))),
         element('div', {},
           element('h3', {}, 'Attributes'), table((who.attributes ?? []).map((attribute) => [attribute])),
+          ...(who.derived?.length ? [table(who.derived.map((stat) => [stat.name, stat.value]))] : []),
           ...(who.features?.length ? [element('h3', {}, 'Features'), element('div', {}, who.features.join(', '))] : [])),
         element('div', {},
           element('h3', {}, 'Equipment'), table(equipment),
@@ -155,11 +157,16 @@ export function createOverlay(send, ui) {
 
   const shop = (view) => {
     const offers = (list, verb) => table(list.map((offer) => [
-      `${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''}`,
+      `${offer.number}. ${offer.name}${offer.holder ? ` (${offer.holder})` : ''}${offer.remaining === null || offer.remaining === undefined ? '' : ` · ${offer.remaining} left`}`,
       { text: `${offer.price} ${currencyName(offer.currency)}`, number: true },
-      { node: button(verb, play(`${verb.toLowerCase()} ${offer.number}`)) },
+      { node: (() => {
+        const node = button(verb, play(`${verb.toLowerCase()} ${offer.number}`));
+        node.disabled = verb === 'Buy' && offer.remaining === 0;
+        return node;
+      })() },
     ]));
     return frame(view.shop.text, `Party: ${formatBalances(view.shop.balances)}`,
+      ...(view.shop.buyingMaxValue === null || view.shop.buyingMaxValue === undefined ? [] : [element('p', {}, `Buys goods worth at most ${view.shop.buyingMaxValue} ${currencyName(view.shop.buyingCurrency)} each.`)]),
       element('div', { class: 'gb-columns' },
         element('div', {}, element('h3', {}, 'For sale'), offers(view.shop.stock, 'Buy')),
         element('div', {}, element('h3', {}, 'Carried'), offers(view.shop.carried, 'Sell'))),

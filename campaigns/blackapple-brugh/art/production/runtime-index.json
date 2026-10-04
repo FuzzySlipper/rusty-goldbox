@@ -739,6 +739,526 @@
           255
         ],
         "rgb_pixels_equal": true
+      },
+      "regions": {
+        "wall": [
+          0,
+          0,
+          627,
+          627
+        ],
+        "door": [
+          627,
+          0,
+          627,
+          627
+        ],
+        "floor": [
+          0,
+          627,
+          627,
+          627
+        ],
+        "ceiling": [
+          627,
+          627,
+          627,
+          627
+        ]
+      }
+    },
+    {
+      "id": "blackapple_agatha_shop",
+      "logical_id": "asset.blackapple-agatha-shop",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_agatha_shop.png",
+        "sha256": "64586ec993defaf86e268f7dd9e7953b5f321b7acf1904ddc173291962b19a38"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_agatha_shop.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "d0d6919b4026316c7883382e271da3e2763a714de05f1763477bfd203bbc3b4d",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_cemetery",
+      "logical_id": "asset.blackapple-cemetery",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_cemetery.png",
+        "sha256": "d3e78715efacb36fb97a773688c6cb3d2d9670992c133a25a4ce34a75e2b4d00"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_cemetery.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "aab190f212aa1f99376392f3f24f8f207076aa42394837cc53c11069d6dcf8e0",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_figwort_manor",
+      "logical_id": "asset.blackapple-figwort-manor",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_figwort_manor.png",
+        "sha256": "05972cefebe3ae3ac3c5b6a55c78cd228922a1f0e8add9e0d5e2c407211a3d22"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_figwort_manor.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "9bd0b09676203b177a737b342737834386170ac6e190e7a30f749a564c3c2c7e",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_goodall_shop",
+      "logical_id": "asset.blackapple-goodall-shop",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_goodall_shop.png",
+        "sha256": "3dddceaea2f1fcc97b29011b79d3d3a77fd9fcde8e752ae37a3df4d54a7157c7"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_goodall_shop.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "ca21a3215ceca4349feef6a83a1fa46058a589710db1b25ca7d6869249d07726",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_hazard_shop",
+      "logical_id": "asset.blackapple-hazard-shop",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_hazard_shop.png",
+        "sha256": "4e9fb166de7bc27f3966aa1d2cde669fded8f0b884b5b4e4e5756d4e634d8c23"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_hazard_shop.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "183b4aac78a1e3505eb378707166e99c5256c516efdf1bb4b1e9fc159bf2a967",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_jolly_fox",
+      "logical_id": "asset.blackapple-jolly-fox",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_jolly_fox.png",
+        "sha256": "4190418c300ca943ea46c903e40ddcc62aacccff662354eadbd3cea1df7338b2"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_jolly_fox.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "9858a1c84d85ed72717b3bc08f0f5378ac5391098688fc766874139607738bac",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_priory",
+      "logical_id": "asset.blackapple-priory",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_priory.png",
+        "sha256": "a1cb3c88d3690a300b0724e0bb61874673a24fcded1598879f284f322b1b1045"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_priory.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "a75daae5d19b0a2cd2e4570f6677693fcee16e4b0df6ccf39de4b7c4ca3f2093",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "blackapple_tobler_shop",
+      "logical_id": "asset.blackapple-tobler-shop",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/village-service/originals/blackapple_tobler_shop.png",
+        "sha256": "ad2943b8d27c0d6a107a8a295f769fbdf0a13aef777cf4cff94332dd0eb3bd16"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_tobler_shop.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "8607b54f217a99377b2b0906f55172cee40a4a2c4285cd8296352600f1a39d8a",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/village-service/metadata/"
+    },
+    {
+      "id": "environs_faehill",
+      "logical_id": "asset.environs-faehill",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_faehill.png",
+        "sha256": "1fc75a721c40b67ff47fca33acd38c93fb759d28e7e105beca8c2492ade8a9bf"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_faehill.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "810a8ae78f60e45cdae70d5b4690d4dc77ac87b818259d071d1f9a6a01f692a4",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "environs_fairy_ruins",
+      "logical_id": "asset.environs-fairy-ruins",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_fairy_ruins.png",
+        "sha256": "aaf627e736a109d6ea00accc43f7c9909485322daa3d10a4ca3a2fc8c8e2e765"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_fairy_ruins.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "1c488eb87ccbf160043b73d890aa2f8c84248173407cb2f97ad9c17178049b37",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "environs_hen_teeth",
+      "logical_id": "asset.environs-hen-teeth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_hen_teeth.png",
+        "sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_hen_teeth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "4bdee2060015a42a551f0c889c3265d592fdeff7222852eaa8d0f2cfaede7722",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "environs_sanitarium",
+      "logical_id": "asset.environs-sanitarium",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_sanitarium.png",
+        "sha256": "228e16772e74718308bc5592c5a74e6d0e95a596f40c4b41e401b81e3a0efbaa"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_sanitarium.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "f4a508a46d0c255bab0f73db0a9bcc35848cc4533fd606a22bc225762207e52d",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "environs_shrine_confession",
+      "logical_id": "asset.environs-shrine-confession",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_shrine_confession.png",
+        "sha256": "25839b0415ef872d8206953d21c448d3e57aaa3fce1968f5a62f884e63b2567e"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_shrine_confession.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "63ee544d8b5bedfb90703b10a8638294d9356f4d8641be157b9f316703fa5f41",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "environs_wild_dog_lair",
+      "logical_id": "asset.environs-wild-dog-lair",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_wild_dog_lair.png",
+        "sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_wild_dog_lair.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "2b4e6cfd6d6418259e4c8b8105c343980f63c9e08d43f06a2388bf405d2a8bc4",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/environs-service/metadata/"
+    },
+    {
+      "id": "blackapple_title",
+      "logical_id": "asset.blackapple-title",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/materials-title/originals/blackapple_title.png",
+        "sha256": "fcc9b3b79a6c2ba05bd31e0e504b15d0b687c048969ac16cae7f34aa29ab4d74"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_title.png",
+        "mode": "RGBA",
+        "size": [
+          1983,
+          793
+        ],
+        "sha256": "f2bd27cde2ac9a0d4c6713be550274a41afb6a4b845a78da7834f58d5bd85271",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/materials-title/metadata/"
+    },
+    {
+      "id": "blackapple_village_materials",
+      "logical_id": "asset.blackapple-village-materials",
+      "slot": "wall_set",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/materials-title/originals/blackapple_village_materials.png",
+        "sha256": "7bc7bc68e8b629ecb0492507df92385f8d29a15aaf17f2912fafc33474059809"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_village_materials.png",
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "sha256": "f62170af4f29c450cd3512893f81949109b96cd3a5251b10e9a9627fbfdb1a4d",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/materials-title/metadata/",
+      "regions": {
+        "wall": [
+          0,
+          0,
+          627,
+          627
+        ],
+        "door": [
+          627,
+          0,
+          627,
+          627
+        ],
+        "floor": [
+          0,
+          627,
+          627,
+          627
+        ],
+        "ceiling": [
+          627,
+          627,
+          627,
+          627
+        ]
+      }
+    },
+    {
+      "id": "environs_forest_materials",
+      "logical_id": "asset.environs-forest-materials",
+      "slot": "wall_set",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/materials-title/originals/environs_forest_materials.png",
+        "sha256": "f7d8607d219eb5f29d07b263e4ec180700582c8b1ef53c0d46b7173f26be7ecf"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/environs_forest_materials.png",
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "sha256": "bce7eda8966f9a919518cc8a566fbd39f42fb2421536bf50a6420891c0509fc1",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/materials-title/metadata/",
+      "regions": {
+        "wall": [
+          0,
+          0,
+          627,
+          627
+        ],
+        "door": [
+          627,
+          0,
+          627,
+          627
+        ],
+        "floor": [
+          0,
+          627,
+          627,
+          627
+        ],
+        "ceiling": [
+          627,
+          627,
+          627,
+          627
+        ]
       }
     }
   ],

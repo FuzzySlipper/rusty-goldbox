@@ -3,5 +3,6 @@
   "id": "evt_vil_optional_cemetery_private_text",
   "kind": "text",
   "text": "You leave the graves undisturbed and keep the cemetery evidence private. It is a lead about this village, not a claim that any child or double has been found.",
+  "picture": "blackapple-art:blackapple_cemetery",
   "next": "evt_vil_optional_hub"
 }

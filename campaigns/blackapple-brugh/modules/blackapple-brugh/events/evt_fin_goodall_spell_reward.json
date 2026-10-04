@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_goodall_spell_reward",
+  "kind": "spell_reward",
+  "text": "Goodall opens a quiet letter from her old spellcasting contacts. Each active spellcaster with an unknown class spell receives one ruleset-selected lesson that can be prepared and cast; other members receive no decorative scroll.",
+  "next": "evt_fin_after_children"
+}

@@ -4,7 +4,7 @@
   "kind": "branch",
   "branches": [
     {
-      "when": "campaign.var.child_amelia_goodall == 'returned' or campaign.var.child_bernard_goodall == 'returned'",
+      "when": "(campaign.var.child_amelia_goodall == 'returned' or campaign.var.child_bernard_goodall == 'returned') and not campaign.var.goodall_reward_given",
       "next": "evt_fin_goodall_reward_text"
     }
   ],

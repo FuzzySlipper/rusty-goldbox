@@ -94,6 +94,22 @@ public sealed record TextFact(string Text) : PlayFact
     public override string Describe() => Text;
 }
 
+/// <summary>One ruleset-selected unknown spell awarded to an active party member.</summary>
+public sealed record SpellRewardFact(
+    int Member,
+    string Who,
+    Definition? Spell,
+    int? Level,
+    bool Granted,
+    string? Reason) : PlayFact
+{
+    public override string Kind => "spell_reward";
+
+    public override string Describe() => Granted && Spell is Definition spell
+        ? $"{Who} learns {spell.Name} (spell level {Level})."
+        : $"{Who} receives no spell reward: {Reason}";
+}
+
 /// <summary>A member-specific perception check resolved for an expedition scope.</summary>
 public sealed record PerceptionFact(
     int Member,
@@ -182,6 +198,14 @@ public sealed record ItemsFact(bool Given, Definition Item, int Count) : PlayFac
     public override string Describe() => $"The party {(Given ? "receives" : "hands over")} {Count} × {Item.Name}.";
 }
 
+/// <summary>A single carried consumable copy was used on one party member.</summary>
+public sealed record ItemUseFact(int Member, string Who, Definition Item) : PlayFact
+{
+    public override string Kind => "used";
+
+    public override string Describe() => $"{Who} uses {Item.Name}.";
+}
+
 public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnlyList<string> Items) : PlayFact
 {
     public override string Kind => "treasure";
@@ -199,17 +223,23 @@ public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnl
     }
 }
 
-/// <summary>A numbered item at its purchase or resale price; Holder names equipped gear.</summary>
-public sealed record ShopOffer(int Number, Definition Item, decimal Price, Definition Currency, string? Holder = null);
+/// <summary>A numbered item at its purchase or resale price; Holder names equipped gear and Remaining is finite stock when declared.</summary>
+public sealed record ShopOffer(int Number, Definition Item, decimal Price, Definition Currency, string? Holder = null, decimal? Remaining = null);
 
-public sealed record ShopFact(string Text, IReadOnlyDictionary<Definition, decimal> Balances, IReadOnlyList<ShopOffer> Stock, IReadOnlyList<ShopOffer> Carried) : PlayFact
+public sealed record ShopFact(
+    string Text,
+    IReadOnlyDictionary<Definition, decimal> Balances,
+    IReadOnlyList<ShopOffer> Stock,
+    IReadOnlyList<ShopOffer> Carried,
+    decimal? MaxBuyValue = null,
+    Definition? BuyingCurrency = null) : PlayFact
 {
     public override string Kind => "shop";
 
     public override string Describe()
     {
         string Offers(IReadOnlyList<ShopOffer> offers) => offers.Count == 0 ? "none" : string.Join("  ", offers.Select(offer =>
-            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}"));
+            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")}{(offer.Remaining is decimal remaining ? $" ({N(remaining)} left)" : "")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}"));
         string balances = Balances.Count == 0 ? "none" : string.Join(", ", Balances.Select(entry => $"{N(entry.Value)} {entry.Key.Name.ToLowerInvariant()}"));
         return $"{Text} Balances: {balances}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
     }

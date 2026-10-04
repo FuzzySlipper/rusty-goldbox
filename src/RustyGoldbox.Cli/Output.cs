@@ -1374,12 +1374,23 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             door = fact is DoorFact door ? new { direction = Facings.Name(door.Direction), method = door.Method, opened = door.Opened } : null,
             party = fact is PartyFact change ? new { npc = change.Npc.QualifiedId, joined = change.Joined, members = change.Members } : null,
             items = fact is ItemsFact transfer ? new { given = transfer.Given, item = transfer.Item.QualifiedId, count = transfer.Count } : null,
+            used = fact is ItemUseFact usedItem ? new { member = usedItem.Member, who = usedItem.Who, item = usedItem.Item.QualifiedId } : null,
+            spellReward = fact is SpellRewardFact reward ? new
+            {
+                member = reward.Member,
+                who = reward.Who,
+                spell = reward.Spell?.QualifiedId,
+                level = reward.Level,
+                granted = reward.Granted,
+                reason = reward.Reason,
+            } : null,
             temple = fact is TempleFact temple ? new { text = temple.Text, services = temple.Services.Select(service => new { number = service.Number, label = service.Label, currency = service.Currency.QualifiedId, prices = service.Prices }) } : null,
             shop = fact is ShopFact shop ? new
             {
                 text = shop.Text,
                 balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
-                stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
+                buying = shop.BuyingCurrency is Definition buyingCurrency ? new { currency = buyingCurrency.QualifiedId, max_value = shop.MaxBuyValue } : null,
+                stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, remaining = offer.Remaining }),
                 carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
             } : null,
         };
