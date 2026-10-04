@@ -51,6 +51,8 @@ complete campaign or every fight is automatically tested.
 | `chapter` | Area, scene, map, event, and quest-state contract | draft |
 | `encounter` | Ruleset-aware encounter tuning and replay | draft |
 | `art` | Style references, original assets, and drift review | draft |
+| `judge-individual` | Fresh original-file image review and targeted corrections | draft |
+| `judge-batch` | Original-file and contact-sheet drift comparison | draft |
 | `handoff` | Single-agent and multi-agent transfer packet | draft |
 | `workflow` | Coordinator sequence and merge discipline | draft |
 | `revision` | Repair, contradiction, and later revision record | draft |
@@ -70,6 +72,11 @@ relevant definition topic for exact fields and examples. Use
 reports a module, file, JSON path, and rule, repair that reported input and
 retain its receipt.
 
-The initial kit covers the workflow and handoffs. The Blackapple production
-campaign, full art set, independent drift calibration, and final fresh transfer
+The kit includes individual and batch image judges. Give each fresh judge the
+brief, original candidates and references, declared display-size views, and
+current schema notes. Keep generator assessments and calibration expectations
+out of the judge inputs. Record unavailable evidence as uncertain; a visual
+verdict does not establish runtime format validity.
+
+The Blackapple production campaign, full art set, and final fresh transfer
 remain later work in the parent task sequence.

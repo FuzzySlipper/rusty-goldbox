@@ -300,6 +300,21 @@ internal sealed class ExpressionChecker(
             return CheckEquipped(call, function);
         }
 
+        if (function.Name == "party_size")
+        {
+            if (!roots.HasFlag(Roots.Campaign))
+            {
+                throw new ExpressionException("party_size() reads the active campaign party, but this field isn't a campaign expression.", call.Column);
+            }
+
+            if (call.Arguments.Count != 0)
+            {
+                throw new ExpressionException($"{function.Signature} takes no arguments, but got {call.Arguments.Count}.", call.Column);
+            }
+
+            return ExprType.Number;
+        }
+
         if (function.Name == "spell_slots" && !roots.HasFlag(Roots.Self))
         {
             throw new ExpressionException("spell_slots() reads self's classes, but this field can't read self.", call.Column);

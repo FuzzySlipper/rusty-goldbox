@@ -954,6 +954,43 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                             success = perception.Result.Success,
                             tier = perception.Result.Tier,
                         } : null,
+                        check = fact is SceneCheckFact sceneCheck ? new
+                        {
+                            member = sceneCheck.Member,
+                            who = sceneCheck.Who,
+                            check = sceneCheck.Check,
+                            roll = sceneCheck.Result.Roll,
+                            bonus = sceneCheck.Result.Bonus,
+                            modifier = sceneCheck.Result.Modifier,
+                            total = sceneCheck.Result.Total,
+                            target = sceneCheck.Result.Target,
+                            margin = sceneCheck.Result.Margin,
+                            success = sceneCheck.Result.Success,
+                            tier = sceneCheck.Result.Tier,
+                        } : null,
+                        damage = fact is SceneDamageFact sceneDamage ? new
+                        {
+                            member = sceneDamage.Member,
+                            who = sceneDamage.Who,
+                            track = sceneDamage.Track.QualifiedId,
+                            amount = sceneDamage.Amount,
+                            left = sceneDamage.Left,
+                        } : null,
+                        heal = fact is SceneHealFact sceneHeal ? new
+                        {
+                            member = sceneHeal.Member,
+                            who = sceneHeal.Who,
+                            track = sceneHeal.Track.QualifiedId,
+                            amount = sceneHeal.Amount,
+                            now = sceneHeal.Now,
+                        } : null,
+                        condition = fact is SceneConditionFact sceneCondition ? new
+                        {
+                            member = sceneCondition.Member,
+                            who = sceneCondition.Who,
+                            name = sceneCondition.Condition,
+                            applied = sceneCondition.Applied,
+                        } : null,
                         view = fact is ViewFact view ? new { member = view.Member, who = view.Who, mode = view.Mode, text = view.Text, picture = view.Picture?.QualifiedId } : null,
                         search = fact is SearchFact search ? new { direction = Facings.Name(search.Direction), found = search.Found } : null,
                         door = fact is DoorFact door ? new { direction = Facings.Name(door.Direction), method = door.Method, opened = door.Opened } : null,

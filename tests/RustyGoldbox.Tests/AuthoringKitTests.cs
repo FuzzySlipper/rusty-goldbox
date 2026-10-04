@@ -16,7 +16,7 @@ public sealed class AuthoringKitTests
         using JsonDocument json = JsonDocument.Parse(text);
         Assert.Equal("draft-0.1", json.RootElement.GetProperty("revision").GetString());
         Assert.Equal(
-            ["kit", "brief", "canon", "chapter", "encounter", "art", "handoff", "workflow", "revision"],
+            ["kit", "brief", "canon", "chapter", "encounter", "art", "judge-individual", "judge-batch", "handoff", "workflow", "revision"],
             json.RootElement.GetProperty("resources").EnumerateArray().Select(resource => resource.GetProperty("id").GetString()));
     }
 
@@ -48,7 +48,7 @@ public sealed class AuthoringKitTests
         Assert.Equal(GoldboxCli.Ok, firstCode);
         using (JsonDocument first = JsonDocument.Parse(firstText))
         {
-            Assert.Equal(9, first.RootElement.GetProperty("files").GetArrayLength());
+            Assert.Equal(11, first.RootElement.GetProperty("files").GetArrayLength());
         }
 
         string briefPath = Path.Combine(destination, "brief.md");

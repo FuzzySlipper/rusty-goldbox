@@ -395,6 +395,10 @@ public sealed partial class CampaignRunner
             case "perception":
                 ResolvePerception(evt, dice, facts);
                 return Next(evt, "$.next");
+            case "check":
+                return RunSceneCheck(evt, dice, facts);
+            case "effect":
+                return RunSceneEffect(evt, dice, facts);
             case "menu":
                 List<(int Number, string Label, int Index)> offered = Offered(evt);
                 facts.Add(new MenuFact(json.GetProperty("text").GetString()!, offered.Select(option => (option.Number, option.Label)).ToList()));
@@ -512,7 +516,7 @@ public sealed partial class CampaignRunner
             decimal modifier = evt.Json.TryGetProperty("modifier", out _)
                 ? Located(evt, "$.modifier", () => evaluator.Evaluate(
                     _rules.Expression(evt, "$.modifier"),
-                    new Scope(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area))).Number)
+                    new Scope(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area), PartySize: _state.Party.Count)).Number)
                 : 0;
             CheckResult result = Located(evt, "$.check", () => evaluator.Check(check, creature, null, modifier));
             string mode = result.Success ? successMode : failureMode;
@@ -892,7 +896,7 @@ public sealed partial class CampaignRunner
     public bool IsTrue(Definition owner, string path)
     {
         Evaluator evaluator = new(_rules, null);
-        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area)))).Boolean;
+        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area), PartySize: _state.Party.Count))).Boolean;
     }
 
     /// <summary>The waiting menu's options, numbered as <c>choose</c> takes them; empty when no menu waits.</summary>
@@ -1077,7 +1081,7 @@ public sealed partial class CampaignRunner
     private Value Evaluate(Definition owner, string path, DiceRoller? dice)
     {
         Evaluator evaluator = new(_rules, dice);
-        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area))));
+        return Located(owner, path, () => evaluator.Evaluate(_rules.Expression(owner, path), new Scope(null, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area), PartySize: _state.Party.Count)));
     }
 
     private Definition? Next(Definition owner, string path)

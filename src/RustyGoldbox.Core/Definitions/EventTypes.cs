@@ -41,6 +41,28 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "brugh_entry", "kind": "perception", "scope": "brugh-entry", "check": "int_save", "modifier": "-2", "reset": true, "success_mode": "truth", "failure_mode": "glamour", "next": "mirror_room" }""");
 
+    public static DefinitionType Check { get; } = new(
+        "check",
+        "Resolves an authored check for one active party member and follows the explicitly authored success or failure event. The result is a play fact; it is not stored as campaign state.",
+        [
+            new("check", new ReferenceKind("check"), true, "The check the selected party member makes."),
+            new("member", new IntegerKind(), true, "The 1-based active party member who rolls."),
+            new("modifier", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false, "An optional extra modifier evaluated with the selected member as self."),
+            new("on_success", new ReferenceKind("event"), false, "The event after a successful check."),
+            new("on_failure", new ReferenceKind("event"), false, "The event after a failed check."),
+        ],
+        """{ "type": "event", "id": "safe_landing", "kind": "check", "check": "rules:reflex_save", "member": 1, "on_success": "continue", "on_failure": "fall" }""");
+
+    public static DefinitionType Effect { get; } = new(
+        "effect",
+        "Applies existing noncombat track and condition operations to one active party member or every active member, then follows the authored event. Effects have no combat target, round clock or hidden state.",
+        [
+            new("member", new IntegerKind(), false, "The 1-based active party member; omit to apply the operations to every active member."),
+            new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign | Roots.Area, ["damage", "heal", "apply_condition", "remove_condition"])), true, "Existing track and condition operations. Give damage and heal an explicit track; campaign effects use non-timed conditions with their authored defaults."),
+            Next,
+        ],
+        """{ "type": "event", "id": "fall", "kind": "effect", "member": 1, "operations": [{ "op": "damage", "track": "rules:hit_points", "amount": "1d6" }, { "op": "apply_condition", "condition": "rules:shaken" }], "next": "after_fall" }""");
+
     public static DefinitionType Menu { get; } = new(
         "menu",
         "Asks the party to choose; play waits for a choose command.",
@@ -270,7 +292,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Check, Effect, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

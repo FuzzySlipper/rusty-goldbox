@@ -23,6 +23,8 @@ internal static class AuthoringKit
         new("chapter", "Chapter contract", "Area, scene, entry/exit, state, and merge contract.", "chapter.md", "draft"),
         new("encounter", "Encounter contract", "Ruleset-aware tuning, seeded replay, and repair.", "encounter.md", "draft"),
         new("art", "Art direction", "Style, provenance, accepted/rejected art, and drift review.", "art.md", "draft"),
+        new("judge-individual", "Individual image judge", "Fresh visual drift review with evidence and bounded corrections.", "judge-individual.md", "draft"),
+        new("judge-batch", "Batch image judge", "Original-file and contact-sheet comparison with separate review axes.", "judge-batch.md", "draft"),
         new("handoff", "Authoring handoff", "Files-first worker packet and contradiction handling.", "handoff.md", "draft"),
         new("workflow", "Authoring workflow", "Single-agent and multi-agent coordinator sequence.", "workflow.md", "draft"),
         new("revision", "Revision record", "Repair, deliberate canon changes, and evidence layers.", "revision.md", "draft"),

@@ -28,6 +28,7 @@ public static class ExpressionFunctions
         new("class_sum", "class_sum(x)", "The total of x worked out once for each class self has (class.id, class.level).", 1, 1),
         new("equipped", "equipped(x)", "How many of the items self has equipped x holds for, reading each as item.id, item.kind, item.weight and item.cost: equipped(item.kind == 'shield') > 0 needs a shield, equipped(item.kind == 'armour' and item.id != 'leather_armour') == 0 allows only leather armour.", 1, 1),
         new("carried", "carried(x)", "How many party-owned items x holds for, including carried inventory and members' equipment, but excluding absent NPCs. Reads each as item.id, item.kind, item.weight and item.cost: carried(item.id == 'dagger') > 0 tests possession, carried(item.kind == 'gear') counts gear. Available in campaign expressions.", 1, 1),
+        new("party_size", "party_size()", "The number of active members in the current campaign party. It is read when the expression is evaluated, so join and dismiss events are reflected immediately.", 0, 0),
         new("spell_slots", "spell_slots(level)", "Spells per day of a spell level that self's classes give at their levels (their spell_slots), added over its classes: the maximum for a track of spell slots.", 1, 1),
         new("table", "table(id, key, ...)", "Looks up a table definition by its keys; gives the table's value type.", 2, int.MaxValue),
     ];
