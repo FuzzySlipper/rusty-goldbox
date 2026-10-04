@@ -36,6 +36,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     public void Start()
     {
         _session.Refresh();
+        PlayerSettings.Load(_engine, _session);
         Publish();
     }
 

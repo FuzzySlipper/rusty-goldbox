@@ -59,6 +59,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
 | `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
+| `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin and layout, kept between runs in their own persistence scope and loaded through the session's checks |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
@@ -249,8 +250,8 @@ only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
-begin, play, continue, save, load, quit, volume, skin, and layout, which says where the view
-panel is), plus digital intents mapped from keys: arrows and
+begin, play, continue, save, load, quit, volume, skin, layout-config (the player's panel
+proportions), and layout, which says where the view panel is), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
 turns a bad one into a note; a key intent acts on a key press or on a UI claim

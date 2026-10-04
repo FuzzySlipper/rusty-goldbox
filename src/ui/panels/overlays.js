@@ -23,8 +23,42 @@ export function createOverlay(send, ui) {
   const skinPick = element('select', { 'aria-label': 'Skin' });
   skinPick.addEventListener('change', () => send({ action: 'skin', skin: skinPick.value || null }));
 
+  // Layout sliders, one per part the projection says may be set, made once the parts arrive.
+  // Dragging previews the proportions; letting go sends the whole layout, which the Game checks and keeps.
+  const layoutSliders = new Map();
+  const layoutRows = element('div', { class: 'gb-columns' });
+  const layoutValues = () => Object.fromEntries([...layoutSliders].map(([id, { input }]) => [id, Number(input.value)]));
+  const layoutReset = button('Reset to the skin\'s', () => send({ action: 'layout-config', layout: null }));
+  const buildLayoutSliders = (parts) => {
+    for (const part of parts) {
+      const input = element('input', { type: 'range', min: String(part.min), max: String(part.max), step: String((part.max - part.min) / 100), 'aria-label': part.name });
+      const shown = element('output', { class: 'gb-muted' });
+      input.addEventListener('input', () => {
+        shown.textContent = Number(input.value).toFixed(2);
+        ui.preview({ ...lastLayout, ...layoutValues() });
+      });
+      input.addEventListener('change', () => send({ action: 'layout-config', layout: layoutValues() }));
+      layoutSliders.set(part.id, { input, shown });
+      layoutRows.append(element('label', {}, part.name, input, shown));
+    }
+  };
+  let lastLayout = {};
+
   /** Keeps the menu's inputs in step with the projection; called on every screen, as the title screen shows them too. */
   const syncSettings = (view) => {
+    if (layoutSliders.size === 0 && view.layoutParts?.length) {
+      buildLayoutSliders(view.layoutParts);
+    }
+
+    lastLayout = view.layout ?? lastLayout;
+    layoutReset.disabled = !view.layoutPicked;
+    for (const [id, { input, shown }] of layoutSliders) {
+      if (document.activeElement !== input && lastLayout[id] !== undefined) {
+        input.value = String(lastLayout[id]);
+        shown.textContent = Number(lastLayout[id]).toFixed(2);
+      }
+    }
+
     if (document.activeElement !== skinPick) {
       fill(skinPick, [{ id: '', name: "(the campaign's own)" }, ...(view.skins ?? [])]);
       skinPick.value = view.skinPicked ?? '';
@@ -40,7 +74,10 @@ export function createOverlay(send, ui) {
   // Built once: moving a control between containers would drop a drag or a focus in progress.
   const settings = element('div', {},
     element('h3', {}, 'Sound and look'),
-    row(element('label', {}, 'Music', musicVolume), element('label', {}, 'Sound', soundVolume), element('label', {}, 'Skin', skinPick)));
+    row(element('label', {}, 'Music', musicVolume), element('label', {}, 'Sound', soundVolume), element('label', {}, 'Skin', skinPick)),
+    element('h3', {}, 'Layout'),
+    layoutRows,
+    row(layoutReset));
   const saving = element('div', {},
     element('h3', {}, 'Save'),
     row(slot, button('Save', () => send({ action: 'save', slot: slot.value }))),

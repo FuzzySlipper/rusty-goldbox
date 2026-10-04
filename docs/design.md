@@ -585,12 +585,17 @@ regression checks for module and rules behavior.
     assets- or campaign-module definition) restyles them: named theme colours,
     a tiled panel picture, a frame and button faces cut into nine by a slice,
     and title art. A campaign names its skin and the player may pick any
-    installed one. Skins change the look only, not layout or behaviour, and
+    installed one. A skin may also set the panels' proportions (`layout`: log
+    share, side column width, text, control and portrait scales, and the
+    window shapes where the arrangement changes), which the player's own
+    layout overrides. Skins don't change what the panels do, and
     can't set fonts until the Engine grants UI fonts as it grants images. Module images reach
     it as Engine UI image URLs (portraits, icons), and pictures over the view
     are renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine
-  persistence scope, as the same JSON `goldbox play --save` writes.
+  persistence scope, as the same JSON `goldbox play --save` writes. The
+  player's settings (volumes, picked skin, layout) are one record in a scope
+  of their own.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
   its content as one zstd-compressed `.rpak`.
 - **Independent module export.** `goldbox module pack <module-dir>` validates

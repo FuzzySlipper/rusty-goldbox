@@ -101,8 +101,19 @@ public sealed class AssetTests
             [("reference.media", "$.button.picture"), ("skin.color", "$.colors.glow"), ("skin.color", "$.colors.text"), ("skin.slice", "$.frame.slice")],
             ModuleLoader.Load(art, []).Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
 
-        // Rulesets carry no art.
+        // A layout sets known proportions within their ranges, and the arrangements mustn't overlap.
         File.Delete(Path.Combine(art, "bad.json"));
+        modules.Write("art/roomy.json", """{ "type": "skin", "id": "roomy", "name": "Roomy", "colors": { "page": "#f0e8d0" }, "layout": { "log_share": 0.5, "text_scale": 1.2 } }""");
+        Assert.Empty(ModuleLoader.Load(art, []).Diagnostics);
+        modules.Write("art/cramped.json", """{ "type": "skin", "id": "cramped", "name": "Cramped", "layout": { "log_share": 0.9, "tall_below": 2.5 } }""");
+        List<ModuleDiagnostic> layout = [.. ModuleLoader.Load(art, []).Diagnostics];
+        Assert.Equal([("skin.layout", "$.layout.log_share"), ("skin.layout", "$.layout.tall_below"), ("skin.layout", "$.layout.tall_below")],
+            layout.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+        Assert.Contains(layout, diagnostic => diagnostic.Message == "log_share is 0.9; it must be from 0.15 to 0.7.");
+        Assert.Contains(layout, diagnostic => diagnostic.Message.StartsWith("tall_below (2.5) must be under ultrawide_from (2.1)", StringComparison.Ordinal));
+
+        // Rulesets carry no art.
+        File.Delete(Path.Combine(art, "cramped.json"));
         string rules = modules.Module("rules", "ruleset", requires: TempModules.Require("art", "*"));
         modules.Write("rules/look.json", """{ "type": "skin", "id": "look", "name": "Look" }""");
         Assert.Equal("skin.module", Assert.Single(ModuleLoader.Load(rules, []).Diagnostics).Rule);

@@ -11,7 +11,7 @@
  */
 import { element } from './dom.js';
 import { BASE_LOOK, skinLook } from './look.js';
-import { DEFAULT_LAYOUT, applyLayout, arrangementFor } from './layout.js';
+import { applyLayout, arrangementFor } from './layout.js';
 import { createStatus } from './panels/status.js';
 import { createLog } from './panels/log.js';
 import { createPortraits } from './panels/portraits.js';
@@ -50,6 +50,8 @@ export function mountProductUi(root, context) {
       open = null;
       rerender();
     },
+    // Shows proportions while the player drags a layout slider; the projection's layout returns on the next update.
+    preview: (layout) => showLayout(layout),
   };
 
   // The look lives in a stylesheet of theme variables, so a skin restyles every panel at once.
@@ -84,11 +86,22 @@ export function mountProductUi(root, context) {
   const panel = element('div', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '' }, frame);
   root.append(skinStyle, panel);
 
-  // The arrangement follows the window's shape; layout ratios are built-in defaults for now.
-  const layout = DEFAULT_LAYOUT;
-  applyLayout(panel, layout);
+  // The arrangement follows the window's shape, at the projection's layout proportions.
+  let layout = null;
+  let shownLayout = '';
   const arrange = () => {
     frame.dataset.arrangement = arrangementFor(panel.clientWidth, panel.clientHeight, layout);
+  };
+  const showLayout = (next) => {
+    const key = JSON.stringify(next ?? null);
+    if (!next || key === shownLayout) {
+      return;
+    }
+
+    shownLayout = key;
+    layout = next;
+    applyLayout(panel, layout);
+    arrange();
   };
 
   // The Engine's camera draws where the view panel is: report its rectangle,
@@ -128,6 +141,7 @@ export function mountProductUi(root, context) {
   const render = (projection) => {
     lastView = projection;
     applySkin(projection.skin);
+    showLayout(projection.layout);
     const screen = projection.screen;
     const playing = screen === 'play' || screen === 'combat';
     if (screen !== shownScreen) {

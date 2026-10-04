@@ -20,5 +20,9 @@
   "button": {
     "picture": "parchment_button",
     "slice": 4
+  },
+  "layout": {
+    "log_share": 0.42,
+    "text_scale": 1.05
   }
 }

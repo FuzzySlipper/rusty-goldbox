@@ -35,10 +35,18 @@ changes shape:
 `layout.js` picks one of three arrangements from the window's aspect ratio:
 **standard** (the view over the log, then a side column of portraits, map and
 controls), **ultrawide** (portraits get their own column) and **tall** (one
-column, the map riding on the view's corner). It sets the layout's ratios
+column, the map riding on the view's corner). It sets the layout's proportions
 (log share, side width, text, control and portrait scales) as CSS variables on
-the panel root, so one stylesheet serves every shape. The ratios are built-in
-defaults (`DEFAULT_LAYOUT`).
+the panel root, so one stylesheet serves every shape.
+
+The proportions are the projection's `layout` (part name to number): the
+Game's defaults, then the active skin's `layout`, then the player's own
+(`layoutPicked` says one is set). `layoutParts` lists what may be set with
+each part's range (`SkinLayout` in Core owns the names, ranges and defaults).
+The ≡ Menu has a slider per part: dragging previews the proportions locally,
+letting go sends `{ action: "layout-config", layout: { part: number, ... } }`,
+which the Game checks whole and keeps; Reset sends `layout: null` to go back
+to the skin's.
 
 The title and party screens are one framed sheet over the whole window, with
 the menu's sound and look settings at the foot.
@@ -108,8 +116,10 @@ the C# (`RustyGoldboxProduct`) and DOM callers aligned when an action or field
 changes. Dispose event listeners and subscriptions when the host unmounts the
 UI.
 
-Music and sound volume sliders and the skin select sit in the ≡ Menu in play
-and at the foot of the title and party screens. They are made once, so a drag
+Music and sound volume sliders, the skin select and the layout sliders sit in
+the ≡ Menu in play and at the foot of the title and party screens. The Game
+keeps the volumes, the picked skin and the player's layout for the next run
+(`PlayerSettings`). They are made once, so a drag
 isn't interrupted by re-renders, take their values from the projection's
 `volumes` when not being dragged, and send a `volume` action (`bus` music or
 sound, `volume` from 0 to 1) on change.
@@ -117,7 +127,8 @@ sound, `volume` from 0 to 1) on change.
 The look is one stylesheet (`look.js`) of theme variables (`--gb-background`,
 `--gb-text`, `--gb-muted`, `--gb-accent`, `--gb-border`, `--gb-inset`,
 `--gb-button`, `--gb-button-text`, and for the log page `--gb-page`,
-`--gb-page-text`, `--gb-page-accent`, `--gb-page-link`) on the
+`--gb-page-text`, `--gb-page-accent`, `--gb-page-link`; a skin sets them as
+`page`, `page_text`, `page_accent`, `page_link`) on the
 `[data-goldbox-panel]` root. The projection's `skin` (the player's pick, else
 the open campaign's) overrides them and adds its panel tile under every panel
 but the view, its frame and button faces as nine-slice `border-image`s and its

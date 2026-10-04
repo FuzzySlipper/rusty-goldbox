@@ -31,6 +31,16 @@ internal static class SessionProjection
             ["skins"] = new JsonArray(session.Skins.Select(choice => (JsonNode)new JsonObject { ["id"] = choice.Id, ["name"] = choice.Name }).ToArray()),
             ["skinPicked"] = session.PickedSkin?.Choice.Id,
             ["volumes"] = new JsonObject { ["music"] = session.MusicVolume, ["sound"] = session.SoundVolume },
+            // The panels' proportions in force, whether the player set their own, and what may be set.
+            ["layout"] = new JsonObject(session.Layout.Select(part => KeyValuePair.Create(part.Key, (JsonNode?)part.Value))),
+            ["layoutPicked"] = session.LayoutPicked is not null,
+            ["layoutParts"] = new JsonArray(SkinLayout.Parts.Select(part => (JsonNode)new JsonObject
+            {
+                ["id"] = part.Name,
+                ["name"] = part.Label,
+                ["min"] = part.Minimum,
+                ["max"] = part.Maximum,
+            }).ToArray()),
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
                 ["bundle"] = campaign.Bundle,

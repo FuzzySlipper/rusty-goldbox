@@ -899,7 +899,8 @@ public static class DefinitionTypes
         """);
 
     /// <summary>The theme colours a skin may set.</summary>
-    public static IReadOnlyList<string> SkinColors { get; } = ["background", "text", "muted", "accent", "border", "inset", "button", "button_text"];
+    public static IReadOnlyList<string> SkinColors { get; } =
+        ["background", "text", "muted", "accent", "border", "inset", "button", "button_text", "page", "page_text", "page_accent", "page_link"];
 
     private static readonly ObjectKind NineSlice = new(
     [
@@ -910,7 +911,7 @@ public static class DefinitionTypes
     public static DefinitionType Skin { get; } = new(
         "skin",
         "How the Game's panels look: theme colours and pictures, in an assets or campaign module. A campaign names its skin; "
-        + "the player may pick any installed one instead. Skins restyle the panels; they don't change their layout or behaviour.",
+        + "the player may pick any installed one instead. Skins restyle the panels and may set their proportions; they don't change what the panels do.",
         [
             new("name", new TextKind(), true, "Display name in the skin chooser."),
             new("colors", new MapKind(new TextKind(), new TextKind()), false,
@@ -919,6 +920,9 @@ public static class DefinitionTypes
             new("frame", NineSlice, false, "A border drawn around the panels."),
             new("button", NineSlice, false, "The face of every button."),
             new("title", new ReferenceKind("asset", "picture"), false, "Art shown at the top of the panels in place of the product's name."),
+            new("layout", new ObjectKind(SkinLayout.Parts.Select(part => new Field(
+                part.Name, new NumberKind(), false, $"{part.Description}; {part.Minimum} to {part.Maximum}, {part.Default} when left out.")).ToList()), false,
+                "The panels' proportions for this skin; any left out keep the Game's own. The player's own layout overrides them."),
         ],
         """
         {
@@ -928,7 +932,8 @@ public static class DefinitionTypes
           "colors": { "background": "#141318e8", "text": "#e6e0d4", "accent": "#e8b04a" },
           "panel": "crypt-art:stone_tile",
           "frame": { "picture": "crypt-art:stone_frame", "slice": 8 },
-          "button": { "picture": "crypt-art:stone_button", "slice": 4 }
+          "button": { "picture": "crypt-art:stone_button", "slice": 4 },
+          "layout": { "log_share": 0.42, "text_scale": 1.1 }
         }
         """);
 

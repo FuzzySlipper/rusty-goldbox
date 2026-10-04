@@ -1458,6 +1458,15 @@ public sealed class RuleSetBuilder
             }
         }
 
+        if (skin.Json.TryGetProperty("layout", out JsonElement layout))
+        {
+            Dictionary<string, double> values = layout.EnumerateObject().ToDictionary(part => part.Name, part => part.Value.GetDouble());
+            foreach ((string part, string problem) in SkinLayout.Problems(values))
+            {
+                Error(skin, "skin.layout", $"$.layout.{part}", problem);
+            }
+        }
+
         foreach (string part in new[] { "frame", "button" })
         {
             string path = $"$.{part}.picture";

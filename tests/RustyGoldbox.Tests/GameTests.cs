@@ -190,6 +190,46 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void ThePlayersLayoutOverridesTheSkinsAndComesBackNextRun()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = Path.Combine(scratch.Root, "persistence") });
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            double LogShare(GameSession of) => SessionProjection.Build(of)["layout"]!["log_share"]!.GetValue<double>();
+
+            // The Game's own, then the parchment skin's, then the player's.
+            Assert.Equal(0.36, LogShare(session));
+            Run(session, engine, """{ "action": "skin", "skin": "placeholder-art:parchment" }""");
+            Assert.Equal(0.42, LogShare(session));
+            Run(session, engine, """{ "action": "layout-config", "layout": { "log_share": 0.5, "side_width": 28 } }""");
+            Assert.Empty(session.Notes);
+            Assert.Equal(0.5, LogShare(session));
+            Assert.True(SessionProjection.Build(session)["layoutPicked"]!.GetValue<bool>());
+
+            // A bad layout is refused whole and the player's stands.
+            Run(session, engine, """{ "action": "layout-config", "layout": { "log_share": 2, "ultrawide_from": 1.6, "tall_below": 1.7 } }""");
+            Assert.Equal(3, session.Notes.Count);
+            Assert.Equal(0.5, LogShare(session));
+            Run(session, engine, """{ "action": "volume", "bus": "music", "volume": 0.25 }""");
+
+            // The next run picks up the skin, the layout and the volume.
+            GameSession next = OpenSession(scratch, engine);
+            PlayerSettings.Load(engine, next);
+            Assert.Empty(next.Notes);
+            Assert.Equal("placeholder-art:parchment", next.PickedSkin?.Choice.Id);
+            Assert.Equal(0.5, LogShare(next));
+            Assert.Equal(28, SessionProjection.Build(next)["layout"]!["side_width"]!.GetValue<double>());
+            Assert.Equal(0.25f, next.MusicVolume);
+
+            // Reset goes back to the skin's.
+            Run(next, engine, """{ "action": "layout-config", "layout": null }""");
+            Assert.Equal(0.42, LogShare(next));
+        });
+    }
+
+    [Fact]
     public void TheLayoutActionMovesTheViewAndLeavesTheNotes()
     {
         using TempModules scratch = new();

@@ -124,6 +124,57 @@ internal sealed class GameSession(ModuleLibrary library)
         : Set?.Rules is RuleSet rules && Campaign is Definition campaign && campaign.Json.TryGetProperty("skin", out _) ? (Set, rules.Reference(campaign, "$.skin"))
         : null;
 
+    /// <summary>The player's own layout proportions, by part name; null for the skin's (or the Game's) own.</summary>
+    public Dictionary<string, double>? LayoutPicked { get; private set; }
+
+    /// <summary>The proportions the panels use: the Game's defaults, then the active skin's, then the player's.</summary>
+    public Dictionary<string, double> Layout
+    {
+        get
+        {
+            Dictionary<string, double> layout = SkinLayout.Over(SkinLayoutValues());
+            foreach ((string name, double value) in LayoutPicked ?? [])
+            {
+                layout[name] = value;
+            }
+
+            return layout;
+        }
+    }
+
+    /// <summary>Sets the player's layout (checked against the parts and their ranges, over the active skin's), or with null goes back to the skin's.</summary>
+    public void SetLayout(Dictionary<string, double>? values)
+    {
+        Notes.Clear();
+        if (values is null)
+        {
+            LayoutPicked = null;
+            return;
+        }
+
+        Dictionary<string, double> combined = SkinLayoutValues();
+        foreach ((string name, double value) in values)
+        {
+            combined[name] = value;
+        }
+
+        List<(string Part, string Problem)> problems = SkinLayout.Problems(combined);
+        if (problems.Count > 0)
+        {
+            Notes.AddRange(problems.Select(problem => problem.Problem));
+            return;
+        }
+
+        LayoutPicked = values;
+    }
+
+    private Dictionary<string, double> SkinLayoutValues()
+    {
+        return ActiveSkin is var (_, skin) && skin.Json.TryGetProperty("layout", out JsonElement layout)
+            ? layout.EnumerateObject().ToDictionary(part => part.Name, part => part.Value.GetDouble())
+            : [];
+    }
+
     /// <summary>Picks an installed skin by ID, or with null goes back to the campaign's own.</summary>
     public void PickSkin(string? id)
     {

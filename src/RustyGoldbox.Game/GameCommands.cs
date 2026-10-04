@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Rusty.Engine;
+using Rusty.Engine.Persistence;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Game.Presentation;
@@ -171,16 +172,22 @@ internal static class GameCommands
                     break;
                 case "volume":
                     session.SetVolume(Text(payload, "bus"), Volume(payload));
+                    SaveSettings(session, engine);
                     break;
                 case "skin":
                     session.PickSkin(payload.TryGetProperty("skin", out JsonElement skin) && skin.ValueKind != JsonValueKind.Null ? Text(payload, "skin") : null);
+                    SaveSettings(session, engine);
+                    break;
+                case "layout-config":
+                    session.SetLayout(LayoutConfig(payload));
+                    SaveSettings(session, engine);
                     break;
                 case "layout":
                     // Interim until the Engine can anchor a camera to a UI element (rusty-engine #9317).
                     session.View = View(payload);
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume, skin and layout");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, save, load, quit, volume, skin, layout-config and layout");
             }
         }
         catch (PayloadException exception)
@@ -194,6 +201,42 @@ internal static class GameCommands
         return payload.TryGetProperty("volume", out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.GetDouble() is >= 0 and <= 1
             ? (float)value.GetDouble()
             : throw new PayloadException("\"volume\" must be a number from 0 to 1");
+    }
+
+    /// <summary>The player's layout: <c>"layout": { part: number, ... }</c>, or null to go back to the skin's.</summary>
+    private static Dictionary<string, double>? LayoutConfig(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("layout", out JsonElement layout) || layout.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (layout.ValueKind != JsonValueKind.Object || layout.EnumerateObject().Any(part => part.Value.ValueKind != JsonValueKind.Number))
+        {
+            throw new PayloadException("\"layout\" must be null or an object of numbers by layout part");
+        }
+
+        return layout.EnumerateObject().ToDictionary(part => part.Name, part => part.Value.GetDouble());
+    }
+
+    /// <summary>
+    /// Keeps the player's settings for the next run; a failure is a note, and
+    /// the change still holds for this one. A host without a persistence root
+    /// (a tool or test host) has nowhere to keep them, which is no failure.
+    /// </summary>
+    private static void SaveSettings(GameSession session, IEngineContext engine)
+    {
+        try
+        {
+            PlayerSettings.Save(engine, session);
+        }
+        catch (EngineCallException)
+        {
+        }
+        catch (PersistenceStorageException exception)
+        {
+            session.Notes.Add($"Can't keep the settings for next time: {exception.Message}");
+        }
     }
 
     /// <summary>The view panel's rectangle: <c>"view": { x, y, width, height }</c>, fractions of the window from its top left.</summary>
