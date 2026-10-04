@@ -121,6 +121,17 @@ export function createOverlay(send, ui) {
       ? [button('Call on former class', play(`former ${index + 1} on`), { 'data-focus-key': `member:${index}:former:on` })]
       : who.formerClasses === 'called' ? [button('Set former class aside', play(`former ${index + 1} off`), { 'data-focus-key': `member:${index}:former:off` })] : [];
     const viewButton = who.perception ? [button(`View as ${who.name}`, play(`view ${index + 1}`), { 'data-focus-key': `member:${index}:view` })] : [];
+    const gearWaiting = Boolean(view.ended || view.menu?.length || view.shop || view.temple || view.training);
+    const gearChoice = (verb, item) => {
+      const action = verb.toLowerCase();
+      const node = button(verb, play(`${action} ${index + 1} ${item.id}`), { 'data-focus-key': `member:${index}:${action}:${item.id}` });
+      node.disabled = gearWaiting;
+      return { node };
+    };
+    const equipment = [
+      ...(who.equipment ?? []).map((item) => [item.name, 'Equipped', gearChoice('Unequip', item)]),
+      ...(view.inventory ?? []).map((item) => [`${item.name}${item.count > 1 ? ` × ${item.count}` : ''}`, 'Carried', gearChoice('Equip', item)]),
+    ];
     return frame(who.name, `${kind} · ${who.experience} xp`,
       row(...(party.length > 1 ? [button('◀ Previous', step(-1), { 'data-focus-key': `member:${index}:previous` }), button('Next ▶', step(1), { 'data-focus-key': `member:${index}:next` })] : []),
         ...viewButton,
@@ -136,7 +147,7 @@ export function createOverlay(send, ui) {
           element('h3', {}, 'Attributes'), table((who.attributes ?? []).map((attribute) => [attribute])),
           ...(who.features?.length ? [element('h3', {}, 'Features'), element('div', {}, who.features.join(', '))] : [])),
         element('div', {},
-          element('h3', {}, 'Equipment'), table((who.equipment ?? []).map((item) => [item.name])),
+          element('h3', {}, 'Equipment'), table(equipment),
           ...((who.castable?.length || who.memorisable?.length) ? [element('h3', {}, 'Spells')] : []),
           ...renderSpells(send, who, index),
           ...renderMemorised(send, who, index))));

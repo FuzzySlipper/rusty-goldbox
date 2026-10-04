@@ -126,6 +126,14 @@ internal static class SessionProjection
                 }).ToArray()),
             } : null;
             projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl, runner)).ToArray());
+            projection["inventory"] = new JsonArray(state.Inventory
+                .GroupBy(item => item.QualifiedId)
+                .Select(items => (JsonNode)new JsonObject
+                {
+                    ["id"] = items.Key,
+                    ["name"] = items.First().Name,
+                    ["count"] = items.Count(),
+                }).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
             projection["picture"] = state.Picture is Definition shown ? Picture(session.Set!.Rules!, shown, imageUrl) : null;

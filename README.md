@@ -191,6 +191,14 @@ discovered edges. `DD` edges may be declared as locked doors with key, pick,
 force or event mechanisms; `open`, `pick` and `force` use those declarations
 and saves keep opened doors and an open shop.
 
+Between conversations, services and fights, `equip <member> <item-id>` moves
+one carried item onto that member; `unequip <member> <item-id>` returns one
+equipped copy to party inventory. The member sheet's Equipment table offers
+the same choices. Class and race restrictions still apply, and saves retain
+both equipped and carried copies. A shop can override its buying rate and
+use a numeric campaign or area variable for its remaining cash with `buying`;
+`goldbox schema events` includes the policy and an example.
+
 Campaign `give` and `take` events name an `item` and an optional positive
 `count` (one by default). Giving adds carried copies. Taking removes carried
 copies first, then equipped ones; it follows `on_refused` and removes nothing
