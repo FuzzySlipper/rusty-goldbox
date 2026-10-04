@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_env_shrine_arrival",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.environs_shrine_seen",
+      "next": "evt_env_shrine_revisit"
+    }
+  ],
+  "otherwise": "evt_env_shrine_mark"
+}

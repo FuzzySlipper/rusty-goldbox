@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_wine_taken",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The optional bottle of Brugh wine was taken from C23 once."
+}

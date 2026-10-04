@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_hen_teeth_scene",
+  "kind": "text",
+  "text": "The Hen's Teeth is a low timber tavern two miles along the forest road. Fauns crowd the tables around a smoky hearth, while Flynn moves between them with patient, deliberate service. A large mirror hangs behind the bar. Flynn's mild manner says the house is safe; his hand never strays far from the loaded crossbow beneath the counter.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_hen_teeth_menu"
+}

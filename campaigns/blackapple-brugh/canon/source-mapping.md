@@ -178,6 +178,24 @@ them as sub-areas.
 6. The source references external adventures such as the Dark Temple only as
    omitted background. They do not become hidden dependencies of this campaign.
 
+### Vault treasure conversion
+
+C27 keeps its three separate, once-only treasure choices and four mirror
+outcomes. Coin/gem amounts are converted to 471, 1,354 and 800 fifth-srd gold.
+The first chest also supplies the source gold-and-obsidian bracers, a 240-gold
+saleable treasure item. The second supplies the source emerald-set gold ring,
+a 1,020-gold treasure item. Both can be traded through Goodall's actual fee
+and cash limit. The third chest's gloves become protective work gloves usable
+on C19's contact trap; the source's unwanted pinching/slapping effect is omitted.
+
+The Wand of Moss Oak's hostile resurrection, Potion of Control Giant and
+cursed centipede rod are omitted from this low-level rescue adaptation. They
+are not represented by unusable spell items or substituted gold threads.
+Resurrection, giant control and cursed-item activation are not promised paths
+in the selected campaign. This is an explicit object-level adaptation; it
+does not change the seven children, mirror routes, named return rewards or
+required combat, investigation and recovery choices.
+
 ## Attribution and modification record
 
 This campaign is adapted from the CC BY-SA 4.0 text and map material of Kyle

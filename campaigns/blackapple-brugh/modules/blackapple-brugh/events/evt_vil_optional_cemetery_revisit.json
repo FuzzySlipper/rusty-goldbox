@@ -1,0 +1,24 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_cemetery_revisit",
+  "kind": "menu",
+  "text": "The night cemetery is waiting. You may follow the earlier trail, bring the grave abuse to Father Naskew, return to Tobler's ledger, or head back to the village board.",
+  "options": [
+    {
+      "label": "Ask Agatha what the lichguard is meant to do",
+      "next": "evt_vil_optional_cemetery_agatha_set"
+    },
+    {
+      "label": "Bring the grave abuse to Father Naskew without drawing steel",
+      "next": "evt_vil_optional_cemetery_expose_set"
+    },
+    {
+      "label": "Return to Tobler's ledger",
+      "next": "evt_vil_optional_tobler"
+    },
+    {
+      "label": "Return to the village board",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}

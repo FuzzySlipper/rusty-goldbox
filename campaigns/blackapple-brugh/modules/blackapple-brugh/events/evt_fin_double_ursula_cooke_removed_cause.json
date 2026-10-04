@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_removed_cause",
+  "kind": "menu",
+  "text": "the Ursula Cooke double — removed, but a named removal cause is required before the account can close.",
+  "options": [
+    {
+      "label": "Record removal after defensive combat",
+      "next": "evt_fin_double_ursula_cooke_removed_cause_combat"
+    },
+    {
+      "label": "Record removal by a Brugh hazard",
+      "next": "evt_fin_double_ursula_cooke_removed_cause_hazard"
+    },
+    {
+      "label": "Record removal during an unrecoverable court incident",
+      "next": "evt_fin_double_ursula_cooke_removed_cause_court"
+    }
+  ]
+}

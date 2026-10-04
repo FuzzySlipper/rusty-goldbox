@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "evt_l1_c10_revisit",
+  "kind": "text",
+  "text": "The ambassador recognizes the party. The desk, copied ledgers, and quiet offer to listen remain in place; the original ledger is no longer available to take.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "Damp paper and fungal shelves line the quiet office."
+    },
+    {
+      "mode": "glamour",
+      "text": "Velvet shelves and a courteous court desk wait beneath warm lamps."
+    }
+  ],
+  "next": "evt_l1_c10_choice"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_spectacle_seen",
+  "kind": "text",
+  "text": "You watch long enough to learn the court's rhythm, then look away before the performance becomes consent. Moth-in-Water leads the party toward the guest rooms, amused that you noticed the difference.",
+  "next": "evt_l2_to_guest_rooms"
+}

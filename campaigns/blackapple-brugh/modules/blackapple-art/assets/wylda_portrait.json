@@ -1,0 +1,10 @@
+{
+  "type": "asset",
+  "id": "wylda_portrait",
+  "media": "image",
+  "file": "pictures/wylda_portrait.png",
+  "sampling": "linear",
+  "tags": [
+    "portrait"
+  ]
+}

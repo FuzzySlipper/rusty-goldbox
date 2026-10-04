@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_entry_choose",
+  "kind": "menu",
+  "text": "The prepared road is one-way. The C1 entry mirror cannot bring you home; find the vault and its return mirrors. Do you enter together?",
+  "options": [
+    {
+      "label": "Wait until midnight and speak the rhyme",
+      "when": "campaign.var.entry_ready and campaign.var.mirror_rhyme_known",
+      "next": "evt_entry_midnight"
+    },
+    {
+      "label": "Keep exploring and preparing"
+    }
+  ]
+}

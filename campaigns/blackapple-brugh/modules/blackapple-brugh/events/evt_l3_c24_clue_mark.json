@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c24_clue_mark",
+  "kind": "set",
+  "variable": "brugh_l3_c24_clue_found",
+  "value": "true",
+  "next": "evt_l3_c24_clue_token"
+}

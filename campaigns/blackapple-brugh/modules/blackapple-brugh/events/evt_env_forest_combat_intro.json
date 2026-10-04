@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_combat_intro",
+  "kind": "text",
+  "text": "The cu-sidhe gives one last warning and the hollow closes around the pack. If you choose violence, the forest will remember the choice. The encounter remains a normal party fight: each member can act, flee, or let the watch break away.",
+  "next": "evt_env_forest_combat"
+}

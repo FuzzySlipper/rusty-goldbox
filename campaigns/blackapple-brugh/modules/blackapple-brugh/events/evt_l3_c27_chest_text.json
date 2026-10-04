@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c27_chest_text",
+  "kind": "text",
+  "text": "The opened cache stays open. The party can return to the mirrors or inspect another unopened chest without changing any rescue status.",
+  "next": "evt_l3_c27_chest_menu"
+}

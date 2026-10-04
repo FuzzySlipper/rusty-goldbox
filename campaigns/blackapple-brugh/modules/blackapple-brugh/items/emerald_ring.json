@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "emerald_ring",
+  "name": "Emerald-set gold ring",
+  "kind": "treasure",
+  "cost": 1020,
+  "currency": "fifth-srd:gold",
+  "weight": 0
+}

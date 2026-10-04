@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_revisit",
+  "kind": "text",
+  "text": "The covered mirror and the quiet service panel confirm the same lesson: C1 is a remembered entrance, not a road home. The attendant still points toward the reception lounge and the stair hall.",
+  "next": "evt_l1_c1_menu"
+}

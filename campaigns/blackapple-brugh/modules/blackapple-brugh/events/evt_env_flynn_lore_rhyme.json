@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_flynn_lore_rhyme",
+  "kind": "set",
+  "variable": "mirror_rhyme_known",
+  "value": "true",
+  "next": "evt_env_flynn_lore_evidence"
+}

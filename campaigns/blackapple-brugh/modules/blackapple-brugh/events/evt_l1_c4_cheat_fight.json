@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_l1_c4_cheat_fight",
+  "kind": "combat",
+  "encounter": "blackapple-fae:court_guard_escalation",
+  "on_win": "evt_l1_c4_cheat_win",
+  "on_flee": "evt_l1_c4_retreat",
+  "on_lose": "evt_l1_c4_loss_recover"
+}

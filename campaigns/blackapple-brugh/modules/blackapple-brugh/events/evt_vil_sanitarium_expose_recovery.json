@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_expose_recovery",
+  "kind": "set",
+  "variable": "recovery_sanitarium",
+  "value": "true",
+  "next": "evt_vil_sanitarium_expose_help"
+}

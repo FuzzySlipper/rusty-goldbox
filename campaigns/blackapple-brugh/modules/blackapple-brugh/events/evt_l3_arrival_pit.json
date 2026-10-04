@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_arrival_pit",
+  "kind": "text",
+  "text": "The party hits the dusty floor fourteen feet below the dining hall. The fall is a shared setback, and the pit's secret south wall is still the only safe way onward.",
+  "next": "evt_l3_c18_fall_mark"
+}

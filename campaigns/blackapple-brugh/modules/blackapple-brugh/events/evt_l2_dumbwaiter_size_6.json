@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_dumbwaiter_size_6",
+  "kind": "text",
+  "text": "The live party count is 6. Six active travelers can use the authored lift route when one companion works the crank; the party-size check is the declared adaptation of the source's load limit.",
+  "next": "evt_l2_dumbwaiter_choice"
+}

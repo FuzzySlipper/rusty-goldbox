@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_bernard_goodall_contain_evidence_priory",
+  "kind": "set",
+  "variable": "double_bernard_goodall_evidence",
+  "value": "\"Father Naskew at St. Ludann Priory\"",
+  "next": "evt_fin_double_bernard_goodall_contain_text_priory"
+}

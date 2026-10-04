@@ -1,0 +1,23 @@
+{
+  "type": "resting",
+  "id": "long_rest",
+  "unit": "days",
+  "restore": [
+    {
+      "track": "fifth-srd:hit_points",
+      "amount": "1"
+    },
+    {
+      "track": "fifth-srd:spells_1",
+      "amount": "1"
+    },
+    {
+      "track": "fifth-srd:spells_2",
+      "amount": "1"
+    },
+    {
+      "track": "fifth-srd:spells_3",
+      "amount": "1"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "blackapple_priory_hold_rewarded",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "Private Blackapple map detail: the priory's one-time trust for arranging safe holding has been recorded."
+}

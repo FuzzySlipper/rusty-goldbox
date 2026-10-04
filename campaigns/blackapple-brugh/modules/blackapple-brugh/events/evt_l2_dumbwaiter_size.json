@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_l2_dumbwaiter_size",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "party_size() == 4",
+      "next": "evt_l2_dumbwaiter_size_4"
+    },
+    {
+      "when": "party_size() == 5",
+      "next": "evt_l2_dumbwaiter_size_5"
+    },
+    {
+      "when": "party_size() == 6",
+      "next": "evt_l2_dumbwaiter_size_6"
+    }
+  ],
+  "otherwise": "evt_l2_dumbwaiter_size_unexpected"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c23_failure_text",
+  "kind": "text",
+  "text": "The words fail to reach the charmed guard. Arthur keeps watch, and the cellar's alarm rises, but the party can try again or leave.",
+  "next": "evt_l3_c23_menu"
+}

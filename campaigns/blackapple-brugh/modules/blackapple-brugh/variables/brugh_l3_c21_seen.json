@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_c21_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "C21 has shown its Stevie rescue scene in this Level 3 area instance."
+}

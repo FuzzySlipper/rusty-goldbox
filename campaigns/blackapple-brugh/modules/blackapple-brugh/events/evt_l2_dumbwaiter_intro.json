@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_dumbwaiter_intro",
+  "kind": "text",
+  "text": "A sliding panel reveals a three-by-four-foot shaft. Its crank connects this service area to the kitchen below. Read the posted load warning and consider your company before taking the lift.",
+  "next": "evt_l2_dumbwaiter_size"
+}

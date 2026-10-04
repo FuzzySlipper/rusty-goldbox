@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_flynn_lore_trust",
+  "kind": "set",
+  "variable": "environs_flynn_lore_done",
+  "value": "true",
+  "next": "evt_env_flynn_lore_trust_value"
+}

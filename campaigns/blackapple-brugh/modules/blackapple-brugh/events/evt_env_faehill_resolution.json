@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_faehill_resolution",
+  "kind": "text",
+  "text": "The Faehill keeps its silence. You leave with a defensible history and a clear warning: the hill is a landmark and a boundary, never a tunnel into the Brugh. The party can report this locally or continue to the Hen's Teeth mirror witness.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_faehill_aftercare"
+}

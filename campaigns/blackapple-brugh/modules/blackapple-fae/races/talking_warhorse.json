@@ -1,0 +1,15 @@
+{
+  "type": "race",
+  "id": "talking_warhorse",
+  "name": "Talking warhorse",
+  "modifiers": [
+    {
+      "stat": "speed",
+      "value": "30"
+    },
+    {
+      "stat": "ac",
+      "value": "2"
+    }
+  ]
+}

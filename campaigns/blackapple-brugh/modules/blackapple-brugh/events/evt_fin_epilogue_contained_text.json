@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_contained_text",
+  "kind": "text",
+  "text": "Additive epilogue: all seven doubles are contained, and every contained record names its custodian. This mask problem is solved as a custody responsibility, separate from the primary ending.",
+  "next": "evt_fin_epilogue_masks_text_gate"
+}

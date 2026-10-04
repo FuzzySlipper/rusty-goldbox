@@ -1,10 +1,10 @@
 # The Blackapple Brugh
 
 This directory is the retained campaign source for the Rusty Goldbox adaptation
-of *The Blackapple Brugh*, 1st Edition, Release 21. It is a campaign brief and
-authoring contract first. Runtime module files, tests, and art may refer to the
-stable IDs here, but they do not replace this canon or maintain a second story
-state.
+of *The Blackapple Brugh*, 1st Edition, Release 21. The editable workspace
+contains canonical story documents, original art and its generation provenance,
+runtime module data, and scripted routes. Runtime data refers to the stable IDs
+here; the canon describes that data without maintaining a second story state.
 
 The source is Kyle Hettinger's 2020–2021, 2023 release supplied as
 `KH1-The-Blackapple-Brugh-r21.pdf`. Its SHA-256 is
@@ -25,9 +25,8 @@ sessions. Rusty Goldbox platform support for larger parties, including 12
 members, is a separate product capability and does not change this balance
 target.
 
-The intended module split is `blackapple-brugh` (campaign), `blackapple-art`
-(asset module), and, if the conversion needs new creatures or encounter
-recipes, `blackapple-fae` (data-only extension). There is no campaign-specific
+The module split is `blackapple-brugh` (campaign), `blackapple-art`
+(asset module), and `blackapple-fae` (data-only extension). There is no campaign-specific
 ruleset: the campaign requires the existing `fifth-srd` module, while
 `blackapple-fae` may carry campaign-owned monster, NPC, encounter, check, or
 condition definitions that use that ruleset. These module IDs follow
@@ -55,6 +54,35 @@ names mapped deliberately in the implementation; for example,
   mapping, rights boundary, and the C1–C27 disposition table.
 * [canon/scene-matrix.md](canon/scene-matrix.md) — feature-to-scene matrix
   checked against the current Core, CLI, and Game owners.
+* [canon/runtime-contract.md](canon/runtime-contract.md) — exact module,
+  area, event, variable and parallel-worker interfaces.
+* [art/ART_BIBLE.md](art/ART_BIBLE.md) — style, identities, reference images,
+  original generation prompts and independent judging requirements.
+
+## Edit and export
+
+Use the installed CLI's `goldbox authoring list`, `show` and `copy` commands
+for reusable prompts and templates. `goldbox schema --json` is authoritative
+for the runtime JSON vocabulary. The nearest `goldbox.json` supplies the
+ruleset dependency search path and the three authored module directories.
+
+```bash
+goldbox workspace inspect campaigns/blackapple-brugh --json
+goldbox workspace build campaigns/blackapple-brugh --json
+goldbox workspace export campaigns/blackapple-brugh --json
+```
+
+The build validates runtime modules and stages them under `.goldbox/staged/`;
+export writes one Engine container per module into `exports/`. Canon, source
+art, generation prompts and scripts remain editable source and are excluded
+from those containers. The required `fifth-srd` ruleset is distributed
+independently with its own licence; it is not folded into an adaptation module.
+Generated staging, party files, saves and exports stay ignored.
+
+For a repeatable four-member CLI party, run `scripts/create-party.sh`, with
+`GOLDBOX_CLI=/path/to/goldbox` if needed. `PARTY_DIR` chooses the generated
+output directory and `RULESET_PATH` can point to an installed ruleset
+container. Ordinary Game creation uses the campaign's authored party limits.
 
 ## Editing contract
 
@@ -73,6 +101,6 @@ and combat approaches. No ending requires killing the Elf Lord.
 The source's dual Brugh perception is retained as a per-member mode. On each
 entry, every active member receives one deterministic perception resolution;
 the resulting `glamour` or `truth` mode is stored for that expedition and is
-shown to the player. It is not silently flattened into one party-wide mood or
-rerolled per room. The exact Core storage and presentation seam is recorded as
-an explicit gap in the scene matrix until the runtime owner implements it.
+shown through the ordinary member view control. Every member shares the same
+map, routes and consequences. Changing views or rooms never rerolls perception;
+the authored entry event explicitly resets it for a new expedition.

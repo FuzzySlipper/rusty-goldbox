@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_fin_return_start",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.ending_id != ''",
+      "next": "evt_return_postscript"
+    },
+    {
+      "when": "campaign.var.brugh_exited and campaign.var.recovery_return_triage and not campaign.var.return_account_complete",
+      "next": "evt_fin_account_intro"
+    }
+  ],
+  "otherwise": "evt_return_postscript"
+}

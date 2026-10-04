@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_revisit",
+  "kind": "text",
+  "text": "The pit is still dusty, but the party knows the worm's reach and the three-foot secret opening in the south wall. The position is shared; no one has been left behind.",
+  "next": "evt_l3_c18_recovery_menu"
+}

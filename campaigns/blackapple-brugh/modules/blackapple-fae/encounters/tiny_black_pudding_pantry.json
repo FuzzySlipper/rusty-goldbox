@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "tiny_black_pudding_pantry",
+  "name": "Tiny black pudding in the pantry",
+  "monsters": [
+    {
+      "monster": "tiny_black_pudding",
+      "count": "1"
+    }
+  ]
+}

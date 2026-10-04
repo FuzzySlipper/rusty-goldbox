@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_hazard_shop_done",
+  "kind": "text",
+  "text": "Hazard closes the shutters. Your purchase is packed with the party's gear, and the counter holds no promise beyond the supplies you bought.",
+  "next": "evt_vil_optional_services"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_pouch_text",
+  "kind": "text",
+  "text": "The dust-covered pouch holds three amethysts and a greenstone, adapted here as 375 gold, plus sturdy gloves that can prevent the false door's contact poison.",
+  "next": "evt_l3_c18_recovery_menu"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l1_coat_ticketed",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "The coatroom attendant has accepted an offering and issued a ticket."
+}

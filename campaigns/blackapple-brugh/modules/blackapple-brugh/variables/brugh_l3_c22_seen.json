@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_c22_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "C22 has shown its optional pantry hazard in this Level 3 area instance."
+}

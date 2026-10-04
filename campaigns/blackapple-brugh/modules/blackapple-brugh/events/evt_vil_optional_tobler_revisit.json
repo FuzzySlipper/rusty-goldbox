@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_tobler_revisit",
+  "kind": "menu",
+  "text": "The question from Tobler's shop stays with your papers. Return to the cemetery or leave the matter unresolved.",
+  "options": [
+    {
+      "label": "Walk through the cemetery after dark",
+      "next": "evt_vil_optional_cemetery"
+    },
+    {
+      "label": "Return to the village board",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}

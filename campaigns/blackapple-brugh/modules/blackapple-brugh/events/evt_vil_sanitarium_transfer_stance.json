@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_transfer_stance",
+  "kind": "set",
+  "variable": "figwort_stance",
+  "value": "\"protect\"",
+  "next": "evt_vil_sanitarium_transfer_status"
+}

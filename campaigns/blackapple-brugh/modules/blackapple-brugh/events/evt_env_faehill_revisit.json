@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_faehill_revisit",
+  "kind": "text",
+  "text": "The Faehill is unchanged: a broad, quiet mound ringed by old stones and living roots. No cut earth, stair, or portal has appeared. The warning remains the same on a second visit.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_faehill_choice"
+}

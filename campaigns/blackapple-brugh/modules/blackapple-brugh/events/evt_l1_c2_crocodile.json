@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c2_crocodile",
+  "kind": "text",
+  "text": "The crocodile is a deliberate landmark, not a harmless statue. Its jaw has a seam for a command word, but no one here says it aloud. You mark the prop and the balcony as evidence that the court watches its own rooms.",
+  "next": "evt_l1_c2_evidence"
+}

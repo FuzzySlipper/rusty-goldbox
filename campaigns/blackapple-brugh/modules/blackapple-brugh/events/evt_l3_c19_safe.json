@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c19_safe",
+  "kind": "set",
+  "variable": "evidence_brugh_danger",
+  "value": "true",
+  "next": "evt_l3_c19_safe_text"
+}

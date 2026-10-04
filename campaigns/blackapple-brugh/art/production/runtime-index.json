@@ -1,0 +1,841 @@
+{
+  "module": {
+    "id": "blackapple-art",
+    "version": "0.1.0",
+    "kind": "assets"
+  },
+  "conversion": {
+    "tool": "ffmpeg 8.0.1-3ubuntu2",
+    "command": "ffmpeg -hide_banner -loglevel error -y -i <source>.png -frames:v 1 -pix_fmt rgba <runtime>.png",
+    "purpose": "Technical 8-bit RGBA packaging for the Engine validator; no resize, crop, composite, or creative edit.",
+    "pixel_check": "Read-only PIL comparison of source RGB plane and runtime RGB plane; alpha checked separately."
+  },
+  "assets": [
+    {
+      "id": "wylda_portrait",
+      "logical_id": "asset.wylda-portrait",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "tags": [
+        "portrait"
+      ],
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/references/wylda_portrait.png",
+        "tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-f4145615-d30a-4e90-a335-f0777676bc5d.png",
+        "prompt": "campaigns/blackapple-brugh/art/prompts/wylda-portrait-square-correction-v2.md",
+        "mode": "RGB",
+        "size": [
+          1024,
+          1536
+        ],
+        "sha256": "23a8f396e0de4ad4870b0a9f12b3c02300d5ff701a66c04e696547d13f8f493c"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/wylda_portrait.png",
+        "mode": "RGBA",
+        "size": [
+          1024,
+          1536
+        ],
+        "sha256": "d6af97ece59add51cb71124f584533ff030de14f892e289951aa214cd6b1a8d8",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "blackapple_village",
+      "logical_id": "asset.blackapple-village",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/references/blackapple_village.png",
+        "tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-c3a07133-4777-4cee-99ef-44d3fb3ad2ce.png",
+        "prompt": "campaigns/blackapple-brugh/art/prompts/blackapple-village-v4.md",
+        "mode": "RGB",
+        "size": [
+          1672,
+          940
+        ],
+        "sha256": "84228a63470eb76f8c7874d7d149dbbc89a8eebf9135ad20f3d1e3aee880a8cb"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/blackapple_village.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          940
+        ],
+        "sha256": "4b19bea6e4707dc2d89a4c0d6882b0098de42a5d4ef7541ccf83bfbdffbc91f6",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "ibix_double_figure",
+      "logical_id": "asset.ibix-double-figure",
+      "slot": "figure",
+      "media": "sheet",
+      "sampling": "linear",
+      "frame_size": [
+        1024,
+        1536
+      ],
+      "frame_count": 1,
+      "faces": "left",
+      "anchor": [
+        512,
+        1463
+      ],
+      "height": 0.75,
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/references/ibix_double_figure.png",
+        "tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-e3a3dba8-9697-4a16-85b8-5ac901e6bafe.png",
+        "prompt": "campaigns/blackapple-brugh/art/prompts/ibix-double-figure-child-scale-correction-v2.md",
+        "mode": "RGBA",
+        "size": [
+          1024,
+          1536
+        ],
+        "sha256": "bac596b5639b50f7efebc3647dbcd4fa15f8d2a7818e7183edb02bd6bb4348cc"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/figures/ibix_double_figure.png",
+        "mode": "RGBA",
+        "size": [
+          1024,
+          1536
+        ],
+        "sha256": "bac596b5639b50f7efebc3647dbcd4fa15f8d2a7818e7183edb02bd6bb4348cc",
+        "alpha_extrema": [
+          0,
+          254
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "bytes_equal_to_source": true,
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "brugh_reception_truth",
+      "logical_id": "asset.brugh-reception-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "paired_geometry": "brugh_reception_glamour",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/references/brugh_reception_truth.png",
+        "tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-f1e5fcea-5596-4985-837c-d41b32c6bcdc.png",
+        "prompt": "campaigns/blackapple-brugh/art/prompts/brugh-reception-truth.md",
+        "mode": "RGB",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "c1fbbd4af8485e3ffced3390661da2adb40510ae8c475d6d63b69c02f705732d"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "061ba7196f26c392126ae6b25f8549718fedf4c11f31e5da4f65ba1dcdec2f92",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "brugh_reception_glamour",
+      "logical_id": "asset.brugh-reception-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "paired_geometry": "brugh_reception_truth",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/references/brugh_reception_glamour.png",
+        "tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-fe3964b2-f4fa-4f3d-82a4-1b85269252aa.png",
+        "prompt": "campaigns/blackapple-brugh/art/prompts/brugh-reception-glamour.md",
+        "mode": "RGB",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "e17c2de0df75f2df45162a2e430ba4fb62f217b71b9cb51643a224b7de52e779"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "4a921bd54931218bf98a4c75992890b35a7072cdc95eb6762ff67d3cffba0abb",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "brugh_bluehouse_truth",
+      "logical_id": "asset.brugh-bluehouse-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/truth/brugh_bluehouse_truth.png",
+        "sha256": "2471def4e4253c8e2248fbf0fb4bbfa15c3b0577e71a2007bef35c1ba4213246"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_bluehouse_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "c9aa864a2bea0d53b2b1b94a7a1b1b105e0fedb99df012e691f26720df099baf",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_coatroom_truth",
+      "logical_id": "asset.brugh-coatroom-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/truth/brugh_coatroom_truth.png",
+        "sha256": "5a8534cf427a6d389abec931c72ae57f26ee5b873f59619ad67fa4bad5492496"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_coatroom_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "707003bd515c04e89ea8f2a813485ca6d8beb26d72d519d77976b95611ebfa83",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_frog_prince_truth",
+      "logical_id": "asset.brugh-frog-prince-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/truth/brugh_frog_prince_truth.png",
+        "sha256": "8d53340a2f6fae983ab18700d1a6759246f7e7ac510ee34abf26fe5b50f77609"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_frog_prince_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "4976b7574d310ebbc87dda9d8136bd3b401e001f37db22b598db870f0b0e4e3c",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_white_lady_truth",
+      "logical_id": "asset.brugh-white-lady-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/truth/brugh_white_lady_truth.png",
+        "sha256": "4edb688d14a3a0bb746ea29fb238a9d588955f0273fd79780f2859fe1cf1d67c"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_white_lady_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "6b4d64ab7683d30c88f07e6d8588d4f5572575cfc79de789720cfc5976db70ce",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_bluehouse_glamour",
+      "logical_id": "asset.brugh-bluehouse-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/glamour/brugh_bluehouse_glamour.png",
+        "sha256": "d5b41613313f2961a53a60e22946e2619c890d5ee009b26d8c618db0233ff3a6"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_bluehouse_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "0f7a667c1adf913851f1b3124a4350e85f75297440fcb1e1309cea2a0a4c8d02",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_coatroom_glamour",
+      "logical_id": "asset.brugh-coatroom-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/glamour/brugh_coatroom_glamour.png",
+        "sha256": "b7d41b9b5b9b377e7c8b85021f7a6a9da542e3af00912c1a87528a650d27029c"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_coatroom_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "39c6610075591f1202cde3141cc3d9a21dbdec1fd7a85bbfc03c2af4509d8335",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_frog_prince_glamour",
+      "logical_id": "asset.brugh-frog-prince-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/glamour/brugh_frog_prince_glamour.png",
+        "sha256": "5742c639d727014525db9dc90bf6bcd3479e7cffb3e06a5f321af88618c519f5"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_frog_prince_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "eea91435674194aebf0b2c8ff50982977f0434639be185b2fc9ca2899a23924e",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_white_lady_glamour",
+      "logical_id": "asset.brugh-white-lady-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level1/glamour/brugh_white_lady_glamour.png",
+        "sha256": "b31fcacec0a7f13ec22a96d942d3dd7c44460c627f560a369b31ee89e4f4c26a"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_white_lady_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "139175f85b245809ab28be241ecc5e11b3e5b74c1f0380f7de4c57d4b87aaeda",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level1/metadata/"
+    },
+    {
+      "id": "brugh_ballroom_truth",
+      "logical_id": "asset.brugh-ballroom-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_ballroom_truth.png",
+        "sha256": "81f0c980a62cf85290e8ed71b4de8c9e21ed3167572986dc060869b90f940761"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_ballroom_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "3a2deff36b534ca1f0a16447ea79cdd76d808ed0d34bdcb8ce855086355a13d4",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_ballroom_glamour",
+      "logical_id": "asset.brugh-ballroom-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_ballroom_glamour.png",
+        "sha256": "86663c3fef6fbf3b8da9b7626368a0fcee7c489910c7942720525936b3b7cc33"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_ballroom_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "1d8149dca951778609cbaaa4138ee0c2c7cdcf513144a6f62008adc3ca94eae4",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_dining_truth",
+      "logical_id": "asset.brugh-dining-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_dining_truth.png",
+        "sha256": "d34660c9db2a6193c3af9bacda28810190d482e28615cb63753c64034495269b"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dining_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          940
+        ],
+        "sha256": "b664bd8c7c73a6ced5d4a5e685ec7a910549feeb3743633441d074499d30e906",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_dining_glamour",
+      "logical_id": "asset.brugh-dining-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_dining_glamour.png",
+        "sha256": "4453d2fe0104ff335ce5df030fa583ed0cef77d9de75ead77dac13c0baca8ef2"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dining_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "655e667139369f10b9ac74667725d8b98e2bf9819b2922d664a45afffee97f3a",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_pool_truth",
+      "logical_id": "asset.brugh-pool-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_pool_truth.png",
+        "sha256": "3ee7c11d5d54ead52193ebe57843d335ceb25cc35dc14cef701b49b1b69571d1"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_pool_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "296f49d0366b4f3dde2a9b8772e52ecf269848d9cd521068103e9b5654cf21d0",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_pool_glamour",
+      "logical_id": "asset.brugh-pool-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_pool_glamour.png",
+        "sha256": "722d0d93f66a3b47f63d9eb4c72afd632960817d8fa04f2690ce0bd48da2073b"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_pool_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "c0e9a46b9c41be673e597e08bb5312df39750fdf1e616da0df1d55e767f5f8fc",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level2/metadata/"
+    },
+    {
+      "id": "brugh_dungeon_truth",
+      "logical_id": "asset.brugh-dungeon-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level3/truth/brugh_dungeon_truth.png",
+        "sha256": "3a6d8002867cecde5bc19140c5b8e0a2e98b07111e7485d381689216321d4a7d"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dungeon_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          940
+        ],
+        "sha256": "20fe5c43556e1c79b45ca35ddc04489e91fd9b8f4ebac3801ac6ca1aa4c9dce8",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level3/metadata/"
+    },
+    {
+      "id": "brugh_treasure_vault_truth",
+      "logical_id": "asset.brugh-treasure-vault-truth",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level3/truth/brugh_treasure_vault_truth.png",
+        "sha256": "544121844ea83a9399923ee403626b4703118360ec96a53e8f32e54f5c8257d9"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_treasure_vault_truth.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "a475f6d803de091b03a926c0ed30a78467dd7bd9a6b135449afa47baad3a3e6a",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level3/metadata/"
+    },
+    {
+      "id": "brugh_dungeon_glamour",
+      "logical_id": "asset.brugh-dungeon-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level3/glamour/brugh_dungeon_glamour.png",
+        "sha256": "cacae85433ecee2d8a0ee9edbfd50b2e8d3b77262c885da4c4408804d96ea519"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dungeon_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1673,
+          940
+        ],
+        "sha256": "c2f076e71e3e9f2925b21e75ea2556bf6223d9d4c5126daf24e0da758c949aaf",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level3/metadata/"
+    },
+    {
+      "id": "brugh_treasure_vault_glamour",
+      "logical_id": "asset.brugh-treasure-vault-glamour",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/level3/glamour/brugh_treasure_vault_glamour.png",
+        "sha256": "ae43f4d6cba070f122e4757017b6ffeeac78d09291046488988df4942998b668"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_treasure_vault_glamour.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "389941ac47a0cb6f05f70b2a3431926187e5ea7f2751e0efa30dfab07d3b13a8",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/level3/metadata/"
+    },
+    {
+      "id": "master_ned_portrait",
+      "logical_id": "asset.master-ned-portrait",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/recruits/originals/master_ned_portrait.png",
+        "sha256": "c3eba182085fdcfad7c12bd42a2763f95efb409dbfb4727b573df9027c7e9dc5"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/master_ned_portrait.png",
+        "mode": "RGBA",
+        "size": [
+          1024,
+          1536
+        ],
+        "sha256": "257770fab7f684dd92c98b05235901ada9a4fc1e9391b569d14463593fe97cfc",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "provenance": "campaigns/blackapple-brugh/art/production/recruits/metadata/",
+      "tags": [
+        "portrait"
+      ]
+    },
+    {
+      "id": "tenpenny_forest",
+      "logical_id": "asset.tenpenny-forest",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/candidates/tenpenny_forest-candidate.png",
+        "sha256": "7236221591bcb70b69c3959c21a8767ab3bd172e85620dcdfa6be68150f0ac1d"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/tenpenny_forest.png",
+        "sha256": "03e84eb751b0ef3aed963181c722d500f5436cb3de740f222c5783f6a8d2ebb0",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    },
+    {
+      "id": "brugh_materials",
+      "logical_id": "asset.brugh-materials",
+      "slot": "wall_set",
+      "media": "image",
+      "sampling": "linear",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/candidates/brugh_materials-candidate.png",
+        "sha256": "addbee6569abc6e9497022170d7d27485f57a9c50c8e185aa7266d9caf73e02a"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_materials.png",
+        "sha256": "f77f06e6a27456e13f36f9ac40ad0192ffecfb1d48808cf9d71c4ba7b45434ac",
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      }
+    }
+  ],
+  "opening_candidates": [
+    {
+      "id": "tenpenny_forest",
+      "logical_id": "asset.tenpenny-forest",
+      "slot": "picture",
+      "media": "image",
+      "sampling": "linear",
+      "status": "provisional_candidate_pending_independent_judge",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/candidates/tenpenny_forest-candidate.png",
+        "raw_tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-7e375491-056d-4bf6-b13c-378ed3bf56b6.png",
+        "prompt": "campaigns/blackapple-brugh/art/production/prompts/tenpenny-forest.md",
+        "mode": "RGB",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "7236221591bcb70b69c3959c21a8767ab3bd172e85620dcdfa6be68150f0ac1d"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/tenpenny_forest.png",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "sha256": "03e84eb751b0ef3aed963181c722d500f5436cb3de740f222c5783f6a8d2ebb0",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "inspection": "Display and original inspection: clear forked mossy forest path, one lantern-lit timber inn, warm amber against cool woods, no lettering or logo visible. Final selection deferred."
+    },
+    {
+      "id": "brugh_materials",
+      "logical_id": "asset.brugh-materials",
+      "slot": "wall_set",
+      "media": "image",
+      "sampling": "linear",
+      "status": "provisional_candidate_pending_independent_judge",
+      "source": {
+        "path": "campaigns/blackapple-brugh/art/production/candidates/brugh_materials-candidate.png",
+        "raw_tool_output": "$CODEX_HOME/generated_images/01a10504-8cef-7023-8122-0923f1e56a82/exec-e20b2dd2-b4b8-4f9a-858f-01bde7848baa.png",
+        "prompt": "campaigns/blackapple-brugh/art/production/prompts/brugh-materials.md",
+        "mode": "RGB",
+        "size": [
+          1254,
+          1254
+        ],
+        "sha256": "addbee6569abc6e9497022170d7d27485f57a9c50c8e185aa7266d9caf73e02a"
+      },
+      "runtime": {
+        "path": "campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_materials.png",
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "sha256": "f77f06e6a27456e13f36f9ac40ad0192ffecfb1d48808cf9d71c4ba7b45434ac",
+        "alpha_extrema": [
+          255,
+          255
+        ],
+        "rgb_pixels_equal": true
+      },
+      "regions": {
+        "wall": [
+          0,
+          0,
+          627,
+          627
+        ],
+        "door": [
+          627,
+          0,
+          627,
+          627
+        ],
+        "floor": [
+          0,
+          627,
+          627,
+          627
+        ],
+        "ceiling": [
+          627,
+          627,
+          627,
+          627
+        ]
+      },
+      "inspection": "Display and original inspection: square atlas with distinct wall, closed door, flagstone floor, and timber ceiling quadrants; exact even split and bounds validated. Final selection deferred."
+    }
+  ]
+}

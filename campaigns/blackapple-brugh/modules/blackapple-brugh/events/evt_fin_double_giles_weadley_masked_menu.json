@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_giles_weadley_masked_menu",
+  "kind": "menu",
+  "text": "Choose the response to the unresolved the Giles Weadley double.",
+  "options": [
+    {
+      "label": "Keep the identity masked while arranging a private handoff",
+      "next": "evt_fin_double_giles_weadley_masked_keep"
+    },
+    {
+      "label": "Record no reliable current account as unknown",
+      "next": "evt_fin_double_giles_weadley_masked_unknown_status"
+    },
+    {
+      "label": "Expose the mask now and preserve the evidence",
+      "next": "evt_fin_double_giles_weadley_masked_expose_status"
+    }
+  ]
+}

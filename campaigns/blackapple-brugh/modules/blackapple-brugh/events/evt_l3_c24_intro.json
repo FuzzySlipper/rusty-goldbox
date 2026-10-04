@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c24_intro",
+  "kind": "text",
+  "text": "The heavy oak door to Moth-in-Water's chamber was locked, but the party's careful opening finds a room opulently furnished and thick with dust. An ebony wardrobe holds court vestments; a private note may reveal what the jester fears.",
+  "next": "evt_l3_c24_menu"
+}

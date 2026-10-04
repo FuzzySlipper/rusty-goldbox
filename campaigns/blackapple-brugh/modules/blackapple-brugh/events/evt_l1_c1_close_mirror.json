@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_close_mirror",
+  "kind": "set",
+  "variable": "mirror_active",
+  "value": "false",
+  "next": "evt_l1_c1_depart"
+}

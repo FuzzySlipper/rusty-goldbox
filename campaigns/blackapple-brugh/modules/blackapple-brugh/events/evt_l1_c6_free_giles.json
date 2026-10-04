@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c6_free_giles",
+  "kind": "set",
+  "variable": "child_giles_weadley",
+  "value": "'freed'",
+  "next": "evt_l1_c6_giles_evidence"
+}

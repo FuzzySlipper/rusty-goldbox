@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_l2_c14",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.child_philip_anvil == 'captive'",
+      "next": "evt_l2_philip_scene"
+    }
+  ],
+  "otherwise": "evt_l2_philip_revisit"
+}

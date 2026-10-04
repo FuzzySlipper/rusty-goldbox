@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_fin_primary_text",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.ending_id == 'ending.court_bound'",
+      "next": "evt_fin_primary_court_bound"
+    },
+    {
+      "when": "campaign.var.ending_id == 'ending.elf_bargain'",
+      "next": "evt_fin_primary_elf_bargain"
+    },
+    {
+      "when": "campaign.var.ending_id == 'ending.full_return'",
+      "next": "evt_fin_primary_full_return"
+    },
+    {
+      "when": "campaign.var.ending_id == 'ending.partial_return'",
+      "next": "evt_fin_primary_partial_return"
+    },
+    {
+      "when": "campaign.var.ending_id == 'ending.lost_in_brugh'",
+      "next": "evt_fin_primary_lost_in_brugh"
+    }
+  ],
+  "otherwise": "evt_fin_primary_truth_without_return"
+}

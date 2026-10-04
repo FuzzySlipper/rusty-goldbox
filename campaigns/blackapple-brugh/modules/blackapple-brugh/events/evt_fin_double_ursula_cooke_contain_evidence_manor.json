@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_contain_evidence_manor",
+  "kind": "set",
+  "variable": "double_ursula_cooke_evidence",
+  "value": "\"Lady Figwort at Figwort Manor\"",
+  "next": "evt_fin_double_ursula_cooke_contain_text_manor"
+}

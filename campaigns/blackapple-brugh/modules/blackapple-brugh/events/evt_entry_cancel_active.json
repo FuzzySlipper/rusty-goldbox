@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_entry_cancel_active",
+  "kind": "set",
+  "variable": "mirror_active",
+  "value": "false",
+  "next": "evt_entry_cancelled"
+}

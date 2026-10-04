@@ -1,0 +1,36 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_hub",
+  "kind": "menu",
+  "text": "The village board lists work for a party that wants another lead: timber, the pig farms, the taxidermist, the cemetery, and the road south.",
+  "options": [
+    {
+      "label": "Ask the merchants about glowwood",
+      "next": "evt_vil_optional_guild"
+    },
+    {
+      "label": "Talk privately with Pigman Jack",
+      "next": "evt_vil_optional_jack"
+    },
+    {
+      "label": "Hear Tobler's night-watch story",
+      "next": "evt_vil_optional_tobler"
+    },
+    {
+      "label": "Walk through the cemetery after dark",
+      "next": "evt_vil_optional_cemetery"
+    },
+    {
+      "label": "Speak with Smithson from the south road",
+      "next": "evt_vil_optional_smithson"
+    },
+    {
+      "label": "Visit Hazard and Agatha for supplies and care",
+      "next": "evt_vil_optional_services"
+    },
+    {
+      "label": "Return to the market board",
+      "next": "evt_vil_market"
+    }
+  ]
+}

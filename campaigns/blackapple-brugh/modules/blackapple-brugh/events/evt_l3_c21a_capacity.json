@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21a_capacity",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "party_size() < 6",
+      "next": "evt_l3_c21a_capacity_ok"
+    }
+  ],
+  "otherwise": "evt_l3_c21a_capacity_over"
+}

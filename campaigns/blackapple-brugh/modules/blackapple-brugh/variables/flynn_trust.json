@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "flynn_trust",
+  "value_type": "number",
+  "initial": "0",
+  "description": "Authored Hen's Teeth relationship value."
+}

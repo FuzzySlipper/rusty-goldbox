@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_refuse",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "not area.var.blackapple_guardhouse_refusal_recorded",
+      "next": "evt_vil_guardhouse_refuse_reward"
+    }
+  ],
+  "otherwise": "evt_vil_guardhouse_refuse_revisit_text"
+}

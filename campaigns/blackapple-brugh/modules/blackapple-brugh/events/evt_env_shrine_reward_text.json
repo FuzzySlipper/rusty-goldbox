@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_shrine_reward_text",
+  "kind": "text",
+  "text": "The keeper gives the party an electrum pendant engraved with a closed eye. It is an ordinary carried item until the ruleset equips it, when its declared glamour-save modifier can apply; it is not a universal charm cure.",
+  "next": "evt_env_return_blackapple"
+}

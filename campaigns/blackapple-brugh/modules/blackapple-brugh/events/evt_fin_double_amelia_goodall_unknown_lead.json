@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_unknown_lead",
+  "kind": "set",
+  "variable": "double_amelia_goodall_evidence",
+  "value": "\"no reliable current account; forest lead recorded\"",
+  "next": "evt_fin_double_amelia_goodall_unknown_lead_text"
+}

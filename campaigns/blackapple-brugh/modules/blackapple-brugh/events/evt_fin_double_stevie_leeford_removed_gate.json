@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_removed_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_stevie_leeford_removal_cause == ''",
+      "next": "evt_fin_double_stevie_leeford_removed_cause"
+    }
+  ],
+  "otherwise": "evt_fin_double_stevie_leeford_removed_text"
+}

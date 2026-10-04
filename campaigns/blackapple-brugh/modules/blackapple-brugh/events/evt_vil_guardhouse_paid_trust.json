@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_paid_trust",
+  "kind": "set",
+  "variable": "village_trust",
+  "value": "campaign.var.village_trust + 1",
+  "next": "evt_vil_guardhouse_paid_text"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_set_ursula_cooke",
+  "kind": "set",
+  "variable": "child_ursula_cooke",
+  "value": "\"returned\"",
+  "next": "evt_fin_bargain_accept_ursula_cooke"
+}

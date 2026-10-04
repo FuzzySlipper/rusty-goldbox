@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_confirm_arthur_figwort",
+  "kind": "menu",
+  "text": "The Elf Lord names Arthur Figwort. Confirm that this explicit bargain releases that child now, with the court's privacy term shown; or decline and keep the current account.",
+  "options": [
+    {
+      "label": "Confirm release of Arthur Figwort and accept the named court terms",
+      "next": "evt_fin_bargain_set_arthur_figwort"
+    },
+    {
+      "label": "Decline these terms and return to the account",
+      "next": "evt_fin_account_choice"
+    }
+  ]
+}

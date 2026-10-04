@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "environs_flynn_lore_done",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The private Hen's Teeth lore conversation has awarded Flynn's trust in this environs area state."
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_c16_scene",
+  "kind": "text",
+  "text": "The servant quarters are carved from rough stone and lined with bunks. No one is sleeping here. The empty room makes the court's polished costumes feel like borrowed clothes.",
+  "next": "evt_l2_c16_choice"
+}

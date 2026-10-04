@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "environs_tenpenny_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The party has entered the Tenpenny Wood scene in this environs area state."
+}

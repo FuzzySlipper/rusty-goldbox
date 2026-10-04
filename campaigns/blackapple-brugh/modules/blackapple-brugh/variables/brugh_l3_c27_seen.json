@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_c27_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "C27 has shown its paired vault presentation in this area instance."
+}

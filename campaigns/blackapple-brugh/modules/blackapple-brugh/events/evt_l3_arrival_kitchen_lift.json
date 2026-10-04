@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_arrival_kitchen_lift",
+  "kind": "text",
+  "text": "The dumbwaiter opens onto the Level 3 kitchen landing. The crank is still within reach, but its capacity has to be judged for the active party before anyone rides it again.",
+  "next": "evt_l3_c21a_arrival"
+}

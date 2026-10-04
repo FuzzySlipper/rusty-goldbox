@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_l3_c25_token",
+  "kind": "take",
+  "item": "l3_moth_token",
+  "count": 1,
+  "on_refused": "evt_l3_c25_bargain_check",
+  "next": "evt_l3_c25_bargain_check"
+}

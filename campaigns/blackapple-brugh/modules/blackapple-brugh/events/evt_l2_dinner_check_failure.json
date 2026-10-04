@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_check_failure",
+  "kind": "menu",
+  "text": "The answer lands badly. The court now offers only its two dangerous readings; choose whether the insult becomes an immediate whole-party attack or a focused punishment that can still be rescued.",
+  "options": [
+    {
+      "label": "Let the insult trigger an immediate whole-party attack",
+      "next": "evt_l2_dinner_immediate"
+    },
+    {
+      "label": "Risk the focused punishment and intervene if needed",
+      "next": "evt_l2_dinner_unfavorable"
+    }
+  ]
+}

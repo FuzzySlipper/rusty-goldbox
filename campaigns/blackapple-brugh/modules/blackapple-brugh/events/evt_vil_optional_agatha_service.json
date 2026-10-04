@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_agatha_service",
+  "kind": "menu",
+  "text": "Agatha sets six stoppered bottles on the counter: sleep for 2 gold, rage for 6, charm for 80, healing for 5, possum for 10, and lichguard for 3. She can point you to the shrine keeper or Father Naskew for care, or leave the bottles sealed.",
+  "options": [
+    {
+      "label": "Ask Agatha to take you to the shrine's cleansing stones",
+      "next": "evt_vil_optional_agatha_to_shrine"
+    },
+    {
+      "label": "Ask Father Naskew to tend a wounded companion",
+      "next": "evt_vil_priory_care"
+    },
+    {
+      "label": "Leave Agatha's bottles sealed for now",
+      "next": "evt_vil_optional_agatha_gap"
+    }
+  ]
+}

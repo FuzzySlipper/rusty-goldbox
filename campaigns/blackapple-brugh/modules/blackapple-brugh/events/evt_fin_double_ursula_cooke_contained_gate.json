@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_contained_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_ursula_cooke_evidence == \"Father Naskew at St. Ludann Priory\" or campaign.var.double_ursula_cooke_evidence == \"Lady Figwort at Figwort Manor\" or campaign.var.double_ursula_cooke_evidence == \"Flynn at the Hen's Teeth safe room\"",
+      "next": "evt_fin_double_ursula_cooke_contained_text"
+    }
+  ],
+  "otherwise": "evt_fin_double_ursula_cooke_contained_custodian"
+}

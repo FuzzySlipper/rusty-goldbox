@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_safe_plan",
+  "kind": "set",
+  "variable": "figwort_stance",
+  "value": "\"protect\"",
+  "next": "evt_vil_sanitarium_safe_plan_text"
+}

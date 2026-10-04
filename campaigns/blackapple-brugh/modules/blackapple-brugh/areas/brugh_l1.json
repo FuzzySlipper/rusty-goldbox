@@ -1,0 +1,45 @@
+{
+  "type": "area",
+  "id": "brugh_l1",
+  "name": "Brugh Level 1 — The Court's First Face",
+  "map": [
+    "+--+--+--+--+--+--+--+",
+    "|     D              |",
+    "+  +  +--+  +SS+  +  +",
+    "|                    |",
+    "+  +  +  +  +  +  +  +",
+    "|                    |",
+    "+--+--+--+--+--+--+--+"
+  ],
+  "wall_set": "blackapple-art:brugh_materials",
+  "search": "blackapple-fae:investigate_evidence",
+  "doors": [
+    {
+      "id": "c3_balcony",
+      "at": [2, 0],
+      "facing": "west",
+      "locked": true,
+      "pick": "blackapple-fae:careful_contact_dex"
+    }
+  ],
+  "cells": [
+    { "at": [0, 0], "zone": "c1_coatroom", "event": "evt_l1_arrival_c1" },
+    { "at": [1, 0], "zone": "c2_reception", "event": "evt_l1_c2_arrival" },
+    { "at": [2, 0], "zone": "c3_royal_balcony", "event": "evt_l1_c3_arrival" },
+    { "at": [3, 0], "zone": "c4_game_room", "event": "evt_l1_c4_arrival" },
+    { "at": [4, 0], "zone": "c5_library", "event": "evt_l1_c5_arrival" },
+    { "at": [5, 0], "zone": "c6_fungal_bluehouse", "event": "evt_l1_c6_arrival" },
+    { "at": [6, 0], "zone": "c7_white_lady", "event": "evt_l1_c7_arrival" },
+    { "at": [0, 1], "zone": "level_2_stairs", "event": "evt_l1_stairs_arrival" },
+    { "at": [2, 1], "zone": "c8_guest_room", "event": "evt_l1_c8_arrival" },
+    { "at": [3, 1], "zone": "c9_guest_room", "event": "evt_l1_c9_arrival" },
+    { "at": [4, 1], "zone": "secret_niche", "event": "evt_l1_secret_niche_arrival" },
+    { "at": [5, 1], "zone": "c10_mushroom_ambassador", "event": "evt_l1_c10_arrival" },
+    { "at": [6, 1], "zone": "c11_frog_prince", "event": "evt_l1_c11_arrival" }
+  ],
+  "entries": {
+    "c1_entry": { "at": [0, 0], "facing": "east" },
+    "from_l2": { "at": [0, 2], "facing": "north" },
+    "guest_rooms": { "at": [2, 1], "facing": "east" }
+  }
+}

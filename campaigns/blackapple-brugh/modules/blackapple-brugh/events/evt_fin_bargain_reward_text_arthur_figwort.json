@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_reward_text_arthur_figwort",
+  "kind": "text",
+  "text": "Lord and Lady Figwort welcome Arthur home. Their promised reward is four hundred gold pieces.",
+  "next": "evt_fin_bargain_reward_arthur_figwort"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_lift_open_text",
+  "kind": "text",
+  "text": "The crank catches, and the dumbwaiter settles into a usable route. The party has opened the Level 2 side of the kitchen lift; every later trip still names its Level 3 arrival event explicitly.",
+  "next": "evt_l2_c14"
+}

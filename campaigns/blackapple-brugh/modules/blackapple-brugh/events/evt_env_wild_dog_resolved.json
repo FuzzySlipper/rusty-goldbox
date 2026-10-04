@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_wild_dog_resolved",
+  "kind": "text",
+  "text": "The cu-sidhe recognizes the party. The wild-dog trouble has already been resolved and Pigman Jack has received the one-time reward; the hollow offers no second claim.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_forest_aftercare"
+}

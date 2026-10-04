@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l2_pool_scene",
+  "kind": "text",
+  "text": "The pool occupies almost the entire chamber. The safe floor ends five feet from the entrance, and the far slope disappears into deep water. A moonstone glints below the surface. The party can read the danger and leave without proving anything to the court.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "Murky water hides two enormous green frogs. Their mouths open with a wet croak as the pool drops from three feet to twelve. A few moonstones lie beyond the safe ledge.",
+      "picture": "blackapple-art:brugh_pool_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "Two sea-maiden figures splash in sparkling water and beckon the party into a moonlit game. Bright stones wait in the clear pool beyond the shallow ledge.",
+      "picture": "blackapple-art:brugh_pool_glamour"
+    }
+  ],
+  "next": "evt_l2_pool_choice"
+}

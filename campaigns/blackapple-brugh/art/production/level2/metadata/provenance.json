@@ -1,0 +1,279 @@
+{
+  "task": "9305",
+  "batch": "blackapple-level2-art",
+  "status": "ready_for_independent_pair_judge",
+  "self_acceptance": false,
+  "independent_judge_required": true,
+  "workspace_root": "/home/agent/dev/rusty-goldbox-9293",
+  "production_root": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/level2",
+  "owned_scope": "campaigns/blackapple-brugh/art/production/level2 only",
+  "protected_scope": [
+    "campaigns/blackapple-brugh/art/production/level1 (byte-frozen)",
+    "runtime assets and module manifests",
+    "campaigns/blackapple-brugh/canon",
+    "src/",
+    "Git history"
+  ],
+  "generation": {
+    "tool": "built-in Codex image_gen",
+    "skill": "/home/agent/.codex/skills/.system/imagegen/SKILL.md",
+    "creative_editing": "image_gen only; no PIL, resize, crop, composite, or external generation API",
+    "output_root": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55",
+    "requested_format": "opaque PNG",
+    "requested_target": "single ordinary event picture, about 1672x941, 16:9",
+    "display_target": "ordinary display readability around 620x300",
+    "actual_model_settings": "not exposed by the built-in tool; no model, sampler, seed, or hidden generation setting is claimed",
+    "truth_then_glamour_lineage": "Each truth was a new built-in image_gen call. Each glamour was an image_gen edit using its saved truth image as the edit target after that truth was viewed at original resolution."
+  },
+  "source_boundary": {
+    "text_source": "/tmp/blackapple-r21.txt",
+    "allowed_printed_pages": "31-34 only",
+    "source_art_maps_and_pdf_images": "excluded from every generation input",
+    "source_art_input_paths": [],
+    "runtime_style_references_viewed_first": [
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+    ],
+    "runtime_style_reference_use": "original painted medium and palette cues only; not copied, traced, edited, or used as scene geometry",
+    "level1_inputs": "none; Level1 remains unjudged and byte-frozen"
+  },
+  "pair_contract": {
+    "shared_between_variants": [
+      "camera and crop",
+      "room geometry and landmarks",
+      "entrances, exits, and retreat routes",
+      "key object positions",
+      "actor count, actor positions, and broad poses"
+    ],
+    "glamour_may_change": [
+      "materials",
+      "surface condition",
+      "palette temperature",
+      "decoration",
+      "perception and illusion cues"
+    ],
+    "style": "original dark-fairytale ink and watercolour with visible brushwork, storybook silhouettes, and no photorealistic or pixel-art treatment",
+    "text_policy": "no readable text, labels, UI, watermark, caption, signature, panel, or contact sheet in any image",
+    "correction_policy": "At most two targeted corrections per asset, only after an independent finding; every attempt is retained. No corrections have been run in this batch."
+  },
+  "locked_character_and_scene_constraints": {
+    "C12": "Ballroom: very large vaulted room, seven ash trees, star-like ceiling lights, animal court dance circle, musician sightline and exits; no mandatory fight.",
+    "C13": "Dining: cruel jealous masked Elf Lord in dark green at the head, Moth-in-Water as a stable black-jester sword juggler beside him, seven elves, two goatfolk, and distinct noncombat child servers Amelia and Bernard with unobtrusive memory/object cues; no mandatory fight.",
+    "C17": "Pool: fixed landing, single sloped pool, moonstones, murky frog truth and clear false-meadow glamour; non-graphic hazard with no drowning body."
+  },
+  "assets": [
+    {
+      "logical_id": "brugh_ballroom_truth",
+      "scene": "C12 ballroom",
+      "variant": "truth",
+      "paired_with": "brugh_ballroom_glamour",
+      "operation": "new_builtin_imagegen_call",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_ballroom_truth.md",
+      "prompt_sha256": "d2b6e1dddda80ec4c9d8d545bcd25e5fa05f12e10e604d56617e5cc31526fa24",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "style_references_viewed": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-1110c76d-4896-4adf-9a19-630720a710ea.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_ballroom_truth-exec-1110c76d-4896-4adf-9a19-630720a710ea.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_ballroom_truth.png",
+      "generated_at_local": "2026-10-04T01:14:22.002774547-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 941,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 941, 8-bit/color RGB, non-interlaced"
+      },
+      "sha256": "81f0c980a62cf85290e8ed71b4de8c9e21ed3167572986dc060869b90f940761",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: wide vaulted animal-court ballroom, seven tree landmarks, star lights, central dance ring, musician sightline, and readable exits. Independent pair judge must decide acceptance."
+    },
+    {
+      "logical_id": "brugh_ballroom_glamour",
+      "scene": "C12 ballroom",
+      "variant": "glamour",
+      "paired_with": "brugh_ballroom_truth",
+      "operation": "builtin_imagegen_edit_of_saved_truth",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_ballroom_glamour.md",
+      "prompt_sha256": "e6ec0cfc3e949a8dddbd371f0599bf1d512b6a5ac87ba4913d19ebbe3458ae6c",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "edit_target": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_ballroom_truth.png",
+        "edit_target_sha256": "81f0c980a62cf85290e8ed71b4de8c9e21ed3167572986dc060869b90f940761",
+        "style_references_viewed_before_pair": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "additional_scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-6e388ace-2dd4-4292-813c-02a31439e63f.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_ballroom_glamour-exec-6e388ace-2dd4-4292-813c-02a31439e63f.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_ballroom_glamour.png",
+      "generated_at_local": "2026-10-04T01:15:55.198875768-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 941,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 941, 8-bit/color RGB, non-interlaced"
+      },
+      "sha256": "86663c3fef6fbf3b8da9b7626368a0fcee7c489910c7942720525936b3b7cc33",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: glamour retains the ballroom landmarks, central circle, musician arch and exits while changing court material and perception cues. Independent pair judge must decide acceptance."
+    },
+    {
+      "logical_id": "brugh_dining_truth",
+      "scene": "C13 dining hall",
+      "variant": "truth",
+      "paired_with": "brugh_dining_glamour",
+      "operation": "new_builtin_imagegen_call",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_dining_truth.md",
+      "prompt_sha256": "79087f7f33aaab12ab6b722d79f40fef1c71f13ee43c08d8f92992eb10cca559",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "style_references_viewed": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-b5e109d7-2e90-4be7-8766-ce03c80f5fe1.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_dining_truth-exec-b5e109d7-2e90-4be7-8766-ce03c80f5fe1.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_dining_truth.png",
+      "generated_at_local": "2026-10-04T01:18:20.370520775-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 940,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 940, 8-bit/color RGB, non-interlaced",
+        "requested_target_note": "The tool returned 940px height for this truth; it was preserved without technical conversion."
+      },
+      "sha256": "d34660c9db2a6193c3af9bacda28810190d482e28615cb63753c64034495269b",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: worn oak hall, long table, masked green Elf Lord, black-jester Moth, court guests, and two distinct child-server positions are visible. Independent pair judge must decide identity and landmark fidelity."
+    },
+    {
+      "logical_id": "brugh_dining_glamour",
+      "scene": "C13 dining hall",
+      "variant": "glamour",
+      "paired_with": "brugh_dining_truth",
+      "operation": "builtin_imagegen_edit_of_saved_truth",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_dining_glamour.md",
+      "prompt_sha256": "36c6c6cebb5f9af247e5f0cd660fe527877e74eb7cc6c636f52b9cb65c8b02e8",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "edit_target": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_dining_truth.png",
+        "edit_target_sha256": "d34660c9db2a6193c3af9bacda28810190d482e28615cb63753c64034495269b",
+        "style_references_viewed_before_pair": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "additional_scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-faab5784-decc-4114-976c-4887dbaf28ba.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_dining_glamour-exec-faab5784-decc-4114-976c-4887dbaf28ba.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_dining_glamour.png",
+      "generated_at_local": "2026-10-04T01:19:55.123125177-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 941,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 941, 8-bit/color RGB, non-interlaced",
+        "pair_dimension_note": "The edit returned 941px height while the saved truth is 940px; both native outputs were preserved without technical conversion."
+      },
+      "sha256": "4453d2fe0104ff335ce5df030fa583ed0cef77d9de75ead77dac13c0baca8ef2",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: edit retains the dining layout, cast, table line and exits while changing court finish, light and palette. Independent pair judge must decide exact pair fidelity."
+    },
+    {
+      "logical_id": "brugh_pool_truth",
+      "scene": "C17 pool",
+      "variant": "truth",
+      "paired_with": "brugh_pool_glamour",
+      "operation": "new_builtin_imagegen_call",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_pool_truth.md",
+      "prompt_sha256": "ffe86a246c2247c5d527111c415335060a9bd09ea9efa96924653d562b8c3167",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "style_references_viewed": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-f49baf00-e80a-497e-b416-5e467dee5a00.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_pool_truth-exec-f49baf00-e80a-497e-b416-5e467dee5a00.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_pool_truth.png",
+      "generated_at_local": "2026-10-04T01:21:16.831135697-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 941,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 941, 8-bit/color RGB, non-interlaced"
+      },
+      "sha256": "3ee7c11d5d54ead52193ebe57843d335ceb25cc35dc14cef701b49b1b69571d1",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: stone landing, sloped pool, moonstones, two green frogs and side retreat are visible, with no body or graphic harm. Independent pair judge must decide acceptance."
+    },
+    {
+      "logical_id": "brugh_pool_glamour",
+      "scene": "C17 pool",
+      "variant": "glamour",
+      "paired_with": "brugh_pool_truth",
+      "operation": "builtin_imagegen_edit_of_saved_truth",
+      "prompt_file": "campaigns/blackapple-brugh/art/production/level2/prompts/brugh_pool_glamour.md",
+      "prompt_sha256": "b56c94244a5cfd7ae891516d98c59b701566256ff401f624807ab29656955f70",
+      "exact_prompt_recorded_in_file": true,
+      "reference_lineage": {
+        "edit_target": "campaigns/blackapple-brugh/art/production/level2/truth/brugh_pool_truth.png",
+        "edit_target_sha256": "3ee7c11d5d54ead52193ebe57843d335ceb25cc35dc14cef701b49b1b69571d1",
+        "style_references_viewed_before_pair": [
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_truth.png",
+          "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_reception_glamour.png"
+        ],
+        "additional_scene_input_images": [],
+        "source_art_input_images": []
+      },
+      "tool_output_path": "/home/agent/.codex/generated_images/01a105e1-e740-7750-9c97-40e9fa41af55/exec-8efc75c3-9235-4341-9189-5b4157265169.png",
+      "raw_path": "campaigns/blackapple-brugh/art/production/level2/raw/brugh_pool_glamour-exec-8efc75c3-9235-4341-9189-5b4157265169.png",
+      "canonical_path": "campaigns/blackapple-brugh/art/production/level2/glamour/brugh_pool_glamour.png",
+      "generated_at_local": "2026-10-04T01:22:40.252230298-07:00",
+      "actual_output": {
+        "width": 1672,
+        "height": 941,
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "8-bit",
+        "file_report": "1672 x 941, 8-bit/color RGB, non-interlaced"
+      },
+      "sha256": "722d0d93f66a3b47f63d9eb4c72afd632960817d8fa04f2690ce0bd48da2073b",
+      "native_original_viewed": true,
+      "inspection_note": "Basic visual inspection only: shared landing, pool footprint, depth cue, moonstones, side exit and actor positions remain visible while water and meadow illusion change. Independent pair judge must decide acceptance."
+    }
+  ],
+  "verification": {
+    "raw_outputs_preserved": true,
+    "canonical_outputs_are_unmodified_copies": true,
+    "technical_conversion": "none",
+    "all_outputs_rgb": true,
+    "visual_review_scope": "basic failure inspection only; this record does not replace independent paired judging"
+  }
+}

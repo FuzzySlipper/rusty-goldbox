@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c4_scene",
+  "kind": "text",
+  "text": "The game room is painted an aggressive green. Five pale court elves pause over darts and a worn pool table, their welcome precise enough to sound like a wager. The party can play by the court's rules, cheat, or walk away.",
+  "next": "evt_l1_c4_choice"
+}

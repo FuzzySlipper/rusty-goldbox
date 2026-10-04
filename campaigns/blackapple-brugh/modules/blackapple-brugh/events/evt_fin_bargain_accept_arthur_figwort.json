@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_accept_arthur_figwort",
+  "kind": "set",
+  "variable": "elf_bargain_accepted",
+  "value": "true",
+  "next": "evt_fin_bargain_terms_text_arthur_figwort"
+}

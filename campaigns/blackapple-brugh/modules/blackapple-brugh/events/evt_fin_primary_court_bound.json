@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_primary_court_bound",
+  "kind": "text",
+  "text": "Primary ending: ending.court_bound. The party knowingly stays in or serves the Brugh court under confirmed terms; children and doubles retain the exact records already displayed.",
+  "next": "evt_fin_epilogue_contained_text_gate"
+}

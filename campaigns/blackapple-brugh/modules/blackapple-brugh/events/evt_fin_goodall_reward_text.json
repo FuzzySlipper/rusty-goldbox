@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_goodall_reward_text",
+  "kind": "text",
+  "text": "Ms. Goodall welcomes her child home. She presses one hundred gold pieces into each traveler’s hands, grateful beyond words.",
+  "next": "evt_fin_goodall_reward"
+}

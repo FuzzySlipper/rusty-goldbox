@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_entry_midnight",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.entry_ready and campaign.var.mirror_rhyme_known and (campaign.var.mirror_route == \"figwort\" or campaign.var.mirror_route == \"hen_teeth\")",
+      "next": "evt_entry_midnight_text"
+    }
+  ],
+  "otherwise": "evt_entry_not_ready"
+}

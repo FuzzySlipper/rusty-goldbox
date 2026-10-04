@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_release_evidence",
+  "kind": "set",
+  "variable": "double_stevie_leeford_evidence",
+  "value": "\"released toward the forest with the cu-sidhe route\"",
+  "next": "evt_fin_double_stevie_leeford_release_text"
+}

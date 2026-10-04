@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_after_children",
+  "kind": "text",
+  "text": "All seven named child records are now displayed. The double records are independent: a child not returned does not prevent the party from accounting for, containing, exposing, releasing, or removing its matching double.",
+  "next": "evt_fin_double_arthur_figwort"
+}

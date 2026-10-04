@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "court_pillow",
+  "name": "Gold-threaded court pillow",
+  "kind": "gear",
+  "cost": 4,
+  "currency": "fifth-srd:gold",
+  "weight": 1
+}

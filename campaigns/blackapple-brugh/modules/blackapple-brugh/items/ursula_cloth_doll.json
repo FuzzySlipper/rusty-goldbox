@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "ursula_cloth_doll",
+  "name": "Ursula's cloth doll",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

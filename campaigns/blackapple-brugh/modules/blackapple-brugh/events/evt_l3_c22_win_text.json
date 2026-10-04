@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c22_win_text",
+  "kind": "text",
+  "text": "The tiny pudding collapses back into the empty jar. The pantry is safe enough to pass, and no other Level 3 objective depended on opening it.",
+  "next": "evt_l3_c22_leave"
+}

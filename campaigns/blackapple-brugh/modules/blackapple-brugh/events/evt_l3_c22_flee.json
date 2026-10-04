@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c22_flee",
+  "kind": "text",
+  "text": "The party shuts the pantry door and leaves the tiny pudding behind. Nothing requires this hazard to be cleared.",
+  "next": "evt_l3_c22_leave"
+}

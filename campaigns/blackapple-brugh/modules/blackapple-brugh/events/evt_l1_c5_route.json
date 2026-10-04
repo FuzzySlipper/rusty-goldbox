@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c5_route",
+  "kind": "set",
+  "variable": "route_secret_library",
+  "value": "true",
+  "next": "evt_l1_c5_secret_ready"
+}

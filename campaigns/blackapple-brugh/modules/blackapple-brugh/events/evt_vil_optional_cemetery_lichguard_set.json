@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_cemetery_lichguard_set",
+  "kind": "set",
+  "variable": "blackapple_optional_tobler_evidence",
+  "value": "\"lichguard_witnessed\"",
+  "next": "evt_vil_optional_cemetery_lichguard_text"
+}

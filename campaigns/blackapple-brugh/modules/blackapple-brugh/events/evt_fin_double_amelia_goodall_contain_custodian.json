@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_contain_custodian",
+  "kind": "menu",
+  "text": "A named custodian is required before the Amelia Goodall double can remain contained. Which consented handoff will you record?",
+  "options": [
+    {
+      "label": "Confirm Father Naskew at St. Ludann Priory",
+      "next": "evt_fin_double_amelia_goodall_contain_status_priory"
+    },
+    {
+      "label": "Confirm Lady Figwort at Figwort Manor",
+      "next": "evt_fin_double_amelia_goodall_contain_status_manor"
+    },
+    {
+      "label": "Confirm Flynn at the Hen's Teeth safe room",
+      "next": "evt_fin_double_amelia_goodall_contain_status_hen_teeth"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_masked_expose_evidence",
+  "kind": "set",
+  "variable": "double_stevie_leeford_evidence",
+  "value": "\"mask exposed during return accounting\"",
+  "next": "evt_fin_double_stevie_leeford_masked_expose_text"
+}

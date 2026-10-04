@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_bernard_goodall_masked_expose_evidence",
+  "kind": "set",
+  "variable": "double_bernard_goodall_evidence",
+  "value": "\"mask exposed during return accounting\"",
+  "next": "evt_fin_double_bernard_goodall_masked_expose_text"
+}

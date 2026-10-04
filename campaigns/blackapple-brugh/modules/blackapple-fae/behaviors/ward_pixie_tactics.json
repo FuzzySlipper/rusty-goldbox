@@ -1,0 +1,30 @@
+{
+  "type": "combat-behavior",
+  "id": "ward_pixie_tactics",
+  "name": "Ward pixie tactics",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "10",
+      "commit": "step",
+      "steps": [
+        {
+          "action": {
+            "action": "pixie_claw",
+            "name": "Claws and pixie dust",
+            "to_hit": "4",
+            "damage": "1d4",
+            "dice": "1d4"
+          },
+          "target": "enemy",
+          "target_score": "0 - combat.distance",
+          "destination": {
+            "kind": "toward",
+            "distance": "1"
+          }
+        }
+      ],
+      "fallback": "next"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_escaped",
+  "kind": "text",
+  "text": "the Amelia Goodall double — escaped. Its matching child's status is unchanged, and the recorded route remains the named custody or evidence record.",
+  "next": "evt_fin_double_bernard_goodall"
+}

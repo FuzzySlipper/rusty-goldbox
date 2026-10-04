@@ -1,0 +1,13 @@
+Use case: illustration-story
+Asset type: wide paired event picture, opaque PNG, target 16:9
+Logical asset ID: asset.brugh-coatroom-glamour / brugh_coatroom_glamour
+Input images: Image 1 is the local original brugh_coatroom_truth truth scene; it is the edit target for geometry locking.
+Primary request: derive the Brugh C1 glamour perception from Image 1. Change only materials, surface condition, palette temperature, decoration and perception cues: make the same coatroom feel like a polished court welcome, with clean blue-green and silver marble, ivory plaster panels, orderly rich cloak textiles, polished brass, bright mirror silver and restrained ornamental fae detail. Keep the calm goatlike attendant, same pose, same grounded placement, same count of figures, same one-way entry mirror, same arrival hall, same closed door with upper service panel, same cloak closet, same chests, same rear door, same perspective and same crop. The mirror remains an entry clue, not a second exit.
+Style/medium: original illustrated dark-fairytale ink-and-watercolour; hand-inked varied contours, visible brushwork, diluted gouache washes, warm paper grain and natural storybook silhouettes; glamour is beautiful but subtly uncanny, with silver reflections and theatrical court polish. Do not copy or trace any source art.
+Composition/framing: exact camera, landmark positions, proportions, exits, subject pose and 16:9 framing from Image 1; readable around 620x300, with the same quiet lower foreground for event text.
+Lighting/mood: cold moonlight polished through mirror glass, blue-green and silver illumination, small controlled amber highlights; inviting courtly beauty with a faint wrongness.
+Color palette: blue slate, verdigris, moon ivory, silver, muted teal and polished brass; remove damp truth grime while retaining the same object identity and silhouettes.
+Materials/textures: polished stone and paneling, clean metal, court textiles, reflective glass, orderly wood; no geometry redraw.
+Text (verbatim): "" (no text in the image)
+Constraints: change only material, condition, palette, decoration and perception cues; preserve camera, crop, all doors, mirror, hall, closet, rear door, attendant identity/pose/position, object count and room geometry exactly; no new rooms or portals; opaque image; no source PDF/map/cover/art input.
+Avoid: retro pixel art; pixelated or nearest-filtered look; photorealism; 3D render; anime/manga; chibi; vector flatness; logos; lettering; captions; UI; watermark; signature; border; copied/traced/collaged third-party illustration; changed landmarks; extra figures; gore; graphic child harm; sexualisation.

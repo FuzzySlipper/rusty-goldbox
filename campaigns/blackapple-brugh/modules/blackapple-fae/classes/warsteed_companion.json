@@ -1,0 +1,31 @@
+{
+  "type": "class",
+  "id": "warsteed_companion",
+  "name": "Warsteed",
+  "levels": [
+    {
+      "hp": "6"
+    },
+    {
+      "hp": "6"
+    },
+    {
+      "hp": "6"
+    }
+  ],
+  "actions": [
+    {
+      "action": "fifth-srd:melee_weapon",
+      "name": "Hooves",
+      "damage": "1d6",
+      "dice": "1d6"
+    }
+  ],
+  "equipment": "false",
+  "modifiers": [
+    {
+      "stat": "extra_attacks",
+      "value": "1"
+    }
+  ]
+}

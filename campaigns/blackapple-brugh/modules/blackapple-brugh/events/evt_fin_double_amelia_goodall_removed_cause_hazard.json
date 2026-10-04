@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_removed_cause_hazard",
+  "kind": "set",
+  "variable": "double_amelia_goodall_removal_cause",
+  "value": "\"removed by a Brugh hazard\"",
+  "next": "evt_fin_double_amelia_goodall_removed_evidence_hazard"
+}

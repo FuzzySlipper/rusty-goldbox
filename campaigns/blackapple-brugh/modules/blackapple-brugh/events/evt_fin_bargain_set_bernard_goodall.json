@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_set_bernard_goodall",
+  "kind": "set",
+  "variable": "child_bernard_goodall",
+  "value": "\"returned\"",
+  "next": "evt_fin_bargain_reward_text_bernard_goodall"
+}

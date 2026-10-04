@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_smithson_care_text",
+  "kind": "text",
+  "text": "Food is left at a distance, and the party asks Father Naskew to hear Smithson's need. He can offer the care he knows, while Smithson's curse remains his own burden.",
+  "next": "evt_vil_priory"
+}

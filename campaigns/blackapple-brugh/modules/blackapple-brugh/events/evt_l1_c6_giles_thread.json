@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c6_giles_thread",
+  "kind": "give",
+  "item": "l1_gold_thread_fragment",
+  "next": "evt_l1_c6_free_giles_text"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_arrival_from_l2",
+  "kind": "text",
+  "text": "The stair ends beside a deep court pit. You gather at the threshold; lower service halls continue north.",
+  "next": "evt_l3_c18_arrival"
+}

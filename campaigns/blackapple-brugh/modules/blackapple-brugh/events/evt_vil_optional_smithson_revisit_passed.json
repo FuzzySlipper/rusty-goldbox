@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_smithson_revisit_passed",
+  "kind": "text",
+  "text": "The party passed Smithson earlier. His distant warning and the care referral remain available if you return deliberately.",
+  "next": "evt_vil_optional_hub"
+}

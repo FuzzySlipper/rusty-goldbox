@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_xp_brugh_mark",
+  "kind": "set",
+  "variable": "middle_xp_awarded",
+  "value": "true",
+  "next": "evt_xp_brugh_award"
+}

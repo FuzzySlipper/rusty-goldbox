@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_bernard_rescue_text",
+  "kind": "text",
+  "text": "Bernard counts the plates in his own rhythm and catches the court's substitution. He closes one hand around an invisible sling stone, then lets it fall; the sign is enough for the party to know he remembers home.",
+  "next": "evt_xp_brugh"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_public_text",
+  "kind": "text",
+  "text": "Additive account: public truth. The party shows the evidence to villagers and the priory; trust and fear are allowed to coexist, and the Figwort stance remains part of the named family response.",
+  "next": "evt_fin_close"
+}

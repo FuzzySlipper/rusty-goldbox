@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_unknown_lead_text",
+  "kind": "text",
+  "text": "the Amelia Goodall double — remains unknown. The forest lead is retained in the named custody or evidence record.",
+  "next": "evt_fin_double_bernard_goodall"
+}

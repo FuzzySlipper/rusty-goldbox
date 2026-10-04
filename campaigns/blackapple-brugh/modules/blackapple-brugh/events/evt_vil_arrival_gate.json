@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_vil_arrival_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.arrival_seen",
+      "next": "evt_vil_arrival_from_environs"
+    }
+  ],
+  "otherwise": "evt_vil_arrival_record"
+}

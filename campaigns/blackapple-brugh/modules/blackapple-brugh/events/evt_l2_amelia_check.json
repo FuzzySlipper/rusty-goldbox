@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_l2_amelia_check",
+  "kind": "check",
+  "check": "blackapple-fae:investigate_evidence",
+  "member": 1,
+  "on_success": "evt_l2_amelia_free",
+  "on_failure": "evt_l2_amelia_fail"
+}

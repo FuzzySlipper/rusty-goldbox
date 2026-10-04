@@ -1,0 +1,26 @@
+{
+  "type": "combat-behavior",
+  "id": "tiny_black_pudding_tactics",
+  "name": "Tiny black pudding tactics",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "10",
+      "commit": "step",
+      "steps": [
+        {
+          "action": {
+            "action": "pudding_pseudopod",
+            "name": "Pseudopod",
+            "to_hit": "3",
+            "damage": "1d4",
+            "dice": "1d4"
+          },
+          "target": "enemy",
+          "target_score": "0 - combat.distance"
+        }
+      ],
+      "fallback": "next"
+    }
+  ]
+}

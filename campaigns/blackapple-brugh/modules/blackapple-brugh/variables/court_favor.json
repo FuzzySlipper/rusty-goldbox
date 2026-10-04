@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "court_favor",
+  "value_type": "number",
+  "initial": "0",
+  "description": "Authored Brugh court relationship value."
+}

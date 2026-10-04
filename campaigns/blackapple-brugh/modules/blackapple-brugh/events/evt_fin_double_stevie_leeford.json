@@ -1,0 +1,32 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_stevie_leeford == 'contained'",
+      "next": "evt_fin_double_stevie_leeford_contained_gate"
+    },
+    {
+      "when": "campaign.var.double_stevie_leeford == 'exposed'",
+      "next": "evt_fin_double_stevie_leeford_exposed"
+    },
+    {
+      "when": "campaign.var.double_stevie_leeford == 'escaped'",
+      "next": "evt_fin_double_stevie_leeford_escaped"
+    },
+    {
+      "when": "campaign.var.double_stevie_leeford == 'removed'",
+      "next": "evt_fin_double_stevie_leeford_removed_gate"
+    },
+    {
+      "when": "campaign.var.double_stevie_leeford == 'masked'",
+      "next": "evt_fin_double_stevie_leeford_masked"
+    },
+    {
+      "when": "campaign.var.double_stevie_leeford == 'unknown'",
+      "next": "evt_fin_double_stevie_leeford_unknown"
+    }
+  ],
+  "otherwise": "evt_fin_double_stevie_leeford_unknown"
+}

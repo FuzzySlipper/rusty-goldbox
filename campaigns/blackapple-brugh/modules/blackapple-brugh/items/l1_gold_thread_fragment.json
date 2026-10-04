@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "l1_gold_thread_fragment",
+  "name": "Faded gold thread fragment",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

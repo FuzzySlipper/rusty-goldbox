@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_agatha_gap",
+  "kind": "text",
+  "text": "Agatha writes the six prices in her ledger and points to the shrine and Priory when someone needs help. She keeps the stoppered bottles sealed behind the counter and offers to discuss them another day.",
+  "next": "evt_vil_optional_services"
+}

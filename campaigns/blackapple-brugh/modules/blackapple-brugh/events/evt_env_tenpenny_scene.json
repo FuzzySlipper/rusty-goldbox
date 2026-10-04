@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_tenpenny_scene",
+  "kind": "text",
+  "text": "Tenpenny Wood glows with pale leaves and old moss. The path is still walkable, but dog tracks cut across it toward a tangle of roots. The forest feels watched rather than empty; whoever sent the dogs here may be testing whether Blackapple remembers its bargain with the living trees.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_tenpenny_menu"
+}

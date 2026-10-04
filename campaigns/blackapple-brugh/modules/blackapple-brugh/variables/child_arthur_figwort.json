@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "child_arthur_figwort",
+  "value_type": "text",
+  "initial": "'captive'",
+  "description": "Status of the real child: captive, freed, returned, or unknown."
+}

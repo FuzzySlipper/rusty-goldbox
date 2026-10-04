@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_giles_weadley_masked_expose_status",
+  "kind": "set",
+  "variable": "double_giles_weadley",
+  "value": "\"exposed\"",
+  "next": "evt_fin_double_giles_weadley_masked_expose_evidence"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_entry_route_hen_teeth",
+  "kind": "set",
+  "variable": "mirror_route",
+  "value": "\"hen_teeth\"",
+  "next": "evt_entry_ready_hen_teeth"
+}

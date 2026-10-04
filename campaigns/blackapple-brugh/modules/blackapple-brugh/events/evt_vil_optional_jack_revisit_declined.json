@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_jack_revisit_declined",
+  "kind": "menu",
+  "text": "Jack declined help and remains at a respectful distance. The party can still follow the dog trail or leave the secret alone.",
+  "options": [
+    {
+      "label": "Follow the wild-dog trail",
+      "next": "evt_vil_optional_jack_dog_lead"
+    },
+    {
+      "label": "Leave the secret alone",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}

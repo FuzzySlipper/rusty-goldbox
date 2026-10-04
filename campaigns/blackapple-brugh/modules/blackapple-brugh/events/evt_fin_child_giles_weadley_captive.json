@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_giles_weadley_captive",
+  "kind": "text",
+  "text": "Giles Weadley — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
+  "next": "evt_fin_child_philip_anvil"
+}

@@ -164,10 +164,15 @@ later integrator.
 | --- | --- | --- | --- | --- |
 | `asset.wylda-portrait` | `wylda_portrait` | `picture` with `portrait` tag | 1024×1536 portrait-safe source; full crown/top hair, face, and brass token remain readable with headroom in the central square crop | opaque paper background; no frame or animation |
 | `asset.blackapple-village` | `blackapple_village` | `picture` for event/backdrop | landscape-safe village square at 16:9 composition; keep focal action in the center 70% for current event-picture cropping | opaque; one image, no animation |
-| `asset.ibix-double-figure` | `ibix_double_figure` | `figure` after one-frame sheet wrapping | 1024×1536 transparent full-body reference with a compact child-shaped-at-distance silhouette (large head, short limbs); later JSON uses `frame_size: [1024, 1536]`, `faces: "left"`, `height: 1.6`, and a bottom-centre anchor | true alpha; one frame, no animation; anchor at the feet |
+| `asset.ibix-double-figure` | `ibix_double_figure` | `figure` after one-frame sheet wrapping | 1024×1536 transparent full-body reference with a compact child-shaped-at-distance silhouette (large head, short limbs); later JSON uses `frame_size: [1024, 1536]`, `faces: "left"`, `height: 0.75` Engine cells, and a bottom-centre anchor | true alpha; one frame, no animation; anchor at the feet |
 | `asset.brugh-reception-truth` | `brugh_reception_truth` | `picture` for `scene.brugh_search` | 16:9 paired room; damp reception lounge, arch left, oval mirror right, long table centre, doorway rear | opaque; exact landmark geometry is shared with glamour |
 | `asset.brugh-reception-glamour` | `brugh_reception_glamour` | `picture` for `scene.brugh_search` | same camera, crop, arch, mirror, table, and doorway as truth; polished courtly perception only | opaque; exact landmark geometry is shared with truth |
-| `asset.brugh-wall-set` | `brugh_wall_set` | `wall_set` for later first-person areas | author as a single illustrated atlas image with named pixel regions `wall`, `door`, optionally `floor`, `ceiling`; use a 4:1 or larger atlas so borders stay readable | opaque RGBA image; no sheet frames; regions must remain inside image and not overlap |
+| `asset.brugh-materials` | `brugh_materials` | `wall_set` for later first-person areas | author as a single illustrated atlas image with named pixel regions `wall`, `door`, optionally `floor`, `ceiling`; use an exact integer 2×2 atlas with distinct wall, door, floor and ceiling regions so borders stay readable | opaque RGBA image; no sheet frames; regions must remain inside image and not overlap |
+
+Figure height is measured in Engine cells. The one-cell room ceiling requires
+headroom around a figure; source pixel height is independent of world height.
+The Ibix uses `0.75` cells, and future figure heights require ordinary world
+inspection before acceptance.
 
 The generated sample deliberately exercises pictures and a transparent figure.
 The wall-set row is a handoff contract for #9305: it must not be faked by

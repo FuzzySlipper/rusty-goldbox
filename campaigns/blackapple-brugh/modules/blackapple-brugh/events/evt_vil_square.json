@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_vil_square",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.evidence_double_behavior",
+      "next": "evt_vil_square_known"
+    }
+  ],
+  "otherwise": "evt_vil_square_incident"
+}

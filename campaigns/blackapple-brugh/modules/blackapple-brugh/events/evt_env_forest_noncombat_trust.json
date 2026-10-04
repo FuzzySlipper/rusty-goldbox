@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_noncombat_trust",
+  "kind": "set",
+  "variable": "environs_pigman_jack_trust",
+  "value": "area.var.environs_pigman_jack_trust + 2",
+  "next": "evt_env_forest_success"
+}

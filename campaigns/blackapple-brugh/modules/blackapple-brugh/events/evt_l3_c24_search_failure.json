@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c24_search_failure",
+  "kind": "text",
+  "text": "Dust hides the private note on the first search. The party learns nothing new but can try the room again or leave it alone.",
+  "next": "evt_l3_c24_menu"
+}

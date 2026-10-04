@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "evt_defeat_close",
+  "kind": "end",
+  "text": "Your expedition is lost. The children\u2019s and doubles\u2019 recorded states remain as you last knew them; no later rescue or family return is claimed."
+}

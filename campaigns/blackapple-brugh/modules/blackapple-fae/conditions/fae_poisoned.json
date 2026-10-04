@@ -1,0 +1,28 @@
+{
+  "type": "condition",
+  "id": "fae_poisoned",
+  "name": "Fae poisoned",
+  "description": "A converted fae poison from tainted food, a poisonous kiss, or contact leaves the creature weak until a named cure removes it.",
+  "modifiers": [
+    {
+      "check": "fifth-srd:con_save",
+      "value": "-2"
+    },
+    {
+      "check": "fifth-srd:melee_attack",
+      "value": "-1"
+    },
+    {
+      "check": "fifth-srd:finesse_attack",
+      "value": "-1"
+    },
+    {
+      "check": "fifth-srd:ranged_attack",
+      "value": "-1"
+    },
+    {
+      "check": "fifth-srd:spell_attack",
+      "value": "-1"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_terms_set_arthur_figwort",
+  "kind": "set",
+  "variable": "epilogue_court_terms",
+  "value": "true",
+  "next": "evt_fin_primary_select"
+}

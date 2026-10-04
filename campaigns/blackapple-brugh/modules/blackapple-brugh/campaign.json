@@ -1,0 +1,15 @@
+{
+  "type": "campaign",
+  "id": "blackapple_brugh",
+  "name": "The Blackapple Brugh",
+  "start": {
+    "area": "blackapple",
+    "entry": "north_road"
+  },
+  "party": {
+    "min": 4,
+    "max": 6
+  },
+  "intro": "evt_root_intro",
+  "skin": "blackapple-art:darkfairytale"
+}

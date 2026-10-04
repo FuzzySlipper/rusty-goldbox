@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_route_faehill",
+  "kind": "teleport",
+  "area": "environs",
+  "entry": "faehill",
+  "next": "evt_env_faehill_arrival"
+}

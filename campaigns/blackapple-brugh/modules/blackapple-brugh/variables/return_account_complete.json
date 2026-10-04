@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "return_account_complete",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "All fourteen status records were displayed and answered."
+}

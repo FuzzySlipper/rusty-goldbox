@@ -1,0 +1,11 @@
+{
+  "type": "event",
+  "id": "evt_l3_c27_chest_one_loot",
+  "kind": "treasure",
+  "currency": "fifth-srd:gold",
+  "amount": "471",
+  "items": [
+    "obsidian_bracers"
+  ],
+  "next": "evt_l3_c27_chest_text"
+}

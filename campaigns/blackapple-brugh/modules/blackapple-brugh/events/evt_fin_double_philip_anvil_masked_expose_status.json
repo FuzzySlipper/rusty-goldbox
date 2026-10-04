@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_philip_anvil_masked_expose_status",
+  "kind": "set",
+  "variable": "double_philip_anvil",
+  "value": "\"exposed\"",
+  "next": "evt_fin_double_philip_anvil_masked_expose_evidence"
+}

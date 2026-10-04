@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "obsidian_bracers",
+  "name": "Gold and obsidian bracers",
+  "kind": "treasure",
+  "cost": 240,
+  "currency": "fifth-srd:gold",
+  "weight": 1
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_paid_take_6",
+  "kind": "take",
+  "item": "village_toll_6",
+  "next": "evt_vil_guardhouse_paid_mark",
+  "on_refused": "evt_vil_guardhouse_paid_missing"
+}

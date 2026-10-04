@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_protected_text",
+  "kind": "text",
+  "text": "Additive account: protected family account. The party gives named families and the priory time to protect frightened children; the cost is a slower public reckoning shaped by village trust.",
+  "next": "evt_fin_close"
+}

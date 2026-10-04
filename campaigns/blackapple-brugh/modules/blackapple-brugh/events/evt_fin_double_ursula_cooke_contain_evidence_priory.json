@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_contain_evidence_priory",
+  "kind": "set",
+  "variable": "double_ursula_cooke_evidence",
+  "value": "\"Father Naskew at St. Ludann Priory\"",
+  "next": "evt_fin_double_ursula_cooke_contain_text_priory"
+}

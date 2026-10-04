@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_l3_c24_arrival",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.brugh_l3_c24_seen",
+      "next": "evt_l3_c24_menu"
+    }
+  ],
+  "otherwise": "evt_l3_c24_mark_seen"
+}

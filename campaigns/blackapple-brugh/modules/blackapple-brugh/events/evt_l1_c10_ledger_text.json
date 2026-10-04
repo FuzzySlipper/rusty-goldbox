@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c10_ledger_text",
+  "kind": "text",
+  "text": "The copied ledger gives the party a practical account of sealed doors and damp passages. The ambassador accepts the careful copying as a peaceful exchange and keeps its own original.",
+  "next": "evt_l1_c10_choice"
+}

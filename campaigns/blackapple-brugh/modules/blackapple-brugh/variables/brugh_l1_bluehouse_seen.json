@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l1_bluehouse_seen",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "C6 Fungal Bluehouse has been visited."
+}

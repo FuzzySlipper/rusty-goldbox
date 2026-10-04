@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c19_mark_seen",
+  "kind": "set",
+  "variable": "brugh_l3_c19_seen",
+  "value": "true",
+  "next": "evt_l3_c19_intro"
+}

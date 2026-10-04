@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "hens_teeth_mirror",
+  "name": "Hen's Teeth mirror",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 80
+}

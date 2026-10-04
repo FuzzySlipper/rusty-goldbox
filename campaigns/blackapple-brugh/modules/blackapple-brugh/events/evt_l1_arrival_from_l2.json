@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_arrival_from_l2",
+  "kind": "text",
+  "text": "The party returns from Level 2 to the bottom stair landing. The Level 1 corridor is unchanged, and every room can be revisited by walking back through the ordinary doors.",
+  "next": "evt_l1_from_l2_menu"
+}

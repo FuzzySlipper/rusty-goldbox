@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_rest",
+  "kind": "rest",
+  "text": "The party makes a guarded camp in the pit, treating wounds and waiting for the worm to settle.",
+  "tracks": [
+    "fifth-srd:hit_points",
+    "fifth-srd:spells_1",
+    "fifth-srd:spells_2",
+    "fifth-srd:spells_3"
+  ],
+  "resting": "blackapple-fae:long_rest",
+  "periods": 1,
+  "prepare": true,
+  "next": "evt_l3_c18_rest_mark"
+}

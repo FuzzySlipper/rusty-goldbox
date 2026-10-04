@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_route_tenpenny",
+  "kind": "teleport",
+  "area": "environs",
+  "entry": "tenpenny_wood",
+  "next": "evt_env_tenpenny_arrival"
+}

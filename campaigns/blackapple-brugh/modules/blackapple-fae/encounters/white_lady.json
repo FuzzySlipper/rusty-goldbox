@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "white_lady",
+  "name": "The White Lady",
+  "monsters": [
+    {
+      "monster": "white_lady",
+      "count": "1"
+    }
+  ]
+}

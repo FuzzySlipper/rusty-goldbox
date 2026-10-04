@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_philip_anvil_masked",
+  "kind": "text",
+  "text": "the Philip Anvil double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.",
+  "next": "evt_fin_double_philip_anvil_masked_menu"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_wild_dog_scene",
+  "kind": "text",
+  "text": "The lair is an overgrown hollow where the dogs have been driving piglets away from the acorns. A black-coated fairy hound steps between you and the pack. It does not attack yet. Its stance asks whether you came to protect the road, exploit the forest, or leave the animals in peace.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_forest_choice"
+}

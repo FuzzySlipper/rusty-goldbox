@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_fairy_ruins_report",
+  "kind": "text",
+  "text": "The marks reinforce the Faehill account: the forest's bargain is maintained at the surface. You have found history, not a shortcut to the Brugh.",
+  "next": "evt_env_faehill_aftercare"
+}

@@ -1,0 +1,11 @@
+{
+  "type": "encounter",
+  "id": "court_guard_escalation",
+  "name": "Court guard escalation",
+  "monsters": [
+    {
+      "monster": "court_guard",
+      "count": "1d2"
+    }
+  ]
+}

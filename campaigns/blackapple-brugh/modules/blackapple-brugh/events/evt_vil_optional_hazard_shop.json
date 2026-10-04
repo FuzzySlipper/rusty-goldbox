@@ -1,0 +1,18 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_hazard_shop",
+  "kind": "shop",
+  "text": "Hazard lays out a dagger, leather armor, and shield, each with its price marked in gold. He offers ordinary supplies from the counter and waits for the party to choose.",
+  "items": [
+    {
+      "item": "fifth-srd:dagger"
+    },
+    {
+      "item": "fifth-srd:leather"
+    },
+    {
+      "item": "fifth-srd:shield"
+    }
+  ],
+  "next": "evt_vil_optional_hazard_shop_done"
+}

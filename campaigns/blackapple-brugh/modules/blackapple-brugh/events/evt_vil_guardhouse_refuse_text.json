@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_refuse_text",
+  "kind": "text",
+  "text": "The guards let you pass, but their hands stay near their staves. In a village already worried about strangers and fairy stories, first impressions will matter. The square lies ahead.",
+  "picture": "blackapple-art:blackapple_village"
+}

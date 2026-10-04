@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_exposed",
+  "kind": "text",
+  "text": "the Ursula Cooke double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
+  "next": "evt_fin_double_ursula_cooke_exposed_menu"
+}

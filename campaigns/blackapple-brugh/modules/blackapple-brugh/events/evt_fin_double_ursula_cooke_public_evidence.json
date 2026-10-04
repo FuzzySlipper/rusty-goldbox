@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_public_evidence",
+  "kind": "set",
+  "variable": "double_ursula_cooke_evidence",
+  "value": "\"public village account with the mask shown\"",
+  "next": "evt_fin_double_ursula_cooke_public_text"
+}

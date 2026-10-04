@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c5_evidence",
+  "kind": "set",
+  "variable": "evidence_brugh_layout",
+  "value": "true",
+  "next": "evt_l1_c5_route"
+}

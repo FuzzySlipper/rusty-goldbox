@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_pool_check_failure_text",
+  "kind": "text",
+  "text": "The lead companion slips at the ledge; a cold hand or tongue catches before the party pulls them back. The wound is real, but the party remains together and can choose recovery or another approach.",
+  "next": "evt_l2_pool_recover_choice"
+}

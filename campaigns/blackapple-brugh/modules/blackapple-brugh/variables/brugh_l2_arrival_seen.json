@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l2_arrival_seen",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "The party has received the Level 2 arrival scene in this area state."
+}

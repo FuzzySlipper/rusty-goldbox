@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l2_arrival_from_l1",
+  "kind": "text",
+  "text": "The stair from Level 1 opens into a ballroom that should not fit beneath the earth. The party remains together at the southern threshold while ash trees and impossible starlight frame the court's next rooms.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The ballroom is a damp, vaulted chamber. Seven ash trees grow through the floor, and the musicians' station is visible beyond the left arch. Doors lead east toward a dining hall and servants' passage.",
+      "picture": "blackapple-art:brugh_ballroom_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The ballroom is a perfect moonlit grove beneath a vaulted sky. Courtiers dance between living ash trees, and a bright musician's station beckons beyond the left arch.",
+      "picture": "blackapple-art:brugh_ballroom_glamour"
+    }
+  ],
+  "next": "evt_l2_arrival_mark"
+}

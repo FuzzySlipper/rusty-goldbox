@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_l1_stairs_menu",
+  "kind": "menu",
+  "text": "The stair landing is clear. What will you do?",
+  "options": [
+    {
+      "label": "Descend to Level 2",
+      "next": "evt_l1_to_l2"
+    },
+    {
+      "label": "Stay on Level 1",
+      "next": "evt_l1_stairs_stay"
+    }
+  ]
+}

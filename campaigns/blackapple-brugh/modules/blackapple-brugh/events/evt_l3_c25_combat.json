@@ -1,0 +1,10 @@
+{
+  "type": "event",
+  "id": "evt_l3_c25_combat",
+  "kind": "combat",
+  "encounter": "blackapple-fae:elf_lord_confrontation",
+  "on_win": "evt_l3_c25_combat_win",
+  "on_lose": "evt_l3_c25_combat_lose",
+  "on_flee": "evt_l3_c25_combat_flee",
+  "flee_on_draw": true
+}

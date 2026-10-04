@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_fall_pending",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The next C18 arrival represents the C13a whole-party fall."
+}

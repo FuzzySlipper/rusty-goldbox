@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "recovery_sanitarium",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "The sanitarium harm or recovery route is resolved."
+}

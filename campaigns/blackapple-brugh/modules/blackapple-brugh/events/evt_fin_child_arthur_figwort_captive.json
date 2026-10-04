@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_arthur_figwort_captive",
+  "kind": "text",
+  "text": "Arthur Figwort — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
+  "next": "evt_fin_child_amelia_goodall"
+}

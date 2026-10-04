@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_env_tenpenny_arrival",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.environs_tenpenny_seen",
+      "next": "evt_env_tenpenny_revisit"
+    }
+  ],
+  "otherwise": "evt_env_tenpenny_mark"
+}

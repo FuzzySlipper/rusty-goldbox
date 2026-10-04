@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_pool_recover_text",
+  "kind": "text",
+  "text": "The party binds the injury, records the waterline, and chooses the dry route. The pool remains revisitable, but its failure no longer pretends to be a hidden instant death.",
+  "next": "evt_l2_c12_menu"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c11_scene",
+  "kind": "text",
+  "text": "The Frog Prince sits beside a covered basin and a locked armoire. He tells the party exactly what he wants: a willing exchange, a story, or the quiet of his room. No one is owed a kiss, and the armoire is searched only with permission.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "A green, tired prince sits by a basin of cloudy water. The armoire is old, the poison lesson is real, and his boundaries are plainly stated.",
+      "picture": "blackapple-art:brugh_frog_prince_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The room shines like a storybook court. The Frog Prince gestures toward a silver basin and a jewel-bright armoire, inviting a willing bargain.",
+      "picture": "blackapple-art:brugh_frog_prince_glamour"
+    }
+  ],
+  "next": "evt_l1_c11_choice"
+}

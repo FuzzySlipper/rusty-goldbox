@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_to_pit",
+  "kind": "teleport",
+  "area": "brugh_l3",
+  "entry": "pit",
+  "next": "evt_l3_arrival_pit"
+}

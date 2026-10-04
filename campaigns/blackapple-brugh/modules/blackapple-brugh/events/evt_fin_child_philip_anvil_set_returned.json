@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_philip_anvil_set_returned",
+  "kind": "set",
+  "variable": "child_philip_anvil",
+  "value": "\"returned\"",
+  "next": "evt_fin_child_ursula_cooke"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_goodall_appraise",
+  "kind": "text",
+  "text": "Goodall warms the electrum closed-eye pendant between her fingers. 'This is enchanted,' she says. 'Wear it when you face the court\u2019s lovely lies. It strengthens the wearer\u2019s judgement when crossing a mirror; keeping it in a pack will do nothing.' She gives no cash value for a ward that the old shrine offered freely.",
+  "picture": "blackapple-art:blackapple_village",
+  "next": "evt_vil_goodall"
+}

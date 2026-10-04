@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_smithson_revisit_care",
+  "kind": "menu",
+  "text": "You already asked Father Naskew to hear Smithson's need. Return to his quiet room or go back to the road.",
+  "options": [
+    {
+      "label": "Open Father Naskew's quiet room",
+      "next": "evt_vil_priory"
+    },
+    {
+      "label": "Return to the village board",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}

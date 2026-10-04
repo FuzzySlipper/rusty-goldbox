@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_paid_receipt",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "carried(item.id == 'village_toll_4') > 0",
+      "next": "evt_vil_guardhouse_paid_take_4"
+    },
+    {
+      "when": "carried(item.id == 'village_toll_5') > 0",
+      "next": "evt_vil_guardhouse_paid_take_5"
+    },
+    {
+      "when": "carried(item.id == 'village_toll_6') > 0",
+      "next": "evt_vil_guardhouse_paid_take_6"
+    }
+  ],
+  "otherwise": "evt_vil_guardhouse_paid_missing"
+}

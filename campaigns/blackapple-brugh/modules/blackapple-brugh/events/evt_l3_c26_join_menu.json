@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "evt_l3_c26_join_menu",
+  "kind": "menu",
+  "text": "Master Ned can join the active party only while the ordinary campaign maximum leaves room.",
+  "options": [
+    {
+      "label": "Invite Master Ned to join the party",
+      "when": "party_size() < 6",
+      "next": "evt_l3_c26_join"
+    },
+    {
+      "label": "Release Ned without recruiting him",
+      "next": "evt_l3_c26_release"
+    }
+  ]
+}

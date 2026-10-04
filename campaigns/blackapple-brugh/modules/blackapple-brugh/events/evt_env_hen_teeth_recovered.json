@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_hen_teeth_recovered",
+  "kind": "text",
+  "text": "The party is rested. Flynn has not moved the mirror, and the road to Blackapple remains open.",
+  "next": "evt_env_hen_teeth_menu"
+}

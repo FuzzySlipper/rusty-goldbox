@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_brief",
+  "kind": "menu",
+  "text": "Lady Figwort's letter describes a sensitive problem: Livinius believes Arthur is possessed and has proposed an operation. The family wants the procedure stopped, but Arthur still needs safe care. The priory can witness the visit, and the sanitarium lies on the forest road.",
+  "options": [
+    {
+      "label": "Go with the priory's seal and question the diagnosis",
+      "next": "evt_vil_sanitarium_travel"
+    },
+    {
+      "label": "Arrange a safe holding room before you go",
+      "next": "evt_vil_sanitarium_safe_plan"
+    },
+    {
+      "label": "Leave the operation on hold while you gather another witness",
+      "next": "evt_vil_sanitarium_delay"
+    }
+  ],
+  "picture": "blackapple-art:blackapple_village"
+}

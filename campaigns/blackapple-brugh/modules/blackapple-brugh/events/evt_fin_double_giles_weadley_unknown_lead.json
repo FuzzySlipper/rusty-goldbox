@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_giles_weadley_unknown_lead",
+  "kind": "set",
+  "variable": "double_giles_weadley_evidence",
+  "value": "\"no reliable current account; forest lead recorded\"",
+  "next": "evt_fin_double_giles_weadley_unknown_lead_text"
+}

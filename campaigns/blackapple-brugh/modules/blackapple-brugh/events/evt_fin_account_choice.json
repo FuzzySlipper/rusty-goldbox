@@ -1,0 +1,22 @@
+{
+  "type": "event",
+  "id": "evt_fin_account_choice",
+  "kind": "menu",
+  "text": "The fourteen-record account is complete. Which living account will the village receive? The available choice changes evidence, trust pressure, and the cost carried into the epilogue.",
+  "options": [
+    {
+      "label": "Publish the verified evidence to the village and priory",
+      "when": "(campaign.var.evidence_brugh_layout or campaign.var.evidence_gold_threads or campaign.var.evidence_arthur_double or campaign.var.evidence_fairy_mirrors or campaign.var.evidence_parent_suspicion) and (campaign.var.figwort_stance == 'protect' or campaign.var.figwort_stance == 'reconcile' or campaign.var.village_trust >= 1)",
+      "next": "evt_fin_public_account"
+    },
+    {
+      "label": "Protect frightened families with a private named account",
+      "next": "evt_fin_protected_account"
+    },
+    {
+      "label": "Report an uncertain missing-child account with no proof",
+      "when": "not campaign.var.evidence_brugh_layout and not campaign.var.evidence_gold_threads and not campaign.var.evidence_arthur_double and not campaign.var.evidence_fairy_mirrors and not campaign.var.evidence_parent_suspicion",
+      "next": "evt_fin_no_proof_account"
+    }
+  ]
+}

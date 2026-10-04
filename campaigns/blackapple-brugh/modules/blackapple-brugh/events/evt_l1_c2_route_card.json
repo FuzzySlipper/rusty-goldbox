@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c2_route_card",
+  "kind": "text",
+  "text": "The card names the balcony, game room, library, and bluehouse in a crooked hand. One line calls the stair hall a place for servants, while another warns that the court's cleanest rooms may hide its worst stories.",
+  "next": "evt_l1_c2_evidence"
+}

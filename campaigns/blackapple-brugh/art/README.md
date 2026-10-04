@@ -1,10 +1,11 @@
 # Blackapple Brugh art direction
 
 This directory is the source-side art direction and original reference set for
-the planned `blackapple-art` asset module. It is deliberately usable before
-that module exists: the stable logical IDs, slot briefs, prompts, inspection
-notes, and rights boundary live here, while runtime asset JSON and export
-integration belong to the later art integration task.
+the `blackapple-art` asset module. Stable logical IDs, slot briefs, prompts,
+inspection notes and the rights boundary live here. Runtime asset JSON and
+Engine-compatible images live in `../modules/blackapple-art/`; technical
+conversion and original-output provenance are recorded in
+[production/runtime-index.json](production/runtime-index.json).
 
 Start with [ART_BIBLE.md](ART_BIBLE.md). The exact prompts used for the
 representative sample are in [prompts/](prompts/), and the accepted generated

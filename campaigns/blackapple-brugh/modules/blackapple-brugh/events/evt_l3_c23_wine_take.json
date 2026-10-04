@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c23_wine_take",
+  "kind": "give",
+  "item": "brugh_wine",
+  "count": 1,
+  "next": "evt_l3_c23_wine_mark"
+}

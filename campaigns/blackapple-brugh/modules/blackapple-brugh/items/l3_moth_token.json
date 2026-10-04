@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "l3_moth_token",
+  "name": "Moth-in-Water's private token",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

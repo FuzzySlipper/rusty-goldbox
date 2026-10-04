@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_arrival_server_area",
+  "kind": "text",
+  "text": "The dumbwaiter opens on a narrow service landing between the dining hall and the smoking room. Philip watches the crank, ready to help the people who are supposed to be carrying the food.",
+  "next": "evt_l2_c14"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "double_giles_weadley",
+  "value_type": "text",
+  "initial": "'masked'",
+  "description": "Status of the matching double: masked, exposed, contained, escaped, removed, or unknown."
+}

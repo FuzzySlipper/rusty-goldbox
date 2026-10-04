@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c6_scene",
+  "kind": "text",
+  "text": "A round cavern glows blue around enormous fungi. Stone paths wind between the beds toward a white gazebo, and a child in a gardener's apron works beside nervous helpers. Black-winged shapes flicker above the paths.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The bluehouse is unfinished stone and damp soil. Giles Weadley trims fungi under a tired lantern while winged ward pixies watch the paths; a gray-skinned woman waits in the gazebo among scattered bones.",
+      "picture": "blackapple-art:brugh_bluehouse_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The bluehouse is a radiant garden with luminous caps and a white gazebo. A child tends the court's blooms beneath drifting black butterflies, while an elegant lady waits at the center.",
+      "picture": "blackapple-art:brugh_bluehouse_glamour"
+    }
+  ],
+  "next": "evt_l1_c6_choice"
+}

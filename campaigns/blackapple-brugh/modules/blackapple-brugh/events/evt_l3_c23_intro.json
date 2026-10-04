@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c23_intro",
+  "kind": "text",
+  "text": "Rows of enchanted wine fill the unlit cellar. Arthur Figwort stands watch in borrowed armor, with a golden thread tied beneath the plate around his ankle.",
+  "next": "evt_l3_c23_menu"
+}

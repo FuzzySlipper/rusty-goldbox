@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_question_reward",
+  "kind": "set",
+  "variable": "blackapple_guardhouse_question_rewarded",
+  "value": "true",
+  "next": "evt_vil_guardhouse_question_trust"
+}

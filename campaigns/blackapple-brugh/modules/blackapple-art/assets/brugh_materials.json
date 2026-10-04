@@ -1,0 +1,33 @@
+{
+  "type": "asset",
+  "id": "brugh_materials",
+  "media": "image",
+  "file": "pictures/brugh_materials.png",
+  "sampling": "linear",
+  "regions": {
+    "wall": [
+      0,
+      0,
+      627,
+      627
+    ],
+    "door": [
+      627,
+      0,
+      627,
+      627
+    ],
+    "floor": [
+      0,
+      627,
+      627,
+      627
+    ],
+    "ceiling": [
+      627,
+      627,
+      627,
+      627
+    ]
+  }
+}

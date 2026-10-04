@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21a_capacity_ok",
+  "kind": "set",
+  "variable": "route_dumbwaiter",
+  "value": "true",
+  "next": "evt_l3_c21a_capacity_ok_text"
+}

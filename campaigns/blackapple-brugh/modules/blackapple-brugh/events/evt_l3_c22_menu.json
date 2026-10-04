@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_l3_c22_menu",
+  "kind": "menu",
+  "text": "The jar can be left alone or opened as a small, contained hazard.",
+  "options": [
+    {
+      "label": "Open the Blackcurrant Confit jar",
+      "next": "evt_l3_c22_combat"
+    },
+    {
+      "label": "Leave the pantry undisturbed",
+      "next": "evt_l3_c22_leave"
+    },
+    {
+      "label": "Take a pouch of clean salt from the shelves",
+      "when": "not area.var.brugh_l3_salt_taken",
+      "next": "evt_l3_c22_salt"
+    }
+  ]
+}

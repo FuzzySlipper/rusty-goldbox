@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c10_take_ledger",
+  "kind": "give",
+  "item": "l1_mushroom_ledger",
+  "next": "evt_l1_c10_ledger_mark"
+}

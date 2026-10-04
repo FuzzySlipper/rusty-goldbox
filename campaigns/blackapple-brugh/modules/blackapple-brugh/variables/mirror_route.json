@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "mirror_route",
+  "value_type": "text",
+  "initial": "'none'",
+  "description": "Prepared route: none, figwort, or hen_teeth."
+}

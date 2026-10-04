@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_no_proof_text",
+  "kind": "text",
+  "text": "Additive account: no proof. The party reports an uncertain missing-child account and carries a concrete next step for a later rescue.",
+  "next": "evt_fin_close"
+}

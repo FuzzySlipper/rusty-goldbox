@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_figwort_watch",
+  "kind": "set",
+  "variable": "figwort_stance",
+  "value": "\"watch\"",
+  "next": "evt_vil_figwort_watch_text"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_cemetery_expose_text",
+  "kind": "text",
+  "text": "You carry the grave-abuse evidence to Father Naskew. He can hear the report and choose a humane response; the cemetery scene ends without drawing steel against a child or the dead.",
+  "next": "evt_vil_priory"
+}

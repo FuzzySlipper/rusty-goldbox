@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_stairs_arrival",
+  "kind": "text",
+  "text": "A broad stair descends through the court's floor. The party can return to Level 2 while keeping the Level 1 rooms available for another pass.",
+  "next": "evt_l1_stairs_menu"
+}

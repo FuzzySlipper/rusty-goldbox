@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_xp_brugh_award",
+  "kind": "experience",
+  "amount": "600",
+  "each": true,
+  "text": "A named child is freed from the court. That rescue teaches the party more than another room explored.",
+  "next": "evt_root_brugh_progress"
+}

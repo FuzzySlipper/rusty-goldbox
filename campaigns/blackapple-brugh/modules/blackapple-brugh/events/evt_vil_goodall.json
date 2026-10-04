@@ -1,0 +1,26 @@
+{
+  "type": "event",
+  "id": "evt_vil_goodall",
+  "kind": "menu",
+  "text": "Ms. Goodall keeps an appraiser's eye on the room and a mother's eye on every mention of Amelia and Bernard. She will answer questions if you keep the children's names out of the market gossip.",
+  "options": [
+    {
+      "label": "Ask what changed in her children",
+      "next": "evt_vil_goodall_evidence"
+    },
+    {
+      "label": "Ask for a resale quote on carried gear",
+      "next": "evt_vil_goodall_trade"
+    },
+    {
+      "label": "Return to the families",
+      "next": "evt_vil_parents"
+    },
+    {
+      "label": "Ask Goodall to appraise the closed-eye pendant",
+      "when": "carried(item.id == 'truth_token') > 0",
+      "next": "evt_vil_goodall_appraise"
+    }
+  ],
+  "picture": "blackapple-art:blackapple_village"
+}

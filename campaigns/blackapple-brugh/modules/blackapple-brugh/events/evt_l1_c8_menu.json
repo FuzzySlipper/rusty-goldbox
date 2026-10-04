@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_l1_c8_menu",
+  "kind": "menu",
+  "text": "Will you use the first guest room?",
+  "options": [
+    {
+      "label": "Rest and recover here",
+      "next": "evt_l1_c8_rest"
+    },
+    {
+      "label": "Take the redacted prayer book",
+      "when": "not area.var.brugh_l1_c8_prayer_taken",
+      "next": "evt_l1_c8_prayer"
+    },
+    {
+      "label": "Leave the room",
+      "next": "evt_l1_c8_leave"
+    }
+  ]
+}
