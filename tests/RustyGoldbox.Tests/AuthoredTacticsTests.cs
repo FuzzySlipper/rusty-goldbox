@@ -73,6 +73,191 @@ public sealed class AuthoredTacticsTests
         Assert.Equal("classic:spell_heal", warderPolicy.Rules[0].Steps[1].Action.QualifiedId);
         Assert.Equal("classic:cure_light_wounds", warderPolicy.Rules[0].Steps[1].Spell!.QualifiedId);
         Assert.Equal(CombatBehaviorTarget.HurtAlly, warderPolicy.Rules[0].Steps[0].Target);
+        Assert.Contains(
+            rules.Reference(ivy, "$.character.milestone_features[0]").QualifiedId,
+            "tactical-bestiaire:warder_training",
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WarderCompanionUsesAuthoredPolicyAndKeepsManualControlAvailable()
+    {
+        using TempModules scratch = new();
+        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
+        ModuleSet set = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = ReadParty(set, scratch, 1);
+        Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            CampaignState state = CampaignRunner.NewState(set.Rules!, campaign, party, 9344);
+            CampaignRunner campaignRunner = new(set.Rules!, state);
+            campaignRunner.Begin(engine.Random);
+            campaignRunner.Execute("choose 1", engine.Random);
+            Character ivy = Assert.Single(state.Party, character => character.Npc is not null);
+            Character allyCharacter = Assert.Single(state.Party, character => character.Npc is null);
+
+            Combatant ivyCombatant = Combatant.FromCharacter(set.Rules!, ivy);
+            Combatant ally = Combatant.FromCharacter(set.Rules!, allyCharacter);
+            Combatant enemy = Combatant.FromMonster(
+                set.Rules!,
+                set.Rules!.Find(DefinitionTypes.Monster, "tactical-bestiaire:dusklark", out _)!,
+                "Dusklark",
+                new Evaluator(set.Rules!, new DiceRoller(engine.Random, engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "warder-companion")))));
+            Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "tactical-bestiaire:approach_ally");
+            Assert.Contains(ivyCombatant.Uses, use => use.Spell?.QualifiedId == "classic:cure_light_wounds");
+            Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "classic:melee_attack" && use.FromItem == "weapon");
+
+            Definition track = set.Rules!.Reference(
+                set.Rules!.Find(DefinitionTypes.Combat, "tactical-bestiaire:tactical_grid", out _)!,
+                "$.track");
+            ally.Creature.Track(track.Id).Current = Math.Max(1m, (ally.Creature.Track(track.Id).Max ?? 6m) - 3m);
+            decimal before = ally.Creature.Track(track.Id).Current ?? 0m;
+
+            Definition combat = set.Rules!.Find(DefinitionTypes.Combat, "tactical-bestiaire:tactical_grid", out _)!;
+            CombatRunner runner = CombatRunner.Create(
+                set.Rules!,
+                combat,
+                [
+                    new CombatSide("Party", [ivyCombatant, ally]),
+                    new CombatSide("Enemy", [enemy]),
+                ],
+                new DiceRoller(engine.Random, engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "warder-companion-fight"))),
+                setup: new CombatSetup([new Cell(0, 0), new Cell(1, 0)]));
+            runner.CollectBehaviorTraces = true;
+            runner.SetController(ivyCombatant.Id, CombatControlMode.Manual);
+            runner.SetController(ally.Id, CombatControlMode.Manual);
+            runner.SetController(enemy.Id, CombatControlMode.Manual);
+
+            CombatObservation observation = runner.Start(3);
+            while (observation.PendingDecision?.ActorId != ivyCombatant.Id)
+            {
+                string actorId = Assert.IsType<CombatDecision>(observation.PendingDecision).ActorId;
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(actorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            Assert.True(runner.SetController(ivyCombatant.Id, CombatControlMode.Automatic));
+            Assert.Equal(CombatControlMode.Automatic, ivyCombatant.Controller);
+            Assert.True(ally.Creature.Track(track.Id).Current > before);
+            Assert.Contains(runner.Facts, fact => fact is HealFact heal && heal.Who == ally.Name);
+            Assert.Contains(runner.Observe().BehaviorTraces, trace => trace.ActorId == ivyCombatant.Id && trace.BehaviorId == "tactical-bestiaire:warder");
+
+            Assert.True(runner.SetController(ivyCombatant.Id, CombatControlMode.Manual));
+            Assert.Equal(CombatControlMode.Manual, ivyCombatant.Controller);
+            observation = runner.Observe();
+            while (observation.PendingDecision?.ActorId != ivyCombatant.Id && observation.Phase != CombatPhase.Ended)
+            {
+                string actorId = Assert.IsType<CombatDecision>(observation.PendingDecision).ActorId;
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(actorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            Assert.Equal(ivyCombatant.Id, observation.PendingDecision?.ActorId);
+            CombatCommandResult manualTurn = runner.Submit(new CombatCommand.EndTurn(ivyCombatant.Id));
+            Assert.True(manualTurn.Accepted, manualTurn.Reason);
+        });
+    }
+
+    [Fact]
+    public void PhaseWatcherSwitchesAuthoredPolicyAfterItsHealthGuardChanges()
+    {
+        ModuleSet set = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
+        Assert.Empty(set.Diagnostics);
+        RuleSet rules = set.Rules!;
+        Definition combat = rules.Find(DefinitionTypes.Combat, "tactical-bestiaire:tactical_grid", out _)!;
+        Definition encounter = rules.Find(DefinitionTypes.Encounter, "tactical-expedition:gallery", out _)!;
+        Definition watcherDefinition = rules.Find(DefinitionTypes.Monster, "tactical-bestiaire:phase_watcher", out _)!;
+        Definition targetDefinition = rules.Find(DefinitionTypes.Monster, "tactical-bestiaire:mossward", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "phase-watcher-guards"));
+            DiceRoller dice = new(engine.Random, stream);
+            Evaluator evaluator = new(rules, dice);
+            Combatant watcher = Combatant.FromMonster(rules, watcherDefinition, "Phase watcher", evaluator);
+            Combatant target = Combatant.FromMonster(rules, targetDefinition, "Mossward", evaluator);
+            Definition track = rules.Reference(combat, "$.track");
+            watcher.Creature.Track(track.Id).Max = 20;
+            watcher.Creature.Track(track.Id).Current = 20;
+            target.Creature.Track(track.Id).Max = 100;
+            target.Creature.Track(track.Id).Current = 100;
+
+            CombatRunner runner = CombatRunner.Create(
+                rules,
+                combat,
+                [
+                    new CombatSide("Watcher", [watcher]),
+                    new CombatSide("Mossward", [target]),
+                ],
+                dice,
+                encounter,
+                new CombatSetup([new Cell(0, 0), new Cell(2, 0)]));
+            runner.CollectBehaviorTraces = true;
+            Assert.True(runner.SetController(watcher.Id, CombatControlMode.Manual));
+            Assert.True(runner.SetController(target.Id, CombatControlMode.Manual));
+
+            CombatObservation observation = runner.Start(4);
+            for (int turn = 0; turn < 4 && observation.PendingDecision?.ActorId != watcher.Id; turn++)
+            {
+                string actorId = Assert.IsType<CombatDecision>(observation.PendingDecision).ActorId;
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(actorId));
+                Assert.True(ended.Accepted, ended.Reason);
+                observation = ended.Observation;
+            }
+
+            Assert.Equal(watcher.Id, observation.PendingDecision?.ActorId);
+            Assert.True(runner.SetController(watcher.Id, CombatControlMode.Automatic));
+            Assert.Contains(runner.Facts.OfType<ActionFact>(), fact => fact.Who == watcher.Name && fact.Action == "Shard ray");
+            Assert.Contains(
+                runner.BehaviorTraces,
+                trace => trace.ActorId == watcher.Id
+                    && trace.RuleIndex == 0
+                    && trace.StepIndex == 0
+                    && trace.ActionId?.Contains("classic:missile_attack", StringComparison.Ordinal) == true
+                    && trace.BehaviorFile?.Replace('\\', '/').EndsWith("behaviors/phase_watcher.json", StringComparison.Ordinal) == true);
+
+            TrackValue watcherHealth = watcher.Creature.Track(track.Id);
+            Assert.True(watcherHealth.Current > watcherHealth.Max / 2);
+            watcherHealth.Current = watcherHealth.Max / 2;
+
+            for (int turn = 0; turn < 8 && !runner.Facts.OfType<ActionFact>().Any(fact => fact.Who == watcher.Name && fact.Action == "Close"); turn++)
+            {
+                observation = runner.Observe();
+                Assert.Equal(target.Id, observation.PendingDecision?.ActorId);
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(target.Id));
+                Assert.True(ended.Accepted, ended.Reason);
+            }
+
+            Assert.Contains(runner.Facts.OfType<ActionFact>(), fact => fact.Who == watcher.Name && fact.Action == "Close");
+            Assert.Contains(
+                runner.BehaviorTraces,
+                trace => trace.ActorId == watcher.Id
+                    && trace.RuleIndex == 1
+                    && trace.StepIndex == 0
+                    && trace.ActionId?.Contains("classic:close", StringComparison.Ordinal) == true);
+
+            for (int turn = 0; turn < 8 && !runner.Facts.OfType<ActionFact>().Any(fact => fact.Who == watcher.Name && fact.Action == "Rift claw"); turn++)
+            {
+                observation = runner.Observe();
+                Assert.Equal(target.Id, observation.PendingDecision?.ActorId);
+                CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(target.Id));
+                Assert.True(ended.Accepted, ended.Reason);
+            }
+
+            Assert.Contains(runner.Facts.OfType<ActionFact>(), fact => fact.Who == watcher.Name && fact.Action == "Rift claw");
+            Assert.Contains(
+                runner.BehaviorTraces,
+                trace => trace.ActorId == watcher.Id
+                    && trace.RuleIndex == 1
+                    && trace.StepIndex == 1
+                    && trace.ActionId?.Contains("classic:melee_attack", StringComparison.Ordinal) == true);
+        });
     }
 
     [Fact]

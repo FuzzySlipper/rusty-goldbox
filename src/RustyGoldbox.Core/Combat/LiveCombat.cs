@@ -61,7 +61,8 @@ public sealed record CombatActionChoice(
     IReadOnlyList<CombatMoveChoice> Moves,
     string? TargetKind = null,
     string TargetMode = "one",
-    int? PortionCount = null);
+    int? PortionCount = null,
+    IReadOnlyDictionary<string, decimal>? SpellCosts = null);
 
 /// <summary>The decision currently required from a controller.</summary>
 public sealed record CombatDecision(

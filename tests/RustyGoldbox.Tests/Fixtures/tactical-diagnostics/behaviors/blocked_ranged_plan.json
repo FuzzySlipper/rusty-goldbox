@@ -1,0 +1,43 @@
+{
+  "type": "combat-behavior",
+  "id": "blocked_ranged_plan",
+  "name": "Blocked ranged plan",
+  "fallback": "end-turn",
+  "rules": [
+    {
+      "priority": "20",
+      "commit": "plan",
+      "steps": [
+        {
+          "destination": {
+            "kind": "within",
+            "distance": "4"
+          },
+          "action": {
+            "action": "classic:missile_attack",
+            "name": "Needle volley",
+            "damage": "1d6",
+            "increment": "6"
+          },
+          "target": "enemy",
+          "target_score": "target.hit_points"
+        }
+      ],
+      "fallback": "next"
+    },
+    {
+      "priority": "10",
+      "steps": [
+        {
+          "action": {
+            "action": "classic:melee_attack",
+            "name": "Fallback strike",
+            "damage": "1d6"
+          },
+          "target": "enemy"
+        }
+      ],
+      "fallback": "end-turn"
+    }
+  ]
+}

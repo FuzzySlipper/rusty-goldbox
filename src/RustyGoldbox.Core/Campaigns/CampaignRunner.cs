@@ -82,6 +82,12 @@ public sealed partial class CampaignRunner
         return WithDice(random, dice => SetCombatController(actorId, mode, random, dice));
     }
 
+    /// <summary>Temporarily resolves one manual actor's current turn automatically.</summary>
+    public CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random)
+    {
+        return WithDice(random, dice => StepCombatAutomatically(actorId, random, dice));
+    }
+
     private CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random, DiceRoller? dice = null)
     {
         if (_state.PendingCombat is null)
@@ -111,6 +117,32 @@ public sealed partial class CampaignRunner
         }
 
         return new CampaignCombatCommandResult(true, null, _combat?.Observe() ?? terminalObservation, facts);
+    }
+
+    private CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random, DiceRoller? dice = null)
+    {
+        if (_state.PendingCombat is null)
+        {
+            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
+        }
+
+        EnsureCombat(random, dice);
+        CombatCommandResult result = _combat!.StepAutomaticTurn(actorId);
+        List<PlayFact> facts = [];
+        if (result.Accepted)
+        {
+            _state.PendingCombat.Continuation = _combat.Capture();
+            if (_combat.Phase == CombatPhase.Ended)
+            {
+                DiceRoller continuationDice = _combatDice ?? dice!;
+                if (CompleteCombat(continuationDice, facts) is Definition next)
+                {
+                    RunChain(next, continuationDice, facts);
+                }
+            }
+        }
+
+        return new CampaignCombatCommandResult(result.Accepted, result.Reason, _combat?.Observe() ?? result.Observation, facts);
     }
 
     /// <summary>A new campaign: the party at the start entry, variables at their initial values.</summary>

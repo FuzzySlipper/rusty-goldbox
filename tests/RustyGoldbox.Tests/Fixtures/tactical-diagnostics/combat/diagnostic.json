@@ -1,0 +1,31 @@
+{
+  "type": "combat",
+  "id": "diagnostic",
+  "name": "Diagnostic combat",
+  "initiative": "1",
+  "initiative_by": "side",
+  "initiative_order": "highest-first",
+  "initiative_each": "combat",
+  "round_seconds": 6,
+  "round_limit": 1,
+  "field": {
+    "width": 10,
+    "height": 6,
+    "metric": "chebyshev",
+    "terrain": {
+      "#": {
+        "name": "Pillar",
+        "passable": false,
+        "blocks_sight": true
+      }
+    }
+  },
+  "budget": [
+    {
+      "id": "action",
+      "per_turn": 1
+    }
+  ],
+  "track": "classic:hit_points",
+  "defeated": "self.hit_points <= 0"
+}

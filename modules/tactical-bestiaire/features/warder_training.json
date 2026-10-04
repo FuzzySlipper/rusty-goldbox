@@ -1,0 +1,12 @@
+{
+  "type": "feature",
+  "id": "warder_training",
+  "name": "Warder training",
+  "kind": "companion feature",
+  "description": "A warder can reach a wounded ally before using the ordinary ruleset actions it carries.",
+  "actions": [
+    {
+      "action": "tactical-bestiaire:approach_ally"
+    }
+  ]
+}

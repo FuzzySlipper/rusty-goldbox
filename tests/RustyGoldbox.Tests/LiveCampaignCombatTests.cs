@@ -309,6 +309,172 @@ public sealed class LiveCampaignCombatTests
     }
 
     [Fact]
+    public void MalformedCampaignSaveRejectsUnknownActiveActorId()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 43);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            save["pending_combat"]!["continuation"]!["ActiveActorId"] = "missing-combatant";
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-active-actor-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == "$.pending_combat.continuation.ActiveActorId"
+                && problem.Message.Contains("unknown combatant", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsNullContinuationCombatantId()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 45);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            save["pending_combat"]!["continuation"]!["Combatants"]!.AsArray()[0]!["Id"] = null;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-null-combatant-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == "$.pending_combat.continuation.Combatants[0].Id"
+                && problem.Message.Contains("nonempty ID", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsMissingUnpreparedSpellCostQuote()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 49);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            JsonObject action = continuation["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
+            action["SpellId"] = "classic:magic_missile";
+            action["SpellCosts"] = null;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-missing-spell-quote-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath?.EndsWith(".PendingDecision.Actions[0].SpellCosts", StringComparison.Ordinal) == true
+                && problem.Message.Contains("committed cost quote", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsSpellCostQuoteWithWrongKeys()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 53);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            JsonObject action = continuation["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
+            action["SpellId"] = "classic:magic_missile";
+            action["SpellCosts"] = new JsonObject { ["wrong_entry"] = 1 };
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-spell-quote-keys-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath?.EndsWith(".PendingDecision.Actions[0].SpellCosts.spells_1", StringComparison.Ordinal) == true
+                && problem.Message.Contains("missing authored cost entry", StringComparison.Ordinal));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath?.EndsWith(".PendingDecision.Actions[0].SpellCosts.wrong_entry", StringComparison.Ordinal) == true
+                && problem.Message.Contains("no authored cost entry", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
+    public void MalformedCampaignSaveRejectsNegativeBehaviorStepIndex()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules, withBehavior: true);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 47);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
+            JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
+            string actorId = continuation["Combatants"]!.AsArray()[0]!["Id"]!.GetValue<string>();
+            JsonObject behaviorState = new()
+            {
+                ["BehaviorId"] = "behavior-rules:dummy_behavior",
+                ["RuleIndex"] = 0,
+                ["StepIndex"] = 0,
+                ["Committed"] = true,
+            };
+            continuation["BehaviorStates"] = new JsonObject { [actorId] = behaviorState };
+
+            List<ModuleDiagnostic> validProblems = [];
+            Assert.NotNull(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "valid-behavior-save.json", set, validProblems));
+            Assert.Empty(validProblems);
+
+            behaviorState["StepIndex"] = -1;
+            continuation["BehaviorPendingActorId"] = actorId;
+            continuation["BehaviorPendingId"] = "behavior-rules:dummy_behavior";
+            continuation["BehaviorPendingRuleIndex"] = 1;
+            continuation["BehaviorPendingStepIndex"] = 0;
+
+            List<ModuleDiagnostic> problems = [];
+            Assert.Null(SaveFile.Read(Encoding.UTF8.GetBytes(save.ToJsonString()), "bad-behavior-step-save.json", set, problems));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == $"$.pending_combat.continuation.BehaviorStates.{actorId}.StepIndex"
+                && problem.Message.Contains("cannot be negative", StringComparison.Ordinal));
+            Assert.Contains(problems, problem =>
+                problem.JsonPath == "$.pending_combat.continuation.BehaviorPendingRuleIndex"
+                && problem.Message.Contains("outside", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
     public void CampaignSaveKeepsExplicitControllerPreferenceForTheNextFight()
     {
         using TempModules modules = new();
@@ -412,9 +578,16 @@ public sealed class LiveCampaignCombatTests
         };
     }
 
-    internal static string CampaignFixture(TempModules modules, bool withGuardReaction = false)
+    internal static string CampaignFixture(TempModules modules, bool withGuardReaction = false, bool withBehavior = false)
     {
-        string campaign = modules.Module("tale", "campaign", requires: $"{TempModules.Require("classic", "*")}, {TempModules.Require("placeholder-art", "*")} ");
+        string requires = $"{TempModules.Require("classic", "*")}, {TempModules.Require("placeholder-art", "*")} ";
+        if (withBehavior)
+        {
+            modules.Module("behavior-rules", "extension", requires: TempModules.Require("classic", "*"));
+            requires += $", {TempModules.Require("behavior-rules", "*")}";
+        }
+
+        string campaign = modules.Module("tale", "campaign", requires: requires);
         modules.Write("tale/campaign.json", """
             {
               "type": "campaign",
@@ -435,6 +608,7 @@ public sealed class LiveCampaignCombatTests
             }
             """);
         string reactions = withGuardReaction ? ",\n              \"reactions\": [ \"guard_reaction\" ]" : "";
+        string behavior = withBehavior ? ",\n              \"behavior\": \"behavior-rules:dummy_behavior\"" : "";
         modules.Write("tale/dummy.json", $$"""
             {
               "type": "monster",
@@ -443,11 +617,22 @@ public sealed class LiveCampaignCombatTests
               "class": "classic:fighter",
               "level": 1,
               "tracks": { "classic:hit_points": "10" },
-              "stats": { "ac": "20", "movement": "120", "str": "1", "size": "'medium'" }{{reactions}},
+              "stats": { "ac": "20", "movement": "120", "str": "1", "size": "'medium'" }{{reactions}}{{behavior}},
               "actions": [],
               "xp": 10
             }
             """);
+        if (withBehavior)
+        {
+            modules.Write("behavior-rules/behaviors/dummy_behavior.json", """
+                {
+                  "type": "combat-behavior",
+                  "name": "Dummy behavior",
+                  "id": "dummy_behavior",
+                  "rules": [ { "steps": [ { "action": { "action": "classic:close" }, "target": "enemy" } ] } ]
+                }
+                """);
+        }
         modules.Write("tale/guard.json", """
             {
               "type": "action",

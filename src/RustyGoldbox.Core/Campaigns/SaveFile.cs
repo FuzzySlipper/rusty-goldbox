@@ -934,9 +934,13 @@ public static class SaveFile
                 {
                     CombatantState combatant = continuation.Combatants[index];
                     string at = $"$.pending_combat.continuation.Combatants[{index}]";
-                    if (combatant is null || string.IsNullOrWhiteSpace(combatant.Id))
+                    if (combatant is null)
                     {
                         Error(at, "Each combatant continuation must contain a nonempty ID.");
+                    }
+                    else if (string.IsNullOrWhiteSpace(combatant.Id))
+                    {
+                        Error($"{at}.Id", "Each combatant continuation must contain a nonempty ID.");
                     }
                     else if (!continuationIds.Add(combatant.Id))
                     {
@@ -965,6 +969,7 @@ public static class SaveFile
                 {
                     CombatantState combatant = continuation.Combatants[index];
                     if (combatant is not null
+                        && !string.IsNullOrWhiteSpace(combatant.Id)
                         && sources.TryGetValue(combatant.Id, out PendingCombatantSource? source)
                         && combatant.Side != source.Side)
                     {
@@ -1039,7 +1044,811 @@ public static class SaveFile
                 Error("$.pending_combat.members", "members and participants must contain the same number of combatants.");
             }
 
+            ValidateContinuation(continuation, participantIds);
             state.PendingCombat = pending;
+        }
+
+        private void ValidateContinuation(CombatContinuationState continuation, IReadOnlySet<string> participantIds)
+        {
+            const string root = "$.pending_combat.continuation";
+            KnownParticipant(continuation.ActiveActorId, $"{root}.ActiveActorId", participantIds);
+            KnownParticipant(continuation.LastActorId, $"{root}.LastActorId", participantIds);
+            if (continuation.FledSide is int fledSide && fledSide is not (0 or 1))
+            {
+                Error($"{root}.FledSide", "FledSide must be side 0, side 1 or null.");
+            }
+
+            if (continuation.Winner is int winner && winner is not (0 or 1))
+            {
+                Error($"{root}.Winner", "Winner must be side 0, side 1 or null.");
+            }
+
+            KnownParticipant(continuation.CommittedActorId, $"{root}.CommittedActorId", participantIds);
+            if (continuation.CommittedActionId is string committedActionId)
+            {
+                if (string.IsNullOrWhiteSpace(committedActionId))
+                {
+                    Error($"{root}.CommittedActionId", "CommittedActionId must be nonempty when present.");
+                }
+                else if (!committedActionId.Contains("/use/", StringComparison.Ordinal)
+                    && !committedActionId.Contains("/reaction/", StringComparison.Ordinal))
+                {
+                    ResolveReference(committedActionId, $"{root}.CommittedActionId", DefinitionTypes.Action);
+                }
+            }
+
+            if (continuation.Facts is null)
+            {
+                Error($"{root}.Facts", "Facts must be an array.");
+            }
+
+            if (continuation.PendingInterruptRolls is null)
+            {
+                Error($"{root}.PendingInterruptRolls", "PendingInterruptRolls must be an array.");
+            }
+
+            if (continuation.PendingCheckRolls is null)
+            {
+                Error($"{root}.PendingCheckRolls", "PendingCheckRolls must be an array.");
+            }
+
+            if (continuation.Controllers is null)
+            {
+                Error($"{root}.Controllers", "Controllers must be an object keyed by known combatant IDs.");
+            }
+            else
+            {
+                foreach ((string actorId, CombatControlMode controller) in continuation.Controllers)
+                {
+                    KnownParticipant(actorId, $"{root}.Controllers.{actorId}", participantIds);
+                    if (!Enum.IsDefined(controller))
+                    {
+                        Error($"{root}.Controllers.{actorId}", $"Controller value {(int)controller} is not valid.");
+                    }
+                }
+            }
+
+            ValidateCombatants(continuation.Combatants, $"{root}.Combatants");
+            ValidateBehaviorContinuation(continuation, participantIds, root);
+            ValidateDecision(continuation.PendingDecision, participantIds, $"{root}.PendingDecision", continuation.Combatants);
+            ValidateContinuationFrames(continuation, participantIds, root);
+        }
+
+        private void ValidateCombatants(IReadOnlyList<CombatantState>? combatants, string at)
+        {
+            if (combatants is null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < combatants.Count; index++)
+            {
+                CombatantState? combatant = combatants[index];
+                string combatantAt = $"{at}[{index}]";
+                if (combatant is null)
+                {
+                    Error(combatantAt, "A combatant continuation must be an object.");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(combatant.Id))
+                {
+                    continue;
+                }
+
+                if (!Enum.IsDefined(combatant.Controller))
+                {
+                    Error($"{combatantAt}.Controller", $"Controller value {(int)combatant.Controller} is not valid.");
+                }
+
+                ValidateTrackMap(combatant.Tracks, $"{combatantAt}.Tracks");
+                ValidateTrackMap(combatant.TrackMaximums, $"{combatantAt}.TrackMaximums");
+                ValidateConditionList(combatant.Conditions, $"{combatantAt}.Conditions");
+                ValidateConditionReferences(combatant.AppliedThisTurn, $"{combatantAt}.AppliedThisTurn");
+                ValidateSpellReferences(combatant.Preparing, $"{combatantAt}.Preparing");
+                ValidateSpellReferences(combatant.Prepared, $"{combatantAt}.Prepared");
+                if (combatant.CastsLeft is null)
+                {
+                    Error($"{combatantAt}.CastsLeft", "CastsLeft must be an object keyed by spell IDs.");
+                }
+                else
+                {
+                    foreach (string spellId in combatant.CastsLeft.Keys)
+                    {
+                        ResolveReference(spellId, $"{combatantAt}.CastsLeft.{spellId}", DefinitionTypes.Spell);
+                    }
+                }
+            }
+        }
+
+        private void ValidateTrackMap<T>(IReadOnlyDictionary<string, T>? values, string at)
+        {
+            if (values is null)
+            {
+                Error(at, "Track values must be an object keyed by track IDs.");
+                return;
+            }
+
+            foreach (string trackId in values.Keys)
+            {
+                if (!_rules.TryTrack(trackId, out _, out _))
+                {
+                    Error($"{at}.{trackId}", $"There is no track '{trackId}'.");
+                }
+            }
+        }
+
+        private void ValidateConditionList(IReadOnlyList<CombatConditionState>? conditions, string at)
+        {
+            if (conditions is null)
+            {
+                Error(at, "Conditions must be an array of condition state objects.");
+                return;
+            }
+
+            for (int index = 0; index < conditions.Count; index++)
+            {
+                CombatConditionState? condition = conditions[index];
+                string conditionAt = $"{at}[{index}]";
+                if (condition is null)
+                {
+                    Error(conditionAt, "A condition continuation must be an object.");
+                    continue;
+                }
+
+                ResolveReference(condition.ConditionId, $"{conditionAt}.ConditionId", DefinitionTypes.Condition);
+                if (condition.Values is null)
+                {
+                    Error($"{conditionAt}.Values", "Condition values must be an object.");
+                }
+            }
+        }
+
+        private void ValidateConditionReferences(IReadOnlyList<string>? conditionIds, string at)
+        {
+            if (conditionIds is null)
+            {
+                Error(at, "Condition IDs must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < conditionIds.Count; index++)
+            {
+                ResolveReference(conditionIds[index], $"{at}[{index}]", DefinitionTypes.Condition);
+            }
+        }
+
+        private void ValidateSpellReferences(IReadOnlyList<string>? spellIds, string at)
+        {
+            if (spellIds is null)
+            {
+                Error(at, "Spell IDs must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < spellIds.Count; index++)
+            {
+                ResolveReference(spellIds[index], $"{at}[{index}]", DefinitionTypes.Spell);
+            }
+        }
+
+        private void ValidateBehaviorContinuation(
+            CombatContinuationState continuation,
+            IReadOnlySet<string> participantIds,
+            string root)
+        {
+            if (continuation.BehaviorAssignments is null)
+            {
+                Error($"{root}.BehaviorAssignments", "BehaviorAssignments must be an object keyed by combatant IDs.");
+            }
+            else
+            {
+                foreach ((string actorId, string? behaviorId) in continuation.BehaviorAssignments)
+                {
+                    string at = $"{root}.BehaviorAssignments.{actorId}";
+                    KnownParticipant(actorId, at, participantIds);
+                    if (behaviorId is not null)
+                    {
+                        ResolveBehavior(behaviorId, at);
+                    }
+                }
+            }
+
+            if (continuation.BehaviorStates is null)
+            {
+                Error($"{root}.BehaviorStates", "BehaviorStates must be an object keyed by combatant IDs.");
+            }
+            else
+            {
+                foreach ((string actorId, CombatBehaviorState? behaviorState) in continuation.BehaviorStates)
+                {
+                    string at = $"{root}.BehaviorStates.{actorId}";
+                    KnownParticipant(actorId, at, participantIds);
+                    if (behaviorState is null)
+                    {
+                        Error(at, "A behavior state must be an object.");
+                        continue;
+                    }
+
+                    CombatBehaviorProfile? profile = behaviorState.BehaviorId is string behaviorId
+                        ? ResolveBehavior(behaviorId, $"{at}.BehaviorId")
+                        : null;
+                    ValidateBehaviorPosition(profile, behaviorState, at, requireCommitted: true);
+                }
+            }
+
+            bool anyPending = continuation.BehaviorPendingActorId is not null
+                || continuation.BehaviorPendingId is not null
+                || continuation.BehaviorPendingRuleIndex is not null
+                || continuation.BehaviorPendingStepIndex is not null;
+            if (!anyPending)
+            {
+                if (continuation.BehaviorPendingMovementOnly)
+                {
+                    Error($"{root}.BehaviorPendingMovementOnly", "BehaviorPendingMovementOnly requires a pending behavior proposal.");
+                }
+
+                return;
+            }
+
+            string pendingAt = $"{root}.BehaviorPending";
+            if (continuation.BehaviorPendingActorId is not string pendingActorId)
+            {
+                Error($"{pendingAt}ActorId", "BehaviorPendingActorId is required when a behavior proposal is pending.");
+            }
+            else
+            {
+                KnownParticipant(pendingActorId, $"{root}.BehaviorPendingActorId", participantIds);
+            }
+
+            CombatBehaviorProfile? pendingProfile = continuation.BehaviorPendingId is string pendingId
+                ? ResolveBehavior(pendingId, $"{root}.BehaviorPendingId")
+                : null;
+            if (continuation.BehaviorPendingId is null)
+            {
+                Error($"{root}.BehaviorPendingId", "BehaviorPendingId is required when a behavior proposal is pending.");
+            }
+
+            if (continuation.BehaviorPendingRuleIndex is not int pendingRuleIndex)
+            {
+                Error($"{root}.BehaviorPendingRuleIndex", "BehaviorPendingRuleIndex is required when a behavior proposal is pending.");
+            }
+            else if (pendingProfile is not null)
+            {
+                ValidateBehaviorPosition(pendingProfile, new CombatBehaviorState
+                {
+                    BehaviorId = continuation.BehaviorPendingId,
+                    RuleIndex = pendingRuleIndex,
+                    StepIndex = continuation.BehaviorPendingStepIndex ?? -1,
+                    Committed = true,
+                }, root, requireCommitted: true, pending: true);
+            }
+
+            if (continuation.BehaviorPendingStepIndex is null)
+            {
+                Error($"{root}.BehaviorPendingStepIndex", "BehaviorPendingStepIndex is required when a behavior proposal is pending.");
+            }
+        }
+
+        private CombatBehaviorProfile? ResolveBehavior(string behaviorId, string at)
+        {
+            Definition? definition = ResolveReference(behaviorId, at, DefinitionTypes.CombatBehavior);
+            if (definition is null)
+            {
+                return null;
+            }
+
+            CombatBehaviorProfile? profile = _rules.CombatBehaviorOf(definition);
+            if (profile is null)
+            {
+                Error(at, $"Combat behavior '{behaviorId}' is not a checked behavior definition.");
+            }
+
+            return profile;
+        }
+
+        private void ValidateBehaviorPosition(
+            CombatBehaviorProfile? profile,
+            CombatBehaviorState state,
+            string at,
+            bool requireCommitted,
+            bool pending = false)
+        {
+            if (state.BehaviorId is null)
+            {
+                Error($"{at}.BehaviorId", "A behavior state must name its behavior definition.");
+                return;
+            }
+
+            if (requireCommitted && !state.Committed)
+            {
+                Error($"{at}.Committed", "A saved behavior state must be committed.");
+            }
+
+            if (state.RuleIndex < 0)
+            {
+                Error($"{at}.{(pending ? "BehaviorPendingRuleIndex" : "RuleIndex")}", "The behavior rule index cannot be negative.");
+                return;
+            }
+
+            if (profile is null || state.RuleIndex >= profile.Rules.Count)
+            {
+                if (profile is not null)
+                {
+                    Error($"{at}.{(pending ? "BehaviorPendingRuleIndex" : "RuleIndex")}", $"The behavior rule index {state.RuleIndex} is outside the {profile.Rules.Count}-rule behavior.");
+                }
+
+                return;
+            }
+
+            if (state.StepIndex < 0)
+            {
+                Error($"{at}.{(pending ? "BehaviorPendingStepIndex" : "StepIndex")}", "The behavior step index cannot be negative.");
+            }
+            else if (state.StepIndex >= profile.Rules[state.RuleIndex].Steps.Count)
+            {
+                Error($"{at}.{(pending ? "BehaviorPendingStepIndex" : "StepIndex")}", $"The behavior step index {state.StepIndex} is outside rule {state.RuleIndex}, which has {profile.Rules[state.RuleIndex].Steps.Count} steps.");
+            }
+        }
+
+        private void ValidateDecision(
+            CombatDecision? decision,
+            IReadOnlySet<string> participantIds,
+            string at,
+            IReadOnlyList<CombatantState>? combatants)
+        {
+            if (decision is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(decision.Id))
+            {
+                Error($"{at}.Id", "A pending decision must have a nonempty ID.");
+            }
+
+            RequiredParticipant(decision.ActorId, $"{at}.ActorId", participantIds);
+            CombatantState? actor = combatants?.FirstOrDefault(candidate =>
+                candidate is not null && string.Equals(candidate.Id, decision.ActorId, StringComparison.Ordinal));
+            if (!Enum.IsDefined(decision.Kind))
+            {
+                Error($"{at}.Kind", $"Decision kind {(int)decision.Kind} is not valid.");
+            }
+
+            if (decision.Actions is null)
+            {
+                Error($"{at}.Actions", "Actions must be an array.");
+            }
+            else
+            {
+                for (int index = 0; index < decision.Actions.Count; index++)
+                {
+                    CombatActionChoice? action = decision.Actions[index];
+                    string actionAt = $"{at}.Actions[{index}]";
+                    if (action is null)
+                    {
+                        Error(actionAt, "An action choice must be an object.");
+                        continue;
+                    }
+
+                    ResolveReference(action.ActionId, $"{actionAt}.ActionId", DefinitionTypes.Action);
+                    Definition? spell = action.SpellId is string spellId
+                        ? ResolveReference(spellId, $"{actionAt}.SpellId", DefinitionTypes.Spell)
+                        : null;
+
+                    ValidateDecisionTargets(action.Targets, participantIds, $"{actionAt}.Targets");
+                    ValidateSpellCosts(action, spell, actor, actionAt);
+                }
+            }
+
+            if (decision.Moves is null)
+            {
+                Error($"{at}.Moves", "Moves must be an array.");
+            }
+
+            if (decision.Options is not null)
+            {
+                for (int index = 0; index < decision.Options.Count; index++)
+                {
+                    CombatDecisionOption? option = decision.Options[index];
+                    string optionAt = $"{at}.Options[{index}]";
+                    if (option is null)
+                    {
+                        Error(optionAt, "A decision option must be an object.");
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(option.Id))
+                    {
+                        Error($"{optionAt}.Id", "Decision option IDs must not be empty.");
+                    }
+
+                    if (option.TargetId is string targetId)
+                    {
+                        KnownParticipant(targetId, $"{optionAt}.TargetId", participantIds);
+                    }
+
+                    if (option.TrackId is string trackId)
+                    {
+                        ResolveReference(trackId, $"{optionAt}.TrackId", DefinitionTypes.Track);
+                    }
+
+                    if (option.Index is int optionIndex && optionIndex < 0)
+                    {
+                        Error($"{optionAt}.Index", "Decision option indices cannot be negative.");
+                    }
+
+                    if (decision.Kind == CombatDecisionKind.Interrupt && option.QualifiedId is string reactionId)
+                    {
+                        ResolveReference(reactionId, $"{optionAt}.QualifiedId", DefinitionTypes.Reaction);
+                    }
+                    else if (decision.Kind == CombatDecisionKind.PostRoll && option.QualifiedId is string checkId)
+                    {
+                        ResolveReference(checkId, $"{optionAt}.QualifiedId", DefinitionTypes.Check);
+                    }
+                    else if (decision.Kind == CombatDecisionKind.Initiative && option.QualifiedId is string initiativeTarget)
+                    {
+                        KnownParticipant(initiativeTarget, $"{optionAt}.QualifiedId", participantIds);
+                    }
+                }
+            }
+
+            if ((decision.Kind is CombatDecisionKind.Interrupt or CombatDecisionKind.Initiative)
+                && decision.Interrupt is null)
+            {
+                Error($"{at}.Interrupt", "An interrupt or initiative decision must carry its continuation frame.");
+            }
+            else
+            {
+                ValidateInterrupt(decision.Interrupt, participantIds, $"{at}.Interrupt");
+            }
+
+            if (decision.Kind == CombatDecisionKind.PostRoll && decision.Check is null)
+            {
+                Error($"{at}.Check", "A post-roll decision must carry its committed check.");
+            }
+            ValidateCheck(decision.Check, participantIds, $"{at}.Check");
+            if (decision.OperationOwner is string operationOwner)
+            {
+                ResolveAnyDefinition(operationOwner, $"{at}.OperationOwner");
+            }
+
+            if (decision.OperationPath is not null && string.IsNullOrWhiteSpace(decision.OperationPath))
+            {
+                Error($"{at}.OperationPath", "OperationPath must be nonempty when present.");
+            }
+        }
+
+        private void ValidateSpellCosts(
+            CombatActionChoice action,
+            Definition? spell,
+            CombatantState? actor,
+            string at)
+        {
+            if (action.SpellCosts is null)
+            {
+                if (spell is not null
+                    && spell.Json.TryGetProperty("cost", out JsonElement spellCostDefinition)
+                    && spellCostDefinition.ValueKind == JsonValueKind.Object
+                    && spellCostDefinition.EnumerateObject().Any()
+                    && actor?.CastsLeft?.ContainsKey(spell.QualifiedId) != true)
+                {
+                    Error($"{at}.SpellCosts", "An unprepared cost-bearing spell choice must carry its committed cost quote.");
+                }
+
+                return;
+            }
+
+            if (spell is null)
+            {
+                Error($"{at}.SpellCosts", "Only a spell action choice may carry a committed spell cost quote.");
+                return;
+            }
+
+            HashSet<string> required = [];
+            if (spell.Json.TryGetProperty("cost", out JsonElement costDefinition)
+                && costDefinition.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty entry in costDefinition.EnumerateObject())
+                {
+                    required.Add(entry.Name);
+                }
+            }
+
+            foreach (string key in required)
+            {
+                if (!action.SpellCosts.ContainsKey(key))
+                {
+                    Error($"{at}.SpellCosts.{key}", $"The committed spell cost quote is missing authored cost entry '{key}'.");
+                }
+            }
+
+            foreach (string key in action.SpellCosts.Keys)
+            {
+                if (!required.Contains(key))
+                {
+                    Error($"{at}.SpellCosts.{key}", $"The committed spell cost quote has no authored cost entry '{key}'.");
+                }
+            }
+        }
+
+        private void ValidateDecisionTargets(IReadOnlyList<CombatTargetChoice>? targets, IReadOnlySet<string> participantIds, string at)
+        {
+            if (targets is null)
+            {
+                Error(at, "Targets must be an array.");
+                return;
+            }
+
+            for (int index = 0; index < targets.Count; index++)
+            {
+                CombatTargetChoice? target = targets[index];
+                string targetAt = $"{at}[{index}]";
+                if (target is null)
+                {
+                    Error(targetAt, "A target choice must be an object.");
+                    continue;
+                }
+
+                RequiredParticipant(target.Id, $"{targetAt}.Id", participantIds);
+                if (target.Side is not (0 or 1))
+                {
+                    Error($"{targetAt}.Side", "Target choice side must be 0 or 1.");
+                }
+            }
+        }
+
+        private void ValidateContinuationFrames(CombatContinuationState continuation, IReadOnlySet<string> participantIds, string root)
+        {
+            if (continuation.PendingInterrupt is CombatInterruptState interrupt)
+            {
+                ValidateInterrupt(interrupt, participantIds, $"{root}.PendingInterrupt");
+            }
+
+            ValidateCheck(continuation.PendingCheck, participantIds, $"{root}.PendingCheck");
+            ValidateOperation(continuation.PendingOperation, participantIds, $"{root}.PendingOperation");
+            if (continuation.OperationStack is null)
+            {
+                Error($"{root}.OperationStack", "OperationStack must be an array of operation states.");
+            }
+            else
+            {
+                for (int index = 0; index < continuation.OperationStack.Count; index++)
+                {
+                    ValidateOperation(continuation.OperationStack[index], participantIds, $"{root}.OperationStack[{index}]");
+                }
+            }
+
+            if (continuation.PendingMovement is CombatMovementState movement)
+            {
+                ValidateKnownAction(movement.OwnerId, $"{root}.PendingMovement.OwnerId");
+                RequiredParticipant(movement.ActorId, $"{root}.PendingMovement.ActorId", participantIds);
+                RequiredParticipant(movement.TargetId, $"{root}.PendingMovement.TargetId", participantIds);
+                if (movement.Steps < 0 || movement.EnemyIndex < 0 || movement.SelectedIndex < 0)
+                {
+                    Error($"{root}.PendingMovement", "Movement continuation indices cannot be negative.");
+                }
+            }
+
+            if (continuation.ParentInterrupts is null)
+            {
+                Error($"{root}.ParentInterrupts", "ParentInterrupts must be an array of interrupt frames.");
+            }
+            else
+            {
+                for (int index = 0; index < continuation.ParentInterrupts.Count; index++)
+                {
+                    CombatInterruptFrameState? frame = continuation.ParentInterrupts[index];
+                    string at = $"{root}.ParentInterrupts[{index}]";
+                    if (frame is null)
+                    {
+                        Error(at, "A parent interrupt frame must be an object.");
+                        continue;
+                    }
+
+                    if (frame.Interrupt is null)
+                    {
+                        Error($"{at}.Interrupt", "A parent interrupt frame must carry its interrupt state.");
+                    }
+                    else
+                    {
+                        ValidateInterrupt(frame.Interrupt, participantIds, $"{at}.Interrupt");
+                    }
+
+                    if (frame.Operation is null)
+                    {
+                        Error($"{at}.Operation", "A parent interrupt frame must carry its operation state.");
+                    }
+                    else
+                    {
+                        ValidateOperation(frame.Operation, participantIds, $"{at}.Operation");
+                    }
+                    ValidateOperation(frame.Action, participantIds, $"{at}.Action");
+                    if (frame.Movement is CombatMovementState parentMovement)
+                    {
+                        ValidateKnownAction(parentMovement.OwnerId, $"{at}.Movement.OwnerId");
+                        RequiredParticipant(parentMovement.ActorId, $"{at}.Movement.ActorId", participantIds);
+                        RequiredParticipant(parentMovement.TargetId, $"{at}.Movement.TargetId", participantIds);
+                    }
+
+                    if (frame.Options is null)
+                    {
+                        Error($"{at}.Options", "Parent interrupt options must be an array.");
+                    }
+                    else
+                    {
+                        for (int optionIndex = 0; optionIndex < frame.Options.Count; optionIndex++)
+                        {
+                            CombatDecisionOption? option = frame.Options[optionIndex];
+                            string optionAt = $"{at}.Options[{optionIndex}]";
+                            if (option is null)
+                            {
+                                Error(optionAt, "A parent interrupt option must be an object.");
+                                continue;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(option.Id))
+                            {
+                                Error($"{optionAt}.Id", "Decision option IDs must not be empty.");
+                            }
+
+                            if (option.QualifiedId is string reactionId)
+                            {
+                                ResolveReference(reactionId, $"{optionAt}.QualifiedId", DefinitionTypes.Reaction);
+                            }
+
+                            KnownParticipant(option.TargetId, $"{optionAt}.TargetId", participantIds);
+                            if (option.TrackId is string trackId)
+                            {
+                                ResolveReference(trackId, $"{optionAt}.TrackId", DefinitionTypes.Track);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ValidateInterrupt(CombatInterruptState? interrupt, IReadOnlySet<string> participantIds, string at)
+        {
+            if (interrupt is null)
+            {
+                return;
+            }
+
+            RequiredParticipant(interrupt.ReactorId, $"{at}.ReactorId", participantIds);
+            RequiredParticipant(interrupt.SourceId, $"{at}.SourceId", participantIds);
+            KnownParticipant(interrupt.TargetId, $"{at}.TargetId", participantIds);
+            if (interrupt.ReactionId is string reactionId)
+            {
+                ResolveReference(reactionId, $"{at}.ReactionId", DefinitionTypes.Reaction);
+            }
+
+            if (interrupt.ActionId is string actionId)
+            {
+                ResolveReference(actionId, $"{at}.ActionId", DefinitionTypes.Action);
+            }
+
+            if (interrupt.TrackId is string trackId)
+            {
+                ResolveReference(trackId, $"{at}.TrackId", DefinitionTypes.Track);
+            }
+
+            if (interrupt.OperationOwner is string operationOwner)
+            {
+                ResolveAnyDefinition(operationOwner, $"{at}.OperationOwner");
+            }
+
+            if (interrupt.OperationPath is not null && string.IsNullOrWhiteSpace(interrupt.OperationPath))
+            {
+                Error($"{at}.OperationPath", "OperationPath must be nonempty when present.");
+            }
+        }
+
+        private void ValidateCheck(CombatCheckState? check, IReadOnlySet<string> participantIds, string at)
+        {
+            if (check is null)
+            {
+                return;
+            }
+
+            ResolveReference(check.CheckId, $"{at}.CheckId", DefinitionTypes.Check);
+            RequiredParticipant(check.ById, $"{at}.ById", participantIds);
+            KnownParticipant(check.AgainstId, $"{at}.AgainstId", participantIds);
+        }
+
+        private void ValidateOperation(CombatOperationState? operation, IReadOnlySet<string> participantIds, string at)
+        {
+            if (operation is null)
+            {
+                return;
+            }
+
+            ResolveAnyDefinition(operation.OwnerId, $"{at}.OwnerId");
+            RequiredParticipant(operation.ActorId, $"{at}.ActorId", participantIds);
+            KnownParticipant(operation.TargetId, $"{at}.TargetId", participantIds);
+            KnownParticipant(operation.SourceId, $"{at}.SourceId", participantIds);
+            if (operation.ActionId is string actionId)
+            {
+                ResolveReference(actionId, $"{at}.ActionId", DefinitionTypes.Action);
+            }
+
+            if (operation.UseId is string useId && string.IsNullOrWhiteSpace(useId))
+            {
+                Error($"{at}.UseId", "UseId must be nonempty when present.");
+            }
+
+            if (operation.TargetIds is not null)
+            {
+                for (int index = 0; index < operation.TargetIds.Count; index++)
+                {
+                    KnownParticipant(operation.TargetIds[index], $"{at}.TargetIds[{index}]", participantIds);
+                }
+            }
+
+            if (operation.Index < 0 || operation.TargetIndex < 0)
+            {
+                Error(at, "Operation indices cannot be negative.");
+            }
+        }
+
+        private void ValidateKnownAction(string id, string at)
+        {
+            ResolveReference(id, at, DefinitionTypes.Action);
+        }
+
+        private Definition? ResolveReference(string? id, string at, DefinitionType type)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                Error(at, $"Expected a nonempty {type.Name} ID.");
+                return null;
+            }
+
+            Definition? definition = _rules.Find(type, id, out string? problem);
+            if (definition is null)
+            {
+                Error(at, problem!);
+            }
+
+            return definition;
+        }
+
+        private void ResolveAnyDefinition(string id, string at)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                Error(at, "Expected a nonempty definition ID.");
+                return;
+            }
+
+            if (_rules.Definitions.All(definition => !string.Equals(definition.QualifiedId, id, StringComparison.Ordinal)))
+            {
+                Error(at, $"There is no definition '{id}' in the loaded module set.");
+            }
+        }
+
+        private void KnownParticipant(string? id, string at, IReadOnlySet<string> participantIds)
+        {
+            if (id is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(id) || !participantIds.Contains(id))
+            {
+                Error(at, $"Combat continuation names unknown combatant '{id}'.");
+            }
+        }
+
+        private void RequiredParticipant(string? id, string at, IReadOnlySet<string> participantIds)
+        {
+            if (id is null)
+            {
+                Error(at, "A combat continuation must name a combatant.");
+                return;
+            }
+
+            KnownParticipant(id, at, participantIds);
         }
 
         private Definition? ResolveProperty(JsonElement parent, string name, string at, DefinitionType type)

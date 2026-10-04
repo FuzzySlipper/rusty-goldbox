@@ -179,25 +179,7 @@ internal static class PlayCommand
                 return new CampaignCombatCommandResult(false, $"Active actor '{activeActor}' is already automatic; use combat control {activeActor} manual before auto-step, or keep the persistent automatic controller.", observation, []);
             }
 
-            CampaignCombatCommandResult advanced = runner.SetCombatController(activeActor, CombatControlMode.Automatic, random);
-            if (!advanced.Accepted || runner.Combat is null)
-            {
-                return advanced;
-            }
-
-            // auto-step is a one-turn assist. A persistent takeover uses
-            // `combat control <actor-id> auto` and remains automatic.
-            CampaignCombatCommandResult restored = runner.SetCombatController(activeActor, CombatControlMode.Manual, random);
-            if (!restored.Accepted)
-            {
-                return advanced;
-            }
-
-            return new CampaignCombatCommandResult(
-                true,
-                advanced.Reason,
-                restored.Observation,
-                advanced.Facts.Concat(restored.Facts).ToList());
+            return runner.StepCombatAutomatically(activeActor, random);
         }
 
         return command switch

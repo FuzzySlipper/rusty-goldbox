@@ -724,12 +724,23 @@ public sealed class LiveCombatInterruptTests
             Assert.Equal(initiative.Id, runner.Observe().PendingDecision!.Id);
             Assert.Equal(rollsBeforeChoice, dice.Rolls.Count);
 
-            CombatCommandResult selected = runner.Submit(new CombatCommand.Decide(initiative.Id, choice.Id));
+            CombatContinuationState saved = CombatContinuationState.FromJson(CombatContinuationState.ToJson(runner.Capture()));
+            Evaluator restoredEvaluator = new(rules, dice);
+            CombatRunner resumed = CombatRunner.Restore(rules, combat,
+            [
+                new CombatSide("Party", [Combatant.FromMonster(rules, attackerDefinition, "First", restoredEvaluator)]),
+                new CombatSide("Foes", [Combatant.FromMonster(rules, guardDefinition, "Second", restoredEvaluator)]),
+            ], dice, saved);
+            CombatDecision restored = AssertDecision(resumed.Observe(), CombatDecisionKind.Initiative);
+            Assert.Equal(initiative.Id, restored.Id);
+            Assert.Equal(initiative.Options, restored.Options);
+
+            CombatCommandResult selected = resumed.Submit(new CombatCommand.Decide(restored.Id, choice.Id));
             Assert.True(selected.Accepted, selected.Reason);
             Assert.Single(selected.Observation.Facts.OfType<InitiativeChoiceFact>());
             Assert.Equal(rollsBeforeChoice, dice.Rolls.Count);
 
-            CombatCommandResult repeated = runner.Submit(new CombatCommand.Decide(initiative.Id, choice.Id));
+            CombatCommandResult repeated = resumed.Submit(new CombatCommand.Decide(restored.Id, choice.Id));
             Assert.False(repeated.Accepted);
             Assert.Single(repeated.Observation.Facts.OfType<InitiativeChoiceFact>());
         });

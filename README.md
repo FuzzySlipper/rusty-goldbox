@@ -171,6 +171,8 @@ dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-cryp
 For manual battle scripts, add `--combat-control manual`. `combat inspect`
 prints stable actor/action/target IDs, budgets and legal paths; use those IDs
 with `combat action`, `combat move`, `combat end-turn` and `combat decide`.
+`combat auto-step` assists the current manual turn through Core without
+changing the member's saved control preference.
 `goldbox schema live-combat --json` describes the command surface. Saves retain
 the current decision, and `--trace` explains authored AI choices without
 changing the rolls. [Authoring tactical combat](docs/combat-authoring.md)

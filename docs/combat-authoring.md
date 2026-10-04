@@ -63,8 +63,21 @@ then retreat and shoot when that enemy closes:
 
 This example uses the data-only `tactical-bestiaire:withdraw` action, whose
 existing `move` operation makes the `away` destination executable before the
-missile step. A profile that uses only a non-moving action should omit
-`destination` or add a separate authored movement step.
+missile step. A destination on a non-moving action can also select an available
+movement use first, for example to find a cell with range and line of sight
+for a screened missile target. The creature must possess that movement use;
+the profile cannot grant one.
+
+`commit: "plan"` retains the selected rule through its remaining steps.
+`commit: "step"` reconsiders guards and priorities between steps while keeping
+the next step of a rule that remains selected. A movement made for a step
+retains that step until its intended action runs.
+
+Keep action `available`, `valid_target`, `range` and `portions` expressions
+deterministic; validation rejects dice in these fields. Put random resolution
+in checks, operations or `max_targets`. The live decision also retains a
+spell's quoted resource cost, so inspecting, refusing or saving the choice
+does not reroll its payment.
 
 The exact fields and legal destination kinds are those printed by `goldbox
 schema combat-behavior`; the example illustrates the ownership boundary rather than

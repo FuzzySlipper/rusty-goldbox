@@ -424,7 +424,9 @@ public sealed partial class CombatRunner
         _pendingInitiativeFrame = null;
         _movementContinuation = null;
         _parentInterruptFrames.Clear();
-        if (state.PendingDecision?.Kind == CombatDecisionKind.Interrupt && state.PendingInterrupt is CombatInterruptState interrupt)
+        if ((state.PendingDecision?.Kind == CombatDecisionKind.Interrupt
+                || state.PendingDecision?.Kind == CombatDecisionKind.Initiative)
+            && state.PendingInterrupt is CombatInterruptState interrupt)
         {
             if (interrupt.Trigger == "initiative")
             {

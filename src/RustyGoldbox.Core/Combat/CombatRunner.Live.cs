@@ -250,6 +250,64 @@ public sealed partial class CombatRunner
         return true;
     }
 
+    /// <summary>
+    /// Resolves one currently waiting manual actor's turn with the automatic
+    /// resolver, without changing that actor's controller. This is the
+    /// temporary assist used by the CLI; a persistent controller change still
+    /// goes through <see cref="SetController"/>.
+    /// </summary>
+    public CombatCommandResult StepAutomaticTurn(string actorId)
+    {
+        if (_phase is not CombatPhase.AwaitingAction and not CombatPhase.AwaitingMovement
+            || _activeActor is null
+            || _activeActor.Id != actorId
+            || _activeActor.Controller != CombatControlMode.Manual)
+        {
+            return CombatCommandResult.Refused("That manual actor is not waiting for an automatic turn.", Observe());
+        }
+
+        Combatant actor = _activeActor;
+        CombatControlMode controller = actor.Controller;
+        try
+        {
+            actor.Controller = CombatControlMode.Automatic;
+            if (_pendingTargetUse is not null && _pendingTargetActor == actor)
+            {
+                ResolveCommittedTargetsAutomatically(actor);
+            }
+            else
+            {
+                _pendingDecision = null;
+                ResolveAutomaticTurn(actor);
+            }
+
+            if (_phase == CombatPhase.AwaitingInterrupt)
+            {
+                actor.Controller = controller;
+                return CombatCommandResult.AcceptedResult(Observe());
+            }
+
+            // Advance while the actor is still manual. Otherwise the normal
+            // automatic advance path can immediately run this actor again or
+            // consume the rest of the fight before the temporary assist ends.
+            actor.Controller = controller;
+            FinishCurrentTurn();
+            _phase = CombatPhase.Advancing;
+            return CombatCommandResult.AcceptedResult(Advance());
+        }
+        catch (CombatSuspendedException)
+        {
+            // The optional decision owns the committed continuation. Keep it
+            // visible to the caller while restoring the actor's controller.
+            actor.Controller = controller;
+            return CombatCommandResult.AcceptedResult(Observe());
+        }
+        finally
+        {
+            actor.Controller = controller;
+        }
+    }
+
     private void ResolveCommittedTargetsAutomatically(Combatant actor)
     {
         if (_pendingTargetUse is not UseOption use
@@ -373,7 +431,34 @@ public sealed partial class CombatRunner
             return Refused("That action is no longer available to the active actor.");
         }
 
-        List<Combatant> candidates = Targets(actor, use, preview: true);
+        string targetKind = use.Action.Json.GetProperty("target").GetString()!;
+        bool hasMaximumTargets = HasMaximumTargets(use.Action);
+        bool hasPortions = use.Action.Json.TryGetProperty("portions", out _);
+        if (!hasMaximumTargets
+            && !hasPortions
+            && targetKind is not ("all_enemies" or "all_allies")
+            && command.TargetIds.Count != 1)
+        {
+            return Refused($"Action '{use.Name}' accepts exactly one target.");
+        }
+
+        if (hasPortions && choice.PortionCount is int portionCount && command.TargetIds.Count > portionCount)
+        {
+            return Refused($"Action '{use.Name}' has only {portionCount} portion{(portionCount == 1 ? "" : "s")}; choose at most one target per portion.");
+        }
+
+        List<Combatant> candidates = [];
+        foreach (CombatTargetChoice offered in choice.Targets)
+        {
+            Combatant? candidate = Find(offered.Id);
+            if (candidate is null)
+            {
+                return Refused($"Target '{offered.Id}' is no longer in the combat.");
+            }
+
+            candidates.Add(candidate);
+        }
+
         List<Combatant> targets = [];
         foreach (string targetId in command.TargetIds)
         {
@@ -396,7 +481,7 @@ public sealed partial class CombatRunner
             return Refused($"Action '{use.Name}' needs at least one target.");
         }
 
-        if (!TryValidateExplicitTargets(actor, use, targets, candidates, out string? cardinalityReason))
+        if (!TryValidateExplicitTargets(actor, use, targets, candidates, choice.PortionCount, out string? cardinalityReason))
         {
             return Refused(cardinalityReason!);
         }
@@ -406,7 +491,9 @@ public sealed partial class CombatRunner
             return Refused($"{actor.Name} cannot afford {use.Name}.");
         }
 
-        if (use.Spell is Definition spell && (!actor.CanCast(spell) || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell))))
+        if (use.Spell is Definition spell
+            && (!actor.CanCast(spell)
+                || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell, choice.SpellCosts))))
         {
             return Refused($"{actor.Name} cannot cast {use.Name}.");
         }
@@ -416,17 +503,25 @@ public sealed partial class CombatRunner
             return Refused($"Action '{use.Name}' does not move.");
         }
 
-        if (command.Path is not null && !PathIsLegal(actor, use, targets[0], command.Path))
+        if (command.Path is not null
+            && !choice.Moves.Any(move => move.Path.SequenceEqual(command.Path)))
         {
             return Refused("The requested movement path is obstructed, out of range or unaffordable.");
         }
 
         if (HasMaximumTargets(use.Action))
         {
-            return CommitExplicitTargetSelection(actor, use, targets, command.Path);
+            return CommitExplicitTargetSelection(actor, use, targets, command.Path, choice.SpellCosts, choice.PortionCount);
         }
 
-        ResolveChosenAction(actor, use, targets, command.Path, explicitTargets: true);
+        ResolveChosenAction(
+            actor,
+            use,
+            targets,
+            command.Path,
+            committedPortions: choice.PortionCount,
+            committedSpellCosts: choice.SpellCosts,
+            explicitTargets: true);
         _pendingDecision = null;
         return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
     }
@@ -438,9 +533,16 @@ public sealed partial class CombatRunner
             return Refused($"{actor.Name} cannot afford {use.Name}.");
         }
 
+        if (use.Spell is Definition spell
+            && (!actor.CanCast(spell)
+                || (!actor.CastsLeft.ContainsKey(spell) && !SpellAffordable(actor, spell, choice.SpellCosts))))
+        {
+            return Refused($"{actor.Name} cannot cast {use.Name}.");
+        }
+
         int rollsBefore = _dice.Rolls.Count;
         Spend(actor, use.Action);
-        PayUse(actor, use);
+        PayUse(actor, use, choice.SpellCosts);
         decimal maximum = Number(use.Action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
         int cap = (int)Math.Clamp(decimal.Floor(maximum), 0, candidates.Count);
         if (cap == 0)
@@ -474,11 +576,13 @@ public sealed partial class CombatRunner
         Combatant actor,
         UseOption use,
         List<Combatant> targets,
-        IReadOnlyList<Cell>? path)
+        IReadOnlyList<Cell>? path,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts,
+        int? committedPortions)
     {
         int rollsBefore = _dice.Rolls.Count;
         Spend(actor, use.Action);
-        PayUse(actor, use);
+        PayUse(actor, use, committedSpellCosts);
         decimal maximum = Number(use.Action, "$.max_targets", new Scope(actor.Creature, null, use.Parameters));
         int cap = (int)Math.Clamp(decimal.Floor(maximum), 0, targets.Count);
         if (cap == 0)
@@ -496,6 +600,8 @@ public sealed partial class CombatRunner
             committedMaxTargets: cap,
             rollsBefore: rollsBefore,
             committedRolls: null,
+            committedPortions: committedPortions,
+            committedSpellCosts: committedSpellCosts,
             explicitTargets: true);
         _pendingDecision = null;
         return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
@@ -535,7 +641,9 @@ public sealed partial class CombatRunner
             return Refused($"Action '{_pendingTargetUse.Name}' does not move.");
         }
 
-        if (command.Path is not null && !PathIsLegal(_pendingTargetActor, _pendingTargetUse, targets[0], command.Path))
+        CombatActionChoice? committedChoice = _pendingDecision.Actions.FirstOrDefault(action => action.Id == _pendingDecision.ActionId);
+        if (command.Path is not null
+            && (committedChoice is null || !committedChoice.Moves.Any(move => move.Path.SequenceEqual(command.Path))))
         {
             return Refused("The requested movement path is obstructed, out of range or unaffordable.");
         }
@@ -567,6 +675,7 @@ public sealed partial class CombatRunner
         UseOption use,
         IReadOnlyList<Combatant> targets,
         IReadOnlyList<Combatant> candidates,
+        int? committedPortions,
         out string? reason)
     {
         Definition action = use.Action;
@@ -588,7 +697,7 @@ public sealed partial class CombatRunner
 
         if (hasPortions)
         {
-            int? knownPortions = PreviewPortionCount(actor, use);
+            int? knownPortions = committedPortions;
             if (knownPortions is int count && targets.Count > count)
             {
                 reason = $"Action '{use.Name}' has only {count} portion{(count == 1 ? "" : "s")}; choose at most one target per portion.";
@@ -624,9 +733,9 @@ public sealed partial class CombatRunner
 
     private int? PreviewPortionCount(Combatant actor, UseOption use)
     {
-        decimal? value = PreviewNumber(use.Action, "$.portions", new Scope(actor.Creature, null, use.Parameters));
-        return value is decimal count
-            ? (int)Math.Clamp(decimal.Floor(count), 0, int.MaxValue)
+        decimal? count = PreviewNumber(use.Action, "$.portions", new Scope(actor.Creature, null, use.Parameters));
+        return count is decimal known
+            ? (int)Math.Clamp(decimal.Floor(known), 0, int.MaxValue)
             : null;
     }
 
@@ -635,7 +744,7 @@ public sealed partial class CombatRunner
     private CombatDecision BuildDecision(Combatant actor)
     {
         List<CombatActionChoice> actions = [];
-        foreach ((UseOption use, List<Combatant> candidates) in Options(actor, preview: true))
+        foreach ((UseOption use, List<Combatant> candidates, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor, preview: true, allCandidates: true))
         {
             int index = actor.Uses.IndexOf(use);
             if (index < 0)
@@ -648,7 +757,7 @@ public sealed partial class CombatRunner
             {
                 foreach (Combatant target in candidates)
                 {
-                    moves.AddRange(MoveChoices(actor, use, target));
+                    moves.AddRange(MoveChoices(actor, use, target, preview: true));
                 }
             }
 
@@ -662,9 +771,8 @@ public sealed partial class CombatRunner
                 moves,
                 TargetKind(use.Action),
                 TargetMode(use.Action),
-                use.Action.Json.TryGetProperty("portions", out _)
-                    ? PreviewPortionCount(actor, use)
-                    : null));
+                portionCount,
+                spellCosts));
         }
 
         return new CombatDecision(
@@ -756,8 +864,6 @@ public sealed partial class CombatRunner
         return actionMatches.Count == 1 ? actionMatches[0] : null;
     }
 
-    private bool HasPreviewAction(Combatant actor) => Options(actor, preview: true).Any();
-
     private static bool HasMaximumTargets(Definition action) => action.Json.TryGetProperty("max_targets", out _);
 
     private static string? TargetKind(Definition action) =>
@@ -826,14 +932,14 @@ public sealed partial class CombatRunner
         return null;
     }
 
-    private List<CombatMoveChoice> MoveChoices(Combatant actor, UseOption use, Combatant target)
+    private List<CombatMoveChoice> MoveChoices(Combatant actor, UseOption use, Combatant target, bool preview = false)
     {
         if (_field is null || actor.Creature.Position is not Cell start || target.Creature.Position is not Cell goal)
         {
             return [];
         }
 
-        if (!TryMovementSpec(use, actor, target, preview: true, out _, out _, out decimal allowed, out decimal within, out decimal? beyond, out bool away))
+        if (!TryMovementSpec(use, actor, target, preview, out _, out _, out decimal allowed, out decimal within, out decimal? beyond, out bool away))
         {
             return [];
         }
@@ -986,36 +1092,6 @@ public sealed partial class CombatRunner
         return paths;
     }
 
-    private bool PathIsLegal(Combatant actor, UseOption use, Combatant target, IReadOnlyList<Cell> path)
-    {
-        if (_field is null || actor.Creature.Position is not Cell start || path.Count == 0 || !ActionHasMove(use.Action) || target.Creature.Position is not Cell goal
-            || !TryMovementSpec(use, actor, target, preview: true, out _, out _, out decimal allowed, out decimal within, out decimal? beyond, out bool away))
-        {
-            return false;
-        }
-
-        HashSet<Cell> blocked = BlockedCells(actor);
-        Cell current = start;
-        decimal spent = 0;
-        foreach (Cell next in path)
-        {
-            if (!_field.Neighbours(current).Contains(next) || !_field.Passable(next) || blocked.Contains(next))
-            {
-                return false;
-            }
-
-            spent += _field.Cost(next);
-            if (spent > allowed)
-            {
-                return false;
-            }
-
-            current = next;
-        }
-
-        return MovementDestinationAllowed(current, goal, within, beyond, away);
-    }
-
     private decimal PreviewMissing(Combatant combatant)
     {
         decimal current = combatant.Creature.Tracks.TryGetValue(_track.Id, out TrackValue? value) && value.Current is decimal present ? present : 0;
@@ -1137,14 +1213,22 @@ public sealed partial class CombatRunner
 
     private CombatObservation AdvanceAfterAction()
     {
-        if (StandingSides() <= 1 || _activeActor is null || _activeActor.Defeated || !HasPreviewAction(_activeActor))
+        if (StandingSides() <= 1 || _activeActor is null || _activeActor.Defeated)
         {
             FinishCurrentTurn();
             _phase = CombatPhase.Advancing;
             return _resolvingBehavior ? Observe() : Advance();
         }
 
-        _pendingDecision = BuildDecision(_activeActor);
+        CombatDecision decision = BuildDecision(_activeActor);
+        if (decision.Actions.Count == 0 && decision.Moves.Count == 0)
+        {
+            FinishCurrentTurn();
+            _phase = CombatPhase.Advancing;
+            return _resolvingBehavior ? Observe() : Advance();
+        }
+
+        _pendingDecision = decision;
         _phase = CombatPhase.AwaitingAction;
         return Observe();
     }
@@ -1302,9 +1386,23 @@ public sealed partial class CombatRunner
         }
 
         bool acted = false;
-        while (!actor.Defeated && StandingSides() > 1 && Choose(actor) is (UseOption use, List<Combatant> targets))
+        while (!actor.Defeated && StandingSides() > 1)
         {
-            ResolveChosenAction(actor, use, targets, null, explicitTargets: false);
+            (UseOption Use, List<Combatant> Targets, IReadOnlyDictionary<string, decimal>? SpellCosts, int? PortionCount)? chosen = Choose(actor);
+            if (chosen is not { } selected)
+            {
+                break;
+            }
+
+            (UseOption use, List<Combatant> targets, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) = selected;
+            ResolveChosenAction(
+                actor,
+                use,
+                targets,
+                null,
+                committedPortions: portionCount,
+                committedSpellCosts: spellCosts,
+                explicitTargets: false);
             acted = true;
         }
 
@@ -1323,6 +1421,8 @@ public sealed partial class CombatRunner
         int? committedMaxTargets = null,
         int? rollsBefore = null,
         IReadOnlyList<DiceRoll>? committedRolls = null,
+        int? committedPortions = null,
+        IReadOnlyDictionary<string, decimal>? committedSpellCosts = null,
         bool explicitTargets = false)
     {
         if (!alreadyPaid)
@@ -1335,7 +1435,17 @@ public sealed partial class CombatRunner
         _requestedTargets = targets;
         try
         {
-            Act(actor, use, targets, explicitTargets ? targets : null, committedMaxTargets, rollsBefore, alreadyPaid, committedRolls);
+            Act(
+                actor,
+                use,
+                targets,
+                explicitTargets ? targets : null,
+                committedMaxTargets,
+                rollsBefore,
+                alreadyPaid,
+                committedRolls,
+                committedPortions,
+                committedSpellCosts);
         }
         finally
         {

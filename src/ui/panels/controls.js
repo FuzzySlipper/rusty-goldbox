@@ -85,7 +85,7 @@ export function createControls(send, ui) {
       }), { 'data-focus-key': `combat:control:${actor.id}` })
       : null;
     const actionButtons = actions.map((choice) => button(
-      `${choice.name}${Object.keys(choice.cost ?? {}).length ? ` · ${budgetText(choice.cost)}` : ''}`,
+      `${choice.name}${Object.keys(choice.cost ?? {}).length ? ` · ${budgetText(choice.cost)}` : ''}${choice.spellCosts?.length ? ` · ${choice.spellCosts.map((cost) => `${cost.name} ${cost.cost}`).join(', ')}` : ''}`,
       () => {
         selectedAction = choice.id;
         selectedTargets = [];
