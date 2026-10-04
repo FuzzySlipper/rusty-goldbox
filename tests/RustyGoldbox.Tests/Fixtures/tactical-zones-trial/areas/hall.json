@@ -1,0 +1,8 @@
+{
+  "type": "area",
+  "id": "hall",
+  "name": "Training hall",
+  "wall_set": "placeholder-art:stone_wall",
+  "map": ["+--+--+", "|     |", "+--+--+"],
+  "entries": { "door": { "at": [0, 0], "facing": "east" } }
+}

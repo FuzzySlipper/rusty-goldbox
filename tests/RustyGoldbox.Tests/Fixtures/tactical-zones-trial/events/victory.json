@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "victory",
+  "kind": "text",
+  "text": "The duelists lower their training blades. You have won the bout."
+}

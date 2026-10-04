@@ -34,8 +34,11 @@ reload it; module edits reload as content bundles without a restart. See
 The first-person view draws in the top-left window and the panel sits beside it. Open a campaign, roll a party (and give it
 equipment and spells), then play with the buttons, a typed command, or the keys: arrows
 or WASD move and turn, X turns around, L looks, digits choose menu options.
-A fight plays back on its own screen; Enter, Space or the button skips it and
-then returns to the corridor.
+Combat uses a live tactical screen. Party members wait for player choices by
+default: choose a movement path, action and target, then finish the turn when
+ready. Eligible members can use automatic control instead. Animation controls
+only advance presentation of committed results; they cannot choose a waiting
+player action. Saves can retain a battle at a pending decision.
 Saves go to named slots in the Engine persistence root, which `rusty dev`
 keeps in `.runtime/persistence`; `goldbox play --store .runtime/persistence`
 loads and writes the same slots.
@@ -125,6 +128,15 @@ dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-cryp
 dotnet run --project src/RustyGoldbox.Cli -- play --campaign modules/sample-crypt --load game.json --script more.script
 ```
 
+For manual battle scripts, add `--combat-control manual`. `combat inspect`
+prints stable actor/action/target IDs, budgets and legal paths; use those IDs
+with `combat action`, `combat move`, `combat end-turn` and `combat decide`.
+`goldbox schema live-combat --json` describes the command surface. Saves retain
+the current decision, and `--trace` explains authored AI choices without
+changing the rolls. [Authoring tactical combat](docs/combat-authoring.md)
+shows how to add reusable profiles and data-only enemies; the original
+`tactical-expedition` campaign permits up to twelve members.
+
 The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
 stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
 scripts and the Game's shop buttons. Declared currency balances stay on
@@ -210,7 +222,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | --- | --- |
 | `src/RustyGoldbox.Core/` | Module format and loading (from directories or Engine bundles), definition types, expressions, rule evaluation, characters, combat, campaigns and saves |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
-| `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), fight playback and the session projection over Core |
+| `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), presentation of committed combat facts and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
 | `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
 | `goldbox.json` | Workspace: module search directories |

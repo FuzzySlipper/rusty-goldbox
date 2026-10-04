@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "loss",
+  "kind": "text",
+  "text": "The duelists call a halt. The bout is over."
+}

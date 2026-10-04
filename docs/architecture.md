@@ -38,20 +38,24 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
 | `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
-| `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from an Engine random stream, with a record of each roll |
+| `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from Engine Random, with a record of each roll; scoped streams for continuous commands and keyed draws for persisted live battles |
 | `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, and the creature view expressions read |
 | `src/RustyGoldbox.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
 | `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress and lifepath age, choices, rolls and results, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
 | `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
-| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` | The fixed combat loop: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, flee rules and actions, checks and operations, condition durations, defeat |
+| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` and its partials | The live combat owner and shared resolver: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, legal choices, commands, flee rules, checks and operations, condition durations and defeat; automatic runs drive this same owner |
+| `src/RustyGoldbox.Core/Combat/LiveCombat.cs` | Combat command, observation, pending-decision and continuation data, including stable combatant references |
+| `src/RustyGoldbox.Core/Definitions/CombatBehavior.cs` | Checked reusable behavior profiles: finite action-use sequences, guards, scores, targets and destination preferences |
+| `src/RustyGoldbox.Core/Combat/CombatBehaviorController.cs` | Module-authored policy selection over the combat owner's legal choices |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu or shop, party and inventory; characters own declared currency balances and equipment |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, party and inventory; characters own declared currency balances and equipment |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
+| `src/RustyGoldbox.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
@@ -67,7 +71,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, including visible lifepath career/table choices and the resulting term ledger, and copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
-| `src/RustyGoldbox.Game/FightReplay.cs` | Playing a resolved fight back fact by fact: track values, defeats and the acting combatant as each fact shows |
+| `src/RustyGoldbox.Game/FightReplay.cs` | Presentation of already committed fight facts by stable combatant ID: track values, defeats and the acting combatant as each fact shows |
 | `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
 | `src/RustyGoldbox.Game/Presentation/GameAudio.cs` | Event sounds and music through Engine audio: clips opened once per asset, one-shot sounds on the Sfx bus, one looping Music voice following the campaign's music, bus volumes |
 | `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
@@ -87,8 +91,14 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `modules/three-action/` | Three-action d20 rules adapted from Paizo's ORC-licensed Player Core, GM Core, Monster Core and NPC Core, with `PROVENANCE.md` (ORC notices) and `LICENSE-ORC.txt`: four degrees of success, the multiple attack penalty, raised shields and Shield Block, dying and wounded, four classes to level 5 |
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
+| `modules/tactical-bestiaire/` and `modules/tactical-expedition/` | Original enemies and reusable tactics, an allied warder and a playable gallery campaign supporting up to twelve members; each module validates and packs independently |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/lifepath`: original term-career data shape; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
+
+The original `Fixtures/tactical-zones` extension adds a shared-zone,
+three-action economy. `Fixtures/tactical-zones-trial` makes it a playable
+campaign for the same title/party/combat flow; packaged integration checks
+use those modules through Engine containers and save slots.
 
 ## Module loading
 
@@ -135,11 +145,12 @@ maximum, the creature's own maximum. `Evaluator` resolves maxima, floors,
 restore caps and starting values. Engine `Track` was considered and not used:
 its maximum is a stored stat, while these are expressions.
 
-`CombatRunner` runs one fight between sides of `Combatant`s. It deploys each
+`CombatRunner` owns one live fight between sides of `Combatant`s. It deploys each
 side on the combat field, using the side's default edge or an encounter
 event's `[x, y]` anchor. A field in `mode: "zones"` permits several creatures
 to occupy one cell, making their distance 0; the ordinary grid keeps one
-occupant per cell. It first rolls surprise, by side (reading the side's lead,
+occupant per cell, reserved across all sides. Insufficient passable cells are
+an encounter diagnostic rather than overlapping figures. It first rolls surprise, by side (reading the side's lead,
 the member `surprise_lead` ranks highest, against the other side's) or by
 creature (each creature against each enemy, so only some may be surprised),
 unless the event forces `party` or `monsters` surprise for its configured
@@ -171,7 +182,26 @@ their place in the order, or at the round's end when they have none (initiative
 rolled each round leaves them out). Reactions resolve where their triggers
 happen: as a mover leaves a reach, before an action's check against the
 reactor, after an operation wounds it, and after an enemy's operation fells an
-ally. Every change is a `CombatFact`, with the dice that produced it.
+ally. Every change is a `CombatFact`, with the dice that produced it and stable
+combatant IDs beside display names.
+
+The owner advances until a manual decision or the outcome. `Observe` copies
+the current phase, actor, budgets, targets and legal choices without rolling.
+`Submit` checks a typed action, movement, end-turn or optional-decision command
+and resumes the same resolver. Rules decide costs, range, sight and targets;
+controller preferences do not restrict a human's legal choices. A committed
+random target limit and an optional reaction or post-roll choice retain their
+actual rolls and suspended operation data. `Capture` and `Restore` carry that
+continuation without repeating deployment, surprise or completed actions.
+`Run` is the automatic driver of this owner.
+
+Each character can retain a manual or automatic control preference in its
+save data. A campaign applies that preference when the next fight starts;
+otherwise an NPC's explicit authored default or the caller's party default
+applies. Changing control during a fight changes the existing combatant and
+does not restore spent budgets. Behavior profiles propose legal commands and
+retain their committed plan state in the combat continuation. Optional CLI
+traces record the actual proposals, their source paths and alternatives.
 
 `goldbox sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope
@@ -183,9 +213,13 @@ and runs the fight inside the Engine tool host; run k uses random scope
 `back`, `left`, `right`, `around`, `search [direction]`, `choose <n>`, `look`, `status`,
 `level <member>`, `former <member> on|off`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
-until a menu waits for a choice, the chain ends, or the adventure does. A
-combat event fights the party against an encounter with `CombatRunner`, and
-the party keeps the damage. A combat event can select its combat definition,
+until a menu or live combat waits for a choice, the chain ends, or the
+adventure does. A combat event creates a `CombatRunner` and suspends the
+chain. The pending event retains the combat continuation and participant
+references; Game and CLI observe it or submit commands through
+`CampaignRunner`. Initial figure positions come from that initialized combat
+owner. Only its terminal result synchronizes the party, grants rewards and
+selects the event's outcome chain. A combat event can select its combat definition,
 anchor both sides, force the surprised side, and route a flee outcome through
 `on_flee` (including a round-limit draw when `flee_on_draw` is true). Felled
 monsters' experience, and an experience event's, go to the party through `CharacterRules.Award`: shared among the
@@ -199,7 +233,10 @@ the command count; that is what makes a resumed save roll as an unbroken run.
 A save is the JSON `SaveFile` writes. `goldbox play` keeps it in a file, or
 with `--store <dir>` in a `SaveSlots` slot of that Engine persistence root;
 the Game uses the same slots (scope `goldbox-saves`), so either loads the
-other's saves.
+other's saves. Pending combat saves include the active turn, budgets,
+conditions, controller state and optional decision. Live battles use Engine
+keyed random draws with a persisted scope and draw index, so inspection,
+rejected choices and save/load do not restart the battle's random sequence.
 
 ## Characters
 
@@ -312,14 +349,18 @@ are unpublished before their atlas and texture are released. Textures are admitt
 container once per asset content. The Engine's default lights light the
 scene.
 
-When a play command's facts include a fight (`FightFact`, which carries each
-combatant's side, monster or class, and start on the combat's track), the
-session switches to the combat screen and a `FightReplay` shows its facts one
-beat at a time. The scene draws each combatant with the sprite its monster or
-class has a `figure` for, under a camera straight on and 30 degrees down, framed to the view (above);
-figures are spherical billboards so they stay upright under that camera.
-Continue (a button, Enter or Space) skips to the end, then returns to play.
-Play commands wait until then.
+When a campaign suspends at a fight, the session switches to the combat screen.
+Its projection exposes Core's active combatant, remaining budgets, legal
+actions and pending optional decision. The player submits commands to that
+same combat owner; enemies and party members using automatic control advance
+through its automatic driver. Party members wait for manual choices by default.
+The scene draws each combatant with the sprite its monster or class has a
+`figure` for, under a camera straight on and 30 degrees down, framed to the
+view (above); figures are spherical billboards so they stay upright under that
+camera. Presentation consumes committed facts. Continue (a button, Enter or
+Space) skips their presentation and does not resolve a waiting choice. The
+session returns to play after Core finishes the fight and its outcome chain.
+Campaign movement commands wait until then; saves include the pending fight.
 
 Portraits and icons reach the panels as Engine UI images: `UiImages` opens an
 asset's PNG from its module bundle once (`Ui.OpenImage`) and keeps the image for
