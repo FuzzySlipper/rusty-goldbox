@@ -27,6 +27,7 @@ English SRD 5.2.1 PDF from https://media.dndbeyond.com/compendium-images/srd/5.2
 | `spells/` and their actions (Fire Bolt, Sacred Flame, Magic Missile, Guiding Bolt, Cure Wounds, Healing Word, Shield, Scorching Ray, Fireball) | Spells |
 | `items/` (weapons, armor and the shield, with their damage and Armor Class) | Equipment |
 | `currencies/gold` | Equipment: gold piece prices |
+| `economy/standard` (equipment resale at half price) | Equipment: Selling Equipment |
 | `monsters/` (Goblin Warrior, Bandit, Skeleton, Zombie with Undead Fortitude, Wolf with Pack Tactics, Ogre) | Monsters; Animals |
 
 The encounters are original groupings of SRD creatures.
@@ -57,3 +58,7 @@ The encounters are original groupings of SRD creatures.
   The hit-point track expresses this as a zero restore cap while `dead` is
   held; living recovery can reach the character's maximum. Revival is outside
   this module's ordinary recovery services.
+
+- The economy policy models saleable equipment at half its listed price.
+  It does not classify trade goods, gems or art objects, which the SRD allows
+  to be sold at full value, or determine an item's saleable condition.

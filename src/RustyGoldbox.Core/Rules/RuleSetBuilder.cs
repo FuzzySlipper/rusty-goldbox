@@ -1859,8 +1859,24 @@ public sealed class RuleSetBuilder
             case "training" when !Characters.CharacterRules.RequiresTraining(_rules):
                 Error(definition, "event.training", "$", "A training event needs advancement.training with cost and days expressions in its ruleset.");
                 break;
-            case "shop" when _rules.Economy is null:
-                Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
+            case "shop":
+                if (_rules.Economy is null)
+                {
+                    Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
+                }
+
+                if (definition.Json.TryGetProperty("buying", out JsonElement buying)
+                    && (!buying.GetProperty("fraction").TryGetDecimal(out decimal fraction) || fraction is < 0 or > 1))
+                {
+                    Error(definition, "event.shop.buying-fraction", "$.buying.fraction", "A shop buying fraction must be from 0 to 1, for example 0.9 for ninety percent of the item's cost.");
+                }
+
+                if (_rules.References.TryGetValue((definition, "$.buying.balance"), out Definition? balance)
+                    && balance.Json.GetProperty("value_type").GetString() != "number")
+                {
+                    Error(definition, "event.shop.buying-balance", "$.buying.balance", "A shop buying balance must reference a numeric campaign or area variable.");
+                }
+
                 break;
             case "set":
                 if (_rules.References.TryGetValue((definition, "$.variable"), out Definition? variable))

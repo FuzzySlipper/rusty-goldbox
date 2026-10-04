@@ -219,7 +219,7 @@ public static class EventTypes
 
     public static DefinitionType Shop { get; } = new(
         "shop",
-        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
+        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction, or at an optional authored buying rate and cash balance. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
         [
             new("text", new TextKind(), true, "The shopkeeper's greeting."),
             new("items", new ListKind(new ObjectKind(
@@ -227,12 +227,18 @@ public static class EventTypes
                 new("item", new ReferenceKind("item"), true, "An item for sale, at its cost."),
                 new("when", Guard, false, "Offered only when this campaign condition holds."),
             ])), true, "Stock in order; buy takes the number shown. An empty list is a shop that only buys."),
+            new("buying", new ObjectKind(
+            [
+                new("fraction", new NumberKind(), true, "The fraction of an item's cost the shop pays, from 0 to 1."),
+                new("currency", new ReferenceKind("currency"), true, "The only currency this shop buys."),
+                new("balance", new ReferenceKind("variable"), true, "A numeric campaign or area variable holding the shop's remaining cash."),
+            ]), false, "Optional buying policy. It changes only this shop's carried-item quotes; without it, the ruleset economy's sell_fraction and unlimited buying apply."),
             Next,
             Picture,
             Sound,
             Music,
         ],
-        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "next": "farewell" }""");
+        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "buying": { "fraction": 0.9, "currency": "classic:gold", "balance": "merchant_cash" }, "next": "farewell" }""");
 
     public static DefinitionType Temple { get; } = new(
         "temple",

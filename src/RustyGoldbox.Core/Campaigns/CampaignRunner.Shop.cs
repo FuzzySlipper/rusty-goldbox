@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RustyGoldbox.Core.Definitions;
+using RustyGoldbox.Core.Expressions;
 using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Campaigns;
@@ -15,7 +16,14 @@ public sealed partial class CampaignRunner
         }
 
         IReadOnlyDictionary<Definition, decimal> balances = Located(shop, "$", () => CurrencyLedger.Snapshot(_state.Party, _rules));
-        return new ShopFact(shop.Json.GetProperty("text").GetString()!, balances, Stock(shop), Carried().Select(entry => entry.Offer).ToList());
+        string text = shop.Json.GetProperty("text").GetString()!;
+        if (shop.Json.TryGetProperty("buying", out _))
+        {
+            (decimal _, Definition currency, Definition balance) = BuyingPolicy(shop);
+            text += $" Buying cash: {Fact(BuyingCash(balance))} {currency.Name.ToLowerInvariant()}.";
+        }
+
+        return new ShopFact(text, balances, Stock(shop), Carried().Select(entry => entry.Offer).ToList());
     }
 
     private List<ShopOffer> Stock(Definition shop)
@@ -39,15 +47,25 @@ public sealed partial class CampaignRunner
 
     private List<(ShopOffer Offer, List<Definition> Items, int Index)> Carried()
     {
+        Definition shop = _state.PendingShop!;
         Definition economy = _rules.Economy!;
+        Definition priceOwner = economy;
+        string pricePath = "$.sell_fraction";
         decimal fraction = economy.Json.GetProperty("sell_fraction").GetDecimal();
+        if (shop.Json.TryGetProperty("buying", out _))
+        {
+            (fraction, _, _) = BuyingPolicy(shop);
+            priceOwner = shop;
+            pricePath = "$.buying.fraction";
+        }
+
         List<(ShopOffer, List<Definition>, int)> carried = [];
         void Add(List<Definition> items, string? holder)
         {
             for (int index = 0; index < items.Count; index++)
             {
                 Definition item = items[index];
-                decimal price = Located(economy, "$.sell_fraction", () => checked(item.Json.GetProperty("cost").GetDecimal() * fraction));
+                decimal price = Located(priceOwner, pricePath, () => checked(item.Json.GetProperty("cost").GetDecimal() * fraction));
                 Definition currency = _rules.Reference(item, "$.currency");
                 carried.Add((new ShopOffer(carried.Count + 1, item, price, currency, holder), items, index));
             }
@@ -91,7 +109,7 @@ public sealed partial class CampaignRunner
 
     private void Sell(int number, List<PlayFact> facts)
     {
-        if (_state.PendingShop is null)
+        if (_state.PendingShop is not Definition shop)
         {
             facts.Add(new RefusedFact("there is no shop open."));
             return;
@@ -105,16 +123,70 @@ public sealed partial class CampaignRunner
         }
 
         (ShopOffer offer, List<Definition> items, int index) = carried[number - 1];
-        // Credit the named currency before removing the item, so an overflow can't lose it.
-        Located(_rules.Economy!, "$.sell_fraction", () =>
+        if (shop.Json.TryGetProperty("buying", out _))
         {
-            CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
-            return true;
-        });
+            (decimal _, Definition buyingCurrency, Definition balance) = BuyingPolicy(shop);
+            if (offer.Currency.Id != buyingCurrency.Id)
+            {
+                facts.Add(new RefusedFact($"this shop buys only {buyingCurrency.Name.ToLowerInvariant()}; {offer.Item.Name} is priced in {offer.Currency.Name.ToLowerInvariant()}."));
+                return;
+            }
+
+            decimal cash = BuyingCash(balance);
+            if (cash < offer.Price)
+            {
+                facts.Add(new RefusedFact($"this shop has {Fact(cash)} {buyingCurrency.Name.ToLowerInvariant()} left; it cannot buy {offer.Item.Name} for {Fact(offer.Price)}."));
+                return;
+            }
+
+            // Credit the named currency before changing the merchant balance or removing the item, so an overflow can't lose it.
+            Located(shop, "$.buying.fraction", () =>
+            {
+                CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
+                SetBuyingCash(balance, checked(cash - offer.Price));
+                return true;
+            });
+        }
+        else
+        {
+            // Credit the named currency before removing the item, so an overflow can't lose it.
+            Located(_rules.Economy!, "$.sell_fraction", () =>
+            {
+                CurrencyLedger.CreditSplit(_state.Party, offer.Currency.Id, offer.Price);
+                return true;
+            });
+        }
 
         items.RemoveAt(index);
         facts.Add(new TradeFact(false, offer.Item.Name, offer.Currency, offer.Price));
         facts.Add(Shop()!);
+    }
+
+    private (decimal Fraction, Definition Currency, Definition Balance) BuyingPolicy(Definition shop)
+    {
+        JsonElement buying = shop.Json.GetProperty("buying");
+        return (
+            buying.GetProperty("fraction").GetDecimal(),
+            _rules.Reference(shop, "$.buying.currency"),
+            _rules.Reference(shop, "$.buying.balance"));
+    }
+
+    private decimal BuyingCash(Definition balance)
+    {
+        Dictionary<string, Value> values = balance.Json.TryGetProperty("scope", out JsonElement scope)
+            && scope.GetString() == "area"
+            ? _state.ValuesFor(_state.Area)
+            : _state.Variables;
+        return values[balance.Id].Number;
+    }
+
+    private void SetBuyingCash(Definition balance, decimal value)
+    {
+        Dictionary<string, Value> values = balance.Json.TryGetProperty("scope", out JsonElement scope)
+            && scope.GetString() == "area"
+            ? _state.ValuesFor(_state.Area)
+            : _state.Variables;
+        values[balance.Id] = Value.Of(value);
     }
 
     private void LeaveShop(DiceRoller dice, List<PlayFact> facts)

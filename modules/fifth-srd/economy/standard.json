@@ -1,0 +1,5 @@
+{
+  "type": "economy",
+  "id": "standard",
+  "sell_fraction": 0.5
+}
