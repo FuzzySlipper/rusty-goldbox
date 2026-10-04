@@ -91,6 +91,273 @@ public sealed class CombatOperationResumeTests
         Assert.Equal(new Cell(0, 0), uninterrupted.ActorPosition);
     }
 
+    [Fact]
+    public void NestedCheckPostRollUsesAcceptedResultAndResumesTheTailOnceAfterJsonRestore()
+    {
+        using TempModules modules = new();
+        string root = WriteNestedPostRollRuleset(modules);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attacker = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
+        Definition guard = rules.Find(DefinitionTypes.Monster, "guard_monster", out _)!;
+
+        PostRollResult uninterrupted = RunNestedPostRoll(rules, combat, attacker, guard, restore: false);
+        PostRollResult restored = RunNestedPostRoll(rules, combat, attacker, guard, restore: true);
+
+        Assert.Equal(uninterrupted.Facts, restored.Facts);
+        Assert.Equal(uninterrupted.ActorHitPoints, restored.ActorHitPoints);
+        Assert.Equal(uninterrupted.Luck, restored.Luck);
+        Assert.Equal(uninterrupted.CheckTotal, restored.CheckTotal);
+        Assert.Equal(uninterrupted.CheckSuccess, restored.CheckSuccess);
+        Assert.Equal(uninterrupted.PendingCheckRolls, restored.PendingCheckRolls);
+        Assert.Equal(uninterrupted.DrawCursorAtOffer, uninterrupted.DrawCursorAfterChoice);
+        Assert.Equal(restored.DrawCursorAtOffer, restored.DrawCursorAfterChoice);
+        Assert.Equal(uninterrupted.DrawCursorAfterChoice, restored.DrawCursorAfterChoice);
+        Assert.Equal(10, uninterrupted.ActorHitPoints);
+        Assert.Equal(0, uninterrupted.Luck);
+        Assert.True(uninterrupted.CheckSuccess);
+        Assert.Equal(1, uninterrupted.CheckFactCount);
+        Assert.Equal(1, uninterrupted.PostRollFactCount);
+        Assert.Equal(2, uninterrupted.Facts.Count(fact => fact.StartsWith("heal|", StringComparison.Ordinal)));
+        int branchHeal = AssertFactIndex(uninterrupted.Facts, "heal|Attacker regains 2");
+        int outerHeal = AssertFactIndex(uninterrupted.Facts, "heal|Attacker regains 3");
+        Assert.True(branchHeal < outerHeal, string.Join(Environment.NewLine, uninterrupted.Facts));
+    }
+
+    [Fact]
+    public void ConditionCheckPostRollResumesItsRemainingOperationsWhenJsonRestored()
+    {
+        using TempModules modules = new();
+        string root = WriteConditionPostRollRuleset(modules);
+        RuleSet rules = Rules.LoadValid(root);
+        Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
+        Definition attacker = rules.Find(DefinitionTypes.Monster, "conditioned", out _)!;
+        Definition guard = rules.Find(DefinitionTypes.Monster, "guard_monster", out _)!;
+
+        PostRollResult uninterrupted = RunConditionPostRoll(rules, combat, attacker, guard, restore: false);
+        PostRollResult restored = RunConditionPostRoll(rules, combat, attacker, guard, restore: true);
+
+        Assert.Equal(uninterrupted.Facts, restored.Facts);
+        Assert.Equal(uninterrupted.ActorHitPoints, restored.ActorHitPoints);
+        Assert.Equal(uninterrupted.Luck, restored.Luck);
+        Assert.Equal(uninterrupted.CheckTotal, restored.CheckTotal);
+        Assert.Equal(uninterrupted.CheckSuccess, restored.CheckSuccess);
+        Assert.Equal(uninterrupted.PendingCheckRolls, restored.PendingCheckRolls);
+        Assert.Equal(uninterrupted.DrawCursorAtOffer, uninterrupted.DrawCursorAfterChoice);
+        Assert.Equal(restored.DrawCursorAtOffer, restored.DrawCursorAfterChoice);
+        Assert.Equal(uninterrupted.DrawCursorAfterChoice, restored.DrawCursorAfterChoice);
+        Assert.Equal(10, uninterrupted.ActorHitPoints);
+        Assert.Equal(0, uninterrupted.Luck);
+        Assert.True(uninterrupted.CheckSuccess);
+        Assert.Equal(CombatDecisionKind.Action, uninterrupted.NextDecisionKind);
+        Assert.Equal(2, uninterrupted.Facts.Count(fact => fact.StartsWith("heal|", StringComparison.Ordinal)));
+        int branchHeal = AssertFactIndex(uninterrupted.Facts, "heal|Conditioned regains 2");
+        int outerHeal = AssertFactIndex(uninterrupted.Facts, "heal|Conditioned regains 3");
+        Assert.True(branchHeal < outerHeal, string.Join(Environment.NewLine, uninterrupted.Facts));
+    }
+
+    private static PostRollResult RunNestedPostRoll(
+        RuleSet rules,
+        Definition combat,
+        Definition attackerDefinition,
+        Definition guardDefinition,
+        bool restore)
+    {
+        using EngineTestHost host = EngineTestHost.Create();
+        return host.Call(engine =>
+        {
+            const ulong seed = 7799;
+            const string scope = "operation-tail-post-roll";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
+            attacker.Creature.Track("hit_points").Current = 5;
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+
+            CombatDecision action = AssertDecision(runner.Start(1), CombatDecisionKind.Action);
+            CombatActionChoice nested = Assert.Single(action.Actions);
+            CombatCommandResult waiting = runner.Submit(new CombatCommand.UseAction(attacker.Id, nested.Id, [guard.Id]));
+            CombatDecision offered = AssertDecision(waiting.Observation, CombatDecisionKind.PostRoll);
+            CombatDecisionOption option = Assert.Single(offered.Options!);
+            CombatContinuationState saved = RoundTrip(runner.Capture());
+            Assert.Single(saved.PendingCheckRolls);
+
+            DiceRoller activeDice = dice;
+            CombatRunner active = runner;
+            if (restore)
+            {
+                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                Evaluator restoredEvaluator = new(rules, activeDice);
+                active = CombatRunner.Restore(rules, combat,
+                [
+                    new CombatSide("Attackers", [Combatant.FromMonster(rules, attackerDefinition, "Attacker", restoredEvaluator)]),
+                    new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+                ], activeDice, saved);
+                CombatDecision restoredOffered = AssertDecision(active.Observe(), CombatDecisionKind.PostRoll);
+                Assert.Equal(offered.Id, restoredOffered.Id);
+                option = Assert.Single(restoredOffered.Options!);
+            }
+
+            CombatCommandResult completed = active.Submit(new CombatCommand.Decide(offered.Id, option.Id));
+            Assert.True(completed.Accepted, completed.Reason);
+            return PostRollSnapshot(completed.Observation, saved, activeDice);
+        });
+    }
+
+    private static PostRollResult RunConditionPostRoll(
+        RuleSet rules,
+        Definition combat,
+        Definition attackerDefinition,
+        Definition guardDefinition,
+        bool restore)
+    {
+        using EngineTestHost host = EngineTestHost.Create();
+        return host.Call(engine =>
+        {
+            const ulong seed = 7799;
+            const string scope = "condition-post-roll";
+            DiceRoller dice = new(engine.Random, seed, scope);
+            Evaluator evaluator = new(rules, dice);
+            Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Conditioned", evaluator);
+            attacker.Creature.Conditions.Add(rules.Find(DefinitionTypes.Condition, "focus", out _)!);
+            attacker.Creature.Track("hit_points").Current = 5;
+            Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
+            CombatRunner runner = CombatRunner.Create(rules, combat,
+            [
+                new CombatSide("Attackers", [attacker]),
+                new CombatSide("Guards", [guard]),
+            ], dice);
+            Assert.True(runner.SetController(attacker.Id, CombatControlMode.Manual));
+
+            CombatDecision offered = AssertDecision(runner.Start(1), CombatDecisionKind.PostRoll);
+            CombatDecisionOption option = Assert.Single(offered.Options!);
+            CombatContinuationState saved = RoundTrip(runner.Capture());
+            Assert.Single(saved.PendingCheckRolls);
+
+            DiceRoller activeDice = dice;
+            CombatRunner active = runner;
+            if (restore)
+            {
+                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                Evaluator restoredEvaluator = new(rules, activeDice);
+                Combatant restoredAttacker = Combatant.FromMonster(rules, attackerDefinition, "Conditioned", restoredEvaluator);
+                restoredAttacker.Creature.Conditions.Add(rules.Find(DefinitionTypes.Condition, "focus", out _)!);
+                active = CombatRunner.Restore(rules, combat,
+                [
+                    new CombatSide("Attackers", [restoredAttacker]),
+                    new CombatSide("Guards", [Combatant.FromMonster(rules, guardDefinition, "Guard", restoredEvaluator)]),
+                ], activeDice, saved);
+                CombatDecision restoredOffered = AssertDecision(active.Observe(), CombatDecisionKind.PostRoll);
+                Assert.Equal(offered.Id, restoredOffered.Id);
+                option = Assert.Single(restoredOffered.Options!);
+            }
+
+            CombatCommandResult completed = active.Submit(new CombatCommand.Decide(offered.Id, option.Id));
+            Assert.True(completed.Accepted, completed.Reason);
+            return PostRollSnapshot(completed.Observation, saved, activeDice);
+        });
+    }
+
+    private static PostRollResult PostRollSnapshot(
+        CombatObservation observation,
+        CombatContinuationState saved,
+        DiceRoller dice)
+    {
+        CombatantObservation actor = observation.Combatants.First(member => member.Side == 0);
+        CheckFact check = Assert.Single(observation.Facts.OfType<CheckFact>());
+        return new PostRollResult(
+            observation.Facts.Select(fact => $"{fact.Kind}|{fact.Describe()}|{string.Join(",", fact.Rolls.Select(roll => roll.ToString()))}").ToArray(),
+            actor.Tracks["hit_points"]!.Value,
+            actor.Tracks["luck"]!.Value,
+            check.Result.Total,
+            check.Result.Success,
+            observation.Facts.Count(fact => fact is CheckFact),
+            observation.Facts.Count(fact => fact is PostRollFact),
+            saved.PendingCheckRolls.Select(roll => roll.ToString()).ToArray(),
+            saved.NextRandomKey,
+            dice.NextRandomKey,
+            observation.PendingDecision?.Kind);
+    }
+
+    private sealed record PostRollResult(
+        IReadOnlyList<string> Facts,
+        decimal ActorHitPoints,
+        decimal Luck,
+        decimal CheckTotal,
+        bool CheckSuccess,
+        int CheckFactCount,
+        int PostRollFactCount,
+        IReadOnlyList<string> PendingCheckRolls,
+        long DrawCursorAtOffer,
+        long DrawCursorAfterChoice,
+        CombatDecisionKind? NextDecisionKind);
+
+    private static string WriteNestedPostRollRuleset(TempModules modules)
+    {
+        string root = WritePostRollBasics(modules);
+        modules.Write("rules/nested_post_roll.json", """
+            { "type": "action", "id": "nested_post_roll", "name": "Nested post-roll", "cost": { "turn": 1 }, "target": "enemy",
+              "always": [
+                { "op": "if", "when": "self.str >= 10", "then": [
+                  { "op": "check", "by": "self", "check": "post_check", "outcomes": {
+                    "success": [ { "op": "heal", "amount": "2", "to": "self" } ]
+                  } }
+                ] },
+                { "op": "heal", "amount": "3", "to": "self" }
+              ] }
+            """);
+        WriteMonster(modules, "attacker", "Attacker", "nested_post_roll", []);
+        WriteMonster(modules, "guard_monster", "Guard", null, []);
+        return root;
+    }
+
+    private static string WriteConditionPostRollRuleset(TempModules modules)
+    {
+        string root = WritePostRollBasics(modules);
+        modules.Write("rules/wait.json", """
+            { "type": "action", "id": "wait", "name": "Wait", "cost": { "turn": 1 }, "target": "self", "always": [] }
+            """);
+        modules.Write("rules/focus.json", """
+            { "type": "condition", "id": "focus", "name": "Focus", "modifiers": [],
+              "each_turn": [
+                { "op": "check", "by": "self", "check": "post_check", "outcomes": {
+                  "success": [ { "op": "heal", "amount": "2", "to": "self" } ]
+                } },
+                { "op": "heal", "amount": "3", "to": "self" }
+              ] }
+            """);
+        modules.Write("rules/conditioned.json", """
+            { "type": "monster", "id": "conditioned", "name": "Conditioned", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "15" },
+              "actions": [ { "action": "wait" } ], "xp": 0 }
+            """);
+        modules.Write("rules/guard_monster.json", """
+            { "type": "monster", "id": "guard_monster", "name": "Guard", "class": "warrior", "level": 1,
+              "tracks": { "hit_points": "20" }, "stats": { "str": "5" }, "actions": [], "xp": 0 }
+            """);
+        return root;
+    }
+
+    private static string WritePostRollBasics(TempModules modules)
+    {
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/luck.json", """
+            { "type": "track", "id": "luck", "name": "Luck", "max": "1", "start": "1", "min": "0" }
+            """);
+        WriteCombat(modules, "duel");
+        modules.Write("rules/post_check.json", """
+            { "type": "check", "id": "post_check", "name": "Post check", "roll": "1d4", "target": "5", "succeeds": "at-least",
+              "post_roll": [ { "name": "Lucky", "track": "luck", "cost": "1", "bonus": "4", "score": "1" } ] }
+            """);
+        return root;
+    }
+
     private static ScenarioResult RunTailAction(
         RuleSet rules,
         Definition combat,

@@ -315,6 +315,7 @@ public sealed class LiveGameCombatTests
             List<JsonNode?> party = members.Where(member => member!["side"]!.GetValue<int>() == 0).ToList();
             Assert.Equal(12, party.Count);
             Assert.Equal(members.Count, members.Select(member => member!["id"]!.GetValue<string>()).Distinct(StringComparer.Ordinal).Count());
+            Assert.All(members, member => Assert.NotNull(member!["value"]));
             JsonObject member12 = party.Single(member => member!["id"]!.GetValue<string>() == "side-1-member-12")!.AsObject();
             Assert.Equal("Member 12", member12["name"]!.GetValue<string>());
             Assert.Equal("manual", member12["controller"]!.GetValue<string>());

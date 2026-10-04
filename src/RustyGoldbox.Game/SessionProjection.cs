@@ -318,7 +318,9 @@ internal static class SessionProjection
         {
             throw new InvalidOperationException($"Live combat observation contains unknown combatant ID '{member.Id}'.");
         }
-        decimal? value = member.Tracks.TryGetValue(track.QualifiedId, out decimal? current) ? current : null;
+        decimal? value = member.Tracks.TryGetValue(track.Id, out decimal? current)
+            ? current
+            : member.Tracks.TryGetValue(track.QualifiedId, out decimal? qualifiedCurrent) ? qualifiedCurrent : null;
         Definition? kind = info.Member?.MonsterId is string monsterId
             ? rules.Find(DefinitionTypes.Monster, monsterId, out _)
             : info.Member?.ClassId is string classId ? rules.Find(DefinitionTypes.Class, classId, out _) : null;

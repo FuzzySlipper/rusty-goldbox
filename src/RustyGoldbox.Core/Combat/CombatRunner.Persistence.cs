@@ -204,8 +204,10 @@ public sealed partial class CombatRunner
             return;
         }
 
-        string? actorId = state.PendingDecision?.ActorId ?? state.PendingOperation?.ActorId;
-        Combatant? actor = actorId is null ? null : Find(actorId);
+        string? actorId = saved.ById ?? state.PendingDecision?.ActorId ?? state.PendingOperation?.ActorId;
+        Combatant? actor = (actorId is null ? null : Find(actorId))
+            ?? (state.PendingDecision?.ActorId is string decisionActorId ? Find(decisionActorId) : null)
+            ?? (state.PendingOperation?.ActorId is string operationActorId ? Find(operationActorId) : null);
         Definition? check = _rules.Find(DefinitionTypes.Check, saved.CheckId, out _);
         if (actor is null || check is null || _facts[index] is not RestoredCombatFact restored)
         {

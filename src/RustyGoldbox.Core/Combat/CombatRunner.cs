@@ -773,7 +773,12 @@ public sealed partial class CombatRunner
             if (action.Json.TryGetProperty("check", out _))
             {
                 decimal extra = action.Json.TryGetProperty("check_bonus", out _) ? Number(action, "$.check_bonus", scope) : 0;
-                CheckResult result = MakeCheck(_rules.Reference(action, "$.check"), actor, target, extra);
+                CheckResult result = MakeCheck(
+                    _rules.Reference(action, "$.check"),
+                    actor,
+                    target,
+                    extra,
+                    new CheckOperationContext(action, "$.check", scope, actor, target, null, IsOperation: false));
                 if (action.Json.TryGetProperty("outcomes", out JsonElement outcomes)
                     && outcomes.TryGetProperty(result.Tier, out JsonElement operations))
                 {
@@ -794,13 +799,18 @@ public sealed partial class CombatRunner
         }
     }
 
-    private CheckResult MakeCheck(Definition check, Combatant by, Combatant against, decimal extra = 0)
+    private CheckResult MakeCheck(
+        Definition check,
+        Combatant by,
+        Combatant against,
+        decimal extra = 0,
+        CheckOperationContext? context = null)
     {
         int before = _dice.Rolls.Count;
         CheckResult result = Located(check, "$", () => _evaluator.Check(check, by.Creature, against.Creature, extra));
         by.Creature.Rolled[check.Id] = by.Creature.Rolled.GetValueOrDefault(check.Id) + 1;
         Record(new CheckFact(by.Name, check.Name, result), before, by, [against]);
-        result = PostRoll(check, by, against, result);
+        result = PostRoll(check, by, against, result, context);
         if (result.Success && by.Character is Character character && check.Json.TryGetProperty("skill", out _))
         {
             CharacterRules.MarkSkillUse(_rules, character, check.Json.GetProperty("skill").GetString()!, []);
@@ -814,7 +824,12 @@ public sealed partial class CombatRunner
     /// The check fact keeps the final result while a separate fact records the
     /// resource and effect, so a transcript can explain why the result changed.
     /// </summary>
-    private CheckResult PostRoll(Definition check, Combatant by, Combatant against, CheckResult result)
+    private CheckResult PostRoll(
+        Definition check,
+        Combatant by,
+        Combatant against,
+        CheckResult result,
+        CheckOperationContext? context = null)
     {
         if (!check.Json.TryGetProperty("post_roll", out JsonElement options))
         {
@@ -824,7 +839,7 @@ public sealed partial class CombatRunner
         List<PostRollCandidate> legal = BuildPostRollCandidates(check, by, against, result);
         if (by.Controller == CombatControlMode.Manual && legal.Count > 0)
         {
-            SuspendPostRoll(check, by, against, result, legal);
+            SuspendPostRoll(check, by, against, result, legal, context);
         }
 
         PostRollCandidate? best = legal
@@ -888,7 +903,11 @@ public sealed partial class CombatRunner
 
     private void ResumeOperationFramesForAction(ActionContinuation action)
     {
-        int start = action.OperationFrameStart;
+        ResumeOperationFrames(action.OperationFrameStart);
+    }
+
+    private void ResumeOperationFrames(int start)
+    {
         if (start > _operationFrames.Count)
         {
             return;
@@ -1181,7 +1200,12 @@ public sealed partial class CombatRunner
         Combatant roller = bySelf ? actor : target ?? actor;
         Combatant other = bySelf ? target ?? actor : actor;
         decimal extra = operation.TryGetProperty("bonus", out _) ? Number(owner, $"{path}.bonus", scope) : 0;
-        CheckResult result = MakeCheck(check, roller, other, extra);
+        CheckResult result = MakeCheck(
+            check,
+            roller,
+            other,
+            extra,
+            new CheckOperationContext(owner, path, scope, actor, target, source, IsOperation: true));
         if (operation.GetProperty("outcomes").TryGetProperty(result.Tier, out JsonElement operations))
         {
             RunOperations(owner, operations, $"{path}.outcomes.{result.Tier}", scope with { Check = result, Outer = scope.Check }, actor, target, source);

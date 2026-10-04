@@ -114,7 +114,9 @@ public sealed record CombatCheckState(
     bool Success,
     string Tier,
     IReadOnlyList<DiceRoll>? Rolls = null,
-    int? FactIndex = null);
+    int? FactIndex = null,
+    string? ById = null,
+    string? AgainstId = null);
 
 /// <summary>Committed check values carried by an operation scope across a save.</summary>
 public sealed record CombatScopeCheckState(
