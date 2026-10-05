@@ -204,6 +204,63 @@ public sealed class PartyTableTests
     }
 
     [Fact]
+    public void AHostedSaveKeepsItsSeatsAndAReturningPlayerGetsTheirCharacterBack()
+    {
+        using TempModules scratch = new();
+        List<string> containers = new[] { "classic", "placeholder-art", "sample-crypt" }
+            .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+            .ToList();
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = Path.Combine(scratch.Root, "store") });
+        host.Call(engine =>
+        {
+            ModuleLibrary Library() => new(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList());
+            GameSession session = new(Library());
+            session.Refresh();
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign = Assert.Single(session.Campaigns).Bundle, seed = "12" }));
+            PartyTable table = new();
+            session.Table = table;
+            table.Join(Host, "hana-key", "Hana");
+            table.Join(Ann, "ann-key", "Ann");
+            Roll(session, engine, Ann, "Ann", "classic:fighter");
+            Roll(session, engine, Host, "Hana", "classic:cleric");
+            int annIndex = session.Party.FindIndex(member => member.Name == "Ann");
+            Run(session, engine, """{ "action": "begin" }""");
+            Run(session, engine, """{ "action": "save", "slot": "together" }""");
+            Assert.Contains("Saved to save slot 'together'.", session.Notes);
+
+            // Loaded and hosted again: the seats come back empty, Ann's character covered until she returns.
+            GameSession again = new(Library());
+            again.Refresh();
+            Run(again, engine, """{ "action": "load", "slot": "together" }""");
+            Assert.NotNull(again.SavedSeats);
+            PartyTable restored = again.NewTable(engine);
+            Assert.Equal(["Hana", "Ann"], restored.Seats.Select(seat => seat.Name));
+            Assert.All(restored.Seats, seat => Assert.False(seat.Connected));
+            Assert.Contains(annIndex, restored.Covered);
+            Assert.Equal(CombatControlMode.Automatic, again.Runner!.State.Party[annIndex].CombatControlPreference);
+
+            // A newcomer who happens to get Ann's old member number doesn't get her character.
+            again.SeatJoined(engine, Host, "hana-key", "Hana");
+            again.SeatJoined(engine, Ann, "bo-key", "Bo");
+            Assert.NotEqual(Ann, restored.OwnerOf(annIndex));
+
+            // Ann rejoins under her own name and plays her character again.
+            again.SeatJoined(engine, 7, "ann-key", "Ann");
+            Assert.Equal(7u, restored.OwnerOf(annIndex));
+            Assert.Equal(CombatControlMode.Manual, again.Runner.State.Party[annIndex].CombatControlPreference);
+            Assert.Empty(restored.Covered);
+
+            // Saved alone, the slot has no seats to restore.
+            again.Table = null;
+            Run(again, engine, """{ "action": "save", "slot": "together" }""");
+            GameSession alone = new(Library());
+            alone.Refresh();
+            Run(alone, engine, """{ "action": "load", "slot": "together" }""");
+            Assert.Null(alone.SavedSeats);
+        });
+    }
+
+    [Fact]
     public void DroppingACharacterKeepsEveryOtherSeatOnItsOwn()
     {
         PartyTable table = new();

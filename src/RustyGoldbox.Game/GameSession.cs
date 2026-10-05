@@ -158,6 +158,32 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>A guest's commands waiting to be sent to the host, oldest first.</summary>
     public List<JsonElement> Outbox { get; } = [];
 
+    /// <summary>The seats saved beside the last loaded save, for hosting it again; null when it was saved alone.</summary>
+    public PartyTable? SavedSeats { get; private set; }
+
+    /// <summary>
+    /// The table for hosting this game: the loaded save's seats when it had
+    /// them, with each absent player's characters on automatic control until
+    /// they rejoin; else an empty table.
+    /// </summary>
+    public PartyTable NewTable(IEngineContext engine)
+    {
+        Table = SavedSeats ?? new PartyTable();
+        SavedSeats = null;
+        foreach (Seat seat in Table.Seats)
+        {
+            foreach (int index in seat.Characters)
+            {
+                if (Control(engine, index, CombatControlMode.Automatic))
+                {
+                    Table.Covered.Add(index);
+                }
+            }
+        }
+
+        return Table;
+    }
+
     /// <summary>Hosting or joining a game over the Engine session service.</summary>
     public HostedGame Hosting => _hosting ??= new HostedGame(this);
 
@@ -734,6 +760,9 @@ internal sealed class GameSession(ModuleLibrary library)
 
             using SaveSlots slots = new(engine);
             slots.Write(slot, SaveFile.ToJson(Runner.State, Set!));
+            // Who sat where goes beside the save, so the game can be hosted again with the same people.
+            using SeatSlots seats = new(engine);
+            seats.Write(slot, Table?.ToJson().ToJsonString() ?? """{ "seats": [] }""");
             Notes.Add($"Saved to {SaveSlots.Location(slot)}.");
         }
         catch (Exception exception) when (exception is PersistenceStorageException or EngineCallException)
@@ -795,6 +824,12 @@ internal sealed class GameSession(ModuleLibrary library)
         Runner.DefaultCombatControl = CombatControlMode.Manual;
         Log.Clear();
         Log.Add($"Loaded {SaveSlots.Location(slot)}.");
+        SavedSeats = ReadSeats(engine, slot);
+        if (Table is not null)
+        {
+            // Already hosting: the save's seats replace the table, and whoever is here is seated again.
+            Hosting.Reseat(engine);
+        }
         Screen = state.PendingCombat is null ? Screen.Play : Screen.Combat;
         _completedCombat = null;
         _completedCombatMetadata = null;
@@ -934,6 +969,26 @@ internal sealed class GameSession(ModuleLibrary library)
         }
 
         return set;
+    }
+
+    private static PartyTable? ReadSeats(IEngineContext engine, string slot)
+    {
+        try
+        {
+            using SeatSlots seats = new(engine);
+            if (seats.Read(slot) is not byte[] json)
+            {
+                return null;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(json);
+            return document.RootElement.GetProperty("seats").GetArrayLength() == 0 ? null : PartyTable.Saved(document.RootElement);
+        }
+        catch (Exception exception) when (exception is PersistenceStorageException or EngineCallException or JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            // Seats only help re-host a game; a save loads without them.
+            return null;
+        }
     }
 
     /// <summary>On the combat screen after a fight has finished: returns to play.</summary>

@@ -56,7 +56,7 @@ internal sealed class HostedGame(GameSession game)
             return $"Couldn't host: {exception.Message}";
         }
 
-        game.Table = new PartyTable();
+        game.NewTable(engine);
         game.LocalMember = PartyTable.HostMember;
         return null;
     }
@@ -99,6 +99,27 @@ internal sealed class HostedGame(GameSession game)
         {
             game.LeaveAsGuest();
         }
+    }
+
+    /// <summary>
+    /// A save was loaded while hosting: take its seats and seat everyone who
+    /// is here again by their key, so returning players get their characters.
+    /// </summary>
+    public void Reseat(IEngineContext engine)
+    {
+        if (_session is null || engine.Session.Read(_session).Role != SessionRole.Host)
+        {
+            return;
+        }
+
+        Dictionary<string, string> names = game.Table?.Seats.ToDictionary(seat => seat.Key, seat => seat.Name) ?? [];
+        game.NewTable(engine);
+        foreach (SessionMember member in engine.Session.ReadMembers(_session).ToArray().Where(member => member.Connected))
+        {
+            game.SeatJoined(engine, member.Member, member.Key, names.GetValueOrDefault(member.Key) ?? (member.IsLocal ? _name : $"player {member.Member}"));
+        }
+
+        _lastView = "";
     }
 
     /// <summary>The invitation to share, once the hosted session is open.</summary>

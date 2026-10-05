@@ -78,6 +78,24 @@ internal sealed class PartyTable
         }).ToArray()),
     };
 
+    /// <summary>
+    /// The seats of a saved hosted game, for hosting it again: every seat keeps
+    /// its key, name and characters but has no member until its player
+    /// rejoins under the same name, and the host leads.
+    /// </summary>
+    public static PartyTable Saved(JsonElement json)
+    {
+        PartyTable table = new();
+        foreach (JsonElement entry in json.GetProperty("seats").EnumerateArray())
+        {
+            Seat seat = new(0, entry.GetProperty("key").GetString()!, entry.GetProperty("name").GetString()!) { Connected = false };
+            seat.Characters.AddRange(entry.GetProperty("characters").EnumerateArray().Select(index => index.GetInt32()));
+            table.Seats.Add(seat);
+        }
+
+        return table;
+    }
+
     /// <summary>A guest's copy of the host's table, read from a view.</summary>
     public static PartyTable FromJson(JsonElement json)
     {
