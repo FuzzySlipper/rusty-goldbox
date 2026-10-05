@@ -48,8 +48,6 @@ public sealed class RustyGoldboxProduct : IEngineProduct
             changed |= GameCommands.Apply(_session, _engine, input);
         }
 
-        // Realtime steps: the fight playback moves on, and animations advance every step.
-        changed |= _session.Tick(update.Facts.AdmittedStepCount * update.Facts.FixedDeltaSeconds);
         if (changed)
         {
             Publish();

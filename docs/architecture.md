@@ -78,8 +78,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, including usable/count-grouped inventory, finite shop `remaining` and buying limits, and member `derived` values filtered by `show_on_sheet`, plus copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
-| `src/RustyGoldbox.Game/FightReplay.cs` | Presentation of already committed fight facts by stable combatant ID: track values, defeats and the acting combatant as each fact shows |
-| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells and moving as the fight's moves show, attack animations for the actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
+| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells, an attack animation for the latest actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
 | `src/RustyGoldbox.Game/Presentation/GameAudio.cs` | Event sounds and music through Engine audio: clips opened once per asset, one-shot sounds on the Sfx bus, one looping Music voice following the campaign's music, bus volumes |
 | `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
 | `src/RustyGoldbox.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
@@ -344,8 +343,8 @@ open becomes a note on the title screen.
 A release (`rusty build --pack`) carries the same bundles inside its container.
 
 The product uses the Engine's `realtime` lifecycle at 30 steps a second, so
-sprite animations and fight playback move between inputs. Each step applies
-input, lets the fight playback advance, advances animations, and republishes
+sprite animations move between inputs. Each step applies input, advances
+animations, and republishes
 only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
@@ -419,7 +418,10 @@ are unpublished before their atlas and texture are released. Textures are admitt
 container once per asset content. The Engine's default lights light the
 scene.
 
-When a campaign suspends at a fight, the session switches to the combat screen.
+When a campaign suspends at a fight, or a fight finishes inside one command
+(every party member on automatic control), the session switches to the combat
+screen. Both show Core's `CombatObservation`; a finished fight keeps its last
+observation, carried on its `FightFact`, until the player continues.
 Its projection exposes Core's active combatant, remaining budgets, legal
 actions and pending optional decision. The player submits commands to that
 same combat owner; enemies and party members using automatic control advance
@@ -427,9 +429,9 @@ through its automatic driver. Party members wait for manual choices by default.
 The scene draws each combatant with the sprite its monster or class has a
 `figure` for, under a camera straight on and 30 degrees down, framed to the
 view (above); figures are spherical billboards so they stay upright under that
-camera. Presentation consumes committed facts. Continue (a button, Enter or
-Space) skips their presentation and does not resolve a waiting choice. The
-session returns to play after Core finishes the fight and its outcome chain.
+camera. Presentation consumes committed facts and never resolves a waiting
+choice. Continue (a button, Enter or Space) returns to play once Core has
+finished the fight and its outcome chain.
 Campaign movement commands wait until then; saves include the pending fight.
 
 Portraits and icons reach the panels as Engine UI images: `UiImages` opens an

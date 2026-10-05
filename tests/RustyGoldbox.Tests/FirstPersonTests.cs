@@ -121,15 +121,11 @@ public sealed class FirstPersonTests
     [Fact]
     public void FallbackCombatFloorGrowsForACampaignSizedParty()
     {
-        List<FightMember> members =
-        [
-            .. Enumerable.Range(1, 12).Select(number => new FightMember($"ally-{number}", 0, null, null, 1, 1)),
-            .. Enumerable.Range(1, 3).Select(number => new FightMember($"foe-{number}", 1, null, null, 1, 1)),
-        ];
+        // Sides of twelve allies and three foes.
+        List<int> sides = [.. Enumerable.Repeat(0, 12), .. Enumerable.Repeat(1, 3)];
 
-        Assert.Equal((10, 6), CombatScene.FallbackSize(members));
-        Assert.Equal((CombatScene.Width, CombatScene.Depth), CombatScene.FallbackSize(
-            [new FightMember("ally", 0, null, null, 1, 1), new FightMember("foe", 1, null, null, 1, 1)]));
+        Assert.Equal((10, 6), CombatScene.FallbackSize(sides));
+        Assert.Equal((CombatScene.Width, CombatScene.Depth), CombatScene.FallbackSize([0, 1]));
     }
 
     /// <summary>How far toward the frame's edge the field's furthest corner (with figures standing on it) appears, from 0 at the centre to 1 at the edge.</summary>

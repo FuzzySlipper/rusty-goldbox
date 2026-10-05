@@ -301,8 +301,9 @@ public sealed record FightMember(
 
 /// <summary>A fight: who took part, what happened in order, and how it ended.</summary>
 /// <param name="Track">The combat's track (usually hit points) that <see cref="FightMember"/> values are on.</param>
-/// <param name="Field">The combat field the fight was on, or null for a fight without positions.</param>
-public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome, Combat.CombatField? Field = null, int? FledSide = null) : PlayFact
+/// <param name="Ending">The finished combat as the live owner last observed it.</param>
+/// <param name="Combat">The fight's setup: event, encounter, combat definition and participants.</param>
+public sealed record FightFact(string Encounter, Definition Track, IReadOnlyList<FightMember> Members, IReadOnlyList<CombatFact> Facts, FightOutcome Outcome, int? FledSide, CombatObservation Ending, PendingCombatState Combat) : PlayFact
 {
     public override string Kind => "combat";
 

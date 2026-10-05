@@ -1152,7 +1152,7 @@ public sealed partial class CampaignRunner
         List<FightMember> members = pending.Members
             .Select((member, index) => ToFightMember(member, index < pending.Participants.Count ? pending.Participants[index].Id : null))
             .ToList();
-        facts.Add(new FightFact(pending.Encounter.Name, result.Track, members, result.Facts, outcome, CombatField.Of(pending.Combat, pending.Encounter), result.FledSide));
+        facts.Add(new FightFact(pending.Encounter.Name, result.Track, members, result.Facts, outcome, result.FledSide, _combat.Observe(), pending));
 
         decimal earned = result.Sides.Count > 1
             ? result.Sides[1].Members.Where(member => member.Defeated && !member.Escaped && member.Creature.Monster is not null)

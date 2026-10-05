@@ -81,9 +81,7 @@ internal static class SessionProjection
 
         if (session.Screen == Screen.Combat)
         {
-            projection["fight"] = session.Combat is CombatObservation live
-                ? LiveFight(session, live, imageUrl)
-                : LegacyFight(session, session.Fight!, imageUrl);
+            projection["fight"] = LiveFight(session, session.Combat!, imageUrl);
         }
 
         if (session.Screen == Screen.Play)
@@ -225,61 +223,12 @@ internal static class SessionProjection
         {
             Screen.Title => $"{session.Campaigns.Count} campaign(s) available",
             Screen.Party => $"{session.Campaign!.Name}: making a party ({session.Party.Count})",
-            Screen.Combat when session.Fight is FightReplay fight => fight.Done
-                ? $"{session.Campaign!.Name}: {fight.Fight.Describe()}"
-                : $"{session.Campaign!.Name}: fighting {fight.Fight.Encounter}",
+            Screen.Combat when session.Combat is CombatObservation { Phase: CombatPhase.Ended } ended => $"{session.Campaign!.Name}: {Outcome(ended)}",
             Screen.Combat when session.Combat is CombatObservation live => $"{session.Campaign!.Name}: fighting{(live.ActiveActorId is string actor ? $" · {actor}" : "")}",
             _ => session.Runner!.State.Ended
                 ? $"{session.Campaign!.Name}: the adventure is over"
                 : $"{session.Campaign!.Name}: {session.Runner.State.Area.Name} [{session.Runner.State.X}, {session.Runner.State.Y}] facing {Facings.Name(session.Runner.State.Facing)}",
         };
-    }
-
-    private static JsonObject LegacyFight(GameSession session, FightReplay fight, Func<Definition, string?> imageUrl)
-    {
-        return new JsonObject
-        {
-            ["encounter"] = fight.Fight.Encounter,
-            ["track"] = fight.Fight.Track.Name,
-            ["done"] = fight.Done,
-            ["outcome"] = fight.Done ? fight.Fight.Describe() : null,
-            ["members"] = new JsonArray(fight.Fight.Members.Select((member, index) => (JsonNode)new JsonObject
-            {
-                ["id"] = fight.MemberKeys[index],
-                ["name"] = member.Name,
-                ["side"] = member.Side,
-                ["value"] = (double)fight.Values[fight.MemberKeys[index]],
-                ["max"] = member.Max is decimal max ? (double)max : null,
-                ["defeated"] = fight.Defeated.Contains(fight.MemberKeys[index]),
-                ["acting"] = fight.Acting.Who == fight.MemberKeys[index],
-                ["icon"] = (member.Monster ?? member.Class) is Definition kind && session.Set!.Rules!.Icons.TryGetValue(kind, out Definition? icon) ? icon.QualifiedId : null,
-                ["iconPicture"] = (member.Monster ?? member.Class) is Definition shown && session.Set!.Rules!.Icons.TryGetValue(shown, out Definition? picture) ? Picture(session.Set.Rules, picture, imageUrl) : null,
-                ["portraitPicture"] = PortraitFor(session, member) is Definition portrait
-                    ? Picture(session.Set!.Rules!, portrait, imageUrl)
-                    : null,
-            }).ToArray()),
-            ["log"] = Strings(fight.Lines.TakeLast(14)),
-        };
-    }
-
-    private static Definition? PortraitFor(GameSession session, FightMember member)
-    {
-        if (member.Side != 0)
-        {
-            return null;
-        }
-
-        if (member.Id is string id
-            && id.StartsWith("side-1-member-", StringComparison.Ordinal)
-            && int.TryParse(id["side-1-member-".Length..], out int oneBased)
-            && oneBased > 0
-            && session.Runner is CampaignRunner runner
-            && oneBased <= runner.State.Party.Count)
-        {
-            return runner.State.Party[oneBased - 1].Portrait;
-        }
-
-        return session.Runner?.State.Party.FirstOrDefault(character => character.Name == member.Name)?.Portrait;
     }
 
     private static JsonObject LiveFight(GameSession session, CombatObservation observation, Func<Definition, string?> imageUrl)
@@ -301,7 +250,6 @@ internal static class SessionProjection
         JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, observation, member, highlightedActorId, track, metadata, imageUrl)).ToArray());
         JsonObject fight = new()
         {
-            ["live"] = true,
             ["encounter"] = pending.Encounter.Name,
             ["track"] = track.Name,
             ["trackId"] = track.QualifiedId,
@@ -436,7 +384,7 @@ internal static class SessionProjection
     {
         return observation.Winner is int winner
             ? winner == 0 ? "The party won." : "The party lost."
-            : observation.FledSide is int fled ? $"Side {fled} fled." : "The fight ended.";
+            : observation.FledSide is int fled ? fled == 0 ? "The party fled." : "The foes fled." : "The fight ended.";
     }
 
     private static JsonArray Strings(IEnumerable<string> lines) => new(lines.Select(line => (JsonNode)line).ToArray());

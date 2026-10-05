@@ -645,9 +645,6 @@ public sealed class GameTests
             }
 
             Assert.Equal(Screen.Combat, session.Screen);
-            Assert.True(session.Fight is null, session.Fight is FightReplay ended
-                ? string.Join(" | ", ended.Fight.Facts.Select(fact => fact.Describe()))
-                : "No live combat snapshot was published.");
             CombatObservation waiting = Assert.IsType<CombatObservation>(session.Combat);
             CombatDecision decision = Assert.IsType<CombatDecision>(waiting.PendingDecision);
             Assert.Equal(CombatPhase.AwaitingAction, waiting.Phase);
@@ -660,9 +657,6 @@ public sealed class GameTests
             view.Show(session);
 
             int factsBefore = waiting.Facts.Count;
-            Assert.False(session.Tick(1.0));
-            Assert.Equal(factsBefore, session.Combat!.Facts.Count);
-
             CombatActionChoice action = decision.Actions.First(choice => choice.Targets.Count > 0);
             CombatTargetChoice target = action.Targets[0];
             CombatMoveChoice? move = action.Moves.FirstOrDefault();
@@ -712,9 +706,9 @@ public sealed class GameTests
             }
 
             Run(session, engine, """{ "action": "begin" }""");
-            // This renderer walk intentionally exercises the historical
-            // committed-facts presentation. Opt the whole party into Core's
-            // automatic controller before the first combat event.
+            // With the whole party on Core's automatic controller, the fight
+            // finishes inside one play command and shows through the same
+            // combat view as a live fight until the player continues.
             session.Runner!.DefaultCombatControl = CombatControlMode.Automatic;
             using SceneView view = new(engine, new ModuleLibrary(_ => Containers(scratch).Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
             Core.Definitions.Definition entrance = session.Runner!.State.Area;
@@ -727,6 +721,14 @@ public sealed class GameTests
             {
                 Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
                 view.Show(session);
+                if (session.Screen == Screen.Combat)
+                {
+                    Assert.Equal(CombatPhase.Ended, session.Combat!.Phase);
+                    JsonObject fight = SessionProjection.Build(session)["fight"]!.AsObject();
+                    Assert.True(fight["done"]!.GetValue<bool>());
+                    Assert.Equal("The party won.", fight["outcome"]!.GetValue<string>());
+                }
+
                 while (session.Screen == Screen.Combat)
                 {
                     Run(session, engine, """{ "action": "continue" }""");

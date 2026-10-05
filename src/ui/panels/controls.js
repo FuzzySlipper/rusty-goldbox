@@ -202,10 +202,9 @@ export function createControls(send, ui) {
     const end = decision?.canEndTurn && actorId
       ? [button('End turn', () => send({ action: 'combat-end-turn', actor: actorId }), { 'data-focus-key': `combat:end:${actorId}` })]
       : [];
-    const done = Boolean(fight.done || fight.phase === 'ended');
-    const skip = fight.live && !done
-      ? element('span', { class: 'gb-muted' }, decision ? 'Choose a combat decision.' : 'Combat is advancing.')
-      : button(done ? 'Continue' : 'Show committed facts', () => send({ action: 'continue' }), { 'data-focus-key': 'combat:continue' });
+    const skip = fight.done
+      ? button('Continue', () => send({ action: 'continue' }), { 'data-focus-key': 'combat:continue' })
+      : element('span', { class: 'gb-muted' }, decision ? 'Choose a combat decision.' : 'Combat is advancing.');
 
     const body = [summary,
       ...(control ? [control] : []),

@@ -13,41 +13,6 @@ namespace RustyGoldbox.Tests;
 public sealed class LiveGameCombatTests
 {
     [Fact]
-    public void AutomaticReplayKeepsDuplicateNamesOnTheirStableCombatIds()
-    {
-        Definition track = Rules.Classic().Find(DefinitionTypes.Track, "hit_points", out _)!;
-        FightFact fight = new(
-            "duplicate names",
-            track,
-            [
-                new FightMember("Rook", 0, null, null, 10, 10, new Cell(1, 1), "side-1-member-1"),
-                new FightMember("Rook", 0, null, null, 10, 10, new Cell(1, 2), "side-1-member-2"),
-            ],
-            [
-                new ActionFact("Rook", "Strike", "Rook")
-                {
-                    SubjectIds = ["side-1-member-1"],
-                    TargetIds = ["side-1-member-2"],
-                },
-                new DamageFact("Rook", track, 3, 7)
-                {
-                    SubjectIds = ["side-1-member-1"],
-                    TargetIds = ["side-1-member-2"],
-                },
-                new DefeatedFact("Rook") { SubjectIds = ["side-1-member-2"] },
-            ],
-            FightOutcome.Won);
-
-        FightReplay replay = new(fight);
-        replay.Finish();
-
-        Assert.Equal(["side-1-member-1", "side-1-member-2"], replay.MemberKeys);
-        Assert.Equal(7m, replay.Values["side-1-member-2"]);
-        Assert.Contains("side-1-member-2", replay.Defeated);
-        Assert.Equal("side-1-member-1", replay.Acting.Who);
-    }
-
-    [Fact]
     public void ChainedLiveFightResetsFactCursorAndKeepsTheNextFightCoreOwned()
     {
         using TempModules modules = new();
@@ -101,7 +66,6 @@ public sealed class LiveGameCombatTests
                 {
                     reachedSecond = true;
                     Assert.Equal("tale:fight2", session.Runner.State.PendingCombat.Event.QualifiedId);
-                    Assert.Null(session.Fight);
                     Assert.All(observation.Facts, fact => Assert.Contains(fact.Describe(), session.Log));
                     break;
                 }
@@ -310,7 +274,6 @@ public sealed class LiveGameCombatTests
 
             JsonObject Fight() => SessionProjection.Build(session)["fight"]!.AsObject();
             JsonObject initial = Fight();
-            Assert.True(initial["live"]!.GetValue<bool>());
             JsonArray members = initial["members"]!.AsArray();
             List<JsonNode?> party = members.Where(member => member!["side"]!.GetValue<int>() == 0).ToList();
             Assert.Equal(12, party.Count);
@@ -338,7 +301,6 @@ public sealed class LiveGameCombatTests
             Run(session, engine, """{ "action": "load", "slot": "large-live" }""");
             Assert.Equal(Screen.Combat, session.Screen);
             JsonObject restored = Fight();
-            Assert.True(restored["live"]!.GetValue<bool>());
             Assert.Equal("automatic", restored["members"]!.AsArray()
                 .Single(member => member!["id"]!.GetValue<string>() == overrideActor)!["controller"]!.GetValue<string>());
         });

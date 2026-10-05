@@ -78,22 +78,12 @@ internal sealed class SceneView : IDisposable
                 _showingCombat = true;
                 CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
                 _combat.Show(
+                    pending.Continuation.RandomScope!,
                     live,
                     id => LiveKind(rules, pending, id),
                     kind => SpriteFor(rules, session.Set, kind),
                     key => field is not null && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
                     field,
-                    Floor(rules, session.Set, state.Area),
-                    facts);
-                FitCombatCamera(force: true);
-            }
-            else if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
-            {
-                _showingCombat = true;
-                _combat.Show(
-                    fight,
-                    kind => SpriteFor(rules, session.Set, kind),
-                    key => fight.Fight.Field is CombatField field && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
                     Floor(rules, session.Set, state.Area),
                     facts);
                 FitCombatCamera(force: true);

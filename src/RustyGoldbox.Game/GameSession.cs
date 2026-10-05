@@ -68,14 +68,10 @@ internal sealed class GameSession(ModuleLibrary library)
 
     public CampaignRunner? Runner { get; private set; }
 
-    /// <summary>The legacy committed fight being played back on the combat screen, when one exists.</summary>
-    public FightReplay? Fight { get; private set; }
-
-    /// <summary>The Core-owned live combat snapshot, cached by the last Game callback.</summary>
-    // A terminal live command clears Core's pending state before the runner's
-    // cached observation is replaced. Prefer the snapshot captured from that
-    // command so the Game keeps the ended fight's stable IDs and resources on
-    // screen until Continue is pressed.
+    /// <summary>The combat on the combat screen: the live fight, or the one that just finished.</summary>
+    // Finishing a fight clears Core's pending state. Keep the finished fight's
+    // last observation on screen, with its stable IDs and resources, until
+    // Continue is pressed.
     public CombatObservation? Combat => _completedCombat ?? Runner?.Combat;
 
     /// <summary>The metadata captured at the live combat boundary, including after a terminal command.</summary>
@@ -575,40 +571,14 @@ internal sealed class GameSession(ModuleLibrary library)
     private void ApplyCombat(CampaignCombatCommandResult result, PendingCombatState? before)
     {
         AppendCombatFacts(result.Observation, Runner?.State.PendingCombat ?? before);
-        bool completedLive = before is not null
-            && result.Observation.Phase == CombatPhase.Ended
-            && Runner?.State.PendingCombat is null;
-        if (completedLive)
-        {
-            _completedCombat = result.Observation;
-            _completedCombatMetadata = before;
-            foreach (PlayFact fact in result.Facts)
-            {
-                Log.Add(fact.Describe());
-            }
-        }
-        else if (result.Facts.Count > 0)
-        {
-            // A terminal fight can immediately chain into another live fight.
-            // Keep its committed outcome in the log, but don't create a
-            // legacy replay while the new Core-owned fight is waiting.
-            Record(null, result.Facts, allowFightReplay: Runner?.State.PendingCombat is null);
-        }
-
+        Record(null, result.Facts);
         if (!result.Accepted && result.Reason is string reason)
         {
             Notes.Add(reason);
         }
 
-        if (Runner?.State.PendingCombat is not null)
-        {
-            Screen = Screen.Combat;
-            return;
-        }
-
-        // A terminal live command stays on the committed-facts combat view,
-        // keyed by the stable observation IDs, until the player continues.
-        Screen = completedLive || Fight is not null ? Screen.Combat : Screen.Play;
+        // A finished fight stays on the combat view until the player continues.
+        Screen = Runner?.State.PendingCombat is not null || _completedCombat is not null ? Screen.Combat : Screen.Play;
     }
 
     private void SyncCombat(IEngineContext engine)
@@ -625,7 +595,7 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (Fight is null && Screen == Screen.Combat)
+        if (_completedCombat is null && Screen == Screen.Combat)
         {
             Screen = Screen.Play;
         }
@@ -633,7 +603,7 @@ internal sealed class GameSession(ModuleLibrary library)
 
     private void AppendCombatFacts(CombatObservation observation, PendingCombatState? pending)
     {
-        string? key = pending is null ? null : $"{Runner?.State.CombatSequence}:{pending.Event.QualifiedId}";
+        string? key = pending?.Continuation.RandomScope;
         if (key is not null && key != _shownCombatKey)
         {
             _shownCombatFacts = 0;
@@ -734,7 +704,6 @@ internal sealed class GameSession(ModuleLibrary library)
         Log.Clear();
         Log.Add($"Loaded {SaveSlots.Location(slot)}.");
         Screen = state.PendingCombat is null ? Screen.Play : Screen.Combat;
-        Fight = null;
         _completedCombat = null;
         _completedCombatMetadata = null;
         _shownCombatFacts = 0;
@@ -752,33 +721,12 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
-    /// <summary>Lets time pass for the fight playback; returns whether anything new showed.</summary>
-    public bool Tick(double seconds)
-    {
-        // Live combat never resolves a pending choice because time passed.
-        // Only the retained legacy playback consumes elapsed presentation time.
-        return Screen == Screen.Combat && Fight is FightReplay fight && fight.Advance(seconds);
-    }
-
-    /// <summary>On the combat screen: shows the rest of the fight, or once it has all shown, returns to play.</summary>
+    /// <summary>On the combat screen after a fight has finished: returns to play.</summary>
     public void Continue()
     {
         Notes.Clear();
         if (Screen != Screen.Combat)
         {
-            return;
-        }
-
-        if (Fight is FightReplay fight)
-        {
-            if (!fight.Done)
-            {
-                fight.Finish();
-                return;
-            }
-
-            Fight = null;
-            Screen = Screen.Play;
             return;
         }
 
@@ -799,7 +747,6 @@ internal sealed class GameSession(ModuleLibrary library)
     public void Quit()
     {
         Notes.Clear();
-        Fight = null;
         _completedCombat = null;
         _completedCombatMetadata = null;
         _shownCombatFacts = 0;
@@ -864,7 +811,7 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
-    private void Record(string? command, IReadOnlyList<PlayFact> facts, bool allowFightReplay = true)
+    private void Record(string? command, IReadOnlyList<PlayFact> facts)
     {
         if (command is not null)
         {
@@ -878,12 +825,13 @@ internal sealed class GameSession(ModuleLibrary library)
                 _sounds.Add(sound);
             }
 
-            // A fight plays back on the combat screen; the log keeps its outcome.
-            if (allowFightReplay && fact is FightFact fight)
+            // A finished fight shows on the combat screen, unless the next
+            // fight it led to is already waiting there.
+            if (fact is FightFact fight && Runner?.State.PendingCombat is null)
             {
-                Fight = new FightReplay(fight);
-                _shownCombatFacts = 0;
-                _shownCombatKey = null;
+                _completedCombat = fight.Ending;
+                _completedCombatMetadata = fight.Combat;
+                AppendCombatFacts(fight.Ending, fight.Combat);
                 Screen = Screen.Combat;
             }
 

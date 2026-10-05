@@ -66,8 +66,8 @@ remaining budgets. They render Core's legal action and target choices,
 authored movement paths, End turn, per-member manual/automatic control and any
 pending optional decision. Target preference belongs to automatic policy;
 manual choices use the legal targets in the projection. The menu can save
-while a turn or optional decision waits. Animation skip only advances the
-presentation of committed facts.
+while a turn or optional decision waits. A finished fight stays on screen with
+its outcome until Continue.
 
 Each campaign on the title screen lists the extensions the player may add
 (`extensions`: installed extension modules built on its ruleset that it
