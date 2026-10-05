@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_resolution_open",
-  "kind": "text",
-  "text": "The party is rested and returns with a witness and a cause for the dog trouble, but the lair remains unresolved. Retreat claimed no kill, no reward, and no completed Pigman Jack contract; the party may approach again or carry the warning back to the village.",
-  "next": "evt_env_forest_aftercare"
-}

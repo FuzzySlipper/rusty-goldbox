@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_court_bound_038",
-  "kind": "set",
-  "variable": "evidence_parent_suspicion",
-  "value": "false",
-  "next": "evt_fin_setup_court_bound_039"
-}

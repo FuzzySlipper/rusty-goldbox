@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_pigman_jack_trust",
-  "value_type": "number",
-  "scope": "area",
-  "initial": "0",
-  "description": "Pigman Jack's private A1 relationship value: fight +1, kindness or negotiation +2, retreat unchanged."
-}

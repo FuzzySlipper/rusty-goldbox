@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_giles_weadley_masked",
-  "kind": "text",
-  "text": "The Giles Weadley double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.",
-  "next": "evt_fin_double_giles_weadley_masked_menu"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_c3_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "C3 Royal Balcony has been visited after its door was opened."
-}

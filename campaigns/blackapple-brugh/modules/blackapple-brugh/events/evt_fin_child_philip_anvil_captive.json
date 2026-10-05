@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_philip_anvil_captive",
-  "kind": "text",
-  "text": "Philip Anvil — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
-  "next": "evt_fin_child_ursula_cooke"
-}

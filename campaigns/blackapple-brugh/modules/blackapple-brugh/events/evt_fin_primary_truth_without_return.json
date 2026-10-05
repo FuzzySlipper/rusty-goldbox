@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_primary_truth_without_return",
-  "kind": "text",
-  "text": "The living party brings home evidence or an honest account of uncertainty. Seeing a child never counted as bringing that child home.",
-  "next": "evt_fin_epilogue_contained_text_gate"
-}

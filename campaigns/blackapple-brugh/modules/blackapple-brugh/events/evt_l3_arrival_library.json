@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_arrival_library",
-  "kind": "text",
-  "text": "The library passage opens into the lower cold-storage hall. A narrow service corridor runs south toward the pit, and the party arrives together at its eastern threshold.",
-  "next": "evt_l3_c20_arrival"
-}

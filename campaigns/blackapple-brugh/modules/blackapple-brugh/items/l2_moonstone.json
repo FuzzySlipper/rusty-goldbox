@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "l2_moonstone",
-  "name": "Brugh moonstone",
-  "kind": "gem",
-  "cost": 50,
-  "currency": "fifth-srd:gold",
-  "weight": 0.1
-}

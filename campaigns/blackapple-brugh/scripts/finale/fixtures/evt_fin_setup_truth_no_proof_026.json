@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_truth_no_proof_026",
-  "kind": "set",
-  "variable": "double_stevie_leeford",
-  "value": "\"unknown\"",
-  "next": "evt_fin_setup_truth_no_proof_027"
-}

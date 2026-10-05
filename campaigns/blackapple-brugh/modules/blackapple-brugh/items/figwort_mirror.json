@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "figwort_mirror",
-  "name": "Figwort manor mirror",
-  "kind": "gear",
-  "cost": 0,
-  "currency": "fifth-srd:gold",
-  "weight": 80
-}

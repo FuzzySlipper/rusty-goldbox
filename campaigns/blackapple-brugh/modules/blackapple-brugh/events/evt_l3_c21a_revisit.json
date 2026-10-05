@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21a_revisit",
-  "kind": "text",
-  "text": "The dumbwaiter is still ready. Its capacity is read from the active party each time the crank is used.",
-  "next": "evt_l3_c21a_capacity"
-}

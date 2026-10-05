@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_focused_success_text",
-  "kind": "text",
-  "text": "The appeal gives the court a prettier story to tell. Moth-in-Water pulls the companion back from the edge, and the Elf Lord permits the party to remain in the dining hall under watch. The rescue succeeds without inventing a second party position.",
-  "next": "evt_l2_c13_revisit"
-}

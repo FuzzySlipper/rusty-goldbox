@@ -4,46 +4,26 @@ namespace RustyGoldbox.Tests;
 
 public sealed class BlackappleCampaignTests
 {
-    private static string Campaign => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "modules",
+    private static string Campaign => BlackappleCheckout.Path("modules",
         "blackapple-brugh");
 
-    private static string CampaignModules => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "modules");
+    private static string CampaignModules => BlackappleCheckout.Path("modules");
 
     private static string RepositoryModules => Path.Combine(Rules.RepositoryRoot, "modules");
 
-    private static string FullSuccessLevelScript => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "scripts",
+    private static string FullSuccessLevelScript => BlackappleCheckout.Path("scripts",
         "routes",
         "full-success-level.script");
 
-    private static string FullPartialScript => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "scripts",
+    private static string FullPartialScript => BlackappleCheckout.Path("scripts",
         "routes",
         "full-partial.script");
 
-    private static string ReturnHubRegressionScript => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "scripts",
+    private static string ReturnHubRegressionScript => BlackappleCheckout.Path("scripts",
         "routes",
         "return-hub-regression.script");
 
-    [Fact]
+    [BlackappleFact]
     public void FullCampaignGoldenReturnsEveryChildLevelsThePartyAndPaysGoodallOnce()
     {
         using TempModules scratch = new();
@@ -86,7 +66,7 @@ public sealed class BlackappleCampaignTests
         Golden.Verify("blackapple-full-campaign.txt", transcript.TrimEnd('\r', '\n') + Environment.NewLine);
     }
 
-    [Fact]
+    [BlackappleFact]
     public void MidChapterWaitingMenuReloadMatchesTheUninterruptedSeededRoute()
     {
         using TempModules scratch = new();
@@ -136,7 +116,7 @@ public sealed class BlackappleCampaignTests
         Assert.True(ReadSave(resumedSave).RootElement.GetProperty("ended").GetBoolean());
     }
 
-    [Fact]
+    [BlackappleFact]
     public void CoatroomViewsRemainSelectableAtItsWaitingMenuAndAfterReloadAndRevisit()
     {
         using TempModules scratch = new();
@@ -188,7 +168,7 @@ public sealed class BlackappleCampaignTests
         }
     }
 
-    [Fact]
+    [BlackappleFact]
     public void ReturnHubVisitNewAmeliaHandoffAndResumeKeepOneTimeProgressStable()
     {
         using TempModules scratch = new();

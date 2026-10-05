@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_salt_text",
-  "kind": "text",
-  "text": "A clean pouch of salt comes free from the pantry shelf. It is enough to mend one break in a salt line.",
-  "next": "evt_l3_c22_menu"
-}

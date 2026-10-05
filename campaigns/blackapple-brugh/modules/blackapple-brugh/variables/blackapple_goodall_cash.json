@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_goodall_cash",
-  "value_type": "number",
-  "initial": "1400",
-  "description": "Gold remaining at Goodall's trading counter; successful purchases reduce this campaign balance."
-}

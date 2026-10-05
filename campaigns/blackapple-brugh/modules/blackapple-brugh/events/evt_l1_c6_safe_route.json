@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c6_safe_route",
-  "kind": "text",
-  "text": "The ward pixies ignore you while your boots stay on stone. Giles keeps his eyes down, but he recognizes the village name when you speak it. A bright thread circles his ankle.",
-  "next": "evt_l1_c6_giles_menu"
-}

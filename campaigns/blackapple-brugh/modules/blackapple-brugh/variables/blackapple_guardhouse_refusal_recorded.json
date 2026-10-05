@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_guardhouse_refusal_recorded",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "Private Blackapple map detail: the one-time village trust loss for refusing the north-road toll has been recorded."
-}

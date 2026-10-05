@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_rest_mark",
-  "kind": "set",
-  "variable": "recovery_pit",
-  "value": "true",
-  "next": "evt_l3_c18_rest_text"
-}

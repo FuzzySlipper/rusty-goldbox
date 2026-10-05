@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_sanitarium_expose_evidence",
-  "kind": "set",
-  "variable": "double_arthur_figwort_evidence",
-  "value": "\"private nickname and impossible memory\"",
-  "next": "evt_vil_sanitarium_expose_recovery"
-}

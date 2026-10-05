@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_optional_cemetery_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "Whether the optional Blackapple night cemetery scene has been entered in this area state."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_ursula_free",
-  "kind": "set",
-  "variable": "child_ursula_cooke",
-  "value": "'freed'",
-  "next": "evt_l2_ursula_evidence"
-}

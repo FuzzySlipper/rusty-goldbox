@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_close",
-  "kind": "text",
-  "text": "Your return account is complete. The village knows whom you brought home, what remains unresolved, and the promises you made in the Brugh.",
-  "next": "evt_return_postscript"
-}

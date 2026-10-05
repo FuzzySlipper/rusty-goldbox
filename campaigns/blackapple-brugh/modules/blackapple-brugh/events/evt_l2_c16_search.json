@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c16_search",
-  "kind": "set",
-  "variable": "brugh_l2_c16_searched",
-  "value": "true",
-  "next": "evt_l2_c16_sling"
-}

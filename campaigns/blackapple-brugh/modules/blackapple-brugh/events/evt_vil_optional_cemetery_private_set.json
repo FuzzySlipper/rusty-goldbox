@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_private_set",
-  "kind": "set",
-  "variable": "blackapple_optional_tobler_evidence",
-  "value": "\"private_evidence\"",
-  "next": "evt_vil_optional_cemetery_private_text"
-}

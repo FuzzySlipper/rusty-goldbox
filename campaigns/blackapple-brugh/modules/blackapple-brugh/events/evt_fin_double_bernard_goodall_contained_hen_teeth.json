@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_bernard_goodall_contained_hen_teeth",
-  "kind": "set",
-  "variable": "double_bernard_goodall_evidence",
-  "value": "\"Flynn at the Hen's Teeth safe room\"",
-  "next": "evt_fin_double_bernard_goodall_contained_hen_teeth_text"
-}

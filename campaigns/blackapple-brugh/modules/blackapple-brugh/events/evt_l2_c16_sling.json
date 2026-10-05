@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c16_sling",
-  "kind": "give",
-  "item": "bernard_sling",
-  "next": "evt_l2_c16_doll"
-}

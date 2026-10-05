@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_return_xp_award",
-  "kind": "experience",
-  "amount": "600",
-  "each": true,
-  "text": "The return confirms your named rescue. The shared rescue experience is awarded only once.",
-  "next": "evt_return_care"
-}

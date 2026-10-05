@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_noncombat_resolve",
-  "kind": "set",
-  "variable": "environs_wild_dog_resolved",
-  "value": "true",
-  "next": "evt_env_forest_noncombat_trust"
-}

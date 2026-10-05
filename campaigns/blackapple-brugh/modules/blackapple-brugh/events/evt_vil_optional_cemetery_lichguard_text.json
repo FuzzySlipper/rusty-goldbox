@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_lichguard_text",
-  "kind": "text",
-  "text": "You witness Agatha sprinkle lichguard over a freshly dug grave and write down what you saw. No child or dead thing is attacked; the grave remains closed.",
-  "picture": "blackapple-art:blackapple_cemetery",
-  "next": "evt_vil_optional_hub"
-}

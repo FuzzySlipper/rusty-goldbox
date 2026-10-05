@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_tobler_decline_text",
-  "kind": "text",
-  "text": "You leave Tobler’s shop without turning a rumour into a public charge. The cemetery lead remains optional.",
-  "picture": "blackapple-art:blackapple_tobler_shop",
-  "next": "evt_vil_optional_hub"
-}

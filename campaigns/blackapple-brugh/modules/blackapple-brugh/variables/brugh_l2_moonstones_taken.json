@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l2_moonstones_taken",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The C17 moonstone cache has been taken once in this Level 2 area state."
-}

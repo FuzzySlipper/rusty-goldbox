@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c25_bargain_failure",
-  "kind": "set",
-  "variable": "court_alarm",
-  "value": "campaign.var.court_alarm + 1",
-  "next": "evt_l3_c25_bargain_failure_text"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_wylda_join",
-  "kind": "join",
-  "npc": "wylda_figwort",
-  "next": "evt_vil_wylda_joined",
-  "on_refused": "evt_vil_wylda_full"
-}

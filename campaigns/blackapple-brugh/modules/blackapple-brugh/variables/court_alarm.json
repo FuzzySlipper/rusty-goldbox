@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "court_alarm",
-  "value_type": "number",
-  "initial": "0",
-  "description": "Authored Brugh court alert value."
-}

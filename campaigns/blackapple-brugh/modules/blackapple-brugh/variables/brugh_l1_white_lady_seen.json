@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_white_lady_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "C7 White Lady gazebo has been visited."
-}

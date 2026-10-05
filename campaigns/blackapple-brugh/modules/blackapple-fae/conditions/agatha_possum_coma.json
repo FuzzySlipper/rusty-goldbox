@@ -1,8 +1,0 @@
-{
-  "type": "condition",
-  "id": "agatha_possum_coma",
-  "name": "Possum coma",
-  "description": "A converted death-like sleep leaves the living drinker unable to act for one fictional day; it is not the dead condition, and the source's minor headache is omitted.",
-  "modifiers": [],
-  "prevents_actions": true
-}

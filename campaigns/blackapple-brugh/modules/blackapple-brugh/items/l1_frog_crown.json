@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "l1_frog_crown",
-  "name": "Tiny brass frog crown",
-  "kind": "gear",
-  "cost": 4,
-  "currency": "fifth-srd:gold",
-  "weight": 0.1
-}

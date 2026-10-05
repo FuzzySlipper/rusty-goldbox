@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_bargain_set_giles_weadley",
-  "kind": "set",
-  "variable": "child_giles_weadley",
-  "value": "\"returned\"",
-  "next": "evt_fin_bargain_accept_giles_weadley"
-}

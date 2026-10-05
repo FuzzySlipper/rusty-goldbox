@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_ursula_cooke_set_returned",
-  "kind": "set",
-  "variable": "child_ursula_cooke",
-  "value": "\"returned\"",
-  "next": "evt_fin_child_stevie_leeford"
-}

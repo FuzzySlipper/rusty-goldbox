@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_combat_lose",
-  "kind": "text",
-  "text": "The watch drives the party from the hollow. No one claims that a fallen companion is restored by the forest; survivors can carry the warning back to Blackapple for ordinary care.",
-  "next": "evt_env_return_blackapple"
-}

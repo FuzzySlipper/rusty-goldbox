@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_017",
-  "kind": "set",
-  "variable": "double_giles_weadley",
-  "value": "\"exposed\"",
-  "next": "evt_fin_setup_elf_bargain_018"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_epilogue_contained_text",
-  "kind": "text",
-  "text": "All seven doubles are safely contained, each with a named custodian. Their care remains a separate duty from the fate of the children.",
-  "next": "evt_fin_epilogue_masks_text_gate"
-}

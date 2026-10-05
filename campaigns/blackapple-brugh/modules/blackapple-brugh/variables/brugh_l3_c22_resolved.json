@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c22_resolved",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The optional C22 pudding hazard has been cleared once."
-}

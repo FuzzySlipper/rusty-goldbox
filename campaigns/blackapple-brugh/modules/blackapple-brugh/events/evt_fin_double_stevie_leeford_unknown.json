@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_stevie_leeford_unknown",
-  "kind": "text",
-  "text": "The Stevie Leeford double — unknown. The party has no reliable current account; this is neither contained nor silently treated as escaped.",
-  "next": "evt_fin_double_stevie_leeford_unknown_menu"
-}

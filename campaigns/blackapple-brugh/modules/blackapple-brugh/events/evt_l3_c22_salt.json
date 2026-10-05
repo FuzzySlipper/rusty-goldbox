@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_salt",
-  "kind": "give",
-  "item": "l3_salt_pouch",
-  "count": 1,
-  "next": "evt_l3_c22_salt_mark"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_reward_mark",
-  "kind": "set",
-  "variable": "environs_wild_dog_reward_given",
-  "value": "true",
-  "next": "evt_env_forest_resolution"
-}

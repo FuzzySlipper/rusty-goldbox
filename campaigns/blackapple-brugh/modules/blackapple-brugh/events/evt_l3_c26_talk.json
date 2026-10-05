@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c26_talk",
-  "kind": "text",
-  "text": "The horse speaks in a patient voice about serving as the Elf Lord's war steed and being punished for looking sideways. He will follow anyone who treats him as a person, but the party must still unfasten him first.",
-  "next": "evt_l3_c26_menu"
-}

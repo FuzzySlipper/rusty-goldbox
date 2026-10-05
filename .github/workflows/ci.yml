@@ -1,7 +1,9 @@
 name: ci
 
 # Checks every push and pull request on the pinned Engine pair: Core and CLI
-# tests, the Game build, and validation of every first-party module.
+# tests, the Game build, and validation of every first-party module. The
+# Blackapple Brugh campaign repository is cloned beside this one for its
+# regression tests and workspace build.
 
 on:
   push:
@@ -18,19 +20,33 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rusty-goldbox
+    env:
+      GOLDBOX_BLACKAPPLE: ${{ github.workspace }}/blackapple-brugh
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: rusty-goldbox
 
-      # Campaign art is in Git LFS. Cache the objects so each run doesn't
-      # spend LFS bandwidth downloading the same pictures again.
-      - name: List LFS objects
-        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-ids
+      - uses: actions/checkout@v4
+        with:
+          repository: FuzzySlipper/blackapple-brugh
+          path: blackapple-brugh
+
+      # The campaign's art is in Git LFS. Cache the objects so each run
+      # doesn't spend LFS bandwidth downloading the same pictures again.
+      - name: List the campaign's LFS objects
+        working-directory: blackapple-brugh
+        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > ../.lfs-ids
       - uses: actions/cache@v4
         with:
-          path: .git/lfs
+          path: blackapple-brugh/.git/lfs
           key: lfs-${{ hashFiles('.lfs-ids') }}
           restore-keys: lfs-
-      - name: Get LFS objects
+      - name: Get the campaign's LFS objects
+        working-directory: blackapple-brugh
         run: git lfs pull
 
       - uses: actions/setup-dotnet@v4
@@ -65,5 +81,5 @@ jobs:
           done
           exit $status
 
-      - name: Validate the editable Blackapple campaign
-        run: dotnet run --project src/RustyGoldbox.Cli -- workspace build campaigns/blackapple-brugh --json
+      - name: Build the Blackapple campaign workspace
+        run: dotnet run --project src/RustyGoldbox.Cli -- workspace build ../blackapple-brugh --json

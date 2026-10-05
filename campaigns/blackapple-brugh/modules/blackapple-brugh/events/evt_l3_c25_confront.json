@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c25_confront",
-  "kind": "set",
-  "variable": "lord_confronted",
-  "value": "true",
-  "next": "evt_l3_c25_combat"
-}

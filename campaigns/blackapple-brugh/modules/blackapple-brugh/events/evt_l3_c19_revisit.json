@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c19_revisit",
-  "kind": "text",
-  "text": "The false door remains a wall behind a door-shaped panel. Its contact danger is understood, so the party can leave it untouched or use gloves and move on.",
-  "next": "evt_l3_c19_menu"
-}

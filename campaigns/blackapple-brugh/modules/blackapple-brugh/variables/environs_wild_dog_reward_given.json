@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_wild_dog_reward_given",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The one-time A1 food, pelts, and coin reward has been delivered in this environs area state."
-}

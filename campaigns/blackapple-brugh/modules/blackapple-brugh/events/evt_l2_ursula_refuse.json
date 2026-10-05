@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_ursula_refuse",
-  "kind": "text",
-  "text": "The ibix musicians keep their seats. Waiting reveals no safe opening, but it does give you a clearer memory of Ursula's rhythm.",
-  "next": "evt_l2_c12_menu"
-}

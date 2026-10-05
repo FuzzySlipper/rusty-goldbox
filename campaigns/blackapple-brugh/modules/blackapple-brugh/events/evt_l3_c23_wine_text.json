@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c23_wine_text",
-  "kind": "text",
-  "text": "One bottle comes free from the cellar rack. The remaining bottles are enchanted to become swamp water outside the Brugh.",
-  "next": "evt_l3_c23_menu"
-}

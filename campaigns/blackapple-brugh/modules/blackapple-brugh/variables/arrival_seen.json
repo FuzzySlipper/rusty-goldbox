@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "arrival_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "North-road opening completed."
-}

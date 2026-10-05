@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "lord_confronted",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The optional Elf Lord confrontation occurred."
-}

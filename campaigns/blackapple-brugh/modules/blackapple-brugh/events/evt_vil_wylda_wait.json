@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_wylda_wait",
-  "kind": "set",
-  "variable": "figwort_stance",
-  "value": "\"watch\"",
-  "next": "evt_vil_wylda_wait_text"
-}

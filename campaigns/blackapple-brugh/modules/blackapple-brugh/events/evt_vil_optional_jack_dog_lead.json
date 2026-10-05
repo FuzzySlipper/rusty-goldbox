@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_jack_dog_lead",
-  "kind": "text",
-  "text": "Jack gives the party the same wild-dog trail that begins beyond the forest road. The pack and its reward await there; nothing about Jack's private secret is forced by taking the trail.",
-  "next": "evt_vil_exit_to_environs"
-}

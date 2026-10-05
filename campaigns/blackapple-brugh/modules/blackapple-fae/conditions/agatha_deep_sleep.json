@@ -1,8 +1,0 @@
-{
-  "type": "condition",
-  "id": "agatha_deep_sleep",
-  "name": "Deep sleep",
-  "description": "Agatha's tea leaves the drinker in an ordinary deep sleep until its fictional duration ends.",
-  "modifiers": [],
-  "prevents_actions": true
-}

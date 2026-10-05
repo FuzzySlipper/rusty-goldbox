@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dinner_very_favorable_text",
-  "kind": "text",
-  "text": "The Elf Lord is delighted enough to order a private spectacle. One ibix performer is pushed toward the pit while the court waits to see whether the party applauds, interrupts, or understands the bargain hidden in the entertainment.",
-  "next": "evt_l2_ibix_spectacle"
-}

@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21_wine",
-  "kind": "take",
-  "item": "brugh_wine",
-  "count": 1,
-  "on_refused": "evt_l3_c21_check",
-  "next": "evt_l3_c21_free"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_guardhouse_paid_text",
-  "kind": "text",
-  "text": "The sentry stamps the paid road pass and marks your faces as visitors in good standing. He directs you to the square, the Jolly Fox, and the Figwort manor. He adds that Arthur Figwort is being held at Dr. Livinius's sanitarium outside the village.",
-  "picture": "blackapple-art:blackapple_village"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_partial_mixed_047",
-  "kind": "set",
-  "variable": "court_service_accepted",
-  "value": "false",
-  "next": "evt_fin_setup_partial_mixed_048"
-}

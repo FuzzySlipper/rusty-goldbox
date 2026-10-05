@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21_check_failure_text",
-  "kind": "text",
-  "text": "The recipe phrase comes out wrong. Stevie recognizes the attempt but the cook turns suspicious; the child remains captive and another quiet try is possible.",
-  "next": "evt_l3_c21_menu"
-}

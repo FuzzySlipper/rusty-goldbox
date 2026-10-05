@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_parent_suspicion",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Parent interviews establish the replacement pattern."
-}

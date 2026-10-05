@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_pool_avoid_text",
-  "kind": "text",
-  "text": "The party marks the safe edge with chalk and backs away. The pool remains a known hazard rather than a forced encounter, and the recovery note preserves the route for a later return.",
-  "next": "evt_l2_c12_menu"
-}

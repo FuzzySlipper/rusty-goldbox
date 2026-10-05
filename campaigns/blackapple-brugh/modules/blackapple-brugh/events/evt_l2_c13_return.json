@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c13_return",
-  "kind": "text",
-  "text": "The party steps back from the opening and returns to the dining hall's table. The court's reaction is still recorded, but the room remains a route through the connected Level 2 chambers.",
-  "next": "evt_l2_c13_revisit"
-}

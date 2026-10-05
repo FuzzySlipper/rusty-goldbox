@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_chest_three_taken",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The third C27 treasure chest has been opened."
-}

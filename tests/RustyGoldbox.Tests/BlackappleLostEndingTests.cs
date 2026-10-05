@@ -23,29 +23,17 @@ public sealed class BlackappleLostEndingTests
         ("double_stevie_leeford", "contained"),
     ];
 
-    private static string CampaignSource => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "modules",
+    private static string CampaignSource => BlackappleCheckout.Path("modules",
         "blackapple-brugh");
 
-    private static string CampaignModules => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "modules");
+    private static string CampaignModules => BlackappleCheckout.Path("modules");
 
     private static string RepositoryModules => Path.Combine(Rules.RepositoryRoot, "modules");
 
-    private static string FinaleRoot => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "scripts",
+    private static string FinaleRoot => BlackappleCheckout.Path("scripts",
         "finale");
 
-    [Fact]
+    [BlackappleFact]
     public void AuthoredLostScenarioSetsEndingAndPreservesAccountAcrossRevisit()
     {
         using TempModules scratch = new();

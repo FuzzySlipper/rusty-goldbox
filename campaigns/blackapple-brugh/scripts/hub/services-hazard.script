@@ -1,8 +1,0 @@
-# B7: open Hazard's real shop owner, buy existing gear, leave, and revisit services.
-status
-choose 6
-choose 1
-sell 1
-buy 1
-leave
-status

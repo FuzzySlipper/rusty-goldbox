@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dinner_immediate_reaction",
-  "kind": "set",
-  "variable": "elf_lord_reaction",
-  "value": "'hostile'",
-  "next": "evt_l2_dinner_immediate_text"
-}

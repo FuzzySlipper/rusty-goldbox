@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c19_intro",
-  "kind": "text",
-  "text": "The door at the end of the hall opens onto solid wall. A warning is scratched beside its ordinary-looking knob: touching it burns the hand later. A pair of gloves can prevent the contact poison.",
-  "next": "evt_l3_c19_menu"
-}

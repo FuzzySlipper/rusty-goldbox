@@ -1,6 +1,0 @@
-# C15: use ordinary movement to read the losing painting, then leave the room.
-choose 7
-forward
-choose 1
-choose 7
-status

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_stevie_leeford_hold",
-  "kind": "text",
-  "text": "Stevie Leeford — remains freed. The party records a safe-room pause; the value is not changed to returned without a family handoff.",
-  "next": "evt_fin_goodall_reward_gate"
-}

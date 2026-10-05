@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "entry_portal_covered",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The C1 entry mirror is covered after departure."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c18_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "C18 has shown its initial pit scene in this Level 3 area instance."
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_flynn_watch",
-  "kind": "text",
-  "text": "You keep your voices low, settle a sharp exchange before it becomes a tavern fight, and leave the fauns their song. Flynn studies the choice, then pulls the mirror's cover back just far enough for a cold reflection to show. He will answer one useful question if you keep the house quiet.",
-  "next": "evt_env_flynn_watch_trust"
-}

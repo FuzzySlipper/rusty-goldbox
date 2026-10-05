@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_stevie_leeford_masked_keep_text",
-  "kind": "text",
-  "text": "The Stevie Leeford double — remains masked. No child status is changed by this choice.",
-  "next": "evt_fin_account_complete"
-}

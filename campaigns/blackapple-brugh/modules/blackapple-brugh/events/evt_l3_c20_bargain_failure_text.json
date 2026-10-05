@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c20_bargain_failure_text",
-  "kind": "text",
-  "text": "The captive hears only a threat in the party's words. The salt remains intact, but the raised voices may travel through the service halls.",
-  "next": "evt_l3_c20_menu"
-}

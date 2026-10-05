@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_011",
-  "kind": "set",
-  "variable": "double_amelia_goodall",
-  "value": "\"exposed\"",
-  "next": "evt_fin_setup_elf_bargain_012"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c23_free",
-  "kind": "set",
-  "variable": "child_arthur_figwort",
-  "value": "'freed'",
-  "next": "evt_l3_c23_evidence"
-}

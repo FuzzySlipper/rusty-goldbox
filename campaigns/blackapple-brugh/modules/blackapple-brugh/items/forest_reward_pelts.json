@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "forest_reward_pelts",
-  "name": "Wild dog pelts",
-  "kind": "gear",
-  "cost": 10,
-  "currency": "fifth-srd:gold",
-  "weight": 2
-}

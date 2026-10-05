@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_ned_rescued",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "Master Ned has been released from the C26 dungeon."
-}

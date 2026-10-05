@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_amelia_rescue_text",
-  "kind": "text",
-  "text": "The tally reaches the number only Amelia would use, and the child whispers a correction beneath the clatter of plates. She is herself again, though the court still expects her to carry the next course. The party can keep the discovery quiet until a safe exit.",
-  "next": "evt_xp_brugh"
-}

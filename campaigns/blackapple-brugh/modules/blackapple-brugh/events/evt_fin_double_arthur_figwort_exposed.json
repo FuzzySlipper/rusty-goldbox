@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_arthur_figwort_exposed",
-  "kind": "text",
-  "text": "The Arthur Figwort double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
-  "next": "evt_fin_double_arthur_figwort_exposed_menu"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l2_c16_searched",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The servant quarters search has delivered the sling and doll evidence once."
-}

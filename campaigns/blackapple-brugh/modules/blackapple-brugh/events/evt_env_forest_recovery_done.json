@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_recovery_done",
-  "kind": "set",
-  "variable": "recovery_forest",
-  "value": "true",
-  "next": "evt_env_forest_reward_gate"
-}

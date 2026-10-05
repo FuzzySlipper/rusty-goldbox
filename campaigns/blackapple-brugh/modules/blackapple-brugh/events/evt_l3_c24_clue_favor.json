@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c24_clue_favor",
-  "kind": "set",
-  "variable": "court_favor",
-  "value": "campaign.var.court_favor + 1",
-  "next": "evt_l3_c24_clue_text"
-}

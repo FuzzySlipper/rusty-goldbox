@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_009",
-  "kind": "set",
-  "variable": "double_arthur_figwort_evidence",
-  "value": "\"mask identity established by return witness\"",
-  "next": "evt_fin_setup_elf_bargain_010"
-}

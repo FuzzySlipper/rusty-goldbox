@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_mark_help",
-  "kind": "set",
-  "variable": "first_help_done",
-  "value": "true",
-  "next": "evt_env_forest_recovery"
-}

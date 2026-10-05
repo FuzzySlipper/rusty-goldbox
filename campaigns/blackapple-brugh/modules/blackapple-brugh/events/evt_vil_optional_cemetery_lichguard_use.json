@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_lichguard_use",
-  "kind": "take",
-  "item": "agatha_lichguard",
-  "count": 1,
-  "next": "evt_vil_optional_cemetery_lichguard_use_set",
-  "on_refused": "evt_vil_optional_cemetery_revisit"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_smithson_passed_set",
-  "kind": "set",
-  "variable": "blackapple_optional_smithson_care",
-  "value": "\"passed\"",
-  "next": "evt_vil_optional_smithson_passed_text"
-}

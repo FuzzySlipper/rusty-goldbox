@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_epilogue_court_terms_text",
-  "kind": "text",
-  "text": "The Elf Lord's privacy or audience term is explicit. If you return, the recorded bargain will greet you rather than a hidden obligation.",
-  "next": "evt_fin_close"
-}

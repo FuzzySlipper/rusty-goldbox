@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_parents_protect_reward",
-  "kind": "set",
-  "variable": "blackapple_parents_protect_rewarded",
-  "value": "true",
-  "next": "evt_vil_parents_protect_trust"
-}

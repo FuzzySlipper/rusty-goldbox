@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_epilogue_public_trusted_text",
-  "kind": "text",
-  "text": "The verified evidence reaches villagers and the priory with a trusted village ally beside you. The Figwort family's protect-or-reconcile stance shapes the public response, and the cost to village trust remains.",
-  "next": "evt_fin_close"
-}

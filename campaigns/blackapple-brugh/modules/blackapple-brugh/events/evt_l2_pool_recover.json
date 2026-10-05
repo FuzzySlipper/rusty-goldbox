@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_pool_recover",
-  "kind": "set",
-  "variable": "recovery_pool",
-  "value": "true",
-  "next": "evt_l2_pool_recover_text"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_route_shrine",
-  "kind": "teleport",
-  "area": "environs",
-  "entry": "shrine_confession",
-  "next": "evt_env_shrine_arrival"
-}

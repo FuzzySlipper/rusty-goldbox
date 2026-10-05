@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_entry_uncover_portal",
-  "kind": "set",
-  "variable": "entry_portal_covered",
-  "value": "false",
-  "next": "evt_entry_brugh_perception"
-}

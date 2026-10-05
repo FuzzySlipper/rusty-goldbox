@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c8_prayer",
-  "kind": "give",
-  "item": "l1_redacted_prayer",
-  "next": "evt_l1_c8_prayer_mark"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_sanitarium_return",
-  "kind": "teleport",
-  "area": "blackapple",
-  "entry": "from_environs",
-  "next": "evt_vil_arrival_from_environs"
-}

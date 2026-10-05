@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c10_threaten_text",
-  "kind": "text",
-  "text": "The ambassador closes the ledger and calls the threat what it is: a court alarm, not a negotiation. It withdraws behind the desk, but no fight starts; the party can lower its voice or leave.",
-  "next": "evt_l1_c10_choice"
-}

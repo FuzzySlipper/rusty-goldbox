@@ -5,11 +5,7 @@ namespace RustyGoldbox.Tests;
 
 public sealed class BlackappleWormBehaviorTests
 {
-    private static string CampaignModules => Path.Combine(
-        Rules.RepositoryRoot,
-        "campaigns",
-        "blackapple-brugh",
-        "modules");
+    private static string CampaignModules => BlackappleCheckout.Path("modules");
 
     private static string EncounterModule => Path.Combine(
         CampaignModules,
@@ -17,7 +13,7 @@ public sealed class BlackappleWormBehaviorTests
 
     private static string RepositoryModules => Path.Combine(Rules.RepositoryRoot, "modules");
 
-    [Fact]
+    [BlackappleFact]
     public void WormMovesThenLashesWithFourMemberPartyWhenCastersAreDepleted()
     {
         using TempModules scratch = new();

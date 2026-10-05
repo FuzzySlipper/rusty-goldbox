@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_primary_elf_bargain",
-  "kind": "text",
-  "text": "The Elf Lord has released a named child under the bargain you confirmed. The court remains bargaining, and the village inherits a deliberate truce; no child is counted as rescued without the family handoff.",
-  "next": "evt_fin_epilogue_contained_text_gate"
-}

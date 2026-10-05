@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_jolly_fox_intro_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "Private Blackapple map detail: the Jolly Fox services have been introduced in this village area."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c1_mark_area",
-  "kind": "set",
-  "variable": "brugh_l1_arrival_seen",
-  "value": "true",
-  "next": "evt_l1_c1_mark_campaign"
-}

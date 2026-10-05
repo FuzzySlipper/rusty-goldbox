@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "silk_sheet",
-  "name": "Silk mirror sheet",
-  "kind": "gear",
-  "cost": 2,
-  "currency": "fifth-srd:gold",
-  "weight": 1
-}

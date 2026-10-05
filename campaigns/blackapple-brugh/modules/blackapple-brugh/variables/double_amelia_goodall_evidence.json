@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "double_amelia_goodall_evidence",
-  "value_type": "text",
-  "initial": "''",
-  "description": "Optional evidence retained when the matching double's identity or disposition is established."
-}

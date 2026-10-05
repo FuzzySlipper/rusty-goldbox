@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_primary_court_bound",
-  "kind": "text",
-  "text": "Your expedition ends under the Brugh court's confirmed terms. The party knowingly stays or serves, while every child's and double's account remains as written.",
-  "next": "evt_fin_epilogue_contained_text_gate"
-}

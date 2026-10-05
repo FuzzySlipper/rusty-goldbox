@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_wild_dog_resolved",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The optional A1 wild-dog quest has been completed by a fight or a noncombat resolution in this environs area state."
-}

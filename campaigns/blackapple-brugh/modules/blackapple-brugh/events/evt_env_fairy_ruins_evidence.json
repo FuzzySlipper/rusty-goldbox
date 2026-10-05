@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_fairy_ruins_evidence",
-  "kind": "set",
-  "variable": "evidence_faehill_history",
-  "value": "true",
-  "next": "evt_env_fairy_ruins_report"
-}

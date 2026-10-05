@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c10_ledger_mark",
-  "kind": "set",
-  "variable": "brugh_l1_ambassador_ledger_taken",
-  "value": "true",
-  "next": "evt_l1_c10_ledger_text"
-}

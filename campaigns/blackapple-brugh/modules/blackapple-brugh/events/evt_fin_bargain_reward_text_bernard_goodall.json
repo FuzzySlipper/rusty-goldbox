@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_bargain_reward_text_bernard_goodall",
-  "kind": "text",
-  "text": "Ms. Goodall embraces Bernard. She thanks each of you with a purse of one hundred gold pieces.",
-  "next": "evt_fin_bargain_reward_bernard_goodall"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_guard_toll_paid",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "Private Blackapple map detail: the north-road toll has been paid in this village visit."
-}

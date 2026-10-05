@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_ursula_cooke_masked",
-  "kind": "text",
-  "text": "The Ursula Cooke double — masked. The identity is unresolved, so the party must choose whether to preserve that uncertainty or record a new lead.",
-  "next": "evt_fin_double_ursula_cooke_masked_menu"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_amelia_fail",
-  "kind": "text",
-  "text": "The question sounds like another court command. The server repeats the menu and steps away before the party can press. Amelia's status remains captive, and another approach or a quieter route is still possible.",
-  "next": "evt_l2_c13_children_menu"
-}

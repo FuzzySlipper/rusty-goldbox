@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21_check",
-  "kind": "check",
-  "check": "blackapple-fae:investigate_evidence",
-  "member": 1,
-  "on_success": "evt_l3_c21_free",
-  "on_failure": "evt_l3_c21_check_failure"
-}

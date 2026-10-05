@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_014",
-  "kind": "set",
-  "variable": "double_bernard_goodall",
-  "value": "\"exposed\"",
-  "next": "evt_fin_setup_elf_bargain_015"
-}

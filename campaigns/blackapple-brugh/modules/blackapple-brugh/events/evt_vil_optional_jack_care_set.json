@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_jack_care_set",
-  "kind": "set",
-  "variable": "blackapple_optional_jack_secret",
-  "value": "\"consented_care\"",
-  "next": "evt_vil_optional_jack_care_text"
-}

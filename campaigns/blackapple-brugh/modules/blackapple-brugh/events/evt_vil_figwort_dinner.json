@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_figwort_dinner",
-  "kind": "text",
-  "text": "Dinner turns the family crisis into three different requests. Lord Figwort wants a story he can repeat without scandal. Lady Figwort wants Arthur protected from an operation she does not trust. Wylda wants someone to look at the mirror with her and admit that the impossible may be real.",
-  "picture": "blackapple-art:blackapple_figwort_manor",
-  "next": "evt_vil_figwort_choices"
-}

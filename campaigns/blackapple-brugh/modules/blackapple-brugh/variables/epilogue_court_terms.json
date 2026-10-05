@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "epilogue_court_terms",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Independent additive ending consequence."
-}

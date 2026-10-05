@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_arthur_figwort_public_evidence",
-  "kind": "set",
-  "variable": "double_arthur_figwort_evidence",
-  "value": "\"public village account with the mask shown\"",
-  "next": "evt_fin_double_arthur_figwort_public_text"
-}

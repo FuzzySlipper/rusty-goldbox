@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_agatha_to_shrine",
-  "kind": "teleport",
-  "area": "environs",
-  "entry": "shrine_confession",
-  "next": "evt_env_shrine_choice"
-}

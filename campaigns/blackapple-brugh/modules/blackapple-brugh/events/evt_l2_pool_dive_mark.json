@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_pool_dive_mark",
-  "kind": "set",
-  "variable": "brugh_l2_moonstones_taken",
-  "value": "true",
-  "next": "evt_l2_pool_dive_recover"
-}

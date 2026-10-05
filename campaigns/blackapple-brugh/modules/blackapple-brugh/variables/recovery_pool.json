@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "recovery_pool",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The C17 water-risk recovery route is resolved."
-}

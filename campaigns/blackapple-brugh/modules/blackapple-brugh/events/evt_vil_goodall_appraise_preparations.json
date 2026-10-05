@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_goodall_appraise_preparations",
-  "kind": "text",
-  "text": "Goodall checks the labels on the preparations you carry. Bed Time Tea heals 1d4 and puts its willing drinker into deep sleep for 1d4+4 hours; Berserker Juice gives a short converted rage with +2 attack and weapon damage and -2 armor class; Love Potion #8 records a one-day, consent-forward social inclination toward the next person met; Right Rain heals 1 hit point; Possum Powder leaves a living drinker unable to act for one day; and Lichguard belongs on a fresh grave, not on a person. The closed-eye pendant is different: its glamour-save bonus applies only while equipped, while a carried pendant has no modifier. No hidden identification state or forced target is added.",
-  "picture": "blackapple-art:blackapple_goodall_shop",
-  "next": "evt_vil_goodall"
-}

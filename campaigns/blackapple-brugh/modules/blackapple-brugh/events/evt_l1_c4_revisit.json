@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c4_revisit",
-  "kind": "text",
-  "text": "The green game room is quieter now. The court remembers both fair play and cheating; the party may still leave without accepting another wager.",
-  "next": "evt_l1_c4_choice"
-}

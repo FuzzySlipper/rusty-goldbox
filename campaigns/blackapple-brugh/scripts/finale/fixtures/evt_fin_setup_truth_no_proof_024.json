@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_truth_no_proof_024",
-  "kind": "set",
-  "variable": "double_ursula_cooke_evidence",
-  "value": "\"\"",
-  "next": "evt_fin_setup_truth_no_proof_025"
-}

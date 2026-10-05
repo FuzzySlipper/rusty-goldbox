@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_parents_hold_rhyme",
-  "kind": "set",
-  "variable": "mirror_rhyme_known",
-  "value": "true",
-  "next": "evt_vil_parents_hold_text"
-}

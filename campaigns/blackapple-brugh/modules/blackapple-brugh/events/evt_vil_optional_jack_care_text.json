@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_jack_care_text",
-  "kind": "text",
-  "text": "Jack consents to a private care conversation. Father Naskew can tend an injured companion, but he has no answer for Jack's wereboar curse; this visit is a promise to talk, not a forced remedy.",
-  "next": "evt_vil_priory"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_amelia_goodall_captive",
-  "kind": "text",
-  "text": "Amelia Goodall — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
-  "next": "evt_fin_child_bernard_goodall"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c23_wine_mark",
-  "kind": "set",
-  "variable": "brugh_l3_wine_taken",
-  "value": "true",
-  "next": "evt_l3_c23_wine_text"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_square_clerics",
-  "kind": "set",
-  "variable": "evidence_double_behavior",
-  "value": "true",
-  "next": "evt_vil_square_clerics_done"
-}

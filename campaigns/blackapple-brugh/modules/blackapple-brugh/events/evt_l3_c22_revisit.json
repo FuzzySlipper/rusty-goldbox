@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_revisit",
-  "kind": "text",
-  "text": "The pantry is still stocked. The Blackcurrant Confit jar remains an optional hazard rather than a required room clear.",
-  "next": "evt_l3_c22_menu"
-}

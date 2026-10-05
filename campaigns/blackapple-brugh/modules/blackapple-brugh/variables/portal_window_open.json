@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "portal_window_open",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The one explicit midnight ingress interaction is available."
-}

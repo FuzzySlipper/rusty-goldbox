@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "l1_redacted_prayer",
-  "name": "Redacted prayer book",
-  "kind": "gear",
-  "cost": 0,
-  "currency": "fifth-srd:gold",
-  "weight": 1
-}

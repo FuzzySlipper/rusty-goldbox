@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dinner_favorable_text",
-  "kind": "text",
-  "text": "The Elf Lord laughs at the party's answers and sends Moth-in-Water to escort you to the guest rooms. The court's hospitality is a real opening, though it remains hospitality on the court's terms.",
-  "next": "evt_l2_to_guest_rooms"
-}

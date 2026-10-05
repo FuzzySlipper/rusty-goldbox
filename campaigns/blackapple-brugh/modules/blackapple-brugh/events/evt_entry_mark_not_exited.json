@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_entry_mark_not_exited",
-  "kind": "set",
-  "variable": "brugh_exited",
-  "value": "false",
-  "next": "evt_entry_uncover_portal"
-}

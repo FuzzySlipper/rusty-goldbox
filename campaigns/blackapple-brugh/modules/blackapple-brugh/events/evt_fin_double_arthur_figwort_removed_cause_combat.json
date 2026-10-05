@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_arthur_figwort_removed_cause_combat",
-  "kind": "set",
-  "variable": "double_arthur_figwort_removal_cause",
-  "value": "\"removed after defensive combat\"",
-  "next": "evt_fin_double_arthur_figwort_removed_evidence_combat"
-}

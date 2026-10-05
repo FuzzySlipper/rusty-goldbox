@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c20_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "C20 has shown its cold-storage bargain in this Level 3 area instance."
-}

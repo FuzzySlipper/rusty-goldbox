@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_stevie_leeford_masked_expose_text",
-  "kind": "text",
-  "text": "The Stevie Leeford double — exposed. The mask evidence is retained, with no automatic custody.",
-  "next": "evt_fin_account_complete"
-}

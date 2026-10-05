@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_resolved_mark",
-  "kind": "set",
-  "variable": "brugh_l3_c22_resolved",
-  "value": "true",
-  "next": "evt_l3_c22_win_text"
-}

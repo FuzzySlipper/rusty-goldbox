@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_truth_no_proof_003",
-  "kind": "set",
-  "variable": "child_bernard_goodall",
-  "value": "\"captive\"",
-  "next": "evt_fin_setup_truth_no_proof_004"
-}

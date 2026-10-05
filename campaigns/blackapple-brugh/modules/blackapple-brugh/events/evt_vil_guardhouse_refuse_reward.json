@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_guardhouse_refuse_reward",
-  "kind": "set",
-  "variable": "blackapple_guardhouse_refusal_recorded",
-  "value": "true",
-  "next": "evt_vil_guardhouse_refuse_trust"
-}

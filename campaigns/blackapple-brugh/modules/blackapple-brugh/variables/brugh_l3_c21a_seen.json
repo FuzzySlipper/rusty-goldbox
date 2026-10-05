@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c21a_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "C21a has evaluated the active-party lift capacity in this area instance."
-}

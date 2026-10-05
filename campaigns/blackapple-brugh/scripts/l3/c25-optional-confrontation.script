@@ -1,5 +1,0 @@
-# Preconditions: load a save at C25 with pending evt_l3_c25_menu. Leave the
-# chamber to prove the Elf Lord confrontation is optional; a separate run can
-# choose the final confrontation option (after taking the optional token).
-choose 1
-status

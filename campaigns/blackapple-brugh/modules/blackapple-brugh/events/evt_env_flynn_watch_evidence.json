@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_flynn_watch_evidence",
-  "kind": "set",
-  "variable": "evidence_fairy_mirrors",
-  "value": "true",
-  "next": "evt_env_hen_teeth_menu"
-}

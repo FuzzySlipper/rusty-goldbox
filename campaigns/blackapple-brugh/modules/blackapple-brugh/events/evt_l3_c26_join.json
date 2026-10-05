@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c26_join",
-  "kind": "join",
-  "npc": "master_ned",
-  "next": "evt_l3_c26_joined",
-  "on_refused": "evt_l3_c26_release"
-}

@@ -1,6 +1,0 @@
-# B12: ask Agatha for the truth, leave her shop, and record the resulting state.
-status
-choose 4
-choose 1
-leave
-status

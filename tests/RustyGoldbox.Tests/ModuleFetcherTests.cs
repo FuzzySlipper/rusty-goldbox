@@ -39,6 +39,23 @@ public sealed class ModuleFetcherTests
     }
 
     [Fact]
+    public void FetchingAnInstalledModuleAgainFinishesItsMissingRequirements()
+    {
+        using TempModules scratch = new();
+        string library = Path.Combine(scratch.Root, "library");
+        Directory.CreateDirectory(library);
+        FakeGitHub hub = new();
+        hub.Release("alice/tale", "tale-v0.1.0", Module("tale", "0.1.0", ModuleKind.Campaign, [("tale-extras", "*", null)]));
+        hub.Release("alice/tale", "tale-extras-v0.1.0", Module("tale-extras", "0.1.0", ModuleKind.Extension, []));
+
+        Assert.True(ReleaseSource.TryParse("github:alice/tale", out ReleaseSource? tale));
+        FetchResult result = hub.Fetcher().Get(tale!, "tale", null, [("tale", new ModuleVersion(0, 1, 0))], library);
+
+        Assert.True(result.Succeeded, string.Join("\n", result.Problems));
+        Assert.Equal("tale-extras", Assert.Single(result.Installed).Module.Id);
+    }
+
+    [Fact]
     public void AContainerThatDoesNotMatchItsIndexIsNotInstalled()
     {
         using TempModules scratch = new();

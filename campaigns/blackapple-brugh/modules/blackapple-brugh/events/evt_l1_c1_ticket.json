@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c1_ticket",
-  "kind": "give",
-  "item": "l1_coatroom_ticket",
-  "next": "evt_l1_c1_ticket_mark"
-}

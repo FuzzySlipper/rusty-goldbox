@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c24_clue_found",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "Moth-in-Water's private note and bargaining clue were found."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_pouch_taken",
-  "kind": "set",
-  "variable": "brugh_l3_pouch_taken",
-  "value": "true",
-  "next": "evt_l3_c18_pouch_text"
-}

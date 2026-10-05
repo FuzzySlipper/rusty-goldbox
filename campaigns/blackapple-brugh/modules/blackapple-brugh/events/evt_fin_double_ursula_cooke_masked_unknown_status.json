@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_ursula_cooke_masked_unknown_status",
-  "kind": "set",
-  "variable": "double_ursula_cooke",
-  "value": "\"unknown\"",
-  "next": "evt_fin_double_ursula_cooke_masked_unknown_evidence"
-}

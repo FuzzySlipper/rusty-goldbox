@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_lost_defeat_013",
-  "kind": "set",
-  "variable": "double_ursula_cooke",
-  "value": "\"unknown\"",
-  "next": "evt_fin_setup_lost_defeat_014"
-}

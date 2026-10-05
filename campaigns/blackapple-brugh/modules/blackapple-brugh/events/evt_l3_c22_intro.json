@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_intro",
-  "kind": "text",
-  "text": "The pantry shelves hold flour, jam, honey, salt, and a jar labelled Blackcurrant Confit. The jar is larger than the others and moves once from inside.",
-  "next": "evt_l3_c22_menu"
-}

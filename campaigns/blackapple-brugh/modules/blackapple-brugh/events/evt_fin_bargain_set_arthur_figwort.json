@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_bargain_set_arthur_figwort",
-  "kind": "set",
-  "variable": "child_arthur_figwort",
-  "value": "\"returned\"",
-  "next": "evt_fin_bargain_reward_text_arthur_figwort"
-}

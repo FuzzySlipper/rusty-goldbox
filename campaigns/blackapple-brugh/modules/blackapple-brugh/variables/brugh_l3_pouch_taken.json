@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_pouch_taken",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The dust-covered C18 pouch has been taken."
-}

@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "village_trust",
-  "value_type": "number",
-  "initial": "0",
-  "description": "Authored village relationship value; neutral at zero."
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_giles_weadley_returned",
-  "kind": "text",
-  "text": "Giles Weadley — returned. The named family handoff is already recorded.",
-  "next": "evt_fin_child_philip_anvil"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_tenpenny_mark",
-  "kind": "set",
-  "variable": "environs_tenpenny_seen",
-  "value": "true",
-  "next": "evt_env_tenpenny_scene"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_stevie_leeford_removed_text",
-  "kind": "text",
-  "text": "The Stevie Leeford double — removed. The existing named cause in the named removal cause remains attached; removal is separate from child rescue.",
-  "next": "evt_fin_account_complete"
-}

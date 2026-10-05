@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_lichguard_protected_set",
-  "kind": "set",
-  "variable": "blackapple_optional_grave_protected",
-  "value": "true",
-  "next": "evt_vil_optional_cemetery_lichguard_cause_set"
-}

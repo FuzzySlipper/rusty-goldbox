@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_faehill_history",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Faehill or fairy-ruins history clue found."
-}

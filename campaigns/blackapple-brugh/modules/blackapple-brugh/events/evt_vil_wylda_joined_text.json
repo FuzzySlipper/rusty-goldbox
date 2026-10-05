@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_wylda_joined_text",
-  "kind": "text",
-  "text": "Wylda trades her manor clothes for a travel cloak and tells the household she is helping with the investigation. She knows the private nickname Arthur used before the mirror incident, a detail that may separate a child from a mask.",
-  "picture": "blackapple-art:wylda_portrait",
-  "next": "evt_vil_wylda_joined_menu"
-}

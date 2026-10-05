@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_ursula_revisit",
-  "kind": "text",
-  "text": "The timpani now keeps a quiet Blackapple beat. Ursula is no longer held at the musician's station, though the empty stool makes the court's music sound less certain.",
-  "next": "evt_l2_c12_menu"
-}

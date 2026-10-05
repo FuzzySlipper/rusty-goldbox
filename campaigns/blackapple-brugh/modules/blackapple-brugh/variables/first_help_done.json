@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "first_help_done",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "At least one ordinary Act I help route resolved."
-}

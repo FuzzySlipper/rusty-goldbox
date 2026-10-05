@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_048",
-  "kind": "set",
-  "variable": "return_account_complete",
-  "value": "false",
-  "next": "evt_fin_setup_elf_bargain_049"
-}

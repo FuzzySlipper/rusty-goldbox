@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_combat_flee",
-  "kind": "text",
-  "text": "You break contact with the worm and regroup in the pit. The south seam offers another way out, and its quiet corner allows a careful rest.",
-  "next": "evt_l3_c18_recovery_menu"
-}

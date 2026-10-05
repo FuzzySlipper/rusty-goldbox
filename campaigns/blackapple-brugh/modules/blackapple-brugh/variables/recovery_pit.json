@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "recovery_pit",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The C18 pit setback recovery route is resolved."
-}

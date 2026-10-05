@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_mark",
-  "kind": "set",
-  "variable": "blackapple_optional_cemetery_seen",
-  "value": "true",
-  "next": "evt_vil_optional_cemetery_night"
-}

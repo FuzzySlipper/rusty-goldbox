@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_full_contained",
-  "kind": "text",
-  "text": "Temporary authored finale fixture: full-return with every double contained. This setup is for CLI integration until the middle-act C27 sender is present.",
-  "next": "evt_fin_setup_full_contained_001"
-}

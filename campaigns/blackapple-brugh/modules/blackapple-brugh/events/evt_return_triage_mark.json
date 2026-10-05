@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_return_triage_mark",
-  "kind": "set",
-  "variable": "recovery_return_triage",
-  "value": "true",
-  "next": "evt_fin_return_start"
-}

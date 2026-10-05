@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_goodall_spell_reward",
-  "kind": "spell_reward",
-  "text": "Goodall opens a quiet letter from her old spellcasting contacts. Each spellcaster whose current training permits a new class spell receives one lesson that can be prepared and cast; the others find no new spell in the letter.",
-  "next": "evt_fin_after_children"
-}

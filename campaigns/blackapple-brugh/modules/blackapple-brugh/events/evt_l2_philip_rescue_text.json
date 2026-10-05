@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_philip_rescue_text",
-  "kind": "text",
-  "text": "Philip answers the smith's rhythm under his breath. When the next tray arrives, he sets it down by choice rather than command and points to the crank: the kitchen below is a route, not a promise.",
-  "next": "evt_xp_brugh"
-}

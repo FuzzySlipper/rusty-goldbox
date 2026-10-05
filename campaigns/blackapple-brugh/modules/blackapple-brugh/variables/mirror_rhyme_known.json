@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "mirror_rhyme_known",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The party knows enough of the rhyme to prepare a route."
-}

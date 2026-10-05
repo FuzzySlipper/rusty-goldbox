@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_double_behavior",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "First reliable double clue established."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_008",
-  "kind": "set",
-  "variable": "double_arthur_figwort",
-  "value": "\"exposed\"",
-  "next": "evt_fin_setup_elf_bargain_009"
-}

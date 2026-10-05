@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c9_scene",
-  "kind": "text",
-  "text": "The second guest room is almost identical to the first, except that a child's small boot print crosses the dust beneath one bed. Someone has used this room recently and left in a hurry.",
-  "next": "evt_l1_c9_menu"
-}

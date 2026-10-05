@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_hen_teeth_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The party has entered the Hen's Teeth scene in this environs area state."
-}

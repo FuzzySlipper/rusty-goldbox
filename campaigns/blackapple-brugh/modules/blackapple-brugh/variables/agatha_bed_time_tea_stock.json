@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "agatha_bed_time_tea_stock",
-  "value_type": "number",
-  "initial": "6",
-  "description": "Remaining Bed Time Tea doses at Agatha's counter; the source caps sales at six doses to this party."
-}

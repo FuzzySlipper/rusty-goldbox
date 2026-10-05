@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21a_capacity_ok_text",
-  "kind": "text",
-  "text": "The active party fits the authored 200-pound lift adaptation with one person on the crank. The dumbwaiter route is open for this expedition.",
-  "next": "evt_l3_c21a_menu"
-}

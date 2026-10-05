@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_philip_scene",
-  "kind": "text",
-  "text": "The server area is a service corridor between the court's rooms. An ibix server keeps watch beside Philip Anvil, who repeats the same court phrase whenever a plate is missing. The dumbwaiter crank turns toward the kitchen below.",
-  "next": "evt_l2_philip_menu"
-}

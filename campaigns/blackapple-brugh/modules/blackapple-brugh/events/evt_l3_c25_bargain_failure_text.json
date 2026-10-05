@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c25_bargain_failure_text",
-  "kind": "text",
-  "text": "The Elf Lord hears a challenge where the party meant a request. His alarm rises, but he does not seal the connected vault route; the party may leave or try the conversation again.",
-  "next": "evt_l3_c25_menu"
-}

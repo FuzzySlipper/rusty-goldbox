@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_partial_mixed_012",
-  "kind": "set",
-  "variable": "double_amelia_goodall_evidence",
-  "value": "\"released toward the forest with the cu-sidhe route\"",
-  "next": "evt_fin_setup_partial_mixed_013"
-}

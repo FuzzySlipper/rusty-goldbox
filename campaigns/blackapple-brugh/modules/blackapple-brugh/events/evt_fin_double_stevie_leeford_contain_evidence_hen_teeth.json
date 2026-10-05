@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_stevie_leeford_contain_evidence_hen_teeth",
-  "kind": "set",
-  "variable": "double_stevie_leeford_evidence",
-  "value": "\"Flynn at the Hen's Teeth safe room\"",
-  "next": "evt_fin_double_stevie_leeford_contain_text_hen_teeth"
-}

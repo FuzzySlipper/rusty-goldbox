@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_negotiation",
-  "kind": "text",
-  "text": "You name Ludann, the squirrel, and the black apple without claiming that every village tale is true. The cu-sidhe answers with a bark toward the cut-free trees and the hungry pigs: take only dead wood, leave living trunks, and do not turn the forest into a road for strangers. The bargain is a warning, not a doorway.",
-  "next": "evt_env_forest_negotiation_stance"
-}

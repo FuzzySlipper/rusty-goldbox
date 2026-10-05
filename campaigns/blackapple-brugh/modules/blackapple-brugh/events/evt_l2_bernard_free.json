@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_bernard_free",
-  "kind": "set",
-  "variable": "child_bernard_goodall",
-  "value": "'freed'",
-  "next": "evt_l2_bernard_evidence"
-}

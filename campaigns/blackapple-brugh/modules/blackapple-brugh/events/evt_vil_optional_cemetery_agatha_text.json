@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_cemetery_agatha_text",
-  "kind": "text",
-  "text": "Agatha answers plainly: lichguard keeps a grave from being troubled; it is no cure or resurrection, and no one may disturb the dead with it. For care, she points you to the shrine keeper or Father Naskew.",
-  "picture": "blackapple-art:blackapple_cemetery",
-  "next": "evt_vil_optional_agatha_service"
-}

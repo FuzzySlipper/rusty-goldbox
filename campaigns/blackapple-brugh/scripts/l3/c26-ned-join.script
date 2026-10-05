@@ -1,6 +1,0 @@
-# Preconditions: load a save at C26 with pending evt_l3_c26_menu and fewer than
-# six active members. Free Ned, then choose the real join event; at six members
-# the join option is hidden and release remains available.
-choose 1
-choose 1
-status

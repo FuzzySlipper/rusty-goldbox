@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c5_scene",
-  "kind": "text",
-  "text": "Shelves fill the library with an absurdly complete account of one charcoal burner's life. A glass-covered forest map lies on the central table. The final numbered volume sits where no ordinary reader would look, and a seam runs through the floor below it.",
-  "next": "evt_l1_c5_choice"
-}

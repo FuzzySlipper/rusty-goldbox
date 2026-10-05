@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_ambassador_ledger_taken",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The mushroom ambassador's copied ledger has been taken."
-}

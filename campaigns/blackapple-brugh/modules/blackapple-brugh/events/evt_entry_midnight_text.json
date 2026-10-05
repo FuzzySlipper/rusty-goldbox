@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_entry_midnight_text",
-  "kind": "text",
-  "text": "Midnight settles over your chosen mirror. Its glass gives way to a damp coatroom. This invitation is brief: enter together now or cover the mirror and remain outside.",
-  "next": "evt_entry_window_open"
-}

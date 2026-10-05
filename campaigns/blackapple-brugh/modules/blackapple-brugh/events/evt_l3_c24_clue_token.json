@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c24_clue_token",
-  "kind": "give",
-  "item": "l3_moth_token",
-  "count": 1,
-  "next": "evt_l3_c24_clue_favor"
-}

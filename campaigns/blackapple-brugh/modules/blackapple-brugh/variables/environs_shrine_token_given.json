@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_shrine_token_given",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The optional truth-marked shrine token has been given once in this environs area state."
-}

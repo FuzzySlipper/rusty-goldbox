@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c26_rescue_text",
-  "kind": "text",
-  "text": "The chains come free. Master Ned describes the court's private routes and waits for the party to decide whether he should travel with them or leave under his own power.",
-  "next": "evt_l3_c26_join_menu"
-}

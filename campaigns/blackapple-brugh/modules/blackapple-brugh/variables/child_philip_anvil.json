@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "child_philip_anvil",
-  "value_type": "text",
-  "initial": "'captive'",
-  "description": "Status of the real child: captive, freed, returned, or unknown."
-}

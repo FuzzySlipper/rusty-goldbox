@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c25_intro",
-  "kind": "text",
-  "text": "The corridor ends at the Elf Lord's finished chamber: a four-poster bed, nine rugs, and no easy sight of the lord himself. Entering is optional; the vault route does not depend on this room.",
-  "next": "evt_l3_c25_menu"
-}

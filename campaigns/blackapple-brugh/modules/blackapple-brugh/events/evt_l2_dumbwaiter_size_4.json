@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dumbwaiter_size_4",
-  "kind": "text",
-  "text": "The live party count is 4. Four active travelers fit the authored lift load if one companion works the crank; no absent recruit is counted.",
-  "next": "evt_l2_dumbwaiter_choice"
-}

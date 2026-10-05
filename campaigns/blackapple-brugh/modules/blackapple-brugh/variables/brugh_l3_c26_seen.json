@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c26_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "C26 has shown its paired dungeon presentation in this area instance."
-}

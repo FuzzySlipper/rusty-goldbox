@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c16_doll",
-  "kind": "give",
-  "item": "ursula_cloth_doll",
-  "next": "evt_l2_c16_evidence"
-}

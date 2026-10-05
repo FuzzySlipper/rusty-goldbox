@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c8_revisit",
-  "kind": "text",
-  "text": "The first guest room remains a possible refuge. The redacted book is gone, but the beds and candle are ready for another court-sanctioned rest.",
-  "next": "evt_l1_c8_menu"
-}

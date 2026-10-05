@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_lost_defeat",
-  "kind": "text",
-  "text": "Temporary authored finale fixture: preserve the recorded child and double account before the expedition is lost in the Brugh.",
-  "next": "evt_fin_setup_lost_defeat_001"
-}

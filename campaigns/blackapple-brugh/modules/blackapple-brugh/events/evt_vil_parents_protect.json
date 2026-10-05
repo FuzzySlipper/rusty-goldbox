@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_parents_protect",
-  "kind": "set",
-  "variable": "evidence_parent_suspicion",
-  "value": "true",
-  "next": "evt_vil_parents_protect_rhyme"
-}

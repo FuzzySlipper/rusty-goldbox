@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_shrine_recovered",
-  "kind": "text",
-  "text": "The party leaves the shrine rested. The water and the story were freely offered; no personal confession was required. The keeper's named-condition services have ended, and the optional truth token is considered separately.",
-  "next": "evt_env_shrine_reward_gate"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_shrine_mark",
-  "kind": "set",
-  "variable": "environs_shrine_seen",
-  "value": "true",
-  "next": "evt_env_shrine_scene"
-}

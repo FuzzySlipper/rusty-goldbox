@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_stevie_leeford_set_returned",
-  "kind": "set",
-  "variable": "child_stevie_leeford",
-  "value": "\"returned\"",
-  "next": "evt_fin_goodall_reward_gate"
-}

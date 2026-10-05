@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_pool_check",
-  "kind": "check",
-  "check": "blackapple-fae:careful_contact_dex",
-  "member": 1,
-  "on_success": "evt_l2_pool_check_success",
-  "on_failure": "evt_l2_pool_check_failure"
-}

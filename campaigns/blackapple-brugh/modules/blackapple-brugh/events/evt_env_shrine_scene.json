@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_shrine_scene",
-  "kind": "text",
-  "text": "A small clearing holds three standing stones, two together and one set apart. The shrine's old keeper leaves a cup of clean water and waits without pressing. A traveller may offer a fictional road-confession and receive quiet care, or leave without surrendering a secret.",
-  "picture": "blackapple-art:environs_shrine_confession",
-  "next": "evt_env_shrine_choice"
-}

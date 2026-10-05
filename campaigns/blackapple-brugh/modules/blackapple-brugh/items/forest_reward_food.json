@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "forest_reward_food",
-  "name": "Pig farmer's food bundle",
-  "kind": "gear",
-  "cost": 2,
-  "currency": "fifth-srd:gold",
-  "weight": 1
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c16_found",
-  "kind": "text",
-  "text": "Behind a loose bunk board you find Bernard's sling, still marked with the Goodall shop's counting knot, and Ursula's stuffed cloth doll. The two ordinary objects make the court's seven replacements feel less like a story and more like a rescue with names.",
-  "next": "evt_l2_c16_revisit"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c6_giles_evidence",
-  "kind": "set",
-  "variable": "evidence_gold_threads",
-  "value": "true",
-  "next": "evt_l1_c6_giles_thread"
-}

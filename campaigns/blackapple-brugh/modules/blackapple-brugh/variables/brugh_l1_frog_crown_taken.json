@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_frog_crown_taken",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The small consent-given crown has been taken from the Frog Prince's armoire."
-}

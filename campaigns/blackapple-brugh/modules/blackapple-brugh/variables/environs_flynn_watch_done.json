@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "environs_flynn_watch_done",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The private Hen's Teeth watch promise has awarded Flynn's trust in this environs area state."
-}

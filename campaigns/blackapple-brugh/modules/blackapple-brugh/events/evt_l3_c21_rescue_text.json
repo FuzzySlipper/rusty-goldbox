@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c21_rescue_text",
-  "kind": "text",
-  "text": "The cook turns toward the oven, and Stevie slips the golden thread from his ankle. He remembers Blackapple and stays with the party as a rescued child; no child-shaped combat was needed.",
-  "next": "evt_l3_c21_leave"
-}

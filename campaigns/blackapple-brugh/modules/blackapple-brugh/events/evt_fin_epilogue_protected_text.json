@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_epilogue_protected_text",
-  "kind": "text",
-  "text": "You give named families and the priory time to protect frightened children. Public reckoning will be slower, shaped by the trust you have earned.",
-  "next": "evt_fin_close"
-}

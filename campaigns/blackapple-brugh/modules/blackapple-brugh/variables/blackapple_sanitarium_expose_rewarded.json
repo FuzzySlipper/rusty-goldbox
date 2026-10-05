@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_sanitarium_expose_rewarded",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "Private Blackapple map detail: the sanitarium investigation's one-time trust reward has been recorded."
-}

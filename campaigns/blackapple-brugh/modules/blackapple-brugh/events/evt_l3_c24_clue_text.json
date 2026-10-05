@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c24_clue_text",
-  "kind": "text",
-  "text": "Behind a folded jester's vest the party finds a note about the Elf Lord's fear of an empty audience. The token tucked beside it is a small bargaining aid, not a key to the vault or a replacement for a real choice.",
-  "next": "evt_l3_c24_leave"
-}

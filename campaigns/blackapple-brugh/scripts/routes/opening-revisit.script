@@ -1,7 +1,0 @@
-# Resume a prepared Hen's Teeth route, repeat the conversation, then return to the village.
-forward
-around
-forward
-choose 1
-choose 3
-status

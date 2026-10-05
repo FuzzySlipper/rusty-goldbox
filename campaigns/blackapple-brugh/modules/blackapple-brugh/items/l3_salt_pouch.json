@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "l3_salt_pouch",
-  "name": "Pouch of clean salt",
-  "kind": "gear",
-  "cost": 1,
-  "currency": "fifth-srd:gold",
-  "weight": 0.5
-}

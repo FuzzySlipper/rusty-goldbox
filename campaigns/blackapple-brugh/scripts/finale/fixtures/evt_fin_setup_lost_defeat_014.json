@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_lost_defeat_014",
-  "kind": "set",
-  "variable": "double_stevie_leeford",
-  "value": "\"contained\"",
-  "next": "evt_fin_setup_lost_defeat_015"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c20_release_mark",
-  "kind": "set",
-  "variable": "brugh_l3_c20_released",
-  "value": "true",
-  "next": "evt_l3_c20_release_text"
-}

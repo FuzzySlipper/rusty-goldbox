@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dinner_check_success",
-  "kind": "text",
-  "text": "The first party member answers the Elf Lord's questions with enough courtesy to keep the blades sheathed. The court's favorable reactions remain choices, not a hidden roll tier.",
-  "next": "evt_l2_dinner_outcome_menu"
-}

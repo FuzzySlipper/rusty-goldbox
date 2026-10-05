@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_pool_dive_success_text",
-  "kind": "text",
-  "text": "The lead companion reaches the shallowest moonstones and returns before the frogs can close the distance. Three cool stones join the party's carried evidence, and the marked edge makes the recovery route clear.",
-  "next": "evt_l2_c12_menu"
-}

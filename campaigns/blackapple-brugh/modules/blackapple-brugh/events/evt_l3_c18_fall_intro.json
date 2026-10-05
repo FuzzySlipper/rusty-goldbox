@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_fall_intro",
-  "kind": "text",
-  "text": "The party lands hard in C18. Dust fills the pit, and the tentacle worm turns toward the sound. The fall can be survived, but every active member bears the ordinary impact before the next choice.",
-  "next": "evt_l3_c18_fall_damage"
-}

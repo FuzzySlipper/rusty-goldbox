@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_squeeze_failure_text",
-  "kind": "text",
-  "text": "The first attempt catches a shoulder on the stone. The member takes a small scrape but remains with the party; a fight, a rest, or the ordinary search route is still available.",
-  "next": "evt_l3_c18_recovery_menu"
-}

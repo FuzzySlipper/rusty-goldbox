@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "l1_mushroom_ledger",
-  "name": "Mushroom ambassador's ledger",
-  "kind": "gear",
-  "cost": 0,
-  "currency": "fifth-srd:gold",
-  "weight": 1
-}

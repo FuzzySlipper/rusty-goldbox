@@ -1,4 +1,0 @@
-# Preconditions: load a save at C22 with pending evt_l3_c22_menu. Leave the
-# pudding sealed; opening it is a separate seeded combat branch.
-choose 2
-status

@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_entered",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "C1 ingress has completed."
-}

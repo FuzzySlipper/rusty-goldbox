@@ -34,6 +34,7 @@ internal static class CliTranscript
     {
         return text
             .Replace(workingDirectory + Path.DirectorySeparatorChar, "", StringComparison.Ordinal)
+            .Replace(BlackappleCheckout.Root + Path.DirectorySeparatorChar, "blackapple-brugh/", StringComparison.Ordinal)
             .Replace(Rules.RepositoryRoot + Path.DirectorySeparatorChar, "", StringComparison.Ordinal);
     }
 }

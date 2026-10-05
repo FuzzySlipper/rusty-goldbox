@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_c4_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "C4 Game Room has been visited."
-}

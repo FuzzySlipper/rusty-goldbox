@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_fall_clear",
-  "kind": "set",
-  "variable": "brugh_l3_fall_pending",
-  "value": "false",
-  "next": "evt_l3_c18_fall_seen"
-}

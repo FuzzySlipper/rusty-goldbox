@@ -1,9 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c19_check",
-  "kind": "check",
-  "check": "blackapple-fae:careful_contact_dex",
-  "member": 1,
-  "on_success": "evt_l3_c19_safe",
-  "on_failure": "evt_l3_c19_exposed"
-}

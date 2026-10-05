@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "agatha_right_rain_stock",
-  "value_type": "number",
-  "initial": "6",
-  "description": "Remaining Right Rain doses at Agatha's counter; the source caps sales at six doses to this party."
-}

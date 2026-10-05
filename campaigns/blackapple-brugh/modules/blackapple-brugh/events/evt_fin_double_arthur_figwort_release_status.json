@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_arthur_figwort_release_status",
-  "kind": "set",
-  "variable": "double_arthur_figwort",
-  "value": "\"escaped\"",
-  "next": "evt_fin_double_arthur_figwort_release_evidence"
-}

@@ -64,6 +64,16 @@ public sealed class ModuleFetcher(
             if (here.Where(module => module.Id == wantedId).Where(module => wantedRange?.Contains(module.Version) ?? true).OrderByDescending(module => module.Version).FirstOrDefault() is { Id: not null } have)
             {
                 present.Add($"{have.Id} {have.Version}");
+
+                // Still make sure what it requires is here, so an interrupted fetch can be finished.
+                if (offers.FirstOrDefault(candidate => candidate.Module.Id == have.Id && candidate.Module.Version == have.Version) is Offer known)
+                {
+                    foreach (ModuleRequirement requirement in known.Module.Requires)
+                    {
+                        wanted.Enqueue((requirement.Releases ?? from, requirement.Id, requirement.Range, $"required by {have.Id} {have.Version}"));
+                    }
+                }
+
                 continue;
             }
 

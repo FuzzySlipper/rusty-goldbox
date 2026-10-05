@@ -11,9 +11,7 @@ Planned work is tracked in the `rusty-goldbox` Den project.
 
 The supported runtime pair targets Linux x64. Install the .NET 10 SDK, `curl`
 and `tar`. NativeAOT also needs the platform compiler/linker prerequisites
-(Clang and zlib development headers on Linux). Campaign art under
-`campaigns/` is stored in Git LFS, so install `git-lfs` before you clone (or
-run `git lfs pull` afterwards). Get the Engine's `rusty` command once:
+(Clang and zlib development headers on Linux). Get the Engine's `rusty` command once:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FuzzySlipper/rusty-engine/main/scripts/install-rusty.sh | bash
@@ -64,19 +62,20 @@ own modules without a rebuild:
 dotnet run --project src/RustyGoldbox.Cli -- module pack modules/sample-crypt --install
 ```
 
-The Game's own content root is `modules/`, so a campaign kept elsewhere, like
-the Blackapple Brugh workspace, is played by installing its modules (the
-ruleset it needs, `fifth-srd`, is already in `modules/`):
+The Game's own content root is `modules/`; campaigns live in their own
+repositories. Install a published one with everything it needs, then press
+Refresh on the title screen:
 
 ```bash
-dotnet run --project src/RustyGoldbox.Cli -- workspace install campaigns/blackapple-brugh
+dotnet run --project src/RustyGoldbox.Cli -- module get github:FuzzySlipper/blackapple-brugh
 ```
 
-Then press Refresh on the title screen. While you are editing a workspace,
-point the Game at it instead and skip installing:
+A campaign workspace you have checked out installs the same way with
+`workspace install <workspace>`. While you are editing one, point the Game at
+it instead and skip installing (here a clone beside this repository):
 
 ```bash
-GOLDBOX_WORKSPACES=$PWD/campaigns/blackapple-brugh rusty dev
+GOLDBOX_WORKSPACES=$PWD/../blackapple-brugh rusty dev
 ```
 
 Each title listing (startup and Refresh) builds the named workspaces (separate
@@ -113,14 +112,13 @@ installed.
 
 ## Authoring modules
 
-Retained campaign canon lives beside its editable content. The
-[Blackapple Brugh source](campaigns/blackapple-brugh/README.md) records its
-story, characters, source adaptation, and licence. Shared canon has one editor;
-chapter and art authors use its stable IDs and handoff contracts. These
-documents describe the story rather than holding runtime game state.
-Its [art bible](campaigns/blackapple-brugh/art/ART_BIBLE.md) defines original
-ink-and-wash references, subject continuity, paired-room geometry and intended
-runtime slots. Exact prompts and provenance remain beside the editable art.
+Campaigns are authored as workspaces in their own repositories, with canon
+beside the editable content. [The Blackapple Brugh](https://github.com/FuzzySlipper/blackapple-brugh)
+is the worked example: its canon records story, characters, source adaptation
+and licence, and its art bible defines original references, continuity and
+runtime slots, with exact prompts and provenance beside the art. Its
+regression tests here read a clone beside this repository (or
+`$GOLDBOX_BLACKAPPLE`) and are skipped without one; CI always clones it.
 
 `goldbox` is the authoring CLI. From the repository root:
 
@@ -391,7 +389,6 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`) and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
 | `modules/` | First-party module sources: rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`), the `placeholder-art` assets, the `tactical-bestiaire` extension and the `sample-crypt` and `tactical-expedition` campaigns. Also the Game's content root: each directory is a content bundle |
-| `campaigns/` | Editable campaign workspaces: Blackapple Brugh's canon, art (in Git LFS), scripts and its three runtime modules. Further campaigns belong in their own repositories |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `Directory.Build.props` | Engine SDK/runtime pin |

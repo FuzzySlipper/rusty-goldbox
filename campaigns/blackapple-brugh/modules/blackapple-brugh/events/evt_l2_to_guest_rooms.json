@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_to_guest_rooms",
-  "kind": "teleport",
-  "area": "brugh_l1",
-  "entry": "guest_rooms",
-  "next": "evt_l1_arrival_guests"
-}

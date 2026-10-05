@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_combat_lose",
-  "kind": "text",
-  "text": "The worm drives the party back. The ordinary combat result stands; if anyone remains able to act, the party can retreat, rest, or search rather than being silently revived.",
-  "next": "evt_l3_c18_recovery_menu"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c27_chest_two",
-  "kind": "set",
-  "variable": "brugh_l3_chest_two_taken",
-  "value": "true",
-  "next": "evt_l3_c27_chest_two_loot"
-}

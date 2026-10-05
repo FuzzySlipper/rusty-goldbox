@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_combat_win_text",
-  "kind": "text",
-  "text": "The tentacle worm withdraws into the dust. Nothing has restored a lost life; the surviving party simply has room to search, rest, or try the narrow exit.",
-  "next": "evt_l3_c18_recovery_menu"
-}

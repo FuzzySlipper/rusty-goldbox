@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_court_bound_032",
-  "kind": "set",
-  "variable": "mirror_route",
-  "value": "\"figwort\"",
-  "next": "evt_fin_setup_court_bound_033"
-}

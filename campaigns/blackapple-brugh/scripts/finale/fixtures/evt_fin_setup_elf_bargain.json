@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain",
-  "kind": "text",
-  "text": "Temporary authored finale fixture: qualifying bargain releasing a named freed child. This setup is for CLI integration until the middle-act C27 sender is present.",
-  "next": "evt_fin_setup_elf_bargain_001"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "double_amelia_goodall",
-  "value_type": "text",
-  "initial": "'masked'",
-  "description": "Status of the matching double: masked, exposed, contained, escaped, removed, or unknown."
-}

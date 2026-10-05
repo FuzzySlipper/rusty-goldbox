@@ -1,7 +1,0 @@
-# Preconditions: load a save at C20 with pending evt_l3_c20_menu and no
-# l3_salt_pouch. The compact first option is the negotiation check. The second
-# choice resolves either a failed retry menu (break) or the successful bargain
-# menu (leave), depending on the seeded check.
-choose 1
-choose 2
-status

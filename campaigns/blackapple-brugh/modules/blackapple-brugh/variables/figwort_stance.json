@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "figwort_stance",
-  "value_type": "text",
-  "initial": "'none'",
-  "description": "Figwort request state: none, watch, rescue, protect, or reconcile."
-}

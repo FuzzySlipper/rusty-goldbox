@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_brugh_layout",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "A Brugh route or layout clue is established."
-}

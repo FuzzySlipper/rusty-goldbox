@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "route_dumbwaiter",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The C14/C21a vertical route is opened."
-}

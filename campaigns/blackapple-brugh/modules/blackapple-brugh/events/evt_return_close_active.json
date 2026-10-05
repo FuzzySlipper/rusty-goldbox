@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_return_close_active",
-  "kind": "set",
-  "variable": "mirror_active",
-  "value": "false",
-  "next": "evt_return_xp_gate"
-}

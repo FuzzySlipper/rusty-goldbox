@@ -1,7 +1,0 @@
-{
-  "type": "condition",
-  "id": "agatha_love_potion",
-  "name": "Love potion charm",
-  "description": "For one day the consenting drinker is inclined toward the next person they meet; the first-person social moment is recorded without forcing a target, player input, or autonomous combat behavior.",
-  "modifiers": []
-}

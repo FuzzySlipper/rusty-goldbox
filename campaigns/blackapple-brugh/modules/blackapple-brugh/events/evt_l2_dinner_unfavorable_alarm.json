@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_dinner_unfavorable_alarm",
-  "kind": "set",
-  "variable": "court_alarm",
-  "value": "campaign.var.court_alarm + 1",
-  "next": "evt_l2_dinner_unfavorable_reaction"
-}

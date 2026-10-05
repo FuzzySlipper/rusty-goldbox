@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "goodall_reward_given",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "The one-time Goodall family reward, including the direct spell lesson for eligible active spellcasters, has been granted after a named child handoff."
-}

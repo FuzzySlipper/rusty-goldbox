@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_c2_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "C2 Reception Lounge has been visited."
-}

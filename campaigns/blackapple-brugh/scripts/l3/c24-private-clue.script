@@ -1,4 +1,0 @@
-# Preconditions: load a save at C24 with pending evt_l3_c24_menu. Search the
-# optional private chamber; a failed check leaves the same menu for a retry.
-choose 1
-status

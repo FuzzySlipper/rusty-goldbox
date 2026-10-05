@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_combat_flee",
-  "kind": "set",
-  "variable": "forest_stance",
-  "value": "\"respect\"",
-  "next": "evt_env_forest_mark_help"
-}

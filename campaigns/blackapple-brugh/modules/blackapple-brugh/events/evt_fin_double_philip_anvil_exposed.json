@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_philip_anvil_exposed",
-  "kind": "text",
-  "text": "The Philip Anvil double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
-  "next": "evt_fin_double_philip_anvil_exposed_menu"
-}

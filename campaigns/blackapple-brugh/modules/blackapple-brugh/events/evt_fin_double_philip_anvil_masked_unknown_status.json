@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_philip_anvil_masked_unknown_status",
-  "kind": "set",
-  "variable": "double_philip_anvil",
-  "value": "\"unknown\"",
-  "next": "evt_fin_double_philip_anvil_masked_unknown_evidence"
-}

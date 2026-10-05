@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_partial_mixed_044",
-  "kind": "set",
-  "variable": "epilogue_no_proof",
-  "value": "false",
-  "next": "evt_fin_setup_partial_mixed_045"
-}

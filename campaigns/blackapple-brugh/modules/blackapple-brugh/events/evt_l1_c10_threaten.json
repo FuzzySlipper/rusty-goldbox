@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c10_threaten",
-  "kind": "set",
-  "variable": "court_alarm",
-  "value": "campaign.var.court_alarm + 1",
-  "next": "evt_l1_c10_threaten_text"
-}

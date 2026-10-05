@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_arthur_double",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Sanitarium evidence identifies Arthur's double."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_entry_ready_hen_teeth",
-  "kind": "set",
-  "variable": "entry_ready",
-  "value": "true",
-  "next": "evt_entry_plan_hen_teeth"
-}

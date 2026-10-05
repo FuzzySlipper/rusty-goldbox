@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "blackapple_optional_smithson_care",
-  "value_type": "text",
-  "scope": "area",
-  "initial": "'none'",
-  "description": "Private Blackapple Smithson response: none, distance_warning, care_referral, or passed."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_return_xp_mark",
-  "kind": "set",
-  "variable": "middle_xp_awarded",
-  "value": "true",
-  "next": "evt_return_xp_award"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_c15",
-  "kind": "text",
-  "text": "The smoking room is empty. A human-sized suit of armour holds a halberd beneath two paintings of a lion-headed, crocodile-bodied beast. One painting promises victory; the other admits that the court has lost before.",
-  "next": "evt_l2_c15_choice"
-}

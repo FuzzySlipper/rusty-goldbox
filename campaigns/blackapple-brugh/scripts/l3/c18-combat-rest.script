@@ -1,6 +1,0 @@
-# Preconditions: load a save at C18 with pending evt_l3_c18_menu. The combat
-# outcome is Engine-seeded; each outcome returns to the authored recovery
-# branch when the party can continue. Choose the rest branch afterward.
-choose 1
-choose 3
-status

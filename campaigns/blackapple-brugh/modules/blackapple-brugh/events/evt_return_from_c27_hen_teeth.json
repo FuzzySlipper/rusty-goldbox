@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_return_from_c27_hen_teeth",
-  "kind": "teleport",
-  "area": "environs",
-  "entry": "hen_teeth",
-  "next": "evt_return_begin"
-}

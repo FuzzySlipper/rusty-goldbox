@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_bernard_goodall_removed_evidence_combat",
-  "kind": "set",
-  "variable": "double_bernard_goodall_evidence",
-  "value": "\"removed status and named cause recorded during return accounting\"",
-  "next": "evt_fin_double_bernard_goodall_removed_text_combat"
-}

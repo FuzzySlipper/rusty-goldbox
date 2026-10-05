@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "middle_xp_awarded",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Middle/Brugh story XP has already been awarded; prevents repeat farming on revisit."
-}

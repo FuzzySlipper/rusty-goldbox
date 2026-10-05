@@ -1,4 +1,4 @@
-$ goldbox play --campaign campaigns/blackapple-brugh/modules/blackapple-brugh --modules modules --modules campaigns/blackapple-brugh/modules --party mara.json,orin.json,sela.json,tamsin.json --seed 9431 --script campaigns/blackapple-brugh/scripts/routes/full-success-level.script --save full-success-level.json --fail-on-refusal
+$ goldbox play --campaign blackapple-brugh/modules/blackapple-brugh --modules modules --modules blackapple-brugh/modules --party mara.json,orin.json,sela.json,tamsin.json --seed 9431 --script blackapple-brugh/scripts/routes/full-success-level.script --save full-success-level.json --fail-on-refusal
 seed 9431
   The party is in Blackapple Village at [1, 0], facing south.
   [picture blackapple-art:blackapple_village]
@@ -596,7 +596,7 @@ seed 9431
   The adventure ends. The account closes with the named children, doubles, promises, and unanswered roads you chose. Your final state can be saved; another expedition would be a new adventure.
 [exit 0]
 
-$ goldbox play --campaign campaigns/blackapple-brugh/modules/blackapple-brugh --modules modules --modules campaigns/blackapple-brugh/modules --load full-success-level.json --script revisit.script --save full-success-level.revisit.json
+$ goldbox play --campaign blackapple-brugh/modules/blackapple-brugh --modules modules --modules blackapple-brugh/modules --load full-success-level.json --script revisit.script --save full-success-level.revisit.json
 seed 9431
 > status
   Can't: the adventure has ended.

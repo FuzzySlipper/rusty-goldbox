@@ -98,9 +98,6 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet with Use/Equip/Gear actions and derived values, shop with stock counts and disabled sold-out buys, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
-| `campaigns/` | Retained editable campaign sources; shared canon supplies authored story and ID contracts, while Core owns their runtime values |
-| `campaigns/blackapple-brugh/modules/` | Blackapple's runtime modules (`blackapple-brugh` campaign, `blackapple-fae` extension, `blackapple-art` assets) under CC BY-SA 4.0, built and exported with `goldbox workspace` |
-| `campaigns/blackapple-brugh/art/` | Original reference images, style/identity/slot contracts, exact generation prompts and provenance; asset-module runtime definitions remain separate |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
 | `modules/universal-d100/` | Basic Roleplaying's d100 rules from Chaosium's ORC Content Document, with `PROVENANCE.md` (ORC notices) and `LICENSE-ORC.txt`: rolled characteristics, skills by profession, dodge and shield parry, armour, major wounds |
@@ -111,6 +108,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `modules/sample-crypt/` | The sample campaign |
 | `modules/tactical-bestiaire/` and `modules/tactical-expedition/` | Original enemies and reusable tactics, an allied warder and a playable gallery campaign supporting up to twelve members; each module validates and packs independently |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/lifepath`: original term-career data shape; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |
+| `tests/RustyGoldbox.Tests/BlackappleCheckout.cs` | Where the Blackapple Brugh regression tests find the campaign: `$GOLDBOX_BLACKAPPLE`, else a clone of FuzzySlipper/blackapple-brugh beside this repository; without one they are skipped, and CI always clones it |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 The original `Fixtures/tactical-zones` extension adds a shared-zone,

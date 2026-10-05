@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_elf_bargain_030",
-  "kind": "set",
-  "variable": "elf_lord_reaction",
-  "value": "\"bargaining\"",
-  "next": "evt_fin_setup_elf_bargain_031"
-}

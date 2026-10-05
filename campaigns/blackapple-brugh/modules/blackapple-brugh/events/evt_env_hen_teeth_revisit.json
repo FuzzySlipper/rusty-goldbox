@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_hen_teeth_revisit",
-  "kind": "text",
-  "text": "Flynn recognizes the party and sets a clean bowl beside the hearth. The fauns keep singing, but the mirror behind the bar remains covered while you decide what to do.",
-  "picture": "blackapple-art:environs_hen_teeth",
-  "next": "evt_env_hen_teeth_menu"
-}

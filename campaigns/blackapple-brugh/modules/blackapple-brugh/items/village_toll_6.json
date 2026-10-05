@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "village_toll_6",
-  "name": "Blackapple road pass (6 travelers)",
-  "kind": "travel pass",
-  "cost": 0.6,
-  "currency": "fifth-srd:gold",
-  "weight": 0
-}

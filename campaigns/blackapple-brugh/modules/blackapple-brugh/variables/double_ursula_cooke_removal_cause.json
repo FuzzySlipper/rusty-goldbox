@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "double_ursula_cooke_removal_cause",
-  "value_type": "text",
-  "initial": "''",
-  "description": "Optional cause retained when the matching double is removed."
-}

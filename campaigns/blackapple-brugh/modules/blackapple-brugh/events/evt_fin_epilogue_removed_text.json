@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_epilogue_removed_text",
-  "kind": "text",
-  "text": "Every removed double has a named cause and evidence. Removal is different from containment and never means its matching child was rescued.",
-  "next": "evt_fin_epilogue_disclosure_gate"
-}

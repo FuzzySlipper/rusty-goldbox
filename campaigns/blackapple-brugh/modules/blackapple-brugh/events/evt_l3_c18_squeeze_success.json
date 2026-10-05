@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_squeeze_success",
-  "kind": "text",
-  "text": "Your scout confirms that the south opening is wide enough for you and too narrow for the worm. Search the south wall to reveal the hidden route.",
-  "next": "evt_l3_c18_recovery_menu"
-}

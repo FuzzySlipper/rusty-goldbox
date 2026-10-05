@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_route_hen_teeth",
-  "kind": "teleport",
-  "area": "environs",
-  "entry": "hen_teeth",
-  "next": "evt_env_hen_teeth_arrival"
-}

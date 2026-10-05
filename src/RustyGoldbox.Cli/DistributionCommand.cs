@@ -217,14 +217,37 @@ internal static class DistributionCommand
         return output.Fetched(result, library);
     }
 
+    // GitHub's release downloads sometimes answer 5xx or drop the
+    // connection for a moment; a short retry makes a fetch dependable.
+    private const int Attempts = 3;
+
     private static (byte[]? Body, string? Failure) Read(Uri url, IReadOnlyDictionary<string, string> headers)
     {
+        (byte[]? Body, string? Failure) result = (null, null);
+        for (int attempt = 1; attempt <= Attempts; attempt++)
+        {
+            result = ReadOnce(url, headers, out bool transient);
+            if (result.Body is not null || !transient)
+            {
+                break;
+            }
+
+            Thread.Sleep(TimeSpan.FromSeconds(attempt));
+        }
+
+        return result;
+    }
+
+    private static (byte[]? Body, string? Failure) ReadOnce(Uri url, IReadOnlyDictionary<string, string> headers, out bool transient)
+    {
+        transient = false;
         try
         {
             using HttpRequestMessage request = Request(url, headers);
             using HttpResponseMessage response = Http.Send(request);
             if (!response.IsSuccessStatusCode)
             {
+                transient = (int)response.StatusCode >= 500;
                 return (null, $"{(int)response.StatusCode} {response.ReasonPhrase}{RateLimit(response)}");
             }
 
@@ -235,18 +258,38 @@ internal static class DistributionCommand
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or IOException)
         {
+            transient = true;
             return (null, exception.Message);
         }
     }
 
     private static string? Download(Uri url, string path)
     {
+        string? failure = null;
+        for (int attempt = 1; attempt <= Attempts; attempt++)
+        {
+            failure = DownloadOnce(url, path, out bool transient);
+            if (failure is null || !transient)
+            {
+                break;
+            }
+
+            Thread.Sleep(TimeSpan.FromSeconds(attempt));
+        }
+
+        return failure;
+    }
+
+    private static string? DownloadOnce(Uri url, string path, out bool transient)
+    {
+        transient = false;
         try
         {
             using HttpRequestMessage request = Request(url, new Dictionary<string, string> { ["User-Agent"] = "rusty-goldbox" });
             using HttpResponseMessage response = Http.Send(request, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
             {
+                transient = (int)response.StatusCode >= 500;
                 return $"{(int)response.StatusCode} {response.ReasonPhrase}";
             }
 
@@ -255,7 +298,12 @@ internal static class DistributionCommand
             body.CopyTo(file);
             return null;
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            transient = true;
+            return exception.Message;
+        }
+        catch (UnauthorizedAccessException exception)
         {
             return exception.Message;
         }

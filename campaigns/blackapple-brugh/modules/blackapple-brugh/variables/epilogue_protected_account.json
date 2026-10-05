@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "epilogue_protected_account",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Independent additive ending consequence."
-}

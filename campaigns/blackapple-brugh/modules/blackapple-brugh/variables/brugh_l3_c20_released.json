@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c20_released",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "The C20 salt-line bargain has released the cold captive."
-}

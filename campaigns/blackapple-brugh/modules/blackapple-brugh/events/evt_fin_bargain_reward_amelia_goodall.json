@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_bargain_reward_amelia_goodall",
-  "kind": "treasure",
-  "currency": "fifth-srd:gold",
-  "amount": "100 * party_size()",
-  "next": "evt_fin_bargain_accept_amelia_goodall"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_c8_prayer_taken",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The redacted prayer book has been removed from the first guest room."
-}

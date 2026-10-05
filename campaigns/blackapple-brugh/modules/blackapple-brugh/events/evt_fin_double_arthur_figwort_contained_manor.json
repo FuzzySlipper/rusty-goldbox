@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_arthur_figwort_contained_manor",
-  "kind": "set",
-  "variable": "double_arthur_figwort_evidence",
-  "value": "\"Lady Figwort at Figwort Manor\"",
-  "next": "evt_fin_double_arthur_figwort_contained_manor_text"
-}

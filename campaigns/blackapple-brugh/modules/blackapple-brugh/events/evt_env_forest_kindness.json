@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_forest_kindness",
-  "kind": "text",
-  "text": "You put away steel, set food at the edge of the hollow, and mend the worst of the trampled roots. The cu-sidhe watches every hand. When the dogs stop snarling, it accepts the gesture as a promise to protect the forest from needless harm.",
-  "next": "evt_env_forest_kindness_stance"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_setup_court_bound_011",
-  "kind": "set",
-  "variable": "double_amelia_goodall",
-  "value": "\"contained\"",
-  "next": "evt_fin_setup_court_bound_012"
-}

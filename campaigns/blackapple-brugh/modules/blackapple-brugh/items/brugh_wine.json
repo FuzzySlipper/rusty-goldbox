@@ -1,9 +1,0 @@
-{
-  "type": "item",
-  "id": "brugh_wine",
-  "name": "Brugh enchanted wine",
-  "kind": "gear",
-  "cost": 30,
-  "currency": "fifth-srd:gold",
-  "weight": 1
-}

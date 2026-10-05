@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l2_dinner_resolved",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "The C13 court reaction has been resolved once for this Level 2 area state."
-}

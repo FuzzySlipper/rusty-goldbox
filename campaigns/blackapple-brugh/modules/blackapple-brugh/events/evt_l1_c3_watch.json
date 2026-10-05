@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c3_watch",
-  "kind": "text",
-  "text": "From above, the court's traffic resolves into a route: stairs descend from the reception side, and servants cross toward the library before disappearing behind a curtain. You learn where to retreat without being seen.",
-  "next": "evt_l1_c3_choice"
-}

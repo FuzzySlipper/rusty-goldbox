@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_giles_weadley_hide_text",
-  "kind": "text",
-  "text": "The Giles Weadley double — masked. The identity is withheld, so the double may still be at large.",
-  "next": "evt_fin_double_philip_anvil"
-}

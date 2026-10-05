@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "evidence_brugh_danger",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "Pit or hazard danger is understood."
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c25_revisit",
-  "kind": "text",
-  "text": "The Elf Lord's chamber is still quiet. The party may leave, bargain, or deliberately call for the optional confrontation; C27 remains reachable either way.",
-  "next": "evt_l3_c25_menu"
-}

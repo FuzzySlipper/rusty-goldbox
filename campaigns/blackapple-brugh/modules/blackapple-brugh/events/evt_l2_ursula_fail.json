@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_ursula_fail",
-  "kind": "text",
-  "text": "The rhythm slips under the court's music. Ursula's eyes find yours for one breath, then the timpani drowns the answer. You can wait, retreat, or try the pattern again; nothing about the child has been decided by this miss.",
-  "next": "evt_l2_ursula_choice"
-}

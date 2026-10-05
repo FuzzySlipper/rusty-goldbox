@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_child_philip_anvil_hold",
-  "kind": "text",
-  "text": "Philip Anvil — remains freed. The party records a safe-room pause; the value is not changed to returned without a family handoff.",
-  "next": "evt_fin_child_ursula_cooke"
-}

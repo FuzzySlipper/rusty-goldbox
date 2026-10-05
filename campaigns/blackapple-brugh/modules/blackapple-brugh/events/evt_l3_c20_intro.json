@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c20_intro",
-  "kind": "text",
-  "text": "An icy blast rolls from the cold storage. A three-foot blue, winged captive watches from inside a thin circle of magical salt while frozen meat hangs from the hooks. The salt line is the bargain's visible boundary.",
-  "next": "evt_l3_c20_menu"
-}

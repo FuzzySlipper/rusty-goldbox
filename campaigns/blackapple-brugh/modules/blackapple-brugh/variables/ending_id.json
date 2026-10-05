@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "ending_id",
-  "value_type": "text",
-  "initial": "''",
-  "description": "Exactly one primary ending ID after resolution; empty before final choice."
-}

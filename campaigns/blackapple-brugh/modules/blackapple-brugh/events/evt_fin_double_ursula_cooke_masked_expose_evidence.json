@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_double_ursula_cooke_masked_expose_evidence",
-  "kind": "set",
-  "variable": "double_ursula_cooke_evidence",
-  "value": "\"mask exposed during return accounting\"",
-  "next": "evt_fin_double_ursula_cooke_masked_expose_text"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c22_lose",
-  "kind": "text",
-  "text": "The pudding drives the party back among the shelves. The ordinary combat result stands; if the party can act, it may leave the optional hazard behind.",
-  "next": "evt_l3_c22_leave"
-}

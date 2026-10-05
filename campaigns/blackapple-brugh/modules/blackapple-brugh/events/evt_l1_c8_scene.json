@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c8_scene",
-  "kind": "text",
-  "text": "The first guest room has two beds and a single candle. A prayer book in the nightstand has every divine name inked over, as though the court wanted the comfort of ritual without its witness.",
-  "next": "evt_l1_c8_menu"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_xp_opening_guard",
-  "kind": "set",
-  "variable": "opening_xp_awarded",
-  "value": "true",
-  "next": "evt_xp_opening_award"
-}

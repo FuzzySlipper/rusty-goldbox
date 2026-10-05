@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_guild_revisit_respect",
-  "kind": "text",
-  "text": "The guild remembers that you stood up for living trees. The glowwood offer can be discussed again, but your promise to the forest stands.",
-  "next": "evt_vil_optional_hub"
-}

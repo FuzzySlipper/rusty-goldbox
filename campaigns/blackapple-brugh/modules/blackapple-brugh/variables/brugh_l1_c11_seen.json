@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l1_c11_seen",
-  "value_type": "boolean",
-  "initial": "false",
-  "scope": "area",
-  "description": "C11 Frog Prince room has been visited."
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_env_arrival_from_blackapple",
-  "kind": "text",
-  "text": "The north road narrows into the old forest. A fork leads toward the warm lights of the Hen's Teeth, while another track climbs toward the Faehill and its standing stones. Tenpenny Wood lies deeper among the living trees. Nothing here is a physical entrance to the Brugh; the forest offers warnings, witnesses, and a route back to Blackapple.",
-  "picture": "blackapple-art:tenpenny_forest",
-  "next": "evt_env_arrival_choice"
-}

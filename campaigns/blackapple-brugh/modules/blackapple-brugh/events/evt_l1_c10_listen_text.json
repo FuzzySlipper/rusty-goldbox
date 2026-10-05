@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c10_listen_text",
-  "kind": "text",
-  "text": "The ambassador describes damp roots under the ballroom and a sealed route that should remain undisturbed. Listening earns a small mark of court favor, while the party keeps the choice of what to report.",
-  "next": "evt_l1_c10_choice"
-}

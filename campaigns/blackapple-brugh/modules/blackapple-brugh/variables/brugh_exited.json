@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_exited",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "C27 return has completed."
-}

@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_optional_jack_containment_text",
-  "kind": "text",
-  "text": "Jack consents to a quiet conversation about keeping others safe and remains the master of his choice. Father Naskew can offer a quiet room and hear the matter; nothing is forced, and no child or other double is touched by this bargain.",
-  "next": "evt_vil_priory"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_vil_sanitarium_safe_plan_text",
-  "kind": "text",
-  "text": "Father Naskew reserves a quiet room and sends a cleric to meet you outside the sanitarium. The plan gives Arthur somewhere safe to go before anyone argues over a diagnosis. You can now travel to the sanitarium without making the operation the only possible outcome.",
-  "picture": "blackapple-art:blackapple_priory",
-  "next": "evt_vil_sanitarium_travel"
-}

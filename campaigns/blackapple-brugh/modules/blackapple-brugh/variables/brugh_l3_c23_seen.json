@@ -1,8 +1,0 @@
-{
-  "type": "variable",
-  "id": "brugh_l3_c23_seen",
-  "value_type": "boolean",
-  "scope": "area",
-  "initial": "false",
-  "description": "C23 has shown its Arthur rescue scene in this Level 3 area instance."
-}

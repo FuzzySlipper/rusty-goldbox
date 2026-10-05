@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l2_philip_free",
-  "kind": "set",
-  "variable": "child_philip_anvil",
-  "value": "'freed'",
-  "next": "evt_l2_philip_evidence"
-}

@@ -1,7 +1,0 @@
-{
-  "type": "variable",
-  "id": "recovery_forest",
-  "value_type": "boolean",
-  "initial": "false",
-  "description": "A forest encounter recovery route is resolved."
-}

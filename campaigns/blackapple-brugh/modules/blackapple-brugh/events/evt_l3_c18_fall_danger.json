@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l3_c18_fall_danger",
-  "kind": "set",
-  "variable": "evidence_brugh_danger",
-  "value": "true",
-  "next": "evt_l3_c18_damage_text"
-}

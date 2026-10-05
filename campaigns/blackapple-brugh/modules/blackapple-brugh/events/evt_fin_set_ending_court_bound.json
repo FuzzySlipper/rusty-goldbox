@@ -1,8 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_fin_set_ending_court_bound",
-  "kind": "set",
-  "variable": "ending_id",
-  "value": "\"ending.court_bound\"",
-  "next": "evt_fin_primary_text"
-}

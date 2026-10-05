@@ -1,7 +1,0 @@
-{
-  "type": "event",
-  "id": "evt_l1_c1_refuse",
-  "kind": "text",
-  "text": "The attendant shakes his head. The entry mirror is already losing its reflection and cannot carry a party back to the village. The Brugh's return mirrors are deeper below.",
-  "next": "evt_l1_c1_menu"
-}
