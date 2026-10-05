@@ -23,6 +23,9 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | Path or service | Responsibility |
 | --- | --- |
 | `src/RustyGoldbox.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
+| `src/RustyGoldbox.Core/Modules/ModuleManifest.cs`, `ModuleIds.cs`, `ModuleKind.cs`, `ModuleVersion.cs` and `VersionRange.cs` | A manifest's fields, module ID rules, the module kinds, versions and `requires` ranges |
+| `src/RustyGoldbox.Core/Modules/ModuleSet.cs` and `ModuleDiagnostic.cs` | A loaded module set with its rules, and a diagnostic naming module, file, JSON path and rule |
+| `src/RustyGoldbox.Core/Modules/JsonFiles.cs` and `DirectoryListing.cs` | Reading JSON files with located parse errors, and listing a module's files in a stable order |
 | `src/RustyGoldbox.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `goldbox.json` |
 | `src/RustyGoldbox.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
 | `src/RustyGoldbox.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
@@ -31,7 +34,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
 | `src/RustyGoldbox.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
 | `src/RustyGoldbox.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
-| `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), and media: what an asset is and which media each slot accepts (`Media`) |
+| `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), media: what an asset is and which media each slot accepts (`Media`), and the panel proportions a skin or the player may set (`SkinLayout`) |
 | `src/RustyGoldbox.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
 | `src/RustyGoldbox.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, asset images and wall-set frames |
 | `src/RustyGoldbox.Core/Rules/ExpressionChecker.cs` | Expression type checking against a rule set |
@@ -52,6 +55,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/CombatGeometry.cs` | The `combat.*` distances, nearest-enemy, allies-near and sight values that both the resolver and authored tactics evaluate |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
+| `src/RustyGoldbox.Core/Combat/Encounters.cs` | Rolling an encounter's monsters into combatants and keeping combatant names distinct across sides |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
 | `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, current text-view event and selected member, party and inventory; characters own declared currency balances, equipment and perception results |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; resolves perception checks through the existing evaluator and selects authored member views without changing shared routes; trading changes the existing character balances, party inventory and equipment; equipment commands transfer existing copies through `CharacterRules` restrictions; optional shop buying cash lives in existing campaign/area variables; `CurrencyLedger` owns pooled payments and splits |
@@ -69,7 +73,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
 | `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
@@ -86,13 +90,14 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
 | `src/RustyGoldbox.Game/Presentation/TextureSampling.cs` | Maps authored nearest/linear sampling to the pinned Engine resource request and isolates cropped atlas UVs by half a source pixel |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
-| `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `goldbox.command` intents and keeps the one presentation-only choice (which overlay the player opened) |
+| `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `goldbox.command` intents and keeps which overlay the player opened; panels keep only their own presentation choices and unsent drafts |
 | `src/ui/layout.js` and `look.js` | The arrangement for the window's shape and its ratios as CSS variables; the stylesheet and a skin's overrides |
 | `src/ui/dom.js` | DOM image presentation over Engine image URLs, including authored sampling and isolated sheet-frame cropping |
 | `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet with Use/Equip/Gear actions and derived values, shop with stock counts and disabled sold-out buys, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
 | `campaigns/` | Retained editable campaign sources; shared canon supplies authored story and ID contracts, while Core owns their runtime values |
+| `campaigns/blackapple-brugh/modules/` | Blackapple's runtime modules (`blackapple-brugh` campaign, `blackapple-fae` extension, `blackapple-art` assets) under CC BY-SA 4.0, built and exported with `goldbox workspace` |
 | `campaigns/blackapple-brugh/art/` | Original reference images, style/identity/slot contracts, exact generation prompts and provenance; asset-module runtime definitions remain separate |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
@@ -353,7 +358,7 @@ only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
-begin, play, continue, save, load, quit, volume, skin, layout-config (the player's panel
+begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config (the player's panel
 proportions) and ui-scale), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and

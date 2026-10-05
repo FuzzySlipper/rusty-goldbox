@@ -1,9 +1,8 @@
 # Blackapple Brugh provenance and licence boundary
 
-This directory is the durable provenance record for the planned
-`blackapple-brugh` campaign module and its companion data and asset modules.
-The canon is an adaptation plan; it does not make a runtime module or ship a
-copy of the source publication.
+This directory is the durable provenance record for the `blackapple-brugh`
+campaign module and its companion data and asset modules under `modules/`.
+It does not ship a copy of the source publication.
 
 ## Source
 
@@ -98,7 +97,7 @@ licence and is outside this campaign attribution notice; no source-derived C#
 or other implementation code is imported. `fifth-srd` remains a separately
 licensed required ruleset module. It is not relicensed by this notice.
 
-## Planned module boundaries
+## Module boundaries
 
 | Module | Kind | Contents and rights boundary |
 | --- | --- | --- |

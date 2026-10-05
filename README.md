@@ -37,9 +37,9 @@ equipment and spells), then play with the buttons, a typed command, or the keys:
 or WASD move and turn, X turns around, L looks, digits choose menu options.
 Combat uses a live tactical screen. Party members wait for player choices by
 default: choose a movement path, action and target, then finish the turn when
-ready. Eligible members can use automatic control instead. Animation controls
-only advance presentation of committed results; they cannot choose a waiting
-player action. Saves can retain a battle at a pending decision.
+ready. Eligible members can use automatic control instead; a fight the whole
+party leaves to automatic control shows its result on the same screen until
+Continue. Saves can retain a battle at a pending decision.
 Saves go to named slots in the Engine persistence root, which `rusty dev`
 keeps in `.runtime/persistence`; `goldbox play --store .runtime/persistence`
 loads and writes the same slots.
@@ -60,6 +60,15 @@ own modules without a rebuild:
 
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- module pack modules/sample-crypt --install
+```
+
+The Game's own content root is `modules/`, so a campaign kept elsewhere, like
+the Blackapple Brugh workspace, is played by installing its modules (the
+ruleset it needs, `fifth-srd`, is already in `modules/`):
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- workspace build campaigns/blackapple-brugh
+for module in blackapple-art blackapple-fae blackapple-brugh; do dotnet run --project src/RustyGoldbox.Cli -- module pack campaigns/blackapple-brugh/.goldbox/staged/$module --install --modules campaigns/blackapple-brugh/.goldbox/staged; done
 ```
 
 The CLI reads installed containers too: any `.rpak` in a search directory is
@@ -151,10 +160,14 @@ dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module m
 dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/sample-crypt --class fighter --race human --name Ada --portrait placeholder-art:fighter_portrait --out ada.json
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/universal-d100 --creation staged --feature staged_soldier --name Rook --seed 4 --out rook.json
-dotnet run --project src/RustyGoldbox.Cli -- character skills rook.json --module modules/universal-d100 --skill sword=profession:100+personal:90,shield=profession:50,dodge=profession:40,brawl=profession:30,bow=profession:30
+dotnet run --project src/RustyGoldbox.Cli -- character skills rook.json --module modules/universal-d100 --skill sword=profession:100+personal:90,shield=profession:50,dodge=profession:40+personal:40,brawl=profession:30,bow=profession:30
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/scifi-2d6 --name Vance --lifepath prior_history --career marine --terms 1 --skill-table service,service,service --benefit cash --seed 3 --out vance.json
 dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --module modules/fate-condensed --raise fight --feature deadeye
 dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
+dotnet run --project src/RustyGoldbox.Cli -- character mark rook.json --module modules/universal-d100 --skill sword
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/classic --class magic_user --race human --name Mira --seed 5 --out mira.json
+dotnet run --project src/RustyGoldbox.Cli -- character spells mira.json --module modules/classic --set magic_missile,sleep --memorise magic_missile
+dotnet run --project src/RustyGoldbox.Cli -- character former aldo.json --module modules/classic on
 ```
 
 The Game's party creator shows the selected method's authored scores and costs.
@@ -343,17 +356,16 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | --- | --- |
 | `src/RustyGoldbox.Core/` | Module format and loading (from directories or Engine bundles), definition types, expressions, rule evaluation, characters, combat, campaigns and saves |
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring CLI |
-| `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), presentation of committed combat facts and the session projection over Core |
+| `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`) and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
-| `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
-| `campaigns/` | Retained editable campaign source, including shared story canon and source attribution |
+| `modules/` | First-party module sources: rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`), the `placeholder-art` assets, the `tactical-bestiaire` extension and the `sample-crypt` and `tactical-expedition` campaigns. Also the Game's content root: each directory is a content bundle |
+| `campaigns/` | Editable campaign workspaces: Blackapple Brugh's canon, art (in Git LFS), scripts and its three runtime modules. Further campaigns belong in their own repositories |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `Directory.Build.props` | Engine SDK/runtime pin |
 | `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |
 | `docs/architecture.md` | Current owners and data flow |
 | `docs/ui.md` | DOM companion contract |
-| `docs/evidence/` | Screenshots that record what a presentation change looked like |
 | `docs/agent-review/` | Review workflow and lane packets |
 
 Combat framing follows the Engine's `hero` viewport anchor and surface CSS

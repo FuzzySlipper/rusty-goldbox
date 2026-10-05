@@ -22,8 +22,9 @@ came from in the commit and in the module's provenance.
 For the near and middle term, **the author is an agent**. An agent creates
 modules by writing JSON files and checks them with the `goldbox` CLI. It
 "plays" them through scripted, headless runs that produce readable transcripts.
-A visual editor and the full graphical presentation come later. Nothing built
-now should assume them, and nothing should stand in their way.
+The Engine product presents the same runtime to a player; a visual editor
+comes later. Nothing built now should assume an editor, and nothing should
+stand in its way.
 
 In priority order:
 
@@ -32,7 +33,8 @@ In priority order:
    evaluates rules, simulates combat and plays campaigns from scripts.
 3. A rules and campaign runtime that the CLI and the Engine product both share.
 4. Independent module export and cross-module references.
-5. Presentation: the first-person view, combat view and UI. This comes later.
+5. Presentation: the first-person view, combat view and UI, which follow the
+   runtime rather than lead it.
 
 ## Repository layout
 

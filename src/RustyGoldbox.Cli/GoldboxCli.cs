@@ -80,7 +80,10 @@ internal static class GoldboxCli
               choice repeats when the policy asks for more), and --benefit chooses cash or
               material for each mustering-out roll (one choice repeats too). The saved character
               records every term roll, choice and result in career_terms.
-          goldbox character level <file> --module <path> --xp <n> [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]
+          goldbox character skills <file> --module <path> --skill <id>=profession:<n>+personal:<n>,... [--seed <n>]
+              Commits a staged character's skill points, profession and personal per skill,
+              and saves the character. It also takes the lifepath options above.
+          goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]
               Adds experience, gains every level reached and saves the file. Where the
               advancement counts experience by character level, levels go to --class (a
               new class must accept the character), else to the class of the latest level.
@@ -102,6 +105,9 @@ internal static class GoldboxCli
               on the old class's abilities anyway (on), or stops (off). While it does, the old
               class works in fights, and in play it earns no experience for the rest of the
               adventure; stopping doesn't give that back.
+          goldbox character npc <file> --module <path> --id <id> --out <npc.json>
+              Writes an NPC definition with the character as its fixed data, for a
+              campaign's join and dismiss events.
           goldbox character show <file> --module <path>
               Prints the derived sheet.
 

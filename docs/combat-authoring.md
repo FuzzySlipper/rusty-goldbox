@@ -100,7 +100,8 @@ schema. Enemies use their authored profile by default. An NPC may also set
 `control` to `"automatic"` or `"manual"` to choose its default controller when
 it joins the party. An explicit player or campaign controller choice wins for
 the current fight and is retained by a live continuation; without `control`,
-the campaign's combat default applies. A manual choice must still use the
+the caller's default applies (manual in the Game, `--combat-control` for
+`goldbox play`, automatic unless set). A manual choice must still use the
 shared legal-action resolver.
 
 Test a profile in layers:
