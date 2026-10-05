@@ -1,4 +1,4 @@
-# Canon and shared-state contract (draft 0.1)
+# Canon and shared-state contract (revision 1.0)
 
 The coordinator owns this file. Workers may propose changes in their handoff;
 the coordinator deliberately edits shared canon after checking the proposal

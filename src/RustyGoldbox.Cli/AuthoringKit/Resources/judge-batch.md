@@ -1,9 +1,8 @@
-# Independent image drift judge: batch and contact sheet (draft 0.1)
+# Independent image drift judge: batch and contact sheet (revision 1.0)
 
 Use this prompt in a fresh judge context to review a frozen group of candidates.
 It complements judge-individual.md; it does not replace opening each original
-candidate and reference. The current kit remains draft pending the later
-transfer trial.
+candidate and reference.
 
 ## Judge brief
 
@@ -44,6 +43,9 @@ visual proof.
    framing can support crop reasoning, but cannot prove small-display
    legibility. A browser CSS display probe may supply this evidence; it still
    does not establish runtime media validity.
+   For a card slot, face readability and composition must hold at card size; a tiny
+   needle or similarly fine detail is judged only in the original full-size view.
+   Do not demand a detail the slot cannot physically show.
 6. Record disagreements between individual and batch impressions. A batch
    impression may reveal drift; it cannot override concrete original-file
    evidence.

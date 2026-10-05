@@ -1,4 +1,4 @@
-# Revision and repair record (draft 0.1)
+# Revision and repair record (revision 1.0)
 
 Use one copy for each later attempt. Keep source, generated outputs, and
 receipts distinct so a fresh author can tell what was actually changed.
@@ -10,7 +10,7 @@ run: <new run id>
 parent_run: <prior run id or null>
 source_baseline: <revision or source tree hash>
 canon_baseline: <canon path and sha256>
-prompt_revision: draft-0.1
+prompt_revision: 1.0
 reason: <observed failure, changed brief, or deliberate content revision>
 ```
 
@@ -59,6 +59,6 @@ Report separately:
 - visible ordinary-control/player evaluation;
 - independent review findings and the exact reviewed source revision.
 
-The prompt revision remains **draft** until it is retested by the later fresh
-transfer, revision, parallel, and different-ruleset trial. A successful local
-copy or one valid route does not change that status.
+This revision record describes the repair and evidence layers; it does not
+expand what a particular receipt proves. A successful local copy or one valid
+route establishes only the checks it records.

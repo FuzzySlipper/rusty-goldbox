@@ -1,4 +1,4 @@
-# Chapter and area contract (draft 0.1)
+# Chapter and area contract (revision 1.0)
 
 Use one copy per chapter, area, or bounded scene slice. The contract prevents
 parallel authors from creating incompatible entrances, exits, or state names.

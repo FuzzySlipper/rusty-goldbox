@@ -1,4 +1,4 @@
-# Art direction and drift review (draft 0.1)
+# Art direction and drift review (revision 1.0)
 
 Use this file before generating or accepting campaign art. The app supports
 different visual styles; the asset owner records the chosen style and uses
@@ -35,6 +35,13 @@ geometry so a drift judge can compare them without a hidden reference.
 Use `goldbox schema media` for asset fields and sampling modes. Use the pinned
 Engine-backed renderer and existing media paths; do not add a second decoder,
 renderer, or asset identity mechanism.
+
+## Size-aware acceptance
+
+For a card slot, judge face readability and composition at the card display
+size. A tiny needle or similarly fine detail is judged only in the original
+full-size view; do not demand a detail that the assigned slot cannot physically
+show.
 
 ## Independent review
 

@@ -153,6 +153,6 @@ dotnet run --project src/RustyGoldbox.Cli -- module inspect modules/tactical-bes
 dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/tactical-expedition \
   --modules modules --party hero.json --encounter tactical-expedition:gallery --seed 17 --trace
 dotnet run --project src/RustyGoldbox.Cli -- module pack modules/tactical-bestiaire \
-  --output /tmp/tactical-bestiaire-0.1.0.rpak --modules modules
+  --output tactical-bestiaire-0.1.0.rpak --modules modules
 ```
 

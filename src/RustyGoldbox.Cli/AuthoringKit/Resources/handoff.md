@@ -1,4 +1,4 @@
-# Authoring handoff packet (draft 0.1)
+# Authoring handoff packet (revision 1.0)
 
 This packet is the minimum a fresh author needs to resume from files. It is a
 work record, not a conversation transcript and not a hidden chain of thought.

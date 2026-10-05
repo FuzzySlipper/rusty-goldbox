@@ -1,4 +1,4 @@
-# Author brief template (draft 0.1)
+# Author brief template (revision 1.0)
 
 Use this file before creating runtime module JSON. It is an author-visible
 intake, not a hidden evaluator prompt. Replace every `<placeholder>` and keep
@@ -62,8 +62,8 @@ routes:
 
 ## Repair path
 
-Run `goldbox schema --json` and the relevant schema topic before writing a new
-field. Run `goldbox module validate <module> --json`; preserve the first
+Start with global `goldbox --help`, then use `goldbox schema <topic> --json`
+before writing a new field. Run `goldbox module validate <module> --json`; preserve the first
 diagnostic and every subsequent repair receipt. A diagnostic naming
 `module/file/json path/rule` is the repair target. If a play command needs a
 dependency directory, include `--modules <dir>` in the command and record how
@@ -72,11 +72,10 @@ literal is not typed as text, quote the literal and retain the before/after
 receipts. If a desired mechanic is unsupported, record the gap and its owner;
 do not silently invent a new runtime mechanism.
 
-## Current example
+## Durable protocol lesson
 
-The #9297 Blackapple slice used one fixed brief, three route scripts, a
-seeded party, and a visible kindness/expose/leave boundary. The compact trial
-used a trust value of `2` while the post hoc oracle expected `1`; the semantic
-outcome was still a visible trust increase. The kit therefore requires exact
-expected values to be supplied to authors and labels any later oracle mismatch
-as a protocol finding rather than an author failure.
+When a route promises a state change, provide the exact expected value and the
+visible consequence to both author and reviewer. If a later oracle disagrees,
+compare it with the author-visible contract and record the mismatch as a
+protocol finding until the contract is deliberately resolved; do not withhold
+numeric facts from the author.

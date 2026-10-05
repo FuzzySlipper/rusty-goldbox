@@ -1,4 +1,4 @@
-# Single-agent and multi-agent workflow (draft 0.1)
+# Single-agent and multi-agent workflow (revision 1.0)
 
 This is the coordinator's copyable sequence. It is intentionally a practical
 workflow rather than an orchestration service.
@@ -65,11 +65,16 @@ changes as proposals. The coordinator merges chapter contracts in dependency
 order, checks the canonical-to-local alias map, validates the full module set,
 and runs an independent fresh reader or player evaluation.
 
-## What the #9297 trials changed
+Use available role tooling honestly. If the harness can spawn role owners,
+dispatch disjoint owners after the shared contracts are ready. If it cannot,
+mark the work same-session and ask the owning coordinator to dispatch it; never
+call same-session work independent.
 
-- Exact state values and route aliases must be author-visible. A post hoc
-  hidden oracle made a compact trial's trust value look like a semantic failure
-  even though the brief only said “raises trust.”
+## Durable authoring observations
+
+- Exact state values and route aliases must be author-visible. A hidden
+  post-hoc oracle can make a visible state change look like a semantic failure
+  when the brief did not specify the exact value.
 - Include `--modules <dir>` in every play command and document reproducible
   sibling dependency staging.
 - Keep a receipt for every repair. A valid second repair without its receipt is
@@ -79,9 +84,7 @@ and runs an independent fresh reader or player evaluation.
 - Preserve compact canon plus structured plan, planner/worker handoffs, and
   files-only continuation inputs as separate artifacts.
 
-These are bounded observations for one brief and revision. They are not a
-model or strategy ranking, and the kit remains draft until the later transfer
-trial.
+These are reusable authoring observations, not a model or strategy ranking.
 
 ## Repair and closeout
 

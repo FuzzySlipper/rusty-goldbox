@@ -41,10 +41,12 @@ internal static class GoldboxCli
           goldbox authoring show <resource> [--json]
           goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]
           goldbox authoring copy --all --out <dir> [--overwrite] [--json]
-              Discovers or copies the embedded draft campaign-authoring kit;
-              copied files include the brief, canon, chapter, encounter, art,
-              handoff, workflow and revision templates.
-              `live-combat` adds the suspended combat script and JSON observation schema.
+              Discovers or copies the embedded revision-1.0 campaign-authoring kit;
+              copied files include the kit index, brief, canon, chapter, encounter,
+              art, individual/batch image judges, handoff, workflow, revision, and
+              the complete Lantern worked example. Use `goldbox schema live-combat
+              --json` for the suspended combat command and observation schema;
+              live-combat is a schema topic, not an authoring resource.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};

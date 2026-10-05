@@ -114,14 +114,18 @@ staging tree; export independently packs each staged module through the pinned
 Engine packer. Canon, prompts and source art remain editable outside the
 runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
 
-The installed CLI also carries a draft authoring kit. `goldbox authoring list
---json` discovers its resources, `goldbox authoring show workflow` prints the
-workflow, and `goldbox authoring copy --all --out my-campaign/prompts --json`
-copies the brief, canon, chapter, encounter, art, individual/batch image judges,
-handoff and revision templates.
-The kit points to `goldbox schema` for format details and works outside this
-repository. Its broader campaign workflow remains a draft until the full
-demonstration and fresh-agent trials have tested it.
+The installed CLI also carries the ready revision-1.0 authoring kit.
+`goldbox authoring list --json` discovers its twelve resources, while
+`goldbox authoring show workflow --json` and
+`goldbox authoring show worked-example --json` print the coordinator workflow
+and complete Lantern example. `goldbox authoring copy --all
+--out my-campaign/prompts --json` copies the kit index, brief, canon, chapter,
+encounter, art, individual/batch image judges, handoff, workflow, revision, and
+worked example. The kit points to `goldbox schema <topic> --json` for format
+details and works outside this repository. The Lantern example is text-only;
+`encounter.md` and [Authoring tactical combat](docs/combat-authoring.md) retain
+the manual-combat, data-authored behavior, AI-debug trace, and refusal-repair
+recipes with fixture-vs-normal-route labels.
 
 The format is described by the tool itself, and rules can be tried against a
 module:

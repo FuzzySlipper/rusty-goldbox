@@ -1,8 +1,7 @@
-# Independent image drift judge: individual asset (draft 0.1)
+# Independent image drift judge: individual asset (revision 1.0)
 
 Use this prompt in a fresh judge context. It is a visible-art review protocol,
-not a generator instruction or a replacement for module/media validation. The
-current kit remains draft pending the later transfer trial.
+not a generator instruction or a replacement for module/media validation.
 
 ## Judge brief
 
@@ -40,6 +39,9 @@ own report as proof that the image is usable.
    Source framing can support crop reasoning, but cannot prove small-display
    legibility. A browser CSS display probe may supply this evidence; it still
    does not establish runtime media validity.
+   For a card slot, face readability and composition must hold at card size; a
+   tiny needle or similarly fine detail is judged only in the original full-size
+   view. Do not demand a detail the slot cannot physically show.
 4. Compare the candidate with the brief before comparing it with your taste.
    Separate deliberate variation from drift. A different allowed surface or
    lighting treatment can pass while a changed subject, landmark, or slot cannot.

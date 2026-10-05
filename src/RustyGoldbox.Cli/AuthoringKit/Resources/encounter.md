@@ -1,4 +1,4 @@
-# Encounter tuning and replay contract (draft 0.1)
+# Encounter tuning and replay contract (revision 1.0)
 
 Use this file for each authored encounter or encounter family. The encounter
 owner chooses values in module data; Core interprets the ruleset and the CLI
@@ -261,5 +261,5 @@ outcome; use the returned `combat inspect` guidance to choose the smallest
 legal repair before claiming success.
 
 The final handoff includes changed files, seeds and transcripts, assumptions,
-unresolved balance questions, and the next command. This draft is a recipe and
-does not certify a module, campaign, or authoring-kit release.
+unresolved balance questions, and the next command. This resource is a reusable
+recipe; its receipts establish only the checks they record.

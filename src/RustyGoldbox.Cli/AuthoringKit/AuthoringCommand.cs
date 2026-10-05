@@ -42,13 +42,13 @@ internal static class AuthoringCommand
             output.WriteJson(new
             {
                 ok = true,
-                revision = "draft-0.1",
+                revision = "1.0",
                 resources = AuthoringKit.Resources.Select(ToJson),
             });
             return GoldboxCli.Ok;
         }
 
-        output.Line("Embedded campaign-authoring resources (draft-0.1):");
+        output.Line("Embedded campaign-authoring resources (revision 1.0):");
         foreach (AuthoringResource resource in AuthoringKit.Resources)
         {
             output.Line($"  {resource.Id,-9} {resource.Title} — {resource.Description}");
@@ -81,7 +81,7 @@ internal static class AuthoringCommand
             output.WriteJson(new
             {
                 ok = true,
-                revision = "draft-0.1",
+                revision = "1.0",
                 resource = ToJson(resource!),
                 content,
             });
@@ -181,7 +181,7 @@ internal static class AuthoringCommand
             output.WriteJson(new
             {
                 ok = true,
-                revision = "draft-0.1",
+                revision = "1.0",
                 destination,
                 overwritten = parsed.Has("--overwrite"),
                 files = copies.Select(copy => new
