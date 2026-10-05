@@ -71,10 +71,15 @@ public sealed class PartyTableTests
             // Character commands belong to the character's owner.
             Assert.Equal("That character isn't yours.", For(session, engine, Bo, new { action = "play", command = $"use {annIndex + 1} classic:dagger" }));
 
-            // Walk to the first fight as the leader.
+            // Walk to the first fight as the leader, settling each menu's vote.
             foreach (string command in script)
             {
                 Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
+                if (command.StartsWith("choose", StringComparison.Ordinal))
+                {
+                    Run(session, engine, """{ "action": "decide" }""");
+                }
+
                 if (session.Screen == Screen.Combat)
                 {
                     break;
@@ -90,6 +95,79 @@ public sealed class PartyTableTests
             Assert.StartsWith("The party has moved on", For(session, engine, owner, new { action = "combat-end-turn", actor = decision.ActorId }, seen: 6), StringComparison.Ordinal);
             Assert.Null(For(session, engine, owner, new { action = "combat-end-turn", actor = decision.ActorId }, seen: 7));
             Assert.NotEqual(decision.Id, session.Combat!.PendingDecision?.Id);
+        });
+    }
+
+    [Fact]
+    public void EventMenusAreVotedAndTheLeaderBreaksTies()
+    {
+        AtTheBarredDoor((session, engine, table, lift, leave) =>
+        {
+            // A vote made against an older view is refused.
+            table.ViewSent(session, 5);
+            Assert.StartsWith("The party has moved on", Vote(session, engine, Ann, lift, seen: 4), StringComparison.Ordinal);
+
+            // Not settled until everyone here has voted; then the majority wins and the log says who chose what.
+            Assert.Null(Vote(session, engine, Ann, leave));
+            Assert.Null(Vote(session, engine, Bo, lift));
+            Assert.NotNull(session.Runner!.State.PendingMenu);
+            Assert.Equal("Only the leader can settle the vote early.", For(session, engine, Ann, new { action = "decide" }));
+            Assert.Equal("The vote is tied: vote to break it, then decide.", For(session, engine, Host, new { action = "decide" }));
+            Assert.Null(Vote(session, engine, Host, leave));
+            Assert.Null(session.Runner.State.PendingMenu);
+            Assert.Contains($"The party chose {leave} (Ann, Hana; Bo chose {lift}).", session.Log);
+            Assert.Empty(table.Votes);
+        });
+    }
+
+    [Fact]
+    public void AnAbsentPlayerDoesNotHoldUpAVoteTheLeaderSettles()
+    {
+        AtTheBarredDoor((session, engine, table, lift, _) =>
+        {
+            table.Leave(Bo);
+            Assert.Null(Vote(session, engine, Ann, lift));
+            Assert.NotNull(session.Runner!.State.PendingMenu);
+            Assert.Null(For(session, engine, Host, new { action = "decide" }));
+            Assert.Contains($"The party chose {lift} (Ann).", session.Log);
+            Assert.Null(session.Runner.State.PendingMenu);
+        });
+    }
+
+    /// <summary>A hosted party of Hana (host and leader), Ann and Bo at the sample crypt's barred door, its two choices showing.</summary>
+    private static void AtTheBarredDoor(Action<GameSession, IEngineContext, PartyTable, int, int> check)
+    {
+        using TempModules scratch = new();
+        List<string> containers = new[] { "classic", "placeholder-art", "sample-crypt" }
+            .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+            .ToList();
+        List<string> script = File.ReadAllLines(CampaignTests.Script("crypt.script"))
+            .Select(line => line.Split('#')[0].Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession session = new(new ModuleLibrary(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList()));
+            session.Refresh();
+            Run(session, engine, JsonSerializer.Serialize(new { action = "open", campaign = Assert.Single(session.Campaigns).Bundle, seed = "12" }));
+            PartyTable table = new();
+            session.Table = table;
+            table.Join(Host, "host-key", "Hana");
+            table.Join(Ann, "ann-key", "Ann");
+            table.Join(Bo, "bo-key", "Bo");
+            Roll(session, engine, Ann, "Ann", "classic:fighter");
+            Roll(session, engine, Bo, "Bo", "classic:cleric");
+            Run(session, engine, """{ "action": "begin" }""");
+            foreach (string command in script[..script.IndexOf("dance")])
+            {
+                Run(session, engine, JsonSerializer.Serialize(new { action = "play", command }));
+            }
+
+            List<int> options = session.Runner!.MenuOptions().Select(option => option.Number).ToList();
+            Assert.Equal(2, options.Count);
+            check(session, engine, table, options[0], options[1]);
         });
     }
 
@@ -117,6 +195,9 @@ public sealed class PartyTableTests
             Assert.Null(For(session, engine, member, new { action = "roll", name, race = "classic:human", @class = characterClass }));
         }
     }
+
+    private static string? Vote(GameSession session, IEngineContext engine, uint member, int option, ulong seen = ulong.MaxValue) =>
+        For(session, engine, member, new { action = "play", command = $"choose {option}" }, seen);
 
     private static string? For(GameSession session, IEngineContext engine, uint member, object action, ulong seen = ulong.MaxValue)
     {

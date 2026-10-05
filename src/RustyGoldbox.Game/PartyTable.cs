@@ -49,12 +49,22 @@ internal sealed class PartyTable
 
     private string? _decision;
 
+    private readonly Dictionary<uint, int> _votes = [];
+    private string? _voteMenu;
+
+    /// <summary>The open vote on the current event menu: member → option number.</summary>
+    public IReadOnlyDictionary<uint, int> Votes => _votes;
+
+    /// <summary>Who votes on event menus: seats with characters, and the leader.</summary>
+    public IEnumerable<Seat> Voters => Seats.Where(seat => seat.Characters.Count > 0 || seat.Member == Leader);
+
     public Seat? SeatOf(uint member) => Seats.FirstOrDefault(seat => seat.Member == member);
 
-    /// <summary>The table as players see it: seats, who is here, who plays what, and the leader.</summary>
+    /// <summary>The table as players see it: seats, who is here, who plays what, the leader, and the open vote.</summary>
     public JsonObject ToJson() => new()
     {
         ["leader"] = Leader,
+        ["votes"] = new JsonObject(_votes.Select(vote => KeyValuePair.Create(vote.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), (JsonNode?)vote.Value))),
         ["seats"] = new JsonArray(Seats.Select(seat => (JsonNode)new JsonObject
         {
             ["member"] = seat.Member,
@@ -77,6 +87,14 @@ internal sealed class PartyTable
             };
             seat.Characters.AddRange(entry.GetProperty("characters").EnumerateArray().Select(index => index.GetInt32()));
             table.Seats.Add(seat);
+        }
+
+        if (json.TryGetProperty("votes", out JsonElement votes))
+        {
+            foreach (JsonProperty vote in votes.EnumerateObject())
+            {
+                table._votes[uint.Parse(vote.Name, System.Globalization.CultureInfo.InvariantCulture)] = vote.Value.GetInt32();
+            }
         }
 
         return table;
@@ -174,6 +192,8 @@ internal sealed class PartyTable
                 return host ? null : "Only the host can do that.";
             case "pass-lead":
                 return leader || host ? null : "Only the leader can pass the lead.";
+            case "decide":
+                return leader ? null : "Only the leader can settle the vote early.";
             case "roll":
                 return session.Screen == Screen.Party ? null : "Characters are made before the adventure begins.";
             case "drop" or "equip" or "skills" or "spells" or "memorise":
@@ -191,6 +211,85 @@ internal sealed class PartyTable
                         : "That choice is no longer waiting.");
             default:
                 return $"'{name}' isn't something a player at the table sends.";
+        }
+    }
+
+    /// <summary>Records a member's vote on the current event menu; a new menu starts a new vote.</summary>
+    public string? Vote(GameSession session, uint member, int option)
+    {
+        SyncVote(session);
+        if (_voteMenu is null)
+        {
+            return "There is no choice to vote on.";
+        }
+
+        if (session.Runner!.MenuOptions().All(choice => choice.Number != option))
+        {
+            return $"{option} isn't one of the choices.";
+        }
+
+        if (Voters.All(seat => seat.Member != member) && member != Leader)
+        {
+            return "Only players with characters vote.";
+        }
+
+        _votes[member] = option;
+        return null;
+    }
+
+    /// <summary>
+    /// The party's choice, once it is settled: when every voter who is here
+    /// has voted, or when the leader calls it (<paramref name="called"/>)
+    /// counting only votes cast. Most votes win and the leader's vote breaks
+    /// a tie; null while it isn't settled.
+    /// </summary>
+    public int? Settled(GameSession session, bool called)
+    {
+        SyncVote(session);
+        if (_voteMenu is null || _votes.Count == 0)
+        {
+            return null;
+        }
+
+        if (!called && Voters.Any(seat => (seat.Connected || seat.Member == HostMember) && !_votes.ContainsKey(seat.Member)))
+        {
+            return null;
+        }
+
+        List<IGrouping<int, KeyValuePair<uint, int>>> tallies = _votes.GroupBy(vote => vote.Value).ToList();
+        int most = tallies.Max(group => group.Count());
+        List<int> tied = tallies.Where(group => group.Count() == most).Select(group => group.Key).ToList();
+        if (tied.Count == 1)
+        {
+            return tied[0];
+        }
+
+        return _votes.TryGetValue(Leader, out int leaderChoice) && tied.Contains(leaderChoice) ? leaderChoice : null;
+    }
+
+    /// <summary>The vote has been acted on; the next menu starts a new one.</summary>
+    public void VoteClosed()
+    {
+        _votes.Clear();
+        _voteMenu = null;
+    }
+
+    /// <summary>The log line for a settled vote: "The party chose 2 (Ann, Bo; Cy chose 1)."</summary>
+    public string Tally(int choice)
+    {
+        string Names(IEnumerable<KeyValuePair<uint, int>> votes) => string.Join(", ", votes.Select(vote => SeatOf(vote.Key)?.Name ?? $"player {vote.Key}"));
+        List<string> others = _votes.Where(vote => vote.Value != choice).GroupBy(vote => vote.Value)
+            .Select(group => $"{Names(group)} chose {group.Key}").ToList();
+        return $"The party chose {choice} ({Names(_votes.Where(vote => vote.Value == choice))}{(others.Count == 0 ? "" : "; " + string.Join("; ", others))}).";
+    }
+
+    private void SyncVote(GameSession session)
+    {
+        string? menu = session.Runner?.State.PendingMenu is not null ? $"menu:{session.Runner.State.Commands}" : null;
+        if (menu != _voteMenu)
+        {
+            _voteMenu = menu;
+            _votes.Clear();
         }
     }
 
@@ -225,7 +324,9 @@ internal sealed class PartyTable
 
         if (verb == "choose")
         {
-            return Stale("choose", seen) ?? (leader ? null : "The party votes on that; the leader settles it.");
+            // A choice at an event menu is this member's vote; anywhere else it is the leader's.
+            return Stale("choose", seen)
+                ?? (session.Runner?.State.PendingMenu is not null || leader ? null : "Only the leader moves the party and deals for it.");
         }
 
         return leader ? null : "Only the leader moves the party and deals for it.";

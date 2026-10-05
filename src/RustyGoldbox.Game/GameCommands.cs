@@ -176,6 +176,29 @@ internal static class GameCommands
             return table.PassLead((uint)Integer(payload, "to"));
         }
 
+        // At an event menu a choice is a vote; the party's choice runs once it is settled.
+        bool calling = action == "decide";
+        if (calling || (action == "play" && session.Runner?.State.PendingMenu is not null && Choice(Text(payload, "command")) is int))
+        {
+            if (!calling && table.Vote(session, member, Choice(Text(payload, "command"))!.Value) is string refused)
+            {
+                session.Notes.Clear();
+                session.Notes.Add(refused);
+                return refused;
+            }
+
+            if (table.Settled(session, calling) is not int choice)
+            {
+                return calling ? (table.Votes.Count == 0 ? "No one has voted yet." : "The vote is tied: vote to break it, then decide.") : null;
+            }
+
+            session.Log.Add(table.Tally(choice));
+            table.VoteClosed();
+            using JsonDocument chosen = JsonDocument.Parse(JsonSerializer.Serialize(new { action = "play", command = $"choose {choice}" }));
+            Dispatch(session, engine, chosen.RootElement, "play");
+            return null;
+        }
+
         int partyBefore = session.Party.Count;
         Dispatch(session, engine, payload, action);
         if (action == "roll" && session.Party.Count > partyBefore)
@@ -188,6 +211,13 @@ internal static class GameCommands
         }
 
         return null;
+    }
+
+    /// <summary>The option of a <c>choose N</c> command, or null for any other command.</summary>
+    private static int? Choice(string command)
+    {
+        string[] words = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return words is ["choose", string number] && int.TryParse(number, out int option) ? option : null;
     }
 
     private static void Dispatch(GameSession session, IEngineContext engine, JsonElement payload, string action)
