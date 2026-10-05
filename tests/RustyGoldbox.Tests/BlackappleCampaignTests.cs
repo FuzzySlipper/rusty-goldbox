@@ -27,6 +27,22 @@ public sealed class BlackappleCampaignTests
         "routes",
         "full-success-level.script");
 
+    private static string FullPartialScript => Path.Combine(
+        Rules.RepositoryRoot,
+        "campaigns",
+        "blackapple-brugh",
+        "scripts",
+        "routes",
+        "full-partial.script");
+
+    private static string ReturnHubRegressionScript => Path.Combine(
+        Rules.RepositoryRoot,
+        "campaigns",
+        "blackapple-brugh",
+        "scripts",
+        "routes",
+        "return-hub-regression.script");
+
     [Fact]
     public void FullCampaignGoldenReturnsEveryChildLevelsThePartyAndPaysGoodallOnce()
     {
@@ -170,6 +186,105 @@ public sealed class BlackappleCampaignTests
             Assert.Equal(2, facts.Count(fact => fact.GetProperty("kind").GetString() == "view"));
             Assert.DoesNotContain(facts, fact => fact.GetProperty("kind").GetString() == "perception");
         }
+    }
+
+    [Fact]
+    public void ReturnHubVisitNewAmeliaHandoffAndResumeKeepOneTimeProgressStable()
+    {
+        using TempModules scratch = new();
+        string party = CreateParty(scratch);
+        Dictionary<string, string> route = WriteReturnHubRouteParts(scratch);
+
+        string firstSave = Path.Combine(scratch.Root, "return-hub-first.json");
+        string accountSave = Path.Combine(scratch.Root, "return-hub-account.json");
+        string villageSave = Path.Combine(scratch.Root, "return-hub-village.json");
+        string resumedSave = Path.Combine(scratch.Root, "return-hub-resumed.json");
+        string preparedSave = Path.Combine(scratch.Root, "return-hub-prepared.json");
+        string c1Save = Path.Combine(scratch.Root, "return-hub-c1.json");
+        string c2Save = Path.Combine(scratch.Root, "return-hub-c2.json");
+        string c12Save = Path.Combine(scratch.Root, "return-hub-c12.json");
+        string ameliaSave = Path.Combine(scratch.Root, "return-hub-amelia.json");
+        string handoffSave = Path.Combine(scratch.Root, "return-hub-handoff.json");
+        string repeatSave = Path.Combine(scratch.Root, "return-hub-repeat.json");
+
+        PlayJson(
+            scratch,
+            Play(
+                party,
+                FullPartialScript,
+                firstSave,
+                seed: "9419",
+                failOnRefusal: false));
+        using JsonDocument first = ReadSave(firstSave);
+        AssertPending(first.RootElement, "blackapple-brugh:evt_fin_court_offer");
+        Assert.Equal("captive", CampaignVariable(first.RootElement, "child_amelia_goodall").GetString());
+        Assert.False(CampaignVariable(first.RootElement, "goodall_reward_given").GetBoolean());
+
+        PlayJson(scratch, Load(firstSave, route["account-decline"], accountSave, failOnRefusal: true));
+        using JsonDocument account = ReadSave(accountSave);
+        AssertPending(account.RootElement, "blackapple-brugh:evt_fin_account_choice");
+        string accountParty = PartyProgress(account.RootElement);
+
+        JsonElement villageResult = PlayJson(
+            scratch,
+            Load(accountSave, route["village-visit"], villageSave, failOnRefusal: true));
+        using JsonDocument village = ReadSave(villageSave);
+        AssertPending(village.RootElement, "blackapple-brugh:evt_vil_arrival_objective");
+        Assert.Contains("Resume the incomplete return account", TranscriptText(villageResult), StringComparison.Ordinal);
+
+        JsonElement resumedResult = PlayJson(
+            scratch,
+            Load(villageSave, route["village-resume"], resumedSave, failOnRefusal: true));
+        using JsonDocument resumed = ReadSave(resumedSave);
+        AssertPending(resumed.RootElement, "blackapple-brugh:evt_fin_account_choice");
+        Assert.Equal(accountParty, PartyProgress(resumed.RootElement));
+        Assert.False(CampaignVariable(resumed.RootElement, "goodall_reward_given").GetBoolean());
+        Assert.Contains("Resume the incomplete return account", TranscriptText(resumedResult), StringComparison.Ordinal);
+
+        PlayJson(scratch, Load(resumedSave, route["prepare-reentry"], preparedSave, failOnRefusal: true));
+        using (JsonDocument prepared = ReadSave(preparedSave))
+        {
+            AssertPending(prepared.RootElement, "blackapple-brugh:evt_entry_choose");
+        }
+
+        PlayJson(scratch, Load(preparedSave, route["enter-c1"], c1Save, failOnRefusal: true));
+        PlayJson(scratch, Load(c1Save, route["c1-to-c2"], c2Save, failOnRefusal: true));
+        PlayJson(scratch, Load(c2Save, route["c2-to-c12"], c12Save, failOnRefusal: true));
+        PlayJson(scratch, Load(c12Save, route["rescue-amelia-c27"], ameliaSave, failOnRefusal: true));
+        using JsonDocument amelia = ReadSave(ameliaSave);
+        AssertPending(amelia.RootElement, "blackapple-brugh:evt_fin_child_amelia_goodall_freed");
+        Assert.Equal("freed", CampaignVariable(amelia.RootElement, "child_amelia_goodall").GetString());
+        Assert.Equal(accountParty, PartyProgress(amelia.RootElement));
+        Assert.Equal(new[] { 900, 900, 900, 900 }, Experience(amelia.RootElement));
+
+        JsonElement handoffResult = PlayJson(
+            scratch,
+            Load(ameliaSave, route["amelia-handoff"], handoffSave, failOnRefusal: true));
+        using JsonDocument handoff = ReadSave(handoffSave);
+        AssertPending(handoff.RootElement, "blackapple-brugh:evt_fin_account_choice");
+        Assert.Equal("returned", CampaignVariable(handoff.RootElement, "child_amelia_goodall").GetString());
+        Assert.True(CampaignVariable(handoff.RootElement, "goodall_reward_given").GetBoolean());
+        Assert.Equal(new[] { 900, 900, 900, 900 }, Experience(handoff.RootElement));
+        Assert.Equal(
+            new[] { 416m, 410m, 410m, 410m },
+            Gold(handoff.RootElement));
+        Assert.Equal(1, TranscriptText(handoffResult).Split("Goodall opens a quiet letter", StringSplitOptions.None).Length - 1);
+        Assert.Equal(1, TranscriptText(handoffResult).Split("one hundred gold pieces into each traveler", StringSplitOptions.None).Length - 1);
+        Assert.Equal(1, SpellCount(handoff.RootElement, "fifth-srd:guiding_bolt"));
+
+        JsonElement repeatedResult = PlayJson(
+            scratch,
+            Load(handoffSave, route["village-resume-repeat"], repeatSave, failOnRefusal: true));
+        using JsonDocument repeated = ReadSave(repeatSave);
+        AssertPending(repeated.RootElement, "blackapple-brugh:evt_fin_account_choice");
+        Assert.Equal("returned", CampaignVariable(repeated.RootElement, "child_amelia_goodall").GetString());
+        Assert.True(CampaignVariable(repeated.RootElement, "goodall_reward_given").GetBoolean());
+        Assert.Equal(PartyProgress(handoff.RootElement), PartyProgress(repeated.RootElement));
+        Assert.Equal(new[] { 900, 900, 900, 900 }, Experience(repeated.RootElement));
+        Assert.Equal(new[] { 416m, 410m, 410m, 410m }, Gold(repeated.RootElement));
+        Assert.Equal(0, TranscriptText(repeatedResult).Split("Goodall opens a quiet letter", StringSplitOptions.None).Length - 1);
+        Assert.Equal(0, TranscriptText(repeatedResult).Split("one hundred gold pieces into each traveler", StringSplitOptions.None).Length - 1);
+        Assert.Contains("Resume the incomplete return account", TranscriptText(repeatedResult), StringComparison.Ordinal);
     }
 
     private static string CreateParty(TempModules scratch)
@@ -349,6 +464,42 @@ public sealed class BlackappleCampaignTests
         return (prefix, suffix);
     }
 
+    private static Dictionary<string, string> WriteReturnHubRouteParts(TempModules scratch)
+    {
+        string[] lines = File.ReadAllLines(ReturnHubRegressionScript);
+        string[] names =
+        [
+            "account-decline",
+            "village-visit",
+            "village-resume",
+            "prepare-reentry",
+            "enter-c1",
+            "c1-to-c2",
+            "c2-to-c12",
+            "rescue-amelia-c27",
+            "amelia-handoff",
+            "village-resume-repeat",
+        ];
+        Dictionary<string, string> scripts = new(StringComparer.Ordinal);
+        for (int index = 0; index < names.Length; index++)
+        {
+            string marker = $"## {names[index]}";
+            int start = Array.FindIndex(lines, line => line == marker);
+            Assert.True(start >= 0, $"Missing regression route marker {marker}.");
+            int end = Array.FindIndex(lines, start + 1, line => line.StartsWith("## ", StringComparison.Ordinal));
+            if (end < 0)
+            {
+                end = lines.Length;
+            }
+
+            string path = Path.Combine(scratch.Root, $"return-hub-{names[index]}.script");
+            File.WriteAllLines(path, lines[(start + 1)..end]);
+            scripts[names[index]] = path;
+        }
+
+        return scripts;
+    }
+
     private static JsonElement PlayJson(TempModules scratch, string[] command)
     {
         string[] jsonCommand = [command[0], "--json", .. command.Skip(1)];
@@ -360,6 +511,78 @@ public sealed class BlackappleCampaignTests
     private static JsonDocument ReadSave(string path)
     {
         return JsonDocument.Parse(File.ReadAllText(path));
+    }
+
+    private static void AssertPending(JsonElement save, string expected)
+    {
+        Assert.False(save.GetProperty("ended").GetBoolean());
+        Assert.Equal(expected, save.GetProperty("pending_menu").GetString());
+    }
+
+    private static JsonElement CampaignVariable(JsonElement save, string name)
+    {
+        return save.GetProperty("variables").GetProperty("campaign").GetProperty(name);
+    }
+
+    private static string PartyProgress(JsonElement save)
+    {
+        string[] fields =
+        [
+            "experience",
+            "levels",
+            "attributes",
+            "tracks",
+            "balances",
+            "equipment",
+            "conditions",
+            "spells",
+        ];
+        return string.Join(
+            "\n",
+            save.GetProperty("party").EnumerateArray().Select(member => string.Join(
+                "|",
+                fields.Select(field => member.TryGetProperty(field, out JsonElement value)
+                    ? value.GetRawText()
+                    : "null"))));
+    }
+
+    private static int[] Experience(JsonElement save)
+    {
+        return save.GetProperty("party").EnumerateArray()
+            .Select(member => member.GetProperty("experience").GetInt32())
+            .ToArray();
+    }
+
+    private static decimal[] Gold(JsonElement save)
+    {
+        return save.GetProperty("party").EnumerateArray()
+            .Select(member => member.GetProperty("balances").GetProperty("gold").GetDecimal())
+            .ToArray();
+    }
+
+    private static int SpellCount(JsonElement save, string spell)
+    {
+        int count = 0;
+        foreach (JsonElement member in save.GetProperty("party").EnumerateArray())
+        {
+            if (!member.TryGetProperty("spells", out JsonElement spells) || spells.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            count += spells.EnumerateArray().Count(value => value.GetString() == spell);
+        }
+
+        return count;
+    }
+
+    private static string TranscriptText(JsonElement result)
+    {
+        return string.Join(
+            "\n",
+            result.GetProperty("transcript").EnumerateArray()
+                .SelectMany(step => step.GetProperty("facts").EnumerateArray())
+                .Select(fact => fact.GetProperty("text").GetString() ?? string.Empty));
     }
 
     private static void AssertFullReturn(JsonElement save)
