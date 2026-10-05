@@ -520,6 +520,33 @@ The exported validation, character sheet, and play should each return `ok: true`
 
 ## 8. Repair evidence
 
-Keep the first failed command and its repair beside the successful receipts. One deliberate authoring mistake is retained as a repair example: adding `status` after an `end` event is a refused command under `--fail-on-refusal`. The diagnostic identifies line 2 and explains that the adventure has ended. The repair removes that post-end command; the repaired script exits 0 and produces the same light save as the corrected branch.
+Keep the first failed command and its repair beside the successful receipts. This deliberate route-script mistake chooses the light ending and then asks for `status` after the adventure has ended.
+
+```sh
+cat > "$WORKSPACE/scripts/light-with-post-end-status.script" <<'SCRIPT'
+choose 1
+status
+SCRIPT
+
+goldbox play --campaign "$WORKSPACE/modules/tidehouse" --modules "$WORKSPACE/modules" \
+  --party "$WORKSPACE/party/neri.json" --seed 7 \
+  --script "$WORKSPACE/scripts/light-with-post-end-status.script" \
+  --save "$WORKSPACE/party/light-with-refusal.save.json" --fail-on-refusal --json \
+  > "$WORKSPACE/receipts/play-post-end-refusal.json"
+```
+
+Expect exit 1, `ok: false`, and a `play.refusal` diagnostic naming line 2 and explaining that the adventure has ended. If running commands in a shell that stops on nonzero exits, run this expected failure separately and retain its exit status.
+
+The repair uses the already supplied one-line light script, which removes the post-end command:
+
+```sh
+goldbox play --campaign "$WORKSPACE/modules/tidehouse" --modules "$WORKSPACE/modules" \
+  --party "$WORKSPACE/party/neri.json" --seed 7 \
+  --script "$WORKSPACE/scripts/intro-and-light.script" \
+  --save "$WORKSPACE/party/repaired-light.save.json" --fail-on-refusal --json \
+  > "$WORKSPACE/receipts/play-repaired-light.json"
+```
+
+Expect exit 0 and the same lantern-lit ending and save state as the uninterrupted light branch in section 5.
 
 This is a route-script correction, not a runtime workaround. If a later change needs a new operation or definition field, first run the relevant schema topic and record the unsupported gap with its owning Core task.
