@@ -317,6 +317,78 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return GoldboxCli.Ok;
     }
 
+    /// <param name="files">Release files written locally, when not published.</param>
+    /// <param name="url">The published GitHub release, when there is one.</param>
+    public int Released(ReleasedModule module, IReadOnlyList<string> files, string? url)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = true, id = module.Id, version = module.Version.ToString(), identity = module.Identity, files = files.Select(Display), url });
+        }
+        else
+        {
+            writer.WriteLine(url is not null
+                ? $"ok: released {module.Id} {module.Version} at {url}"
+                : $"ok: wrote the {module.Id} {module.Version} release files:");
+            foreach (string file in files)
+            {
+                writer.WriteLine($"  {Display(file)}");
+            }
+
+            writer.WriteLine($"  identity {module.Identity}");
+        }
+
+        return GoldboxCli.Ok;
+    }
+
+    public int Fetched(FetchResult result, string library)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = result.Succeeded,
+                library = Display(library),
+                installed = result.Installed.Select(fetched => new
+                {
+                    id = fetched.Module.Id,
+                    version = fetched.Module.Version.ToString(),
+                    kind = ModuleKinds.Name(fetched.Module.Kind),
+                    title = fetched.Module.Title,
+                    provenance = fetched.Module.Provenance,
+                    from = fetched.From.Text,
+                    container = Display(fetched.Container),
+                }),
+                present = result.Present,
+                problems = result.Problems,
+            });
+        }
+        else
+        {
+            foreach (FetchedModule fetched in result.Installed)
+            {
+                writer.WriteLine($"installed {fetched.Module.Id} {fetched.Module.Version} ({ModuleKinds.Name(fetched.Module.Kind)}) from {fetched.From}");
+                writer.WriteLine($"  {fetched.Module.Title}: {fetched.Module.Provenance}");
+            }
+
+            foreach (string present in result.Present)
+            {
+                writer.WriteLine($"already here: {present}");
+            }
+
+            foreach (string problem in result.Problems)
+            {
+                writer.WriteLine($"error: {problem}");
+            }
+
+            writer.WriteLine(result.Succeeded
+                ? $"ok: {result.Installed.Count} module(s) installed into {Display(library)}."
+                : $"{result.Problems.Count} problem(s); {result.Installed.Count} module(s) installed into {Display(library)}.");
+        }
+
+        return result.Succeeded ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
     public int Dependencies(ModuleSet set)
     {
         if (json)

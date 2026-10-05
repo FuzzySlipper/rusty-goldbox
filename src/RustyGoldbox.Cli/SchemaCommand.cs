@@ -14,8 +14,9 @@ internal static class SchemaCommand
           "kind": "campaign",
           "version": "0.1.0",
           "title": "My campaign",
-          "requires": [ { "id": "classic", "version": "^0.1.0" }, { "id": "crypt-art", "version": "*" } ],
-          "provenance": "Original content."
+          "requires": [ { "id": "classic", "version": "^0.1.0" }, { "id": "crypt-art", "version": "*", "releases": "github:alice/crypt-art" } ],
+          "provenance": "Original content.",
+          "releases": "github:alice/my-campaign"
         }
         """;
 
@@ -23,7 +24,7 @@ internal static class SchemaCommand
         {
           "modules": ["modules", "../shared-rules"],
           "authoring": {
-            "modules": ["modules/blackapple-campaign", "modules/blackapple-art"],
+            "modules": ["modules/blackapple-brugh", "modules/blackapple-art"],
             "staging": ".goldbox/staged",
             "exports": "exports"
           }
@@ -203,7 +204,7 @@ internal static class SchemaCommand
             return GoldboxCli.Ok;
         }
 
-        output.Line($"{ManifestReader.FileName}: the module manifest. Every field is required.");
+        output.Line($"{ManifestReader.FileName}: the module manifest. Every field is required except {string.Join(", ", ManifestReader.OptionalFields)}.");
         output.Line();
         foreach ((string name, string description) in ManifestReader.Fields)
         {

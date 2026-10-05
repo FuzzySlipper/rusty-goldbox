@@ -71,4 +71,25 @@ public static class InstalledModules
             }
         }
     }
+
+    /// <summary>
+    /// The modules in <paramref name="directories"/> (module directories and
+    /// installed containers), as (id, version). Call inside a host callback.
+    /// </summary>
+    public static List<(string Id, ModuleVersion Version)> Present(IReadOnlyList<string> directories, IContentService content)
+    {
+        List<ProductContentBundle> opened = [];
+        try
+        {
+            return ModuleCatalog.Sources(directories, "", content, opened, [], [])
+                .Select(source => ManifestReader.Read(source, []))
+                .OfType<ModuleManifest>()
+                .Select(manifest => (manifest.Id, manifest.Version))
+                .ToList();
+        }
+        finally
+        {
+            opened.ForEach(bundle => bundle.Dispose());
+        }
+    }
 }

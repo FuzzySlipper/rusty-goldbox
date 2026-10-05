@@ -24,6 +24,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | --- | --- |
 | `src/RustyGoldbox.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
 | `src/RustyGoldbox.Core/Modules/ModuleManifest.cs`, `ModuleIds.cs`, `ModuleKind.cs`, `ModuleVersion.cs` and `VersionRange.cs` | A manifest's fields, module ID rules, the module kinds, versions and `requires` ranges |
+| `src/RustyGoldbox.Core/Modules/ReleaseSource.cs`, `ReleaseIndex.cs`, `ModuleFetcher.cs` and `InstalledSources.cs` | Where a module is published, the `module-index.json` a release carries, fetching a module and its missing requirements into the library with identity checks (reading and downloading are supplied by the caller), and the library's `sources.json` record |
 | `src/RustyGoldbox.Core/Modules/ModuleSet.cs` and `ModuleDiagnostic.cs` | A loaded module set with its rules, and a diagnostic naming module, file, JSON path and rule |
 | `src/RustyGoldbox.Core/Modules/JsonFiles.cs` and `DirectoryListing.cs` | Reading JSON files with located parse errors, and listing a module's files in a stable order |
 | `src/RustyGoldbox.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `goldbox.json` |
@@ -73,7 +74,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`, `DistributionCommand` for `module release` and `module get` over `gh` and .NET HTTP), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
 | `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |

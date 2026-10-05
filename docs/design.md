@@ -70,12 +70,23 @@ Meaning comes from the manifest and each file's declared type, not from paths.
 }
 ```
 
-Every field is required and unknown fields are errors. IDs are lowercase
+Every field but `releases` is required and unknown fields are errors. IDs are lowercase
 letters, digits and single hyphens, starting with a letter. Versions are
 `MAJOR.MINOR.PATCH`. A `requires` entry is `{ "id": "classic", "version":
 "^0.1.0" }`; ranges are an exact version, `^1.2.0` (same major; same minor
 below 1.0.0), `~1.2.0` (same minor), space-separated comparators
 (`>=1.0.0 <2.0.0`) or `*`.
+
+The optional `releases` says where a module is published:
+`"github:<owner>/<repo>"` (that repository's GitHub releases) or the https URL
+of a `module-index.json`. A `requires` entry may carry its own `releases` for
+a module published elsewhere. `goldbox module release` publishes a module as
+its container plus a `module-index.json` listing its ID, version, kind,
+requirements and content identity; `goldbox module get <source>` installs it
+and every requirement not already present, looking for a requirement without
+`releases` where its requirer came from, checking each container's identity
+against its index, and recording each fetched module's source and versions in
+the library's `sources.json`.
 
 Every other `.json` file in the module directory is a definition file: a JSON
 object whose `type` field names its definition type. Other files (media,

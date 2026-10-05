@@ -27,6 +27,18 @@ internal static class GoldboxCli
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
+          goldbox module release <module-dir> [--output <dir> | --repo <owner>/<repo>] [--modules <dir>]...
+              Validates and packs the module, writes module-index.json beside the container,
+              and publishes both as the GitHub release <id>-v<version> through `gh` (to --repo,
+              else the module's "releases": "github:<owner>/<repo>"). --output writes the two
+              files to a directory instead, for an https index or a local source.
+          goldbox module get <source> [--id <id>] [--version <range>] [--modules <dir>]...
+              Installs a published module into the module library with every module it requires
+              that isn't already here (in the search directories or the library). <source> is
+              github:<owner>/<repo>, an https:// URL of a module-index.json, or a local
+              directory of them. Requirements without "releases" are looked for where their
+              requirer came from. Each container's content identity is checked against its
+              index. Set GITHUB_TOKEN for private repositories or a higher rate limit.
           goldbox schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
               The format reference: definition types with fields and examples.
           goldbox workspace new <dir>
@@ -203,8 +215,10 @@ internal static class GoldboxCli
             "deps" => ModuleDeps(rest, printer, workingDirectory),
             "inspect" => InspectCommand.Run(rest, printer, workingDirectory),
             "pack" => PackCommand.Run(rest, printer, workingDirectory),
+            "release" => DistributionCommand.Release(rest, printer, workingDirectory),
+            "get" => DistributionCommand.Get(rest, printer, workingDirectory),
             "--help" or "-h" => Print(output, Help),
-            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect and pack."),
+            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect, pack, release and get."),
         };
     }
 

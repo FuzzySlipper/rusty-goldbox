@@ -86,6 +86,18 @@ copies of the same modules. Re-open the campaign to play an edit; a changed
 workspace adds a second or two to Refresh. A workspace that doesn't build
 leaves a note on the title screen and keeps its last packed modules.
 
+Modules published to GitHub releases install the same way, with whatever they
+require that isn't already here. `module release` publishes one (through `gh`,
+or `--output <dir>` to write the files), and `module get` fetches one:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- module release modules/my-campaign --repo alice/my-campaign
+dotnet run --project src/RustyGoldbox.Cli -- module get github:alice/my-campaign
+```
+
+A manifest's optional `"releases": "github:<owner>/<repo>"`, on the module or
+on a `requires` entry, says where it and its requirements are published.
+
 The CLI reads installed containers too: any `.rpak` in a search directory is
 a candidate module, and a command's module path may be one.
 

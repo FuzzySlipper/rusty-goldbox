@@ -16,11 +16,15 @@ public static class ManifestReader
         ("kind", $"string: one of {string.Join(", ", ModuleKinds.Names)}"),
         ("version", $"string: {ModuleVersion.FormatDescription}"),
         ("title", "string: a non-empty display title"),
-        ("requires", "array of { \"id\": <module id>, \"version\": <version range> }; may be empty"),
+        ("requires", "array of { \"id\": <module id>, \"version\": <version range>, \"releases\": <optional release source> }; may be empty"),
         ("provenance", "string: where the content comes from and under which license, for example \"Original content.\""),
+        ("releases", $"optional string: where this module's releases are published, {ReleaseSource.FormatDescription}"),
     ];
 
-    private static readonly string[] RequirementFields = ["id", "version"];
+    /// <summary>Fields a manifest may leave out.</summary>
+    public static IReadOnlyList<string> OptionalFields { get; } = ["releases"];
+
+    private static readonly string[] RequirementFields = ["id", "version", "releases"];
 
     /// <summary>
     /// Reads <c>module.json</c> from <paramref name="moduleDirectory"/>. Every
@@ -91,13 +95,16 @@ public static class ManifestReader
             string? title = ReadNonEmpty(root, "title");
             List<ModuleRequirement> requires = ReadRequires(root, id);
             string? provenance = ReadNonEmpty(root, "provenance");
+            ReleaseSource? releases = root.TryGetProperty("releases", out JsonElement releasesValue)
+                ? ReadReleases(releasesValue, "$.releases")
+                : null;
 
             if (diagnostics.Count > _errorsBefore)
             {
                 return null;
             }
 
-            return new ModuleManifest(source, format!.Value, id!, kind!.Value, version!.Value, title!, requires, provenance!);
+            return new ModuleManifest(source, format!.Value, id!, kind!.Value, version!.Value, title!, requires, provenance!, releases);
         }
 
         private void CheckUnknownFields(JsonElement root)
@@ -216,12 +223,16 @@ public static class ManifestReader
             {
                 if (!RequirementFields.Contains(property.Name))
                 {
-                    Error("manifest.unknown-field", $"{at}.{property.Name}", $"'{property.Name}' is not a requires field. Fields are: id, version.");
+                    Error("manifest.unknown-field", $"{at}.{property.Name}", $"'{property.Name}' is not a requires field. Fields are: id, version, releases.");
                 }
             }
 
             string? id = ReadEntryString(entry, "id", at);
             string? rangeText = ReadEntryString(entry, "version", at);
+            int errorsBeforeReleases = diagnostics.Count;
+            ReleaseSource? releases = entry.TryGetProperty("releases", out JsonElement releasesValue)
+                ? ReadReleases(releasesValue, $"{at}.releases")
+                : null;
             if (id is not null && !ModuleIds.IsValid(id))
             {
                 Error("manifest.id", $"{at}.id", $"'{id}' is not a valid module ID. Use {ModuleIds.FormatDescription}.");
@@ -234,7 +245,7 @@ public static class ManifestReader
                 Error("requires.range", $"{at}.version", $"'{rangeText}' is not a version range. Use {VersionRange.FormatDescription}.");
             }
 
-            if (id is null || range is null)
+            if (id is null || range is null || diagnostics.Count > errorsBeforeReleases)
             {
                 return null;
             }
@@ -252,7 +263,24 @@ public static class ManifestReader
                 return null;
             }
 
-            return new ModuleRequirement(id, range, index);
+            return new ModuleRequirement(id, range, index, releases);
+        }
+
+        private ReleaseSource? ReadReleases(JsonElement value, string at)
+        {
+            if (value.ValueKind != JsonValueKind.String)
+            {
+                Error("manifest.field-type", at, $"\"releases\" must be a string, {ReleaseSource.FormatDescription}, but it is {JsonFiles.Describe(value.ValueKind)}.");
+                return null;
+            }
+
+            if (!ReleaseSource.TryParse(value.GetString()!, out ReleaseSource? releases))
+            {
+                Error("manifest.releases", at, $"'{value.GetString()}' is not a release source. Use {ReleaseSource.FormatDescription}, for example \"github:alice/blackapple\".");
+                return null;
+            }
+
+            return releases;
         }
 
         private string? ReadEntryString(JsonElement entry, string name, string at)
