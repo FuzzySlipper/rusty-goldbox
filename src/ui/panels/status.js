@@ -14,11 +14,9 @@ export function createStatus(ui) {
     const facing = view.position?.facing;
     compass.hidden = !facing;
     compass.textContent = facing ? facing[0].toUpperCase() : '';
-    if (view.screen === 'play') {
-      meta.textContent = `Day ${(view.elapsedDays ?? 0) + 1}`;
-    } else {
-      meta.textContent = view.fight?.done ? 'Fight over' : '';
-    }
+    // At a hosted table, who the party is waiting for comes first.
+    const day = view.screen === 'play' ? `Day ${(view.elapsedDays ?? 0) + 1}` : view.fight?.done ? 'Fight over' : '';
+    meta.textContent = [view.waiting, day].filter(Boolean).join(' · ');
   };
 
   return { node, render };

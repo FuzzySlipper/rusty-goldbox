@@ -7,6 +7,9 @@
     "readyText": "mountProductUi",
     "reusePolicy": "broker_owned",
     "startupTimeout": "180s",
-    "healthInterval": "250ms"
+    "healthInterval": "250ms",
+    "instanceArgs": "--instance {instance} --label {label}",
+    "keepArgs": "--keep",
+    "stopCommand": "PATH=\"$HOME/.local/bin:$PATH\" rusty dev stop --project ./src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --instance {instance}"
   }
 }

@@ -1,5 +1,6 @@
 import { element, fragment, row, button, fill, picture, formatBalances, trackText } from '../dom.js';
 import { renderSpells, renderMemorised } from '../panels/members.js';
+import { invitation } from '../table.js';
 
 /**
  * The party screen: the members made so far, and what a roll needs from the
@@ -116,8 +117,13 @@ export function createParty(send, rerender) {
     const creationControl = creationChoices.length > 1
       ? [element('span', {}, 'Creation:'), creation]
       : selectedCreation ? [element('span', {}, `Creation: ${selectedCreation.name}`)] : [];
+    // At a hosted table: who is here and which characters each has made.
+    const seats = (view.table?.seats ?? []).map((seat) => element('li', {},
+      `${seat.name}${seat.member === view.you ? ' (you)' : ''}${seat.member === view.table.leader ? ' · leads' : ''}${seat.connected ? '' : ' · away'}: `,
+      seat.characters.length ? seat.characters.map((index) => view.party?.[index]?.name ?? '?').join(', ') : element('span', { class: 'gb-muted' }, 'no character yet')));
     return fragment(
       element('h1', {}, view.status ?? 'Party'),
+      ...(seats.length ? [element('h2', {}, 'At the table'), element('ul', {}, ...seats), ...invitation(view.hosting)] : []),
       element('h2', {}, `Party (${size.min} to ${size.max})`),
       ...(view.extensions?.length ? [element('div', { class: 'gb-muted' }, `Extensions: ${view.extensions.join(', ')}`)] : []),
       members,

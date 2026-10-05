@@ -97,6 +97,12 @@ dotnet run --project src/RustyGoldbox.Cli -- module updates --install
 
 Updates install beside the versions you have, so saves keep loading with the
 versions they were made under; `module remove <id>@<version>` drops an old one.
+To play together, one player hosts from the title screen's Play together
+section and shares the invitation it shows; friends paste it to join. The
+host runs the game: the leader moves the party, everyone votes at event menus
+(the leader breaks ties), each player fights their own characters, and
+everyone can chat.
+
 The Game's title screen does the same under Modules: paste a repository,
 preview what it offers with licences, install with progress and Cancel, check
 for updates and remove.

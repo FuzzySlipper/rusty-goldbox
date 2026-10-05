@@ -47,6 +47,7 @@ internal static partial class SessionProjection
             // Hosted play: seats, who plays what and the leader, and which member this player is.
             ["table"] = session.Table?.ToJson(),
             ["you"] = session.Table is null ? null : session.LocalMember,
+            ["waiting"] = session.Table?.Waiting(session),
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
                 ["bundle"] = campaign.Bundle,
@@ -295,6 +296,7 @@ internal static partial class SessionProjection
             ["id"] = member.Id,
             ["name"] = member.Name,
             ["side"] = member.Side,
+            ["partyIndex"] = info.Source.PartyIndex,
             ["controller"] = member.Controller.ToString().ToLowerInvariant(),
             ["defeated"] = member.Defeated,
             ["escaped"] = member.Escaped,

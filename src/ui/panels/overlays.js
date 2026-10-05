@@ -1,5 +1,6 @@
 import { element, button, row, fill, currencyName, formatBalances, trackText, picture } from '../dom.js';
 import { renderSpells, renderMemorised } from './members.js';
+import { invitation } from '../table.js';
 
 /**
  * What covers the view for a while: the game menu or a member's sheet when the
@@ -91,6 +92,20 @@ export function createOverlay(send, ui) {
     element('h3', {}, 'Layout'),
     layoutRows,
     row(layoutReset));
+  // Playing together: the invitation to share and leaving the session, kept in place so the copy button stays clickable.
+  const together = element('div', {});
+  let togetherShown = '';
+  const syncTogether = (view) => {
+    const key = JSON.stringify([view.hosting?.invitation ?? null, view.hosting?.role ?? null]);
+    if (key === togetherShown) {
+      return;
+    }
+
+    togetherShown = key;
+    together.replaceChildren(...(view.hosting && !view.hosting.ended
+      ? [element('h3', {}, 'Playing together'), ...invitation(view.hosting), row(button('Leave the game', () => send({ action: 'leave' })))]
+      : []));
+  };
   const saving = element('div', {},
     element('h3', {}, 'Save'),
     row(slot, button('Save', () => send({ action: 'save', slot: slot.value }))),
@@ -196,11 +211,13 @@ export function createOverlay(send, ui) {
       // The menu is the same nodes every time; leave it in place so its controls keep their state.
       // A pending live combat is a save boundary too. Keep the menu usable
       // over the fight so saving never requires resolving a player's choice.
-      saving.hidden = view.screen !== 'play' && view.screen !== 'combat';
+      // Only the host saves a game played together.
+      saving.hidden = (view.screen !== 'play' && view.screen !== 'combat') || Boolean(view.table && view.you !== 1);
+      syncTogether(view);
       if (node.dataset.showing !== 'menu') {
         node.dataset.showing = 'menu';
         // The title screen borrows the settings; take them back.
-        menuColumns.replaceChildren(saving, settings);
+        menuColumns.replaceChildren(saving, together, settings);
         node.replaceChildren(...menu);
       }
 

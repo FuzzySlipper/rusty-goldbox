@@ -1,4 +1,5 @@
 import { element, button } from '../dom.js';
+import { leading } from '../table.js';
 
 /** The movement pad and the commands that fit what the party is doing. Keys do the same through the product's key mappings. */
 export function createControls(send, ui) {
@@ -224,17 +225,33 @@ export function createControls(send, ui) {
     const busy = Boolean(view.shop || view.temple || view.training);
     // A waiting menu, shop, temple or trainer takes a choice first; only Look still works.
     const choosing = (view.menu ?? []).length > 0;
+    // At a hosted table only the leader moves the party; anyone may look.
+    const follower = !leading(view);
     for (const control of pad.children) {
       const looking = control.getAttribute('aria-label') === 'Look';
-      control.disabled = combat || Boolean(view.ended) || ((busy || choosing) && !looking);
+      control.disabled = combat || Boolean(view.ended) || ((busy || choosing || follower) && !looking);
     }
+    pad.title = follower ? 'The leader moves the party' : '';
 
     if (combat) {
       renderCombat(view);
       return;
     }
 
+    // The leader may pass the lead to anyone here.
+    const others = (view.table?.seats ?? []).filter((seat) => seat.connected && seat.member !== view.you);
+    const passLead = view.table && leading(view) && others.length
+      ? [element('select', { 'aria-label': 'Pass the lead', 'data-focus-key': 'controls:pass-lead' },
+        element('option', { value: '' }, 'Pass lead…'),
+        ...others.map((seat) => element('option', { value: String(seat.member) }, seat.name)))]
+      : [];
+    passLead.forEach((select) => select.addEventListener('change', () => {
+      if (select.value) {
+        send({ action: 'pass-lead', to: Number(select.value) });
+      }
+    }));
     commands.replaceChildren(
+      ...passLead,
       button('Status', play('status')),
       ...(busy || choosing ? [] : [button('Search', play('search'))]),
       ...(view.party?.length ? [button('Party', () => ui.toggle({ kind: 'member', index: 0 }))] : []),

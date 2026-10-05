@@ -1,4 +1,5 @@
 import { element, fragment, row, button, picture } from '../dom.js';
+import { invitation } from '../table.js';
 
 /** The title screen: the campaigns to open (with the extensions the player may add) and a save to load. */
 export function createTitle(send) {
@@ -14,6 +15,34 @@ export function createTitle(send) {
   const progress = element('span', { class: 'gb-muted' });
   const busyRow = row(activity, progress, button('Cancel', () => send({ action: 'module-cancel' })));
   let shown = null;
+  // Playing together: the player's name (also how they rejoin), the relay and a pasted invitation.
+  const playerName = element('input', { size: '16', placeholder: 'your name', 'aria-label': 'Your name', 'data-focus-key': 'title:player-name' });
+  const relay = element('input', { size: '24', value: 'n0', 'aria-label': 'Relay', title: 'n0 (free test relays), a relay URL, or empty for the same network only', 'data-focus-key': 'title:relay' });
+  const pasted = element('input', { size: '40', placeholder: 'paste an invitation', 'aria-label': 'Invitation', 'data-focus-key': 'title:invitation' });
+  const together = (hosting) => {
+    if (!hosting || hosting.ended) {
+      return [
+        element('h2', {}, 'Play together'),
+        ...(hosting?.ended ? [element('p', { class: 'gb-note' }, hosting.ended)] : []),
+        row(element('span', {}, 'Name:'), playerName, element('span', {}, 'Relay:'), relay,
+          button('Host', () => send({ action: 'host', name: playerName.value, relay: relay.value }))),
+        row(pasted, button('Join', () => send({ action: 'join', name: playerName.value, invitation: pasted.value }))),
+      ];
+    }
+
+    return [
+      element('h2', {}, hosting.role === 'host' ? `Hosting as ${hosting.name}` : `Joined as ${hosting.name}`),
+      element('p', { class: 'gb-muted' }, hosting.state === 'open'
+        ? hosting.role === 'host' ? 'Open a campaign; players who join see your game.' : 'Waiting for the host to open a campaign…'
+        : 'Connecting…'),
+      // Shown as selectable text, so it can be copied by hand as well as with the button.
+      ...invitation(hosting),
+      element('ul', {}, ...(hosting.members ?? []).map((member) => element('li', {},
+        `${member.name}${member.you ? ' (you)' : ''}${member.host ? ' · host' : ''}`,
+        element('span', { class: 'gb-muted' }, member.connected ? ` · ${member.path}${member.ms ? `, ${member.ms} ms` : ''}` : ' · away')))),
+      row(button('Leave', () => send({ action: 'leave' }))),
+    ];
+  };
 
   // Installing published modules: preview a source, install with progress, update and remove.
   const modules = (state) => {
@@ -85,6 +114,7 @@ export function createTitle(send) {
       row(button('Refresh', () => send({ action: 'refresh' }))),
       element('h2', {}, 'Load'),
       row(slot, button('Load', () => send({ action: 'load', slot: slot.value }))),
+      ...together(view.hosting),
       ...modules(view.modules ?? {}));
   };
 }

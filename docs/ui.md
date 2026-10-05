@@ -65,6 +65,25 @@ manual choices use the legal targets in the projection. The menu can save
 while a turn or optional decision waits. A finished fight stays on screen with
 its outcome until Continue.
 
+Play together on the title screen hosts or joins a game over the Engine
+session service. The host gives a name (also the Engine identity, so the same
+name rejoins as the same player) and a relay (`n0` for number 0's test relays,
+a relay URL, or empty for the same network only), and gets an invitation shown
+as a button that copies it. It also appears on the party screen and in the
+game menu. A guest pastes it with their name and joins; the host's game then
+shows on their screen. At a hosted table:
+
+- the party screen lists who is at the table and which characters each made;
+- portraits carry their owner's initial, a dot for whether they are here and
+  a crown for the leader;
+- the status line says who the party is waiting for;
+- the log has a Chat tab beside it (text only, with an unread count and
+  sending or undelivered marks);
+- an event menu shows who voted for each choice, with Decide now for the
+  leader;
+- the movement pad works only for the leader, who can pass the lead from the
+  controls; only the host saves.
+
 The title screen's Modules section installs published modules. Paste a
 GitHub repository (its page URL or `github:owner/repo`) or a
 `module-index.json` URL and Preview: it lists each module the source offers

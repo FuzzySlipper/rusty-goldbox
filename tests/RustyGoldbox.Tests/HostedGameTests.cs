@@ -24,7 +24,9 @@ public sealed class HostedGameTests
         {
             leader = new GameSession(Library(engine, containers));
             leader.Refresh();
-            Run(leader, engine, """{ "action": "host", "name": "Hana", "relay": "" }""");
+            // Direct by default; GOLDBOX_TEST_RELAY=n0 runs the same check through number 0's internet relays.
+            string relay = Environment.GetEnvironmentVariable("GOLDBOX_TEST_RELAY") ?? "";
+            Run(leader, engine, JsonSerializer.Serialize(new { action = "host", name = "Hana", relay }));
             Run(leader, engine, JsonSerializer.Serialize(new { action = "open", campaign = Assert.Single(leader.Campaigns).Bundle, seed = "12" }));
         });
         guestEngine.Call(engine =>

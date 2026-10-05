@@ -105,7 +105,7 @@ internal static class GameCommands
 
     /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
     private static readonly HashSet<string> LocalActions =
-        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave"];
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat"];
 
     /// <summary>Runs one <c>goldbox.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
@@ -378,8 +378,11 @@ internal static class GameCommands
                 case "leave":
                     session.Hosting.Leave(engine);
                     break;
+                case "chat":
+                    Note(session, session.Hosting.Chat(engine, Text(payload, "text")));
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel, host, join, leave, pass-lead, decide");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel, host, join, leave, chat, pass-lead, decide");
             }
         }
     }

@@ -1,5 +1,6 @@
 import { element, button, picture } from '../dom.js';
 import { bar, vitalTrack } from './members.js';
+import { ownerMark, plays } from '../table.js';
 
 /**
  * The party as portrait cards, sized by party size and the portrait scale.
@@ -53,6 +54,7 @@ export function createPortraits(send, ui) {
     },
       element('span', { class: 'gb-face' }, ...(face.length ? face : [name[0] ?? '?'])),
       element('span', { class: 'gb-name' }, name, ...(flags.ready ? [element('span', { class: 'gb-flag' }, ' ▲')] : [])),
+      ...(flags.mark ?? []),
       ...(controllerText ? [element('span', { class: 'gb-amount' }, controllerText)] : []),
       ...(flags.showAmount && amount ? [element('span', { class: 'gb-amount' }, `${current}${max === null || max === undefined ? '' : `/${max}`}`)] : []),
       bar(current, max));
@@ -96,8 +98,10 @@ export function createPortraits(send, ui) {
           down: member.defeated,
           track: view.fight?.track,
           showAmount: true,
+          mark: member.partyIndex === null || member.partyIndex === undefined ? [] : ownerMark(view, member.partyIndex),
         },
-        member.id && member.controller
+        // At a hosted table a player switches only their own fighters.
+        member.id && member.controller && plays(view, member.partyIndex)
           ? () => send({
             action: 'combat-control',
             actor: member.id,
@@ -121,7 +125,7 @@ export function createPortraits(send, ui) {
         picture(member.portraitPicture, `${member.name}'s portrait`, 'fill'),
         vital?.current,
         vital?.max,
-        { ready: member.levelReady, down: vital ? (vital.current ?? 0) <= 0 && vital.max > 0 : false, track: vital?.name },
+        { ready: member.levelReady, down: vital ? (vital.current ?? 0) <= 0 && vital.max > 0 : false, track: vital?.name, mark: ownerMark(view, rosterIndex) },
         () => ui.toggle({ kind: 'member', index: rosterIndex }),
         rosterIndex);
     }));

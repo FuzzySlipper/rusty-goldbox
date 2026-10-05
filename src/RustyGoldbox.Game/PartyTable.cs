@@ -217,6 +217,25 @@ internal sealed class PartyTable
         }
     }
 
+    /// <summary>Who the party is waiting for, in words, or null when it waits on no one in particular.</summary>
+    public string? Waiting(GameSession session)
+    {
+        string Name(uint member) => SeatOf(member)?.Name ?? (member == HostMember ? "the host" : $"player {member}");
+        if (session.Runner?.State.PendingMenu is not null)
+        {
+            List<string> missing = Voters.Where(seat => seat.Connected && !_votes.ContainsKey(seat.Member)).Select(seat => seat.Name).ToList();
+            return missing.Count == 0 ? $"Waiting for {Name(Leader)} to decide" : $"Waiting on {missing.Count} vote{(missing.Count == 1 ? "" : "s")} ({string.Join(", ", missing)})";
+        }
+
+        if (session.Combat?.PendingDecision is { } decision
+            && session.CombatMetadata?.Participants.FirstOrDefault(participant => participant.Id == decision.ActorId)?.PartyIndex is int index)
+        {
+            return $"Waiting for {Name(OwnerOf(index))} to choose";
+        }
+
+        return session.Screen is Screen.Play ? $"{Name(Leader)} leads" : null;
+    }
+
     /// <summary>Records a member's vote on the current event menu; a new menu starts a new vote.</summary>
     public string? Vote(GameSession session, uint member, int option)
     {

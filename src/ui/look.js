@@ -119,6 +119,12 @@ img.gb-picture { object-fit: contain; }
 .gb-log .gb-page p { margin: 0 0 .15em; white-space: pre-wrap; }
 .gb-log .gb-page p.gb-old { color: color-mix(in srgb, var(--gb-page-text) 55%, var(--gb-page)); }
 .gb-log .gb-page p.gb-note { color: var(--gb-page-accent); }
+.gb-log .gb-tabs { flex: none; display: flex; gap: .2em; }
+.gb-log .gb-tabs .gb-tab[aria-pressed="false"] { opacity: .7; }
+.gb-log .gb-page .gb-choice.gb-selected { font-weight: bold; }
+.gb-owner { font-size: .75em; color: var(--gb-accent); }
+.gb-invitation { display: block; max-width: 100%; overflow-wrap: anywhere; user-select: all; text-align: left; font: .8em monospace; }
+.gb-owner.gb-away { color: var(--gb-muted); }
 .gb-log .gb-page .gb-choice { display: block; width: 100%; text-align: left; background: none; border: 0; box-shadow: none; padding: .05em 0; color: var(--gb-page-link); }
 .gb-log .gb-page .gb-choice:hover { text-decoration: underline; }
 .gb-log .gb-page .gb-choice b { color: var(--gb-page-accent); margin-inline-end: .5em; }

@@ -27,6 +27,7 @@ internal sealed class HostedGame(GameSession game)
     private string _lastView = "";
     private JsonDocument? _pendingView;
     private bool _fetching;
+    private ulong _chatRevision;
 
     public bool Active => _session is not null;
 
@@ -46,7 +47,15 @@ internal sealed class HostedGame(GameSession game)
         }
 
         Leave(engine);
-        _session = engine.Session.Host(new SessionHostRequest(_name, Application, relay, relayToken, false));
+        try
+        {
+            _session = engine.Session.Host(new SessionHostRequest(_name, Application, relay.Trim(), relayToken, false));
+        }
+        catch (EngineCallException exception)
+        {
+            return $"Couldn't host: {exception.Message}";
+        }
+
         game.Table = new PartyTable();
         game.LocalMember = PartyTable.HostMember;
         return null;
@@ -61,7 +70,18 @@ internal sealed class HostedGame(GameSession game)
         }
 
         Leave(engine);
-        _session = engine.Session.Join(new SessionJoinRequest(_name, Application, invitation.Trim(), false));
+        try
+        {
+            _session = engine.Session.Join(new SessionJoinRequest(_name, Application, invitation.Trim(), false));
+        }
+        catch (EngineCallException exception)
+        {
+            // Text that isn't an invitation is refused at once.
+            return exception.Message.Contains("not a session invitation", StringComparison.Ordinal)
+                ? "That isn't an invitation; paste the whole text the host copied."
+                : $"Couldn't join: {exception.Message}";
+        }
+
         return null;
     }
 
@@ -89,6 +109,19 @@ internal sealed class HostedGame(GameSession game)
             : null;
     }
 
+    /// <summary>Says something to everyone at the table.</summary>
+    public string? Chat(IEngineContext engine, string text)
+    {
+        text = text.Trim();
+        if (_session is null || text.Length == 0)
+        {
+            return _session is null ? "You aren't playing with anyone." : null;
+        }
+
+        engine.Session.SendChat(_session, text.Length > 1000 ? text[..1000] : text);
+        return null;
+    }
+
     /// <summary>What the title screen and panels show about the session.</summary>
     public JsonObject? Readout(IEngineContext engine)
     {
@@ -98,9 +131,19 @@ internal sealed class HostedGame(GameSession game)
         }
 
         SessionReadout readout = engine.Session.Read(_session);
+        Dictionary<uint, string> names = engine.Session.ReadMembers(_session).ToArray()
+            .ToDictionary(member => member.Member, member => game.Table?.SeatOf(member.Member)?.Name ?? (member.IsLocal ? _name : $"player {member.Member}"));
         return new JsonObject
         {
             ["name"] = _name,
+            ["chatRevision"] = readout.ChatRevision,
+            // The newest lines, oldest first; each is the sender's words as plain text.
+            ["chat"] = new JsonArray(engine.Session.ReadChat(_session).ToArray().TakeLast(100).Select(line => (JsonNode)new JsonObject
+            {
+                ["from"] = names.TryGetValue(line.Member, out string? name) ? name : $"player {line.Member}",
+                ["text"] = line.Text,
+                ["state"] = line.State.ToString().ToLowerInvariant(),
+            }).ToArray()),
             ["role"] = readout.Role.ToString().ToLowerInvariant(),
             ["state"] = readout.State.ToString().ToLowerInvariant(),
             ["invitation"] = Invitation(engine),
@@ -147,8 +190,9 @@ internal sealed class HostedGame(GameSession game)
             return false;
         }
 
-        bool changed = false;
         SessionReadout readout = engine.Session.Read(_session);
+        bool changed = readout.ChatRevision != _chatRevision;
+        _chatRevision = readout.ChatRevision;
         foreach (SessionEvent observed in engine.Session.TakeEvents(_session).Span)
         {
             changed = true;
