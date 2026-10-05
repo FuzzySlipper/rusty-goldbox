@@ -106,7 +106,7 @@ public sealed class GuestViewTests
     private static string Projection(GameSession session)
     {
         JsonObject projection = SessionProjection.Build(session);
-        foreach (string own in new[] { "modules", "skins", "skinPicked", "skin", "volumes", "layout", "layoutPicked", "uiScale", "layoutParts", "campaigns" })
+        foreach (string own in new[] { "modules", "skins", "skinPicked", "skin", "volumes", "layout", "layoutPicked", "uiScale", "layoutParts", "campaigns", "notes" })
         {
             projection.Remove(own);
         }

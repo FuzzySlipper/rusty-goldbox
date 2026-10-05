@@ -16,6 +16,9 @@ namespace RustyGoldbox.Game;
 /// plus key-mapped digital intents for moving and choosing. Payloads come
 /// from the page, so every field is checked here, once.
 /// </summary>
+/// <summary>What became of one player's action at a hosted table, and what to tell them.</summary>
+internal sealed record ActionReply(bool Accepted, string? Message);
+
 internal static class GameCommands
 {
     public const string CommandIntent = "goldbox.command";
@@ -140,11 +143,11 @@ internal static class GameCommands
     /// <summary>
     /// Runs one player's action at a hosted table: refused with a reason
     /// when their seat may not send it now, else applied through the
-    /// ordinary commands, keeping which seat made which character.
+    /// ordinary commands, keeping which seat made which character. What the
+    /// action noted goes back to that player, not into the host's notes.
     /// </summary>
     /// <param name="seen">The last host sequence that player had received.</param>
-    /// <returns>Why it was refused, or null when it was applied.</returns>
-    public static string? RunFor(GameSession session, IEngineContext engine, uint member, JsonElement payload, ulong seen)
+    public static ActionReply RunFor(GameSession session, IEngineContext engine, uint member, JsonElement payload, ulong seen)
     {
         try
         {
@@ -157,17 +160,40 @@ internal static class GameCommands
         }
         catch (PayloadException exception)
         {
-            return $"Ignored a {CommandContract} payload: {exception.Message}.";
+            return new ActionReply(false, $"Ignored a {CommandContract} payload: {exception.Message}.");
         }
     }
 
-    private static string? Apply(GameSession session, IEngineContext engine, PartyTable table, uint member, JsonElement payload, ulong seen)
+    private static ActionReply Apply(GameSession session, IEngineContext engine, PartyTable table, uint member, JsonElement payload, ulong seen)
+    {
+        List<string> hostNotes = [.. session.Notes];
+        session.Notes.Clear();
+        string? refusal = Decide(session, engine, table, member, payload, seen);
+        List<string> noted = [.. session.Notes];
+        if (refusal is not null)
+        {
+            noted = [refusal];
+        }
+
+        session.Notes.Clear();
+        if (member == PartyTable.HostMember)
+        {
+            session.Notes.AddRange(noted);
+        }
+        else
+        {
+            // A guest's notes are theirs; the host's own stay as they were.
+            session.Notes.AddRange(hostNotes);
+        }
+
+        return new ActionReply(refusal is null, noted.Count == 0 ? null : string.Join(" ", noted));
+    }
+
+    private static string? Decide(GameSession session, IEngineContext engine, PartyTable table, uint member, JsonElement payload, ulong seen)
     {
         string action = Text(payload, "action");
         if (table.Allows(session, member, payload, seen) is string refusal)
         {
-            session.Notes.Clear();
-            session.Notes.Add(member == PartyTable.HostMember ? refusal : $"{table.SeatOf(member)?.Name ?? "A player"}: {refusal}");
             return refusal;
         }
 
@@ -182,8 +208,6 @@ internal static class GameCommands
         {
             if (!calling && table.Vote(session, member, Choice(Text(payload, "command"))!.Value) is string refused)
             {
-                session.Notes.Clear();
-                session.Notes.Add(refused);
                 return refused;
             }
 

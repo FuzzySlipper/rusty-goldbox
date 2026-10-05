@@ -12,7 +12,8 @@ namespace RustyGoldbox.Game;
 /// and is read as untrusted input.
 /// </summary>
 /// <remarks>
-/// <c>{ "screen", "log", "notes", "campaign"?, "party"?, "save"?, "finished"? }</c>:
+/// <c>{ "screen", "log", "table"?, "sources"?, "campaign"?, "party"?, "save"?, "finished"? }</c>
+/// (notes are feedback for whoever acted and go back to them alone):
 /// <c>campaign</c> and <c>party</c> on the party screen (the campaign's module
 /// identity and the characters made so far, as character files); <c>save</c>
 /// once play has begun; <c>finished</c> while a fight that just ended is on
@@ -26,7 +27,6 @@ internal static class GameView
         {
             ["screen"] = session.Screen.ToString().ToLowerInvariant(),
             ["log"] = new JsonArray(session.Log.Select(line => (JsonNode)line).ToArray()),
-            ["notes"] = new JsonArray(session.Notes.Select(note => (JsonNode)note).ToArray()),
         };
         if (session.Table is PartyTable table)
         {

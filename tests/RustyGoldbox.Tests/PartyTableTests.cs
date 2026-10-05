@@ -234,7 +234,8 @@ public sealed class PartyTableTests
     private static string? For(GameSession session, IEngineContext engine, uint member, object action, ulong seen = ulong.MaxValue)
     {
         using JsonDocument document = JsonDocument.Parse(JsonSerializer.Serialize(action));
-        return GameCommands.RunFor(session, engine, member, document.RootElement, seen);
+        ActionReply reply = GameCommands.RunFor(session, engine, member, document.RootElement, seen);
+        return reply.Accepted ? null : reply.Message;
     }
 
     private static void Run(GameSession session, IEngineContext engine, string payload)

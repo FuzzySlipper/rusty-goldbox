@@ -822,7 +822,6 @@ internal sealed class GameSession(ModuleLibrary library)
     public void ShowView(IEngineContext engine, JsonElement view)
     {
         Guest = true;
-        Notes.Clear();
         List<ModuleDiagnostic> problems = [];
         try
         {
@@ -895,7 +894,6 @@ internal sealed class GameSession(ModuleLibrary library)
             Table = view.TryGetProperty("table", out JsonElement table) && table.ValueKind == JsonValueKind.Object ? PartyTable.FromJson(table) : null;
             Log.Clear();
             Log.AddRange(view.GetProperty("log").EnumerateArray().Select(line => line.GetString() ?? ""));
-            Notes.AddRange(view.GetProperty("notes").EnumerateArray().Select(line => line.GetString() ?? ""));
         }
         catch (Exception exception) when (exception is KeyNotFoundException or InvalidOperationException or RuleFailure)
         {

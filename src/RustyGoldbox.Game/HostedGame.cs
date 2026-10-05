@@ -126,6 +126,8 @@ internal sealed class HostedGame(GameSession game)
             return;
         }
 
+        // A new action replaces what the last one noted.
+        game.Notes.Clear();
         foreach (JsonElement action in game.Outbox)
         {
             engine.Session.SendToHost(_session, Encode(new JsonObject { ["type"] = "action", ["action"] = JsonNode.Parse(action.GetRawText()) }));
@@ -224,9 +226,9 @@ internal sealed class HostedGame(GameSession game)
             case "action" when message!["action"] is JsonObject action:
                 using (JsonDocument document = JsonDocument.Parse(action.ToJsonString()))
                 {
-                    if (GameCommands.RunFor(game, engine, observed.Member, document.RootElement, observed.Seen) is string refusal)
+                    if (GameCommands.RunFor(game, engine, observed.Member, document.RootElement, observed.Seen).Message is string reply)
                     {
-                        engine.Session.Send(new SessionSendRequest(_session!, observed.Member, Encode(new JsonObject { ["kind"] = "notice", ["text"] = refusal })));
+                        engine.Session.Send(new SessionSendRequest(_session!, observed.Member, Encode(new JsonObject { ["kind"] = "notice", ["text"] = reply })));
                     }
                 }
 
