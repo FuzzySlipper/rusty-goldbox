@@ -28,6 +28,11 @@ internal static class GameView
             ["log"] = new JsonArray(session.Log.Select(line => (JsonNode)line).ToArray()),
             ["notes"] = new JsonArray(session.Notes.Select(note => (JsonNode)note).ToArray()),
         };
+        if (session.Table is PartyTable table)
+        {
+            view["table"] = table.ToJson();
+        }
+
         if (session.Set?.Root is not ModuleManifest root)
         {
             return view;

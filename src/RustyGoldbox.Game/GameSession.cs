@@ -90,6 +90,15 @@ internal sealed class GameSession(ModuleLibrary library)
     /// </summary>
     public bool Guest { get; private set; }
 
+    /// <summary>
+    /// Who plays what when this game is hosted, or null for single-player.
+    /// A guest keeps the host's copy, from its views, only to show it.
+    /// </summary>
+    public PartyTable? Table { get; set; }
+
+    /// <summary>This player's Engine session member (the host is 1).</summary>
+    public uint LocalMember { get; set; } = PartyTable.HostMember;
+
     /// <summary>A guest's commands waiting to be sent to the host, oldest first.</summary>
     public List<JsonElement> Outbox { get; } = [];
 
@@ -810,6 +819,7 @@ internal sealed class GameSession(ModuleLibrary library)
                 "combat" => Screen.Combat,
                 _ => Screen,
             };
+            Table = view.TryGetProperty("table", out JsonElement table) && table.ValueKind == JsonValueKind.Object ? PartyTable.FromJson(table) : null;
             Log.Clear();
             Log.AddRange(view.GetProperty("log").EnumerateArray().Select(line => line.GetString() ?? ""));
             Notes.AddRange(view.GetProperty("notes").EnumerateArray().Select(line => line.GetString() ?? ""));

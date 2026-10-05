@@ -44,6 +44,9 @@ internal static partial class SessionProjection
                 ["max"] = part.Maximum,
             }).ToArray()),
             ["modules"] = Modules(session.Installer),
+            // Hosted play: seats, who plays what and the leader, and which member this player is.
+            ["table"] = session.Table?.ToJson(),
+            ["you"] = session.Table is null ? null : session.LocalMember,
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
                 ["bundle"] = campaign.Bundle,

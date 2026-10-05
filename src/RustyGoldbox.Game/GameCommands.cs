@@ -122,6 +122,77 @@ internal static class GameCommands
                 return;
             }
 
+            if (session.Table is PartyTable table && !LocalActions.Contains(action))
+            {
+                // The host plays at its own table by the same rules as its guests.
+                Apply(session, engine, table, PartyTable.HostMember, payload, ulong.MaxValue);
+                return;
+            }
+
+            Dispatch(session, engine, payload, action);
+        }
+        catch (PayloadException exception)
+        {
+            Refuse(session, $"Ignored a {CommandContract} payload: {exception.Message}.");
+        }
+    }
+
+    /// <summary>
+    /// Runs one player's action at a hosted table: refused with a reason
+    /// when their seat may not send it now, else applied through the
+    /// ordinary commands, keeping which seat made which character.
+    /// </summary>
+    /// <param name="seen">The last host sequence that player had received.</param>
+    /// <returns>Why it was refused, or null when it was applied.</returns>
+    public static string? RunFor(GameSession session, IEngineContext engine, uint member, JsonElement payload, ulong seen)
+    {
+        try
+        {
+            if (payload.ValueKind != JsonValueKind.Object || session.Table is not PartyTable table)
+            {
+                throw new PayloadException("the payload must be an object with an \"action\"");
+            }
+
+            return Apply(session, engine, table, member, payload, seen);
+        }
+        catch (PayloadException exception)
+        {
+            return $"Ignored a {CommandContract} payload: {exception.Message}.";
+        }
+    }
+
+    private static string? Apply(GameSession session, IEngineContext engine, PartyTable table, uint member, JsonElement payload, ulong seen)
+    {
+        string action = Text(payload, "action");
+        if (table.Allows(session, member, payload, seen) is string refusal)
+        {
+            session.Notes.Clear();
+            session.Notes.Add(member == PartyTable.HostMember ? refusal : $"{table.SeatOf(member)?.Name ?? "A player"}: {refusal}");
+            return refusal;
+        }
+
+        if (action == "pass-lead")
+        {
+            return table.PassLead((uint)Integer(payload, "to"));
+        }
+
+        int partyBefore = session.Party.Count;
+        Dispatch(session, engine, payload, action);
+        if (action == "roll" && session.Party.Count > partyBefore)
+        {
+            table.Claim(member, session.Party.Count - 1);
+        }
+        else if (action == "drop" && session.Party.Count < partyBefore)
+        {
+            table.Dropped(Integer(payload, "member"));
+        }
+
+        return null;
+    }
+
+    private static void Dispatch(GameSession session, IEngineContext engine, JsonElement payload, string action)
+    {
+        {
             switch (action)
             {
                 case "refresh":
@@ -235,10 +306,6 @@ internal static class GameCommands
                 default:
                     throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel");
             }
-        }
-        catch (PayloadException exception)
-        {
-            Refuse(session, $"Ignored a {CommandContract} payload: {exception.Message}.");
         }
     }
 
