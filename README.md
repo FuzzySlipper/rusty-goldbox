@@ -11,8 +11,9 @@ Planned work is tracked in the `rusty-goldbox` Den project.
 
 The supported runtime pair targets Linux x64. Install the .NET 10 SDK, `curl`
 and `tar`. NativeAOT also needs the platform compiler/linker prerequisites
-(Clang and zlib development headers on Linux). Get the Engine's `rusty`
-command once:
+(Clang and zlib development headers on Linux). Campaign art under
+`campaigns/` is stored in Git LFS, so install `git-lfs` before you clone (or
+run `git lfs pull` afterwards). Get the Engine's `rusty` command once:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FuzzySlipper/rusty-engine/main/scripts/install-rusty.sh | bash
