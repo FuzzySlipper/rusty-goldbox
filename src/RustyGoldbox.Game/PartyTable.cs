@@ -41,6 +41,9 @@ internal sealed class PartyTable
 
     public uint Leader { get; private set; } = HostMember;
 
+    /// <summary>Party members put on automatic control while their player is away, to hand back on rejoin.</summary>
+    public HashSet<int> Covered { get; } = [];
+
     /// <summary>
     /// The host sequence from which the current menu or combat decision has
     /// been on screen; a choice made against an older view is refused.

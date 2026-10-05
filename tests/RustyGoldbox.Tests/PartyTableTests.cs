@@ -172,6 +172,38 @@ public sealed class PartyTableTests
     }
 
     [Fact]
+    public void AnAbsentPlayersFighterGoesAutomaticAndComesBackOnRejoin()
+    {
+        AtTheBarredDoor((session, engine, table, lift, _) =>
+        {
+            // Lift the bar and step through to the guards.
+            Assert.Null(For(session, engine, Ann, new { action = "play", command = $"choose {lift}" }));
+            Assert.Null(For(session, engine, Bo, new { action = "play", command = $"choose {lift}" }));
+            Assert.Null(For(session, engine, Host, new { action = "decide" }));
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Assert.Equal(Screen.Combat, session.Screen);
+
+            CombatDecision decision = Assert.IsType<CombatDecision>(session.Combat!.PendingDecision);
+            PendingCombatantSource fighter = session.CombatMetadata!.Participants.Single(participant => participant.Id == decision.ActorId);
+            uint owner = table.OwnerOf(fighter.PartyIndex!.Value);
+            Assert.True(owner is Ann or Bo);
+
+            session.SeatLeft(engine, owner);
+
+            // The fight no longer waits on the absent player; their character is on Core's automatic control.
+            Assert.NotEqual(decision.ActorId, session.Combat?.PendingDecision?.ActorId);
+            Assert.Equal(CombatControlMode.Automatic, session.Runner!.State.Party[fighter.PartyIndex.Value].CombatControlPreference);
+            Assert.Contains(fighter.PartyIndex.Value, table.Covered);
+
+            session.SeatJoined(engine, owner + 20, owner == Ann ? "ann-key" : "bo-key", "back");
+            Assert.Equal(CombatControlMode.Manual, session.Runner.State.Party[fighter.PartyIndex.Value].CombatControlPreference);
+            Assert.Empty(table.Covered);
+            Assert.Equal(owner + 20, table.OwnerOf(fighter.PartyIndex.Value));
+        });
+    }
+
+    [Fact]
     public void DroppingACharacterKeepsEveryOtherSeatOnItsOwn()
     {
         PartyTable table = new();

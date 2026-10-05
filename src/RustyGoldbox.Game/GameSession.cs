@@ -99,6 +99,62 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>This player's Engine session member (the host is 1).</summary>
     public uint LocalMember { get; set; } = PartyTable.HostMember;
 
+    /// <summary>
+    /// A player left the hosted table: their seat waits for a rejoin, the
+    /// lead returns to the host if they held it, and their characters fight
+    /// under Core's automatic control meanwhile, mid-fight included.
+    /// </summary>
+    public void SeatLeft(IEngineContext engine, uint member)
+    {
+        if (Table is not PartyTable table || table.SeatOf(member) is not Seat seat)
+        {
+            return;
+        }
+
+        table.Leave(member);
+        foreach (int index in seat.Characters)
+        {
+            if (Control(engine, index, CombatControlMode.Automatic))
+            {
+                table.Covered.Add(index);
+            }
+        }
+    }
+
+    /// <summary>A player joined, or rejoined with the same key and gets back their seat and the characters covered for them.</summary>
+    public Seat? SeatJoined(IEngineContext engine, uint member, string key, string name)
+    {
+        if (Table is not PartyTable table)
+        {
+            return null;
+        }
+
+        Seat seat = table.Join(member, key, name);
+        foreach (int index in seat.Characters.Where(table.Covered.Remove).ToList())
+        {
+            Control(engine, index, CombatControlMode.Manual);
+        }
+
+        return seat;
+    }
+
+    /// <summary>Sets a party member's controller: in a live fight through Core, and as their preference for fights to come.</summary>
+    private bool Control(IEngineContext engine, int index, CombatControlMode mode)
+    {
+        if (Runner?.State.Party is not List<Character> party || index < 0 || index >= party.Count)
+        {
+            return false;
+        }
+
+        party[index].CombatControlPreference = mode;
+        if (Runner.State.PendingCombat?.Participants.FirstOrDefault(participant => participant.PartyIndex == index) is PendingCombatantSource fighter)
+        {
+            SetCombatController(engine, fighter.Id, mode);
+        }
+
+        return true;
+    }
+
     /// <summary>A guest's commands waiting to be sent to the host, oldest first.</summary>
     public List<JsonElement> Outbox { get; } = [];
 
