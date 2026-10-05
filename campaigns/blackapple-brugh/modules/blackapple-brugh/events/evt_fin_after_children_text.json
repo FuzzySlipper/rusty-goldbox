@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_after_children_text",
+  "kind": "text",
+  "text": "The seven children's names and current fates are set out before you. Each double has a separate account: even when its matching child is not home, you can still account for, contain, expose, release, or remove it.",
+  "next": "evt_fin_double_arthur_figwort"
+}

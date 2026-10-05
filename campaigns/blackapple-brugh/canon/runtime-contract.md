@@ -194,7 +194,7 @@ without inventing aliases:
 | evt_return_from_c27_figwort | teleport/wiring | mirror_route, child statuses | whole party to blackapple.figwort_manor, then evt_return_begin |
 | evt_return_from_c27_hen_teeth | teleport/wiring | mirror_route, child statuses | whole party to environs.hen_teeth, then evt_return_begin |
 | evt_return_begin | triage boundary | all child/double statuses, recovery flags | sets brugh_exited and recovery_return_triage, then evt_fin_return_start |
-| evt_fin_return_start | finale entry | brugh_exited, recovery_return_triage | exact external finale entry after evt_return_begin; starts return account |
+| evt_fin_return_start | finale entry | brugh_exited, recovery_return_triage, return_account_complete, ending_id | exact external finale entry after evt_return_begin; starts the fourteen-record account once, then resumes the pending final account after a later C27 return while `ending_id` is empty |
 | evt_return_postscript | final wiring | ending_id and epilogues | postscript or end |
 | evt_defeat_lost_in_brugh | set/end chain | ordinary Engine party defeat | sets ending_id to ending.lost_in_brugh; leaves child/double state unchanged |
 | evt_xp_investigation | guarded experience | Act I/II completion, opening_xp_awarded | sets opening_xp_awarded and awards ordinary fifth-srd XP once |
@@ -339,10 +339,19 @@ escaped, exposed, masked, or unknown. A removed double gets a separate status
 paragraph and satisfies neither boolean.
 
 The finale displays all fourteen status scalars before selecting the primary
-ending. Its precedence is lost_in_brugh, explicit court_bound, explicit
-qualifying elf_bargain, seven returned children (full_return), one to six
-returned children (partial_return), then a living zero-return account
-(truth_without_return). Defeat leaves child/double values unchanged.
+ending. Once `return_account_complete` is true and `ending_id` is still empty,
+the account menu may send the party through `evt_env_return_blackapple` to the
+ordinary Blackapple arrival menu. That menu appends a gated resume option after
+the existing village choices; services and the prepared mirror route remain
+ordinary choices. A later C27 return receives triage and reopens only the
+authored handoff menu for a child whose current status is `freed`; already
+returned, captive, and unknown child records advance, the already answered
+double records are skipped, and one-time rewards/experience remain gated. Its
+precedence is lost_in_brugh, explicit court_bound, explicit qualifying
+elf_bargain, seven returned children (full_return), one to six returned
+children (partial_return), then a living zero-return account
+(truth_without_return). Defeat leaves child/double values unchanged, and once
+`ending_id` is set the postscript remains terminal.
 
 The finale writes elf_bargain_accepted only after the player confirms a
 qualifying bargain whose named children are released. It writes

@@ -19,6 +19,11 @@
     {
       "label": "Find a safe bed at the Jolly Fox",
       "next": "evt_vil_jolly_fox"
+    },
+    {
+      "label": "Resume the incomplete return account",
+      "when": "campaign.var.return_account_complete and campaign.var.ending_id == ''",
+      "next": "evt_fin_account_choice"
     }
   ]
 }

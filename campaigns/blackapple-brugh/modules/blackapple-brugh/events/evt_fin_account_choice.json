@@ -17,6 +17,11 @@
       "label": "Report an uncertain missing-child account with no proof",
       "when": "not campaign.var.evidence_brugh_layout and not campaign.var.evidence_gold_threads and not campaign.var.evidence_arthur_double and not campaign.var.evidence_fairy_mirrors and not campaign.var.evidence_parent_suspicion",
       "next": "evt_fin_no_proof_account"
+    },
+    {
+      "label": "Visit the village before choosing the final account",
+      "when": "campaign.var.ending_id == ''",
+      "next": "evt_env_return_blackapple"
     }
   ]
 }

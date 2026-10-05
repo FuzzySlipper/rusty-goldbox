@@ -75,6 +75,22 @@ Before an ending can be selected:
    source's one-day mortal-world compression is retained as a narrative fact;
    it is not a reason to skip ordinary injury, resource, or save handling.
 
+After the fourteen records are answered, `return_account_complete` is true but
+`ending_id` remains empty until the final account is chosen. The account menu
+keeps its public, private, and no-proof options in their existing order and
+appends an optional **Visit the village before choosing the final account**
+choice while the ending is still unresolved. That choice uses the existing
+forest-return teleport and the ordinary Blackapple arrival menu. The arrival
+menu appends **Resume the incomplete return account** only when the fourteen
+records are complete and `ending_id` is still empty. The party may use the
+existing village services and route-preparation choices, re-enter through the
+midnight mirror, and return through C27. A later C27 return reopens only
+authored handoffs for children whose current status is `freed`; already
+returned, captive, and unknown records advance through the existing chain, and
+the already answered double records are skipped. The existing one-time reward
+and experience gates still apply. Once `ending_id` is set, the postscript is
+terminal.
+
 ## Ending IDs
 
 The dotted IDs below map to underscore event IDs in the campaign module, for
@@ -104,9 +120,12 @@ changing this full-rescue primary ending.
 **Eligibility:** at least one child is `returned`, fewer than seven are
 `returned`, and the party has exited alive.
 
-**Choice:** prioritize a family, the most endangered child, or a future route
-back to the Brugh. The choice changes which household receives immediate aid
-and whether the village sees the party as rescuers or dangerous witnesses.
+**Choice:** the per-child handoff choices determine which families receive
+children and which records remain freed, captive, or unknown. Each double then
+receives its own disposition and evidence choice. The final account menu
+offers the authored public verified account when its evidence and trust gate
+is met, or the protected private named account; the latter is always
+available. There is no additional mandatory partial-rescue menu.
 
 **Outcome:** returned children are named and reunited. Freed-but-not-returned,
 captive, or unknown children remain explicit in the epilogue, with a concrete lead or cost if a
@@ -122,8 +141,12 @@ chooses to retreat before rescue. Credible evidence (`evidence.brugh_layout`,
 a mask, a freed witness, or a child's object) is recorded when present, but is
 not required for this fallback ending.
 
-**Choice:** publish the evidence immediately, ask the priory to prepare a
-rescue, or keep the route secret while recovering.
+**Choice:** the per-child and per-double records remain explicit even when no
+child is returned. With qualifying evidence, the final account menu offers the
+public verified account or the protected private named account. With no
+qualifying evidence, it offers the explicit uncertain missing-child account
+with no proof or the protected private named account. There is no additional
+mandatory priory-preparation or future-route choice.
 
 **Outcome:** the ending names every child as freed, captive, or unknown when it
 has not been returned, and records
