@@ -221,10 +221,12 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
     }
 
+    /// <param name="step">What the containers were packed for: "export" or "install".</param>
     public int WorkspaceExported(
         WorkspaceBuildResult? result,
         IReadOnlyList<WorkspaceExport> exports,
-        IReadOnlyList<ModuleDiagnostic> diagnostics)
+        IReadOnlyList<ModuleDiagnostic> diagnostics,
+        string step = "export")
     {
         List<ModuleDiagnostic> allDiagnostics = [.. diagnostics];
         if (result is not null)
@@ -253,7 +255,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
         else if (result is not null)
         {
-            writer.WriteLine($"Workspace export {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
+            writer.WriteLine($"Workspace {step} {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
             foreach (WorkspaceExport export in exports)
             {
                 writer.WriteLine($"  {export.Module.Id} {export.Module.Version} ({ModuleKinds.Name(export.Module.Kind)}) -> {Display(export.Container)}");

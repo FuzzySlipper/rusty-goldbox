@@ -257,6 +257,7 @@ internal static class SchemaCommand
                 {
                     new { name = "workspace build", description = "Validate each explicit authored module and replace staging with its runtime files." },
                     new { name = "workspace export", description = "Build first, then pack each staged module independently into exports as an Engine container." },
+                    new { name = "workspace install", description = "Build first, then pack each staged module into the Game's module library, where the title screen's Refresh finds it." },
                 },
                 example = System.Text.Json.JsonDocument.Parse(WorkspaceExample).RootElement,
             });
@@ -271,7 +272,7 @@ internal static class SchemaCommand
         output.Line("    modules (required): explicit module source directories; canon, prompts and art stay outside them.");
         output.Line("    staging (required): generated clean staging directory, commonly .goldbox/staged.");
         output.Line("    exports (required): generated exported container directory, commonly exports.");
-        output.Line("Run `goldbox workspace build` to validate and stage only authoring.modules; run `goldbox workspace export` to pack each staged module independently.");
+        output.Line("Run `goldbox workspace build` to validate and stage only authoring.modules; run `goldbox workspace export` to pack each staged module independently, or `goldbox workspace install` to pack them into the Game's module library.");
         output.Line("Build reports included runtime files and unresolved dependencies as JSON. A generated root must stay outside module sources and editable roots before it can be cleaned.");
         output.Line();
         output.Line("Editable roots created by `goldbox workspace new`: canon, art/references, art/accepted, art/rejected, prompts, scripts.");

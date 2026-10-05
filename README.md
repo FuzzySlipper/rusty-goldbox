@@ -69,9 +69,10 @@ the Blackapple Brugh workspace, is played by installing its modules (the
 ruleset it needs, `fifth-srd`, is already in `modules/`):
 
 ```bash
-dotnet run --project src/RustyGoldbox.Cli -- workspace build campaigns/blackapple-brugh
-for module in blackapple-art blackapple-fae blackapple-brugh; do dotnet run --project src/RustyGoldbox.Cli -- module pack campaigns/blackapple-brugh/.goldbox/staged/$module --install --modules campaigns/blackapple-brugh/.goldbox/staged; done
+dotnet run --project src/RustyGoldbox.Cli -- workspace install campaigns/blackapple-brugh
 ```
+
+Then press Refresh on the title screen.
 
 The CLI reads installed containers too: any `.rpak` in a search directory is
 a candidate module, and a command's module path may be one.
@@ -114,6 +115,7 @@ dotnet run --project src/RustyGoldbox.Cli -- workspace new my-campaign
 dotnet run --project src/RustyGoldbox.Cli -- workspace inspect my-campaign --json
 dotnet run --project src/RustyGoldbox.Cli -- workspace build my-campaign --json
 dotnet run --project src/RustyGoldbox.Cli -- workspace export my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace install my-campaign
 dotnet run --project src/RustyGoldbox.Cli -- schema workspace --json
 ```
 

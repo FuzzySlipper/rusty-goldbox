@@ -43,6 +43,12 @@ export directory, and independently packs each staged module as
 The output lists each generated container. A failed build leaves source and
 editable files untouched and does not pack a new export.
 
+`goldbox workspace install <path>` builds the same way and packs each staged
+module into the Game's module library instead (`$GOLDBOX_MODULE_LIBRARY`,
+else the XDG data directory), replacing the same versions installed before.
+Press Refresh on the Game's title screen to see the campaign without a
+restart.
+
 Use `goldbox workspace inspect` to see the resolved paths and authored module
 manifests, and `goldbox schema workspace --json` to discover the contract and
 the build/export commands from the tool itself.

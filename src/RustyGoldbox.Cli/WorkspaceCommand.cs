@@ -13,7 +13,7 @@ internal static class WorkspaceCommand
         (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
         if (error is null && parsed.Positionals.Count == 0)
         {
-            error = "Usage: goldbox workspace new <dir> | inspect [<path>] | build [<path>] | export [<path>]";
+            error = "Usage: goldbox workspace new <dir> | inspect [<path>] | build [<path>] | export [<path>] | install [<path>]";
         }
 
         if (error is not null)
@@ -26,8 +26,9 @@ internal static class WorkspaceCommand
             "new" => New(parsed.Positionals.Skip(1), output, workingDirectory),
             "inspect" => Inspect(parsed.Positionals.Skip(1), output, workingDirectory),
             "build" => Build(parsed.Positionals.Skip(1), output, workingDirectory),
-            "export" => Export(parsed.Positionals.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown workspace command '{parsed.Positionals[0]}'. Use new, inspect, build or export."),
+            "export" => Export(parsed.Positionals.Skip(1), output, workingDirectory, install: false),
+            "install" => Export(parsed.Positionals.Skip(1), output, workingDirectory, install: true),
+            _ => output.UsageError($"Unknown workspace command '{parsed.Positionals[0]}'. Use new, inspect, build, export or install."),
         };
     }
 
@@ -78,12 +79,18 @@ internal static class WorkspaceCommand
         return output.WorkspaceBuilt(result, diagnostics);
     }
 
-    private static int Export(IEnumerable<string> positionals, Output output, string workingDirectory)
+    /// <summary>
+    /// Builds the workspace and packs each staged module: into its exports
+    /// directory, or with <paramref name="install"/> into the Game's module
+    /// library, replacing the same versions installed before.
+    /// </summary>
+    private static int Export(IEnumerable<string> positionals, Output output, string workingDirectory, bool install)
     {
+        string step = install ? "install" : "export";
         string[] values = positionals.ToArray();
         if (values.Length > 1)
         {
-            return output.UsageError("Usage: goldbox workspace export [<path>]");
+            return output.UsageError($"Usage: goldbox workspace {step} [<path>]");
         }
 
         List<ModuleDiagnostic> diagnostics = [];
@@ -91,32 +98,36 @@ internal static class WorkspaceCommand
         Workspace? workspace = Workspace.Find(path, diagnostics);
         if (workspace is null || diagnostics.Count > 0)
         {
-            return output.WorkspaceExported(null, [], diagnostics);
+            return output.WorkspaceExported(null, [], diagnostics, step);
         }
 
         WorkspaceBuildResult result = ModuleSets.BuildWorkspace(workspace);
         if (!result.IsValid)
         {
-            return output.WorkspaceExported(result, [], diagnostics);
+            return output.WorkspaceExported(result, [], diagnostics, step);
         }
 
         AuthoringWorkspace authoring = workspace.Authoring!;
-        if (!PrepareExportRoot(authoring.ExportsDirectory, workspace.ManifestPath, diagnostics))
+        string directory = install ? InstalledModules.DefaultDirectory() : authoring.ExportsDirectory;
+        bool ready = install
+            ? PrepareLibrary(directory, workspace.ManifestPath, diagnostics)
+            : PrepareExportRoot(directory, workspace.ManifestPath, diagnostics);
+        if (!ready)
         {
-            return output.WorkspaceExported(result, [], diagnostics);
+            return output.WorkspaceExported(result, [], diagnostics, step);
         }
 
         List<WorkspaceExport> exports = [];
         foreach (WorkspaceBuiltModule module in result.Modules)
         {
             string target = Path.Combine(
-                authoring.ExportsDirectory,
+                directory,
                 InstalledModules.FileName(module.Manifest.Id, module.Manifest.Version));
             string? failure = ContentPacker.Pack(module.StagedDirectory, target);
             if (failure is not null)
             {
                 diagnostics.Add(new ModuleDiagnostic(
-                    "workspace.export.pack",
+                    $"workspace.{step}.pack",
                     failure,
                     module.Manifest.Id,
                     target,
@@ -127,7 +138,24 @@ internal static class WorkspaceCommand
             exports.Add(new WorkspaceExport(module.Manifest, target));
         }
 
-        return output.WorkspaceExported(result, exports, diagnostics);
+        return output.WorkspaceExported(result, exports, diagnostics, step);
+    }
+
+    private static bool PrepareLibrary(string library, string manifestPath, List<ModuleDiagnostic> diagnostics)
+    {
+        try
+        {
+            Directory.CreateDirectory(library);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            diagnostics.Add(new ModuleDiagnostic(
+                "workspace.install.output",
+                $"Can't create the module library {library}: {exception.Message} Fix its permissions, or set GOLDBOX_MODULE_LIBRARY to another directory.",
+                File: manifestPath));
+            return false;
+        }
     }
 
     private static bool PrepareExportRoot(string exports, string manifestPath, List<ModuleDiagnostic> diagnostics)

@@ -27,7 +27,7 @@ internal sealed record ExtensionChoice(string Id, string Title, ModuleVersion Ve
 internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle>> open)
 {
     private static readonly string HowToAdd =
-        $"Install it with `goldbox module pack <dir> --install` (into {InstalledModules.DefaultDirectory()}), or put its directory under modules/ and rebuild.";
+        $"Install it with `goldbox module pack <dir> --install` or `goldbox workspace install <workspace>` (into {InstalledModules.DefaultDirectory()}), or put its directory under modules/ and rebuild.";
 
     /// <summary>
     /// Every bundle holding a valid campaign manifest. Containers that don't

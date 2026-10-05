@@ -37,6 +37,9 @@ internal static class GoldboxCli
               Validates each authored runtime module and prepares a clean staging tree; canon, prompts and source art stay outside it.
           goldbox workspace export [<path>]
               Builds the workspace, then independently packs each staged module into the configured exports directory.
+          goldbox workspace install [<path>]
+              Builds the workspace, then packs each staged module into the Game's module library
+              (as module pack --install does); Refresh on the title screen then lists it.
           goldbox authoring list [--json]
           goldbox authoring show <resource> [--json]
           goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]
