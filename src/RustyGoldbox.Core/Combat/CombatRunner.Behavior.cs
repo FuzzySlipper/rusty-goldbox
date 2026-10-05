@@ -37,7 +37,7 @@ public sealed partial class CombatRunner
     {
         if (_behaviorController is null)
         {
-            _behaviorController = new CombatBehaviorController(_rules, _combat, _field);
+            _behaviorController = new CombatBehaviorController(_rules, _combat, _field, LegalFrom);
             _behaviorController.Register(Everyone);
         }
 

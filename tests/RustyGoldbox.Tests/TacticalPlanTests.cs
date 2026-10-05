@@ -355,7 +355,9 @@ public sealed class TacticalPlanTests
         Combatant target = new("Target", targetCreature, [], "target") { Side = 1 };
         Assert.False(field.CanSee(actorCreature.Position!.Value, targetCreature.Position!.Value));
 
-        CombatBehaviorController controller = new(rules, combat, field);
+        // Stands in for the resolver: the shot is legal from any cell that sees the target.
+        CombatBehaviorController controller = new(rules, combat, field,
+            (_, _, _, endpoint) => field.CanSee(endpoint, targetCreature.Position!.Value));
         controller.Assign(actor.Id, profile);
         controller.Register([actor, target]);
         CombatActionChoice closeChoice = new(

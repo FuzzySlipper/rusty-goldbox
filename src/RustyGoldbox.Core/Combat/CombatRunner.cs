@@ -139,36 +139,38 @@ public sealed partial class CombatRunner
         }
     }
 
-    /// <summary>Cells apart on the field; without a field, everyone is 1 apart (within reach).</summary>
-    private decimal Distance(Creature from, Creature to)
+    private decimal Distance(Creature from, Creature to) => CombatGeometry.Distance(_field, from, to);
+
+    private bool CanSee(Creature from, Creature to) => CombatGeometry.CanSee(_field, from, to);
+
+    private decimal AlliesNear(Creature creature, Creature target) => CombatGeometry.AlliesNear(_field, OwnerOf(creature), target, Everyone);
+
+    private decimal Nearest(Creature creature) => CombatGeometry.Nearest(_field, OwnerOf(creature), creature, Everyone);
+
+    /// <summary>The combatant a creature (or its preview copy) belongs to.</summary>
+    private Combatant? OwnerOf(Creature creature)
     {
-        return _field is not null && from.Position is Cell a && to.Position is Cell b ? _field.Distance(a, b) : 1;
+        return Everyone.FirstOrDefault(member => member.Creature == creature) ?? _previewOwners.GetValueOrDefault(creature);
     }
 
-    /// <summary>Whether nothing on the field blocks the line of sight between two creatures; without a field, always.</summary>
-    private bool CanSee(Creature from, Creature to)
+    /// <summary>
+    /// Whether <paramref name="use"/> could target <paramref name="targetId"/>
+    /// if <paramref name="actor"/> stood on <paramref name="endpoint"/>: the
+    /// same legality the actor's next decision would offer from there.
+    /// </summary>
+    internal bool LegalFrom(Combatant actor, UseOption use, string targetId, Cell endpoint)
     {
-        return _field is null || from.Position is not Cell a || to.Position is not Cell b || _field.CanSee(a, b);
-    }
-
-    /// <summary>How many of a creature's allies still fighting, other than itself, stand within 1 cell of a target (without a field, all of them are).</summary>
-    private decimal AlliesNear(Creature creature, Creature target)
-    {
-        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature)
-            ?? _previewOwners.GetValueOrDefault(creature);
-        return Everyone.Count(member => self is not null && member != self && member.Side == self.Side && !member.Defeated
-            && Distance(member.Creature, target) <= 1);
-    }
-
-    /// <summary>How far a creature is from its nearest enemy still fighting (0 with none).</summary>
-    private decimal Nearest(Creature creature)
-    {
-        Combatant? self = Everyone.FirstOrDefault(member => member.Creature == creature)
-            ?? _previewOwners.GetValueOrDefault(creature);
-        return Everyone.Where(member => !member.Defeated && self is not null && member.Side != self.Side)
-            .Select(member => Distance(creature, member.Creature))
-            .DefaultIfEmpty(0)
-            .Min();
+        Cell? position = actor.Creature.Position;
+        actor.Creature.Position = endpoint;
+        try
+        {
+            return Options(actor, preview: true, allCandidates: true)
+                .Any(option => ReferenceEquals(option.Use, use) && option.Targets.Any(target => target.Id == targetId));
+        }
+        finally
+        {
+            actor.Creature.Position = position;
+        }
     }
 
     /// <summary>Rounds a fight runs when its combat definition sets no round_limit.</summary>

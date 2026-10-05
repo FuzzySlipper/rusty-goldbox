@@ -48,7 +48,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/CombatRunner.cs` and its partials | The live combat owner and shared resolver: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, legal choices, commands, flee rules, checks and operations, condition durations and defeat; automatic runs drive this same owner |
 | `src/RustyGoldbox.Core/Combat/LiveCombat.cs` | Combat command, observation, pending-decision and continuation data, including stable combatant references |
 | `src/RustyGoldbox.Core/Definitions/CombatBehavior.cs` | Checked reusable behavior profiles: finite action-use sequences, guards, scores, targets and destination preferences |
-| `src/RustyGoldbox.Core/Combat/CombatBehaviorController.cs` | Module-authored policy selection over the combat owner's legal choices |
+| `src/RustyGoldbox.Core/Combat/CombatBehaviorController.cs` | Module-authored policy selection over the combat owner's legal choices; when a plan needs to move first, the runner says which endpoints make the intended action legal |
+| `src/RustyGoldbox.Core/Combat/CombatGeometry.cs` | The `combat.*` distances, nearest-enemy, allies-near and sight values that both the resolver and authored tactics evaluate |
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |

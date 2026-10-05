@@ -116,12 +116,19 @@ public sealed class CombatBehaviorController
     private readonly Dictionary<string, CombatBehaviorProfile?> _overrides = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CombatBehaviorState> _states = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Combatant> _actors = new(StringComparer.Ordinal);
+    private readonly Func<Combatant, UseOption, string, Cell, bool>? _legalFrom;
 
-    public CombatBehaviorController(RuleSet rules, Definition? combat = null, CombatField? field = null)
+    /// <param name="legalFrom">
+    /// The resolver's answer to whether a use could target a combatant from a
+    /// cell the actor might move to. The fight's runner supplies it; without
+    /// one, every endpoint counts as legal and the resolver still decides.
+    /// </param>
+    public CombatBehaviorController(RuleSet rules, Definition? combat = null, CombatField? field = null, Func<Combatant, UseOption, string, Cell, bool>? legalFrom = null)
     {
         _rules = rules;
         _combat = combat;
         _field = field;
+        _legalFrom = legalFrom;
         _evaluator = new Evaluator(rules, null);
     }
 
@@ -353,7 +360,7 @@ public sealed class CombatBehaviorController
                 && intendedUse is not null
                 && target.Position is Cell
                 && actor.Creature.Position is Cell actorPosition
-                && !ActionLegalAt(intendedUse, actor, target, behavior, actorPosition);
+                && !ActionLegalAt(intendedUse, actor, target, actorPosition);
             decimal? destinationDistance = step.Destination is CombatBehaviorDestination destinationForTrace && targetCreature is not null
                 ? EvaluateNumber(destinationForTrace.Distance, actor, targetCreature, behavior)
                 : null;
@@ -881,7 +888,7 @@ public sealed class CombatBehaviorController
                 .Where(candidate => Meets(candidate.Distance, preferred, destination.Kind))
                 .Where(candidate => !requiresIntendedAction
                     || intendedUse is not null
-                    && ActionLegalAt(intendedUse, actor, target, behavior, candidate.Move.Destination))
+                    && ActionLegalAt(intendedUse, actor, target, candidate.Move.Destination))
                 .OrderBy(candidate => candidate.Move.Cost)
                 .ThenBy(candidate => candidate.Distance)
                 .Select(candidate => (CombatMoveChoice?)candidate.Move)
@@ -896,185 +903,17 @@ public sealed class CombatBehaviorController
     }
 
     /// <summary>
-    /// Checks the field-owned part of an action's target legality from a
-    /// hypothetical endpoint. The live resolver remains the authority for the
-    /// actual choice; this read-only check only lets a behavior choose a move
-    /// that can make a currently screened ranged action legal.
+    /// Whether the intended use could target <paramref name="target"/> from
+    /// <paramref name="endpoint"/>, so a behavior can choose a move that makes
+    /// a screened or out-of-range action legal. The resolver still decides
+    /// the actual choice.
     /// </summary>
-    private bool ActionLegalAt(
-        UseOption use,
-        Combatant actor,
-        CombatTargetChoice target,
-        CombatBehaviorProfile behavior,
-        Cell endpoint)
+    private bool ActionLegalAt(UseOption use, Combatant actor, CombatTargetChoice target, Cell endpoint)
     {
-        if (_field is null || target.Position is not Cell targetCell)
-        {
-            return true;
-        }
-
-        if (ActionCostUnavailable(actor, use.Action)
-            || (use.Spell is Definition spell
-                && (!actor.CanCast(spell) || !SpellAffordableAt(actor, spell, target, behavior, use, endpoint))))
-        {
-            return false;
-        }
-
-        try
-        {
-            if (_rules.TryExpression(use.Action, "$.available", out CompiledExpression? available)
-                && available is not null
-                && !EvaluateActionBooleanAt(available, actor, target, behavior, use, endpoint))
-            {
-                return false;
-            }
-
-            if (_rules.TryExpression(use.Action, "$.valid_target", out CompiledExpression? validTarget)
-                && validTarget is not null
-                && !EvaluateActionBooleanAt(validTarget, actor, target, behavior, use, endpoint))
-            {
-                return false;
-            }
-        }
-        catch (ExpressionException)
-        {
-            return false;
-        }
-
-        if (!_rules.TryExpression(use.Action, "$.range", out CompiledExpression? range)
-            || range is null)
-        {
-            return true;
-        }
-
-        decimal knownRange;
-        try
-        {
-            knownRange = EvaluateActionNumberAt(range, actor, target, behavior, use, endpoint);
-        }
-        catch (ExpressionException)
-        {
-            return false;
-        }
-
-        return Distance(endpoint, targetCell) <= knownRange && _field.CanSee(endpoint, targetCell);
-    }
-
-    private bool EvaluateActionBooleanAt(
-        CompiledExpression expression,
-        Combatant actor,
-        CombatTargetChoice target,
-        CombatBehaviorProfile behavior,
-        UseOption use,
-        Cell endpoint)
-    {
-        Creature? targetCreature = FindCreature(target.Id);
-        return CreateEndpointEvaluator(actor, target, endpoint).Evaluate(
-            expression,
-            ScopeFor(actor, targetCreature, behavior, use.Parameters)).Boolean;
-    }
-
-    private decimal EvaluateActionNumberAt(
-        CompiledExpression expression,
-        Combatant actor,
-        CombatTargetChoice target,
-        CombatBehaviorProfile behavior,
-        UseOption use,
-        Cell endpoint)
-    {
-        Creature? targetCreature = FindCreature(target.Id);
-        Scope scope = ScopeFor(actor, targetCreature, behavior, use.Parameters);
-        return CreateEndpointEvaluator(actor, target, endpoint).Evaluate(expression, scope).Number;
-    }
-
-    private Evaluator CreateEndpointEvaluator(Combatant actor, CombatTargetChoice target, Cell endpoint)
-    {
-        return new Evaluator(_rules, null)
-        {
-            Combat = new CombatMoment(
-                _evaluator.Combat?.Round ?? 0,
-                _evaluator.Combat?.SurpriseRound ?? false,
-                (from, to) => from == actor.Creature && to.Position is Cell toCell
-                    ? Distance(endpoint, toCell)
-                    : CombatDistance(from, to),
-                creature => creature == actor.Creature
-                    ? _actors.Values
-                        .Where(member => member != actor && member.Side != actor.Side && !member.Defeated && !member.Escaped && member.Creature.Position is Cell)
-                        .Select(member => Distance(endpoint, member.Creature.Position!.Value))
-                        .DefaultIfEmpty(0)
-                        .Min()
-                    : Nearest(creature),
-                (from, to) => from == actor.Creature && to.Position is Cell toCell
-                    ? _field!.CanSee(endpoint, toCell)
-                    : CanSee(from, to),
-                (from, to) => from == actor.Creature && to.Position is Cell toCell
-                    ? _actors.Values.Count(member => member != actor
-                        && member.Side == actor.Side
-                        && !member.Defeated
-                        && !member.Escaped
-                        && member.Creature != to
-                        && member.Creature.Position is Cell allyCell
-                        && Distance(allyCell, toCell) <= 1)
-                    : AlliesNear(from, to)),
-        };
-    }
-
-    private bool SpellAffordableAt(
-        Combatant actor,
-        Definition spell,
-        CombatTargetChoice target,
-        CombatBehaviorProfile behavior,
-        UseOption use,
-        Cell endpoint)
-    {
-        if (!spell.Json.TryGetProperty("cost", out JsonElement costs)
-            || actor.CastsLeft.ContainsKey(spell))
-        {
-            return true;
-        }
-
-        foreach (JsonProperty cost in costs.EnumerateObject())
-        {
-            if (!_rules.References.TryGetValue((spell, $"$.cost.{cost.Name}"), out Definition? track)
-                || !_rules.TryExpression(spell, $"$.cost.{cost.Name}", out CompiledExpression? expression)
-                || expression is null)
-            {
-                return false;
-            }
-
-            decimal amount;
-            try
-            {
-                amount = CreateEndpointEvaluator(actor, target, endpoint)
-                    .Evaluate(expression, ScopeFor(actor, FindCreature(target.Id), behavior, use.Parameters))
-                    .Number;
-            }
-            catch (ExpressionException)
-            {
-                return false;
-            }
-
-            decimal current = actor.Creature.Tracks.TryGetValue(track.Id, out TrackValue? value) && value.Current is decimal present
-                ? present
-                : 0;
-            if (current < amount)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static bool ActionCostUnavailable(Combatant actor, Definition action)
-    {
-        if (actor.Budget.Count == 0)
-        {
-            return false;
-        }
-
-        return action.Json.GetProperty("cost").EnumerateObject()
-            .Any(cost => !actor.Budget.TryGetValue(cost.Name, out int left) || left < cost.Value.GetInt32());
+        return _field is null
+            || target.Position is not Cell
+            || _legalFrom is null
+            || _legalFrom(actor, use, target.Id, endpoint);
     }
 
     private static bool ContainsOperation(JsonElement element, string name)
@@ -1155,46 +994,13 @@ public sealed class CombatBehaviorController
         _evaluator.Combat = new CombatMoment(
             observation.Round,
             observation.Combatants.Any(combatant => combatant.SurprisedRounds > 0),
-            CombatDistance,
-            Nearest,
-            CanSee,
-            AlliesNear);
+            (from, to) => CombatGeometry.Distance(_field, from, to),
+            creature => CombatGeometry.Nearest(_field, OwnerOf(creature), creature, _actors.Values),
+            (from, to) => CombatGeometry.CanSee(_field, from, to),
+            (creature, target) => CombatGeometry.AlliesNear(_field, OwnerOf(creature), target, _actors.Values));
     }
 
-    /// <summary>Cells apart on the field; without positions or a field, everyone is in reach.</summary>
-    private decimal CombatDistance(Creature from, Creature to)
-    {
-        return _field is not null && from.Position is Cell a && to.Position is Cell b
-            ? _field.Distance(a, b)
-            : 1;
-    }
-
-    private bool CanSee(Creature from, Creature to)
-    {
-        return _field is null || from.Position is not Cell a || to.Position is not Cell b || _field.CanSee(a, b);
-    }
-
-    private decimal Nearest(Creature creature)
-    {
-        Combatant? self = _actors.Values.FirstOrDefault(actor => actor.Creature == creature);
-        return _actors.Values
-            .Where(actor => self is not null && actor.Side != self.Side && !actor.Defeated && !actor.Escaped)
-            .Select(actor => CombatDistance(creature, actor.Creature))
-            .DefaultIfEmpty(0)
-            .Min();
-    }
-
-    private decimal AlliesNear(Creature creature, Creature target)
-    {
-        Combatant? self = _actors.Values.FirstOrDefault(actor => actor.Creature == creature);
-        return _actors.Values.Count(actor => self is not null
-            && actor != self
-            && actor.Side == self.Side
-            && !actor.Defeated
-            && !actor.Escaped
-            && actor.Creature != target
-            && CombatDistance(actor.Creature, target) <= 1);
-    }
+    private Combatant? OwnerOf(Creature creature) => _actors.Values.FirstOrDefault(actor => actor.Creature == creature);
 
     private bool EvaluateBoolean(CompiledExpression expression, Combatant? actor, Creature? target, CombatBehaviorProfile behavior)
     {
