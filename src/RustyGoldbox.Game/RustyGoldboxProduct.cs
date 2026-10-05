@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Rusty.Engine;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Game.Presentation;
@@ -52,6 +53,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         }
 
         changed |= _session.Installer.Tick(_engine);
+        changed |= _session.Hosting.Tick(_engine);
         if (_session.Installer.LibraryChanged)
         {
             _session.Installer.LibraryChanged = false;
@@ -123,7 +125,9 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     private void Publish()
     {
         _view.Show(_session);
-        UiValue value = SessionProjection.ToUiValue(SessionProjection.Build(_session, (set, asset) => _images.Url(set, asset)));
+        JsonObject projection = SessionProjection.Build(_session, (set, asset) => _images.Url(set, asset));
+        projection["hosting"] = _session.Hosting.Readout(_engine);
+        UiValue value = SessionProjection.ToUiValue(projection);
         _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
     }
 }

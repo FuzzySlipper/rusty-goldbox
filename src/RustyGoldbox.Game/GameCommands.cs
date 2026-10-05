@@ -102,7 +102,7 @@ internal static class GameCommands
 
     /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
     private static readonly HashSet<string> LocalActions =
-        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel"];
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave"];
 
     /// <summary>Runs one <c>goldbox.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
@@ -212,6 +212,18 @@ internal static class GameCommands
 
         return null;
     }
+
+    private static void Note(GameSession session, string? refusal)
+    {
+        session.Notes.Clear();
+        if (refusal is not null)
+        {
+            session.Notes.Add(refusal);
+        }
+    }
+
+    private static string? Optional(JsonElement payload, string name) =>
+        payload.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     /// <summary>The option of a <c>choose N</c> command, or null for any other command.</summary>
     private static int? Choice(string command)
@@ -333,8 +345,17 @@ internal static class GameCommands
                 case "module-cancel":
                     session.Installer.Cancel(engine);
                     break;
+                case "host":
+                    Note(session, session.Hosting.Host(engine, Text(payload, "name"), Optional(payload, "relay") ?? "n0", Optional(payload, "relayToken") ?? ""));
+                    break;
+                case "join":
+                    Note(session, session.Hosting.Join(engine, Text(payload, "name"), Text(payload, "invitation")));
+                    break;
+                case "leave":
+                    session.Hosting.Leave(engine);
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel, host, join, leave, pass-lead, decide");
             }
         }
     }

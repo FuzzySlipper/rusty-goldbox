@@ -38,6 +38,13 @@ internal static class GameView
             return view;
         }
 
+        // Where each module of the set is published, so a guest without one can fetch it.
+        Dictionary<string, InstalledSources.Entry> installed = InstalledSources.Read(InstalledModules.DefaultDirectory());
+        view["sources"] = new JsonObject(session.Set.LoadOrder
+            .Select(loaded => (loaded.Manifest.Id, Releases: loaded.Manifest.Releases?.Text ?? (installed.TryGetValue(loaded.Manifest.Id, out InstalledSources.Entry? entry) ? entry.Releases : null)))
+            .Where(source => source.Releases is not null)
+            .Select(source => KeyValuePair.Create(source.Id, (JsonNode?)source.Releases)));
+
         if (session.Screen == Screen.Party)
         {
             view["campaign"] = new JsonObject

@@ -158,6 +158,23 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>A guest's commands waiting to be sent to the host, oldest first.</summary>
     public List<JsonElement> Outbox { get; } = [];
 
+    /// <summary>Hosting or joining a game over the Engine session service.</summary>
+    public HostedGame Hosting => _hosting ??= new HostedGame(this);
+
+    private HostedGame? _hosting;
+
+    /// <summary>The campaign module a host's view needs that this guest lacks, or null.</summary>
+    public (string Id, string Version)? Missing { get; private set; }
+
+    /// <summary>A guest's game ended or was left: back to the title screen, playing alone again.</summary>
+    public void LeaveAsGuest()
+    {
+        Guest = false;
+        Missing = null;
+        Outbox.Clear();
+        Quit();
+    }
+
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
 
@@ -898,14 +915,18 @@ internal sealed class GameSession(ModuleLibrary library)
         if (Set?.Root is ModuleManifest root && root.Id == id && root.Version.ToString() == version && root.Source.Identity == identity
             && Set.Extensions.Order().SequenceEqual(extensions.Order()))
         {
+            Missing = null;
             return Set;
         }
 
         if (library.BundleOf(id, version, identity) is not string bundle)
         {
-            Notes.Add($"The host plays {id} {version}, which isn't installed here with the same content. Install it under Modules, then join again.");
+            Missing = (id, version);
+            Notes.Add($"The host plays {id} {version}, which isn't installed here with the same content.");
             return null;
         }
+
+        Missing = null;
 
         ModuleSet set = library.Load(bundle, extensions, saved);
         if (set.Rules is null || !set.IsValid)
