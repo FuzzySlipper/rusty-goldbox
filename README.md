@@ -72,7 +72,19 @@ ruleset it needs, `fifth-srd`, is already in `modules/`):
 dotnet run --project src/RustyGoldbox.Cli -- workspace install campaigns/blackapple-brugh
 ```
 
-Then press Refresh on the title screen.
+Then press Refresh on the title screen. While you are editing a workspace,
+point the Game at it instead and skip installing:
+
+```bash
+GOLDBOX_WORKSPACES=$PWD/campaigns/blackapple-brugh rusty dev
+```
+
+Each title listing (startup and Refresh) builds the named workspaces (separate
+several like `PATH`), repacks any module whose content changed into the
+workspace's ignored `.goldbox/game/`, and plays those in place of installed
+copies of the same modules. Re-open the campaign to play an edit; a changed
+workspace adds a second or two to Refresh. A workspace that doesn't build
+leaves a note on the title screen and keeps its last packed modules.
 
 The CLI reads installed containers too: any `.rpak` in a search directory is
 a candidate module, and a command's module path may be one.

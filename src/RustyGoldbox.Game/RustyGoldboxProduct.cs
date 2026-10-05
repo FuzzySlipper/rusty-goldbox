@@ -25,7 +25,10 @@ public sealed class RustyGoldboxProduct : IEngineProduct
     {
         ArgumentNullException.ThrowIfNull(context);
         _engine = context.Engine;
-        ModuleLibrary library = new(problems => OpenModules(context.Content, context.Engine.Content, problems));
+        WorkspaceModules workspaces = WorkspaceModules.FromEnvironment();
+        ModuleLibrary library = new(
+            problems => OpenModules(context.Content, context.Engine.Content, workspaces, problems),
+            problems => workspaces.Prepare(context.Engine.Content, problems));
         _session = new GameSession(library);
         _view = new SceneView(_engine, library);
         _images = new UiImages(_engine, library);
@@ -86,8 +89,8 @@ public sealed class RustyGoldboxProduct : IEngineProduct
         _uiStream.Dispose();
     }
 
-    /// <summary>The product's own module bundles, then the modules installed in the module library.</summary>
-    private static List<ProductContentBundle> OpenModules(ProductContent content, IContentService service, List<string> problems)
+    /// <summary>The product's own module bundles, the modules installed in the module library, then any workspace modules in their place.</summary>
+    private static List<ProductContentBundle> OpenModules(ProductContent content, IContentService service, WorkspaceModules workspaces, List<string> problems)
     {
         List<ProductContentBundle> modules = [];
         try
@@ -98,6 +101,7 @@ public sealed class RustyGoldboxProduct : IEngineProduct
             }
 
             InstalledModules.Open(service, InstalledModules.DefaultDirectory(), modules, problems);
+            workspaces.Open(service, modules, problems);
             return modules;
         }
         catch

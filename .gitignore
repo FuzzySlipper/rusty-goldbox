@@ -17,6 +17,7 @@ __pycache__/
 # Authoring workspace generated module staging and exports.
 **/.goldbox/staged/
 **/.goldbox/party/
+**/.goldbox/game/
 **/exports/
 
 # Windows Explorer generated thumbnail caches.

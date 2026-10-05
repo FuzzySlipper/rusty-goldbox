@@ -49,6 +49,12 @@ else the XDG data directory), replacing the same versions installed before.
 Press Refresh on the Game's title screen to see the campaign without a
 restart.
 
+To play a workspace while editing it, without installing, start the Game with
+`GOLDBOX_WORKSPACES` naming the workspace directory (several separated like
+`PATH`). Each title listing builds it, repacks only modules whose content
+identity changed into `.goldbox/game/`, and offers those in place of installed
+copies with the same IDs.
+
 Use `goldbox workspace inspect` to see the resolved paths and authored module
 manifests, and `goldbox schema workspace --json` to discover the contract and
 the build/export commands from the tool itself.

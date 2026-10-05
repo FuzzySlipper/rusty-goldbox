@@ -16,7 +16,8 @@ internal sealed record ExtensionChoice(string Id, string Title, ModuleVersion Ve
 
 /// <summary>
 /// The modules the product can load: its own content bundles (one per module
-/// directory) and modules installed as containers in the module library.
+/// directory), modules installed as containers in the module library, and
+/// any development workspaces' modules (<see cref="WorkspaceModules"/>).
 /// Each call opens them afresh, so under <c>rusty dev</c> it sees bundle
 /// edits and newly installed modules without a restart.
 /// </summary>
@@ -24,7 +25,11 @@ internal sealed record ExtensionChoice(string Id, string Title, ModuleVersion Ve
 /// Opens every bundle and container the product has, describing any that
 /// don't open in the list it is given; the library disposes what it returns.
 /// </param>
-internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle>> open)
+/// <param name="prepare">
+/// Runs before each campaign listing (the title screen and its Refresh), for
+/// work too slow for every open, such as packing edited workspace modules.
+/// </param>
+internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle>> open, Action<List<string>>? prepare = null)
 {
     private static readonly string HowToAdd =
         $"Install it with `goldbox module pack <dir> --install` or `goldbox workspace install <workspace>` (into {InstalledModules.DefaultDirectory()}), or put its directory under modules/ and rebuild.";
@@ -36,6 +41,7 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
     /// </summary>
     public List<CampaignChoice> Campaigns(List<string> problems)
     {
+        prepare?.Invoke(problems);
         List<CampaignChoice> campaigns = [];
         WithBundles(problems, sources =>
         {

@@ -77,6 +77,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
 | `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
+| `src/RustyGoldbox.Game/WorkspaceModules.cs` | Development play from source: builds the workspaces in `$GOLDBOX_WORKSPACES` on each title listing, repacks changed modules with the Engine packer into `.goldbox/game/`, and opens them in place of installed copies |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
 | `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL; asset sampling accompanies the projection |
