@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_entry_window_check",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.portal_window_open and campaign.var.mirror_active",
+      "next": "evt_entry_mark_brugh"
+    }
+  ],
+  "otherwise": "evt_entry_not_ready"
+}

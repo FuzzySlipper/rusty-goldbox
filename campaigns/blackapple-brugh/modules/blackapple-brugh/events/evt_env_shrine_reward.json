@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_shrine_reward",
+  "kind": "give",
+  "item": "truth_token",
+  "next": "evt_env_shrine_reward_mark"
+}

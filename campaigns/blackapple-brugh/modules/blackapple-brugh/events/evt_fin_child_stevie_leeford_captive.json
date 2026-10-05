@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_stevie_leeford_captive",
+  "kind": "text",
+  "text": "Stevie Leeford — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
+  "next": "evt_fin_goodall_reward_gate"
+}

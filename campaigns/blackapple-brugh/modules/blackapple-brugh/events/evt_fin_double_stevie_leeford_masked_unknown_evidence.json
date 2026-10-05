@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_masked_unknown_evidence",
+  "kind": "set",
+  "variable": "double_stevie_leeford_evidence",
+  "value": "\"no reliable current account\"",
+  "next": "evt_fin_double_stevie_leeford_masked_unknown_text"
+}

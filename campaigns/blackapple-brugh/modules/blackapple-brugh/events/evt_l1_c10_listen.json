@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c10_listen",
+  "kind": "set",
+  "variable": "court_favor",
+  "value": "campaign.var.court_favor + 1",
+  "next": "evt_l1_c10_listen_text"
+}

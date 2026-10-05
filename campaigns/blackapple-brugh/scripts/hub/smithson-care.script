@@ -1,0 +1,7 @@
+# B17: keep distance, leave food, and use the real Priory care owner.
+status
+choose 5
+choose 2
+choose 1
+leave
+status

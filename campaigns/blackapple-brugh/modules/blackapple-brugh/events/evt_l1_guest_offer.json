@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_l1_guest_offer",
+  "kind": "menu",
+  "text": "Moth-in-Water gestures toward the two rooms. Which quiet corner will you accept?",
+  "options": [
+    {
+      "label": "Take the first guest room",
+      "next": "evt_l1_c8_scene"
+    },
+    {
+      "label": "Take the second guest room",
+      "next": "evt_l1_c9_scene"
+    },
+    {
+      "label": "Decline the court's hospitality",
+      "next": "evt_l1_guest_decline"
+    }
+  ]
+}

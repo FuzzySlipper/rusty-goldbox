@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_arthur_figwort_masked_keep_text",
+  "kind": "text",
+  "text": "The Arthur Figwort double — remains masked. No child status is changed by this choice.",
+  "next": "evt_fin_double_amelia_goodall"
+}

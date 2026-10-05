@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21a_over_menu",
+  "kind": "menu",
+  "text": "The lift is a capacity constraint, not a party split. Choose a safe connected route.",
+  "options": [
+    {
+      "label": "Leave the lift and stay on Level 3",
+      "next": "evt_l3_c21a_leave"
+    }
+  ]
+}

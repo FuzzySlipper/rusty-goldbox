@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_resolution_complete",
+  "kind": "text",
+  "text": "The first forest lead has a completed local resolution: the party is rested, the dog trouble has a witness and a cause, Pigman Jack's relationship has changed, and the ordinary food, pelts, and coin reward was delivered once. The Brugh remains beyond the mirrors; the next step is a village report or a quiet conversation at the Hen's Teeth.",
+  "next": "evt_env_forest_aftercare"
+}

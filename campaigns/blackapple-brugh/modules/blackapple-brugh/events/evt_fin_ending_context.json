@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_ending_context",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.elf_lord_reaction == 'curious' or campaign.var.elf_lord_reaction == 'bargaining'",
+      "next": "evt_fin_special_choice"
+    }
+  ],
+  "otherwise": "evt_fin_account_choice"
+}

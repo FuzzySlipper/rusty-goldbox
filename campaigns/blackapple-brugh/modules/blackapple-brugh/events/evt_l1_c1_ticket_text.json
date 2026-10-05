@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_ticket_text",
+  "kind": "text",
+  "text": "The attendant accepts the empty gesture as courtly luggage and presses a numbered ticket into your hand. The stairs and the reception lounge remain open; the mirror behind you is an entrance only.",
+  "next": "evt_l1_c1_leave"
+}

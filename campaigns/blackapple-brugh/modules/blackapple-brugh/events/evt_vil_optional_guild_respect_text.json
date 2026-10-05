@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_guild_respect_text",
+  "kind": "text",
+  "text": "The guild records a guarded route that leaves living glowwood alone. The forest hears your respect, and the merchants may ask again another day.",
+  "next": "evt_vil_optional_hub"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_arrival_c1",
+  "kind": "text",
+  "text": "The mirror gives way to a narrow coatroom inside the Brugh. A half-open service panel admits a small attendant who waits for your first decision.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The mirror gives way to a cramped, dim coatroom. A shabby goat-faced attendant peers through the service panel, wary but not violent.",
+      "picture": "blackapple-art:brugh_coatroom_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The mirror gives way to a polished palace coatroom. A composed attendant in a dark coat welcomes you beneath warm brass lamps.",
+      "picture": "blackapple-art:brugh_coatroom_glamour"
+    }
+  ],
+  "next": "evt_l1_c1_arrival_branch"
+}

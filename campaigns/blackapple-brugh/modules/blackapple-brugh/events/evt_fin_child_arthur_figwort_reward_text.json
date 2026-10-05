@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_arthur_figwort_reward_text",
+  "kind": "text",
+  "text": "Arthur is safely home. Lord and Lady Figwort give you the four hundred gold pieces they promised.",
+  "next": "evt_fin_child_arthur_figwort_reward"
+}

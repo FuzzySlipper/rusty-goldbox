@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_masked_unknown_text",
+  "kind": "text",
+  "text": "The Stevie Leeford double — unknown. The party records no reliable current account.",
+  "next": "evt_fin_account_complete"
+}

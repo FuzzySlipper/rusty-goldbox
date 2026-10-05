@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_expose_status",
+  "kind": "set",
+  "variable": "double_arthur_figwort",
+  "value": "\"exposed\"",
+  "next": "evt_vil_sanitarium_expose_evidence"
+}

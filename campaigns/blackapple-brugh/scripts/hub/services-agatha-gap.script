@@ -1,0 +1,9 @@
+# B2: use Agatha's finite shop, then leave the counter back into the open market lane.
+status
+choose 6
+choose 2
+sell 2
+buy 1
+leave
+use 1 blackapple-brugh:agatha_bed_time_tea
+status

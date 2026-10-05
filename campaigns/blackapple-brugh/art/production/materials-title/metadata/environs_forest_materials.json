@@ -1,0 +1,50 @@
+{
+  "logical_id": "asset.environs-forest-materials",
+  "runtime_id": "environs_forest_materials",
+  "slot": "wall_set",
+  "media": "image",
+  "generation_tool": "built-in Codex image_gen",
+  "transparent_background": false,
+  "source_pdfs_used": false,
+  "prompt": {
+    "path": "campaigns/blackapple-brugh/art/production/materials-title/prompts/environs_forest_materials.md",
+    "sha256": "85362e2c413b0b56cf5da923271bd5443adac554f55ba82591c24ed1f40f15a6"
+  },
+  "style_references_inspected": [
+    {
+      "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_faehill.png",
+      "sha256": "1fc75a721c40b67ff47fca33acd38c93fb759d28e7e105beca8c2492ade8a9bf",
+      "native_dimensions": [1672, 941]
+    },
+    {
+      "path": "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_fairy_ruins.png",
+      "sha256": "aaf627e736a109d6ea00accc43f7c9909485322daa3d10a4ca3a2fc8c8e2e765",
+      "native_dimensions": [1672, 941]
+    }
+  ],
+  "native_dimensions": [1254, 1254],
+  "color_type": "8-bit RGB PNG",
+  "regions": {
+    "wall": [0, 0, 627, 627],
+    "door": [627, 0, 627, 627],
+    "floor": [0, 627, 627, 627],
+    "ceiling": [627, 627, 627, 627]
+  },
+  "raw_tool_output": {
+    "tool_output_path": "/home/agent/.codex/generated_images/01a105d9-d382-74b3-922a-cfb7560540d4/exec-8f4ba321-774a-4d2a-a49d-34de960c23d2.png",
+    "workspace_copy": "campaigns/blackapple-brugh/art/production/materials-title/raw/environs_forest_materials-exec-8f4ba321-774a-4d2a-a49d-34de960c23d2.png",
+    "sha256": "f7d8607d219eb5f29d07b263e4ec180700582c8b1ef53c0d46b7173f26be7ecf",
+    "bytes": 3607833
+  },
+  "original": {
+    "path": "campaigns/blackapple-brugh/art/production/materials-title/originals/environs_forest_materials.png",
+    "sha256": "f7d8607d219eb5f29d07b263e4ec180700582c8b1ef53c0d46b7173f26be7ecf",
+    "bytes": 3607833,
+    "byte_identity_with_raw": true
+  },
+  "inspection": {
+    "status": "ready_for_independent_judge",
+    "notes": "All four equal quadrants are full-bleed forest material swatches with no frame, text, decorative divider, or visible crossover; native boundaries are the midpoint edges only.",
+    "targeted_corrections": 0
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c6_revisit_freed",
+  "kind": "text",
+  "text": "The bluehouse paths are quiet after Giles's release. The gardeners avoid the party, and the empty place where his thread hung is the clearest proof that the court's charm can be broken.",
+  "next": "evt_l1_c6_revisit_choice",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The damp fungal paths have not changed. The bluehouse paths are quiet after Giles's release. The gardeners avoid the party, and the empty place where his thread hung is the clearest proof that the court's charm can be broken.",
+      "picture": "blackapple-art:brugh_bluehouse_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The conservatory glows with blue blossoms. The bluehouse paths are quiet after Giles's release. The gardeners avoid the party, and the empty place where his thread hung is the clearest proof that the court's charm can be broken.",
+      "picture": "blackapple-art:brugh_bluehouse_glamour"
+    }
+  ]
+}

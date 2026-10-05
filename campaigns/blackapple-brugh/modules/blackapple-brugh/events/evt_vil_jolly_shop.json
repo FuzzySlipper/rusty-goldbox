@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_vil_jolly_shop",
+  "kind": "shop",
+  "text": "The Fox’s practical shelf carries a dagger, leather armor, and a shield. Burt quotes his prices plainly and asks you to keep the village’s peace.",
+  "items": [
+    {
+      "item": "fifth-srd:dagger"
+    },
+    {
+      "item": "fifth-srd:leather"
+    },
+    {
+      "item": "fifth-srd:shield"
+    }
+  ],
+  "next": "evt_vil_jolly_shop_done",
+  "picture": "blackapple-art:blackapple_jolly_fox"
+}

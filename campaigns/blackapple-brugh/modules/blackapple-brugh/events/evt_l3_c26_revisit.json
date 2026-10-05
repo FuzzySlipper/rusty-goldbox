@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l3_c26_revisit",
+  "kind": "text",
+  "text": "You return to the dungeon. Its rack, instrument table, and iron maiden stand where you remember them.",
+  "views": [
+    {
+      "mode": "glamour",
+      "text": "The clover meadow is quiet, and the white unicorn's place is empty if Ned has already gone.",
+      "picture": "blackapple-art:brugh_dungeon_glamour"
+    },
+    {
+      "mode": "truth",
+      "text": "The rack and iron maiden remain. The horse's stall is empty if Ned has already gone.",
+      "picture": "blackapple-art:brugh_dungeon_truth"
+    }
+  ],
+  "next": "evt_l3_c26_menu"
+}

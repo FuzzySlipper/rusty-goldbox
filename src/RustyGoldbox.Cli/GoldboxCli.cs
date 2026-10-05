@@ -27,8 +27,26 @@ internal static class GoldboxCli
               (<id>-<version>.rpak here, or in the Game's module library with --install:
               $GOLDBOX_MODULE_LIBRARY, else $XDG_DATA_HOME/rusty-goldbox/modules,
               else ~/.local/share/rusty-goldbox/modules).
-          goldbox schema [<type> | module | expressions | operations | events | media | live-combat]
-              The format reference: definition types with fields and examples, plus the live combat script.
+          goldbox schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
+              The format reference: definition types with fields and examples.
+          goldbox workspace new <dir>
+              Creates goldbox.json plus editable canon/art/prompts/scripts and generated staging/export directories.
+          goldbox workspace inspect [<path>]
+              Finds the nearest goldbox.json and lists dependency search paths, authored modules, editable roots and outputs.
+          goldbox workspace build [<path>]
+              Validates each authored runtime module and prepares a clean staging tree; canon, prompts and source art stay outside it.
+          goldbox workspace export [<path>]
+              Builds the workspace, then independently packs each staged module into the configured exports directory.
+          goldbox authoring list [--json]
+          goldbox authoring show <resource> [--json]
+          goldbox authoring copy <resource> --out <dir> [--overwrite] [--json]
+          goldbox authoring copy --all --out <dir> [--overwrite] [--json]
+              Discovers or copies the embedded revision-1.0 campaign-authoring kit;
+              copied files include the kit index, brief, canon, chapter, encounter,
+              art, individual/batch image judges, handoff, workflow, revision, and
+              the complete Lantern worked example. Use `goldbox schema live-combat
+              --json` for the suspended combat command and observation schema;
+              live-combat is a schema topic, not an authoring resource.
           goldbox eval <expression> --module <path> [--context <json> | @<file>] [--seed <n>]
           goldbox eval --check <check-id> --module <path> --context <json> [--seed <n>]
               Evaluates against the module set. Context: {"self": creature, "target": creature};
@@ -39,7 +57,7 @@ internal static class GoldboxCli
 
           goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>]
                 [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...]
-                [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--lifepath <id>]
+                [--boosts <id>,...] [--spells <id>,...] [--equipment <id>,...] [--portrait <asset>] [--lifepath <id>]
                 [--career <id>,...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]
                 [--seed <n>] [--out <file>]
               --class and --race are needed where the ruleset has classes and races.
@@ -48,7 +66,9 @@ internal static class GoldboxCli
               track, and rolls any declared starting balances. --priority arranges rolls where the ruleset allows.
               --attributes skips the ruleset's roll entirely (for given or point-bought scores);
               scores must be within each attribute's range. --portrait gives the character a
-              portrait asset from the module set. --feature fills the choices creation and the
+              portrait asset from the module set. --equipment gives the character the listed
+              item IDs after creation, checking each against the class and race equipment rules;
+              repeat the option or comma-separate IDs. --feature fills the choices creation and the
               first level grant (a background, a feat), matched to them by kind in order.
               Where creation makes scores by boosts, --boosts names the attribute for each
               boost that offers a choice: race, creation features, class, then creation.
@@ -94,15 +114,21 @@ internal static class GoldboxCli
 
           goldbox map render <area> --module <path> [--player]
               Draws an area: edge walls and doors, entries, event triggers (--player hides secret doors).
-          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace]
-          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace]
+          goldbox play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <file>] [--combat-control auto|manual] [--trace] [--fail-on-refusal]
+          goldbox play --campaign <path> --load <save> [--script <file>] [--save <file>] [--trace] [--fail-on-refusal] [--modules <dir>]... [--extension <id>]...
               Plays a campaign from a command script (or stdin), one command per line; # starts
-              a comment. Add --combat-control manual to suspend the party at a fight. Commands include
+              a comment. Commands: forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, look, view <member>, status.
+              Commands include equip <member> <item-id>, unequip <member> <item-id>, and use <member> <item-id>
+              (one-based party members; item IDs can be local or module:id). Gear changes transfer one existing carried
+              copy; use consumes one existing carried item with a declared use on the selected member. These commands are
+              refused during live combat or while a pending interaction owns the command.
+              Add --combat-control manual to suspend the party at a fight. Combat commands include
               combat inspect, combat control <actor-id> auto|manual, combat action <actor-id> <action-id>
               [target-id...] [--target <id>]... [--targets <id>,...] [--path <x,y;x,y>] (quote IDs containing spaces), combat move, combat end-turn, combat decide and
               combat auto-step (one automatic turn, then manual control); `goldbox schema live-combat`
               shows the complete grammar and JSON shape. Use combat control ... auto for a persistent takeover.
               --save writes the state at the end, including a pending fight; --load continues a save exactly.
+              --fail-on-refusal turns scripted command refusals into diagnostics and exit code 1.
 
         Every command accepts --json for structured output.
 
@@ -134,6 +160,10 @@ internal static class GoldboxCli
         {
             case "schema":
                 return SchemaCommand.Run(args.Skip(1), printer);
+            case "workspace":
+                return WorkspaceCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "authoring":
+                return AuthoringCommand.Run(args.Skip(1), printer, workingDirectory);
             case "eval":
                 return EvalCommand.Run(args.Skip(1), printer, workingDirectory);
             case "character":
@@ -147,7 +177,13 @@ internal static class GoldboxCli
             case "module" when args.Count >= 2:
                 break;
             default:
-                return printer.UsageError($"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.");
+                string message = $"Unknown command '{string.Join(' ', args.Take(2))}'. Run `goldbox --help` for the commands.";
+                if (args.Count >= 2 && args[0] == "author" && args[1] == "build")
+                {
+                    message += " To build an authored workspace, use `goldbox workspace build <path>`.";
+                }
+
+                return printer.UsageError(message);
         }
 
         IEnumerable<string> rest = args.Skip(2);

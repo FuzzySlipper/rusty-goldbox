@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_set_ending_elf_bargain",
+  "kind": "set",
+  "variable": "ending_id",
+  "value": "\"ending.elf_bargain\"",
+  "next": "evt_fin_primary_text"
+}

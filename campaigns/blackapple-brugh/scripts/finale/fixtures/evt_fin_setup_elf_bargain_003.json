@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_003",
+  "kind": "set",
+  "variable": "child_bernard_goodall",
+  "value": "\"captive\"",
+  "next": "evt_fin_setup_elf_bargain_004"
+}

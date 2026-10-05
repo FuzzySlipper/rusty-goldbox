@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_intro",
+  "kind": "text",
+  "text": "The pit floor is cramped and dust-covered. A tentacle worm shifts in the dark above a pouch of forgotten stones; three feet of clear wall in the south promises a route it cannot follow.",
+  "next": "evt_l3_c18_menu"
+}

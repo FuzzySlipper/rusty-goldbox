@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_hide_evidence",
+  "kind": "set",
+  "variable": "double_amelia_goodall_evidence",
+  "value": "\"identity withheld while arranging a private handoff\"",
+  "next": "evt_fin_double_amelia_goodall_hide_text"
+}

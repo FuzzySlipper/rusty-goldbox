@@ -1,0 +1,22 @@
+{
+  "type": "character-creation",
+  "id": "warsteed_companion",
+  "name": "Warsteed companion",
+  "attributes": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+  ],
+  "method": "array",
+  "array": [
+    16,
+    14,
+    12,
+    11,
+    10,
+    10
+  ]
+}

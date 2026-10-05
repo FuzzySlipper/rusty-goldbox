@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_court_set",
+  "kind": "set",
+  "variable": "court_service_accepted",
+  "value": "true",
+  "next": "evt_fin_court_terms_text"
+}

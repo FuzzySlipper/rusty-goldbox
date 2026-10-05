@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_tobler_lead_text",
+  "kind": "text",
+  "text": "The ledger gives you a cemetery lead and a former night-watch dismissal, not proof of necromancy. The moral investigation can continue after dark without displacing the child mystery.",
+  "picture": "blackapple-art:blackapple_tobler_shop",
+  "next": "evt_vil_optional_cemetery"
+}

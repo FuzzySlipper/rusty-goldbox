@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_l3_c19_menu",
+  "kind": "menu",
+  "text": "The false door is a readable hazard rather than a required route.",
+  "options": [
+    {
+      "label": "Put on the protective gloves and test the knob",
+      "when": "carried(item.id == 'l3_protective_gloves') > 0",
+      "next": "evt_l3_c19_gloved"
+    },
+    {
+      "label": "Touch the knob carefully",
+      "next": "evt_l3_c19_check"
+    },
+    {
+      "label": "Leave the false door alone",
+      "next": "evt_l3_c19_avoid"
+    }
+  ]
+}

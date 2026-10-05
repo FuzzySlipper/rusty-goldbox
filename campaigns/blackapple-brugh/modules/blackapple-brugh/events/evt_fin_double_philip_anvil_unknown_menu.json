@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_philip_anvil_unknown_menu",
+  "kind": "menu",
+  "text": "The Philip Anvil double has no reliable identity. Choose what account to carry home.",
+  "options": [
+    {
+      "label": "Leave the status unknown and carry the uncertainty home",
+      "next": "evt_fin_double_ursula_cooke"
+    },
+    {
+      "label": "Record a forest lead without claiming custody",
+      "next": "evt_fin_double_philip_anvil_unknown_lead"
+    }
+  ]
+}

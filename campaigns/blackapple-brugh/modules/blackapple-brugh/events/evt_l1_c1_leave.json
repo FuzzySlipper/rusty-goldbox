@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_leave",
+  "kind": "set",
+  "variable": "entry_portal_covered",
+  "value": "true",
+  "next": "evt_l1_c1_close_window"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_038",
+  "kind": "set",
+  "variable": "evidence_parent_suspicion",
+  "value": "true",
+  "next": "evt_fin_setup_elf_bargain_039"
+}

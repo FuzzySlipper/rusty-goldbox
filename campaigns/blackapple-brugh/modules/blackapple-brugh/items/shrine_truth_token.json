@@ -1,0 +1,15 @@
+{
+  "type": "item",
+  "id": "truth_token",
+  "name": "Electrum closed-eye pendant",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1,
+  "modifiers": [
+    {
+      "check": "blackapple-fae:fifthsave_int",
+      "value": "2"
+    }
+  ]
+}

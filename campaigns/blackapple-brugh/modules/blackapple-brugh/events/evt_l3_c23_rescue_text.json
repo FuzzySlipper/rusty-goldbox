@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c23_rescue_text",
+  "kind": "text",
+  "text": "The family phrase reaches Arthur through the charm. The thread comes free, and the wine-cellar guard remembers his name; his rescue is useful but never a condition of the vault exit.",
+  "next": "evt_l3_c23_leave"
+}

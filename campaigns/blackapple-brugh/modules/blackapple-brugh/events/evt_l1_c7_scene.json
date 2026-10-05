@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c7_scene",
+  "kind": "text",
+  "text": "An octagonal gazebo stands at the center of the bluehouse. Someone in white holds out a hand from an ivory chair and waits for the party to come closer.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "A gray, emaciated woman sits among scattered bones. A pearl necklace is the one beautiful thing left on her, and her outstretched hand is an invitation that feels like a trap.",
+      "picture": "blackapple-art:brugh_white_lady_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "An elegant woman in white silk rests in an ivory gazebo. Rose petals surround her chair as she offers a graceful hand and waits for a courtly greeting.",
+      "picture": "blackapple-art:brugh_white_lady_glamour"
+    }
+  ],
+  "next": "evt_l1_c7_choice"
+}

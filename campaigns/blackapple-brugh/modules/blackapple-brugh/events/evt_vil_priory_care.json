@@ -1,0 +1,22 @@
+{
+  "type": "event",
+  "id": "evt_vil_priory_care",
+  "kind": "temple",
+  "text": "The priory offers a careful healing service for one party member at a time. The clerics ask no questions about how the wound was earned.",
+  "services": [
+    {
+      "label": "Lay on hands",
+      "cost": "5",
+      "currency": "fifth-srd:gold",
+      "operations": [
+        {
+          "op": "heal",
+          "track": "fifth-srd:hit_points",
+          "amount": "1d8"
+        }
+      ]
+    }
+  ],
+  "next": "evt_vil_priory_care_mark",
+  "picture": "blackapple-art:blackapple_priory"
+}

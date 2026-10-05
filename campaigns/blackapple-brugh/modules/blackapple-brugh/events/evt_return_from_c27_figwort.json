@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_return_from_c27_figwort",
+  "kind": "teleport",
+  "area": "blackapple",
+  "entry": "figwort_manor",
+  "next": "evt_return_begin"
+}

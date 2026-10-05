@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_full_contained_019",
+  "kind": "set",
+  "variable": "double_giles_weadley_removal_cause",
+  "value": "\"\"",
+  "next": "evt_fin_setup_full_contained_020"
+}

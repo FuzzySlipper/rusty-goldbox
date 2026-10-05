@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21_revisit",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.child_stevie_leeford == 'captive'",
+      "next": "evt_l3_c21_menu"
+    }
+  ],
+  "otherwise": "evt_l3_c21_resolved"
+}

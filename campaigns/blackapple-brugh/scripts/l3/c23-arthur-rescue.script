@@ -1,0 +1,4 @@
+# Preconditions: load a save at C23 with pending evt_l3_c23_menu. The first
+# option runs the evidence check and leaves Arthur's status in Core data.
+choose 1
+status

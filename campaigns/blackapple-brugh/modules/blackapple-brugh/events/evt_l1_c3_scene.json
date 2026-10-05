@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c3_scene",
+  "kind": "text",
+  "text": "The royal balcony overlooks a lower ballroom where a court of moving shapes turns beneath star-like lights. Two padded chairs face the floor, but their occupants have gone. The locked door is the only ordinary way back to the lounge.",
+  "next": "evt_l1_c3_choice"
+}

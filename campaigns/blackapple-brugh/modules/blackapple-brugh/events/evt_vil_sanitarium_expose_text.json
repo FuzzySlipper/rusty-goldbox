@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_expose_text",
+  "kind": "text",
+  "text": "When Wylda's private nickname produces only a blank stare, the patient lunges for the letter instead of answering. The assistant sees the mismatch; Livinius stops the operation. The figure wearing Arthur's face is now exposed, but no safe custodian has been named. It remains at the sanitarium under watch while the real Arthur is still captive somewhere beyond the mirror; the priory can be called for a separate safe transfer.",
+  "picture": "blackapple-art:environs_sanitarium",
+  "next": "evt_vil_sanitarium_return"
+}

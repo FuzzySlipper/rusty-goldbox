@@ -1,0 +1,100 @@
+{
+  "type": "area",
+  "id": "blackapple",
+  "name": "Blackapple Village",
+  "map": [
+    "+--+--+--+--+",
+    "|           |",
+    "+  +--+  +--+",
+    "|           |",
+    "+--+  +--+  +",
+    "|           |",
+    "+  +  +--+--+",
+    "|           |",
+    "+--+--+--+--+"
+  ],
+  "wall_set": "blackapple-art:blackapple_village_materials",
+  "cells": [
+    {
+      "at": [1, 0],
+      "zone": "north-road",
+      "backdrop": "blackapple-art:blackapple_village"
+    },
+    {
+      "at": [0, 1],
+      "zone": "guardhouse",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_guardhouse"
+    },
+    {
+      "at": [1, 1],
+      "zone": "village-square",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_square"
+    },
+    {
+      "at": [2, 1],
+      "zone": "jolly-fox",
+      "backdrop": "blackapple-art:blackapple_jolly_fox",
+      "event": "evt_vil_jolly_fox"
+    },
+    {
+      "at": [3, 1],
+      "zone": "figwort-manor",
+      "backdrop": "blackapple-art:blackapple_figwort_manor",
+      "event": "evt_vil_figwort_manor"
+    },
+    {
+      "at": [0, 2],
+      "zone": "priory",
+      "backdrop": "blackapple-art:blackapple_priory",
+      "event": "evt_vil_priory"
+    },
+    {
+      "at": [1, 2],
+      "zone": "parents",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_parents"
+    },
+    {
+      "at": [2, 2],
+      "zone": "market",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_market"
+    },
+    {
+      "at": [3, 2],
+      "zone": "manor-road",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_manor_road"
+    },
+    {
+      "at": [1, 3],
+      "zone": "forest-road",
+      "backdrop": "blackapple-art:blackapple_village",
+      "event": "evt_vil_exit_choice"
+    }
+  ],
+  "entries": {
+    "north_road": {
+      "at": [1, 0],
+      "facing": "south"
+    },
+    "from_environs": {
+      "at": [1, 3],
+      "facing": "north"
+    },
+    "figwort_manor": {
+      "at": [3, 1],
+      "facing": "west"
+    },
+    "jolly_fox": {
+      "at": [2, 1],
+      "facing": "west"
+    },
+    "priory": {
+      "at": [0, 2],
+      "facing": "east"
+    }
+  }
+}

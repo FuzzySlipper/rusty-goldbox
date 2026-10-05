@@ -51,3 +51,6 @@ jobs:
             dotnet run --project src/RustyGoldbox.Cli -- module validate "$module" || status=1
           done
           exit $status
+
+      - name: Validate the editable Blackapple campaign
+        run: dotnet run --project src/RustyGoldbox.Cli -- workspace build campaigns/blackapple-brugh --json

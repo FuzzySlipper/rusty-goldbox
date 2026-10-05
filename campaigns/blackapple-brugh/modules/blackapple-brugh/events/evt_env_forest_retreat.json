@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_retreat",
+  "kind": "text",
+  "text": "You back away with the party together. The cu-sidhe does not pursue. You have protected the group from a fight and learned that the tracks were a deliberate boundary, not a hidden entrance.",
+  "next": "evt_env_forest_retreat_stance"
+}

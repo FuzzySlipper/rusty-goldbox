@@ -24,6 +24,8 @@ seed 1
 > choose 1
   The party chooses 1: Recruit.
   Guide joins the party (2 members).
+  A resolves brugh-entry as truth (roll 1 + 0 + 0 = 1, needs 1).  [1d1: 1 = 1]
+  Guide resolves brugh-entry as truth (roll 1 + 0 + 0 = 1, needs 1).  [1d1: 1 = 1]
   Company? [1] Recruit  [2] Dismiss
 > status
   A (hit points 6/6, 0 xp) | Guide (hit points 6/6, 0 xp) | gold 5 + 5

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_016",
+  "kind": "set",
+  "variable": "double_bernard_goodall_removal_cause",
+  "value": "\"removed by a Brugh hazard\"",
+  "next": "evt_fin_setup_truth_no_proof_017"
+}

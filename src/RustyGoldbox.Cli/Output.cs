@@ -6,6 +6,7 @@ using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Combat;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Expressions;
+using RustyGoldbox.Core.Authoring;
 using RustyGoldbox.Core.Modules;
 using RustyGoldbox.Core.Rules;
 
@@ -61,6 +62,212 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         else
         {
             WriteDiagnostics(diagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceCreated(Workspace? workspace, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        bool ok = workspace is not null && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = workspace is null ? null : new
+                {
+                    root = Display(workspace.RootDirectory),
+                    manifest = Display(workspace.ManifestPath),
+                    modules = workspace.ModulePaths.Select(path => Display(path.FullPath)),
+                    authoring = workspace.Authoring is null ? null : new
+                    {
+                        modules = workspace.Authoring.ModulePaths.Select(path => Display(path.FullPath)),
+                        staging = Display(workspace.Authoring.StagingDirectory),
+                        exports = Display(workspace.Authoring.ExportsDirectory),
+                    },
+                },
+                diagnostics = diagnostics.Select(ToJson),
+            });
+        }
+        else if (ok)
+        {
+            writer.WriteLine($"Created authoring workspace at {Display(workspace!.RootDirectory)}.");
+            writer.WriteLine($"  inspect it with: goldbox workspace inspect {Display(workspace.RootDirectory)}");
+            writer.WriteLine($"  add runtime module paths to {Display(workspace.ManifestPath)} under authoring.modules.");
+        }
+        else
+        {
+            WriteDiagnostics(diagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceInspected(WorkspaceInspection? inspection, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        bool ok = inspection is not null && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = inspection is null ? null : WorkspaceJson(inspection),
+                diagnostics = diagnostics.Select(ToJson),
+            });
+        }
+        else if (inspection is not null)
+        {
+            Workspace workspace = inspection.Workspace;
+            writer.WriteLine($"Workspace: {Display(workspace.RootDirectory)}");
+            writer.WriteLine($"Manifest: {Display(workspace.ManifestPath)}");
+            writer.WriteLine("Module search directories:");
+            foreach (WorkspacePath path in workspace.ModulePaths)
+            {
+                writer.WriteLine($"  {Display(path.FullPath)}");
+            }
+
+            if (workspace.Authoring is AuthoringWorkspace authoring)
+            {
+                writer.WriteLine("Authored runtime modules:");
+                if (inspection.AuthoredModules.Count == 0)
+                {
+                    writer.WriteLine("  (none listed)");
+                }
+
+                foreach (WorkspaceModule module in inspection.AuthoredModules)
+                {
+                    string identity = module.Manifest is null
+                        ? "(manifest unavailable)"
+                        : $"{module.Manifest.Id} {module.Manifest.Version} ({ModuleKinds.Name(module.Manifest.Kind)})";
+                    writer.WriteLine($"  {identity}  {Display(module.Path)}");
+                }
+
+                writer.WriteLine($"Staging: {Display(authoring.StagingDirectory)}");
+                writer.WriteLine($"Exports: {Display(authoring.ExportsDirectory)}");
+            }
+            else
+            {
+                writer.WriteLine("Authoring: not configured (modules-only workspace).");
+            }
+
+            writer.WriteLine($"Documentation: {Display(Path.Combine(workspace.RootDirectory, "README.md"))} and {Display(Path.Combine(workspace.RootDirectory, "docs"))}.");
+
+            writer.WriteLine("Editable roots:");
+            foreach (WorkspaceDirectory directory in inspection.EditableDirectories)
+            {
+                writer.WriteLine($"  {directory.Name} {(directory.Exists ? "present" : "absent")}");
+            }
+
+            if (diagnostics.Count > 0)
+            {
+                WriteDiagnostics(diagnostics);
+            }
+        }
+        else
+        {
+            WriteDiagnostics(diagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceBuilt(WorkspaceBuildResult? result, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        List<ModuleDiagnostic> allDiagnostics = [.. diagnostics];
+        if (result is not null)
+        {
+            allDiagnostics.AddRange(result.Diagnostics);
+        }
+
+        bool ok = result is not null && result.IsValid && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = result is null ? null : WorkspaceJson(result.Workspace),
+                modules = result?.Modules.Select(BuildModuleJson) ?? [],
+                unresolvedDependencies = result?.UnresolvedDependencies.Select(DependencyJson) ?? [],
+                diagnostics = allDiagnostics.Select(ToJson),
+            });
+        }
+        else if (result is not null)
+        {
+            writer.WriteLine($"Workspace build {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
+            foreach (WorkspaceBuiltModule module in result.Modules)
+            {
+                writer.WriteLine($"  {module.Manifest.Id} {module.Manifest.Version} ({ModuleKinds.Name(module.Manifest.Kind)})");
+                writer.WriteLine($"    source:  {Display(module.SourceDirectory)}");
+                writer.WriteLine($"    staging: {Display(module.StagedDirectory)}");
+                writer.WriteLine($"    included runtime files: {module.IncludedFiles.Count}");
+                foreach (WorkspaceDependency dependency in module.Dependencies)
+                {
+                    writer.WriteLine($"    requires {dependency.Id} {dependency.Range} -> {dependency.ResolvedVersion}");
+                }
+            }
+
+            WriteUnresolved(result.UnresolvedDependencies);
+            if (allDiagnostics.Count > 0)
+            {
+                WriteDiagnostics(allDiagnostics);
+            }
+        }
+        else
+        {
+            WriteDiagnostics(allDiagnostics);
+        }
+
+        return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int WorkspaceExported(
+        WorkspaceBuildResult? result,
+        IReadOnlyList<WorkspaceExport> exports,
+        IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        List<ModuleDiagnostic> allDiagnostics = [.. diagnostics];
+        if (result is not null)
+        {
+            allDiagnostics.AddRange(result.Diagnostics);
+        }
+
+        bool ok = result is not null && result.IsValid && diagnostics.Count == 0;
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok,
+                workspace = result is null ? null : WorkspaceJson(result.Workspace),
+                modules = result?.Modules.Select(BuildModuleJson) ?? [],
+                exports = exports.Select(export => new
+                {
+                    id = export.Module.Id,
+                    version = export.Module.Version.ToString(),
+                    kind = ModuleKinds.Name(export.Module.Kind),
+                    container = Display(export.Container),
+                }),
+                unresolvedDependencies = result?.UnresolvedDependencies.Select(DependencyJson) ?? [],
+                diagnostics = allDiagnostics.Select(ToJson),
+            });
+        }
+        else if (result is not null)
+        {
+            writer.WriteLine($"Workspace export {(ok ? "succeeded" : "failed")}: {Display(result.Workspace.RootDirectory)}");
+            foreach (WorkspaceExport export in exports)
+            {
+                writer.WriteLine($"  {export.Module.Id} {export.Module.Version} ({ModuleKinds.Name(export.Module.Kind)}) -> {Display(export.Container)}");
+            }
+
+            WriteUnresolved(result.UnresolvedDependencies);
+            if (allDiagnostics.Count > 0)
+            {
+                WriteDiagnostics(allDiagnostics);
+            }
+        }
+        else
+        {
+            WriteDiagnostics(allDiagnostics);
         }
 
         return ok ? GoldboxCli.Ok : GoldboxCli.Invalid;
@@ -200,6 +407,101 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             title = manifest.Title,
             path = Display(manifest.Source.Location),
         };
+    }
+
+    private object WorkspaceJson(WorkspaceInspection inspection)
+    {
+        Workspace workspace = inspection.Workspace;
+        return new
+        {
+            root = Display(workspace.RootDirectory),
+            manifest = Display(workspace.ManifestPath),
+            modules = workspace.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+            searchDirectories = workspace.ModuleDirectories.Select(Display),
+            authoring = workspace.Authoring is AuthoringWorkspace authoring
+                ? new
+                {
+                    modules = inspection.AuthoredModules.Select(module => new
+                    {
+                        entry = module.Entry,
+                        path = Display(module.Path),
+                        id = module.Id,
+                        kind = module.Kind,
+                        version = module.Version,
+                    }),
+                    modulePaths = authoring.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+                    staging = Display(authoring.StagingDirectory),
+                    exports = Display(authoring.ExportsDirectory),
+                }
+                : null,
+            editable = inspection.EditableDirectories.Select(directory => new { name = directory.Name, path = Display(directory.Path), exists = directory.Exists }),
+            documentation = new[]
+            {
+                new { name = "README.md", path = Display(Path.Combine(workspace.RootDirectory, "README.md")), exists = File.Exists(Path.Combine(workspace.RootDirectory, "README.md")) },
+                new { name = "docs", path = Display(Path.Combine(workspace.RootDirectory, "docs")), exists = Directory.Exists(Path.Combine(workspace.RootDirectory, "docs")) },
+            },
+        };
+    }
+
+    private object WorkspaceJson(Workspace workspace)
+    {
+        return new
+        {
+            root = Display(workspace.RootDirectory),
+            manifest = Display(workspace.ManifestPath),
+            searchDirectories = workspace.ModuleDirectories.Select(Display),
+            authoring = workspace.Authoring is AuthoringWorkspace authoring
+                ? new
+                {
+                    modules = authoring.ModulePaths.Select(path => new { entry = path.Entry, path = Display(path.FullPath), jsonPath = path.JsonPath }),
+                    staging = Display(authoring.StagingDirectory),
+                    exports = Display(authoring.ExportsDirectory),
+                }
+                : null,
+        };
+    }
+
+    private object BuildModuleJson(WorkspaceBuiltModule module)
+    {
+        return new
+        {
+            id = module.Manifest.Id,
+            version = module.Manifest.Version.ToString(),
+            kind = ModuleKinds.Name(module.Manifest.Kind),
+            source = Display(module.SourceDirectory),
+            staging = Display(module.StagedDirectory),
+            includedFiles = module.IncludedFiles,
+            requires = module.Dependencies.Select(DependencyJson),
+        };
+    }
+
+    private static object DependencyJson(WorkspaceDependency dependency)
+    {
+        return new
+        {
+            module = dependency.RequiredBy,
+            id = dependency.Id,
+            range = dependency.Range,
+            resolvedVersion = dependency.ResolvedVersion,
+            rule = dependency.Rule,
+            jsonPath = dependency.JsonPath,
+            message = dependency.Message,
+        };
+    }
+
+    private void WriteUnresolved(IReadOnlyList<WorkspaceDependency> dependencies)
+    {
+        if (dependencies.Count == 0)
+        {
+            return;
+        }
+
+        writer.WriteLine("Unresolved module dependencies:");
+        foreach (WorkspaceDependency dependency in dependencies)
+        {
+            writer.WriteLine($"  {dependency.RequiredBy} requires {dependency.Id ?? "(unknown)"} {dependency.Range ?? "(unknown range)"}");
+            writer.WriteLine($"    {dependency.Message}");
+        }
     }
 
     private object ToJson(ModuleDiagnostic diagnostic)
@@ -901,14 +1203,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
     {
         if (json)
         {
-            WriteJson(new
-            {
-                ok = true,
-                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                transcript = transcript.Select(StepJson),
-                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
-                ended = state.Ended,
-            });
+            WriteJson(PlayJson(state, transcript, null));
             return;
         }
 
@@ -947,6 +1242,46 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
     }
 
+    public int PlayFailure(CampaignState state, IReadOnlyList<PlayStep> transcript, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    {
+        if (json)
+        {
+            WriteJson(PlayJson(state, transcript, diagnostics));
+        }
+        else
+        {
+            PlayTranscript(state, transcript);
+            WriteDiagnostics(diagnostics);
+        }
+
+        return GoldboxCli.Invalid;
+    }
+
+    private object PlayJson(
+        CampaignState state,
+        IReadOnlyList<PlayStep> transcript,
+        IReadOnlyList<ModuleDiagnostic>? diagnostics)
+    {
+        return diagnostics is null
+            ? new
+            {
+                ok = true,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(StepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+            }
+            : new
+            {
+                ok = false,
+                seed = state.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                transcript = transcript.Select(StepJson),
+                position = new { area = state.Area.QualifiedId, x = state.X, y = state.Y, facing = Facings.Name(state.Facing) },
+                ended = state.Ended,
+                diagnostics = diagnostics.Select(ToJson),
+            };
+    }
+
     private object StepJson(PlayStep step)
     {
         Dictionary<string, object?> result = new(StringComparer.Ordinal)
@@ -983,17 +1318,80 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             rolls = fact.Rolls.Select(RollJson),
             combat = fact is FightFact fight ? fight.Facts.Select(combatFact => new { kind = combatFact.Kind, text = combatFact.Describe(), rolls = combatFact.Rolls.Select(RollJson) }) : null,
             media = fact is MediaFact shown ? new { picture = shown.Picture?.QualifiedId, sound = shown.Sound?.QualifiedId, music = shown.Music?.QualifiedId } : null,
+            perception = fact is PerceptionFact perception ? new
+            {
+                member = perception.Member,
+                who = perception.Who,
+                scope = perception.Scope,
+                mode = perception.Mode,
+                roll = perception.Result.Roll,
+                bonus = perception.Result.Bonus,
+                modifier = perception.Result.Modifier,
+                total = perception.Result.Total,
+                target = perception.Result.Target,
+                success = perception.Result.Success,
+                tier = perception.Result.Tier,
+            } : null,
+            check = fact is SceneCheckFact sceneCheck ? new
+            {
+                member = sceneCheck.Member,
+                who = sceneCheck.Who,
+                check = sceneCheck.Check,
+                roll = sceneCheck.Result.Roll,
+                bonus = sceneCheck.Result.Bonus,
+                modifier = sceneCheck.Result.Modifier,
+                total = sceneCheck.Result.Total,
+                target = sceneCheck.Result.Target,
+                margin = sceneCheck.Result.Margin,
+                success = sceneCheck.Result.Success,
+                tier = sceneCheck.Result.Tier,
+            } : null,
+            damage = fact is SceneDamageFact sceneDamage ? new
+            {
+                member = sceneDamage.Member,
+                who = sceneDamage.Who,
+                track = sceneDamage.Track.QualifiedId,
+                amount = sceneDamage.Amount,
+                left = sceneDamage.Left,
+            } : null,
+            heal = fact is SceneHealFact sceneHeal ? new
+            {
+                member = sceneHeal.Member,
+                who = sceneHeal.Who,
+                track = sceneHeal.Track.QualifiedId,
+                amount = sceneHeal.Amount,
+                now = sceneHeal.Now,
+            } : null,
+            condition = fact is SceneConditionFact sceneCondition ? new
+            {
+                member = sceneCondition.Member,
+                who = sceneCondition.Who,
+                name = sceneCondition.Condition,
+                applied = sceneCondition.Applied,
+            } : null,
+            view = fact is ViewFact view ? new { member = view.Member, who = view.Who, mode = view.Mode, text = view.Text, picture = view.Picture?.QualifiedId } : null,
             search = fact is SearchFact search ? new { direction = Facings.Name(search.Direction), found = search.Found } : null,
             door = fact is DoorFact door ? new { direction = Facings.Name(door.Direction), method = door.Method, opened = door.Opened } : null,
             party = fact is PartyFact change ? new { npc = change.Npc.QualifiedId, joined = change.Joined, members = change.Members } : null,
             items = fact is ItemsFact transfer ? new { given = transfer.Given, item = transfer.Item.QualifiedId, count = transfer.Count } : null,
+            used = fact is ItemUseFact usedItem ? new { member = usedItem.Member, who = usedItem.Who, item = usedItem.Item.QualifiedId } : null,
+            spellReward = fact is SpellRewardFact reward ? new
+            {
+                member = reward.Member,
+                who = reward.Who,
+                spell = reward.Spell?.QualifiedId,
+                level = reward.Level,
+                granted = reward.Granted,
+                reason = reward.Reason,
+            } : null,
             temple = fact is TempleFact temple ? new { text = temple.Text, services = temple.Services.Select(service => new { number = service.Number, label = service.Label, currency = service.Currency.QualifiedId, prices = service.Prices }) } : null,
             shop = fact is ShopFact shop ? new
             {
                 text = shop.Text,
                 balances = shop.Balances.ToDictionary(entry => entry.Key.QualifiedId, entry => entry.Value),
-                stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId }),
-                carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder }),
+                buying = shop.BuyingCurrency is Definition buyingCurrency ? new { currency = buyingCurrency.QualifiedId, max_value = shop.MaxBuyValue } : null,
+                stock = shop.Stock.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, remaining = offer.Remaining }),
+                carried = shop.Carried.Select(offer => new { number = offer.Number, item = offer.Item.QualifiedId, name = offer.Item.Name, price = offer.Price, currency = offer.Currency.QualifiedId, holder = offer.Holder, sellable = offer.Sellable, refusalReason = offer.RefusalReason }),
             } : null,
         };
     }

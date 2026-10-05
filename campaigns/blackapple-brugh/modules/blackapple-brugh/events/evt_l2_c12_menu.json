@@ -1,0 +1,36 @@
+{
+  "type": "event",
+  "id": "evt_l2_c12_menu",
+  "kind": "menu",
+  "text": "The ballroom offers several routes. Keep the party together while you choose.",
+  "options": [
+    {
+      "label": "Follow the timpani toward the musician's station (C12a)",
+      "next": "evt_l2_c12a"
+    },
+    {
+      "label": "Cross to the dining hall (C13)",
+      "next": "evt_l2_c13"
+    },
+    {
+      "label": "Walk the servants' corridor (C14)",
+      "next": "evt_l2_c14"
+    },
+    {
+      "label": "Study the pool door (C17)",
+      "next": "evt_l2_c17"
+    },
+    {
+      "label": "Take the stair down to Level 3",
+      "next": "evt_l2_to_l3"
+    },
+    {
+      "label": "Retreat to Level 1 while the route is open",
+      "next": "evt_l2_to_l1"
+    },
+    {
+      "label": "Leave the ballroom and use its connected exits",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

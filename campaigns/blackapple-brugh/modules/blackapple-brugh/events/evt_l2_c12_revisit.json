@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l2_c12_revisit",
+  "kind": "text",
+  "text": "The ballroom's impossible music continues without an audience. The ash trees mark the same paths as before, and the party can choose which part of the court to risk next.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The damp floor, ash roots, and dark service arches have not moved. A narrow door by the musicians leads toward the dining hall.",
+      "picture": "blackapple-art:brugh_ballroom_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The polished dance floor gleams beneath the false stars. The musicians smile as if they remember the party, and every arch looks like a garden gate.",
+      "picture": "blackapple-art:brugh_ballroom_glamour"
+    }
+  ],
+  "next": "evt_l2_c12_menu"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_ticket_mark",
+  "kind": "set",
+  "variable": "brugh_l1_coat_ticketed",
+  "value": "true",
+  "next": "evt_l1_c1_ticket_text"
+}

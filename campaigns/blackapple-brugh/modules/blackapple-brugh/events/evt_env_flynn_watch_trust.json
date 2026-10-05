@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_flynn_watch_trust",
+  "kind": "set",
+  "variable": "environs_flynn_watch_done",
+  "value": "true",
+  "next": "evt_env_flynn_watch_trust_value"
+}

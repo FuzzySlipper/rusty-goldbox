@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_arrival_from_environs",
+  "kind": "text",
+  "text": "The forest road climbs back into Blackapple. The village is still here: the Jolly Fox offers a safe bed, the priory offers care, and the families remember every promise you made. You may revisit the square before choosing another road.",
+  "picture": "blackapple-art:blackapple_village",
+  "next": "evt_vil_arrival_objective"
+}

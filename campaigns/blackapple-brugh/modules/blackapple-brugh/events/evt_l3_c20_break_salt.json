@@ -1,0 +1,13 @@
+{
+  "type": "event",
+  "id": "evt_l3_c20_break_salt",
+  "kind": "effect",
+  "operations": [
+    {
+      "op": "damage",
+      "track": "fifth-srd:hit_points",
+      "amount": "1d4"
+    }
+  ],
+  "next": "evt_l3_c20_break_alarm"
+}

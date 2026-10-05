@@ -1,0 +1,52 @@
+{
+  "type": "action",
+  "id": "ibix_butt",
+  "name": "Headbutt",
+  "cost": {
+    "action": 1
+  },
+  "target": "enemy",
+  "range": "1",
+  "parameters": [
+    "to_hit",
+    "damage",
+    "dice"
+  ],
+  "check": "fifth-srd:monster_attack",
+  "check_bonus": "use.to_hit",
+  "score": "use.to_hit",
+  "outcomes": {
+    "success": [
+      {
+        "op": "apply_condition",
+        "condition": "fifth-srd:hit",
+        "values": {
+          "amount": "use.damage",
+          "critical": "0",
+          "attack": "1"
+        }
+      },
+      {
+        "op": "apply_condition",
+        "condition": "fifth-srd:prone",
+        "rounds": "1"
+      }
+    ],
+    "critical": [
+      {
+        "op": "apply_condition",
+        "condition": "fifth-srd:hit",
+        "values": {
+          "amount": "use.damage + use.dice",
+          "critical": "1",
+          "attack": "1"
+        }
+      },
+      {
+        "op": "apply_condition",
+        "condition": "fifth-srd:prone",
+        "rounds": "1"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_masked_keep",
+  "kind": "set",
+  "variable": "double_amelia_goodall_evidence",
+  "value": "\"identity remains unresolved; private handoff not confirmed\"",
+  "next": "evt_fin_double_amelia_goodall_masked_keep_text"
+}

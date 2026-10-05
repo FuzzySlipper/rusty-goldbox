@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "environs_shrine_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The party has visited the consent-forward confession shrine in this environs area state."
+}

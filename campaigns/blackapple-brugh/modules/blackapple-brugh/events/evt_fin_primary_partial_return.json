@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_primary_partial_return",
+  "kind": "text",
+  "text": "One to six named children are home through family handoffs. Every other captive, freed, or unknown child and each double keeps its own consequence.",
+  "next": "evt_fin_epilogue_contained_text_gate"
+}

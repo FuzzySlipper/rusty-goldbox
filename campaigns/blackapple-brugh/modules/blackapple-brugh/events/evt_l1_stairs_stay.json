@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "evt_l1_stairs_stay",
+  "kind": "text",
+  "text": "The party stays on the landing. The corridor, guest rooms, and lower garden route remain reachable by ordinary movement."
+}

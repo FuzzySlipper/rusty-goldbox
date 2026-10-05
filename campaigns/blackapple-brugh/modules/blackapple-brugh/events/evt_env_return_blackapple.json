@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_return_blackapple",
+  "kind": "teleport",
+  "area": "blackapple",
+  "entry": "from_environs",
+  "next": "evt_vil_arrival_from_environs"
+}

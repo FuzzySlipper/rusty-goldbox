@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_fairy_ruins",
+  "kind": "text",
+  "text": "Broken stones lie beyond the main path, half-swallowed by moss. Their worn marks look like the remains of a fairy court's boundary rather than a map. There is no mirror and no physical entrance here; the useful clue is how carefully the living roots avoid the ruins.",
+  "picture": "blackapple-art:environs_fairy_ruins",
+  "next": "evt_env_fairy_ruins_choice"
+}

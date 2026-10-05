@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_arthur_figwort_release_text",
+  "kind": "text",
+  "text": "The Arthur Figwort double — escaped. The release preserves the double's life but leaves it beyond your protection.",
+  "next": "evt_fin_double_amelia_goodall"
+}

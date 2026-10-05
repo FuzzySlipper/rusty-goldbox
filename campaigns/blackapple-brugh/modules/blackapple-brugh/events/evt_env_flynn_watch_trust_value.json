@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_flynn_watch_trust_value",
+  "kind": "set",
+  "variable": "flynn_trust",
+  "value": "campaign.var.flynn_trust + 1",
+  "next": "evt_env_flynn_watch_rhyme"
+}

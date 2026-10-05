@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_release_text",
+  "kind": "text",
+  "text": "The Ursula Cooke double — escaped. The release preserves the double's life but leaves it beyond your protection.",
+  "next": "evt_fin_double_stevie_leeford"
+}

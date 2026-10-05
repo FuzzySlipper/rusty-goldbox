@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_to_kitchen_lift",
+  "kind": "teleport",
+  "area": "brugh_l3",
+  "entry": "kitchen_lift",
+  "next": "evt_l3_arrival_kitchen_lift"
+}

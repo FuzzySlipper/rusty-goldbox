@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_removed_text_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_arthur_figwort == 'removed' or campaign.var.double_amelia_goodall == 'removed' or campaign.var.double_bernard_goodall == 'removed' or campaign.var.double_giles_weadley == 'removed' or campaign.var.double_philip_anvil == 'removed' or campaign.var.double_ursula_cooke == 'removed' or campaign.var.double_stevie_leeford == 'removed'",
+      "next": "evt_fin_epilogue_removed_text"
+    }
+  ],
+  "otherwise": "evt_fin_epilogue_disclosure_gate"
+}

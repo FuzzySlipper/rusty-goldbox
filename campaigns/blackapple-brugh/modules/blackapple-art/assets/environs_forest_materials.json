@@ -1,0 +1,13 @@
+{
+  "type": "asset",
+  "id": "environs_forest_materials",
+  "media": "image",
+  "file": "pictures/environs_forest_materials.png",
+  "sampling": "linear",
+  "regions": {
+    "wall": [0, 0, 627, 627],
+    "door": [627, 0, 627, 627],
+    "floor": [0, 627, 627, 627],
+    "ceiling": [627, 627, 627, 627]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "evt_l3_c25_combat_lose",
+  "kind": "text",
+  "text": "The Elf Lord drives the party from the chamber. The ordinary combat result stands; no rescue is erased and the connected route remains available if the party can continue."
+}

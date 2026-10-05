@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_025",
+  "kind": "set",
+  "variable": "double_ursula_cooke_removal_cause",
+  "value": "\"\"",
+  "next": "evt_fin_setup_court_bound_026"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "condition",
+  "id": "paralyzed",
+  "name": "Paralyzed",
+  "description": "A fae or tentacle strike can briefly lock the target's muscles.",
+  "modifiers": [],
+  "prevents_actions": true,
+  "rounds_end": "turn_end"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_revisit",
+  "kind": "text",
+  "text": "The covered mirror and the quiet service panel confirm the same lesson: C1 is a remembered entrance, not a road home. The attendant still points toward the reception lounge and the stair hall.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The covered mirror and shabby service panel remain in the dim coatroom. The goat-faced attendant points toward the lounge and stairs; the mirror offers no road home.",
+      "picture": "blackapple-art:brugh_coatroom_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The covered mirror and polished service panel remain beneath the palace lamps. The composed attendant points toward the lounge and stairs; the mirror offers no road home.",
+      "picture": "blackapple-art:brugh_coatroom_glamour"
+    }
+  ],
+  "next": "evt_l1_c1_menu"
+}

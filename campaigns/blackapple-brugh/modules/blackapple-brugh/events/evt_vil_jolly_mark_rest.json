@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_jolly_mark_rest",
+  "kind": "set",
+  "variable": "blackapple_jolly_fox_intro_seen",
+  "value": "true",
+  "next": "evt_vil_jolly_mark_rest_services"
+}

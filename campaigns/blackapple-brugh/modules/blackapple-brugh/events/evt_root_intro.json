@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_root_intro",
+  "kind": "text",
+  "text": "Seven Blackapple children have changed beyond recognition. Their families need witnesses who will listen before condemning them. Follow the north road into the village; the Jolly Fox offers shelter, the Figwort household has invited you to dinner, and the forest keeps the older story.",
+  "picture": "blackapple-art:blackapple_village",
+  "next": "evt_vil_arrival"
+}

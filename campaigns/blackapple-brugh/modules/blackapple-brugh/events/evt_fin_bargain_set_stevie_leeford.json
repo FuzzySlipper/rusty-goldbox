@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_set_stevie_leeford",
+  "kind": "set",
+  "variable": "child_stevie_leeford",
+  "value": "\"returned\"",
+  "next": "evt_fin_bargain_accept_stevie_leeford"
+}

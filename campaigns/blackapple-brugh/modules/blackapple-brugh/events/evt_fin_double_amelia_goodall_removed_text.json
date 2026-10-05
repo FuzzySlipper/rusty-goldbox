@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_removed_text",
+  "kind": "text",
+  "text": "The Amelia Goodall double — removed. The existing named cause in the named removal cause remains attached; removal is separate from child rescue.",
+  "next": "evt_fin_double_bernard_goodall"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_arrival_from_l3",
+  "kind": "text",
+  "text": "The upper stair returns the party to the Level 2 landing. The court's doors are still where you left them, but every servant now knows you have learned another route.",
+  "next": "evt_l2_c12_menu"
+}

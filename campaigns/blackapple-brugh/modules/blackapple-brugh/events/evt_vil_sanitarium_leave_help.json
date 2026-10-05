@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_leave_help",
+  "kind": "set",
+  "variable": "first_help_done",
+  "value": "true",
+  "next": "evt_vil_sanitarium_leave_text"
+}

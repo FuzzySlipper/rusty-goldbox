@@ -94,6 +94,82 @@ public sealed record TextFact(string Text) : PlayFact
     public override string Describe() => Text;
 }
 
+/// <summary>One ruleset-selected unknown spell awarded to an active party member.</summary>
+public sealed record SpellRewardFact(
+    int Member,
+    string Who,
+    Definition? Spell,
+    int? Level,
+    bool Granted,
+    string? Reason) : PlayFact
+{
+    public override string Kind => "spell_reward";
+
+    public override string Describe() => Granted && Spell is Definition spell
+        ? $"{Who} learns {spell.Name} (spell level {Level})."
+        : $"{Who} receives no spell reward: {Reason}";
+}
+
+/// <summary>A member-specific perception check resolved for an expedition scope.</summary>
+public sealed record PerceptionFact(
+    int Member,
+    string Who,
+    string Scope,
+    string Mode,
+    CheckResult Result) : PlayFact
+{
+    public override string Kind => "perception";
+
+    public override string Describe() =>
+        $"{Who} resolves {Scope} as {Mode} (roll {N(Result.Roll)} + {N(Result.Bonus)} + {N(Result.Modifier)} = {N(Result.Total)}, needs {N(Result.Target)}).";
+}
+
+/// <summary>A module-authored check resolved for one active party member.</summary>
+public sealed record SceneCheckFact(int Member, string Who, string Check, CheckResult Result) : PlayFact
+{
+    public override string Kind => "check";
+
+    public override string Describe() =>
+        $"{Who} rolls {Check} (member {Member}): {N(Result.Roll)} + {N(Result.Bonus)} + {N(Result.Modifier)} = {N(Result.Total)}, needs {N(Result.Target)}: {Result.Tier}.";
+}
+
+/// <summary>Damage applied by an authored noncombat effect.</summary>
+public sealed record SceneDamageFact(int Member, string Who, Definition Track, decimal Amount, decimal Left) : PlayFact
+{
+    public override string Kind => "damage";
+
+    public override string Describe() =>
+        $"{Who} loses {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Left)} left).";
+}
+
+/// <summary>Healing applied by an authored noncombat effect.</summary>
+public sealed record SceneHealFact(int Member, string Who, Definition Track, decimal Amount, decimal Now) : PlayFact
+{
+    public override string Kind => "heal";
+
+    public override string Describe() =>
+        $"{Who} regains {N(Amount)} {Track.Name.ToLowerInvariant()} ({N(Now)}).";
+}
+
+/// <summary>A condition applied or removed by an authored noncombat effect.</summary>
+public sealed record SceneConditionFact(int Member, string Who, string Condition, bool Applied) : PlayFact
+{
+    public override string Kind => Applied ? "condition_applied" : "condition_ended";
+
+    public override string Describe() => Applied
+        ? $"{Who} is {Condition}."
+        : $"{Who} is no longer {Condition}.";
+}
+
+/// <summary>A presentation-only member view selection.</summary>
+public sealed record ViewFact(int Member, string Who, string Mode, string Text, Definition? Picture) : PlayFact
+{
+    public override string Kind => "view";
+
+    public override string Describe() =>
+        $"{Who}'s {Mode} view: {Text}{(Picture is Definition picture ? $" [picture {picture.QualifiedId}]" : "")}";
+}
+
 public sealed record MenuFact(string Text, IReadOnlyList<(int Number, string Label)> Options) : PlayFact
 {
     public override string Kind => "menu";
@@ -122,6 +198,14 @@ public sealed record ItemsFact(bool Given, Definition Item, int Count) : PlayFac
     public override string Describe() => $"The party {(Given ? "receives" : "hands over")} {Count} × {Item.Name}.";
 }
 
+/// <summary>A single carried consumable copy was used on one party member.</summary>
+public sealed record ItemUseFact(int Member, string Who, Definition Item) : PlayFact
+{
+    public override string Kind => "used";
+
+    public override string Describe() => $"{Who} uses {Item.Name}.";
+}
+
 public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnlyList<string> Items) : PlayFact
 {
     public override string Kind => "treasure";
@@ -139,17 +223,31 @@ public sealed record TreasureFact(Definition? Currency, decimal Amount, IReadOnl
     }
 }
 
-/// <summary>A numbered item at its purchase or resale price; Holder names equipped gear.</summary>
-public sealed record ShopOffer(int Number, Definition Item, decimal Price, Definition Currency, string? Holder = null);
+/// <summary>A numbered item at its purchase or resale price; carried offers also state whether the shop accepts their sale and why not.</summary>
+public sealed record ShopOffer(
+    int Number,
+    Definition Item,
+    decimal Price,
+    Definition Currency,
+    string? Holder = null,
+    decimal? Remaining = null,
+    bool Sellable = true,
+    string? RefusalReason = null);
 
-public sealed record ShopFact(string Text, IReadOnlyDictionary<Definition, decimal> Balances, IReadOnlyList<ShopOffer> Stock, IReadOnlyList<ShopOffer> Carried) : PlayFact
+public sealed record ShopFact(
+    string Text,
+    IReadOnlyDictionary<Definition, decimal> Balances,
+    IReadOnlyList<ShopOffer> Stock,
+    IReadOnlyList<ShopOffer> Carried,
+    decimal? MaxBuyValue = null,
+    Definition? BuyingCurrency = null) : PlayFact
 {
     public override string Kind => "shop";
 
     public override string Describe()
     {
         string Offers(IReadOnlyList<ShopOffer> offers) => offers.Count == 0 ? "none" : string.Join("  ", offers.Select(offer =>
-            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}"));
+            $"[{offer.Number}] {offer.Item.Name}{(offer.Holder is null ? "" : $" ({offer.Holder})")}{(offer.Remaining is decimal remaining ? $" ({N(remaining)} left)" : "")} {N(offer.Price)} {offer.Currency.Name.ToLowerInvariant()}{(offer.Sellable || offer.RefusalReason is null ? "" : $" (cannot sell: {offer.RefusalReason})")}"));
         string balances = Balances.Count == 0 ? "none" : string.Join(", ", Balances.Select(entry => $"{N(entry.Value)} {entry.Key.Name.ToLowerInvariant()}"));
         return $"{Text} Balances: {balances}. Buy: {Offers(Stock)}. Sell: {Offers(Carried)}. Commands: buy <n>, sell <n>, leave.";
     }

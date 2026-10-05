@@ -1,0 +1,10 @@
+{
+  "type": "check",
+  "id": "fae_con_save",
+  "name": "Constitution save against a fae effect",
+  "roll": "1d20",
+  "bonus": "self.con_save",
+  "target": "target.spell_dc",
+  "succeeds": "at-least",
+  "tiers": []
+}

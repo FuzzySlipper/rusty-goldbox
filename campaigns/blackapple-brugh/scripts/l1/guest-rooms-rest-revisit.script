@@ -1,0 +1,18 @@
+# C6 checkpoint: visit C10, C9 and C8 through ordinary movement; rest in both
+# guest rooms, take the one-time redacted prayer, then revisit C8.
+right
+forward
+choose 4
+right
+forward
+forward
+choose 1
+forward
+choose 2
+around
+forward
+choose 3
+around
+forward
+choose 1
+status

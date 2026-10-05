@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21_menu",
+  "kind": "menu",
+  "text": "Stevie watches the party while the cook turns toward the ovens. A small distraction can free the child without a fight.",
+  "options": [
+    {
+      "label": "Offer a pie and use the cook's recipe as a quiet signal",
+      "next": "evt_l3_c21_check"
+    },
+    {
+      "label": "Spend a bottle of Brugh wine to draw the cook away",
+      "when": "carried(item.id == 'brugh_wine') > 0",
+      "next": "evt_l3_c21_wine"
+    },
+    {
+      "label": "Leave the kitchen and keep the child scene available",
+      "next": "evt_l3_c21_leave"
+    }
+  ]
+}

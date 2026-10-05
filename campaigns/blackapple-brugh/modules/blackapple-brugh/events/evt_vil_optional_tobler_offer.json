@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_tobler_offer",
+  "kind": "menu",
+  "text": "Tobler’s shop is full of cleanly mounted animals and carefully labelled tools. His retired night-watch story leaves one question: why did the city dismiss him amid grave-robbery rumours?",
+  "picture": "blackapple-art:blackapple_tobler_shop",
+  "options": [
+    {
+      "label": "Ask about the dismissal and inspect the taxidermy ledger",
+      "next": "evt_vil_optional_tobler_lead_set"
+    },
+    {
+      "label": "Take the concern to Father Naskew before searching further",
+      "next": "evt_vil_priory"
+    },
+    {
+      "label": "Leave the shop without making an accusation",
+      "next": "evt_vil_optional_tobler_decline"
+    }
+  ]
+}

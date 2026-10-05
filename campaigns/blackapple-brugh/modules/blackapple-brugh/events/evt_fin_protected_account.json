@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_protected_account",
+  "kind": "set",
+  "variable": "epilogue_protected_account",
+  "value": "true",
+  "next": "evt_fin_truth_consequence_gate"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "entry_ready",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "An approved mirror route can open."
+}

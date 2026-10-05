@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l2_c13_revisit",
+  "kind": "text",
+  "text": "The dining table is still set, but the court has recorded your earlier answer. Amelia and Bernard's service stations remain visible, and the party can use the hall as a route rather than repeating the same reaction.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The empty courses have left rings on the oak. The two child servers keep their hands close to their own pockets, where family tokens might be hidden.",
+      "picture": "blackapple-art:brugh_dining_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The feast appears untouched and welcoming. The servers bow with courtly precision, as if your last visit was a toast rather than a confrontation.",
+      "picture": "blackapple-art:brugh_dining_glamour"
+    }
+  ],
+  "next": "evt_l2_c13_children_menu"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_immediate",
+  "kind": "set",
+  "variable": "brugh_l2_dinner_resolved",
+  "value": "true",
+  "next": "evt_l2_dinner_immediate_alarm"
+}

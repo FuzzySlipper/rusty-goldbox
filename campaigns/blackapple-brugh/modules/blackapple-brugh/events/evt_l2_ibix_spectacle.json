@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_l2_ibix_spectacle",
+  "kind": "menu",
+  "text": "Moth-in-Water presents the spectacle as a joke. The party's response will shape the escort to the guest rooms.",
+  "options": [
+    {
+      "label": "Watch without applauding, and remember the court's cruelty",
+      "next": "evt_l2_spectacle_seen"
+    },
+    {
+      "label": "Interrupt with a toast that gives the ibix a way out",
+      "next": "evt_l2_spectacle_interrupt"
+    },
+    {
+      "label": "Leave the spectacle and follow Moth-in-Water",
+      "next": "evt_l2_to_guest_rooms"
+    }
+  ]
+}

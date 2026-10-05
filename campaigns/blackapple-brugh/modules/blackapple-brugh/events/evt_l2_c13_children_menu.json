@@ -1,0 +1,34 @@
+{
+  "type": "event",
+  "id": "evt_l2_c13_children_menu",
+  "kind": "menu",
+  "text": "The servers can only answer through their work. Which thread will you test before the court decides what the party deserves?",
+  "options": [
+    {
+      "label": "Ask the blue-vested server about a Goodall shop tally",
+      "when": "campaign.var.child_amelia_goodall == 'captive'",
+      "next": "evt_l2_amelia_check"
+    },
+    {
+      "label": "Ask the second server to count the plates in Bernard's pattern",
+      "when": "campaign.var.child_bernard_goodall == 'captive'",
+      "next": "evt_l2_bernard_check"
+    },
+    {
+      "label": "Join the meal and address the Elf Lord",
+      "next": "evt_l2_dinner_check"
+    },
+    {
+      "label": "Decline the feast and leave the hall",
+      "next": "evt_l2_dinner_unfavorable"
+    },
+    {
+      "label": "Return to the ballroom",
+      "next": "evt_l2_c12_menu"
+    },
+    {
+      "label": "Leave the dining hall and use its connected exits",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

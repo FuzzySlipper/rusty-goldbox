@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_005",
+  "kind": "set",
+  "variable": "child_philip_anvil",
+  "value": "\"captive\"",
+  "next": "evt_fin_setup_elf_bargain_006"
+}

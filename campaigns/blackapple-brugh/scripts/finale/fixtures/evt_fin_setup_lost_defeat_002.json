@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_002",
+  "kind": "set",
+  "variable": "child_amelia_goodall",
+  "value": "\"captive\"",
+  "next": "evt_fin_setup_lost_defeat_003"
+}

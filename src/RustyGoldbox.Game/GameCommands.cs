@@ -131,11 +131,13 @@ internal static class GameCommands
                     IReadOnlyList<string>? skillTables = payload.TryGetProperty("skillTables", out _) ? Texts(payload, "skillTables") : null;
                     IReadOnlyList<string>? benefits = payload.TryGetProperty("benefits", out _) ? Texts(payload, "benefits") : null;
                     IReadOnlyList<SkillAllocation>? skillPoints = payload.TryGetProperty("skills", out _) ? Skills(payload) : null;
+                    IReadOnlyDictionary<string, decimal>? attributes = payload.TryGetProperty("attributes", out _) ? Attributes(payload) : null;
+                    IReadOnlyList<string>? priority = payload.TryGetProperty("priority", out _) ? Texts(payload, "priority") : null;
                     string? creation = payload.TryGetProperty("creation", out _) ? Text(payload, "creation") : null;
                     string? race = payload.TryGetProperty("race", out _) ? Text(payload, "race") : null;
                     string? characterClass = payload.TryGetProperty("class", out _) ? Text(payload, "class") : null;
                     int terms = payload.TryGetProperty("terms", out _) ? Integer(payload, "terms") : 0;
-                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts, skillPoints, creation, lifepath, careers, skillTables, benefits, terms);
+                    session.Roll(engine, Text(payload, "name").Trim(), race, characterClass, portrait, features, boosts, skillPoints, creation, lifepath, careers, skillTables, benefits, terms, attributes, priority);
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));
@@ -365,6 +367,35 @@ internal static class GameCommands
         return value.ValueKind == JsonValueKind.Array && value.EnumerateArray().All(entry => entry.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(entry.GetString()))
             ? value.EnumerateArray().Select(entry => entry.GetString()!).ToList()
             : throw new PayloadException($"\"{field}\" must be an array of non-empty text");
+    }
+
+    private static Dictionary<string, decimal> Attributes(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("attributes", out JsonElement value) || value.ValueKind != JsonValueKind.Object)
+        {
+            throw new PayloadException("\"attributes\" must be an object of numeric attribute scores");
+        }
+
+        Dictionary<string, decimal> scores = new(StringComparer.Ordinal);
+        foreach (JsonProperty entry in value.EnumerateObject())
+        {
+            if (string.IsNullOrWhiteSpace(entry.Name))
+            {
+                throw new PayloadException("Each \"attributes\" entry must have a non-empty attribute ID");
+            }
+
+            if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetDecimal(out decimal score))
+            {
+                throw new PayloadException("Each \"attributes\" entry must have a numeric score");
+            }
+
+            if (!scores.TryAdd(entry.Name, score))
+            {
+                throw new PayloadException($"\"attributes\" contains the attribute ID '{entry.Name}' more than once");
+            }
+        }
+
+        return scores;
     }
 
     private static List<SkillAllocation> Skills(JsonElement payload)

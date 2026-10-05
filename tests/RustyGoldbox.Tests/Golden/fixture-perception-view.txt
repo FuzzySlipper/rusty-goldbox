@@ -1,0 +1,62 @@
+$ goldbox character new --module tale --modules . --modules modules --class fighter --race human --name Ada --priority int,con,dex,wis,cha,str --feature soldier,savage_attacker,defense --seed 1 --out ada.json
+Ada: Human Fighter 1 (0 xp, next level at 300)
+  death save failures 0/3
+  death save successes 0/3
+  hit points 12/12
+  second wind uses 2/2
+  gold 0
+  features: Soldier (background), Savage Attacker (origin feat), Defense (fighting style)
+  str              10     Strength
+  dex              13     Dexterity
+  con              15     Constitution
+  int              15     Intelligence
+  wis              12     Wisdom
+  cha              10     Charisma
+  ac               12     Armor Class
+  ac_bonus         1      AC bonus
+  armor_base       10     Armor base
+  cantrip_dice     1      Cantrip dice
+  cha_mod          0      Charisma modifier
+  con_mod          2      Constitution modifier
+  con_save         4      Constitution saving throw
+  crit_range       20     Lowest critical roll
+  dex_cap          10     Dexterity cap on AC
+  dex_mod          1      Dexterity modifier
+  dex_save         1      Dexterity saving throw
+  dueling          0      Dueling damage
+  engage_range     1      Distance it fights from (squares)
+  extra_attacks    0      Extra attacks
+  fighter_level    1      Fighter level
+  initiative_bonus 1      Initiative bonus
+  int_mod          2      Intelligence modifier
+  is_character     true   Player character
+  life_bonus       0      Disciple of Life healing
+  pack_tactics     false  Pack Tactics
+  proficiency      2      Proficiency bonus
+  rogue_level      0      Rogue level
+  sneak_dice       0      Sneak Attack dice
+  speed            30     Speed (ft)
+  spell_dc         5      Spell save DC
+  spell_mod        -5     Spellcasting modifier
+  str_mod          0      Strength modifier
+  undead_fortitude false  Undead Fortitude
+  wis_mod          1      Wisdom modifier
+Saved to ada.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ goldbox play --campaign tale --modules . --modules modules --party ada.json --seed 7 --script view.script --save after.json
+seed 7
+  The party is in Hall at [0, 0], facing east.
+> forward
+  The party moves to [1, 0], facing east.
+  Ada resolves entry-1 as truth (roll 18 + 2 + -1 = 19, needs 10).  [1d20: 18 = 18]
+  The room waits.
+> look
+  Hall [1, 0], facing east. east: open; south: wall; west: open; north: wall.
+> view 1
+  Ada's truth view: The buried halls are real. [picture placeholder-art:altar]
+> look
+  Hall [1, 0], facing east. east: open; south: wall; west: open; north: wall.
+[exit 0]
+

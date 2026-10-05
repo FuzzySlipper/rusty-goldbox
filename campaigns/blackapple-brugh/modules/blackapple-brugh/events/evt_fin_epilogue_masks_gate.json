@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_masks_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_arthur_figwort == 'escaped' or campaign.var.double_arthur_figwort == 'exposed' or campaign.var.double_arthur_figwort == 'masked' or campaign.var.double_arthur_figwort == 'unknown' or campaign.var.double_amelia_goodall == 'escaped' or campaign.var.double_amelia_goodall == 'exposed' or campaign.var.double_amelia_goodall == 'masked' or campaign.var.double_amelia_goodall == 'unknown' or campaign.var.double_bernard_goodall == 'escaped' or campaign.var.double_bernard_goodall == 'exposed' or campaign.var.double_bernard_goodall == 'masked' or campaign.var.double_bernard_goodall == 'unknown' or campaign.var.double_giles_weadley == 'escaped' or campaign.var.double_giles_weadley == 'exposed' or campaign.var.double_giles_weadley == 'masked' or campaign.var.double_giles_weadley == 'unknown' or campaign.var.double_philip_anvil == 'escaped' or campaign.var.double_philip_anvil == 'exposed' or campaign.var.double_philip_anvil == 'masked' or campaign.var.double_philip_anvil == 'unknown' or campaign.var.double_ursula_cooke == 'escaped' or campaign.var.double_ursula_cooke == 'exposed' or campaign.var.double_ursula_cooke == 'masked' or campaign.var.double_ursula_cooke == 'unknown' or campaign.var.double_stevie_leeford == 'escaped' or campaign.var.double_stevie_leeford == 'exposed' or campaign.var.double_stevie_leeford == 'masked' or campaign.var.double_stevie_leeford == 'unknown'",
+      "next": "evt_fin_epilogue_masks_set"
+    }
+  ],
+  "otherwise": "evt_fin_ending_context"
+}

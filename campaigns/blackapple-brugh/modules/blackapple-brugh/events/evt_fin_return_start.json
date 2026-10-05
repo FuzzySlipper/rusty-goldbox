@@ -1,0 +1,24 @@
+{
+  "type": "event",
+  "id": "evt_fin_return_start",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.ending_id != ''",
+      "next": "evt_return_postscript"
+    },
+    {
+      "when": "campaign.var.brugh_exited and campaign.var.recovery_return_triage and not campaign.var.return_account_complete",
+      "next": "evt_fin_account_intro"
+    },
+    {
+      "when": "campaign.var.brugh_exited and campaign.var.recovery_return_triage and campaign.var.return_account_complete and campaign.var.ending_id == '' and (campaign.var.child_arthur_figwort == 'freed' or campaign.var.child_amelia_goodall == 'freed' or campaign.var.child_bernard_goodall == 'freed' or campaign.var.child_giles_weadley == 'freed' or campaign.var.child_philip_anvil == 'freed' or campaign.var.child_ursula_cooke == 'freed' or campaign.var.child_stevie_leeford == 'freed')",
+      "next": "evt_fin_account_intro"
+    },
+    {
+      "when": "campaign.var.brugh_exited and campaign.var.recovery_return_triage and campaign.var.return_account_complete and campaign.var.ending_id == ''",
+      "next": "evt_fin_account_choice"
+    }
+  ],
+  "otherwise": "evt_return_postscript"
+}

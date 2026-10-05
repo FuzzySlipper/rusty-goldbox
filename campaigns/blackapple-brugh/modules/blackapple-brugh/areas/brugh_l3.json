@@ -1,0 +1,53 @@
+{
+  "type": "area",
+  "id": "brugh_l3",
+  "name": "Brugh Level 3 — Service Rooms and Vault",
+  "map": [
+    "+--+--+--+--+--+",
+    "|              |",
+    "+  +  +DD+  +  +",
+    "|        D     |",
+    "+SS+  +  +  +  +",
+    "|              |",
+    "+--+--+--+--+--+"
+  ],
+  "wall_set": "blackapple-art:brugh_materials",
+  "search": "blackapple-fae:investigate_evidence",
+  "doors": [
+    {
+      "id": "c21_service_door",
+      "at": [2, 0],
+      "facing": "south",
+      "locked": true,
+      "pick": "blackapple-fae:careful_contact_dex"
+    },
+    {
+      "id": "c24_moth_private_door",
+      "at": [2, 1],
+      "facing": "east",
+      "locked": true,
+      "key": "court_token",
+      "pick": "blackapple-fae:careful_contact_dex"
+    }
+  ],
+  "cells": [
+    { "at": [0, 0], "zone": "c19_false_door", "event": "evt_l3_c19_arrival" },
+    { "at": [1, 0], "zone": "c20_cold_storage", "event": "evt_l3_c20_arrival" },
+    { "at": [2, 0], "zone": "c21_kitchen", "event": "evt_l3_c21_arrival" },
+    { "at": [3, 0], "zone": "c21a_dumbwaiter", "event": "evt_l3_c21a_arrival" },
+    { "at": [4, 0], "zone": "c22_pantry", "event": "evt_l3_c22_arrival" },
+    { "at": [0, 1], "zone": "c18_pit", "event": "evt_l3_c18_arrival" },
+    { "at": [2, 1], "zone": "c23_wine_cellar", "event": "evt_l3_c23_arrival" },
+    { "at": [3, 1], "zone": "c24_moth_chamber", "event": "evt_l3_c24_arrival" },
+    { "at": [4, 1], "zone": "c25_elf_lord_chamber", "event": "evt_l3_c25_arrival" },
+    { "at": [0, 2], "zone": "c26_dungeon", "event": "evt_l3_c26_arrival" },
+    { "at": [1, 2], "zone": "c27_treasure_vault", "event": "evt_l3_c27_arrival" }
+  ],
+  "entries": {
+    "from_l2": { "at": [0, 1], "facing": "south" },
+    "library_passage": { "at": [1, 0], "facing": "east" },
+    "pit": { "at": [0, 1], "facing": "south" },
+    "kitchen_lift": { "at": [3, 0], "facing": "south" },
+    "c27_vault": { "at": [1, 2], "facing": "east" }
+  }
+}

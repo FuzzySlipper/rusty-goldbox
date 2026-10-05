@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c26_rescue",
+  "kind": "set",
+  "variable": "brugh_l3_ned_rescued",
+  "value": "true",
+  "next": "evt_l3_c26_rescue_text"
+}

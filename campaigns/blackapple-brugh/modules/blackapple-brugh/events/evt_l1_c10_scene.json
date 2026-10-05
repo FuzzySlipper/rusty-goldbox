@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "evt_l1_c10_scene",
+  "kind": "text",
+  "text": "A mushroom ambassador waits behind a low desk, its cap patched with court seals. It has no guards and no appetite for a fight; it wants to know whether the surface party will listen before the roots are disturbed.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The ambassador is a pale, jointed fungus in a damp office. Its copied ledgers are careful, useful records, and the room's only threat is the court's pressure outside."
+    },
+    {
+      "mode": "glamour",
+      "text": "The ambassador appears as a courteous little courtier in a velvet cap. Its tidy ledgers promise a harmless audience beneath the palace's music."
+    }
+  ],
+  "next": "evt_l1_c10_choice"
+}

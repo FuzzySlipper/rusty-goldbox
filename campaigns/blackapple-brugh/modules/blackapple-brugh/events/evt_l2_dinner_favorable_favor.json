@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_favorable_favor",
+  "kind": "set",
+  "variable": "court_favor",
+  "value": "campaign.var.court_favor + 2",
+  "next": "evt_l2_dinner_favorable_reaction"
+}

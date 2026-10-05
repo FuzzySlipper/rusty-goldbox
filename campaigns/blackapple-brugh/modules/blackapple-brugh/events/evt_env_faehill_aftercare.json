@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_env_faehill_aftercare",
+  "kind": "menu",
+  "text": "Where will you take the Faehill history?",
+  "options": [
+    {
+      "label": "Ask Flynn about the mirror witness",
+      "next": "evt_env_route_hen_teeth"
+    },
+    {
+      "label": "Return to Blackapple and report the warning",
+      "next": "evt_env_return_blackapple"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_entry_route_figwort",
+  "kind": "set",
+  "variable": "mirror_route",
+  "value": "\"figwort\"",
+  "next": "evt_entry_ready_figwort"
+}

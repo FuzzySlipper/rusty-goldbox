@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_philip_fail",
+  "kind": "text",
+  "text": "The service phrase sounds like the court's command. Philip keeps carrying plates, and the ibix guard turns its head. The party can try another approach without changing the child's status.",
+  "next": "evt_l2_philip_menu"
+}

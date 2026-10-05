@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_l2_focused_intervention",
+  "kind": "menu",
+  "text": "A companion is held at the pit's edge while the court waits for your answer. The first party member speaks for the party's intervention; the map position remains shared.",
+  "options": [
+    {
+      "label": "Reach out with a calm courtly appeal",
+      "next": "evt_l2_focused_check"
+    },
+    {
+      "label": "Refuse to bargain and let the court make its example",
+      "next": "evt_l2_focused_fail"
+    },
+    {
+      "label": "Step back to the ballroom while keeping the party together",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

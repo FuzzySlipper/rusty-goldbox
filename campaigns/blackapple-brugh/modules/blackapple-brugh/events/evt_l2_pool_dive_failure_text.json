@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_pool_dive_failure_text",
+  "kind": "text",
+  "text": "The water twists the distance and the moonstone slips away. The party pulls its companion clear with a bruising scrape; no stone is awarded, and the recovery choice remains yours.",
+  "next": "evt_l2_pool_recover_choice"
+}

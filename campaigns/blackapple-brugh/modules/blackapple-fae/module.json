@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "id": "blackapple-fae",
+  "kind": "extension",
+  "version": "0.1.0",
+  "title": "Blackapple Brugh fae and encounter data",
+  "requires": [
+    {
+      "id": "fifth-srd",
+      "version": "^0.1.0"
+    }
+  ],
+  "provenance": "Source-converted Blackapple Brugh creatures, encounters and the Intelligence glamour save, adapted from Release 21 text under CC BY-SA 4.0; see PROVENANCE.md and LICENSE-CC-BY-SA-4.0.txt."
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_flynn_lore_intro",
+  "kind": "text",
+  "text": "Flynn listens until the room's noise covers his answer. He confirms that the mirror is a fairy road, that Periwinkle Black sometimes arrives to smoke in the corner, and that the road opens only when the old words are spoken at the right hour. He gives you the rhyme's shape without making a promise about what waits beyond it. Faehill is a warning and a history, never the Brugh's door.",
+  "next": "evt_env_flynn_lore_rhyme"
+}

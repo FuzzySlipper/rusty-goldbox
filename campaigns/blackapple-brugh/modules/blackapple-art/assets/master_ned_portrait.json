@@ -1,0 +1,10 @@
+{
+  "type": "asset",
+  "id": "master_ned_portrait",
+  "media": "image",
+  "file": "pictures/master_ned_portrait.png",
+  "sampling": "linear",
+  "tags": [
+    "portrait"
+  ]
+}

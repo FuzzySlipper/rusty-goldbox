@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_034",
+  "kind": "set",
+  "variable": "evidence_brugh_layout",
+  "value": "false",
+  "next": "evt_fin_setup_truth_no_proof_035"
+}

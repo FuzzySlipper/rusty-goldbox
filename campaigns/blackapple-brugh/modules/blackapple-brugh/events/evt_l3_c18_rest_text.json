@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_rest_text",
+  "kind": "text",
+  "text": "After resting together, you inspect your wounds. The secret seam, the worm’s corner, and the way back up remain in sight.",
+  "next": "evt_l3_c18_recovery_menu"
+}

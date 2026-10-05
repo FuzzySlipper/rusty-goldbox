@@ -13,6 +13,36 @@ namespace RustyGoldbox.Tests;
 public sealed class LiveCampaignCombatTests
 {
     [Fact]
+    public void GearCommandsDuringLiveCombatPreserveSaveAndRandomCursor()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = Party(modules, campaign, set);
+        Definition definition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        CampaignState state = CampaignRunner.NewState(set.Rules, definition, party, 7);
+        state.Inventory.Add(set.Rules.Find(DefinitionTypes.Item, "classic:dagger", out _)!);
+        CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            Assert.NotNull(state.PendingCombat);
+            string before = SaveFile.ToJson(state, set);
+            string equipped = party[0].Equipment[0].QualifiedId;
+
+            foreach (string command in new[] { "equip 1 classic:dagger", $"unequip 1 {equipped}" })
+            {
+                RefusedFact refusal = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+                Assert.Contains("combat", refusal.Reason, StringComparison.Ordinal);
+                Assert.Empty(refusal.Rolls);
+                Assert.Equal(before, SaveFile.ToJson(state, set));
+            }
+        });
+    }
+
+    [Fact]
     public void ManualCampaignCombatSuspendsAndSaveRestoresTheSameBoundary()
     {
         using TempModules modules = new();

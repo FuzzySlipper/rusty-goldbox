@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_priory_witness_text",
+  "kind": "text",
+  "text": "Father Naskew agrees to attend any conversation about Arthur, provided the patient is treated as a person and the clerics are not used to stage a public accusation. Lady Figwort will recognize the priory's seal.",
+  "picture": "blackapple-art:blackapple_priory",
+  "next": "evt_vil_sanitarium_brief"
+}

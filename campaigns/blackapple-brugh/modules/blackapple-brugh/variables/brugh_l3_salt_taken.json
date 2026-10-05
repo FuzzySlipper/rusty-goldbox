@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_salt_taken",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The optional pouch of clean salt was taken from C22 once."
+}

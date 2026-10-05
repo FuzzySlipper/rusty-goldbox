@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_delay_return",
+  "kind": "text",
+  "text": "Livinius asks for more time. You leave the treatment room before the conversation becomes consent by exhaustion. The family still needs proof, and the safer path remains open.",
+  "picture": "blackapple-art:environs_sanitarium",
+  "next": "evt_vil_sanitarium_return"
+}

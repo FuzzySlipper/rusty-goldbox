@@ -1,0 +1,29 @@
+{
+  "type": "event",
+  "id": "evt_vil_arrival_objective",
+  "kind": "menu",
+  "text": "The sentry points out the Jolly Fox, the priory, and the manor on the hill. A folded invitation from the Figwort household asks you to hear the family out. What will you do first?",
+  "options": [
+    {
+      "label": "Ask the guard for directions",
+      "next": "evt_vil_guardhouse"
+    },
+    {
+      "label": "Watch the village square",
+      "next": "evt_vil_square"
+    },
+    {
+      "label": "Accept the Figwort dinner invitation",
+      "next": "evt_vil_figwort_manor"
+    },
+    {
+      "label": "Find a safe bed at the Jolly Fox",
+      "next": "evt_vil_jolly_fox"
+    },
+    {
+      "label": "Resume the incomplete return account",
+      "when": "campaign.var.return_account_complete and campaign.var.ending_id == ''",
+      "next": "evt_fin_account_choice"
+    }
+  ]
+}

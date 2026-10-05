@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_shrine_reward_mark",
+  "kind": "set",
+  "variable": "environs_shrine_token_given",
+  "value": "true",
+  "next": "evt_env_shrine_reward_text"
+}

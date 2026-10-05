@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c4_fair_text",
+  "kind": "text",
+  "text": "You play the game as offered. The elves dislike losing, but they recognize a clean throw and make room for you instead of reaching for their daggers. The court has noticed your restraint.",
+  "next": "evt_l1_c4_choice"
+}

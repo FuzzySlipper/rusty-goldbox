@@ -1,0 +1,11 @@
+# C6 checkpoint after Giles: leave the White Lady alone, walk south to C11,
+# hear the basin story, and make the consent-forward contact check. Seed 9303
+# reaches the success branch; a failure seed uses c11-poison-recovery.script.
+forward
+choose 1
+right
+forward
+choose 1
+choose 2
+choose 4
+status

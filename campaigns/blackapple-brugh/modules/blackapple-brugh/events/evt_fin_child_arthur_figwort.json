@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_arthur_figwort",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.return_account_complete and campaign.var.child_arthur_figwort != 'freed'",
+      "next": "evt_fin_child_amelia_goodall"
+    },
+    {
+      "when": "campaign.var.child_arthur_figwort == 'freed'",
+      "next": "evt_fin_child_arthur_figwort_freed"
+    },
+    {
+      "when": "campaign.var.child_arthur_figwort == 'returned'",
+      "next": "evt_fin_child_arthur_figwort_returned"
+    },
+    {
+      "when": "campaign.var.child_arthur_figwort == 'captive'",
+      "next": "evt_fin_child_arthur_figwort_captive"
+    },
+    {
+      "when": "campaign.var.child_arthur_figwort == 'unknown'",
+      "next": "evt_fin_child_arthur_figwort_unknown"
+    }
+  ],
+  "otherwise": "evt_fin_child_arthur_figwort_unknown"
+}

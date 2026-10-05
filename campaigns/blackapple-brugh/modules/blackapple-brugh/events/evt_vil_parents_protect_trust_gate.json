@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_vil_parents_protect_trust_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "not area.var.blackapple_parents_protect_rewarded",
+      "next": "evt_vil_parents_protect_reward"
+    }
+  ],
+  "otherwise": "evt_vil_parents_protect_revisit_text"
+}

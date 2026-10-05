@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_transfer_text",
+  "kind": "text",
+  "text": "Father Naskew, named custodian of St. Ludann Priory, receives the exposed figure in the quiet room. The double is contained under the priory's care; the evidence remains private nickname and impossible memory, and the real Arthur remains captive beyond the mirror.",
+  "picture": "blackapple-art:blackapple_priory",
+  "next": "evt_vil_sanitarium_return"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_c15_lore_text",
+  "kind": "text",
+  "text": "The winning painting is newer, but the losing one shows the useful detail: the beast's strength is greatest when its watchers stand close together. The court prizes spectacle because it is afraid of an empty audience.",
+  "next": "evt_l2_c12_menu"
+}

@@ -1,0 +1,531 @@
+{
+  "logical_id": "environs_wild_dog_lair",
+  "runtime_id": "environs_wild_dog_lair",
+  "slot": "wide picture context",
+  "scope": "campaigns/blackapple-brugh/art/production/environs-service",
+  "prompt": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/prompts/environs_wild_dog_lair.md",
+    "sha256": "0cfac19283421cb679a7908dbb9bfa1d62c22436394373a9871146881858b394",
+    "bytes": 1290,
+    "written_before_generation": true,
+    "exact_prompt_file_only": true,
+    "written_mtime_utc": "2026-10-04T09:06:54.311505Z"
+  },
+  "generation": {
+    "tool": "built-in Codex image_gen",
+    "mode": "new image generation",
+    "transparent_background": false,
+    "call_started_utc": "2026-10-04T09:11:04.454Z",
+    "native_output_path": "/home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a/exec-b35f5bfc-3678-484c-aad2-17bc51edd2ad.png",
+    "native_output_preserved_by_tool": true,
+    "native_output_hint": "Generated images are saved to /home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a; this asset remains at the native path recorded above.",
+    "model_sampler_seed": "not exposed by built-in result; no values guessed",
+    "imagegen_input_paths": [],
+    "palette_references_inspected_only": [
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/candidates/tenpenny_forest-candidate.png",
+      "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/references/blackapple_village.png"
+    ],
+    "palette_references_passed_to_imagegen": false,
+    "source_pdf_image_inputs": []
+  },
+  "raw": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/raw/environs_wild_dog_lair-exec-b35f5bfc.png",
+    "sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b",
+    "bytes": 3396637,
+    "native_tool_path": "/home/agent/.codex/generated_images/01a105fd-1bed-7533-8e4e-1902f7f56d9a/exec-b35f5bfc-3678-484c-aad2-17bc51edd2ad.png",
+    "native_copy_observed": true,
+    "png": {
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bit_depth": 8,
+      "color_type": 2,
+      "interlace": 0,
+      "chunks": [
+        {
+          "type": "IHDR",
+          "bytes": 13
+        },
+        {
+          "type": "caBX",
+          "bytes": 23654
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 29966
+        },
+        {
+          "type": "IEND",
+          "bytes": 0
+        }
+      ]
+    }
+  },
+  "canonical_original": {
+    "path": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/environs-service/originals/environs_wild_dog_lair.png",
+    "sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b",
+    "bytes": 3396637,
+    "png": {
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bit_depth": 8,
+      "color_type": 2,
+      "interlace": 0,
+      "chunks": [
+        {
+          "type": "IHDR",
+          "bytes": 13
+        },
+        {
+          "type": "caBX",
+          "bytes": 23654
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 65536
+        },
+        {
+          "type": "IDAT",
+          "bytes": 29966
+        },
+        {
+          "type": "IEND",
+          "bytes": 0
+        }
+      ]
+    }
+  },
+  "canonical_byte_identity": {
+    "raw_to_original_equal": true,
+    "raw_sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b",
+    "original_sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b",
+    "raw_bytes": 3396637,
+    "original_bytes": 3396637
+  },
+  "corrections": {
+    "targeted_correction_count": 0,
+    "independent_finding_triggered": false,
+    "selection_status": "selected original after display inspection; no correction applied"
+  },
+  "inspection": {
+    "display_and_original_resolution_checked": true,
+    "notes": "A root-woven natural den, a clear forked muddy path, six alert but non-attacking dogs, and a distant standing-stone hint are readable without injury or architecture."
+  },
+  "source_evidence": [
+    "/tmp/blackapple-r21.txt:237-261 (A1 overgrown woodland, natural dog pack den, Faehill clue)",
+    "campaigns/blackapple-brugh/canon/locations.md:66",
+    "campaigns/blackapple-brugh/art/production/art-inventory.md:118"
+  ],
+  "runtime_boundary": {
+    "target_native_dimensions": "1672x941",
+    "actual_dimensions": "1672x941",
+    "within_target_tolerance": true,
+    "packed": false,
+    "runtime_acceptance_claimed": false
+  }
+}

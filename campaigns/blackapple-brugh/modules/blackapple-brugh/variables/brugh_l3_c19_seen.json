@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l3_c19_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "C19 has shown its false-door warning in this Level 3 area instance."
+}

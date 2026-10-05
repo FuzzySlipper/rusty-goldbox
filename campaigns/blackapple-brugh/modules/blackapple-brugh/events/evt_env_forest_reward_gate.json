@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_reward_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.environs_wild_dog_resolved and not area.var.environs_wild_dog_reward_given",
+      "next": "evt_env_forest_reward"
+    }
+  ],
+  "otherwise": "evt_env_forest_resolution"
+}

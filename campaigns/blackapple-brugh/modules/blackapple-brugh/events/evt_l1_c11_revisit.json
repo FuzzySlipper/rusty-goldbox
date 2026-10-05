@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c11_revisit",
+  "kind": "text",
+  "text": "The Frog Prince remembers the party and keeps the basin covered. The crown is gone if it was taken, while the story and a consent-forward lesson remain available.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The green prince sits beside the cloudy basin, waiting without pressure.",
+      "picture": "blackapple-art:brugh_frog_prince_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The fairytale room glows softly around the prince and his silver basin.",
+      "picture": "blackapple-art:brugh_frog_prince_glamour"
+    }
+  ],
+  "next": "evt_l1_c11_choice"
+}

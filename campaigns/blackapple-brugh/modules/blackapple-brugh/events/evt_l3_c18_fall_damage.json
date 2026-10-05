@@ -1,0 +1,13 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_fall_damage",
+  "kind": "effect",
+  "operations": [
+    {
+      "op": "damage",
+      "track": "fifth-srd:hit_points",
+      "amount": "1d6"
+    }
+  ],
+  "next": "evt_l3_c18_fall_clear"
+}

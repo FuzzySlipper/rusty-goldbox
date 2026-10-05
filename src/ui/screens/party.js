@@ -21,6 +21,9 @@ export function createParty(send, rerender) {
   const choiceSelects = new Map();
   // Skill amounts are a local draft until the player submits the Core action.
   const skillDrafts = new Map();
+  // Creation scores and priorities are local intent drafts until the Roll action.
+  const scoreDrafts = new Map();
+  const priorityDrafts = new Map();
   const choiceSelect = (key, label) => {
     if (!choiceSelects.has(key)) {
       const select = element('select', { 'aria-label': label, 'data-focus-key': `party:choice:${key}` });
@@ -78,6 +81,14 @@ export function createParty(send, rerender) {
     });
     const size = view.partySize ?? { min: 1, max: 1 };
     const choices = renderChoices(view, selectedCreation);
+    const creationValues = () => {
+      const attributes = choices.attributes();
+      const priority = choices.priority();
+      return {
+        ...(attributes ? { attributes } : {}),
+        ...(priority ? { priority } : {}),
+      };
+    };
     const roll = button('Roll', () => send({
       action: 'roll',
       name: name.value,
@@ -88,6 +99,7 @@ export function createParty(send, rerender) {
       ...(portrait.value ? { portrait: portrait.value } : {}),
       ...(choices.features().length > 0 ? { features: choices.features() } : {}),
       ...(choices.boosts().length > 0 ? { boosts: choices.boosts() } : {}),
+      ...creationValues(),
       ...(view.lifepath ? {
         lifepath: view.lifepath.id,
         careers: lifepathCareer.value ? [lifepathCareer.value] : [],
@@ -134,7 +146,80 @@ export function createParty(send, rerender) {
     const featureSlots = [];
     const creationSlots = [];
     if (!creation) {
-      return { rows, features: () => [], boosts: () => [] };
+      return { rows, features: () => [], boosts: () => [], attributes: () => null, priority: () => null };
+    }
+
+    const attributeDetails = (creation.attributeDetails?.length
+      ? creation.attributeDetails
+      : (creation.attributes ?? []).map((id) => ({ id, name: id })));
+    const arrangeableDetails = Array.isArray(creation.arrangeableAttributes)
+      ? creation.arrangeableAttributes
+      : attributeDetails;
+    const attributeIds = arrangeableDetails.map((attribute) => attribute.id);
+    let attributeValues = null;
+    let priorityValues = null;
+    if (creation.method === 'point-buy') {
+      const costRows = creation.costs?.rows ?? [];
+      const costText = costRows.length > 0
+        ? ` Costs: ${costRows.map((cost) => `${cost[0]}=${cost[cost.length - 1]}`).join(', ')}.`
+        : '';
+      rows.append(element('div', { class: 'gb-muted' }, `Point buy: base ${creation.base ?? '-'}, budget ${creation.budget ?? '-'}${costText}`));
+      const fields = attributeDetails.map((attribute) => {
+        const key = `${creation.id}:score:${attribute.id}`;
+        const initial = scoreDrafts.get(key) ?? creation.base ?? attribute.min ?? '';
+        const inputAttributes = {
+          type: 'number',
+          step: 'any',
+          value: String(initial),
+          size: '5',
+          'aria-label': `${attribute.name} score`,
+          'data-focus-key': `party:new:score:${attribute.id}`,
+        };
+        if (attribute.min !== undefined) {
+          inputAttributes.min = String(attribute.min);
+        }
+
+        if (attribute.max !== undefined) {
+          inputAttributes.max = String(attribute.max);
+        }
+
+        const input = element('input', inputAttributes);
+        input.addEventListener('input', () => scoreDrafts.set(key, input.value));
+        rows.append(row(element('span', {}, `${attribute.name} (${attribute.id}):`), input));
+        return { id: attribute.id, input };
+      });
+      attributeValues = () => Object.fromEntries(fields.map((field) => [field.id, Number(field.input.value)]));
+    } else if (creation.method === 'array' || creation.assignment === 'arrange') {
+      const array = creation.array ?? [];
+      rows.append(element('div', { class: 'gb-muted' }, creation.method === 'array'
+        ? 'Assign each standard score to an attribute.'
+        : 'Assign each rolled score to an attribute.'));
+      const fixedDetails = attributeDetails.filter((attribute) => !attributeIds.includes(attribute.id));
+      if (fixedDetails.length > 0) {
+        rows.append(element('div', { class: 'gb-muted' }, `Fixed authored rolls: ${fixedDetails.map((attribute) => attribute.name).join(', ')}.`));
+      }
+
+      const selects = arrangeableDetails.map((attribute, index) => {
+        const key = `${creation.id}:priority:${index}`;
+        const current = priorityDrafts.get(key);
+        const selected = attributeIds.includes(current) ? current : attributeIds[index] ?? attributeIds[0];
+        const select = element('select', {
+          'aria-label': `${creation.method === 'array' ? `Score ${array[index] ?? index + 1}` : `Rolled score ${index + 1}`} priority`,
+          'data-focus-key': `party:new:priority:${index}`,
+        });
+        fill(select, arrangeableDetails.map((detail) => ({ id: detail.id, name: detail.name })));
+        if (selected) {
+          select.value = selected;
+        }
+
+        select.addEventListener('change', () => {
+          priorityDrafts.set(key, select.value);
+          rerender();
+        });
+        rows.append(row(element('span', {}, `${creation.method === 'array' ? `Score ${array[index] ?? index + 1}` : `Rolled score ${index + 1}`} →`), select));
+        return select;
+      });
+      priorityValues = selects.length > 0 ? () => selects.map((select) => select.value) : () => null;
     }
 
     if (view.lifepath) {
@@ -195,6 +280,8 @@ export function createParty(send, rerender) {
       rows,
       features: () => featureSlots.map((select) => select.value).filter((value) => value),
       boosts: () => boostSlots.map((select) => select.value),
+      attributes: () => attributeValues?.() ?? null,
+      priority: () => priorityValues?.() ?? null,
     };
   };
 

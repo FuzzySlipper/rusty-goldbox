@@ -1,0 +1,53 @@
+{
+  "type": "monster",
+  "id": "white_lady",
+  "name": "White Lady",
+  "class": "fifth-srd:fighter",
+  "level": 2,
+  "tracks": {
+    "fifth-srd:hit_points": "22",
+    "fifth-srd:spells_1": "0",
+    "fifth-srd:spells_2": "0",
+    "fifth-srd:spells_3": "0",
+    "fifth-srd:second_wind": "0",
+    "fifth-srd:death_successes": "0",
+    "fifth-srd:death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "11",
+    "crit_range": "20",
+    "ac": "14",
+    "initiative_bonus": "2",
+    "dex_save": "2",
+    "con_save": "2",
+    "speed": "30",
+    "str": "13",
+    "dex": "14",
+    "con": "12",
+    "int": "7",
+    "wis": "10",
+    "cha": "6",
+    "pack_tactics": "false",
+    "undead_fortitude": "false"
+  },
+  "actions": [
+    {
+      "action": "white_lady_assault",
+      "name": "Claws and bite",
+      "to_hit": "4",
+      "damage": "1d4",
+      "dice": "1d4"
+    },
+    {
+      "action": "fifth-srd:move"
+    }
+  ],
+  "xp": 200,
+  "behavior": "white_lady_tactics"
+}

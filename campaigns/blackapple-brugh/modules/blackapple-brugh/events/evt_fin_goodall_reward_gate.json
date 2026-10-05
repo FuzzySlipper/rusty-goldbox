@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_goodall_reward_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "(campaign.var.child_amelia_goodall == 'returned' or campaign.var.child_bernard_goodall == 'returned') and not campaign.var.goodall_reward_given",
+      "next": "evt_fin_goodall_reward_text"
+    }
+  ],
+  "otherwise": "evt_fin_after_children"
+}

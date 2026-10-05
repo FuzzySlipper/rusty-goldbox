@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_jack_containment_set",
+  "kind": "set",
+  "variable": "blackapple_optional_jack_secret",
+  "value": "\"consented_containment\"",
+  "next": "evt_vil_optional_jack_containment_text"
+}

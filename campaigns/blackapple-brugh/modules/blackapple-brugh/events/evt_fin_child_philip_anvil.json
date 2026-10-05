@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_philip_anvil",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.return_account_complete and campaign.var.child_philip_anvil != 'freed'",
+      "next": "evt_fin_child_ursula_cooke"
+    },
+    {
+      "when": "campaign.var.child_philip_anvil == 'freed'",
+      "next": "evt_fin_child_philip_anvil_freed"
+    },
+    {
+      "when": "campaign.var.child_philip_anvil == 'returned'",
+      "next": "evt_fin_child_philip_anvil_returned"
+    },
+    {
+      "when": "campaign.var.child_philip_anvil == 'captive'",
+      "next": "evt_fin_child_philip_anvil_captive"
+    },
+    {
+      "when": "campaign.var.child_philip_anvil == 'unknown'",
+      "next": "evt_fin_child_philip_anvil_unknown"
+    }
+  ],
+  "otherwise": "evt_fin_child_philip_anvil_unknown"
+}

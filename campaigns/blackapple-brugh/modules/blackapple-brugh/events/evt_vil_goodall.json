@@ -1,0 +1,31 @@
+{
+  "type": "event",
+  "id": "evt_vil_goodall",
+  "kind": "menu",
+  "text": "Ms. Goodall keeps an appraiser's eye on the room and a mother's eye on every mention of Amelia and Bernard. She will answer questions if you keep the children's names out of the market gossip.",
+  "options": [
+    {
+      "label": "Ask what changed in her children",
+      "next": "evt_vil_goodall_evidence"
+    },
+    {
+      "label": "Ask for a resale quote on carried gear",
+      "next": "evt_vil_goodall_trade"
+    },
+    {
+      "label": "Return to the families",
+      "next": "evt_vil_parents"
+    },
+    {
+      "label": "Ask Goodall to appraise the closed-eye pendant",
+      "when": "carried(item.id == 'truth_token') > 0",
+      "next": "evt_vil_goodall_appraise"
+    },
+    {
+      "label": "Ask Goodall to appraise Agatha's carried preparations",
+      "when": "carried(item.id == 'agatha_bed_time_tea') > 0 or carried(item.id == 'agatha_berserker_juice') > 0 or carried(item.id == 'agatha_love_potion_eight') > 0 or carried(item.id == 'agatha_right_rain') > 0 or carried(item.id == 'agatha_possum_powder') > 0 or carried(item.id == 'agatha_lichguard') > 0",
+      "next": "evt_vil_goodall_appraise_preparations"
+    }
+  ],
+  "picture": "blackapple-art:blackapple_goodall_shop"
+}

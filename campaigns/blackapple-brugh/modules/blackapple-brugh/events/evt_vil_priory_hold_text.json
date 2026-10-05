@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_priory_hold_text",
+  "kind": "text",
+  "text": "The priory has a quiet room and a rule against public punishment. If a double is exposed, the clerics can contain it while the family decides what can be proved. Father Naskew asks you to bring evidence before bringing a crowd.",
+  "picture": "blackapple-art:blackapple_priory"
+}

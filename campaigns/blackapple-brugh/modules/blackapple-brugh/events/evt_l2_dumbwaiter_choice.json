@@ -1,0 +1,24 @@
+{
+  "type": "event",
+  "id": "evt_l2_dumbwaiter_choice",
+  "kind": "menu",
+  "text": "One companion can crank the lift while the others keep hold of the shaft rails. Which route will the party take?",
+  "options": [
+    {
+      "label": "Open the lift for the whole active party",
+      "next": "evt_l2_lift_open"
+    },
+    {
+      "label": "Use the stairs to Level 3 instead",
+      "next": "evt_l2_to_l3"
+    },
+    {
+      "label": "Leave the dumbwaiter closed",
+      "next": "evt_l2_c14"
+    },
+    {
+      "label": "Leave the service area and use its connected exits",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

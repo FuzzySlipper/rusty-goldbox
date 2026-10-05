@@ -1,0 +1,229 @@
+{
+  "task": "9305 final runtime art pack",
+  "group": "environs-service",
+  "conversion": "Opaque RGB to RGBA alpha255 only; no resize crop composite or creative modification",
+  "assets": [
+    {
+      "id": "environs_faehill",
+      "source": "art/production/environs-service/originals/environs_faehill.png",
+      "runtime": "modules/blackapple-art/pictures/environs_faehill.png",
+      "source_sha256": "1fc75a721c40b67ff47fca33acd38c93fb759d28e7e105beca8c2492ade8a9bf",
+      "runtime_sha256": "810a8ae78f60e45cdae70d5b4690d4dc77ac87b818259d071d1f9a6a01f692a4",
+      "decoded_rgb_sha256": "fcbcc0b04bf1b58fa0e5b0f5919ce15a55c70333d7849ab925924399a6373d35",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_faehill.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_faehill.png"
+      ]
+    },
+    {
+      "id": "environs_fairy_ruins",
+      "source": "art/production/environs-service/originals/environs_fairy_ruins.png",
+      "runtime": "modules/blackapple-art/pictures/environs_fairy_ruins.png",
+      "source_sha256": "aaf627e736a109d6ea00accc43f7c9909485322daa3d10a4ca3a2fc8c8e2e765",
+      "runtime_sha256": "1c488eb87ccbf160043b73d890aa2f8c84248173407cb2f97ad9c17178049b37",
+      "decoded_rgb_sha256": "00533be70cbef0cd7d42a131b230b9b6143be52ac5d39091b294728d3200e5f5",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_fairy_ruins.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_fairy_ruins.png"
+      ]
+    },
+    {
+      "id": "environs_hen_teeth",
+      "source": "art/production/environs-service/originals/environs_hen_teeth.png",
+      "runtime": "modules/blackapple-art/pictures/environs_hen_teeth.png",
+      "source_sha256": "2b296b4a17ce8a693a3bab8f05a3498f12672cd4db98a9b5dd39b8eb31555d4a",
+      "runtime_sha256": "4bdee2060015a42a551f0c889c3265d592fdeff7222852eaa8d0f2cfaede7722",
+      "decoded_rgb_sha256": "d6d693dd94b252e6666d7c81dde7cf45c6a233d56269b1fc74d4ac6c63960b15",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_hen_teeth.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_hen_teeth.png"
+      ]
+    },
+    {
+      "id": "environs_sanitarium",
+      "source": "art/production/environs-service/originals/environs_sanitarium.png",
+      "runtime": "modules/blackapple-art/pictures/environs_sanitarium.png",
+      "source_sha256": "228e16772e74718308bc5592c5a74e6d0e95a596f40c4b41e401b81e3a0efbaa",
+      "runtime_sha256": "f4a508a46d0c255bab0f73db0a9bcc35848cc4533fd606a22bc225762207e52d",
+      "decoded_rgb_sha256": "ab827b0cac1a3be39b2de342e8e9ceda54ccb2b2a8fcb3c61f31a481fa610e7a",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_sanitarium.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_sanitarium.png"
+      ]
+    },
+    {
+      "id": "environs_shrine_confession",
+      "source": "art/production/environs-service/originals/environs_shrine_confession.png",
+      "runtime": "modules/blackapple-art/pictures/environs_shrine_confession.png",
+      "source_sha256": "25839b0415ef872d8206953d21c448d3e57aaa3fce1968f5a62f884e63b2567e",
+      "runtime_sha256": "63ee544d8b5bedfb90703b10a8638294d9356f4d8641be157b9f316703fa5f41",
+      "decoded_rgb_sha256": "38dba666d1a259150a3b05d733ea44f410162189786721bd6e814fa01e15445e",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_shrine_confession.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_shrine_confession.png"
+      ]
+    },
+    {
+      "id": "environs_wild_dog_lair",
+      "source": "art/production/environs-service/originals/environs_wild_dog_lair.png",
+      "runtime": "modules/blackapple-art/pictures/environs_wild_dog_lair.png",
+      "source_sha256": "1c4564724e224111070f1eb357e820a8fa3dc2992fde545fd61a13469c24e41b",
+      "runtime_sha256": "2b4e6cfd6d6418259e4c8b8105c343980f63c9e08d43f06a2388bf405d2a8bc4",
+      "decoded_rgb_sha256": "b6dd62a5df200acc715080c0f049a2679cc6fa3eae758137bdb87f93e701b42f",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "conversion": "FFmpeg format=rgba only: added opaque alpha, no resize/crop/composite/paint",
+      "conversion_command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-threads",
+        "1",
+        "-i",
+        "art/production/environs-service/originals/environs_wild_dog_lair.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "modules/blackapple-art/pictures/environs_wild_dog_lair.png"
+      ]
+    }
+  ]
+}

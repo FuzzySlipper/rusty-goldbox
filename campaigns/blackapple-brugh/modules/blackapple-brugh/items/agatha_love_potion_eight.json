@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "agatha_love_potion_eight",
+  "name": "Agatha's Love Potion #8",
+  "kind": "consumable",
+  "cost": 80,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1,
+  "use": {
+    "operations": [
+      {
+        "op": "apply_condition",
+        "condition": "blackapple-fae:agatha_love_potion"
+      }
+    ],
+    "duration_days": "1"
+  }
+}

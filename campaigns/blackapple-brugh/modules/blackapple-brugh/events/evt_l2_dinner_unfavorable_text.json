@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_unfavorable_text",
+  "kind": "text",
+  "text": "The Elf Lord's attention narrows to one companion at the table. The court opens the pit as a focused rescue vignette: the separated companion is the scene's target, but the party remains one world position and can still intervene together.",
+  "next": "evt_l2_focused_intervention"
+}

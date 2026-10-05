@@ -1,0 +1,72 @@
+# Adverse ordinary route: fail C13 into the immediate whole-party attack, recover through C18, and return with no rescues.
+choose 2
+choose 1
+right
+forward
+left
+forward
+choose 2
+left
+forward
+choose 1
+choose 1
+right
+forward
+choose 3
+forward
+choose 1
+choose 1
+choose 1
+choose 2
+# Prepared-entry checkpoint: accept the coatroom ticket, then walk into C2.
+choose 1
+choose 1
+choose 1
+forward
+choose 3
+status
+# Leave the reception lounge and cross the ordinary C3-C5 rooms without a
+# child rescue before continuing toward the lower stairs.
+pick east
+forward
+choose 2
+forward
+choose 3
+forward
+choose 3
+forward
+choose 3
+right
+forward
+choose 4
+right
+forward
+forward
+choose 3
+forward
+choose 3
+forward
+forward
+choose 1
+# Join the feast, take the authored immediate whole-party attack, and recover at C18.
+choose 2
+choose 3
+choose 1
+choose 1
+choose 3
+choose 2
+search south
+forward
+# Leave Ned behind, then take the ordinary C27 return.
+choose 3
+left
+forward
+choose 3
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 1
+choose 2

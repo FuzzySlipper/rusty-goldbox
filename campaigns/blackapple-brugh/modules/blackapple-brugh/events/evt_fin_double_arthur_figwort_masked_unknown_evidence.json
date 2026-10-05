@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_arthur_figwort_masked_unknown_evidence",
+  "kind": "set",
+  "variable": "double_arthur_figwort_evidence",
+  "value": "\"no reliable current account\"",
+  "next": "evt_fin_double_arthur_figwort_masked_unknown_text"
+}

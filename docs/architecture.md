@@ -39,9 +39,9 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
 | `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
 | `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from Engine Random, with a record of each roll; scoped streams for continuous commands and keyed draws for persisted live battles |
-| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, and the creature view expressions read |
-| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
-| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress and lifepath age, choices, rolls and results, and refusing one made under a different module set |
+| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, authored perception scope/mode and absolute campaign-day condition expiries, and the creature view expressions read |
+| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices, starting equipment and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
+| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress, lifepath age, choices, rolls and results, saved `condition_expiry` values and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
 | `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
@@ -52,13 +52,20 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
 | `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
 | `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, party and inventory; characters own declared currency balances and equipment |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; trading changes the existing character balances, party inventory and equipment; `CurrencyLedger` owns pooled payments and splits |
+| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, current text-view event and selected member, party and inventory; characters own declared currency balances, equipment and perception results |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; resolves perception checks through the existing evaluator and selects authored member views without changing shared routes; trading changes the existing character balances, party inventory and equipment; equipment commands transfer existing copies through `CharacterRules` restrictions; optional shop buying cash lives in existing campaign/area variables; `CurrencyLedger` owns pooled payments and splits |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Consumable.cs` | The `use <member> <item-id>` command, applying an item's existing scene operations to one carried copy and expiring durable conditions when rest or training advances campaign time |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.SpellReward.cs` | The data-driven `spell_reward` event: filters known spells from ruleset castability, chooses the highest eligible active-class level, draws once among that level and adds the selected definition to the character's known spells |
+| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Shop.cs` | Shop offers, scalar finite stock in existing campaign/area variables, optional buying fraction/cash/value policy and the buy/sell mutations |
 | `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyGoldbox.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
 | `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
-| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including combat placement, surprise and flee branches |
+| `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
+| `src/RustyGoldbox.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
+| `src/RustyGoldbox.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export; Engine owns the container format and identity |
+| `src/RustyGoldbox.Cli/AuthoringKit/` | Embedded, copyable revision-1.0 authoring kit with index, brief/canon/chapter/encounter/art/image-judge/handoff/workflow/revision prompts and the complete Lantern worked example, discovered through the installed authoring commands |
+| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
 | `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
 | `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand`, `PackCommand`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
@@ -67,8 +74,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
-| `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL |
-| `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, including visible lifepath career/table choices and the resulting term ledger, and copying JSON into an Engine `UiValue` |
+| `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL; asset sampling accompanies the projection |
+| `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, including usable/count-grouped inventory, finite shop `remaining` and buying limits, and member `derived` values filtered by `show_on_sheet`, plus copying JSON into an Engine `UiValue` |
 | `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
 | `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
 | `src/RustyGoldbox.Game/FightReplay.cs` | Presentation of already committed fight facts by stable combatant ID: track values, defeats and the acting combatant as each fact shows |
@@ -77,12 +84,16 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
 | `src/RustyGoldbox.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
 | `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
+| `src/RustyGoldbox.Game/Presentation/TextureSampling.cs` | Maps authored nearest/linear sampling to the pinned Engine resource request and isolates cropped atlas UVs by half a source pixel |
 | `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
 | `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `goldbox.command` intents and keeps the one presentation-only choice (which overlay the player opened) |
 | `src/ui/layout.js` and `look.js` | The arrangement for the window's shape and its ratios as CSS variables; the stylesheet and a skin's overrides |
-| `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet, shop, temple, trainer) |
+| `src/ui/dom.js` | DOM image presentation over Engine image URLs, including authored sampling and isolated sheet-frame cropping |
+| `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet with Use/Equip/Gear actions and derived values, shop with stock counts and disabled sold-out buys, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
+| `campaigns/` | Retained editable campaign sources; shared canon supplies authored story and ID contracts, while Core owns their runtime values |
+| `campaigns/blackapple-brugh/art/` | Original reference images, style/identity/slot contracts, exact generation prompts and provenance; asset-module runtime definitions remain separate |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
 | `modules/universal-d100/` | Basic Roleplaying's d100 rules from Chaosium's ORC Content Document, with `PROVENANCE.md` (ORC notices) and `LICENSE-ORC.txt`: rolled characteristics, skills by profession, dodge and shield parry, armour, major wounds |
@@ -219,7 +230,9 @@ and runs the fight inside the Engine tool host; run k uses random scope
 ## Campaigns
 
 `CampaignRunner` owns play: it takes one command at a time (`forward`,
-`back`, `left`, `right`, `around`, `search [direction]`, `choose <n>`, `look`, `status`,
+`back`, `left`, `right`, `around`, `search [direction]`, `choose <n>`,
+`buy <n>`, `sell <n>`, `equip <member> <item-id>`,
+`unequip <member> <item-id>`, `use <member> <item-id>`, `look`, `status`,
 `level <member>`, `former <member> on|off`) and returns `PlayFact`s. Moving checks the edge on that side; entering a cell
 runs its event if the facing and once-only rules allow. An event chain runs
 until a menu or live combat waits for a choice, the chain ends, or the
@@ -239,6 +252,33 @@ nothing. `CampaignRunner` gives command *n* a dice stream
 scoped `goldbox.play.<n>` from the campaign's seed, which a save records with
 the command count; that is what makes a resumed save roll as an unbroken run.
 
+`CampaignRunner.Consumable.cs` checks the selected active member and carried
+item before evaluating an optional `$.use.duration_days` expression, consumes
+one occurrence, and sends its `damage`, `heal`, `apply_condition` or
+`remove_condition` operations through the existing scene operation path.
+Pending combat, menu, shop, temple and training states, an ended campaign,
+missing `use` data and equipped-only copies are refusals. A timed durable
+condition stores its absolute expiry on `Character`; `CampaignRunner.Rest.cs`
+and `CampaignRunner.Training.cs` advance the existing `ElapsedDays` and call
+the same expiry cleanup. `CharacterFile` writes the map as
+`condition_expiry`, and `SaveFile` embeds it with each party character.
+
+`CampaignRunner.SpellReward.cs` handles the `spell_reward` event from
+`EventTypes`. For each named member, or every active member when omitted, it
+uses ruleset castability, filters the existing known list, keeps the highest
+level represented on an active class list and makes one Engine-backed draw
+among that level. It adds the chosen definition to the ordinary `Spells` list;
+an empty pool publishes a `SpellRewardFact` with no roll. Once-only behavior
+comes from the authored trigger or variable path that reaches the event.
+
+`CampaignRunner.Shop.cs` reads a shop's offers and existing variable values.
+An optional `$.items[i].stock` variable is a nonnegative whole scalar count and
+decrements after a successful buy. An optional `buying` object uses the
+ruleset's `economy.sell_fraction` unless it supplies `fraction`, requires a
+currency, treats an omitted `balance` as unlimited cash and an omitted
+`max_value` as no value limit. `ShopFact` carries `Remaining`, buying currency
+and maximum value to both CLI output and the Game projection.
+
 A save is the JSON `SaveFile` writes. `goldbox play` keeps it in a file, or
 with `--store <dir>` in a `SaveSlots` slot of that Engine persistence root;
 the Game uses the same slots (scope `goldbox-saves`), so either loads the
@@ -246,6 +286,17 @@ other's saves. Pending combat saves include the active turn, budgets,
 conditions, controller state and optional decision. Live battles use Engine
 keyed random draws with a persisted scope and draw index, so inspection,
 rejected choices and save/load do not restart the battle's random sequence.
+
+`CampaignRunner.Scene.cs` resolves authored scene checks with `Evaluator.Check`
+and applies the supported scene effects through `TrackOperations` and the
+existing character/creature conversion. It publishes check, damage, healing
+and condition facts; it owns no parallel hazard state. Scene conditions must
+be durable and have no application/turn hooks, per-application values or
+duration; declared condition defaults remain available. Consumable uses share
+that durable condition owner and add their separate campaign-day expiry map.
+The campaign authors
+recovery and defeat routing. Campaign expression scopes expose the current
+active count to `party_size()` rather than storing a second capacity value.
 
 ## Characters
 
@@ -264,7 +315,8 @@ left leaves the next level waiting for another class. Features fill the
 grants of creation, the advancement and the class level in that order. A
 character file stores its choices, its tracks' current values (and the level
 track's maximum), each level's class, gain and features, staged creation's
-evaluated choice values, and the module IDs and versions it was made under. Reading it needs each of those
+evaluated choice values, durable condition expiries and the module IDs and
+versions it was made under. Reading it needs each of those
 modules loaded at a compatible version; extra modules, such as a campaign that
 requires the ruleset, are fine. Ordinary derived values are never stored; the
 sheet computes them, while staged creation keeps its evaluated first-stage
@@ -309,7 +361,12 @@ scope `goldbox.character.<n>` and the game starts from the same seed, so a
 session replays from it. Play commands are the same text commands `goldbox
 play` scripts use.
 
-The party screen exposes every available creation in `creations`. A staged
+The party screen exposes every available creation in `creations`, including
+the authored attribute details, standard array, assignment order, and point-buy
+base, budget and cost rows. Its score and priority controls submit those choices
+through `GameCommands` to the existing `CreationRequest`; Core applies the method
+and checks its constraints. The page retains only the player's unsent choices.
+A staged
 creation is rolled with `roll` first; the party member then carries its actual
 attributes and `skillPoints` budgets/base values in the projection. The DOM
 submits a second `skills` action with profession and personal allocations, and
@@ -395,8 +452,14 @@ came from; the projection's `skin` is that pick, else the open campaign's
 After each update that changed something, and on `Start` and `Restart`, the
 product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,
 campaigns, the party, and in play the position, the player-view map, the
-waiting menu, the latest log lines, the event picture (a media object) and the
-music playing. The DOM renders it and holds no state.
+waiting menu, the latest log lines, the event picture (a media object), the
+music playing, grouped inventory with its `usable` flag, and shop offers with
+`remaining` and buying limits. `SessionProjection` builds member `derived`
+values from the existing evaluator only for definitions with
+`show_on_sheet: true`. The member and shop overlays send the same play command
+strings (`use`, `equip`, `unequip`, `buy`, `sell`, `leave`); they disable gear
+while a pending interaction owns commands and disable a buy at zero remaining
+stock. The DOM renders the projection and holds no game state.
 
 ## Build and host
 

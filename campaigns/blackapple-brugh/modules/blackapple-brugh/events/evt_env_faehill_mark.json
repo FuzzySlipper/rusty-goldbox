@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_faehill_mark",
+  "kind": "set",
+  "variable": "environs_faehill_seen",
+  "value": "true",
+  "next": "evt_env_faehill_scene"
+}

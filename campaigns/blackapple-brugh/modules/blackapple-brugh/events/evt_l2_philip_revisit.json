@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_philip_revisit",
+  "kind": "text",
+  "text": "The server corridor is quieter now. Philip's place is empty, and the dumbwaiter crank remains available to a party that can make the authored live-size check.",
+  "next": "evt_l2_philip_menu"
+}

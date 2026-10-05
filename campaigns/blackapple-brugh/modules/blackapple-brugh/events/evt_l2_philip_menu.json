@@ -1,0 +1,39 @@
+{
+  "type": "event",
+  "id": "evt_l2_philip_menu",
+  "kind": "menu",
+  "text": "The service corridor connects the dining hall, servant quarters, and the dumbwaiter. What will the party do?",
+  "options": [
+    {
+      "label": "Use a remembered smith rhythm to reach Philip",
+      "when": "campaign.var.child_philip_anvil == 'captive'",
+      "next": "evt_l2_philip_check"
+    },
+    {
+      "label": "Inspect the dumbwaiter and its live party-size limit",
+      "when": "not campaign.var.route_dumbwaiter",
+      "next": "evt_l2_dumbwaiter_intro"
+    },
+    {
+      "label": "Ride the opened dumbwaiter to Level 3",
+      "when": "campaign.var.route_dumbwaiter",
+      "next": "evt_l2_to_kitchen_lift"
+    },
+    {
+      "label": "Return to the dining hall",
+      "next": "evt_l2_c13_revisit"
+    },
+    {
+      "label": "Return to the ballroom",
+      "next": "evt_l2_c12_menu"
+    },
+    {
+      "label": "Use the stairs to Level 3 instead",
+      "next": "evt_l2_to_l3"
+    },
+    {
+      "label": "Leave the service area and use its connected exits",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

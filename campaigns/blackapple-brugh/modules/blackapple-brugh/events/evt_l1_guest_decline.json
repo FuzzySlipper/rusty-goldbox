@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "evt_l1_guest_decline",
+  "kind": "text",
+  "text": "You decline the beds and keep the party's own watch. The court records the refusal as a choice, not an insult."
+}

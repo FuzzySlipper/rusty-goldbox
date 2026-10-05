@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_046",
+  "kind": "set",
+  "variable": "elf_bargain_accepted",
+  "value": "false",
+  "next": "evt_fin_setup_truth_no_proof_047"
+}

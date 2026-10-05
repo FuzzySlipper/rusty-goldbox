@@ -1,0 +1,19 @@
+{
+  "type": "check",
+  "id": "investigate_evidence",
+  "name": "Investigate evidence",
+  "roll": "1d20",
+  "bonus": "self.int_mod",
+  "target": "10",
+  "succeeds": "at-least",
+  "tiers": [
+    {
+      "name": "critical",
+      "when": "check.roll == 20"
+    },
+    {
+      "name": "clear_evidence",
+      "when": "check.margin >= 5"
+    }
+  ]
+}

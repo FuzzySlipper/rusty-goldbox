@@ -2,5 +2,6 @@
   "type": "derived",
   "id": "ac",
   "name": "Armor Class",
-  "value": "self.armor_base + min(self.dex_mod, self.dex_cap) + self.ac_bonus"
+  "value": "self.armor_base + min(self.dex_mod, self.dex_cap) + self.ac_bonus",
+  "show_on_sheet": true
 }

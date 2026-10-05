@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_cemetery_lichguard_use_text",
+  "kind": "text",
+  "text": "You sprinkle Lichguard over the fresh grave. The named protection is recorded: this grave will not produce a skeleton or zombie in the campaign. It does not cure or resurrect anyone, stop a stronger undead, or affect something already animated; no combat effect is claimed.",
+  "picture": "blackapple-art:blackapple_cemetery",
+  "next": "evt_vil_optional_hub"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_success",
+  "kind": "text",
+  "text": "The cu-sidhe accepts the party's answer as a completed resolution of the dog trouble. Pigman Jack will hear that the pack was handled, and his relationship with the party changes before the ordinary reward is delivered.",
+  "next": "evt_env_forest_mark_help"
+}

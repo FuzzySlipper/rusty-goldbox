@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_immediate_text",
+  "kind": "text",
+  "text": "The Elf Lord's smile vanishes. Brugh elves and ibix servants close around the whole table, and Moth-in-Water announces that the party has been invited to the pit as a single audience. The world keeps one party position as the court's trap takes hold.",
+  "next": "evt_l2_to_pit"
+}

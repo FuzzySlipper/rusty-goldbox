@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c22_salt_mark",
+  "kind": "set",
+  "variable": "brugh_l3_salt_taken",
+  "value": "true",
+  "next": "evt_l3_c22_salt_text"
+}

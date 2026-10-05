@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "agatha_lichguard",
+  "name": "Agatha's Lichguard",
+  "kind": "powder",
+  "cost": 3,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

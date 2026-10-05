@@ -1610,6 +1610,10 @@ public sealed class RuleSetBuilder
             {
                 CheckEvent(definition);
             }
+            else if (definition.Type == DefinitionTypes.Item)
+            {
+                CheckItem(definition);
+            }
             else if (definition.Type == DefinitionTypes.Asset)
             {
                 string file = definition.Json.GetProperty("file").GetString()!;
@@ -1752,7 +1756,7 @@ public sealed class RuleSetBuilder
             Error(asset, "asset.audio", "$.file", $"'{file}' is not audio the Engine decodes; use {string.Join(", ", Media.AudioFormats)}.");
         }
 
-        foreach (string field in Media.SheetFields.Append("regions").Where(field => asset.Json.TryGetProperty(field, out _)))
+        foreach (string field in Media.SheetFields.Append("regions").Append("sampling").Where(field => asset.Json.TryGetProperty(field, out _)))
         {
             Error(asset, "asset.audio", $"$.{field}", $"\"{field}\" is for pictures; this asset is audio.");
         }
@@ -1818,7 +1822,38 @@ public sealed class RuleSetBuilder
             if (rect[0] < 0 || rect[1] < 0 || rect[2] < 1 || rect[3] < 1 || (long)rect[0] + rect[2] > width || (long)rect[1] + rect[3] > height)
             {
                 Error(asset, "asset.regions", $"$.regions.{region.Name}", $"[{string.Join(", ", rect)}] must be [x, y, width, height] with a positive size inside the {width} x {height} image.");
+                continue;
             }
+
+            CheckLinearCrop(asset, $"$.regions.{region.Name}", rect[0], rect[1], rect[2], rect[3], width, height, "region");
+        }
+    }
+
+    /// <summary>
+    /// The pinned Engine rejects a degenerate sprite-atlas UV rectangle. A
+    /// half-pixel inset keeps linear filtering inside a crop, but a one-pixel
+    /// cropped axis would collapse when both edges move inward. Reject that
+    /// one concrete case at the module boundary so the DOM and Engine retain
+    /// the same authored sampling policy.
+    /// </summary>
+    private void CheckLinearCrop(Definition asset, string path, int x, int y, int cropWidth, int cropHeight, int imageWidth, int imageHeight, string kind)
+    {
+        if (!asset.Json.TryGetProperty("sampling", out JsonElement sampling)
+            || sampling.ValueKind != JsonValueKind.String
+            || sampling.GetString() != "linear")
+        {
+            return;
+        }
+
+        string? axis = x > 0 || cropWidth < imageWidth
+            ? cropWidth == 1 ? "width" : null
+            : null;
+        axis ??= y > 0 || cropHeight < imageHeight
+            ? cropHeight == 1 ? "height" : null
+            : null;
+        if (axis is not null)
+        {
+            Error(asset, "asset.sampling", path, $"linear sampling cannot safely filter a one-pixel cropped {kind} on its {axis} axis: the pinned Engine rejects a degenerate sprite-atlas UV rectangle (CSHARP_SPRITE_ATLAS_FRAME: DegenerateRect). Use \"nearest\" for this crop or make its {axis} dimension at least 2 pixels.");
         }
     }
 
@@ -1920,6 +1955,8 @@ public sealed class RuleSetBuilder
             return;
         }
 
+        CheckLinearCrop(asset, "$.frame_size", 0, 0, frameWidth, frameHeight, width, height, "sheet frame");
+
         int cells = width / frameWidth * (height / frameHeight);
         int count = cells;
         if (json.TryGetProperty("frame_count", out JsonElement declared))
@@ -2018,6 +2055,18 @@ public sealed class RuleSetBuilder
         string kind = definition.Json.GetProperty("kind").GetString()!;
         switch (kind)
         {
+            case "text":
+                CheckTextViews(definition);
+                break;
+            case "perception":
+                CheckPerception(definition);
+                break;
+            case "check":
+                CheckSceneCheck(definition);
+                break;
+            case "effect":
+                CheckSceneEffect(definition);
+                break;
             case "give" or "take":
                 if (definition.Json.TryGetProperty("count", out JsonElement copies) && copies.GetInt32() <= 0)
                 {
@@ -2054,8 +2103,76 @@ public sealed class RuleSetBuilder
             case "training" when !Characters.CharacterRules.RequiresTraining(_rules):
                 Error(definition, "event.training", "$", "A training event needs advancement.training with cost and days expressions in its ruleset.");
                 break;
-            case "shop" when _rules.Economy is null:
-                Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
+            case "spell_reward" when definition.Json.TryGetProperty("member", out JsonElement member) && member.GetInt32() < 1:
+                Error(definition, "event.spell-reward", "$.member", "A spell reward member number must be at least 1; omit it to reward every active party member.");
+                break;
+            case "shop":
+                if (_rules.Economy is null)
+                {
+                    Error(definition, "event.shop", "$", "A shop needs an economy definition in its ruleset, for example { \"type\": \"economy\", \"id\": \"standard\", \"sell_fraction\": 0.5 }.");
+                }
+
+                if (definition.Json.TryGetProperty("buying", out JsonElement buying)
+                    && buying.TryGetProperty("fraction", out JsonElement fractionValue)
+                    && (!fractionValue.TryGetDecimal(out decimal fraction) || fraction is < 0 or > 1))
+                {
+                    Error(definition, "event.shop.buying-fraction", "$.buying.fraction", "A shop buying fraction must be from 0 to 1, for example 0.9 for ninety percent of the item's cost.");
+                }
+
+                if (definition.Json.TryGetProperty("buying", out buying)
+                    && buying.TryGetProperty("max_value", out JsonElement maximum)
+                    && (!maximum.TryGetDecimal(out decimal maxValue) || maxValue < 0))
+                {
+                    Error(definition, "event.shop.buying-max-value", "$.buying.max_value", "A shop maximum item value must be a nonnegative decimal number that fits the currency range.");
+                }
+
+                if (_rules.References.TryGetValue((definition, "$.buying.balance"), out Definition? balance)
+                    && balance.Json.GetProperty("value_type").GetString() != "number")
+                {
+                    Error(definition, "event.shop.buying-balance", "$.buying.balance", "A shop buying balance must reference a numeric campaign or area variable.");
+                }
+
+                JsonElement items = definition.Json.GetProperty("items");
+                Evaluator initialEvaluator = new(_rules, null);
+                for (int index = 0; index < items.GetArrayLength(); index++)
+                {
+                    string stockPath = $"$.items[{index}].stock";
+                    if (!_rules.References.TryGetValue((definition, stockPath), out Definition? stock))
+                    {
+                        continue;
+                    }
+
+                    if (stock.Json.GetProperty("value_type").GetString() != "number")
+                    {
+                        Error(definition, "event.shop.stock-type", stockPath, "A shop stock reference must name a numeric campaign or area variable.");
+                        continue;
+                    }
+
+                    string initial = stock.Json.GetProperty("initial").GetString()!;
+                    if (_rules.TryExpression(stock, "$.initial", out CompiledExpression? initialExpression)
+                        && initialExpression!.Type == ExprType.Number)
+                    {
+                        try
+                        {
+                            decimal initialValue = initialEvaluator.Evaluate(initialExpression, new Scope(null, null)).Number;
+                            if (initialValue < 0 || decimal.Truncate(initialValue) != initialValue)
+                            {
+                                Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must start at a nonnegative whole number.");
+                            }
+                        }
+                        catch (ExpressionException exception)
+                        {
+                            Error(definition, "event.shop.stock-integral", stockPath,
+                                $"A shop stock variable must evaluate to a nonnegative whole number: {exception.Message}");
+                        }
+                    }
+                    else if (double.TryParse(initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double oversized)
+                        && (double.IsInfinity(oversized) || oversized > (double)decimal.MaxValue || oversized < (double)decimal.MinValue))
+                    {
+                        Error(definition, "event.shop.stock-integral", stockPath, "A shop stock variable must fit the decimal range and start at a nonnegative whole number.");
+                    }
+                }
+
                 break;
             case "set":
                 if (_rules.References.TryGetValue((definition, "$.variable"), out Definition? variable))
@@ -2073,6 +2190,186 @@ public sealed class RuleSetBuilder
             case "combat":
                 CheckCombatEvent(definition);
                 break;
+        }
+    }
+
+    private void CheckSceneCheck(Definition definition)
+    {
+        int member = definition.Json.GetProperty("member").GetInt32();
+        if (member < 1)
+        {
+            Error(definition, "event.check", "$.member", "A scene check member must be a positive 1-based party member number.");
+        }
+    }
+
+    private void CheckSceneEffect(Definition definition)
+    {
+        if (definition.Json.TryGetProperty("member", out JsonElement member) && member.GetInt32() < 1)
+        {
+            Error(definition, "event.effect", "$.member", "An effect member must be a positive 1-based party member number when given.");
+        }
+
+        JsonElement operations = definition.Json.GetProperty("operations");
+        if (operations.GetArrayLength() == 0)
+        {
+            Error(definition, "event.effect", "$.operations", "An effect needs at least one operation; use a text or branch event for a no-op scene step.");
+            return;
+        }
+
+        for (int index = 0; index < operations.GetArrayLength(); index++)
+        {
+            JsonElement operation = operations[index];
+            string op = operation.GetProperty("op").GetString()!;
+            string path = $"$.operations[{index}]";
+            if (op is ("damage" or "heal") && !operation.TryGetProperty("track", out _))
+            {
+                Error(definition, "event.effect", $"{path}.track", $"A campaign {op} operation needs an explicit track; there is no combat track here.");
+            }
+
+            if (op == "apply_condition")
+            {
+                if (operation.TryGetProperty("rounds", out _))
+                {
+                    Error(definition, "event.effect", $"{path}.rounds", "Timed condition rounds belong to combat turns; campaign effects use a condition's default duration instead.");
+                }
+
+                if (operation.TryGetProperty("values", out _))
+                {
+                    Error(definition, "event.effect", $"{path}.values", "Campaign effects do not keep transient condition values; define the condition's default values instead.");
+                }
+
+                if (_rules.References.TryGetValue((definition, $"{path}.condition"), out Definition? condition))
+                {
+                    if (condition.Json.TryGetProperty("instant", out JsonElement instant) && instant.GetBoolean())
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Instant conditions are combat operations; campaign effects need a condition that remains on the character.");
+                    }
+
+                    if (condition.Json.TryGetProperty("on_apply", out _))
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Conditions with on_apply need the combat operation executor; campaign effects need a durable condition without an apply hook.");
+                    }
+
+                    if (condition.Json.TryGetProperty("each_turn", out _)
+                        || condition.Json.TryGetProperty("end_of_turn", out _)
+                        || condition.Json.TryGetProperty("rounds_end", out _))
+                    {
+                        Error(definition, "event.effect", $"{path}.condition", "Turn hooks and turn duration belong to combat; campaign effects need a durable condition without combat timing.");
+                    }
+                }
+            }
+        }
+    }
+
+    private void CheckItem(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("use", out JsonElement use))
+        {
+            return;
+        }
+
+        JsonElement operations = use.GetProperty("operations");
+        if (operations.GetArrayLength() == 0)
+        {
+            Error(definition, "item.use", "$.use.operations", "A consumable use needs at least one operation; omit use for equipment.");
+            return;
+        }
+
+        bool hasDuration = use.TryGetProperty("duration_days", out _);
+
+        bool hasCondition = false;
+        for (int index = 0; index < operations.GetArrayLength(); index++)
+        {
+            JsonElement operation = operations[index];
+            string path = $"$.use.operations[{index}]";
+            string op = operation.GetProperty("op").GetString()!;
+            if (op is ("damage" or "heal") && !operation.TryGetProperty("track", out _))
+            {
+                Error(definition, "item.use", $"{path}.track", $"A consumable {op} operation needs an explicit track; there is no combat track here.");
+            }
+
+            if (op != "apply_condition")
+            {
+                continue;
+            }
+
+            hasCondition = true;
+            if (operation.TryGetProperty("rounds", out _))
+            {
+                Error(definition, "item.use", $"{path}.rounds", "Timed condition rounds belong to combat turns; consumable uses use duration_days for fictional campaign time.");
+            }
+
+            if (operation.TryGetProperty("values", out _))
+            {
+                Error(definition, "item.use", $"{path}.values", "Consumable uses do not keep transient condition values; define the condition's durable state instead.");
+            }
+
+            if (_rules.References.TryGetValue((definition, $"{path}.condition"), out Definition? condition))
+            {
+                if (condition.Json.TryGetProperty("instant", out JsonElement instant) && instant.GetBoolean())
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Instant conditions are combat operations; consumable uses need a condition that remains on the character.");
+                }
+
+                if (condition.Json.TryGetProperty("on_apply", out _))
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Conditions with on_apply need the combat operation executor; consumable uses need a durable condition without an apply hook.");
+                }
+
+                if (condition.Json.TryGetProperty("each_turn", out _)
+                    || condition.Json.TryGetProperty("end_of_turn", out _)
+                    || condition.Json.TryGetProperty("rounds_end", out _))
+                {
+                    Error(definition, "item.use", $"{path}.condition", "Turn hooks and turn duration belong to combat; consumable uses need a durable condition without combat timing.");
+                }
+            }
+        }
+
+        if (hasDuration && !hasCondition)
+        {
+            Error(definition, "item.use", "$.use.duration_days", "duration_days applies to an apply_condition operation; omit it for an immediate track change.");
+        }
+    }
+
+    private void CheckTextViews(Definition definition)
+    {
+        if (!definition.Json.TryGetProperty("views", out JsonElement views))
+        {
+            return;
+        }
+
+        if (views.GetArrayLength() == 0)
+        {
+            Error(definition, "event.views", "$.views", "A text event's views must contain at least one authored mode.");
+            return;
+        }
+
+        HashSet<string> modes = new(StringComparer.Ordinal);
+        int index = 0;
+        foreach (JsonElement view in views.EnumerateArray())
+        {
+            string mode = view.GetProperty("mode").GetString()!;
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", "A view mode must be nonempty text.");
+            }
+            else if (!modes.Add(mode))
+            {
+                Error(definition, "event.views", $"$.views[{index}].mode", $"View mode '{mode}' is repeated; each authored view needs a distinct mode.");
+            }
+
+            index++;
+        }
+    }
+
+    private void CheckPerception(Definition definition)
+    {
+        foreach (string field in new[] { "scope", "success_mode", "failure_mode" })
+        {
+            if (string.IsNullOrWhiteSpace(definition.Json.GetProperty(field).GetString()))
+            {
+                Error(definition, "event.perception", $"$.{field}", $"{field} must be nonempty text.");
+            }
         }
     }
 

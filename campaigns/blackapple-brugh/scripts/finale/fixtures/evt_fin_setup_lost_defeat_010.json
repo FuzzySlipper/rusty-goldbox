@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_010",
+  "kind": "set",
+  "variable": "double_bernard_goodall",
+  "value": "\"masked\"",
+  "next": "evt_fin_setup_lost_defeat_011"
+}

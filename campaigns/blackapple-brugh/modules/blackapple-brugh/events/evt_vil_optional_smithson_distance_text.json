@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_smithson_distance_text",
+  "kind": "text",
+  "text": "From the road, Smithson tells the party never to dig into Faehill. You hear him without stepping closer, and the warning is all that passes between you.",
+  "next": "evt_vil_optional_hub"
+}

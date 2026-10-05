@@ -1,0 +1,22 @@
+{
+  "type": "event",
+  "id": "evt_l3_c26_menu",
+  "kind": "menu",
+  "text": "Master Ned is a prisoner, a witness, and a possible companion. The party can free him without making him join.",
+  "options": [
+    {
+      "label": "Unfasten Master Ned and lead him out",
+      "when": "not area.var.brugh_l3_ned_rescued",
+      "next": "evt_l3_c26_rescue"
+    },
+    {
+      "label": "Speak with the horse before choosing",
+      "when": "not area.var.brugh_l3_ned_rescued",
+      "next": "evt_l3_c26_talk"
+    },
+    {
+      "label": "Leave the dungeon and search for the vault door",
+      "next": "evt_l3_c26_leave"
+    }
+  ]
+}

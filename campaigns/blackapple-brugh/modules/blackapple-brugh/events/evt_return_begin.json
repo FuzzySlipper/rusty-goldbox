@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_return_begin",
+  "kind": "set",
+  "variable": "brugh_exited",
+  "value": "true",
+  "next": "evt_return_close_window"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_015",
+  "kind": "set",
+  "variable": "double_bernard_goodall_evidence",
+  "value": "\"removed status retained from witness\"",
+  "next": "evt_fin_setup_truth_no_proof_016"
+}

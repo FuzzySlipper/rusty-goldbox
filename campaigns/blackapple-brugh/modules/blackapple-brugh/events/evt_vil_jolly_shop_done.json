@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_jolly_shop_done",
+  "kind": "text",
+  "text": "The innkeeper wraps the supplies and marks the party's tab. The road and the village's ordinary problems are still waiting.",
+  "picture": "blackapple-art:blackapple_jolly_fox"
+}

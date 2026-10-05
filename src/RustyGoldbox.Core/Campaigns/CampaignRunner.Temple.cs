@@ -45,7 +45,7 @@ public sealed partial class CampaignRunner
     private Expressions.Value EvaluateFor(Definition owner, string path, Character character, DiceRoller? dice)
     {
         Evaluator evaluator = new(_rules, dice);
-        return evaluator.Evaluate(_rules.Expression(owner, path), new Scope(character.ToCreature(), null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area)));
+        return evaluator.Evaluate(_rules.Expression(owner, path), new Scope(character.ToCreature(), null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area), PartySize: _state.Party.Count));
     }
 
     private bool CanPay(Definition owner, string label, Definition currency, decimal price, List<PlayFact> facts)
@@ -88,7 +88,7 @@ public sealed partial class CampaignRunner
         // Evaluate on the existing creature view before applying a paid service.
         Creature creature = character.ToCreature();
         Evaluator evaluator = new(_rules, dice);
-        Scope scope = new(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area));
+        Scope scope = new(creature, null, Variables: _state.Variables, PartyItems: _state.CarriedItems, AreaVariables: _state.ValuesFor(_state.Area), PartySize: _state.Party.Count);
         int before = dice.Rolls.Count;
         JsonElement operations = services[number - 1].GetProperty("operations");
         for (int index = 0; index < operations.GetArrayLength(); index++)
@@ -112,13 +112,7 @@ public sealed partial class CampaignRunner
         }
 
         CurrencyLedger.Pay(_state.Party, currency.Id, price);
-        foreach ((string id, TrackValue value) in creature.Tracks)
-        {
-            character.Tracks[id] = value;
-        }
-
-        character.Conditions.Clear();
-        character.Conditions.AddRange(creature.Conditions);
+        SyncCharacter(character, creature);
         facts.Add(new TextFact($"{character.Name} receives {label} for {Fact(price)} {currency.Name.ToLowerInvariant()}.") { Rolls = dice.Rolls.Skip(before).ToList() });
         facts.Add(Temple()!);
     }

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_parents_compare_rhyme",
+  "kind": "set",
+  "variable": "mirror_rhyme_known",
+  "value": "true",
+  "next": "evt_vil_parents_compare_text"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_spectacle_interrupt_text",
+  "kind": "text",
+  "text": "Your toast gives the ibix one heartbeat to slip aside. The Elf Lord calls it a clever variation, but the court's alarm rises beneath the laughter. Moth-in-Water still escorts you, now watching the party more closely.",
+  "next": "evt_l2_to_guest_rooms"
+}

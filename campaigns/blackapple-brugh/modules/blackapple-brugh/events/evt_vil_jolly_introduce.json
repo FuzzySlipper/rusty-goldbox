@@ -1,0 +1,25 @@
+{
+  "type": "event",
+  "id": "evt_vil_jolly_introduce",
+  "kind": "menu",
+  "text": "The Jolly Fox is warm, practical, and loud enough to drown out a village rumor. Burt and Griselda offer a safe bed, a shelf of ordinary supplies, and the kind of local news that only arrives after the second cup. What will you use first?",
+  "options": [
+    {
+      "label": "Rest and bind the party's wounds",
+      "next": "evt_vil_jolly_mark_rest"
+    },
+    {
+      "label": "Browse the supply shelf",
+      "next": "evt_vil_jolly_mark_shop"
+    },
+    {
+      "label": "Listen for useful rumors",
+      "next": "evt_vil_jolly_mark_rumors"
+    },
+    {
+      "label": "Leave the inn",
+      "next": "evt_vil_exit_choice"
+    }
+  ],
+  "picture": "blackapple-art:blackapple_jolly_fox"
+}

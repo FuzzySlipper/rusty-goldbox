@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "environs_faehill_seen",
+  "value_type": "boolean",
+  "scope": "area",
+  "initial": "false",
+  "description": "The party has received the Faehill warning in this environs area state."
+}

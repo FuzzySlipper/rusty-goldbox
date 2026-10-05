@@ -1,0 +1,14 @@
+{
+  "type": "event",
+  "id": "evt_vil_goodall_trade",
+  "kind": "shop",
+  "text": "Goodall counts her cash and names her terms: a ten-percent selling fee. She buys while she has enough gold on hand; larger treasures may have to wait for another buyer.",
+  "items": [],
+  "buying": {
+    "fraction": 0.9,
+    "currency": "fifth-srd:gold",
+    "balance": "blackapple_goodall_cash"
+  },
+  "next": "evt_vil_goodall_trade_done",
+  "picture": "blackapple-art:blackapple_goodall_shop"
+}

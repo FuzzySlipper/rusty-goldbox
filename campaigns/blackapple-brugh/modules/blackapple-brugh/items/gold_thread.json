@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "gold_thread",
+  "name": "Enchanted gold thread",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

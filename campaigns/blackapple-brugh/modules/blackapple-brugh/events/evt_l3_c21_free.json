@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21_free",
+  "kind": "set",
+  "variable": "child_stevie_leeford",
+  "value": "'freed'",
+  "next": "evt_l3_c21_evidence"
+}

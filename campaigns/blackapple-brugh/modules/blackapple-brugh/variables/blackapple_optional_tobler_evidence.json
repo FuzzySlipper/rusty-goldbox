@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "blackapple_optional_tobler_evidence",
+  "value_type": "text",
+  "scope": "area",
+  "initial": "'none'",
+  "description": "Private Blackapple optional investigation evidence: none, tobler_lead, agatha_truth, lichguard_witnessed, grave_abuse_exposed, declined, or private_evidence."
+}

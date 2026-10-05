@@ -1,0 +1,18 @@
+{
+  "type": "item",
+  "id": "agatha_berserker_juice",
+  "name": "Agatha's Berserker Juice",
+  "kind": "consumable",
+  "cost": 6,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1,
+  "use": {
+    "operations": [
+      {
+        "op": "apply_condition",
+        "condition": "blackapple-fae:agatha_berserker_rage"
+      }
+    ],
+    "duration_days": "1 / 24"
+  }
+}

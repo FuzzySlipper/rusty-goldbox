@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_env_faehill_arrival",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.environs_faehill_seen",
+      "next": "evt_env_faehill_revisit"
+    }
+  ],
+  "otherwise": "evt_env_faehill_mark"
+}

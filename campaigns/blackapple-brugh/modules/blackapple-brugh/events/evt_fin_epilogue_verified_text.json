@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_verified_text",
+  "kind": "text",
+  "text": "The truth is verified. Credible evidence reaches the village without pretending that an evidence-only retreat brought a child home.",
+  "next": "evt_fin_close"
+}

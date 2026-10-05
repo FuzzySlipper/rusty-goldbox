@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_priory_witness_reward",
+  "kind": "set",
+  "variable": "blackapple_priory_witness_rewarded",
+  "value": "true",
+  "next": "evt_vil_priory_witness_trust"
+}

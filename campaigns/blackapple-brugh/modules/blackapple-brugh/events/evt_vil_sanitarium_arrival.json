@@ -1,0 +1,25 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_arrival",
+  "kind": "menu",
+  "text": "The sanitarium is a clean country house with barred windows and a locked front door. An assistant waits in the hall. Behind him, Livinius has prepared instruments and insists that his patient is not Arthur at all, though he has no explanation for the contradiction.",
+  "options": [
+    {
+      "label": "Stop the operation and ask for Arthur's private memory",
+      "next": "evt_vil_sanitarium_investigate"
+    },
+    {
+      "label": "Call the priory and transfer custody safely",
+      "next": "evt_vil_sanitarium_transfer"
+    },
+    {
+      "label": "Refuse the treatment room and return with a letter",
+      "next": "evt_vil_sanitarium_leave"
+    },
+    {
+      "label": "Leave Arthur in Livinius's care for now",
+      "next": "evt_vil_sanitarium_delay_return"
+    }
+  ],
+  "picture": "blackapple-art:environs_sanitarium"
+}

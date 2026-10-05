@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l1_c9_seen",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "C9 Guest Room has been visited."
+}

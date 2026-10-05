@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_bernard_goodall_unknown",
+  "kind": "text",
+  "text": "The Bernard Goodall double — unknown. The party has no reliable current account; this is neither contained nor silently treated as escaped.",
+  "next": "evt_fin_double_bernard_goodall_unknown_menu"
+}

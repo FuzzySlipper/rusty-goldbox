@@ -1,0 +1,10 @@
+# No child is returned. Double decisions leave a loose/removed account while
+# all global evidence booleans remain false, so the account can choose no proof.
+status
+choose 2
+choose 1
+choose 4
+choose 2
+choose 1
+choose 2
+status

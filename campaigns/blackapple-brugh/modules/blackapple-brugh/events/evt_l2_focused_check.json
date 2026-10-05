@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_l2_focused_check",
+  "kind": "check",
+  "check": "blackapple-fae:court_negotiation",
+  "member": 1,
+  "on_success": "evt_l2_focused_success",
+  "on_failure": "evt_l2_focused_fail"
+}

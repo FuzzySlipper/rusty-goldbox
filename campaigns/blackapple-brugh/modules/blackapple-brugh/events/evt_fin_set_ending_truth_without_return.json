@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_set_ending_truth_without_return",
+  "kind": "set",
+  "variable": "ending_id",
+  "value": "\"ending.truth_without_return\"",
+  "next": "evt_fin_primary_text"
+}

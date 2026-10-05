@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_keep",
+  "kind": "text",
+  "text": "The attendant accepts your caution with a tiny bow. He points to the lounge and warns that the mirror will be covered once you leave this room.",
+  "next": "evt_l1_c1_leave"
+}

@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_removed_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.double_amelia_goodall_removal_cause == ''",
+      "next": "evt_fin_double_amelia_goodall_removed_cause"
+    }
+  ],
+  "otherwise": "evt_fin_double_amelia_goodall_removed_text"
+}

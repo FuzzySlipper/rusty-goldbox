@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_terms_text_giles_weadley",
+  "kind": "text",
+  "text": "The bargain is sealed only after the named child is released and you confirm the terms. The Elf Lord remains bargaining; this promise stands alongside the expedition's final fate.",
+  "next": "evt_fin_bargain_terms_set_giles_weadley"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_003",
+  "kind": "set",
+  "variable": "child_bernard_goodall",
+  "value": "\"unknown\"",
+  "next": "evt_fin_setup_lost_defeat_004"
+}

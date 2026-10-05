@@ -12,7 +12,7 @@ internal static class CharacterCommand
     private const string RandomScope = "goldbox.character";
 
     private const string Usage =
-        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--skill <id>=profession:<n>+personal:<n>,...] [--boosts <id>,...] [--spells <id>,...] [--portrait <asset>] [--lifepath <id> --career <id>[,<id>...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]] [--seed <n>] [--out <file>]\n"
+        "Usage: goldbox character new --module <path> [--class <id>] [--race <id>] [--name <name>] [--attributes <id>=<n>,...] [--priority <id>,...] [--creation <id>] [--feature <id>,...] [--skill <id>=profession:<n>+personal:<n>,...] [--boosts <id>,...] [--spells <id>,...] [--equipment <id>,...] [--portrait <asset>] [--lifepath <id> --career <id>[,<id>...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]] [--seed <n>] [--out <file>]\n"
         + "       goldbox character skills <file> --module <path> --skill <id>=profession:<n>+personal:<n>,... [--lifepath <id> --career <id>[,<id>...] [--terms <n>] [--skill-table <id>,...] [--benefit cash|material,...]] [--seed <n>]\n"
         + "       goldbox character level <file> --module <path> --xp <n> [--trained] [--class <id>] [--feature <id>,...] [--boosts <id>,...] [--seed <n>]\n"
         + "       goldbox character spells <file> --module <path> [--set <id>,...] [--memorise <id>,...]\n"
@@ -218,7 +218,7 @@ internal static class CharacterCommand
 
     private static int New(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--skill", "--boosts", "--spells", "--portrait", "--lifepath", "--career", "--terms", "--skill-table", "--benefit", "--seed", "--out"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--class", "--race", "--name", "--attributes", "--priority", "--creation", "--feature", "--skill", "--boosts", "--spells", "--equipment", "--portrait", "--lifepath", "--career", "--terms", "--skill-table", "--benefit", "--seed", "--out"], []);
         if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--module") is null))
         {
             error = Usage;
@@ -266,6 +266,12 @@ internal static class CharacterCommand
         if (character is null
             || (parsed.Single("--portrait") is string portrait && !CharacterRules.SetPortrait(set.Rules, character, portrait, problems))
             || (parsed.Single("--spells") is string spells && !CharacterRules.SetSpells(set.Rules, character, List(spells), problems)))
+        {
+            return output.Problems(problems);
+        }
+
+        if (parsed.All("--equipment").Count > 0
+            && !CharacterRules.SetEquipment(set.Rules, character, Values(parsed, "--equipment"), problems))
         {
             return output.Problems(problems);
         }

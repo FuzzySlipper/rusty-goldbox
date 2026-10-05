@@ -1,0 +1,6 @@
+{
+  "type": "event",
+  "id": "evt_l2_leave_room",
+  "kind": "text",
+  "text": "You finish looking around. The connected hallways lead onward."
+}

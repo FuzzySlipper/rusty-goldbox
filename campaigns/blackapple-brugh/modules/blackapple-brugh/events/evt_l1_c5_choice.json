@@ -1,0 +1,21 @@
+{
+  "type": "event",
+  "id": "evt_l1_c5_choice",
+  "kind": "menu",
+  "text": "What will you investigate in the library?",
+  "options": [
+    {
+      "label": "Pull the final volume from the shelf",
+      "when": "not campaign.var.route_secret_library",
+      "next": "evt_l1_c5_volume"
+    },
+    {
+      "label": "Search the shelves and map for a safe route",
+      "next": "evt_l1_c5_search_hint"
+    },
+    {
+      "label": "Leave the library",
+      "next": "evt_l1_c5_leave"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_arthur_figwort_hide_text",
+  "kind": "text",
+  "text": "The Arthur Figwort double — masked. The identity is withheld, so the double may still be at large.",
+  "next": "evt_fin_double_amelia_goodall"
+}

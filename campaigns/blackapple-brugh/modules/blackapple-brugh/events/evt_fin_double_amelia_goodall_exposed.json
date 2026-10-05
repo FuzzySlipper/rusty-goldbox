@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_amelia_goodall_exposed",
+  "kind": "text",
+  "text": "The Amelia Goodall double — exposed. The identity is known, but the return account still needs a response and a named consequence.",
+  "next": "evt_fin_double_amelia_goodall_exposed_menu"
+}

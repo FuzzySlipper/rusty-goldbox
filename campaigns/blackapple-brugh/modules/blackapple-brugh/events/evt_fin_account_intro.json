@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_account_intro",
+  "kind": "text",
+  "text": "The party has reached a safe room after the one-day mortal-world compression. Before anyone calls this a victory, the return account names each real child and each matching double. A child becomes returned only after the named family handoff; a double's custody or loss is recorded separately.",
+  "next": "evt_fin_child_arthur_figwort"
+}

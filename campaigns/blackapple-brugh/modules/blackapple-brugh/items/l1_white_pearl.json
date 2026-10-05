@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "l1_white_pearl",
+  "name": "White Lady pearl",
+  "kind": "gear",
+  "cost": 75,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_l2_c16_choice",
+  "kind": "menu",
+  "text": "The bunks are quiet. Search for what the child servers left behind, or return to the court's public rooms.",
+  "options": [
+    {
+      "label": "Search the bunks and footlockers",
+      "next": "evt_l2_c16_search"
+    },
+    {
+      "label": "Return to the dining hall",
+      "next": "evt_l2_c13_revisit"
+    },
+    {
+      "label": "Return to the pool door",
+      "next": "evt_l2_c17"
+    },
+    {
+      "label": "Return to the ballroom",
+      "next": "evt_l2_leave_room"
+    },
+    {
+      "label": "Leave the servant quarters and use their connected exits",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

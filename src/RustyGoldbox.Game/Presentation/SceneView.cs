@@ -309,11 +309,7 @@ internal sealed class SceneView : IDisposable
         foreach (JsonProperty frame in wallSet.Json.GetProperty("regions").EnumerateObject())
         {
             int[] rect = frame.Value.EnumerateArray().Select(value => value.GetInt32()).ToArray();
-            frames[frame.Name] = new UvRect(
-                (float)rect[0] / size.Width,
-                (float)rect[1] / size.Height,
-                (float)(rect[0] + rect[2]) / size.Width,
-                (float)(rect[1] + rect[3]) / size.Height);
+            frames[frame.Name] = TextureSampling.Region(wallSet, rect[0], rect[1], rect[2], rect[3], size);
         }
 
         return frames;
@@ -355,7 +351,7 @@ internal sealed class SceneView : IDisposable
         RenderResource? texture = _library.ReadModule(source.Location, bundle =>
         {
             using ContentReference reference = bundle.OpenReference(file);
-            return _engine.Graphics.OpenResourceFromContent(new RenderResourceContentRequest(reference, TextureFilter.Nearest, TextureWrap.Clamp)).Handle;
+            return _engine.Graphics.OpenResourceFromContent(new RenderResourceContentRequest(reference, TextureSampling.Filter(asset), TextureWrap.Clamp)).Handle;
         });
         if (texture is null)
         {

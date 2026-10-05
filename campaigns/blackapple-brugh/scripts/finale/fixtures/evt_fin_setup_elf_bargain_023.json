@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_023",
+  "kind": "set",
+  "variable": "double_ursula_cooke",
+  "value": "\"exposed\"",
+  "next": "evt_fin_setup_elf_bargain_024"
+}

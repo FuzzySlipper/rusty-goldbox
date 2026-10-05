@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_xp_opening_award",
+  "kind": "experience",
+  "amount": "300",
+  "each": true,
+  "text": "You have protected someone and established a credible mirror lead. Your growing experience will matter beyond Blackapple.",
+  "next": "evt_root_opening_resolution"
+}

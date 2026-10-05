@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c27_adversary_failure_text",
+  "kind": "text",
+  "text": "The reflection strikes first, leaving a 1d4 wound and a rise in court alarm. The second mirror is not a required exit; the mundane return choices remain available.",
+  "next": "evt_l3_c27_menu"
+}

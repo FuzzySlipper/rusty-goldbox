@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_tenpenny_ecology",
+  "kind": "text",
+  "text": "You identify fresh dog tracks, broken acorn shells, and a path where no living tree has been cut. The evidence points to a deliberate warning rather than a random pack. You can still approach the lair, or carry the observation back to Flynn and the village.",
+  "picture": "blackapple-art:tenpenny_forest",
+  "next": "evt_env_tenpenny_menu"
+}

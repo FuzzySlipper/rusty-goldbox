@@ -1,0 +1,4 @@
+# A completed ending must route through the postscript guard; these commands
+# only observe the loaded state and cannot award the finale rewards again.
+status
+status

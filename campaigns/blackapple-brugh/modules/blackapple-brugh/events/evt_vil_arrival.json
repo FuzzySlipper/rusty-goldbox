@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_arrival",
+  "kind": "text",
+  "text": "The north road drops into Blackapple, a careful village of pig farms, slate roofs, and old stories about a forest that must not be cut. Every doorway bears a little horseshoe. The guardhouse stands southwest of the north road. Follow the west lane before heading south through its gate; beyond it, the square is already whispering about the children.",
+  "picture": "blackapple-art:blackapple_village",
+  "next": "evt_vil_arrival_gate"
+}

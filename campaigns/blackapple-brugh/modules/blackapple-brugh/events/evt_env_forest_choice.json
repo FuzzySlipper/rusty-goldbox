@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_choice",
+  "kind": "menu",
+  "text": "The cu-sidhe holds the pack at the edge of the hollow. What is your answer?",
+  "options": [
+    {
+      "label": "Lower weapons, offer food, and repair the trampled path",
+      "next": "evt_env_forest_kindness"
+    },
+    {
+      "label": "Negotiate: speak of Ludann's bargain and ask what the forest needs",
+      "next": "evt_env_forest_negotiation"
+    },
+    {
+      "label": "Fight through the watch",
+      "next": "evt_env_forest_combat_intro"
+    },
+    {
+      "label": "Retreat with the party together and keep the warning",
+      "next": "evt_env_forest_retreat"
+    },
+    {
+      "label": "Leave the forest and return to Blackapple",
+      "next": "evt_env_return_blackapple"
+    }
+  ]
+}

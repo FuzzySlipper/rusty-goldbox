@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "court_token",
+  "name": "Brugh court token",
+  "kind": "gear",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l1_c1_mark_campaign",
+  "kind": "set",
+  "variable": "brugh_c1_seen",
+  "value": "true",
+  "next": "evt_l1_c1_attendant"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "brugh_l1_arrival_seen",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "The C1 arrival presentation has been seen in this Level 1 area instance."
+}

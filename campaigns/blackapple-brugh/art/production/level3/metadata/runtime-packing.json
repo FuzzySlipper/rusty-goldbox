@@ -1,0 +1,121 @@
+{
+  "conversion": "Opaque RGB to RGBA alpha255 only; no resize crop or creative modification",
+  "assets": [
+    {
+      "source": "art/production/level3/truth/brugh_dungeon_truth.png",
+      "runtime": "modules/blackapple-art/pictures/brugh_dungeon_truth.png",
+      "source_sha256": "3a6d8002867cecde5bc19140c5b8e0a2e98b07111e7485d381689216321d4a7d",
+      "runtime_sha256": "20fe5c43556e1c79b45ca35ddc04489e91fd9b8f4ebac3801ac6ca1aa4c9dce8",
+      "decoded_rgb_sha256": "48240841ace375394fa5f104ee20dfb7e1332c785a6fb0d4dd9eee4c07b04400",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 940,
+        "pix_fmt": "rgba"
+      },
+      "conversion_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-threads",
+        "1",
+        "-i",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/level3/truth/brugh_dungeon_truth.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dungeon_truth.png"
+      ]
+    },
+    {
+      "source": "art/production/level3/truth/brugh_treasure_vault_truth.png",
+      "runtime": "modules/blackapple-art/pictures/brugh_treasure_vault_truth.png",
+      "source_sha256": "544121844ea83a9399923ee403626b4703118360ec96a53e8f32e54f5c8257d9",
+      "runtime_sha256": "a475f6d803de091b03a926c0ed30a78467dd7bd9a6b135449afa47baad3a3e6a",
+      "decoded_rgb_sha256": "e27e713daea2c657e1d8e535553a4c1a71890fa60a5ee641cb568bc518b62758",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "conversion_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-threads",
+        "1",
+        "-i",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/level3/truth/brugh_treasure_vault_truth.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_treasure_vault_truth.png"
+      ]
+    },
+    {
+      "source": "art/production/level3/glamour/brugh_dungeon_glamour.png",
+      "runtime": "modules/blackapple-art/pictures/brugh_dungeon_glamour.png",
+      "source_sha256": "cacae85433ecee2d8a0ee9edbfd50b2e8d3b77262c885da4c4408804d96ea519",
+      "runtime_sha256": "c2f076e71e3e9f2925b21e75ea2556bf6223d9d4c5126daf24e0da758c949aaf",
+      "decoded_rgb_sha256": "bc8f1779847278cd0933e99b2b435df20181b0f8141c23944bc6ad5d047e85d4",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1673,
+        "height": 940,
+        "pix_fmt": "rgba"
+      },
+      "conversion_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-threads",
+        "1",
+        "-i",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/level3/glamour/brugh_dungeon_glamour.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_dungeon_glamour.png"
+      ]
+    },
+    {
+      "source": "art/production/level3/glamour/brugh_treasure_vault_glamour.png",
+      "runtime": "modules/blackapple-art/pictures/brugh_treasure_vault_glamour.png",
+      "source_sha256": "ae43f4d6cba070f122e4757017b6ffeeac78d09291046488988df4942998b668",
+      "runtime_sha256": "389941ac47a0cb6f05f70b2a3431926187e5ea7f2751e0efa30dfab07d3b13a8",
+      "decoded_rgb_sha256": "2a6110ad15e0bf4e92b15923a52a63daf0c926f7b9669ea45769f43208e27126",
+      "rgb_bytes_equal": true,
+      "runtime_dimensions": {
+        "width": 1672,
+        "height": 941,
+        "pix_fmt": "rgba"
+      },
+      "conversion_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-threads",
+        "1",
+        "-i",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/level3/glamour/brugh_treasure_vault_glamour.png",
+        "-vf",
+        "format=rgba",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/modules/blackapple-art/pictures/brugh_treasure_vault_glamour.png"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# C6 checkpoint after Giles: walk to C10, listen peacefully, take the one-time
+# ledger, exercise the noncombat alarm branch, leave, and revisit the room.
+right
+forward
+choose 1
+choose 2
+choose 2
+choose 3
+around
+forward
+choose 2
+right
+right
+forward
+choose 3
+status

@@ -41,7 +41,8 @@ public sealed record Scope(
     Definition? Item = null,
     IEnumerable<Definition>? PartyItems = null,
     IReadOnlyDictionary<string, Value>? AreaVariables = null,
-    IReadOnlyDictionary<string, Value>? BehaviorValues = null);
+    IReadOnlyDictionary<string, Value>? BehaviorValues = null,
+    int? PartySize = null);
 
 /// <summary>
 /// Evaluates checked expressions against creatures. Dice need a
@@ -639,6 +640,13 @@ public sealed class Evaluator(RuleSet rules, DiceRoller? dice)
                 IEnumerable<Definition> items = scope.PartyItems ?? throw new ExpressionException("carried() needs a running campaign's party items, but none were given.", call.Column);
                 int count = items.Count(item => new Run(evaluator, expression, scope with { Item = item }).Evaluate(call.Arguments[0]).Boolean);
                 return Value.Of(count);
+            }
+
+            if (call.Function == "party_size")
+            {
+                return scope.PartySize is int count
+                    ? Value.Of(count)
+                    : throw new ExpressionException("party_size() needs a running campaign, but no party was given.", call.Column);
             }
 
             if (call.Function == "spell_slots")

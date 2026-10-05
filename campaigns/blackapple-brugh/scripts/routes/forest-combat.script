@@ -1,0 +1,17 @@
+# Corrected ordinary route: village help, Tenpenny Wood, automatic headless fight.
+# This is bounded balance evidence only; the current runtime has no manual combat input.
+choose 2
+choose 1
+right
+forward
+left
+forward
+choose 3
+left
+forward
+choose 4
+choose 1
+choose 3
+choose 1
+choose 3
+status

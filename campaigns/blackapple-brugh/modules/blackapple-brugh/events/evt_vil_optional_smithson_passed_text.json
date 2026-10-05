@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_smithson_passed_text",
+  "kind": "text",
+  "text": "You leave Smithson undisturbed. His warning remains available on a later visit, and the road offers no contact hazard.",
+  "next": "evt_vil_optional_hub"
+}

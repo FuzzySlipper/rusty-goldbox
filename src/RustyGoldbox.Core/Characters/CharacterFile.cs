@@ -101,7 +101,13 @@ public static class CharacterFile
         new("memorised", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Memorised copies."),
         new("prepared", new Definitions.ListKind(new Definitions.ReferenceKind("spell")), false, "Unspent prepared copies; omit for the full plan."),
         new("conditions", new Definitions.ListKind(new Definitions.ReferenceKind("condition")), true, "Held conditions."),
-        new("portrait", new Definitions.ReferenceKind("asset", "portrait"), false, "Portrait art."),
+        new("condition_expiry", new Definitions.MapKind(new Definitions.ReferenceKind("condition"), new Definitions.NumberKind()), false, "Absolute fictional campaign days when held durable conditions end; every key must also be in conditions."),
+        new("portrait", new Definitions.ReferenceKind("asset", "picture"), false, "Portrait art (a picture slot; use the portrait tag to mark chooser art)."),
+        new("perception", new Definitions.ObjectKind(
+        [
+            new("scope", new Definitions.TextKind(), true, "The module-authored expedition scope."),
+            new("mode", new Definitions.TextKind(), true, "The module-authored result mode."),
+        ]), false, "The member's persisted perception result for the current expedition."),
         new("uses_former_classes", new Definitions.BooleanKind(), false, "Calling on dormant classes."),
         new("forfeits_experience", new Definitions.BooleanKind(), false, "Experience forfeited this adventure."),
         new("combat_control", new Definitions.EnumKind(["automatic", "manual"]), false, "Preferred controller for the next combat; omit to use the campaign or host default."),
@@ -346,6 +352,17 @@ public static class CharacterFile
             }
 
             WriteReferences(writer, "conditions", character.Conditions);
+            if (character.ConditionExpiryDays.Count > 0)
+            {
+                writer.WriteStartObject("condition_expiry");
+                foreach ((Definition condition, decimal days) in character.ConditionExpiryDays.OrderBy(entry => entry.Key.QualifiedId, StringComparer.Ordinal))
+                {
+                    writer.WriteNumber(condition.QualifiedId, days);
+                }
+
+                writer.WriteEndObject();
+            }
+
             if (character.Portrait is Definition portrait)
             {
                 writer.WriteString("portrait", portrait.QualifiedId);
@@ -354,6 +371,14 @@ public static class CharacterFile
             if (character.CombatControlPreference is CombatControlMode preference)
             {
                 writer.WriteString("combat_control", preference == CombatControlMode.Manual ? "manual" : "automatic");
+            }
+
+            if (character.Perception is PerceptionState perception)
+            {
+                writer.WriteStartObject("perception");
+                writer.WriteString("scope", perception.Scope);
+                writer.WriteString("mode", perception.Mode);
+                writer.WriteEndObject();
             }
 
             writer.WriteEndObject();
@@ -512,6 +537,7 @@ public static class CharacterFile
             }
 
             ReadList(root, "conditions", DefinitionTypes.Condition, character.Conditions);
+            ReadConditionExpiry(root, character);
             ReadList(root, "spells", DefinitionTypes.Spell, character.Spells);
             for (int index = 0; index < character.Spells.Count; index++)
             {
@@ -557,6 +583,8 @@ public static class CharacterFile
                 character.Portrait = asset;
             }
 
+            ReadPerception(root, character);
+
             List<ModuleDiagnostic> stagedProblems = [];
             CharacterRules.ValidateSkillPointState(_rules, character, stagedProblems);
             foreach (ModuleDiagnostic problem in stagedProblems)
@@ -575,6 +603,87 @@ public static class CharacterFile
             }
 
             return problems.Count > _before ? null : character;
+        }
+
+        private void ReadPerception(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("perception", out JsonElement perception))
+            {
+                return;
+            }
+
+            if (perception.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.perception", "perception must be an object with nonempty scope and mode text.");
+                return;
+            }
+
+            foreach (JsonProperty property in perception.EnumerateObject())
+            {
+                if (property.Name is not ("scope" or "mode"))
+                {
+                    Error($"$.perception.{property.Name}", $"'{property.Name}' is not a perception field. Fields: scope, mode.");
+                }
+            }
+
+            string? scope = perception.TryGetProperty("scope", out JsonElement scopeValue) && scopeValue.ValueKind == JsonValueKind.String
+                ? scopeValue.GetString()
+                : null;
+            string? mode = perception.TryGetProperty("mode", out JsonElement modeValue) && modeValue.ValueKind == JsonValueKind.String
+                ? modeValue.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(scope))
+            {
+                Error("$.perception.scope", "perception.scope must be nonempty text.");
+            }
+
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                Error("$.perception.mode", "perception.mode must be nonempty text.");
+            }
+
+            if (scope is not null && mode is not null && !string.IsNullOrWhiteSpace(scope) && !string.IsNullOrWhiteSpace(mode))
+            {
+                character.Perception = new PerceptionState(scope, mode);
+            }
+        }
+
+        private void ReadConditionExpiry(JsonElement root, Character character)
+        {
+            if (!root.TryGetProperty("condition_expiry", out JsonElement expiry))
+            {
+                return;
+            }
+
+            if (expiry.ValueKind != JsonValueKind.Object)
+            {
+                Error("$.condition_expiry", "condition_expiry must be an object mapping condition IDs to absolute fictional campaign days.");
+                return;
+            }
+
+            foreach (JsonProperty entry in expiry.EnumerateObject())
+            {
+                string path = $"$.condition_expiry.{entry.Name}";
+                Definition? condition = Resolve(entry.Name, path, DefinitionTypes.Condition);
+                if (condition is null)
+                {
+                    continue;
+                }
+
+                if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetDecimal(out decimal days) || days < 0)
+                {
+                    Error(path, "A condition expiry must be a nonnegative number of absolute fictional campaign days.");
+                    continue;
+                }
+
+                if (!character.Conditions.Contains(condition))
+                {
+                    Error(path, $"Condition expiry names {condition.QualifiedId}, but that condition is not held in conditions.");
+                    continue;
+                }
+
+                character.ConditionExpiryDays[condition] = days;
+            }
         }
 
         /// <summary>Reads "levels": one { "class", "gain", "features"? } per character level, none past its class's last level.</summary>

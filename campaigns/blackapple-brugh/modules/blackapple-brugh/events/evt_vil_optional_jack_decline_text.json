@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_jack_decline_text",
+  "kind": "text",
+  "text": "Jack keeps the wereboar secret on his own terms. You leave the gate without forcing contact, treatment, or confinement; the dog trail through the forest is still open.",
+  "next": "evt_vil_optional_hub"
+}

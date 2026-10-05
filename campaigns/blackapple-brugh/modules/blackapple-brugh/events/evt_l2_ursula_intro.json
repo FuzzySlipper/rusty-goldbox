@@ -1,0 +1,17 @@
+{
+  "type": "event",
+  "id": "evt_l2_ursula_intro",
+  "kind": "text",
+  "text": "The musician's station is crowded with pipes and a bass drum. A small child keeps the timpani beat while the ibix musicians stare straight ahead. The beat is wrong in a way that a village ear would recognize.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "Ursula Cooke sits rigidly at the timpani. The court's music is a harsh performance, and her hands pause whenever the old Blackapple bell rhythm should begin."
+    },
+    {
+      "mode": "glamour",
+      "text": "A joyful child musician keeps time for a brilliant little orchestra. The drumbeat seems to invite the party to join the dance."
+    }
+  ],
+  "next": "evt_l2_ursula_choice"
+}

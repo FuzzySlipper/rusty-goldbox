@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_primary_lost_in_brugh",
+  "kind": "text",
+  "text": "The Brugh overcame the party before anyone could return. No child's or double's fate is changed to soften the loss.",
+  "next": "evt_fin_epilogue_contained_text_gate"
+}

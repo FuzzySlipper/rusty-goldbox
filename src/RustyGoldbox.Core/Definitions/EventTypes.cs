@@ -14,12 +14,54 @@ public static class EventTypes
     private static readonly Field Picture = new("picture", new ReferenceKind("asset", "picture"), false, "A picture shown with the event, any visual media; it stays until the party moves or another event shows one.");
     private static readonly Field Sound = new("sound", new ReferenceKind("asset", "sound"), false, "Audio played once as the event begins.");
     private static readonly Field Music = new("music", new ReferenceKind("asset", "music"), false, "Audio that loops from this event on, until another event's music replaces it.");
+    private static readonly Field Views = new("views", new ListKind(new ObjectKind(
+    [
+        new("mode", new TextKind(), true, "The opaque mode selected by a member's persisted perception result."),
+        new("text", new TextKind(), true, "What a member in this mode sees or hears."),
+        new("picture", new ReferenceKind("asset", "picture"), false, "The logical picture shown for this mode."),
+    ])), false, "Presentation alternatives selected by the existing view <member> command; modes must be distinct.");
 
     public static DefinitionType Text { get; } = new(
         "text",
         "Shows text.",
-        [new("text", new TextKind(), true, "What the party sees or hears."), Next, Picture, Sound, Music],
-        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "picture": "crypt-art:gate", "sound": "crypt-art:creak", "next": "gate_choice" }""");
+        [new("text", new TextKind(), true, "What the party sees or hears when no member-specific view is selected."), Next, Picture, Sound, Music, Views],
+        """{ "type": "event", "id": "gate", "kind": "text", "text": "A rusted gate bars the way.", "picture": "crypt-art:gate", "sound": "crypt-art:creak", "next": "gate_choice", "views": [ { "mode": "truth", "text": "The gate is real." }, { "mode": "glamour", "text": "The gate is an archway." } ] }""");
+
+    public static DefinitionType Perception { get; } = new(
+        "perception",
+        "Resolves one module-authored check for every active party member and persists its opaque success or failure mode for the named expedition scope. An authored reset starts a fresh resolution even when the scope is unchanged.",
+        [
+            new("scope", new TextKind(), true, "The expedition scope. Entering a different scope clears older member results."),
+            new("check", new ReferenceKind("check"), true, "The authored check each member makes with the member as self."),
+            new("modifier", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false, "An optional extra modifier evaluated separately for each member."),
+            new("reset", new BooleanKind(), false, "If true, clears active and absent member results before this entry resolves, even when scope is unchanged."),
+            new("success_mode", new TextKind(), true, "Opaque mode stored when the member's check succeeds."),
+            new("failure_mode", new TextKind(), true, "Opaque mode stored when the member's check fails."),
+            Next,
+        ],
+        """{ "type": "event", "id": "brugh_entry", "kind": "perception", "scope": "brugh-entry", "check": "int_save", "modifier": "-2", "reset": true, "success_mode": "truth", "failure_mode": "glamour", "next": "mirror_room" }""");
+
+    public static DefinitionType Check { get; } = new(
+        "check",
+        "Resolves an authored check for one active party member and follows the explicitly authored success or failure event. The result is a play fact; it is not stored as campaign state.",
+        [
+            new("check", new ReferenceKind("check"), true, "The check the selected party member makes."),
+            new("member", new IntegerKind(), true, "The 1-based active party member who rolls."),
+            new("modifier", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false, "An optional extra modifier evaluated with the selected member as self."),
+            new("on_success", new ReferenceKind("event"), false, "The event after a successful check."),
+            new("on_failure", new ReferenceKind("event"), false, "The event after a failed check."),
+        ],
+        """{ "type": "event", "id": "safe_landing", "kind": "check", "check": "rules:reflex_save", "member": 1, "on_success": "continue", "on_failure": "fall" }""");
+
+    public static DefinitionType Effect { get; } = new(
+        "effect",
+        "Applies existing noncombat track and condition operations to one active party member or every active member, then follows the authored event. Effects have no combat target, round clock or hidden state.",
+        [
+            new("member", new IntegerKind(), false, "The 1-based active party member; omit to apply the operations to every active member."),
+            new("operations", new ListKind(new OperationKind(Roots.Self | Roots.Campaign | Roots.Area, ["damage", "heal", "apply_condition", "remove_condition"])), true, "Existing track and condition operations. Give damage and heal an explicit track; campaign effects use non-timed conditions with their authored defaults."),
+            Next,
+        ],
+        """{ "type": "event", "id": "fall", "kind": "effect", "member": 1, "operations": [{ "op": "damage", "track": "rules:hit_points", "amount": "1d6" }, { "op": "apply_condition", "condition": "rules:shaken" }], "next": "after_fall" }""");
 
     public static DefinitionType Menu { get; } = new(
         "menu",
@@ -175,22 +217,43 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "study", "kind": "improve", "text": "You reflect on what you learned.", "next": "road" }""");
 
+    public static DefinitionType SpellReward { get; } = new(
+        "spell_reward",
+        "Awards one unknown spell to each named party member, or every member when member is omitted. The ruleset chooses the highest-level spell that member can cast; the final draw is uniform among that level's unknown spells.",
+        [
+            new("text", new TextKind(), false, "What the party sees before the individual reward facts."),
+            new("member", new IntegerKind(), false, "Party member number; omit to award every active party member."),
+            Next,
+            Picture,
+            Sound,
+            Music,
+        ],
+        """{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "The recovered scroll reveals a new lesson.", "member": 1, "next": "road" }""");
+
     public static DefinitionType Shop { get; } = new(
         "shop",
-        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction. Waits for buy <n>, sell <n> or leave; stock is unlimited.",
+        "Offers guarded stock at item cost and buys carried items at the ruleset economy's sell_fraction, or at an optional authored buying rate, cash balance and maximum item value. A stock reference uses a numeric campaign or area variable and decrements after each successful purchase. Waits for buy <n>, sell <n> or leave; omitted stock is unlimited.",
         [
             new("text", new TextKind(), true, "The shopkeeper's greeting."),
             new("items", new ListKind(new ObjectKind(
             [
                 new("item", new ReferenceKind("item"), true, "An item for sale, at its cost."),
                 new("when", Guard, false, "Offered only when this campaign condition holds."),
+                new("stock", new ReferenceKind("variable"), false, "A numeric campaign or area variable holding the remaining whole copies; each successful purchase lowers it by one. Omit for unlimited stock."),
             ])), true, "Stock in order; buy takes the number shown. An empty list is a shop that only buys."),
+            new("buying", new ObjectKind(
+            [
+                new("fraction", new NumberKind(), false, "The fraction of an item's cost the shop pays, from 0 to 1; omit to use the ruleset economy's sell_fraction."),
+                new("currency", new ReferenceKind("currency"), true, "The only currency this shop buys."),
+                new("balance", new ReferenceKind("variable"), false, "A numeric campaign or area variable holding the shop's remaining cash; omit for unlimited buying cash."),
+                new("max_value", new NumberKind(), false, "The highest item cost this shop buys, in the item's declared buying currency; omit for no item-value limit."),
+            ]), false, "Optional buying policy. Currency is required when present; fraction defaults to the ruleset economy's sell_fraction, balance defaults to unlimited buying cash, and max_value omits the item-value limit when absent."),
             Next,
             Picture,
             Sound,
             Music,
         ],
-        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "next": "farewell" }""");
+        """{ "type": "event", "id": "outfitter", "kind": "shop", "text": "Supplies for the road.", "items": [ { "item": "classic:dagger", "stock": "preparations" }, { "item": "classic:long_sword", "when": "campaign.var.gate_open" } ], "buying": { "fraction": 0.9, "currency": "classic:gold", "balance": "merchant_cash", "max_value": 50 }, "next": "farewell" }""");
 
     public static DefinitionType Temple { get; } = new(
         "temple",
@@ -250,7 +313,7 @@ public static class EventTypes
         ],
         """{ "type": "event", "id": "camp", "kind": "rest", "text": "You rest and pray.", "tracks": ["classic:spells_1"], "resting": "classic:natural", "periods": 1 }""");
 
-    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, Shop, Temple, Training, Join, Dismiss, End];
+    public static IReadOnlyList<DefinitionType> All { get; } = [Text, Perception, Check, Effect, Menu, Combat, Set, Open, Branch, Teleport, Treasure, Rest, Experience, Give, Take, Milestone, Improve, SpellReward, Shop, Temple, Training, Join, Dismiss, End];
 
     public static DefinitionType? Find(string name) => All.FirstOrDefault(kind => kind.Name == name);
 }

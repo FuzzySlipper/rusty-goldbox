@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_partial_mixed_020",
+  "kind": "set",
+  "variable": "double_philip_anvil",
+  "value": "\"unknown\"",
+  "next": "evt_fin_setup_partial_mixed_021"
+}

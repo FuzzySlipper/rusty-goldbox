@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_arrival",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "area.var.brugh_l3_fall_pending",
+      "next": "evt_l3_c18_fall_intro"
+    },
+    {
+      "when": "area.var.brugh_l3_c18_seen",
+      "next": "evt_l3_c18_revisit"
+    }
+  ],
+  "otherwise": "evt_l3_c18_mark_seen"
+}

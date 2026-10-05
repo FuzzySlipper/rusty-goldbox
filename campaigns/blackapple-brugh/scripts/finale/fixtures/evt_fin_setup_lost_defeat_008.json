@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_008",
+  "kind": "set",
+  "variable": "double_arthur_figwort",
+  "value": "\"contained\"",
+  "next": "evt_fin_setup_lost_defeat_009"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_021",
+  "kind": "set",
+  "variable": "double_philip_anvil_evidence",
+  "value": "\"Father Naskew at St. Ludann Priory\"",
+  "next": "evt_fin_setup_court_bound_022"
+}

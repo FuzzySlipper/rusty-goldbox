@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_l2_ursula_choice",
+  "kind": "menu",
+  "text": "Ursula's sticks hover over the drum. How will you reach her without turning the court's music into a command?",
+  "options": [
+    {
+      "label": "Tap the Blackapple bell rhythm and let Ursula answer",
+      "next": "evt_l2_ursula_check"
+    },
+    {
+      "label": "Wait for the musicians to tire, then try again",
+      "next": "evt_l2_ursula_refuse"
+    },
+    {
+      "label": "Leave the station and return to the ballroom",
+      "next": "evt_l2_leave_room"
+    }
+  ]
+}

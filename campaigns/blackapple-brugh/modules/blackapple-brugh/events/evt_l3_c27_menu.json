@@ -1,0 +1,30 @@
+{
+  "type": "event",
+  "id": "evt_l3_c27_menu",
+  "kind": "menu",
+  "text": "C27 is the Brugh's only return room. Choose treasure, face the self-adversary, or uncover the selected mundane mirror.",
+  "options": [
+    {
+      "label": "Open one of the three treasure chests",
+      "next": "evt_l3_c27_chest_menu"
+    },
+    {
+      "label": "Uncover Mirror #2 and face its adversary",
+      "next": "evt_l3_c27_adversary_check"
+    },
+    {
+      "label": "Uncover Mirror #1 — return through Hen's Teeth",
+      "when": "campaign.var.mirror_route == 'hen_teeth'",
+      "next": "evt_return_from_c27_hen_teeth"
+    },
+    {
+      "label": "Uncover Mirror #3 — return through Figwort Manor",
+      "when": "campaign.var.mirror_route == 'figwort'",
+      "next": "evt_return_from_c27_figwort"
+    },
+    {
+      "label": "Leave Mirror #4 covered as an unavailable future route",
+      "next": "evt_l3_c27_mirror_four"
+    }
+  ]
+}

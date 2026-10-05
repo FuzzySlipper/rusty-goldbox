@@ -1,0 +1,53 @@
+{
+  "type": "monster",
+  "id": "tentacle_worm",
+  "name": "Tentacle worm",
+  "class": "fifth-srd:fighter",
+  "level": 3,
+  "tracks": {
+    "fifth-srd:hit_points": "24",
+    "fifth-srd:spells_1": "0",
+    "fifth-srd:spells_2": "0",
+    "fifth-srd:spells_3": "0",
+    "fifth-srd:second_wind": "0",
+    "fifth-srd:death_successes": "0",
+    "fifth-srd:death_failures": "0"
+  },
+  "stats": {
+    "proficiency": "2",
+    "is_character": "false",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "engage_range": "1",
+    "spell_mod": "0",
+    "spell_dc": "11",
+    "crit_range": "20",
+    "ac": "13",
+    "initiative_bonus": "1",
+    "dex_save": "1",
+    "con_save": "3",
+    "speed": "40",
+    "str": "14",
+    "dex": "12",
+    "con": "16",
+    "int": "3",
+    "wis": "10",
+    "cha": "3",
+    "pack_tactics": "false",
+    "undead_fortitude": "false"
+  },
+  "actions": [
+    {
+      "action": "tentacle_lash",
+      "name": "Six tentacles",
+      "to_hit": "5",
+      "damage": "1d4 + 1",
+      "dice": "1d4"
+    },
+    {
+      "action": "fifth-srd:move"
+    }
+  ],
+  "xp": 200,
+  "behavior": "tentacle_worm_tactics"
+}

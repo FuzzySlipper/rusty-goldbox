@@ -1,0 +1,9 @@
+{
+  "type": "event",
+  "id": "evt_l3_c20_use_salt",
+  "kind": "take",
+  "item": "l3_salt_pouch",
+  "count": 1,
+  "on_refused": "evt_l3_c20_menu",
+  "next": "evt_l3_c20_bargain_check"
+}

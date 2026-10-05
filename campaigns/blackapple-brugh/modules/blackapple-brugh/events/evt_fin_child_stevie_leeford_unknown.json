@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_stevie_leeford_unknown",
+  "kind": "text",
+  "text": "Stevie Leeford — unknown. The party has no reliable current account for this child.",
+  "next": "evt_fin_goodall_reward_gate"
+}

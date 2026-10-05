@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_truth_no_proof_011",
+  "kind": "set",
+  "variable": "double_amelia_goodall",
+  "value": "\"unknown\"",
+  "next": "evt_fin_setup_truth_no_proof_012"
+}

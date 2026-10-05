@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_009",
+  "kind": "set",
+  "variable": "double_amelia_goodall",
+  "value": "\"escaped\"",
+  "next": "evt_fin_setup_lost_defeat_010"
+}

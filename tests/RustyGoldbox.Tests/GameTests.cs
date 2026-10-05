@@ -6,7 +6,9 @@ using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Campaigns;
 using RustyGoldbox.Core.Combat;
+using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
+using RustyGoldbox.Core.Rules;
 using RustyGoldbox.Game;
 using RustyGoldbox.Game.Presentation;
 
@@ -191,6 +193,51 @@ public sealed class GameTests
     }
 
     [Fact]
+    public void MemberSheetGearIntentsTransferExistingCopiesAndSaveEquippedState()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = Path.Combine(scratch.Root, "persistence") });
+        host.Call(engine =>
+        {
+            GameSession session = OpenSession(scratch, engine);
+            for (int attempt = 0; attempt < 50 && session.Party.Count == 0; attempt++)
+            {
+                Run(session, engine, """{ "action": "roll", "name": "Ada", "race": "classic:human", "class": "classic:fighter" }""");
+            }
+
+            Run(session, engine, """{ "action": "begin" }""");
+            Assert.Equal(Screen.Play, session.Screen);
+            Definition mail = session.Set!.Rules!.Find(DefinitionTypes.Item, "classic:chain_mail", out _)!;
+            session.Runner!.State.Inventory.AddRange([mail, mail]);
+            Assert.Equal(2, SessionProjection.Build(session)["inventory"]![0]!["count"]!.GetValue<int>());
+            Evaluator evaluator = new(session.Set.Rules, null);
+            decimal before = evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number;
+            Assert.Equal(before.ToString(System.Globalization.CultureInfo.InvariantCulture), SessionProjection.Build(session)["party"]![0]!["derived"]![0]!["value"]!.GetValue<string>());
+
+            Run(session, engine, """{ "action": "play", "command": "equip 1 classic:chain_mail" }""");
+            Assert.Single(session.Runner.State.Inventory);
+            Assert.Single(session.Runner.State.Party[0].Equipment, item => item == mail);
+            decimal wearing = evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number;
+            Assert.NotEqual(before, wearing);
+            Assert.Equal(wearing.ToString(System.Globalization.CultureInfo.InvariantCulture), SessionProjection.Build(session)["party"]![0]!["derived"]![0]!["value"]!.GetValue<string>());
+            Assert.Equal(1, SessionProjection.Build(session)["inventory"]![0]!["count"]!.GetValue<int>());
+
+            Run(session, engine, """{ "action": "save", "slot": "gear" }""");
+            Run(session, engine, """{ "action": "quit" }""");
+            Run(session, engine, """{ "action": "load", "slot": "gear" }""");
+            Assert.Equal(Screen.Play, session.Screen);
+            Assert.Single(session.Runner.State.Inventory);
+            Assert.Single(session.Runner.State.Party[0].Equipment);
+            evaluator = new Evaluator(session.Set!.Rules!, null);
+            Assert.Equal(wearing, evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number);
+            Run(session, engine, """{ "action": "play", "command": "unequip 1 classic:chain_mail" }""");
+            Assert.Equal(2, session.Runner.State.Inventory.Count);
+            Assert.Empty(session.Runner.State.Party[0].Equipment);
+            Assert.Equal(before, evaluator.Stat(session.Runner.State.Party[0].ToCreature(), "ac").Number);
+        });
+    }
+
+    [Fact]
     public void ThePlayersLayoutOverridesTheSkinsAndComesBackNextRun()
     {
         using TempModules scratch = new();
@@ -321,6 +368,7 @@ public sealed class GameTests
             JsonObject projection = SessionProjection.Build(session, (set, asset) => images.Url(set, asset));
             string url = projection["party"]![0]!["portraitPicture"]!["url"]!.GetValue<string>();
             Assert.StartsWith("/__rusty/product/runtime/ui-images/", url, StringComparison.Ordinal);
+            Assert.Equal("nearest", projection["party"]![0]!["portraitPicture"]!["sampling"]!.GetValue<string>());
             // One image per asset: the chooser and the member share it.
             Assert.Contains(projection["portraits"]!.AsArray(), entry => entry!["picture"]?["url"]?.GetValue<string>() == url);
         });

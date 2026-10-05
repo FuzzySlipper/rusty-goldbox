@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_fin_truth_consequence_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.child_arthur_figwort != 'returned' and campaign.var.child_amelia_goodall != 'returned' and campaign.var.child_bernard_goodall != 'returned' and campaign.var.child_giles_weadley != 'returned' and campaign.var.child_philip_anvil != 'returned' and campaign.var.child_ursula_cooke != 'returned' and campaign.var.child_stevie_leeford != 'returned' and (campaign.var.evidence_brugh_layout or campaign.var.evidence_gold_threads or campaign.var.evidence_arthur_double or campaign.var.evidence_fairy_mirrors or campaign.var.evidence_parent_suspicion)",
+      "next": "evt_fin_truth_verified_set"
+    },
+    {
+      "when": "campaign.var.child_arthur_figwort != 'returned' and campaign.var.child_amelia_goodall != 'returned' and campaign.var.child_bernard_goodall != 'returned' and campaign.var.child_giles_weadley != 'returned' and campaign.var.child_philip_anvil != 'returned' and campaign.var.child_ursula_cooke != 'returned' and campaign.var.child_stevie_leeford != 'returned' and (not campaign.var.evidence_brugh_layout and not campaign.var.evidence_gold_threads and not campaign.var.evidence_arthur_double and not campaign.var.evidence_fairy_mirrors and not campaign.var.evidence_parent_suspicion)",
+      "next": "evt_fin_no_proof_set"
+    }
+  ],
+  "otherwise": "evt_fin_primary_select"
+}

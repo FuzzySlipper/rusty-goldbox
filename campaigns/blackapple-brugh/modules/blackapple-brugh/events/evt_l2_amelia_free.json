@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_amelia_free",
+  "kind": "set",
+  "variable": "child_amelia_goodall",
+  "value": "'freed'",
+  "next": "evt_l2_amelia_evidence"
+}

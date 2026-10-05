@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_vil_sanitarium_transfer_revisit_text",
+  "kind": "text",
+  "text": "Father Naskew confirms that the Arthur double remains contained under his named care at St. Ludann Priory. The real Arthur is still captive beyond the mirror, and the transfer earns no second trust reward.",
+  "picture": "blackapple-art:blackapple_priory",
+  "next": "evt_vil_sanitarium_return"
+}

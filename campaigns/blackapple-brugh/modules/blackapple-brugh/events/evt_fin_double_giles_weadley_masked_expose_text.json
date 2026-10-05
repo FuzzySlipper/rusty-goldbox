@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_giles_weadley_masked_expose_text",
+  "kind": "text",
+  "text": "The Giles Weadley double — exposed. The mask evidence is retained, with no automatic custody.",
+  "next": "evt_fin_double_philip_anvil"
+}

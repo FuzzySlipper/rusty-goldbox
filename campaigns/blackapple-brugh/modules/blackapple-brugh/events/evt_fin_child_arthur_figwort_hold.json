@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_arthur_figwort_hold",
+  "kind": "text",
+  "text": "Arthur Figwort — remains freed. The party records a safe-room pause; the value is not changed to returned without a family handoff.",
+  "next": "evt_fin_child_amelia_goodall"
+}

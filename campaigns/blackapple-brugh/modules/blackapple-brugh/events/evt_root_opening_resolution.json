@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_root_opening_resolution",
+  "kind": "text",
+  "text": "The families have given you a credible mirror lead. The children are prisoners beyond the glass, while their doubles remain in Blackapple. Your first investigation has reached a local resolution. You can prepare supplies and companions, or wait at your selected mirror for the midnight opening. This is the start of the rescue, not its conclusion.",
+  "picture": "blackapple-art:blackapple_village",
+  "next": "evt_entry_choose"
+}

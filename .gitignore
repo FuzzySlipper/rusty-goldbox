@@ -11,3 +11,13 @@ target/
 src/ui/generated/
 playwright-report/
 test-results/
+__pycache__/
+*.pyc
+
+# Authoring workspace generated module staging and exports.
+**/.goldbox/staged/
+**/.goldbox/party/
+**/exports/
+
+# Windows Explorer generated thumbnail caches.
+Thumbs.db

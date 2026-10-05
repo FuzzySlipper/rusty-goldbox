@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_c16_revisit",
+  "kind": "text",
+  "text": "The servant quarters hold only bunks and the evidence you recovered. Bernard's sling and Ursula's doll remain carried proof that the court's servers came from Blackapple.",
+  "next": "evt_l2_c16_revisit_menu"
+}

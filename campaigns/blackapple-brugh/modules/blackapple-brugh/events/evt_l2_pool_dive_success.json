@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_pool_dive_success",
+  "kind": "give",
+  "item": "l2_moonstone",
+  "count": 3,
+  "next": "evt_l2_pool_dive_mark"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_entry_mirror_active",
+  "kind": "set",
+  "variable": "mirror_active",
+  "value": "true",
+  "next": "evt_entry_window_choice"
+}

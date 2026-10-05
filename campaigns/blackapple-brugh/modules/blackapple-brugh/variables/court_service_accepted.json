@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "court_service_accepted",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "The player explicitly accepted permanent court service or a court stay."
+}

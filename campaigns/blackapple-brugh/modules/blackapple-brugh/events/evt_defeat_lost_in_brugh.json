@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_defeat_lost_in_brugh",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.ending_id == \"\"",
+      "next": "evt_defeat_begin"
+    }
+  ],
+  "otherwise": "evt_defeat_close"
+}

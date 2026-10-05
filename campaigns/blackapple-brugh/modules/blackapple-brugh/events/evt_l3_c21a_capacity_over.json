@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c21a_capacity_over",
+  "kind": "text",
+  "text": "Six active members exceed the authored 200-pound dumbwaiter adaptation. The lift cannot be used as a whole-party route at this size; the connected Level 3 halls remain open.",
+  "next": "evt_l3_c21a_over_menu"
+}

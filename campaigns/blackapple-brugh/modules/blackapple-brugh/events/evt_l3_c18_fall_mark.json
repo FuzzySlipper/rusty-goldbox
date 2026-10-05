@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_fall_mark",
+  "kind": "set",
+  "variable": "brugh_l3_fall_pending",
+  "value": "true",
+  "next": "evt_l3_c18_arrival"
+}

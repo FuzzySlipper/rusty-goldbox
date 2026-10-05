@@ -1,0 +1,20 @@
+{
+  "type": "condition",
+  "id": "forest_sickness",
+  "name": "Forest sickness",
+  "description": "A converted forest fever or disease leaves a lasting weakness until the shrine or another authored cure removes it.",
+  "modifiers": [
+    {
+      "stat": "con",
+      "value": "-1"
+    },
+    {
+      "stat": "cha",
+      "value": "-1"
+    },
+    {
+      "check": "fifth-srd:dex_save",
+      "value": "-1"
+    }
+  ]
+}

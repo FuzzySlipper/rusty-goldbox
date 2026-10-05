@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c20_revisit",
+  "kind": "text",
+  "text": "The captive remains inside the salt circle, watching for a useful promise. The cold room can be left alone, bargained through, or opened at a real cost.",
+  "next": "evt_l3_c20_menu"
+}

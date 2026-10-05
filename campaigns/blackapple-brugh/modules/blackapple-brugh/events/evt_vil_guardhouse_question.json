@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_question",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "not area.var.blackapple_guardhouse_question_rewarded",
+      "next": "evt_vil_guardhouse_question_reward"
+    }
+  ],
+  "otherwise": "evt_vil_guardhouse_question_revisit_text"
+}

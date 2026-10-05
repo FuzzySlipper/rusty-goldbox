@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l3_c18_damage_text",
+  "kind": "text",
+  "text": "The impact leaves everyone bruised but together. The worm is real, and the narrow south wall remains a possible recovery route.",
+  "next": "evt_l3_c18_menu"
+}

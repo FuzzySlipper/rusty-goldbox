@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_bargain_reward_arthur_figwort",
+  "kind": "treasure",
+  "currency": "fifth-srd:gold",
+  "amount": "400",
+  "next": "evt_fin_bargain_accept_arthur_figwort"
+}

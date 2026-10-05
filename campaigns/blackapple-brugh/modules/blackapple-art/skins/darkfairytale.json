@@ -1,0 +1,20 @@
+{
+  "type": "skin",
+  "id": "darkfairytale",
+  "name": "Blackapple ink and wash",
+  "colors": {
+    "background": "#172322ed",
+    "text": "#f0eadb",
+    "muted": "#b8bdab",
+    "accent": "#d6ac61",
+    "border": "#677669",
+    "inset": "#101b1bed",
+    "button": "#34433a",
+    "button_text": "#f6eed8",
+    "page": "#e8dec5",
+    "page_text": "#282e26",
+    "page_accent": "#69542d",
+    "page_link": "#37695b"
+  },
+  "title": "blackapple-art:blackapple_title"
+}

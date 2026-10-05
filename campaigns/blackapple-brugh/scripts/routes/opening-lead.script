@@ -1,0 +1,23 @@
+# Corrected ordinary route: first help, guard question, family rhyme, Hen's Teeth route, XP.
+choose 2
+choose 1
+right
+forward
+left
+forward
+choose 2
+left
+forward
+choose 1
+choose 1
+right
+forward
+choose 3
+forward
+choose 1
+choose 1
+choose 1
+choose 2
+# Keep exploring before the midnight opening.
+choose 2
+status

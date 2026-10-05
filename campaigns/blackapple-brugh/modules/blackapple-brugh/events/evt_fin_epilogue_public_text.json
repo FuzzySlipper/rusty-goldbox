@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_public_text",
+  "kind": "text",
+  "text": "You show the evidence to villagers and the priory. Trust and fear now share the square, and the Figwort family's stance remains part of the response.",
+  "next": "evt_fin_close"
+}

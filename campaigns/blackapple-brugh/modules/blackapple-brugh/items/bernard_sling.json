@@ -1,0 +1,14 @@
+{
+  "type": "item",
+  "id": "bernard_sling",
+  "name": "Bernard's sling",
+  "kind": "ranged weapon",
+  "cost": 0,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1,
+  "parameters": {
+    "damage": "1d4",
+    "dice": "1d4",
+    "range": "16"
+  }
+}

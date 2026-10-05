@@ -24,6 +24,7 @@ public sealed partial class CampaignRunner
             for (int period = 0; period < periods; period++)
             {
                 _state.ElapsedDays = Located(evt, "$.periods", () => checked(_state.ElapsedDays + days));
+                ExpireConditions(facts);
                 int before = dice.Rolls.Count;
                 bool interrupted = json.TryGetProperty("wandering", out _) && Located(evt, "$.wandering.when", () => Evaluate(evt, "$.wandering.when", dice).Boolean);
                 facts.Add(new TextFact($"Rest period {period + 1}/{periods} ({policy.Json.GetProperty("unit").GetString()}); campaign time: {Fact(_state.ElapsedDays)} days{(interrupted ? "; interrupted by a wandering encounter" : "")}.") { Rolls = dice.Rolls.Skip(before).ToList() });
@@ -43,10 +44,18 @@ public sealed partial class CampaignRunner
             Definition track = _rules.Reference(evt, $"$.tracks[{index}]");
             foreach (Character character in _state.Party)
             {
-                if (Located(track, "$", () => evaluator.KnownTrackMax(character.ToCreature(), track)) is decimal max)
+                Creature creature = character.ToCreature();
+                Located(track, "$", () =>
                 {
-                    character.Tracks[track.Id].Current = max;
-                }
+                    if (evaluator.KnownTrackMax(creature, track) is decimal max)
+                    {
+                        decimal current = creature.Track(track.Id).Current ?? 0;
+                        TrackOperations.Heal(evaluator, creature, track, max - current);
+                        character.Tracks[track.Id] = creature.Track(track.Id);
+                    }
+
+                    return true;
+                });
             }
         }
 

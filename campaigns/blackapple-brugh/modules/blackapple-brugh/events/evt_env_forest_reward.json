@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_reward",
+  "kind": "treasure",
+  "currency": "fifth-srd:gold",
+  "amount": "25",
+  "items": [
+    "forest_reward_food",
+    "forest_reward_pelts"
+  ],
+  "next": "evt_env_forest_reward_mark"
+}

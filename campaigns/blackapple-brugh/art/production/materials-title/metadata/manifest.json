@@ -1,0 +1,60 @@
+{
+  "task": "9305 materials-title",
+  "scope_root": "/home/agent/dev/rusty-goldbox-9293/campaigns/blackapple-brugh/art/production/materials-title",
+  "generation_tool": "built-in Codex image_gen",
+  "source_policy": {
+    "pdf_or_excluded_source_art_used": false,
+    "style_references_inspected_before_generation": true,
+    "accepted_reference_paths": [
+      "campaigns/blackapple-brugh/art/references/blackapple_village.png",
+      "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_faehill.png",
+      "campaigns/blackapple-brugh/art/production/environs-service/originals/environs_fairy_ruins.png"
+    ]
+  },
+  "assets": [
+    {
+      "logical_id": "asset.blackapple-village-materials",
+      "runtime_id": "blackapple_village_materials",
+      "original": "originals/blackapple_village_materials.png",
+      "metadata": "metadata/blackapple_village_materials.json",
+      "native_dimensions": [1254, 1254],
+      "regions": {
+        "wall": [0, 0, 627, 627],
+        "door": [627, 0, 627, 627],
+        "floor": [0, 627, 627, 627],
+        "ceiling": [627, 627, 627, 627]
+      },
+      "sha256": "7bc7bc68e8b629ecb0492507df92385f8d29a15aaf17f2912fafc33474059809"
+    },
+    {
+      "logical_id": "asset.environs-forest-materials",
+      "runtime_id": "environs_forest_materials",
+      "original": "originals/environs_forest_materials.png",
+      "metadata": "metadata/environs_forest_materials.json",
+      "native_dimensions": [1254, 1254],
+      "regions": {
+        "wall": [0, 0, 627, 627],
+        "door": [627, 0, 627, 627],
+        "floor": [0, 627, 627, 627],
+        "ceiling": [627, 627, 627, 627]
+      },
+      "sha256": "f7d8607d219eb5f29d07b263e4ec180700582c8b1ef53c0d46b7173f26be7ecf"
+    },
+    {
+      "logical_id": "asset.blackapple-title",
+      "runtime_id": "blackapple_title",
+      "original": "originals/blackapple_title.png",
+      "metadata": "metadata/blackapple_title.json",
+      "native_dimensions": [1983, 793],
+      "sha256": "fcc9b3b79a6c2ba05bd31e0e504b15d0b687c048969ac16cae7f34aa29ab4d74",
+      "nominal_target": [1600, 400],
+      "native_aspect_note": "The built-in generator produced a wide 1983x793 image; no crop or resize was applied. One targeted aspect correction was preserved in raw and rejected because it produced the same native dimensions."
+    }
+  ],
+  "validation": {
+    "json_files_validated": true,
+    "raw_original_byte_identity_checked": true,
+    "targeted_correction_limit_used": 1,
+    "rgba_packing_or_runtime_bounds": "owned by parent integrator"
+  }
+}

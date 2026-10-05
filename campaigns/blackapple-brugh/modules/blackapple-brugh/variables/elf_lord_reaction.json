@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "elf_lord_reaction",
+  "value_type": "text",
+  "initial": "'curious'",
+  "description": "Court stance: curious, amused, suspicious, hostile, or bargaining."
+}

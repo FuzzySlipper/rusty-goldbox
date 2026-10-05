@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Rusty.Engine.Testing;
 using RustyGoldbox.Core.Campaigns;
+using RustyGoldbox.Core.Characters;
 using RustyGoldbox.Core.Definitions;
 using RustyGoldbox.Core.Modules;
 
@@ -49,6 +50,35 @@ public sealed class TempleTests
             Assert.Equal("shrine", restored.PendingTemple!.Id);
             Assert.Empty(restored.Party[1].Conditions);
             Assert.Contains(new CampaignRunner(set.Rules, restored).Execute("leave", engine.Random), fact => fact is TextFact { Text: "Safe travels." });
+        });
+    }
+
+    [Fact]
+    public void PaidServiceOperationReadsLivePartySizeForHealingAndPayment()
+    {
+        using TempModules modules = new();
+        string campaign = Fixture(modules);
+        modules.Write("tale/shrine.json", """
+            { "type": "event", "id": "shrine", "kind": "temple", "text": "Welcome.",
+              "services": [{ "label": "Mend the party", "cost": "party_size() * 2", "currency": "rules:gold",
+                "operations": [{ "op": "heal", "track": "rules:hit_points", "amount": "party_size()" }] }] }
+            """);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root]);
+        Assert.Empty(set.Diagnostics);
+        List<Character> party = ShopTests.Party(modules, campaign, set);
+        party[0].Tracks["hit_points"].Current = 1;
+        CampaignState state = CampaignRunner.NewState(set.Rules!, set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!, party, 1);
+        CampaignRunner runner = new(set.Rules!, state);
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            runner.Begin(engine.Random);
+            decimal before = party.Sum(member => member.Balances["gold"]);
+            Assert.Equal(4, runner.Temple()!.Services[0].Prices[0]);
+            List<PlayFact> facts = runner.Execute("serve 1 1", engine.Random);
+            Assert.Contains(facts, fact => fact is TextFact { Text: "A receives Mend the party for 4 gold." });
+            Assert.Equal(before - 4, party.Sum(member => member.Balances["gold"]));
+            Assert.Equal(3, party[0].Tracks["hit_points"].Current);
         });
     }
 

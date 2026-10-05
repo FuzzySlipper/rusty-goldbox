@@ -7,7 +7,9 @@ namespace RustyGoldbox.Game;
 /// <summary>
 /// Module images (portraits, icons) granted to the DOM panels: each asset's
 /// PNG opened once from its module's bundle as an Engine UI image, whose URL
-/// the projection carries for an img element. The Engine keeps the bytes, so
+/// the projection carries for an img element. The pinned UiImageRequest has no
+/// filter parameter, so the projection carries the asset's sampling policy and
+/// the DOM applies it when it renders the URL. The Engine keeps the bytes, so
 /// the bundle is released at once; the images last until the product ends.
 /// </summary>
 internal sealed class UiImages(IEngineContext engine, ModuleLibrary library) : IDisposable

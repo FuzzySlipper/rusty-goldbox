@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_l2_dinner_very_favorable_reaction",
+  "kind": "set",
+  "variable": "elf_lord_reaction",
+  "value": "'curious'",
+  "next": "evt_l2_dinner_very_favorable_text"
+}

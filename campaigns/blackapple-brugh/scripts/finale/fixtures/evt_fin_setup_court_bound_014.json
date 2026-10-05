@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_014",
+  "kind": "set",
+  "variable": "double_bernard_goodall",
+  "value": "\"contained\"",
+  "next": "evt_fin_setup_court_bound_015"
+}

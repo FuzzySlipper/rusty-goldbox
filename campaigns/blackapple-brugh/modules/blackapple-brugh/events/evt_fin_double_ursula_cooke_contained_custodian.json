@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_contained_custodian",
+  "kind": "menu",
+  "text": "The Ursula Cooke double — contained, but no named custodian evidence is present. Confirm who holds the double safely.",
+  "options": [
+    {
+      "label": "Confirm Father Naskew at St. Ludann Priory as the named custodian",
+      "next": "evt_fin_double_ursula_cooke_contained_priory"
+    },
+    {
+      "label": "Confirm Lady Figwort at Figwort Manor as the named custodian",
+      "next": "evt_fin_double_ursula_cooke_contained_manor"
+    },
+    {
+      "label": "Confirm Flynn at the Hen's Teeth safe room as the named custodian",
+      "next": "evt_fin_double_ursula_cooke_contained_hen_teeth"
+    }
+  ]
+}

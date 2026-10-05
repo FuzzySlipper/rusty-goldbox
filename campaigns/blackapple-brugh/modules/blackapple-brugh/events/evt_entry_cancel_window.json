@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_entry_cancel_window",
+  "kind": "set",
+  "variable": "portal_window_open",
+  "value": "false",
+  "next": "evt_entry_cancel_active"
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_public_evidence",
+  "kind": "set",
+  "variable": "double_stevie_leeford_evidence",
+  "value": "\"public village account with the mask shown\"",
+  "next": "evt_fin_double_stevie_leeford_public_text"
+}

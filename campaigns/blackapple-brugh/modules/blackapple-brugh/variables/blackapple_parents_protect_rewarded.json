@@ -1,0 +1,8 @@
+{
+  "type": "variable",
+  "id": "blackapple_parents_protect_rewarded",
+  "value_type": "boolean",
+  "initial": "false",
+  "scope": "area",
+  "description": "Private Blackapple map detail: the parents' one-time trust for protecting the frightened siblings has been recorded."
+}

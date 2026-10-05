@@ -113,6 +113,8 @@ internal static class SessionProjection
                 ["balances"] = Balances(shop.Balances),
                 ["stock"] = Offers(shop.Stock),
                 ["carried"] = Offers(shop.Carried),
+                ["buyingCurrency"] = shop.BuyingCurrency?.QualifiedId,
+                ["buyingMaxValue"] = shop.MaxBuyValue,
             } : null;
             projection["temple"] = runner.Temple() is TempleFact temple ? new JsonObject
             {
@@ -125,11 +127,34 @@ internal static class SessionProjection
                     ["prices"] = new JsonArray(service.Prices.Select(price => (JsonNode)JsonValue.Create(price)!).ToArray()),
                 }).ToArray()),
             } : null;
-            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl)).ToArray());
+            projection["party"] = new JsonArray(state.Party.Select(character => (JsonNode)Member(session.Set!.Rules!, character, imageUrl, runner)).ToArray());
+            projection["inventory"] = new JsonArray(state.Inventory
+                .GroupBy(item => item.QualifiedId)
+                .Select(items => (JsonNode)new JsonObject
+                {
+                    ["id"] = items.Key,
+                    ["name"] = items.First().Name,
+                    ["count"] = items.Count(),
+                    ["usable"] = items.First().Json.TryGetProperty("use", out _),
+                }).ToArray());
             projection["ended"] = state.Ended;
             projection["log"] = Strings(session.Log);
             projection["picture"] = state.Picture is Definition shown ? Picture(session.Set!.Rules!, shown, imageUrl) : null;
             projection["music"] = state.Music?.QualifiedId;
+            projection["viewEvent"] = state.ViewEvent?.QualifiedId;
+            projection["viewOptions"] = new JsonArray(runner.CurrentViews().Select(view => (JsonNode)Presentation(session.Set!.Rules!, view, imageUrl)).ToArray());
+            projection["view"] = state.ViewedCharacter is Character viewed
+                ? runner.ViewFor(viewed) is ViewPresentation selected
+                    ? new JsonObject
+                    {
+                        ["member"] = state.Party.IndexOf(viewed) + 1,
+                        ["who"] = viewed.Name,
+                        ["mode"] = selected.Mode,
+                        ["text"] = selected.Text,
+                        ["picture"] = selected.Picture is Definition selectedPicture ? Picture(session.Set!.Rules!, selectedPicture, imageUrl) : null,
+                    }
+                    : null
+                : null;
         }
 
         return projection;
@@ -426,6 +451,9 @@ internal static class SessionProjection
             ["price"] = offer.Price,
             ["currency"] = offer.Currency.QualifiedId,
             ["holder"] = offer.Holder,
+            ["remaining"] = offer.Remaining,
+            ["sellable"] = offer.Sellable,
+            ["refusalReason"] = offer.RefusalReason,
         }).ToArray());
     }
 
@@ -462,15 +490,8 @@ internal static class SessionProjection
             return;
         }
 
-        projection["creation"] = new JsonObject
-        {
-            ["id"] = creation.QualifiedId,
-            ["method"] = creation.Json.TryGetProperty("method", out JsonElement method) ? method.GetString() : "roll",
-            ["attributes"] = new JsonArray(creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => (JsonNode)JsonValue.Create(attribute.GetString())!).ToArray()),
-            ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
-            ["boosts"] = Boosts(creation),
-        };
-        projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(CreationChoice).ToArray());
+        projection["creation"] = CreationChoice(rules, creation);
+        projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(definition => (JsonNode)CreationChoice(rules, definition)).ToArray());
         if (creation.Json.TryGetProperty("lifepath", out _)
             && rules.Reference(creation, "$.lifepath") is Definition lifepath)
         {
@@ -513,7 +534,7 @@ internal static class SessionProjection
         }).ToArray());
     }
 
-    private static JsonObject CreationChoice(Definition creation)
+    private static JsonObject CreationChoice(RuleSet rules, Definition creation)
     {
         JsonObject choice = new()
         {
@@ -524,6 +545,66 @@ internal static class SessionProjection
             ["grants"] = Grants(CharacterRules.CreationChoices(creation)),
             ["boosts"] = Boosts(creation),
         };
+        JsonObject AttributeDetail(string id)
+        {
+            Definition definition = rules.Stats[id].Definition;
+            JsonObject detail = new()
+            {
+                ["id"] = id,
+                ["name"] = definition.Name,
+            };
+            if (definition.Json.TryGetProperty("min", out JsonElement minimum))
+            {
+                detail["min"] = minimum.GetDecimal();
+            }
+
+            if (definition.Json.TryGetProperty("max", out JsonElement maximum))
+            {
+                detail["max"] = maximum.GetDecimal();
+            }
+
+            return detail;
+        }
+
+        string[] attributeIds = creation.Json.GetProperty("attributes").EnumerateArray().Select(attribute => attribute.GetString()!).ToArray();
+        choice["attributeDetails"] = new JsonArray(attributeIds.Select(id => (JsonNode)AttributeDetail(id)).ToArray());
+        JsonElement ownRolls = creation.Json.TryGetProperty("attribute_rolls", out JsonElement givenRolls) ? givenRolls : default;
+        bool HasOwnRoll(string id) => ownRolls.ValueKind == JsonValueKind.Object && ownRolls.TryGetProperty(id, out _);
+        choice["arrangeableAttributes"] = new JsonArray(attributeIds
+            .Where(id => !HasOwnRoll(id))
+            .Select(id => (JsonNode)AttributeDetail(id))
+            .ToArray());
+        if (creation.Json.TryGetProperty("array", out JsonElement array))
+        {
+            choice["array"] = JsonNode.Parse(array.GetRawText());
+        }
+
+        if (creation.Json.TryGetProperty("assignment", out JsonElement assignment))
+        {
+            choice["assignment"] = assignment.GetString();
+        }
+
+        if (creation.Json.TryGetProperty("base", out JsonElement baseScore))
+        {
+            choice["base"] = baseScore.GetDecimal();
+        }
+
+        if (creation.Json.TryGetProperty("budget", out JsonElement budget))
+        {
+            choice["budget"] = budget.GetDecimal();
+        }
+
+        if (creation.Json.TryGetProperty("costs", out _)
+            && rules.Reference(creation, "$.costs") is Definition costs
+            && costs.Json.TryGetProperty("rows", out JsonElement rows))
+        {
+            choice["costs"] = new JsonObject
+            {
+                ["id"] = costs.QualifiedId,
+                ["rows"] = JsonNode.Parse(rows.GetRawText()),
+            };
+        }
+
         if (creation.Json.TryGetProperty("skill_points", out JsonElement skillPoints))
         {
             choice["skillPoints"] = JsonNode.Parse(skillPoints.GetRawText());
@@ -602,13 +683,34 @@ internal static class SessionProjection
             };
         }
 
-        return new JsonObject { ["url"] = url, ["width"] = width, ["height"] = height, ["frame"] = frame, ["animation"] = animation };
+        return new JsonObject
+        {
+            ["url"] = url,
+            ["width"] = width,
+            ["height"] = height,
+            ["frame"] = frame,
+            ["animation"] = animation,
+            ["sampling"] = Media.SamplingOf(asset),
+        };
     }
 
     /// <summary>
     /// A member's tracks as values for bars and text. A vital track is one a
     /// combat is fought on, so a portrait can show it.
     /// </summary>
+    private static JsonArray SheetValues(RuleSet rules, Character character)
+    {
+        Evaluator evaluator = new(rules, null);
+        Creature creature = character.ToCreature();
+        return new JsonArray(rules.OfType(DefinitionTypes.Derived)
+            .Where(stat => stat.Json.TryGetProperty("show_on_sheet", out JsonElement shown) && shown.GetBoolean())
+            .Select(stat => (JsonNode)new JsonObject
+            {
+                ["name"] = stat.Name,
+                ["value"] = evaluator.Stat(creature, stat.Id).ToString(),
+            }).ToArray());
+    }
+
     private static JsonArray Tracks(RuleSet rules, Character character)
     {
         HashSet<Definition> fought = rules.OfType(DefinitionTypes.Combat)
@@ -629,10 +731,11 @@ internal static class SessionProjection
         return new JsonArray(spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray());
     }
 
-    private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl)
+    private static JsonObject Member(RuleSet rules, Character character, Func<Definition, string?> imageUrl, CampaignRunner? runner = null)
     {
         List<ModuleDiagnostic> skillProblems = [];
         SkillPointOptions? skillPoints = CharacterRules.GetSkillPointOptions(rules, character, skillProblems);
+        ViewPresentation? view = runner?.ViewFor(character);
         return new JsonObject
         {
             ["name"] = character.Name,
@@ -642,6 +745,8 @@ internal static class SessionProjection
             ["level"] = character.Level,
             ["tracks"] = Tracks(rules, character),
             ["attributes"] = Strings(character.Attributes.Select(attribute => $"{attribute.Key} {Number(attribute.Value)}")),
+            ["derived"] = SheetValues(rules, character),
+            ["conditions"] = Strings(character.Conditions.Select(condition => condition.Name)),
             ["skillPoints"] = skillPoints is null ? null : new JsonObject
             {
                 ["profession"] = (double)skillPoints.Profession,
@@ -675,6 +780,12 @@ internal static class SessionProjection
             ["formerClasses"] = !character.HasDormantClasses() ? null : character.UsesFormerClasses ? "called" : "waiting",
             ["portrait"] = character.Portrait?.QualifiedId,
             ["portraitPicture"] = character.Portrait is Definition portrait ? Picture(rules, portrait, imageUrl) : null,
+            ["perception"] = character.Perception is PerceptionState perception ? new JsonObject
+            {
+                ["scope"] = perception.Scope,
+                ["mode"] = perception.Mode,
+            } : null,
+            ["view"] = view is ViewPresentation selected ? Presentation(rules, selected, imageUrl) : null,
             ["age"] = character.Lifepath is null ? null : character.Age,
             ["lifepath"] = character.Lifepath?.QualifiedId,
             ["careerTerms"] = new JsonArray(character.CareerTerms.Select(term => new JsonObject
@@ -695,6 +806,16 @@ internal static class SessionProjection
                 ["choices"] = new JsonArray(term.Choices.Select(choice => (JsonNode)choice).ToArray()),
                 ["results"] = new JsonArray(term.Results.Select(result => (JsonNode)result).ToArray()),
             }).ToArray()),
+        };
+    }
+
+    private static JsonObject Presentation(RuleSet rules, ViewPresentation view, Func<Definition, string?> imageUrl)
+    {
+        return new JsonObject
+        {
+            ["mode"] = view.Mode,
+            ["text"] = view.Text,
+            ["picture"] = view.Picture is Definition picture ? Picture(rules, picture, imageUrl) : null,
         };
     }
 

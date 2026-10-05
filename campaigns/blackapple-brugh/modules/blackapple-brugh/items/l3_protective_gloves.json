@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "l3_protective_gloves",
+  "name": "Protective work gloves",
+  "kind": "gear",
+  "cost": 2,
+  "currency": "fifth-srd:gold",
+  "weight": 0.1
+}

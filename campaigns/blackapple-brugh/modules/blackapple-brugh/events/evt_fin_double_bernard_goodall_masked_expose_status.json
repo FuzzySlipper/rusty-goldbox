@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_bernard_goodall_masked_expose_status",
+  "kind": "set",
+  "variable": "double_bernard_goodall",
+  "value": "\"exposed\"",
+  "next": "evt_fin_double_bernard_goodall_masked_expose_evidence"
+}

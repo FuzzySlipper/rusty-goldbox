@@ -1,0 +1,19 @@
+{
+  "type": "event",
+  "id": "evt_l1_c2_scene",
+  "kind": "text",
+  "text": "The reception lounge stretches around a bronze crocodile whose polished eyes face the balcony. Music and animal noises drift down from the court above. A scratched route card lies beneath one sofa.",
+  "views": [
+    {
+      "mode": "truth",
+      "text": "The lounge is dim and worn. Cheap chairs sag beside a bronze crocodile, while barking, braying, and badly played instruments echo from beyond the balcony.",
+      "picture": "blackapple-art:brugh_reception_truth"
+    },
+    {
+      "mode": "glamour",
+      "text": "The lounge is broad and perfumed, furnished with plush chairs around a gleaming bronze crocodile. Laughter and music rise from a palace party beyond the balcony.",
+      "picture": "blackapple-art:brugh_reception_glamour"
+    }
+  ],
+  "next": "evt_l1_c2_choice"
+}

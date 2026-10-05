@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_env_shrine_revisit",
+  "kind": "text",
+  "text": "The three stones are quiet when you return. The shrine offers care only to a traveller who chooses to speak, and it does not demand a confession.",
+  "picture": "blackapple-art:environs_shrine_confession",
+  "next": "evt_env_shrine_choice"
+}

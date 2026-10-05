@@ -1,0 +1,9 @@
+{
+  "type": "item",
+  "id": "l1_weadley_volume",
+  "name": "Final Weadley volume",
+  "kind": "gear",
+  "cost": 1,
+  "currency": "fifth-srd:gold",
+  "weight": 1
+}

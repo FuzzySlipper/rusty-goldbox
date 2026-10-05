@@ -1,0 +1,12 @@
+{
+  "type": "event",
+  "id": "evt_return_xp_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "not campaign.var.middle_xp_awarded and ((campaign.var.child_arthur_figwort == \"freed\" or campaign.var.child_arthur_figwort == \"returned\") or (campaign.var.child_amelia_goodall == \"freed\" or campaign.var.child_amelia_goodall == \"returned\") or (campaign.var.child_bernard_goodall == \"freed\" or campaign.var.child_bernard_goodall == \"returned\") or (campaign.var.child_giles_weadley == \"freed\" or campaign.var.child_giles_weadley == \"returned\") or (campaign.var.child_philip_anvil == \"freed\" or campaign.var.child_philip_anvil == \"returned\") or (campaign.var.child_ursula_cooke == \"freed\" or campaign.var.child_ursula_cooke == \"returned\") or (campaign.var.child_stevie_leeford == \"freed\" or campaign.var.child_stevie_leeford == \"returned\") or campaign.var.elf_bargain_accepted)",
+      "next": "evt_return_xp_mark"
+    }
+  ],
+  "otherwise": "evt_return_care"
+}

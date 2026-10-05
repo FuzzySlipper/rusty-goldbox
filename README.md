@@ -72,6 +72,15 @@ installed.
 
 ## Authoring modules
 
+Retained campaign canon lives beside its editable content. The
+[Blackapple Brugh source](campaigns/blackapple-brugh/README.md) records its
+story, characters, source adaptation, and licence. Shared canon has one editor;
+chapter and art authors use its stable IDs and handoff contracts. These
+documents describe the story rather than holding runtime game state.
+Its [art bible](campaigns/blackapple-brugh/art/ART_BIBLE.md) defines original
+ink-and-wash references, subject continuity, paired-room geometry and intended
+runtime slots. Exact prompts and provenance remain beside the editable art.
+
 `goldbox` is the authoring CLI. From the repository root:
 
 ```bash
@@ -84,12 +93,48 @@ dotnet run --project src/RustyGoldbox.Cli -- module deps modules/my-rules --json
 `goldbox.json` makes `modules/` the workspace search directory, so new modules
 go there and required modules are found there. Every command accepts `--json`.
 
+An editable authoring workspace keeps canon, reference and accepted art,
+prompts, and scripts outside runtime module directories. Create or inspect it
+through the CLI:
+
+```bash
+dotnet run --project src/RustyGoldbox.Cli -- workspace new my-campaign
+dotnet run --project src/RustyGoldbox.Cli -- workspace inspect my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace build my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- workspace export my-campaign --json
+dotnet run --project src/RustyGoldbox.Cli -- schema workspace --json
+```
+
+The optional `authoring` object in `goldbox.json` lists each owned module source
+directory and the generated staging/export locations. The existing top-level
+`modules` array remains the dependency search path. Workspace inspection
+reports both, so a copied workspace can be resumed from its files.
+Build validates the explicit authored modules and replaces their generated
+staging tree; export independently packs each staged module through the pinned
+Engine packer. Canon, prompts and source art remain editable outside the
+runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
+
+The installed CLI also carries the ready revision-1.0 authoring kit.
+`goldbox authoring list --json` discovers its twelve resources, while
+`goldbox authoring show workflow --json` and
+`goldbox authoring show worked-example --json` print the coordinator workflow
+and complete Lantern example. `goldbox authoring copy --all
+--out my-campaign/prompts --json` copies the kit index, brief, canon, chapter,
+encounter, art, individual/batch image judges, handoff, workflow, revision, and
+worked example. The kit points to `goldbox schema <topic> --json` for format
+details and works outside this repository. The Lantern example is text-only;
+`encounter.md` and [Authoring tactical combat](docs/combat-authoring.md) retain
+the manual-combat, data-authored behavior, AI-debug trace, and refusal-repair
+recipes with fixture-vs-normal-route labels.
+
 The format is described by the tool itself, and rules can be tried against a
 module:
 
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- schema
 dotnet run --project src/RustyGoldbox.Cli -- schema class
+dotnet run --project src/RustyGoldbox.Cli -- schema item --json
+dotnet run --project src/RustyGoldbox.Cli -- schema events --json
 dotnet run --project src/RustyGoldbox.Cli -- module inspect modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval "self.thac0" --module modules/classic --context '{"self": {"class": "fighter", "level": 5}}'
 dotnet run --project src/RustyGoldbox.Cli -- eval --check attack --module modules/classic --seed 7 --context '{"self": {"class": "fighter", "level": 5, "str": 17}, "target": {"monster": "ogre"}}'
@@ -99,6 +144,7 @@ Characters are JSON files made and advanced under a module set:
 
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
+dotnet run --project src/RustyGoldbox.Cli -- character new --module modules/fifth-srd --class fighter --race human --feature soldier,savage_attacker,defense --equipment longsword,chain_mail --out ada.json
 dotnet run --project src/RustyGoldbox.Cli -- character level brom.json --module modules/classic --xp 5000 --seed 3
 dotnet run --project src/RustyGoldbox.Cli -- character show brom.json --module modules/classic
 dotnet run --project src/RustyGoldbox.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'
@@ -110,6 +156,11 @@ dotnet run --project src/RustyGoldbox.Cli -- character milestone ruth.json --mod
 dotnet run --project src/RustyGoldbox.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
 ```
 
+The Game's party creator shows the selected method's authored scores and costs.
+For point buy, enter each attribute score before **Roll**; for a standard array
+or arranged rolls, assign each score's attribute using the priority selectors.
+Core checks the submitted choices and reports any budget or assignment error.
+
 When a character-creation definition names a `lifepath`, `--career` chooses
 the career for each term (one choice repeats with `--terms`),
 `--skill-table` supplies the visible table choice for each actual configured
@@ -119,6 +170,11 @@ also repeats).
 The saved character keeps its age, term choices, roll totals and results in
 `career_terms`; `goldbox character show --json` and the Game party projection
 expose that ledger.
+
+Derived definitions may set `show_on_sheet: true`. The member projection then
+evaluates and exposes that named value in `derived`; the member sheet renders
+the same list. This is an authored display flag and uses the existing
+evaluator, so adding a derived value does not require a named stat in C#.
 
 Campaigns play from command scripts, and save and resume:
 
@@ -147,15 +203,47 @@ shows how to add reusable profiles and data-only enemies; the original
 
 The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
 stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
-scripts and the Game's shop buttons. Declared currency balances stay on
-characters and purchases join party inventory; selling equipped gear removes it
-from its wearer. Each item names its payment currency, and the ruleset declares
-resale in `economy.sell_fraction` (`goldbox schema economy`),
-and `goldbox schema events` describes the shop format. Areas can mark secret
+scripts and the Game's shop buttons. A stock entry can name a numeric campaign
+or area variable holding a nonnegative whole scalar count; each successful buy
+decrements it, while omitted stock is unlimited. Declared currency balances stay
+on characters and purchases join party inventory; selling equipped gear removes
+it from its wearer. Each item names its payment currency, and the ruleset
+declares resale in `economy.sell_fraction` (`goldbox schema economy`). A shop's
+optional `buying` policy requires a currency, defaults its fraction to the
+ruleset `sell_fraction` (0.5 in classic and fifth-srd), and may name a numeric
+cash `balance` or `max_value`; omitted balance means unlimited cash and omitted
+maximum means no value limit. `goldbox schema events` describes these fields
+and the input diagnostics identify `$.items[i].stock` or `$.buying.*`. Areas can mark secret
 doors with `SS`; `search [direction]` uses the area's search check and saves
 discovered edges. `DD` edges may be declared as locked doors with key, pick,
 force or event mechanisms; `open`, `pick` and `force` use those declarations
 and saves keep opened doors and an open shop.
+
+Between conversations, services and fights, `equip <member> <item-id>` moves
+one carried item onto that member; `unequip <member> <item-id>` returns one
+equipped copy to party inventory. The member sheet's Equipment table offers
+the same choices. Class and race restrictions still apply, and saves retain
+both equipped and carried copies. A shop can override its buying rate and
+use a numeric campaign or area variable for its remaining cash with `buying`;
+`goldbox schema events` includes the policy and an example.
+
+Carried consumables use `use <member> <item-id>` with a one-based active member
+and a local or qualified item ID. One carried copy is consumed and the item's
+existing scene operations run outside combat and pending menu, shop, temple or
+training interactions; an equipped copy cannot be used. The item schema's
+minimal form is:
+
+```json
+{ "type": "item", "id": "healing_draught", "name": "Healing draught", "kind": "consumable", "cost": 5, "currency": "gold", "weight": 1, "use": { "operations": [{ "op": "heal", "track": "hit_points", "amount": "1d8 + 1" }] } }
+```
+
+`use.duration_days` is a nonnegative expression evaluated once on use with
+the selected member as `self`; only authored rest and training advance
+fictional `ElapsedDays`. An applied condition stores its absolute expiry in
+the saved character's `condition_expiry` map. Combat rounds, transient
+condition values and turn hooks are rejected for this campaign-time use.
+`goldbox schema item --json` prints the fields and example, and errors identify
+paths such as `$.use.operations[0].track` and `$.use.duration_days`.
 
 Campaign `give` and `take` events name an `item` and an optional positive
 `count` (one by default). Giving adds carried copies. Taking removes carried
@@ -164,6 +252,30 @@ if the party lacks the full count. Guards and menus can use
 `carried(item.id == 'dagger') > 0` for possession or `carried(item.kind == 'gear')`
 for a count. This includes the active party's equipment and excludes absent
 NPCs. The sample crypt's altar consumes its offered dagger.
+
+Scene `check` events roll a declared check for a numbered active member and
+follow its success or failure branch. Scene `effect` events apply explicit
+track damage/healing and durable condition changes through the existing
+character state. Authors supply recovery and defeat routing; timed or
+turn-hook conditions belong to combat. `party_size()` reads the live active
+count in campaign expressions, so an authored lift or passage can respond to
+recruitment and dismissal. See `goldbox schema events` and
+`goldbox schema expressions` for the fields and examples.
+
+`spell_reward` is the data event for a ruleset-selected lesson. It may name a
+positive `member` or award every active member. For each member it uses the
+ruleset's castable eligibility, keeps the highest level on an active class list,
+then filters known spells and draws once among that level's unknown spells.
+The selected definition is added to the ordinary known list, so casting,
+preparation and save/load use it. No eligible spell emits a visible no-op fact
+and consumes no random draw. Gate a one-time reward with the authored event
+trigger or variable path; `spell_reward` has no generic once flag. Its minimal
+authoring form is `{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "A lesson takes hold.", "next": "road" }`.
+
+For scripted runs, `--fail-on-refusal` converts a refusal into a diagnostic and
+exit code 1. Otherwise refusals remain transcript facts, which keeps a script
+readable while allowing authors to choose whether a refusal should fail a
+headless check.
 
 With `--store <dir>`, `--load` and `--save` name save slots in that Engine
 persistence root instead of files, such as the Game's under `rusty dev`:
@@ -233,6 +345,7 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `src/RustyGoldbox.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`), presentation of committed combat facts and the session projection over Core |
 | `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
 | `modules/` | First-party module sources: the `classic` ruleset, `placeholder-art` assets and the `sample-crypt` campaign. Also the Game's content root: each directory is a content bundle |
+| `campaigns/` | Retained editable campaign source, including shared story canon and source attribution |
 | `goldbox.json` | Workspace: module search directories |
 | `tests/RustyGoldbox.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
 | `Directory.Build.props` | Engine SDK/runtime pin |
@@ -286,3 +399,19 @@ campaign's party maximum/minimum and never remove player characters.
 `AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
 and NPC identity, rejecting duplicate identities at the save boundary. The Game
 roster observes the existing party, with no separate NPC runtime or state.
+
+For scenes perceived differently by party members, author a `perception` event
+with `scope`, `check`, `success_mode` and `failure_mode`, then a text event with
+matching `views`. `goldbox schema events --json` describes both and includes
+examples. `view <member>` in scripted play, or the member sheet's view control
+in the Game, selects the member's text and picture over the shared area. Results
+belong to the existing character and survive save/load and NPC dismissal.
+Use `reset: true` on an expedition-entry event when the same scope must be
+rolled again; ordinary same-scope room events preserve the result.
+
+Illustrated image and sheet assets can declare `"sampling": "linear"`;
+omitting it keeps nearest sampling for pixel art. `goldbox schema media --json`
+lists the modes and examples. Engine scene textures and DOM pictures use the
+same authored policy, with isolated sheet frames and named regions. Validation
+identifies one-pixel linear crops that the pinned Engine cannot represent and
+suggests nearest sampling or a wider crop.

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_035",
+  "kind": "set",
+  "variable": "evidence_gold_threads",
+  "value": "false",
+  "next": "evt_fin_setup_court_bound_036"
+}

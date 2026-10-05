@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_child_ursula_cooke_captive",
+  "kind": "text",
+  "text": "Ursula Cooke — captive. Seeing a child in the Brugh did not count as rescue, and no family handoff is claimed.",
+  "next": "evt_fin_child_stevie_leeford"
+}

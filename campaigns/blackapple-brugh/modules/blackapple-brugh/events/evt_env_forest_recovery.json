@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_env_forest_recovery",
+  "kind": "rest",
+  "text": "You make a sheltered camp at the edge of the road. The party rests for a day under ordinary rules before deciding whether to report the encounter, visit the hill, or return to the village.",
+  "tracks": [
+    "fifth-srd:hit_points",
+    "fifth-srd:spells_1",
+    "fifth-srd:spells_2",
+    "fifth-srd:spells_3"
+  ],
+  "next": "evt_env_forest_recovery_done",
+  "resting": "blackapple-fae:long_rest",
+  "periods": 1,
+  "prepare": true
+}

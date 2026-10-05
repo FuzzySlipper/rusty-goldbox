@@ -43,6 +43,7 @@ In priority order:
 | `src/RustyGoldbox.Cli/` | The `goldbox` authoring and testing CLI over Core. |
 | `src/ui/` | DOM companion: the panels around the Engine view, laid out for the window's shape. |
 | `modules/` | First-party module sources, one directory per module. |
+| `campaigns/` | Retained editable campaign sources, with story canon and attribution outside runtime module directories. |
 | `tests/` | Focused checks: module fixtures, expression cases and golden play transcripts. |
 
 This is the intended shape; [architecture.md](architecture.md) records what
@@ -146,6 +147,14 @@ class needs no patch to the ruleset's character creation.
   campaign or extension, since rulesets carry no art) says which sheet draws a
   monster or a class, and optionally the picture that lists it. A character
   may have a portrait, chosen at creation and kept in its file and saves.
+- Visual assets may declare `sampling: "linear"` for smoothly scaled
+  illustrations; omitted sampling or `"nearest"` preserves pixel-art edges.
+  The same policy follows the asset through Engine textures and DOM pictures,
+  including sheet frames. Linear cropped regions and frames use half-pixel
+  isolation. A one-pixel cropped axis cannot be isolated with the pinned
+  Engine's nondegenerate atlas rectangles, so validation directs the author
+  to nearest sampling or a wider crop. Whole images retain their ordinary
+  dimensions; this restriction applies only to that cropped-axis case.
 
 ### Rules as data
 
@@ -179,6 +188,12 @@ foe). A **check** compares a roll, plus its modifiers,
 with a target. A **monster** names the class and level whose tables it uses,
 and its `stats` replace derived values. Attributes may declare a `default` for
 creatures that have none.
+
+A derived definition may set `show_on_sheet: true` to include its evaluated
+name and value in the ordinary member sheet. The Game projection computes
+these values from the ruleset and character each time; the flag is data that
+controls the readout, not a named-stat list in product code. An omitted flag
+keeps the derived value available to rules and out of the sheet.
 
 A character records the class it took at each level and what the level track
 gained, so it can hold levels in several classes: `self.level` is the total
@@ -285,6 +300,33 @@ A condition may declare **values** with defaults (`{ "amount": 5 }`) that
 `apply_condition` sets when it applies the condition ("ongoing 5"); its
 modifiers and its start- and end-of-turn operations read them as
 `condition.amount`, so a save that ends the condition is an end-of-turn check.
+A carried item may instead declare a `use` object for campaign-time
+consumption. Its operations use the existing `damage`, `heal`,
+`apply_condition` and `remove_condition` vocabulary, and `duration_days` is an
+optional number expression for an applied durable condition:
+
+```json
+{
+  "type": "item", "id": "healing_draught", "name": "Healing draught",
+  "kind": "consumable", "cost": 5, "currency": "gold", "weight": 1,
+  "use": { "operations": [{ "op": "heal", "track": "hit_points", "amount": "1d8 + 1" }] }
+}
+```
+
+`use <member> <item-id>` addresses a one-based active party member and a local
+or qualified item ID. It consumes one carried copy and runs the item
+operations outside combat and outside a pending menu, shop, temple or
+training interaction; equipped copies are not carried consumables. The
+duration expression is evaluated once on use in the selected member's
+`self`, campaign and area scope. It is fictional campaign time: `ElapsedDays`
+advances through authored rest and training, and the resulting absolute day
+is saved in the character's optional `condition_expiry` map. Consumable
+conditions remain ordinary durable conditions; combat rounds, transient
+condition values and turn hooks are invalid in this path. Validation and
+runtime expression failures identify paths such as
+`$.use.operations[0].track`, `$.use.operations[0].rounds`,
+`$.use.operations[0].values` and `$.use.duration_days`.
+
 A combat definition may put its fights on a **field**: a grid of cells with
 a distance metric (diagonal steps counting 1, or only straight steps). The
 sides start at opposite edges; an action's `range` limits its targets to that
@@ -489,24 +531,63 @@ Combat is built so that no die convention is assumed:
   or an event chain; `open`, `pick` and `force` commands and forward movement
   use those authored mechanisms, and opened edges are saved as open.
 - **Events.** These are UA-style event chains, written as data. Event types
-  include text, question/menu, combat, treasure, experience, give/take item, shop,
-  temple, training, rest, NPC join/leave, set/test variable, teleport, a
+  include text, question/menu, combat, treasure, experience, give/take item,
+  `spell_reward`, shop, temple, training, rest, NPC join/leave, set/test variable, teleport, a
   conditional branch, door open, chain-to, and end adventure. Each event names its
   successors through outcome branches (`onYes`, `onWin`, `onFlee` …). Any
   branch can be guarded by an expression. Text, menu, shop and combat events may
   bring a `picture` (shown until the party moves or another event shows one),
   a `sound` (played once) and `music` (looping until another event's music);
   the play transcript names them, and saves keep the picture and music.
+- **Member perception.** A `perception` event names a check, a scope and its
+  success/failure modes, with an optional check modifier. Each active character
+  owns one persisted scope/mode result. Repeating the same scope keeps that
+  result; changing scope or authoring `reset: true` clears active and absent NPC
+  results before resolving active members through the normal evaluator and
+  Engine dice. A text event may supply `views` with distinct mode, text and
+  optional picture fields. `view <member>` selects that member's presentation;
+  the area, routes, variables and consequences remain shared. Saves retain the
+  current view event and selection. Modes and check names are authored data.
+- **Scene checks and effects.** A `check` event resolves a declared check for
+  one active member through the same evaluator and Engine dice as other checks,
+  then follows `on_success` or `on_failure`. An `effect` event applies explicit
+  track damage/healing or durable condition changes to one member or the active
+  party. Character tracks and conditions remain their only mutable owners.
+  Per-application condition values, durations and combat hooks are rejected
+  here; declared condition defaults remain available. The author supplies recovery and defeat branches;
+  an effect alone does not decide a ruleset's defeat policy. `party_size()` reads
+  the current active party in campaign expressions, including after recruitment
+  or dismissal.
+- **Spell rewards** are data events with `kind: "spell_reward"`, optional
+  positive `member` (or every active member when omitted), text and `next`.
+  The ruleset's `CharacterRules.CastableSpells` supplies eligibility; the
+  runtime keeps the highest castable level present
+  on an active class list, and makes one Engine-backed draw among that level's
+  unknown spells. It adds the chosen definition to the ordinary known-spell
+  list, so normal casting, preparation and saves see it. A member with no
+  candidate produces a visible no-op fact and no draw. A one-time reward uses
+  the campaign's authored once trigger or variable gate; the event has no
+  generic once state. `goldbox schema events --json` gives the minimal shape:
+  `{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "A lesson takes hold.", "next": "road" }`.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
-  an item and an optional campaign guard; stock is unlimited and offered at
-  the item's cost in its declared currency. A ruleset's single `economy`
-  definition declares `sell_fraction` (0 to 1). Carried items, including
-  equipped gear, sell at cost times that fraction, keeping fractional amounts.
-  Purchases spend the item's currency from pooled character balances in party
-  order; proceeds use the treasure split (whole shares, remainder to the first
-  member). Bought items join party inventory. A ruleset may declare no
-  currencies, in which case paid content cannot be authored. Leaving follows
-  the event's `next`, and saves retain an open shop.
+  an item, an optional campaign guard and, when finite, a `stock` reference to
+  a numeric campaign or area variable holding a nonnegative whole scalar count.
+  A successful purchase lowers that variable by one; omitting `stock` keeps
+  the offer unlimited. Items sell at cost in their declared currency. A
+  ruleset's single `economy` definition declares `sell_fraction` (0 to 1),
+  which is the default buying fraction; the classic and fifth-srd economies
+  set it to 0.5. A shop `buying` object requires its currency and may override
+  `fraction`, name a numeric `balance` variable (omitting it gives unlimited
+  buying cash), and set `max_value` (omitting it gives no item-value limit).
+  Carried items, including equipped gear, sell at cost times the selected
+  fraction, keeping fractional amounts. Purchases spend the item's currency
+  from pooled character balances in party order; proceeds use the treasure
+  split (whole shares, remainder to the first member). Bought items join party
+  inventory. A ruleset may declare no currencies, in which case paid content
+  cannot be authored. Leaving follows the event's `next`, and saves retain an
+  open shop. Authoring diagnostics point to `$.items[i].stock`,
+  `$.buying.fraction`, `$.buying.balance` or `$.buying.max_value` when those
+  inputs violate their type or range.
 - **Experience** comes from felled monsters and experience events, shared
   among the survivors (or the whole party, or given whole to each character,
   as the ruleset says). A level that
@@ -537,10 +618,18 @@ definition whose `kind` picks its fields (`goldbox schema events`).
 
 Core holds one mutable owner per domain: party and characters, the campaign
 position and variables, the active event, and the active combat. Commands in
-(move, turn, choose option, combat action) produce state changes and an
-observation record. The CLI and the Game product drive the same command
-surface. The CLI prints observations; the Game publishes them as projections
-and, later, presentation.
+(move, turn, choose option, equip or unequip one item, use one item, combat
+action) produce state changes and an observation record. The CLI and the Game
+product drive the same command surface. The CLI prints observations; the Game
+publishes them as projections and, later, presentation. `equip <member>
+<item-id>`, `unequip <member> <item-id>` and `use <member> <item-id>` use
+one-based party members and local or qualified item IDs. Gear transfers one
+existing occurrence between party inventory and the selected character's
+equipment; `use` consumes one carried occurrence and applies the item's
+existing scene operations to that member. All three are refused while a live
+combat or another pending menu, shop, temple or training interaction owns
+commands. `use` also refuses an ended adventure or an item without a `use`
+definition.
 
 Every random draw goes through Engine `Random` with an explicit seed, so a
 seed and a command script fully reproduce a run. A transcript records seeds,
@@ -564,19 +653,31 @@ scope until a real module release needs it.
 path and the rule that failed. Module directories resolve through
 `--modules <dir>` and a workspace `goldbox.json`.
 
+For the data above, `goldbox schema item --json` and `goldbox schema events
+--json` print the accepted fields and examples. A malformed consumable points
+to its `$.use.operations[i]` field or `$.use.duration_days`; a malformed spell
+reward member points to `$.member`; shop stock and buying policy diagnostics
+point to `$.items[i].stock`, `$.buying.fraction`, `$.buying.balance` or
+`$.buying.max_value`. The command help shows the same `use <member> <item-id>`
+play syntax.
+
 | Command | Purpose |
 | --- | --- |
 | `goldbox schema [type]` | Print a definition type's fields, an example and the available operations and expression functions. This is the agent's format reference. |
+| `goldbox workspace new <dir>` | Create editable canon/art/prompts/scripts directories and a workspace manifest with separate runtime module and generated output locations. |
+| `goldbox workspace inspect [path]` | Find the nearest workspace and report its authored modules, dependency paths, editable roots and generated locations. `goldbox schema workspace` describes the manifest. |
+| `goldbox workspace build [path]` | Validate the explicit runtime modules, report included files and unresolved dependencies, and replace generated staging while preserving editable source. |
+| `goldbox workspace export [path]` | Build first, then pack each staged module independently through the pinned Engine packer into generated exports. |
 | `goldbox module new <kind> <id>` | Scaffold a module. |
 | `goldbox module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
 | `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
 | `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
 | `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
-| `goldbox character new\|skills\|level …` | Create a character (including a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
+| `goldbox character new\|skills\|level …` | Create a character (including starting equipment and a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
 | `goldbox character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
 | `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
 | `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
-| `goldbox play --campaign … --seed N [--script file]` | Play from a command script or stdin and emit a transcript. |
+| `goldbox play --campaign … --seed N [--script file] [--fail-on-refusal]` | Play from a command script or stdin and emit a transcript. Use `use <member> <item-id>` for a carried consumable; `--fail-on-refusal` turns a scripted refusal into a diagnostic and exit code 1. |
 | `goldbox module pack <path> [--output <file> \| --install]` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
 
 Golden transcripts from `goldbox play` and `goldbox sim` are the main
@@ -703,4 +804,7 @@ Inventory events use the existing party inventory and character equipment.
 `give` adds item copies; `take` removes the full requested count or follows
 `on_refused` without taking any. `carried(predicate)` counts matching copies
 across those same stores for campaign guards, including equipped items and
-excluding NPCs outside the party.
+excluding NPCs outside the party. A `use <member> <item-id>` command consumes
+one carried item with a declared `use` object and applies its operations to
+that active member; the Game's grouped inventory marks such items `usable` so
+the member overlay sends `use` instead of `equip`.

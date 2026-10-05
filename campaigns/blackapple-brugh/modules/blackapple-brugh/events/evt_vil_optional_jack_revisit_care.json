@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_jack_revisit_care",
+  "kind": "menu",
+  "text": "Jack's secret remains under a private promise of care. Father Naskew is still willing to talk, and the dog trail remains open.",
+  "options": [
+    {
+      "label": "Follow the wild-dog trail",
+      "next": "evt_vil_optional_jack_dog_lead"
+    },
+    {
+      "label": "Open Father Naskew's quiet room",
+      "next": "evt_vil_priory"
+    },
+    {
+      "label": "Return to the village board",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}

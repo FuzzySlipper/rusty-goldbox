@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "epilogue_public_truth",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "Independent additive ending consequence."
+}

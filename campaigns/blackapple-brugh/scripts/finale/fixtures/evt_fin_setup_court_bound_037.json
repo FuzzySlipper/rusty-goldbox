@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_court_bound_037",
+  "kind": "set",
+  "variable": "evidence_fairy_mirrors",
+  "value": "false",
+  "next": "evt_fin_setup_court_bound_038"
+}

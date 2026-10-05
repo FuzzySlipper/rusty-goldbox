@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_elf_bargain_013",
+  "kind": "set",
+  "variable": "double_amelia_goodall_removal_cause",
+  "value": "\"\"",
+  "next": "evt_fin_setup_elf_bargain_014"
+}

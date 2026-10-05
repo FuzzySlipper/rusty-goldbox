@@ -1,0 +1,22 @@
+{
+  "type": "event",
+  "id": "evt_vil_guardhouse_paid",
+  "kind": "shop",
+  "text": "The guardhouse toll counter lists one road pass for the active party. Each pass costs 1 sp per person. Buy the pass, then leave the counter so the guards can take the receipt.",
+  "items": [
+    {
+      "item": "village_toll_4",
+      "when": "party_size() == 4"
+    },
+    {
+      "item": "village_toll_5",
+      "when": "party_size() == 5"
+    },
+    {
+      "item": "village_toll_6",
+      "when": "party_size() == 6"
+    }
+  ],
+  "next": "evt_vil_guardhouse_paid_receipt",
+  "picture": "blackapple-art:blackapple_village"
+}

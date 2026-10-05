@@ -1,0 +1,28 @@
+{
+  "type": "event",
+  "id": "evt_fin_epilogue_disclosure_gate",
+  "kind": "branch",
+  "branches": [
+    {
+      "when": "campaign.var.epilogue_public_truth",
+      "next": "evt_fin_epilogue_public_gate"
+    },
+    {
+      "when": "campaign.var.epilogue_protected_account",
+      "next": "evt_fin_epilogue_protected_text"
+    },
+    {
+      "when": "campaign.var.epilogue_truth_verified",
+      "next": "evt_fin_epilogue_verified_text"
+    },
+    {
+      "when": "campaign.var.epilogue_no_proof",
+      "next": "evt_fin_epilogue_no_proof_text"
+    },
+    {
+      "when": "campaign.var.epilogue_court_terms",
+      "next": "evt_fin_epilogue_court_terms_text"
+    }
+  ],
+  "otherwise": "evt_fin_close"
+}

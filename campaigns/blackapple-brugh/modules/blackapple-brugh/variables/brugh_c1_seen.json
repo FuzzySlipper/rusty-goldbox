@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "brugh_c1_seen",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "C1 has been visited."
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_set_ending_partial_return",
+  "kind": "set",
+  "variable": "ending_id",
+  "value": "\"ending.partial_return\"",
+  "next": "evt_fin_primary_text"
+}

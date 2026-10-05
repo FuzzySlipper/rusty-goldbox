@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_bernard_goodall_escaped",
+  "kind": "text",
+  "text": "The Bernard Goodall double — escaped. Its matching child's status is unchanged, and the recorded route remains the named custody or evidence record.",
+  "next": "evt_fin_double_giles_weadley"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "variable",
+  "id": "opening_xp_awarded",
+  "value_type": "boolean",
+  "initial": "false",
+  "description": "Opening story XP has already been awarded; prevents repeat farming on revisit."
+}

@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_ursula_cooke_hide_evidence",
+  "kind": "set",
+  "variable": "double_ursula_cooke_evidence",
+  "value": "\"identity withheld while arranging a private handoff\"",
+  "next": "evt_fin_double_ursula_cooke_hide_text"
+}

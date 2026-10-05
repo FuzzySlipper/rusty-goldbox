@@ -1,0 +1,8 @@
+{
+  "type": "event",
+  "id": "evt_fin_setup_lost_defeat_007",
+  "kind": "set",
+  "variable": "child_stevie_leeford",
+  "value": "\"unknown\"",
+  "next": "evt_fin_setup_lost_defeat_008"
+}

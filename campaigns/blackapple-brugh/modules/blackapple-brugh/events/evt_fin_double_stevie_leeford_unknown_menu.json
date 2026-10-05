@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "id": "evt_fin_double_stevie_leeford_unknown_menu",
+  "kind": "menu",
+  "text": "The Stevie Leeford double has no reliable identity. Choose what account to carry home.",
+  "options": [
+    {
+      "label": "Leave the status unknown and carry the uncertainty home",
+      "next": "evt_fin_account_complete"
+    },
+    {
+      "label": "Record a forest lead without claiming custody",
+      "next": "evt_fin_double_stevie_leeford_unknown_lead"
+    }
+  ]
+}

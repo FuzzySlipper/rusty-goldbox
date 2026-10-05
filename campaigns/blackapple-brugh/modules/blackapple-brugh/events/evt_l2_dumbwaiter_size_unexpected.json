@@ -1,0 +1,7 @@
+{
+  "type": "event",
+  "id": "evt_l2_dumbwaiter_size_unexpected",
+  "kind": "text",
+  "text": "The live active party count is outside the campaign's authored 4–6 range. The dumbwaiter stays closed until the campaign's ordinary party limit is restored.",
+  "next": "evt_l2_c14"
+}

@@ -1,0 +1,25 @@
+{
+  "type": "event",
+  "id": "evt_vil_optional_services",
+  "kind": "menu",
+  "text": "At the service board, Hazard offers marked-price supplies and Agatha offers six named draughts. Choose whose counter to visit; Agatha keeps the bottles behind the counter until you have chosen what help you need.",
+  "picture": "blackapple-art:blackapple_village",
+  "options": [
+    {
+      "label": "Visit Hazard's supply counter",
+      "next": "evt_vil_optional_hazard_shop"
+    },
+    {
+      "label": "Ask Agatha about her six draughts",
+      "next": "evt_vil_optional_agatha_service"
+    },
+    {
+      "label": "Ask Father Naskew to tend a wounded companion",
+      "next": "evt_vil_priory_care"
+    },
+    {
+      "label": "Return to the village board",
+      "next": "evt_vil_optional_hub"
+    }
+  ]
+}
