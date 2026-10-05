@@ -175,10 +175,6 @@ internal static class GameCommands
                 case "combat-action":
                     session.CombatAction(engine, Text(payload, "actor"), CombatActionId(payload), CombatTargets(payload), CombatPath(payload));
                     break;
-                case "combat-move":
-                    IReadOnlyList<Cell>? movePath = CombatPath(payload) ?? throw new PayloadException("\"path\" must be an array of combat cells");
-                    session.CombatMove(engine, Text(payload, "actor"), CombatActionId(payload), Text(payload, "target"), movePath);
-                    break;
                 case "combat-end-turn":
                     session.CombatEndTurn(engine, Text(payload, "actor"));
                     break;
@@ -208,7 +204,7 @@ internal static class GameCommands
                     SaveSettings(session, engine);
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-move, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale");
             }
         }
         catch (PayloadException exception)
@@ -239,11 +235,6 @@ internal static class GameCommands
         if (payload.TryGetProperty("choice", out JsonElement choice) && choice.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(choice.GetString()))
         {
             return choice.GetString()!;
-        }
-
-        if (payload.TryGetProperty("actionId", out JsonElement action) && action.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(action.GetString()))
-        {
-            return action.GetString()!;
         }
 
         throw new PayloadException("\"choice\" must be non-empty text");

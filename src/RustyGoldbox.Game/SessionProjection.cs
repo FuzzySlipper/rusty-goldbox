@@ -256,7 +256,6 @@ internal static class SessionProjection
             ["phase"] = observation.Phase.ToString().ToLowerInvariant(),
             ["round"] = observation.Round,
             ["activeActorId"] = highlightedActorId,
-            ["activeActor"] = highlightedActorId is string activeId && observation.Combatants.FirstOrDefault(member => member.Id == activeId) is CombatantObservation active ? active.Name : null,
             ["decisionActorId"] = decisionActorId,
             ["turnActorId"] = turnActorId,
             ["done"] = observation.Phase == CombatPhase.Ended,
@@ -325,7 +324,9 @@ internal static class SessionProjection
             ["options"] = decision.Options is null ? null : new JsonArray(decision.Options.Select(DecisionOption).ToArray()),
             ["check"] = decision.Check is CombatCheckState check ? new JsonObject
             {
-                ["id"] = check.CheckId, ["roll"] = (double)check.Roll, ["bonus"] = (double)check.Bonus,
+                ["id"] = check.CheckId,
+                ["name"] = rules.Find(DefinitionTypes.Check, check.CheckId, out _)?.Name ?? check.CheckId,
+                ["roll"] = (double)check.Roll, ["bonus"] = (double)check.Bonus,
                 ["modifier"] = (double)check.Modifier, ["total"] = (double)check.Total,
                 ["target"] = (double)check.Target, ["margin"] = (double)check.Margin,
                 ["success"] = check.Success, ["tier"] = check.Tier,

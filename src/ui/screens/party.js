@@ -327,7 +327,7 @@ export function createParty(send, rerender) {
             profession: Number(field.profession.value),
             personal: Number(field.personal.value),
           })),
-        }, { 'data-focus-key': `party:${index}:skills` }))))];
+        }), { 'data-focus-key': `party:${index}:skills` })))];
 
     function pointInput(key, initial, allowed) {
       const input = element('input', {

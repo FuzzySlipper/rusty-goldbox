@@ -177,13 +177,6 @@ public sealed class CombatBehaviorController
         Assign(actorId, profile);
     }
 
-    /// <summary>Removes an explicit override so the actor can inherit its module policy again.</summary>
-    public void ClearAssignment(string actorId)
-    {
-        _overrides.Remove(actorId);
-        Reset(actorId);
-    }
-
     /// <summary>Resets a policy's rule and step commitment at a combat boundary.</summary>
     public void Reset(string actorId)
     {

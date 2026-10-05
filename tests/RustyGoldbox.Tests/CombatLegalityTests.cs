@@ -164,10 +164,8 @@ public sealed class CombatLegalityTests
         });
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ClassicCloseRejectsAPathForAnotherTargetWithoutMutatingCombat(bool standaloneMoveCommand)
+    [Fact]
+    public void ClassicCloseRejectsAPathForAnotherTargetWithoutMutatingCombat()
     {
         using TempModules modules = new();
         string tactics = modules.Module("tactics", "extension", requires: TempModules.Require("classic", "*"));
@@ -271,9 +269,8 @@ public sealed class CombatLegalityTests
             Cell positionBeforeMismatch = observation.Combatants.Single(member => member.Id == actor.Id).Position!.Value;
             string[] factsBeforeMismatch = observation.Facts.Select(FactLine).ToArray();
 
-            CombatCommand MismatchedCommand(string targetId, IReadOnlyList<Cell> path) => standaloneMoveCommand
-                ? new CombatCommand.Move(actor.Id, closeChoice.Id, targetId, path)
-                : new CombatCommand.UseAction(actor.Id, closeChoice.Id, [targetId], path);
+            CombatCommand MismatchedCommand(string targetId, IReadOnlyList<Cell> path) =>
+                new CombatCommand.UseAction(actor.Id, closeChoice.Id, [targetId], path);
 
             CombatCommandResult mismatched = runner.Submit(MismatchedCommand(second.Id, pathForFirst.Path));
             Assert.False(mismatched.Accepted, mismatched.Reason);

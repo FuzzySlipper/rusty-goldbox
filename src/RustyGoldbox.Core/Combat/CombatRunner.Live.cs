@@ -46,19 +46,6 @@ public sealed partial class CombatRunner
     /// <summary>The one live state owner exposes its current fact list read-only.</summary>
     public IReadOnlyList<CombatFact> Facts => _facts;
 
-    /// <summary>Creates the persistence snapshot through the shared persistence partial.</summary>
-    public CombatContinuationState CaptureContinuation() => Capture();
-
-    /// <summary>Resumes a live owner through the shared persistence partial.</summary>
-    public static CombatRunner Resume(
-        RuleSet rules,
-        Definition combat,
-        IReadOnlyList<CombatSide> sides,
-        DiceRoller dice,
-        CombatContinuationState state,
-        Definition? encounter = null,
-        CombatSetup? setup = null) => Restore(rules, combat, sides, dice, state, encounter, setup);
-
     private void AssignStableIds()
     {
         HashSet<string> used = new(StringComparer.Ordinal);
@@ -258,7 +245,7 @@ public sealed partial class CombatRunner
     /// </summary>
     public CombatCommandResult StepAutomaticTurn(string actorId)
     {
-        if (_phase is not CombatPhase.AwaitingAction and not CombatPhase.AwaitingMovement
+        if (_phase is not CombatPhase.AwaitingAction
             || _activeActor is null
             || _activeActor.Id != actorId
             || _activeActor.Controller != CombatControlMode.Manual)
@@ -362,7 +349,7 @@ public sealed partial class CombatRunner
             }
         }
 
-        if (_phase is not CombatPhase.AwaitingAction and not CombatPhase.AwaitingMovement || _pendingDecision is null)
+        if (_phase is not CombatPhase.AwaitingAction || _pendingDecision is null)
         {
             return CombatCommandResult.Refused("Combat is not waiting for an action command.", Observe());
         }
@@ -377,7 +364,6 @@ public sealed partial class CombatRunner
             return command switch
             {
                 CombatCommand.EndTurn end => SubmitEndTurn(end),
-                CombatCommand.Move move => SubmitMove(move),
                 CombatCommand.UseAction use => SubmitAction(use),
                 _ => CombatCommandResult.Refused("The combat command is not supported.", Observe()),
             };
@@ -398,11 +384,6 @@ public sealed partial class CombatRunner
         FinishCurrentTurn();
         _phase = CombatPhase.Advancing;
         return CombatCommandResult.AcceptedResult(Advance());
-    }
-
-    private CombatCommandResult SubmitMove(CombatCommand.Move command)
-    {
-        return SubmitAction(new CombatCommand.UseAction(command.ActorId, command.ActionId, [command.TargetId], command.Path));
     }
 
     private CombatCommandResult SubmitAction(CombatCommand.UseAction command)

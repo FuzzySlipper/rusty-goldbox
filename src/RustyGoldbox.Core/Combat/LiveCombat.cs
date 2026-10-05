@@ -4,14 +4,14 @@ using RustyGoldbox.Core.Rules;
 namespace RustyGoldbox.Core.Combat;
 
 /// <summary>The point at which a live combat is waiting or has stopped.</summary>
+/// <remarks>Saved continuations store these numbers.</remarks>
 public enum CombatPhase
 {
-    NotStarted,
-    Advancing,
-    AwaitingAction,
-    AwaitingMovement,
-    AwaitingInterrupt,
-    Ended,
+    NotStarted = 0,
+    Advancing = 1,
+    AwaitingAction = 2,
+    AwaitingInterrupt = 4,
+    Ended = 5,
 }
 
 /// <summary>Who supplies a combatant's decisions at its turns.</summary>
@@ -22,15 +22,14 @@ public enum CombatControlMode
 }
 
 /// <summary>The kind of choice a live combat can expose.</summary>
+/// <remarks>Saved continuations store these numbers.</remarks>
 public enum CombatDecisionKind
 {
-    Action,
-    Targets,
-    Movement,
-    EndTurn,
-    Interrupt,
-    PostRoll,
-    Initiative,
+    Action = 0,
+    Targets = 1,
+    Interrupt = 4,
+    PostRoll = 5,
+    Initiative = 6,
 }
 
 /// <summary>A target the current actor may inspect or select.</summary>
@@ -288,16 +287,6 @@ public abstract record CombatCommand
         string ActionId,
         IReadOnlyList<string> TargetIds,
         IReadOnlyList<Cell>? Path = null) : CombatCommand;
-
-    /// <summary>
-    /// Move through a movement-capable action. The action is identified
-    /// explicitly when an actor has more than one such use.
-    /// </summary>
-    public sealed record Move(
-        string ActorId,
-        string ActionId,
-        string TargetId,
-        IReadOnlyList<Cell> Path) : CombatCommand;
 
     /// <summary>Finish the active actor's turn, even when some budget remains.</summary>
     public sealed record EndTurn(string ActorId) : CombatCommand;

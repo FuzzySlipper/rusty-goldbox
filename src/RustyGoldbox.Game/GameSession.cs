@@ -530,12 +530,6 @@ internal sealed class GameSession(ModuleLibrary library)
         SubmitCombat(engine, new CombatCommand.UseAction(actorId, actionId, targetIds, path));
     }
 
-    /// <summary>Submits a movement action through the Core live combat owner.</summary>
-    public void CombatMove(IEngineContext engine, string actorId, string actionId, string targetId, IReadOnlyList<Cell> path)
-    {
-        SubmitCombat(engine, new CombatCommand.Move(actorId, actionId, targetId, path));
-    }
-
     /// <summary>Ends the active actor's turn without spending a future action.</summary>
     public void CombatEndTurn(IEngineContext engine, string actorId)
     {

@@ -21,11 +21,14 @@ export function createControls(send, ui) {
   const budgetText = (budget) => Object.entries(budget ?? {})
     .map(([name, amount]) => `${name.split(':').at(-1)} ${amount}`)
     .join(' · ');
-  const trackText = (member, track) => {
-    const tracks = member?.tracks ?? {};
-    const value = track && tracks[track] !== undefined ? tracks[track] : member?.value;
-    const max = member?.max ?? (track && member?.trackMaximums?.[track]);
-    return value === undefined || value === null ? '' : `${value}${max === undefined || max === null ? '' : `/${max}`}`;
+  // A fight member's value on the fight's track, e.g. "6/8".
+  const memberValue = (member) => member?.value === undefined || member?.value === null
+    ? ''
+    : `${member.value}${member.max === undefined || member.max === null ? '' : `/${member.max}`}`;
+  // The roll a post-roll choice would change, e.g. "Melee attack 9 + 2 = 11 vs 15: failure".
+  const checkText = (check) => {
+    const modifiers = (check.bonus ?? 0) + (check.modifier ?? 0);
+    return `${check.name} ${check.roll}${modifiers ? ` ${modifiers < 0 ? '-' : '+'} ${Math.abs(modifiers)}` : ''} = ${check.total} vs ${check.target}: ${check.success ? 'success' : 'failure'}`;
   };
 
   const submitAction = (actorId, action, targets, path = undefined) => {
@@ -37,7 +40,7 @@ export function createControls(send, ui) {
     const decision = fight.decision ?? null;
     const members = fight.members ?? [];
     const actorId = decision?.actorId ?? fight.activeActorId ?? null;
-    const actor = members.find((member) => member.id === actorId) ?? fight.activeActor ?? null;
+    const actor = members.find((member) => member.id === actorId) ?? null;
     const turnActor = members.find((member) => member.id === (fight.turnActorId ?? fight.activeActorId)) ?? null;
     const actions = decision?.actions ?? [];
 
@@ -75,9 +78,10 @@ export function createControls(send, ui) {
       element('span', { class: 'gb-muted' }, actorId ? ` · ${actorId}` : ''),
       ...(decision?.kind ? [element('span', { class: 'gb-muted' }, ` · ${decision.kind}`)] : []),
       ...(turnActor && turnActor.id !== actorId ? [element('span', { class: 'gb-muted' }, ` · turn ${turnActor.name}`)] : []),
-      element('span', {}, actor ? ` · ${trackText(actor, fight.track)}` : ''),
+      element('span', {}, actor ? ` · ${memberValue(actor)}` : ''),
       ...(actor && budgetText(actor.budget) ? [element('span', { class: 'gb-muted' }, ` · ${budgetText(actor.budget)}`)] : []),
-      ...(actor ? [element('span', { class: 'gb-muted' }, ` · ${text(actor.controller, 'manual')}`)] : []));
+      ...(actor ? [element('span', { class: 'gb-muted' }, ` · ${text(actor.controller, 'manual')}`)] : []),
+      ...(decision?.check ? [element('div', {}, checkText(decision.check))] : []));
 
     const control = actor && actor.side === 0 && actor.controller
       ? button(actor.controller === 'manual' ? 'Let AI control' : 'Take control', () => send({
@@ -155,11 +159,9 @@ export function createControls(send, ui) {
     const selectedMoveTarget = action && !commitsTargetCount && selectedTargets.length > 0
       ? selectedTargets[0]
       : null;
-    const availableMoves = action
-      ? selectedMoveTarget === null
-        ? []
-        : (action.moves ?? []).filter((move) => moveTargetIds(move).includes(selectedMoveTarget))
-      : (decision?.kind === 'movement' ? decision.moves ?? [] : []);
+    const availableMoves = action && selectedMoveTarget !== null
+      ? (action.moves ?? []).filter((move) => moveTargetIds(move).includes(selectedMoveTarget))
+      : [];
     if (selectedMoveKey !== null && !availableMoves.some((move) => moveKey(move) === selectedMoveKey)) {
       selectedMoveKey = null;
     }
@@ -174,23 +176,15 @@ export function createControls(send, ui) {
       })]
       : [];
     const moves = availableMoves.map((move, index) => button(
-      `${action ? 'Path' : 'Move'} ${cellText(move.destination)}${move.cost === undefined ? '' : ` · ${move.cost}`}`,
+      `Path ${cellText(move.destination)}${move.cost === undefined ? '' : ` · ${move.cost}`}`,
       () => {
-        if (action) {
-          const key = moveKey(move);
-          selectedMoveKey = selectedMoveKey === key ? null : key;
-          render(view);
-          return;
-        }
-
-        send({
-          action: 'combat-move', actor: actorId, choice: decision?.actionId ?? 'move',
-          target: selectedTargets[0] ?? actorId, path: move.path ?? [],
-        });
+        const key = moveKey(move);
+        selectedMoveKey = selectedMoveKey === key ? null : key;
+        render(view);
       },
       {
-        'aria-pressed': String(action && selectedMoveKey === moveKey(move)),
-        class: action && selectedMoveKey === moveKey(move) ? 'gb-selected' : '',
+        'aria-pressed': String(selectedMoveKey === moveKey(move)),
+        class: selectedMoveKey === moveKey(move) ? 'gb-selected' : '',
         'data-focus-key': `combat:move:${index}:${cellText(move.destination)}`,
       }));
     const options = (decision?.options ?? []).map((option) => button(option.name, () => send({

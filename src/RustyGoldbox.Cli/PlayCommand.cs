@@ -226,7 +226,7 @@ internal static class PlayCommand
         {
             CombatControlCommand control => runner.SetCombatController(control.ActorId, control.Mode, random),
             CombatUseActionCommand action => runner.SubmitCombat(new CombatCommand.UseAction(action.ActorId, action.ActionId, action.TargetIds, action.Path), random),
-            CombatMoveCommand move => runner.SubmitCombat(new CombatCommand.Move(move.ActorId, move.ActionId, move.TargetId, move.Path), random),
+            CombatMoveCommand move => runner.SubmitCombat(new CombatCommand.UseAction(move.ActorId, move.ActionId, [move.TargetId], move.Path), random),
             CombatEndTurnCommand endTurn => runner.SubmitCombat(new CombatCommand.EndTurn(endTurn.ActorId), random),
             CombatDecisionCommand decision => runner.SubmitCombat(new CombatCommand.Decide(decision.DecisionId, decision.OptionId), random),
             _ => new CampaignCombatCommandResult(false, "The combat script command is not supported.", CombatScript.EmptyObservation(), []),
