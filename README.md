@@ -24,10 +24,12 @@ Then, from this repository:
 ```bash
 rusty status
 rusty install
-rusty dev --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --port 8787
+rusty dev --port 8787
 ```
 
-Open the URL printed by the host. `rusty dev` runs the pinned pair's runtime:
+`Directory.Build.props` names the Game as the default project, so `rusty dev`
+and `rusty build` need no `--project` from anywhere in the repository. Open
+the URL printed by the host. `rusty dev` runs the pinned pair's runtime:
 CoreCLR loads the product, and changes to C#, UI or content inputs rebuild and
 reload it; module edits reload as content bundles without a restart. See
 `rusty dev --help` for `--bind-host`, `--live-debug` and `--debugger`.
