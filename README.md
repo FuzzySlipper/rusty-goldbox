@@ -355,6 +355,10 @@ rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj --aot
 | `docs/evidence/` | Screenshots that record what a presentation change looked like |
 | `docs/agent-review/` | Review workflow and lane packets |
 
+Combat framing follows the Engine's `hero` viewport anchor and surface CSS
+dimensions. Resizes and layout changes refit the camera in the product update;
+the UI only registers the anchor.
+
 Read [AGENTS.md](AGENTS.md) before changing anything.
 
 Temples offer numbered services through `serve <service> <member>` and `leave`.

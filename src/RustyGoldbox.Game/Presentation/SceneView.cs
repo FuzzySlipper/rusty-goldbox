@@ -40,6 +40,7 @@ internal sealed class SceneView : IDisposable
     private readonly List<IDisposable> _retired = [];
     private readonly List<Prop> _props = [];
     private bool _showingCombat;
+    private ulong? _viewRevision;
     private bool _showingArea;
     private string? _areaKey;
     private MeshResource? _mesh;
@@ -84,7 +85,7 @@ internal sealed class SceneView : IDisposable
                     field,
                     Floor(rules, session.Set, state.Area),
                     facts);
-                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(session.ViewAspect), CombatScene.FieldOfView)));
+                FitCombatCamera(force: true);
             }
             else if (session.Screen == Screen.Combat && session.Fight is FightReplay fight)
             {
@@ -95,7 +96,7 @@ internal sealed class SceneView : IDisposable
                     key => fight.Fight.Field is CombatField field && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
                     Floor(rules, session.Set, state.Area),
                     facts);
-                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(session.ViewAspect), CombatScene.FieldOfView)));
+                FitCombatCamera(force: true);
             }
             else if (session.Screen == Screen.Play)
             {
@@ -137,7 +138,7 @@ internal sealed class SceneView : IDisposable
     }
 
     /// <summary>
-    /// Advances animations; call in every update. The renderer shows a
+    /// Fits the combat camera and advances animations; call in every update. The renderer shows a
     /// playback's frame as of the latest snapshot, so when any frame changes
     /// the same snapshot is published again.
     /// </summary>
@@ -146,6 +147,7 @@ internal sealed class SceneView : IDisposable
         bool changed = false;
         if (_showingCombat)
         {
+            changed |= FitCombatCamera();
             changed |= _combat.Tick(_frames);
         }
 
@@ -169,6 +171,25 @@ internal sealed class SceneView : IDisposable
         {
             _engine.Graphics.PublishSnapshot(_published);
         }
+    }
+
+    /// <summary>Fit to the Engine's current view rectangle, including layout-only changes.</summary>
+    private bool FitCombatCamera(bool force = false)
+    {
+        CameraViewportAnchorReadout anchor = _engine.CameraView.ReadViewportAnchor(new(ViewAnchor));
+        CameraSurfaceReadout surface = _engine.CameraView.ReadSurface();
+        if (!force && _viewRevision == anchor.Revision)
+        {
+            return false;
+        }
+
+        _viewRevision = anchor.Revision;
+        // Before the page reports its anchor, the camera covers the full surface.
+        double width = (anchor.Reported ? anchor.Width : 1) * surface.CssWidth;
+        double height = (anchor.Reported ? anchor.Height : 1) * surface.CssHeight;
+        double aspect = width > 0 && height > 0 ? width / height : 16.0 / 9;
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(aspect), CombatScene.FieldOfView)));
+        return true;
     }
 
     public void Dispose()

@@ -349,7 +349,7 @@ only when something changed. Agent playtests can hold time with the Engine's
 `goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
 begin, play, continue, save, load, quit, volume, skin, layout-config (the player's panel
-proportions), ui-scale and view-aspect), plus digital intents mapped from keys: arrows and
+proportions) and ui-scale), plus digital intents mapped from keys: arrows and
 WASD move and turn, X turns around, L looks, digits choose menu options.
 Payloads come from the page, so `GameCommands` checks every field once and
 turns a bad one into a note; a key intent acts on a key press or on a UI claim
@@ -383,8 +383,10 @@ holds, so a wider panel sees more to the sides. The combat camera frames the
 field to the view's shape (`CombatScene.PoseFor`): straight on and 30 degrees
 down, it stands as close as it can with every corner of the field, and
 figures standing on it, inside 90% of the frame, aimed so the field sits in
-the frame's middle. The view's aspect comes from the panels (`view-aspect`)
-until the Engine reports an anchored view's rectangle (rusty-engine #9361). A sprite's placement (an event
+the frame's middle. `SceneView` reads the `hero` rectangle through `CameraView.ReadViewportAnchor`
+and the surface's CSS dimensions through `ReadSurface` on each combat update.
+It fits again when the Engine's surface revision changes, including layout-only
+changes, and publishes that camera change in the same update. A sprite's placement (an event
 picture's) is within the camera's viewport. The area becomes one generated mesh: each wall, door or
 secret door on a cell edge is a quad facing into that cell (back faces are not
 drawn), and each cell has a floor and a ceiling, textured from the area's

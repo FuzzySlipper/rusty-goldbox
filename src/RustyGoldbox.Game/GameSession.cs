@@ -84,13 +84,6 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
 
-    /// <summary>
-    /// The view panel's width over its height, as the panels report it, so the
-    /// combat camera can frame the field to it. Presentation only, never saved;
-    /// it stands in until the Engine reports an anchored view's rectangle.
-    /// </summary>
-    public double ViewAspect { get; set; } = 16.0 / 9;
-
     /// <summary>The player's interface scale, which the panels give the Engine's UI scale; kept with the settings.</summary>
     public double UiScale { get; private set; } = 1;
 

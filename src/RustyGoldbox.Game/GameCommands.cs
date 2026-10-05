@@ -203,15 +203,12 @@ internal static class GameCommands
                     session.SetLayout(LayoutConfig(payload));
                     SaveSettings(session, engine);
                     break;
-                case "view-aspect":
-                    session.ViewAspect = Aspect(payload);
-                    break;
                 case "ui-scale":
                     session.SetUiScale(Number(payload, "scale"));
                     SaveSettings(session, engine);
                     break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-move, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale and view-aspect");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-move, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale");
             }
         }
         catch (PayloadException exception)
@@ -329,13 +326,6 @@ internal static class GameCommands
         {
             session.Notes.Add($"Can't keep the settings for next time: {exception.Message}");
         }
-    }
-
-    /// <summary>The view panel's width over its height: <c>"aspect": number</c>, from a tenth to ten.</summary>
-    private static double Aspect(JsonElement payload)
-    {
-        double aspect = Number(payload, "aspect");
-        return aspect is >= 0.1 and <= 10 ? aspect : throw new PayloadException("\"aspect\" must be the view's width over its height, from 0.1 to 10");
     }
 
     private static double Number(JsonElement payload, string field)

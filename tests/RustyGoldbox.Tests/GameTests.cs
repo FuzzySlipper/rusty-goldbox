@@ -32,6 +32,7 @@ public sealed class GameTests
     [InlineData("""{ "action": "drop", "member": "0" }""", "\"member\" must be a whole number")]
     [InlineData("""{ "action": "open", "campaign": "x", "seed": 7 }""", "\"seed\" must be non-empty text")]
     [InlineData("""{ "action": "save", "slot": "../escape" }""", "isn't a save slot name")]
+    [InlineData("""{ "action": "view-aspect", "aspect": 2.35 }""", "'view-aspect' is not an action")]
     [InlineData("""{ "action": "dance" }""", "'dance' is not an action")]
     [InlineData("""[1, 2]""", "must be an object")]
     public void BadPayloadsBecomeNotes(string payload, string note)
@@ -278,24 +279,6 @@ public sealed class GameTests
             // Reset goes back to the skin's.
             Run(next, engine, """{ "action": "layout-config", "layout": null }""");
             Assert.Equal(0.42, LogShare(next));
-        });
-    }
-
-    [Fact]
-    public void TheViewsAspectIsKeptForTheCombatCamera()
-    {
-        using TempModules scratch = new();
-        using EngineTestHost host = EngineTestHost.Create();
-        host.Call(engine =>
-        {
-            GameSession session = OpenSession(scratch, engine);
-            Run(session, engine, """{ "action": "view-aspect", "aspect": 2.35 }""");
-            Assert.Equal(2.35, session.ViewAspect);
-            Assert.Empty(session.Notes);
-
-            Run(session, engine, """{ "action": "view-aspect", "aspect": 40 }""");
-            Assert.Equal(2.35, session.ViewAspect);
-            Assert.Contains("\"aspect\" must be the view's width over its height", Assert.Single(session.Notes), StringComparison.Ordinal);
         });
     }
 
