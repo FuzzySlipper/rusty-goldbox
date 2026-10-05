@@ -95,6 +95,12 @@ public sealed class ModuleFetcher(
         return new FetchResult(installed, present, problems);
     }
 
+    /// <summary>Every module the releases of <paramref name="source"/> offer.</summary>
+    public IReadOnlyList<ReleasedModule> Published(ReleaseSource source, List<string> problems)
+    {
+        return Offers(source, problems).Select(offer => offer.Module).ToList();
+    }
+
     private FetchedModule? Install(Offer offer, ReleaseSource from, string library, List<string> problems)
     {
         ReleasedModule module = offer.Module;

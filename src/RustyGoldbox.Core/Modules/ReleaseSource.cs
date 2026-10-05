@@ -70,7 +70,7 @@ public sealed partial record ReleaseSource
         }
 
         string path = Path.GetFullPath(text, workingDirectory);
-        source = System.IO.Directory.Exists(path) ? new ReleaseSource(text, null, null, null, path) : null;
+        source = System.IO.Directory.Exists(path) ? new ReleaseSource(path, null, null, null, path) : null;
         return source is not null;
     }
 

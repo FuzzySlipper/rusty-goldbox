@@ -10,12 +10,106 @@ namespace RustyGoldbox.Cli;
 /// module with its <c>module-index.json</c>, and fetch one with everything
 /// it requires into the module library.
 /// </summary>
+internal sealed record ModuleUpdate(string Id, ModuleVersion Installed, ModuleVersion Available, ReleaseSource From);
+
 internal static class DistributionCommand
 {
     public const string ReleaseUsage = "Usage: goldbox module release <module-dir> [--output <dir> | --repo <owner>/<repo>] [--modules <dir>]...";
     public const string GetUsage = "Usage: goldbox module get <source> [--id <id>] [--version <range>] [--modules <dir>]...";
 
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = true }) { Timeout = TimeSpan.FromMinutes(30) };
+
+    public const string UpdatesUsage = "Usage: goldbox module updates [--install]";
+    public const string RemoveUsage = "Usage: goldbox module remove <id>@<version>";
+
+    /// <summary>
+    /// Checks where each fetched module was published for a newer version;
+    /// with --install, fetches each newest version (and anything new it
+    /// requires) beside the installed ones, so existing saves keep loading.
+    /// </summary>
+    public static int Updates(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, [], ["--install"]);
+        if (error is null && parsed.Positionals.Count != 0)
+        {
+            error = UpdatesUsage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        string library = InstalledModules.DefaultDirectory();
+        Dictionary<string, InstalledSources.Entry> record = InstalledSources.Read(library);
+        List<string> searched = ModuleSearchPaths.Find(workingDirectory, [], []);
+        searched.Add(library);
+        List<string> problems = [];
+        List<ModuleUpdate> updates = [];
+        List<FetchedModule> installed = [];
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            ModuleFetcher fetcher = new(Read, Download, container => IdentityOf(engine.Content, container));
+            foreach ((string id, InstalledSources.Entry entry) in record.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+            {
+                if (!ReleaseSource.TryParseArgument(entry.Releases, workingDirectory, out ReleaseSource? source))
+                {
+                    problems.Add($"{InstalledSources.FileName} records '{entry.Releases}' for {id}, which isn't a release source; fetch it again with `goldbox module get`.");
+                    continue;
+                }
+
+                ModuleVersion newestHere = entry.Versions.Keys
+                    .Select(text => ModuleVersion.TryParse(text, out ModuleVersion version) ? version : default)
+                    .Max();
+                ReleasedModule? newest = fetcher.Published(source!, problems)
+                    .Where(module => module.Id == id && module.Version > newestHere)
+                    .MaxBy(module => module.Version);
+                if (newest is null)
+                {
+                    continue;
+                }
+
+                updates.Add(new ModuleUpdate(id, newestHere, newest.Version, source!));
+                if (parsed.Has("--install"))
+                {
+                    VersionRange.TryParse(newest.Version.ToString(), out VersionRange? exact);
+                    FetchResult result = fetcher.Get(source!, id, exact, InstalledModules.Present(searched, engine.Content), library);
+                    installed.AddRange(result.Installed);
+                    problems.AddRange(result.Problems);
+                }
+            }
+        });
+        return output.Updates(updates, installed, problems, library);
+    }
+
+    /// <summary>Removes one installed version from the module library and its record.</summary>
+    public static int Remove(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
+        string[] parts = error is null && parsed.Positionals.Count == 1 ? parsed.Positionals[0].Split('@') : [];
+        if (error is null && (parts.Length != 2 || !ModuleIds.IsValid(parts[0]) || !ModuleVersion.TryParse(parts[1], out _)))
+        {
+            error = RemoveUsage;
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        ModuleVersion.TryParse(parts[1], out ModuleVersion version);
+        string library = InstalledModules.DefaultDirectory();
+        string container = Path.Combine(library, InstalledModules.FileName(parts[0], version));
+        if (!File.Exists(container))
+        {
+            return output.Problems([new ModuleDiagnostic("remove.missing", $"{parts[0]} {version} isn't installed in {library}.", parts[0], container)]);
+        }
+
+        File.Delete(container);
+        InstalledSources.Forget(library, parts[0], version);
+        return output.Removed(parts[0], version, container);
+    }
 
     public static int Release(IEnumerable<string> args, Output output, string workingDirectory)
     {

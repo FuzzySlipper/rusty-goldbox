@@ -105,11 +105,13 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
     }
 
     /// <summary>Loads the module in <paramref name="bundle"/> and its requirements from the other bundles, with the extensions added.</summary>
-    public ModuleSet Load(string bundle, IReadOnlyList<string> extensions)
+    /// <param name="saved">For a save, the modules it was made under, loaded at exactly those versions.</param>
+    public ModuleSet Load(string bundle, IReadOnlyList<string> extensions, IReadOnlyList<SavedModule>? saved = null)
     {
         ModuleSet? set = null;
-        WithBundles([], sources =>
+        WithBundles([], all =>
         {
+            List<ModuleSource> sources = ModuleLoader.AsSaved(all, saved);
             ModuleSource root = sources.FirstOrDefault(source => source.Location == bundle)
                 ?? throw new InvalidOperationException($"There is no content bundle '{bundle}'.");
             set = ModuleLoader.Load(root, sources, sources.Select(source => source.Location).ToList(), HowToAdd, extensions);

@@ -4,6 +4,9 @@ using RustyGoldbox.Core.Rules;
 
 namespace RustyGoldbox.Core.Modules;
 
+/// <summary>One module a save was made under: its ID, version and content identity.</summary>
+public sealed record SavedModule(string Id, string Version, string Identity);
+
 /// <summary>Loads a module and everything it requires, checking all of it.</summary>
 public static class ModuleLoader
 {
@@ -15,7 +18,8 @@ public static class ModuleLoader
     /// the search directories. Without it only module directories are searched.
     /// </param>
     /// <param name="extensions">IDs of extension modules to add to the set, found where requirements are.</param>
-    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IContentService? content = null, IReadOnlyList<string>? extensions = null)
+    /// <param name="saved">The modules a save was made under; each is loaded at exactly that version and content, even beside newer ones.</param>
+    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IContentService? content = null, IReadOnlyList<string>? extensions = null, IReadOnlyList<SavedModule>? saved = null)
     {
         // "house/" and "house" are the same module; the parent lookup for
         // sibling search needs the form without the trailing separator.
@@ -34,7 +38,7 @@ public static class ModuleLoader
             }
 
             List<string> unreadable = [];
-            List<ModuleSource> available = ModuleCatalog.Sources(directories, modulePath, content, opened, unreadable, diagnostics);
+            List<ModuleSource> available = AsSaved(ModuleCatalog.Sources(directories, modulePath, content, opened, unreadable, diagnostics), saved);
             string howToAdd = "Add the directory that holds it (a module directory or an installed .rpak) with --modules <dir> or to the \"modules\" list in goldbox.json.";
             ModuleCatalog catalog = ModuleCatalog.Read(available, root, directories, howToAdd, unreadable);
             return Load(root, catalog, directories, extensions ?? [], diagnostics);
@@ -47,6 +51,33 @@ public static class ModuleLoader
                 bundle.Dispose();
             }
         }
+    }
+
+    /// <summary>
+    /// <paramref name="available"/> without the other versions or copies of
+    /// any module <paramref name="saved"/> names, when the exact one it was
+    /// made under is there, so resolving picks it rather than the newest
+    /// installed version. When it isn't there, every copy stays, and reading
+    /// the save names what differs.
+    /// </summary>
+    public static List<ModuleSource> AsSaved(IEnumerable<ModuleSource> available, IReadOnlyList<SavedModule>? saved)
+    {
+        List<(ModuleSource Source, ModuleManifest? Manifest)> sources = available.Select(source => (source, ManifestReader.Read(source, []))).ToList();
+        if (saved is null || saved.Count == 0)
+        {
+            return sources.Select(entry => entry.Source).ToList();
+        }
+
+        bool Exact((ModuleSource Source, ModuleManifest? Manifest) entry, SavedModule module) =>
+            entry.Manifest is ModuleManifest manifest && manifest.Id == module.Id && manifest.Version.ToString() == module.Version && entry.Source.Identity == module.Identity;
+        Dictionary<string, SavedModule> pinned = saved
+            .Where(module => sources.Any(entry => Exact(entry, module)))
+            .GroupBy(module => module.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        return sources
+            .Where(entry => entry.Manifest is not ModuleManifest manifest || !pinned.TryGetValue(manifest.Id, out SavedModule? module) || Exact(entry, module))
+            .Select(entry => entry.Source)
+            .ToList();
     }
 
     private static ModuleManifest? ReadContainer(string path, IContentService? content, List<ProductContentBundle> opened, List<ModuleDiagnostic> diagnostics)

@@ -678,7 +678,7 @@ internal sealed class GameSession(ModuleLibrary library)
             return;
         }
 
-        if (LoadSet(bundle, extensions) is not ModuleSet set)
+        if (LoadSet(bundle, extensions, SaveFile.Modules(json)) is not ModuleSet set)
         {
             return;
         }
@@ -754,9 +754,9 @@ internal sealed class GameSession(ModuleLibrary library)
         _sounds.Clear();
     }
 
-    private ModuleSet? LoadSet(string bundle, IReadOnlyList<string> extensions)
+    private ModuleSet? LoadSet(string bundle, IReadOnlyList<string> extensions, IReadOnlyList<SavedModule>? saved = null)
     {
-        ModuleSet set = library.Load(bundle, extensions);
+        ModuleSet set = library.Load(bundle, extensions, saved);
         if (set.Rules is null || !set.IsValid)
         {
             Notes.AddRange(set.Diagnostics.Select(Describe));

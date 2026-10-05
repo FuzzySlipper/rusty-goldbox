@@ -9,10 +9,10 @@ internal static class ModuleSets
 {
     /// <param name="path">A module directory or an installed <c>.rpak</c>.</param>
     /// <param name="extensions">Extension module IDs to add to the set (<c>--extension</c>).</param>
-    public static ModuleSet Load(string path, IReadOnlyList<string> searchDirectories, IReadOnlyList<string>? extensions = null)
+    public static ModuleSet Load(string path, IReadOnlyList<string> searchDirectories, IReadOnlyList<string>? extensions = null, IReadOnlyList<SavedModule>? saved = null)
     {
         using EngineTestHost host = EngineTestHost.Create();
-        return host.Call(engine => ModuleLoader.Load(path, searchDirectories, engine.Content, extensions));
+        return host.Call(engine => ModuleLoader.Load(path, searchDirectories, engine.Content, extensions, saved));
     }
 
     /// <summary>Builds an authoring workspace with the same Engine content service the CLI uses for module loads.</summary>

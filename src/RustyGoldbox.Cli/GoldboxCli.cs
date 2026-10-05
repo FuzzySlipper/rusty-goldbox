@@ -39,6 +39,12 @@ internal static class GoldboxCli
               directory of them. Requirements without "releases" are looked for where their
               requirer came from. Each container's content identity is checked against its
               index. Set GITHUB_TOKEN for private repositories or a higher rate limit.
+          goldbox module updates [--install]
+              Checks where each fetched module was published for a newer version. --install
+              fetches each newest version beside the installed ones: a new game uses the newest
+              version that satisfies its requirements, and a save keeps the versions it was made with.
+          goldbox module remove <id>@<version>
+              Removes one installed version from the module library and its record.
           goldbox schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
               The format reference: definition types with fields and examples.
           goldbox workspace new <dir>
@@ -217,8 +223,10 @@ internal static class GoldboxCli
             "pack" => PackCommand.Run(rest, printer, workingDirectory),
             "release" => DistributionCommand.Release(rest, printer, workingDirectory),
             "get" => DistributionCommand.Get(rest, printer, workingDirectory),
+            "updates" => DistributionCommand.Updates(rest, printer, workingDirectory),
+            "remove" => DistributionCommand.Remove(rest, printer, workingDirectory),
             "--help" or "-h" => Print(output, Help),
-            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect, pack, release and get."),
+            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect, pack, release, get, updates and remove."),
         };
     }
 

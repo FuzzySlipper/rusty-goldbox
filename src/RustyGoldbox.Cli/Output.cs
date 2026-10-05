@@ -341,6 +341,58 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return GoldboxCli.Ok;
     }
 
+    public int Updates(IReadOnlyList<ModuleUpdate> updates, IReadOnlyList<FetchedModule> installed, IReadOnlyList<string> problems, string library)
+    {
+        if (json)
+        {
+            WriteJson(new
+            {
+                ok = problems.Count == 0,
+                updates = updates.Select(update => new { id = update.Id, installed = update.Installed.ToString(), available = update.Available.ToString(), from = update.From.Text }),
+                installed = installed.Select(fetched => new { id = fetched.Module.Id, version = fetched.Module.Version.ToString(), container = Display(fetched.Container) }),
+                problems,
+            });
+        }
+        else
+        {
+            foreach (ModuleUpdate update in updates)
+            {
+                writer.WriteLine($"{update.Id}: {update.Installed} installed, {update.Available} available from {update.From}");
+            }
+
+            foreach (FetchedModule fetched in installed)
+            {
+                writer.WriteLine($"installed {fetched.Module.Id} {fetched.Module.Version} beside the earlier version(s)");
+            }
+
+            foreach (string problem in problems)
+            {
+                writer.WriteLine($"error: {problem}");
+            }
+
+            if (updates.Count == 0 && problems.Count == 0)
+            {
+                writer.WriteLine($"ok: every fetched module in {Display(library)} is up to date.");
+            }
+        }
+
+        return problems.Count == 0 ? GoldboxCli.Ok : GoldboxCli.Invalid;
+    }
+
+    public int Removed(string id, ModuleVersion version, string container)
+    {
+        if (json)
+        {
+            WriteJson(new { ok = true, id, version = version.ToString(), container = Display(container) });
+        }
+        else
+        {
+            writer.WriteLine($"ok: removed {id} {version} ({Display(container)}). A save made with it now names it as missing when loaded.");
+        }
+
+        return GoldboxCli.Ok;
+    }
+
     public int Fetched(FetchResult result, string library)
     {
         if (json)

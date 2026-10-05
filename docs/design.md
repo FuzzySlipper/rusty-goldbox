@@ -86,7 +86,12 @@ requirements and content identity; `goldbox module get <source>` installs it
 and every requirement not already present, looking for a requirement without
 `releases` where its requirer came from, checking each container's identity
 against its index, and recording each fetched module's source and versions in
-the library's `sources.json`.
+the library's `sources.json`. `goldbox module updates` checks those sources
+for newer versions and `--install` fetches them beside the installed ones;
+`goldbox module remove <id>@<version>` drops one. Versions live side by side:
+a new game resolves the newest version each range allows, while loading a
+save pins every module it names to the exact version and content it was made
+under whenever that copy is present.
 
 Every other `.json` file in the module directory is a definition file: a JSON
 object whose `type` field names its definition type. Other files (media,

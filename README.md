@@ -93,7 +93,11 @@ or `--output <dir>` to write the files), and `module get` fetches one:
 ```bash
 dotnet run --project src/RustyGoldbox.Cli -- module release modules/my-campaign --repo alice/my-campaign
 dotnet run --project src/RustyGoldbox.Cli -- module get github:alice/my-campaign
+dotnet run --project src/RustyGoldbox.Cli -- module updates --install
 ```
+
+Updates install beside the versions you have, so saves keep loading with the
+versions they were made under; `module remove <id>@<version>` drops an old one.
 
 A manifest's optional `"releases": "github:<owner>/<repo>"`, on the module or
 on a `requires` entry, says where it and its requirements are published.

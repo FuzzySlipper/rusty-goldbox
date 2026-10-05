@@ -240,6 +240,41 @@ public static class SaveFile
         }
     }
 
+    /// <summary>
+    /// The modules a save names, read before its module set loads so that
+    /// set can be the one it was made under. Malformed entries are left out;
+    /// <see cref="Read(string, ModuleSet, List{ModuleDiagnostic})"/> reports them.
+    /// </summary>
+    public static List<SavedModule> Modules(ReadOnlyMemory<byte> json)
+    {
+        List<SavedModule> modules = [];
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("modules", out JsonElement list)
+                && list.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement module in list.EnumerateArray())
+                {
+                    if (module.ValueKind == JsonValueKind.Object
+                        && module.TryGetProperty("id", out JsonElement id) && id.ValueKind == JsonValueKind.String
+                        && module.TryGetProperty("version", out JsonElement version) && version.ValueKind == JsonValueKind.String
+                        && module.TryGetProperty("identity", out JsonElement identity) && identity.ValueKind == JsonValueKind.String)
+                    {
+                        modules.Add(new SavedModule(id.GetString()!, version.GetString()!, identity.GetString()!));
+                    }
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Reading the save itself reports what is wrong with it.
+        }
+
+        return modules;
+    }
+
     /// <summary>Reads a save file against the loaded module set; problems name the file and JSON path.</summary>
     public static CampaignState? Read(string path, ModuleSet set, List<ModuleDiagnostic> problems)
     {

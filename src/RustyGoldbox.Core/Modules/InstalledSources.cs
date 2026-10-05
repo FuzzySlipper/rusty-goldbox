@@ -51,6 +51,34 @@ public static class InstalledSources
         Dictionary<string, string> versions = entries.TryGetValue(module.Id, out Entry? known) ? new(known.Versions) : [];
         versions[module.Version.ToString()] = module.Identity;
         entries[module.Id] = new Entry(from.Text, versions);
+        Write(library, entries);
+    }
+
+    /// <summary>Drops one installed version from the record, and the module once no version is left.</summary>
+    public static void Forget(string library, string id, ModuleVersion version)
+    {
+        Dictionary<string, Entry> entries = Read(library);
+        if (!entries.TryGetValue(id, out Entry? known))
+        {
+            return;
+        }
+
+        Dictionary<string, string> versions = new(known.Versions);
+        versions.Remove(version.ToString());
+        if (versions.Count == 0)
+        {
+            entries.Remove(id);
+        }
+        else
+        {
+            entries[id] = known with { Versions = versions };
+        }
+
+        Write(library, entries);
+    }
+
+    private static void Write(string library, Dictionary<string, Entry> entries)
+    {
         JsonObject root = [];
         foreach ((string id, Entry entry) in entries.OrderBy(entry => entry.Key, StringComparer.Ordinal))
         {

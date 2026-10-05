@@ -70,20 +70,32 @@ internal static class PlayCommand
             return output.UsageError($"--combat-control must be auto or manual, but was '{controlText}'.");
         }
 
+        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
+        List<ModuleDiagnostic> problems = [];
+        (byte[] Json, string Location)? loadedSave = null;
+        if (loading)
+        {
+            loadedSave = ReadSave(host, store, parsed.Single("--load")!, workingDirectory, problems);
+            if (loadedSave is null)
+            {
+                return output.Problems(problems);
+            }
+        }
+
+        // A save loads with the module versions it was made under, even beside newer ones.
         ModuleSet set = ModuleSets.Load(
             Path.GetFullPath(parsed.Single("--campaign")!, workingDirectory),
             parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList(),
-            ModuleSets.Extensions(parsed));
+            ModuleSets.Extensions(parsed),
+            loadedSave is { } loaded ? SaveFile.Modules(loaded.Json) : null);
         if (set.Rules is null || !set.IsValid)
         {
             return output.ModuleErrors(set);
         }
 
         RuleSet rules = set.Rules;
-        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
-        List<ModuleDiagnostic> problems = [];
-        CampaignState? state = loading
-            ? Load(host, store, parsed.Single("--load")!, set, workingDirectory, problems)
+        CampaignState? state = loadedSave is { } saved
+            ? SaveFile.Read(saved.Json, saved.Location, set, problems)
             : NewGame(rules, set, parsed.Single("--party")!, seed, workingDirectory, problems);
         if (state is null)
         {
@@ -289,11 +301,21 @@ internal static class PlayCommand
             : $"{option} names a save slot when --store is given; '{slot}' isn't one. Use {SaveSlots.NameDescription}.";
     }
 
-    private static CampaignState? Load(EngineTestHost host, string? store, string save, ModuleSet set, string workingDirectory, List<ModuleDiagnostic> problems)
+    /// <summary>The save's JSON and where it came from (a file, or a slot in the store), for messages.</summary>
+    private static (byte[] Json, string Location)? ReadSave(EngineTestHost host, string? store, string save, string workingDirectory, List<ModuleDiagnostic> problems)
     {
         if (store is null)
         {
-            return SaveFile.Read(Path.GetFullPath(save, workingDirectory), set, problems);
+            string path = Path.GetFullPath(save, workingDirectory);
+            try
+            {
+                return (File.ReadAllBytes(path), path);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                problems.Add(new ModuleDiagnostic("save.read", $"Can't read the save: {exception.Message}", File: path));
+                return null;
+            }
         }
 
         string location = $"{SaveSlots.Location(save)} in {store}";
@@ -318,7 +340,7 @@ internal static class PlayCommand
             return null;
         }
 
-        return SaveFile.Read(json, location, set, problems);
+        return (json, location);
     }
 
     private static ModuleDiagnostic? Save(EngineTestHost host, string? store, string save, string json, string workingDirectory)

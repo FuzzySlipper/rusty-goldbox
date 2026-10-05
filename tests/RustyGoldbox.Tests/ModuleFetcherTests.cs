@@ -201,3 +201,96 @@ public sealed class ModuleReleaseAndGetTests
         return (code, output.ToString());
     }
 }
+
+/// <summary>Updated modules install beside the old ones; saves keep the versions they were made with.</summary>
+[Collection(nameof(ModuleLibraryVariable))]
+public sealed class ModuleUpdateTests
+{
+    [Fact]
+    public void ASaveKeepsItsRequiredVersionBesideANewerOne()
+    {
+        using TempModules scratch = new();
+        foreach (string module in new[] { "classic", "placeholder-art", "sample-crypt" })
+        {
+            CopyDirectory(Path.Combine(Rules.RepositoryRoot, "modules", module), Path.Combine(scratch.Root, "modules", module));
+        }
+
+        scratch.Write("goldbox.json", """{ "modules": ["modules"] }""");
+        string campaign = Path.Combine(scratch.Root, "modules", "sample-crypt");
+        CampaignTests.WriteParty(scratch, Path.Combine(scratch.Root, "modules", "classic"));
+        (int saveCode, string saved) = CampaignTests.Run(scratch, "play", "--campaign", campaign, "--party", "ada.json,brom.json", "--script", CampaignTests.Script("crypt-early-stairs.script"), "--save", "game.json");
+        Assert.True(saveCode == GoldboxCli.Ok, saved);
+
+        // A newer classic with different content arrives beside the old one.
+        string newer = Path.Combine(scratch.Root, "modules", "classic-next");
+        CopyDirectory(Path.Combine(scratch.Root, "modules", "classic"), newer);
+        string manifest = Path.Combine(newer, "module.json");
+        File.WriteAllText(manifest, File.ReadAllText(manifest).Replace("\"0.1.0\"", "\"0.1.1\"", StringComparison.Ordinal));
+        string rat = Path.Combine(newer, "monsters", "giant_rat.json");
+        File.WriteAllText(rat, File.ReadAllText(rat).Replace("\"xp\": 7", "\"xp\": 8", StringComparison.Ordinal));
+
+        (int loadCode, string loaded) = CampaignTests.Run(scratch, "play", "--campaign", campaign, "--load", "game.json", "--script", CampaignTests.Script("crypt-early-stairs.script"));
+        Assert.True(loadCode == GoldboxCli.Ok, loaded);
+
+        (int depsCode, string deps) = CampaignTests.Run(scratch, "module", "deps", campaign, "--json");
+        Assert.True(depsCode == GoldboxCli.Ok, deps);
+        Assert.Contains("0.1.1", deps, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UpdatesListAndInstallNewerVersionsAndRemoveDropsOne()
+    {
+        using TempModules scratch = new();
+        string source = Path.Combine(scratch.Root, "classic-source");
+        CopyDirectory(Path.Combine(Rules.RepositoryRoot, "modules", "classic"), source);
+        string releases = Path.Combine(scratch.Root, "releases");
+        (int firstCode, string first) = CampaignTests.Run(scratch, "module", "release", source, "--output", Path.Combine(releases, "v010"));
+        Assert.True(firstCode == GoldboxCli.Ok, first);
+
+        string library = Path.Combine(scratch.Root, "library");
+        string? previous = Environment.GetEnvironmentVariable(InstalledModules.DirectoryVariable);
+        Environment.SetEnvironmentVariable(InstalledModules.DirectoryVariable, library);
+        try
+        {
+            (int getCode, string got) = CampaignTests.Run(scratch, "module", "get", releases);
+            Assert.True(getCode == GoldboxCli.Ok, got);
+            (int quietCode, string quiet) = CampaignTests.Run(scratch, "module", "updates");
+            Assert.True(quietCode == GoldboxCli.Ok, quiet);
+            Assert.Contains("up to date", quiet, StringComparison.Ordinal);
+
+            string manifest = Path.Combine(source, "module.json");
+            File.WriteAllText(manifest, File.ReadAllText(manifest).Replace("\"0.1.0\"", "\"0.1.1\"", StringComparison.Ordinal));
+            (int secondCode, string second) = CampaignTests.Run(scratch, "module", "release", source, "--output", Path.Combine(releases, "v011"));
+            Assert.True(secondCode == GoldboxCli.Ok, second);
+
+            (int listCode, string listed) = CampaignTests.Run(scratch, "module", "updates");
+            Assert.True(listCode == GoldboxCli.Ok, listed);
+            Assert.Contains("classic: 0.1.0 installed, 0.1.1 available", listed, StringComparison.Ordinal);
+
+            (int installCode, string installed) = CampaignTests.Run(scratch, "module", "updates", "--install");
+            Assert.True(installCode == GoldboxCli.Ok, installed);
+            Assert.True(File.Exists(Path.Combine(library, "classic-0.1.0.rpak")));
+            Assert.True(File.Exists(Path.Combine(library, "classic-0.1.1.rpak")));
+            Assert.Equal(["0.1.0", "0.1.1"], InstalledSources.Read(library)["classic"].Versions.Keys.Order());
+
+            (int removeCode, string removed) = CampaignTests.Run(scratch, "module", "remove", "classic@0.1.0");
+            Assert.True(removeCode == GoldboxCli.Ok, removed);
+            Assert.False(File.Exists(Path.Combine(library, "classic-0.1.0.rpak")));
+            Assert.Equal(["0.1.1"], InstalledSources.Read(library)["classic"].Versions.Keys);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(InstalledModules.DirectoryVariable, previous);
+        }
+    }
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        foreach (string file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            string target = Path.Combine(destination, Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
+    }
+}
