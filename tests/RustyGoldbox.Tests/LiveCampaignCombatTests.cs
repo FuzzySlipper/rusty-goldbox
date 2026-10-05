@@ -43,6 +43,39 @@ public sealed class LiveCampaignCombatTests
     }
 
     [Fact]
+    public void CombatControlDoesNotChangeTheCampaignDice()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        Definition definition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            CampaignRunner automatic = new(set.Rules, CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7));
+            FightFact expected = automatic.Begin(engine.Random).OfType<FightFact>().First();
+
+            // The same fight under manual control, handed back to Core one
+            // member at a time, rolls exactly what the automatic fight rolled.
+            CampaignState state = CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7);
+            CampaignRunner manual = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+            manual.Begin(engine.Random);
+            List<PlayFact> facts = [];
+            while (!facts.OfType<FightFact>().Any())
+            {
+                string actor = manual.ObserveCombat(engine.Random)!.PendingDecision!.ActorId;
+                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, engine.Random).Facts);
+            }
+
+            FightFact actual = facts.OfType<FightFact>().First();
+            Assert.Equal(expected.Outcome, actual.Outcome);
+            Assert.Equal(expected.Facts.Select(fact => fact.Describe()), actual.Facts.Select(fact => fact.Describe()));
+        });
+    }
+
+    [Fact]
     public void ManualCampaignCombatSuspendsAndSaveRestoresTheSameBoundary()
     {
         using TempModules modules = new();

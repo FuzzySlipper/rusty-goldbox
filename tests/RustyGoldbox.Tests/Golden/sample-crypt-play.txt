@@ -61,35 +61,26 @@ seed 1
 > forward
   The party moves to [3, 2], facing south.
   [music placeholder-art:battle_music]
+    Crypt guard is surprised for 1 round.  [1d6: 2 = 2]
     Round 1.
-    Party rolls 6 for initiative.  [1d6: 6 = 6]
-    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+    Party rolls 1 for initiative.  [1d6: 1 = 1]
+    Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
     Ada uses Charge (Long sword) on Skeleton 1.
     Ada moves 8 cells to (8, 2).
     Ada is Winded for 10 rounds.
-    Ada rolls Melee attack: 11 + 2 modifiers = 13 against 13: success.  [1d20: 11 = 11]
-    Skeleton 1 loses 5 hit points (0 left).  [1d8: 4 = 4]
+    Ada rolls Melee attack: 16 + 2 modifiers = 18 against 13: success.  [1d20: 16 = 16]
+    Skeleton 1 loses 9 hit points (-6 left).  [1d8: 8 = 8]
     Skeleton 1 is out of the fight.
     Brom uses Charge (Heavy mace) on Skeleton 2.
     Brom moves 8 cells to (8, 3).
     Brom is Winded for 10 rounds.
-    Brom rolls Melee attack: 8 + 2 modifiers = 10 against 13: failure.  [1d20: 8 = 8]
-    Skeleton 2 uses claw on Ada.
-    Skeleton 2 rolls Melee attack: 6 against 15: failure.  [1d20: 6 = 6]
-    Round 2.
-    Party rolls 5 for initiative.  [1d6: 5 = 5]
-    Crypt guard rolls 3 for initiative.  [1d6: 3 = 3]
-    Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
-    Skeleton 2 loses 3 hit points (1 left).  [1d8: 2 = 2]
-    Brom uses Melee attack (Heavy mace) on Skeleton 2.
-    Brom rolls Melee attack: 14 against 13: success.  [1d20: 14 = 14]
-    Skeleton 2 loses 4 hit points (-3 left).  [1d6: 3 = 3]
+    Brom rolls Melee attack: 14 + 2 modifiers = 16 against 13: success.  [1d20: 14 = 14]
+    Skeleton 2 loses 5 hit points (-4 left).  [1d6: 4 = 4]
     Skeleton 2 is out of the fight.
-    Party wins after 2 rounds.
+    Party wins after 1 round.
   Combat with Crypt guard: the party wins.
   Experience: Ada 14, Brom 14.
-  The party finds 100 gold.  [2d6: 5+5 = 10]
+  The party finds 30 gold.  [2d6: 1+2 = 3]
   The party receives 1 × Dagger.
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
@@ -98,7 +89,7 @@ seed 1
   Brom recovers 0 hit points.
   The rattling stops. A draught rises from somewhere to the west.
 > status
-  Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 220 + 120 | carrying Dagger
+  Ada (hit points 8/8, 14 xp) | Brom (hit points 8/8, 1st level spells 1/1, 14 xp) | gold 185 + 85 | carrying Dagger
 > around
   The party faces north.
 > forward
@@ -123,13 +114,13 @@ seed 1
   The party faces east.
 > forward
   The party moves to [1, 2], facing east.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 340 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 270 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > buy 1
   The party buys Dagger for 2 gold.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 338 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Dagger 1 gold  [3] Long sword (Ada) 7.5 gold  [4] Chain mail (Ada) 37.5 gold  [5] Shield (Ada) 6 gold  [6] Heavy mace (Brom) 5 gold  [7] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 268 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Dagger 1 gold  [3] Long sword (Ada) 7.5 gold  [4] Chain mail (Ada) 37.5 gold  [5] Shield (Ada) 6 gold  [6] Heavy mace (Brom) 5 gold  [7] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > sell 1
   The party sells Dagger for 1 gold.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 339 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 269 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.

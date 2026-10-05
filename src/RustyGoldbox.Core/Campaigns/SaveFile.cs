@@ -778,9 +778,9 @@ public static class SaveFile
                 Error("$.pending_combat.continuation.NextRandomKey", "NextRandomKey cannot be negative.");
             }
 
-            if (continuation.RandomScope is string scope && string.IsNullOrWhiteSpace(scope))
+            if (string.IsNullOrWhiteSpace(continuation.RandomScope))
             {
-                Error("$.pending_combat.continuation.RandomScope", "RandomScope must be nonempty when a keyed combat continuation is used.");
+                Error("$.pending_combat.continuation.RandomScope", "A saved campaign combat needs its nonempty RandomScope.");
             }
 
             if (!data.TryGetProperty("participants", out JsonElement participants) || participants.ValueKind != JsonValueKind.Array)

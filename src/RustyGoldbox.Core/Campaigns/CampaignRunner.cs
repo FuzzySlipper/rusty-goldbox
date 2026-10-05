@@ -64,7 +64,7 @@ public sealed partial class CampaignRunner
 
         return WithDice(random, dice =>
         {
-            EnsureCombat(random, dice);
+            EnsureCombat(random);
             return _combat!.Observe();
         });
     }
@@ -95,7 +95,7 @@ public sealed partial class CampaignRunner
             return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
         }
 
-        EnsureCombat(random, dice);
+        EnsureCombat(random);
         bool changed = _combat!.SetController(actorId, mode);
         List<PlayFact> facts = [];
         if (!changed)
@@ -126,7 +126,7 @@ public sealed partial class CampaignRunner
             return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
         }
 
-        EnsureCombat(random, dice);
+        EnsureCombat(random);
         CombatCommandResult result = _combat!.StepAutomaticTurn(actorId);
         List<PlayFact> facts = [];
         if (result.Accepted)
@@ -237,7 +237,7 @@ public sealed partial class CampaignRunner
             return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
         }
 
-        EnsureCombat(random, dice);
+        EnsureCombat(random);
         CombatCommandResult result = _combat!.Submit(command);
         List<PlayFact> facts = [];
         if (result.Accepted)
@@ -266,7 +266,7 @@ public sealed partial class CampaignRunner
         [],
         []);
 
-    private void EnsureCombat(IRandomService random, DiceRoller? commandDice = null)
+    private void EnsureCombat(IRandomService random)
     {
         if (_combat is not null)
         {
@@ -278,9 +278,9 @@ public sealed partial class CampaignRunner
             throw new InvalidOperationException("No campaign combat is pending.");
         }
 
-        _combatDice = pending.Continuation.RandomScope is string scope
-            ? new DiceRoller(random, _state.Seed, scope, pending.Continuation.NextRandomKey)
-            : commandDice ?? throw new InvalidOperationException("A resumed combat needs its Engine random stream.");
+        string scope = pending.Continuation.RandomScope
+            ?? throw new InvalidOperationException("A campaign combat continuation has no random scope.");
+        _combatDice = new DiceRoller(random, _state.Seed, scope, pending.Continuation.NextRandomKey);
         (List<CombatSide> sides, _) = RestoreSides(pending);
         _combat = CombatRunner.Restore(_rules, pending.Combat, sides, _combatDice, pending.Continuation, pending.Encounter, Setup(pending.Event));
         _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
@@ -1029,13 +1029,10 @@ public sealed partial class CampaignRunner
         Definition combat = evt.Json.TryGetProperty("combat", out _)
             ? _rules.Reference(evt, "$.combat")
             : _rules.OfType(DefinitionTypes.Combat).Single();
-        // Any party-side manual preference can suspend this fight, even when
-        // the campaign default is automatic. Give those fights their own
-        // persisted keyed cursor so a save can resume without replaying the
-        // caller's broader command stream.
-        DiceRoller combatDice = RequiresKeyedCombat()
-            ? dice.Keyed(_state.Seed, CombatScope(evt, combatSequence))
-            : dice;
+        // Every campaign fight draws from its own keyed scope, so the same seed
+        // rolls the same fight whether members are manual or automatic, and a
+        // saved fight resumes without replaying the caller's command stream.
+        DiceRoller combatDice = dice.Keyed(_state.Seed, CombatScope(evt, combatSequence));
         List<Combatant> party = _state.Party.Select(character => Combatant.FromCharacter(_rules, character)).ToList();
         List<CombatSide> sides = Encounters.Distinct(
         [
@@ -1064,12 +1061,6 @@ public sealed partial class CampaignRunner
     }
 
     private string CombatScope(Definition evt, long combatSequence) => $"goldbox.campaign.combat.{combatSequence}.{evt.QualifiedId}";
-
-    private bool RequiresKeyedCombat()
-    {
-        return DefaultCombatControl == CombatControlMode.Manual
-            || _state.Party.Any(character => PartyCombatControl(character) == CombatControlMode.Manual);
-    }
 
     private void ApplyDefaultControllers(CombatRunner combat)
     {

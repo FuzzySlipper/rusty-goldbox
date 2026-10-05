@@ -283,9 +283,11 @@ A save is the JSON `SaveFile` writes. `goldbox play` keeps it in a file, or
 with `--store <dir>` in a `SaveSlots` slot of that Engine persistence root;
 the Game uses the same slots (scope `goldbox-saves`), so either loads the
 other's saves. Pending combat saves include the active turn, budgets,
-conditions, controller state and optional decision. Live battles use Engine
-keyed random draws with a persisted scope and draw index, so inspection,
-rejected choices and save/load do not restart the battle's random sequence.
+conditions, controller state and optional decision. Every campaign fight
+uses Engine keyed random draws with its own persisted scope and draw index,
+so manual and automatic control roll the same dice for the same seed, and
+inspection, rejected choices and save/load do not restart the battle's random
+sequence.
 
 `CampaignRunner.Scene.cs` resolves authored scene checks with `Evaluator.Check`
 and applies the supported scene effects through `TrackOperations` and the
