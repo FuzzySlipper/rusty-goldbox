@@ -76,6 +76,39 @@ public sealed class LiveCampaignCombatTests
     }
 
     [Fact]
+    public void ALiveFightKeepsItsDiceAcrossEngineCallbacks()
+    {
+        using TempModules modules = new();
+        string campaign = CampaignFixture(modules);
+        ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.Empty(set.Diagnostics);
+        Definition definition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
+        using EngineTestHost host = EngineTestHost.Create();
+        FightFact expected = host.Call(engine =>
+        {
+            CampaignRunner automatic = new(set.Rules, CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7));
+            return automatic.Begin(engine.Random).OfType<FightFact>().First();
+        });
+
+        // Each command arrives in its own callback, as the Game's inputs do.
+        CampaignState state = CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7);
+        CampaignRunner manual = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
+        host.Call(engine => manual.Begin(engine.Random));
+        List<PlayFact> facts = [];
+        while (!facts.OfType<FightFact>().Any())
+        {
+            host.Call(engine =>
+            {
+                string actor = manual.ObserveCombat(engine.Random)!.PendingDecision!.ActorId;
+                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, engine.Random).Facts);
+            });
+        }
+
+        FightFact actual = facts.OfType<FightFact>().First();
+        Assert.Equal(expected.Facts.Select(fact => fact.Describe()), actual.Facts.Select(fact => fact.Describe()));
+    }
+
+    [Fact]
     public void ManualCampaignCombatSuspendsAndSaveRestoresTheSameBoundary()
     {
         using TempModules modules = new();

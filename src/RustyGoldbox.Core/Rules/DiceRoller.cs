@@ -37,7 +37,7 @@ public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, in
 /// </summary>
 public sealed class DiceRoller
 {
-    private readonly IRandomService _random;
+    private IRandomService _random;
     private readonly Rng? _stream;
     private readonly ulong? _seed;
     private readonly string? _scope;
@@ -79,6 +79,20 @@ public sealed class DiceRoller
 
     /// <summary>Whether this roller can be reconstructed without retaining an Engine stream.</summary>
     public bool IsKeyed => _scope is not null;
+
+    /// <summary>
+    /// Points a keyed roller at the current callback's Engine random service,
+    /// so a live fight can keep its roller between callbacks.
+    /// </summary>
+    public void Use(IRandomService random)
+    {
+        if (!IsKeyed)
+        {
+            throw new InvalidOperationException("Only a keyed roller can move to another callback.");
+        }
+
+        _random = random;
+    }
 
     /// <summary>Creates another keyed roller over the same Engine random service.</summary>
     public DiceRoller Keyed(ulong seed, string scope, long nextKey = 0) => new(_random, seed, scope, nextKey);

@@ -31,7 +31,6 @@ public sealed partial class CampaignRunner
     private readonly Dictionary<Definition, AreaMap> _maps = [];
     private CombatRunner? _combat;
     private DiceRoller? _combatDice;
-    private CombatObservation? _combatObservation;
 
     /// <summary>
     /// The default controller for party combatants created by this runner.
@@ -52,7 +51,7 @@ public sealed partial class CampaignRunner
     public CampaignState State => _state;
 
     /// <summary>The current live combat view, or null while campaign events run.</summary>
-    public CombatObservation? Combat => _combat?.Observe() ?? _combatObservation;
+    public CombatObservation? Combat => _combat?.Observe();
 
     /// <summary>Loads a saved live combat when needed and observes it without advancing or drawing.</summary>
     public CombatObservation? ObserveCombat(IRandomService random)
@@ -62,87 +61,102 @@ public sealed partial class CampaignRunner
             return null;
         }
 
-        return WithDice(random, dice =>
-        {
-            EnsureCombat(random);
-            return _combat!.Observe();
-        });
+        return InCombat(random, () => _combat!.Observe());
     }
 
     /// <summary>Submits one typed combat command through the campaign owner.</summary>
     public CampaignCombatCommandResult SubmitCombat(CombatCommand command, IRandomService random)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return WithDice(random, dice => SubmitCombat(command, random, dice));
+        if (_state.PendingCombat is null)
+        {
+            return NoCombat();
+        }
+
+        return InCombat(random, () =>
+        {
+            CombatCommandResult result = _combat!.Submit(command);
+            return Committed(result.Accepted, result.Reason, result.Observation);
+        });
     }
 
     /// <summary>Changes one combatant's controller without changing its turn or resources.</summary>
     public CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random)
     {
-        return WithDice(random, dice => SetCombatController(actorId, mode, random, dice));
+        if (_state.PendingCombat is null)
+        {
+            return NoCombat();
+        }
+
+        return InCombat(random, () =>
+        {
+            if (!_combat!.SetController(actorId, mode))
+            {
+                return new CampaignCombatCommandResult(false, $"Unknown combatant '{actorId}'.", _combat.Observe(), []);
+            }
+
+            if (_combat.Sides.SelectMany(side => side.Members).FirstOrDefault(member => member.Id == actorId)?.Character is Character character)
+            {
+                character.CombatControlPreference = mode;
+            }
+
+            return Committed(true, null, _combat.Observe());
+        });
     }
 
     /// <summary>Temporarily resolves one manual actor's current turn automatically.</summary>
     public CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random)
     {
-        return WithDice(random, dice => StepCombatAutomatically(actorId, random, dice));
-    }
-
-    private CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random, DiceRoller? dice = null)
-    {
         if (_state.PendingCombat is null)
         {
-            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
+            return NoCombat();
         }
 
-        EnsureCombat(random);
-        bool changed = _combat!.SetController(actorId, mode);
-        List<PlayFact> facts = [];
-        if (!changed)
+        return InCombat(random, () =>
         {
-            return new CampaignCombatCommandResult(false, $"Unknown combatant '{actorId}'.", _combat.Observe(), facts);
-        }
-
-        if (_combat.Sides.SelectMany(side => side.Members).FirstOrDefault(member => member.Id == actorId)?.Character is Character character)
-        {
-            character.CombatControlPreference = mode;
-        }
-
-        _state.PendingCombat.Continuation = _combat.Capture();
-        CombatObservation terminalObservation = _combat.Observe();
-        DiceRoller continuationDice = _combatDice ?? dice!;
-        if (_combat.Phase == CombatPhase.Ended && CompleteCombat(continuationDice, facts) is Definition next)
-        {
-            RunChain(next, continuationDice, facts);
-        }
-
-        return new CampaignCombatCommandResult(true, null, _combat?.Observe() ?? terminalObservation, facts);
+            CombatCommandResult result = _combat!.StepAutomaticTurn(actorId);
+            return Committed(result.Accepted, result.Reason, result.Observation);
+        });
     }
 
-    private CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random, DiceRoller? dice = null)
-    {
-        if (_state.PendingCombat is null)
-        {
-            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
-        }
+    private CampaignCombatCommandResult NoCombat() => new(false, "No combat is waiting for a command.", NoCombatObservation(), []);
 
+    /// <summary>
+    /// Runs one step against the live fight, loading it from the save first
+    /// when needed. A step that fails partway reloads the fight from its last
+    /// committed continuation before the failure is reported.
+    /// </summary>
+    private T InCombat<T>(IRandomService random, Func<T> step)
+    {
         EnsureCombat(random);
-        CombatCommandResult result = _combat!.StepAutomaticTurn(actorId);
-        List<PlayFact> facts = [];
-        if (result.Accepted)
+        try
         {
-            _state.PendingCombat.Continuation = _combat.Capture();
-            if (_combat.Phase == CombatPhase.Ended)
+            return step();
+        }
+        catch
+        {
+            _combat = null;
+            _combatDice = null;
+            EnsureCombat(random);
+            throw;
+        }
+    }
+
+    /// <summary>After an accepted command: saves the fight's continuation and, once it has ended, completes it and runs its outcome chain.</summary>
+    private CampaignCombatCommandResult Committed(bool accepted, string? reason, CombatObservation observation)
+    {
+        List<PlayFact> facts = [];
+        if (accepted)
+        {
+            _state.PendingCombat!.Continuation = _combat!.Capture();
+            DiceRoller dice = _combatDice!;
+            if (_combat.Phase == CombatPhase.Ended && CompleteCombat(dice, facts) is Definition next)
             {
-                DiceRoller continuationDice = _combatDice ?? dice!;
-                if (CompleteCombat(continuationDice, facts) is Definition next)
-                {
-                    RunChain(next, continuationDice, facts);
-                }
+                RunChain(next, dice, facts);
             }
         }
 
-        return new CampaignCombatCommandResult(result.Accepted, result.Reason, _combat?.Observe() ?? result.Observation, facts);
+        return new CampaignCombatCommandResult(accepted, reason, _combat?.Observe() ?? observation, facts);
     }
 
     /// <summary>A new campaign: the party at the start entry, variables at their initial values.</summary>
@@ -214,46 +228,7 @@ public sealed partial class CampaignRunner
     private T WithDice<T>(IRandomService random, Func<DiceRoller, T> step)
     {
         using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(_state.Seed, $"goldbox.play.{_state.Commands}"));
-        try
-        {
-            return step(new DiceRoller(random, stream));
-        }
-        finally
-        {
-            if (_combat is not null)
-            {
-                _combatObservation = _combat.Observe();
-            }
-
-            _combat = null;
-            _combatDice = null;
-        }
-    }
-
-    private CampaignCombatCommandResult SubmitCombat(CombatCommand command, IRandomService random, DiceRoller dice)
-    {
-        if (_state.PendingCombat is null)
-        {
-            return new CampaignCombatCommandResult(false, "No combat is waiting for a command.", NoCombatObservation(), []);
-        }
-
-        EnsureCombat(random);
-        CombatCommandResult result = _combat!.Submit(command);
-        List<PlayFact> facts = [];
-        if (result.Accepted)
-        {
-            _state.PendingCombat.Continuation = _combat.Capture();
-            if (_combat.Phase == CombatPhase.Ended)
-            {
-                DiceRoller continuationDice = _combatDice ?? dice;
-                if (CompleteCombat(continuationDice, facts) is Definition next)
-                {
-                    RunChain(next, continuationDice, facts);
-                }
-            }
-        }
-
-        return new CampaignCombatCommandResult(result.Accepted, result.Reason, _combat?.Observe() ?? result.Observation, facts);
+        return step(new DiceRoller(random, stream));
     }
 
     private CombatObservation NoCombatObservation() => new(
@@ -266,10 +241,12 @@ public sealed partial class CampaignRunner
         [],
         []);
 
+    /// <summary>The live fight, kept between commands; loaded from the saved continuation after a save load or a failed step.</summary>
     private void EnsureCombat(IRandomService random)
     {
         if (_combat is not null)
         {
+            _combatDice!.Use(random);
             return;
         }
 
@@ -284,7 +261,6 @@ public sealed partial class CampaignRunner
         (List<CombatSide> sides, _) = RestoreSides(pending);
         _combat = CombatRunner.Restore(_rules, pending.Combat, sides, _combatDice, pending.Continuation, pending.Encounter, Setup(pending.Event));
         _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
-        _combatObservation = _combat.Observe();
     }
 
     private (List<CombatSide> Sides, List<Combatant> Members) RestoreSides(PendingCombatState pending)
@@ -1180,7 +1156,6 @@ public sealed partial class CampaignRunner
         _state.PendingCombat = null;
         _combat = null;
         _combatDice = null;
-        _combatObservation = null;
         return next;
     }
 

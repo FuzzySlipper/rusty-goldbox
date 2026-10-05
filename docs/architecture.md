@@ -207,7 +207,10 @@ Controller preferences do not restrict a human's legal choices. A committed
 spell price, random target limit and optional reaction or post-roll choice
 retain their actual rolls and suspended operation data. `Capture` and `Restore` carry that
 continuation without repeating deployment, surprise or completed actions.
-`Run` is the automatic driver of this owner.
+`CampaignRunner` keeps one live `CombatRunner` between commands, moving its
+keyed dice to each callback's Engine random service; it restores from the
+continuation only after a save load or a step that failed partway. `Run` is
+the automatic driver of this owner.
 
 Candidate construction evaluates spell prices without dice. A selected legal
 spell commits a random price in its existing pending action choice; if the
