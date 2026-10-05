@@ -203,8 +203,26 @@ internal static class GameCommands
                     session.SetUiScale(Number(payload, "scale"));
                     SaveSettings(session, engine);
                     break;
+                case "module-preview":
+                    session.Installer.PreviewFrom(Text(payload, "source"));
+                    break;
+                case "module-install":
+                    session.Installer.Install(
+                        Text(payload, "source"),
+                        payload.TryGetProperty("id", out _) ? Text(payload, "id") : null,
+                        payload.TryGetProperty("version", out _) ? Text(payload, "version") : null);
+                    break;
+                case "module-updates":
+                    session.Installer.CheckUpdates();
+                    break;
+                case "module-remove":
+                    session.Installer.Remove(engine, Text(payload, "id"), Text(payload, "version"));
+                    break;
+                case "module-cancel":
+                    session.Installer.Cancel(engine);
+                    break;
                 default:
-                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale");
+                    throw new PayloadException($"'{action}' is not an action; actions are refresh, open, roll, skills, drop, equip, spells, memorise, begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config, ui-scale, module-preview, module-install, module-updates, module-remove, module-cancel");
             }
         }
         catch (PayloadException exception)

@@ -5,7 +5,7 @@ namespace RustyGoldbox.Core.Modules;
 /// <summary>A module <see cref="ModuleFetcher"/> installed.</summary>
 public sealed record FetchedModule(ReleasedModule Module, ReleaseSource From, string Container);
 
-/// <summary>What <see cref="ModuleFetcher.Get"/> did.</summary>
+/// <summary>What a fetch did.</summary>
 /// <param name="Present">Requirements already met by modules on this machine, as "id version".</param>
 public sealed record FetchResult(IReadOnlyList<FetchedModule> Installed, IReadOnlyList<string> Present, IReadOnlyList<string> Problems)
 {
@@ -13,18 +13,106 @@ public sealed record FetchResult(IReadOnlyList<FetchedModule> Installed, IReadOn
 }
 
 /// <summary>
-/// Fetches a module from where it is published, and every module it requires
-/// that isn't already here, into a module library. The caller supplies how to
-/// read a URL, download one to a file and read a container's content
-/// identity, so the CLI and the Game share the rules.
+/// Network work a fetch is waiting for. The caller does it however its host
+/// allows (the CLI at once with .NET, the Game over Engine <c>Http</c> across
+/// updates), fills in the result and resumes the fetch.
 /// </summary>
-/// <param name="read">GETs a URL with the given headers: its body, or why it failed.</param>
-/// <param name="download">Downloads a URL to a file: null, or why it failed.</param>
+public abstract class FetchStep
+{
+    /// <summary>Why it failed, or null when it succeeded.</summary>
+    public string? Failure { get; set; }
+}
+
+/// <summary>GET a URL into memory.</summary>
+public sealed class ReadStep(Uri url, IReadOnlyDictionary<string, string> headers) : FetchStep
+{
+    public Uri Url { get; } = url;
+
+    public IReadOnlyDictionary<string, string> Headers { get; } = headers;
+
+    /// <summary>The body, when the GET succeeded.</summary>
+    public byte[]? Body { get; set; }
+}
+
+/// <summary>Download a URL to <see cref="FileName"/> in <see cref="Directory"/>, replacing any file of that name.</summary>
+public sealed class DownloadStep(Uri url, string directory, string fileName, string module) : FetchStep
+{
+    public Uri Url { get; } = url;
+
+    public string Directory { get; } = directory;
+
+    public string FileName { get; } = fileName;
+
+    /// <summary>The module being downloaded, as "id version", for progress.</summary>
+    public string Module { get; } = module;
+}
+
+/// <summary>
+/// One fetch in progress: run it by doing each <see cref="Pending"/> step and
+/// calling <see cref="Resume"/> until <see cref="Result"/> is set.
+/// </summary>
+public sealed class ModuleFetch
+{
+    private readonly IEnumerator<FetchStep> _steps;
+
+    internal ModuleFetch(IEnumerable<FetchStep> steps, Func<FetchResult> result)
+    {
+        _steps = steps.GetEnumerator();
+        ResultOf = result;
+        Resume();
+    }
+
+    /// <summary>The step the fetch waits for, or null once it has finished.</summary>
+    public FetchStep? Pending { get; private set; }
+
+    /// <summary>What the fetch did, once it has finished.</summary>
+    public FetchResult? Result { get; private set; }
+
+    private Func<FetchResult> ResultOf { get; }
+
+    /// <summary>Continues after <see cref="Pending"/> has been done and its result filled in.</summary>
+    public void Resume()
+    {
+        if (_steps.MoveNext())
+        {
+            Pending = _steps.Current;
+            return;
+        }
+
+        Pending = null;
+        Result = ResultOf();
+        _steps.Dispose();
+    }
+
+    /// <summary>Runs the whole fetch with steps done at once, as the CLI does.</summary>
+    public FetchResult RunWith(Action<ReadStep> read, Action<DownloadStep> download)
+    {
+        while (Pending is FetchStep step)
+        {
+            switch (step)
+            {
+                case ReadStep reading:
+                    read(reading);
+                    break;
+                case DownloadStep downloading:
+                    download(downloading);
+                    break;
+            }
+
+            Resume();
+        }
+
+        return Result!;
+    }
+}
+
+/// <summary>
+/// Fetches a module from where it is published, and every module it requires
+/// that isn't already here, into a module library. Network work is handed out
+/// as steps, so the CLI and the Game share the rules.
+/// </summary>
 /// <param name="identityOf">A container's Engine content identity, or null when it isn't a usable container.</param>
-public sealed class ModuleFetcher(
-    Func<Uri, IReadOnlyDictionary<string, string>, (byte[]? Body, string? Failure)> read,
-    Func<Uri, string, string?> download,
-    Func<string, string?> identityOf)
+public sealed class ModuleFetcher(Func<string, string?> identityOf)
 {
     private static readonly Dictionary<string, string> GitHubHeaders = new()
     {
@@ -34,22 +122,58 @@ public sealed class ModuleFetcher(
 
     private readonly Dictionary<string, List<Offer>> _offers = [];
 
+    /// <summary>Starts fetching a module and what it requires.</summary>
     /// <param name="id">The module to fetch; may be left out when the source offers one module, or one campaign.</param>
     /// <param name="range">Acceptable versions; any version when null.</param>
     /// <param name="available">Modules already on this machine, as (id, version).</param>
     /// <param name="library">The module library directory to install into.</param>
-    public FetchResult Get(ReleaseSource source, string? id, VersionRange? range, IEnumerable<(string Id, ModuleVersion Version)> available, string library)
+    public ModuleFetch Get(ReleaseSource source, string? id, VersionRange? range, IEnumerable<(string Id, ModuleVersion Version)> available, string library)
     {
         List<FetchedModule> installed = [];
         List<string> present = [];
         List<string> problems = [];
-        List<(string Id, ModuleVersion Version)> here = [.. available];
+        return new ModuleFetch(Fetch(source, id, range, [.. available], library, installed, present, problems), () => new FetchResult(installed, present, problems));
+    }
+
+    /// <summary>Starts reading every module the releases of <paramref name="source"/> offer.</summary>
+    public ModuleFetch Published(ReleaseSource source, List<ReleasedModule> modules)
+    {
+        List<string> problems = [];
+        return new ModuleFetch(Listing(source, modules, problems), () => new FetchResult([], [], problems));
+    }
+
+    private IEnumerable<FetchStep> Listing(ReleaseSource source, List<ReleasedModule> modules, List<string> problems)
+    {
+        List<Offer> offers = [];
+        foreach (FetchStep step in Offers(source, offers, problems))
+        {
+            yield return step;
+        }
+
+        modules.AddRange(offers.Select(offer => offer.Module));
+    }
+
+    private IEnumerable<FetchStep> Fetch(
+        ReleaseSource source,
+        string? id,
+        VersionRange? range,
+        List<(string Id, ModuleVersion Version)> here,
+        string library,
+        List<FetchedModule> installed,
+        List<string> present,
+        List<string> problems)
+    {
         Queue<(ReleaseSource Source, string? Id, VersionRange? Range, string Why)> wanted = new();
         wanted.Enqueue((source, id, range, $"requested from {source}"));
         while (wanted.Count > 0)
         {
             (ReleaseSource from, string? wantedId, VersionRange? wantedRange, string why) = wanted.Dequeue();
-            List<Offer> offers = Offers(from, problems);
+            List<Offer> offers = [];
+            foreach (FetchStep step in Offers(from, offers, problems))
+            {
+                yield return step;
+            }
+
             if (offers.Count == 0)
             {
                 continue;
@@ -88,30 +212,28 @@ public sealed class ModuleFetcher(
                 continue;
             }
 
-            if (Install(offer, from, library, problems) is not FetchedModule fetched)
+            List<FetchedModule> fetched = [];
+            foreach (FetchStep step in Install(offer, from, library, fetched, problems))
+            {
+                yield return step;
+            }
+
+            if (fetched is not [FetchedModule module])
             {
                 continue;
             }
 
-            installed.Add(fetched);
-            here.Add((fetched.Module.Id, fetched.Module.Version));
-            foreach (ModuleRequirement requirement in fetched.Module.Requires)
+            installed.Add(module);
+            here.Add((module.Module.Id, module.Module.Version));
+            foreach (ModuleRequirement requirement in module.Module.Requires)
             {
                 // A requirement without its own source is looked for where its requirer came from.
-                wanted.Enqueue((requirement.Releases ?? from, requirement.Id, requirement.Range, $"required by {fetched.Module.Id} {fetched.Module.Version}"));
+                wanted.Enqueue((requirement.Releases ?? from, requirement.Id, requirement.Range, $"required by {module.Module.Id} {module.Module.Version}"));
             }
         }
-
-        return new FetchResult(installed, present, problems);
     }
 
-    /// <summary>Every module the releases of <paramref name="source"/> offer.</summary>
-    public IReadOnlyList<ReleasedModule> Published(ReleaseSource source, List<string> problems)
-    {
-        return Offers(source, problems).Select(offer => offer.Module).ToList();
-    }
-
-    private FetchedModule? Install(Offer offer, ReleaseSource from, string library, List<string> problems)
+    private IEnumerable<FetchStep> Install(Offer offer, ReleaseSource from, string library, List<FetchedModule> fetched, List<string> problems)
     {
         ReleasedModule module = offer.Module;
         string target = Path.Combine(library, module.File);
@@ -125,14 +247,25 @@ public sealed class ModuleFetcher(
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             problems.Add($"Can't prepare {downloads} for {module.Id} {module.Version}: {exception.Message}");
-            return null;
+            yield break;
         }
 
-        string? failure = offer.Container is Uri url ? download(url, temporary) : Copy(offer.Path!, temporary);
+        string? failure;
+        if (offer.Container is Uri url)
+        {
+            DownloadStep download = new(url, downloads, module.File, $"{module.Id} {module.Version}");
+            yield return download;
+            failure = download.Failure;
+        }
+        else
+        {
+            failure = Copy(offer.Path!, temporary);
+        }
+
         if (failure is not null)
         {
             problems.Add($"Downloading {module.Id} {module.Version} from {from} failed: {failure}");
-            return null;
+            yield break;
         }
 
         string? identity = identityOf(temporary);
@@ -142,12 +275,12 @@ public sealed class ModuleFetcher(
             problems.Add(identity is null
                 ? $"{module.File} from {from} isn't a usable module container, so it wasn't installed."
                 : $"{module.File} from {from} doesn't match its index (content {identity}, index says {module.Identity}), so it wasn't installed. Ask the publisher to re-release it.");
-            return null;
+            yield break;
         }
 
         File.Move(temporary, target, overwrite: true);
         InstalledSources.Record(library, module, from);
-        return new FetchedModule(module, from, target);
+        fetched.Add(new FetchedModule(module, from, target));
     }
 
     private static string? Copy(string from, string to)
@@ -181,32 +314,39 @@ public sealed class ModuleFetcher(
         return null;
     }
 
-    /// <summary>Every module every release of a source offers, read once per source.</summary>
-    private List<Offer> Offers(ReleaseSource source, List<string> problems)
+    /// <summary>Every module every release of a source offers, read once per source, into <paramref name="offers"/>.</summary>
+    private IEnumerable<FetchStep> Offers(ReleaseSource source, List<Offer> offers, List<string> problems)
     {
         if (_offers.TryGetValue(source.Text, out List<Offer>? known))
         {
-            return known;
+            offers.AddRange(known);
+            yield break;
         }
 
-        List<Offer> offers = source switch
+        int problemsBefore = problems.Count;
+        List<Offer> found = [];
+        IEnumerable<FetchStep> steps = source switch
         {
-            { Directory: string directory } => LocalOffers(directory, problems),
-            { Index: Uri index } => IndexOffers(index, file => new Uri(index, file), problems),
-            _ => GitHubOffers(source, problems),
+            { Directory: string directory } => LocalOffers(directory, found, problems),
+            { Index: Uri index } => IndexOffers(index, file => new Uri(index, file), found, problems),
+            _ => GitHubOffers(source, found, problems),
         };
-        if (offers.Count == 0 && problems.Count == 0)
+        foreach (FetchStep step in steps)
+        {
+            yield return step;
+        }
+
+        if (found.Count == 0 && problems.Count == problemsBefore)
         {
             problems.Add($"{source} has no releases with a {ReleaseIndex.FileName}. Publish one with `goldbox module release`.");
         }
 
-        _offers[source.Text] = offers;
-        return offers;
+        _offers[source.Text] = found;
+        offers.AddRange(found);
     }
 
-    private static List<Offer> LocalOffers(string directory, List<string> problems)
+    private static IEnumerable<FetchStep> LocalOffers(string directory, List<Offer> offers, List<string> problems)
     {
-        List<Offer> offers = [];
         IEnumerable<string> folders = Directory.EnumerateDirectories(directory).Order(StringComparer.Ordinal).Prepend(directory);
         foreach (string folder in folders)
         {
@@ -218,20 +358,20 @@ public sealed class ModuleFetcher(
             }
         }
 
-        return offers;
+        yield break;
     }
 
-    private List<Offer> IndexOffers(Uri index, Func<string, Uri?> container, List<string> problems)
+    private static IEnumerable<FetchStep> IndexOffers(Uri index, Func<string, Uri?> container, List<Offer> offers, List<string> problems)
     {
-        (byte[]? body, string? failure) = read(index, GitHubHeaders);
-        if (body is null)
+        ReadStep read = new(index, GitHubHeaders);
+        yield return read;
+        if (read.Body is null)
         {
-            problems.Add($"Can't read {index}: {failure}");
-            return [];
+            problems.Add($"Can't read {index}: {read.Failure}");
+            yield break;
         }
 
-        List<Offer> offers = [];
-        foreach (ReleasedModule module in ReleaseIndex.Read(body, index.ToString(), problems))
+        foreach (ReleasedModule module in ReleaseIndex.Read(read.Body, index.ToString(), problems))
         {
             if (container(module.File) is Uri url)
             {
@@ -242,24 +382,22 @@ public sealed class ModuleFetcher(
                 problems.Add($"{index} lists {module.File}, but its release has no such file.");
             }
         }
-
-        return offers;
     }
 
-    private List<Offer> GitHubOffers(ReleaseSource source, List<string> problems)
+    private static IEnumerable<FetchStep> GitHubOffers(ReleaseSource source, List<Offer> offers, List<string> problems)
     {
-        Uri releases = new($"https://api.github.com/repos/{source.Owner}/{source.Repository}/releases?per_page=100");
-        (byte[]? body, string? failure) = read(releases, GitHubHeaders);
-        if (body is null)
+        ReadStep list = new(new Uri($"https://api.github.com/repos/{source.Owner}/{source.Repository}/releases?per_page=100"), GitHubHeaders);
+        yield return list;
+        if (list.Body is null)
         {
-            problems.Add($"Can't list the releases of {source}: {failure}");
-            return [];
+            problems.Add($"Can't list the releases of {source}: {list.Failure}");
+            yield break;
         }
 
-        List<Offer> offers = [];
+        List<(Uri Index, Dictionary<string, Uri> Assets)> releases = [];
         try
         {
-            using JsonDocument document = JsonDocument.Parse(body);
+            using JsonDocument document = JsonDocument.Parse(list.Body);
             foreach (JsonElement release in document.RootElement.EnumerateArray())
             {
                 if (release.TryGetProperty("draft", out JsonElement draft) && draft.ValueKind == JsonValueKind.True)
@@ -278,16 +416,23 @@ public sealed class ModuleFetcher(
 
                 if (assets.TryGetValue(ReleaseIndex.FileName, out Uri? index))
                 {
-                    offers.AddRange(IndexOffers(index, file => assets.GetValueOrDefault(file), problems));
+                    releases.Add((index, assets));
                 }
             }
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
         {
             problems.Add($"GitHub's release list for {source} wasn't in the expected shape: {exception.Message}");
+            yield break;
         }
 
-        return offers;
+        foreach ((Uri index, Dictionary<string, Uri> assets) in releases)
+        {
+            foreach (FetchStep step in IndexOffers(index, file => assets.GetValueOrDefault(file), offers, problems))
+            {
+                yield return step;
+            }
+        }
     }
 
     private sealed record Offer(ReleasedModule Module, Uri? Container, string? Path);

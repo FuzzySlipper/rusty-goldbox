@@ -50,6 +50,9 @@ internal sealed class GameSession(ModuleLibrary library)
 
     public List<CampaignChoice> Campaigns { get; private set; } = [];
 
+    /// <summary>Fetching, updating and removing published modules in the module library.</summary>
+    public ModuleInstaller Installer { get; } = new(library);
+
     /// <summary>The module set of the open campaign.</summary>
     public ModuleSet? Set { get; private set; }
 

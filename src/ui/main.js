@@ -172,7 +172,10 @@ export function mountProductUi(root, context) {
       : null;
     sheetNotes.replaceChildren(...(projection.notes ?? []).map((note) => element('li', {}, note)));
     overlay.render(projection, null);
-    sheetBody.replaceChildren(screen === 'title' ? renderTitle(projection) : screen === 'party' ? renderParty(projection) : '');
+    const body = screen === 'title' ? renderTitle(projection) : screen === 'party' ? renderParty(projection) : '';
+    if (body !== null) {
+      sheetBody.replaceChildren(body);
+    }
     if (sheetState) {
       sheet.scrollTop = sheetState.scrollTop;
       if (sheetState.focusKey) {

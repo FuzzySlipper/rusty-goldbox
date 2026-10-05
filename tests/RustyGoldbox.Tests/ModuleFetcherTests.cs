@@ -24,7 +24,7 @@ public sealed class ModuleFetcherTests
         hub.Release("bob/art", "art-v0.1.0", Module("art", "0.1.0", ModuleKind.Assets, []));
 
         Assert.True(ReleaseSource.TryParse("github:alice/tale", out ReleaseSource? tale));
-        FetchResult result = hub.Fetcher().Get(tale!, null, null, [("art", new ModuleVersion(0, 1, 0))], library);
+        FetchResult result = hub.Get(tale!, null, [("art", new ModuleVersion(0, 1, 0))], library);
 
         Assert.True(result.Succeeded, string.Join("\n", result.Problems));
         Assert.Equal(["tale 0.1.0", "rules 0.2.0", "tale-extras 0.1.0"], result.Installed.Select(module => $"{module.Module.Id} {module.Module.Version}"));
@@ -49,7 +49,7 @@ public sealed class ModuleFetcherTests
         hub.Release("alice/tale", "tale-extras-v0.1.0", Module("tale-extras", "0.1.0", ModuleKind.Extension, []));
 
         Assert.True(ReleaseSource.TryParse("github:alice/tale", out ReleaseSource? tale));
-        FetchResult result = hub.Fetcher().Get(tale!, "tale", null, [("tale", new ModuleVersion(0, 1, 0))], library);
+        FetchResult result = hub.Get(tale!, "tale", [("tale", new ModuleVersion(0, 1, 0))], library);
 
         Assert.True(result.Succeeded, string.Join("\n", result.Problems));
         Assert.Equal("tale-extras", Assert.Single(result.Installed).Module.Id);
@@ -66,7 +66,7 @@ public sealed class ModuleFetcherTests
         hub.Tamper("rules-0.1.0.rpak");
 
         Assert.True(ReleaseSource.TryParse("github:carol/rules", out ReleaseSource? rules));
-        FetchResult result = hub.Fetcher().Get(rules!, null, null, [], library);
+        FetchResult result = hub.Get(rules!, null, [], library);
 
         Assert.Empty(result.Installed);
         Assert.Contains("doesn't match its index", Assert.Single(result.Problems), StringComparison.Ordinal);
@@ -126,7 +126,10 @@ public sealed class ModuleFetcherTests
             }
         }
 
-        public ModuleFetcher Fetcher() => new(Read, Download, path => File.ReadAllText(path));
+        public FetchResult Get(ReleaseSource source, string? id, IEnumerable<(string, ModuleVersion)> available, string library) =>
+            new ModuleFetcher(path => File.ReadAllText(path)).Get(source, id, null, available, library).RunWith(
+                step => (step.Body, step.Failure) = Read(step.Url, step.Headers),
+                step => step.Failure = Download(step.Url, Path.Combine(step.Directory, step.FileName)));
 
         private (byte[]? Body, string? Failure) Read(Uri url, IReadOnlyDictionary<string, string> headers)
         {

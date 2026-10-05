@@ -119,6 +119,17 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
         return set!;
     }
 
+    /// <summary>Every module the product has (its bundles and the module library), as (id, version).</summary>
+    public List<(string Id, ModuleVersion Version)> Present()
+    {
+        List<(string Id, ModuleVersion Version)> present = [];
+        WithBundles([], sources => present.AddRange(sources
+            .Select(source => ManifestReader.Read(source, []))
+            .OfType<ModuleManifest>()
+            .Select(manifest => (manifest.Id, manifest.Version))));
+        return present;
+    }
+
     /// <summary>The bundle holding the module a save names: its ID, version and content identity.</summary>
     public string? BundleOf(string id, string version, string identity)
     {

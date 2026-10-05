@@ -16,7 +16,7 @@ namespace RustyGoldbox.Game;
 /// shows and the choices it can claim intents for. Built as JSON, then
 /// copied into the Engine's structured UI value.
 /// </summary>
-internal static class SessionProjection
+internal static partial class SessionProjection
 {
     /// <param name="imageUrls">Where the panels can show an image asset of a module set, when it can be shown.</param>
     public static JsonObject Build(GameSession session, Func<ModuleSet, Definition, string?>? imageUrls = null)
@@ -43,6 +43,7 @@ internal static class SessionProjection
                 ["min"] = part.Minimum,
                 ["max"] = part.Maximum,
             }).ToArray()),
+            ["modules"] = Modules(session.Installer),
             ["campaigns"] = new JsonArray(session.Campaigns.Select(campaign => (JsonNode)new JsonObject
             {
                 ["bundle"] = campaign.Bundle,
@@ -387,6 +388,49 @@ internal static class SessionProjection
             ? winner == 0 ? "The party won." : "The party lost."
             : observation.FledSide is int fled ? fled == 0 ? "The party fled." : "The foes fled." : "The fight ended.";
     }
+
+    private static JsonObject Modules(ModuleInstaller installer)
+    {
+        string library = InstalledModules.DefaultDirectory();
+        Dictionary<string, InstalledSources.Entry> record = InstalledSources.Read(library);
+        return new JsonObject
+        {
+            ["activity"] = installer.Activity,
+            ["received"] = installer.Received,
+            ["expected"] = installer.Expected,
+            ["previewSource"] = installer.PreviewSource,
+            ["preview"] = new JsonArray(installer.Preview.Select(offer => (JsonNode)new JsonObject
+            {
+                ["id"] = offer.Id,
+                ["version"] = offer.Version,
+                ["kind"] = offer.Kind,
+                ["title"] = offer.Title,
+                ["provenance"] = offer.Provenance,
+                ["requires"] = Strings(offer.Requires),
+            }).ToArray()),
+            ["updates"] = new JsonArray(installer.Updates.Select(update => (JsonNode)new JsonObject
+            {
+                ["id"] = update.Id,
+                ["installed"] = update.Installed,
+                ["available"] = update.Available,
+                ["source"] = update.Source,
+            }).ToArray()),
+            ["installed"] = new JsonArray(InstalledModules.In(library, [])
+                .Select(Path.GetFileName)
+                .Select(name => InstalledName().Match(name!))
+                .Where(match => match.Success)
+                .Select(match => (JsonNode)new JsonObject
+                {
+                    ["id"] = match.Groups[1].Value,
+                    ["version"] = match.Groups[2].Value,
+                    ["source"] = record.TryGetValue(match.Groups[1].Value, out InstalledSources.Entry? entry) ? entry.Releases : null,
+                }).ToArray()),
+            ["messages"] = Strings(installer.Messages),
+        };
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^(.+)-(\d+\.\d+\.\d+)\.rpak$")]
+    private static partial System.Text.RegularExpressions.Regex InstalledName();
 
     private static JsonArray Strings(IEnumerable<string> lines) => new(lines.Select(line => (JsonNode)line).ToArray());
 

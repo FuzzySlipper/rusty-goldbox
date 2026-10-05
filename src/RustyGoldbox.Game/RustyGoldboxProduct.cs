@@ -51,6 +51,14 @@ public sealed class RustyGoldboxProduct : IEngineProduct
             changed |= GameCommands.Apply(_session, _engine, input);
         }
 
+        changed |= _session.Installer.Tick(_engine);
+        if (_session.Installer.LibraryChanged)
+        {
+            _session.Installer.LibraryChanged = false;
+            _session.Refresh();
+            changed = true;
+        }
+
         if (changed)
         {
             Publish();

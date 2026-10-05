@@ -24,7 +24,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | --- | --- |
 | `src/RustyGoldbox.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
 | `src/RustyGoldbox.Core/Modules/ModuleManifest.cs`, `ModuleIds.cs`, `ModuleKind.cs`, `ModuleVersion.cs` and `VersionRange.cs` | A manifest's fields, module ID rules, the module kinds, versions and `requires` ranges |
-| `src/RustyGoldbox.Core/Modules/ReleaseSource.cs`, `ReleaseIndex.cs`, `ModuleFetcher.cs` and `InstalledSources.cs` | Where a module is published, the `module-index.json` a release carries, fetching a module and its missing requirements into the library with identity checks (reading and downloading are supplied by the caller), and the library's `sources.json` record |
+| `src/RustyGoldbox.Core/Modules/ReleaseSource.cs`, `ReleaseIndex.cs`, `ModuleFetcher.cs` and `InstalledSources.cs` | Where a module is published, the `module-index.json` a release carries, fetching a module and its missing requirements into the library with identity checks, and the library's `sources.json` record. A fetch hands out read and download steps (`ModuleFetch`), which the CLI does at once with .NET and the Game does over Engine `Http` across updates |
 | `src/RustyGoldbox.Core/Modules/ModuleSet.cs` and `ModuleDiagnostic.cs` | A loaded module set with its rules, and a diagnostic naming module, file, JSON path and rule |
 | `src/RustyGoldbox.Core/Modules/JsonFiles.cs` and `DirectoryListing.cs` | Reading JSON files with located parse errors, and listing a module's files in a stable order |
 | `src/RustyGoldbox.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `goldbox.json` |
@@ -79,6 +79,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
 | `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
 | `src/RustyGoldbox.Game/WorkspaceModules.cs` | Development play from source: builds the workspaces in `$GOLDBOX_WORKSPACES` on each title listing, repacks changed modules with the Engine packer into `.goldbox/game/`, and opens them in place of installed copies |
+| `src/RustyGoldbox.Game/ModuleInstaller.cs` | The title screen's module work over Engine `Http`: previewing what a source publishes, installing with Core's `ModuleFetcher` steps across updates (one transfer at a time, with retries and cancel), checking recorded sources for updates, and removing a version through an Engine `HttpLibrary` |
 | `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
 | `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
 | `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL; asset sampling accompanies the projection |

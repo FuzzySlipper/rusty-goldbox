@@ -7,8 +7,55 @@ export function createTitle(send) {
   // Ticked extensions, by campaign bundle and extension ID, so a projection
   // update that redraws the list doesn't clear them before Open.
   const ticked = new Set();
+  const source = element('input', { size: '40', placeholder: 'https://github.com/owner/repo', 'aria-label': 'Module source', 'data-focus-key': 'title:module-source' });
+  // The running activity's row stays in place while only its byte count
+  // changes, so its Cancel button can be clicked during a download.
+  const activity = element('span', {});
+  const progress = element('span', { class: 'gb-muted' });
+  const busyRow = row(activity, progress, button('Cancel', () => send({ action: 'module-cancel' })));
+  let shown = null;
 
+  // Installing published modules: preview a source, install with progress, update and remove.
+  const modules = (state) => {
+    // Buttons that start work wait while something is running.
+    const off = state.activity ? { disabled: '' } : {};
+    const megabytes = (bytes) => `${(Number(bytes) / 1048576).toFixed(1)} MB`;
+    activity.textContent = state.activity ?? '';
+    progress.textContent = state.expected ? ` ${megabytes(state.received)} of ${megabytes(state.expected)} ` : state.received ? ` ${megabytes(state.received)} ` : ' ';
+    const busy = state.activity ? [busyRow] : [];
+    const preview = (state.preview ?? []).map((offer) => element('li', {},
+      element('strong', {}, offer.title), ` (${offer.id} ${offer.version}, ${offer.kind}) `,
+      button(`Install ${offer.id}`, () => send({ action: 'module-install', source: state.previewSource, id: offer.id, version: offer.version }), off),
+      element('div', { class: 'gb-muted' }, offer.provenance),
+      ...(offer.requires?.length ? [element('div', { class: 'gb-muted' }, `Requires ${offer.requires.join(', ')}`)] : [])));
+    const updates = (state.updates ?? []).map((update) => element('li', {},
+      `${update.id}: ${update.installed} installed, ${update.available} available `,
+      button('Install', () => send({ action: 'module-install', source: update.source, id: update.id, version: update.available }), off)));
+    const installed = (state.installed ?? []).map((module) => element('li', {},
+      `${module.id} ${module.version}`, element('span', { class: 'gb-muted' }, module.source ? ` from ${module.source} ` : ' '),
+      button('Remove', () => send({ action: 'module-remove', id: module.id, version: module.version }), off)));
+    return [
+      element('h2', {}, 'Modules'),
+      row(source,
+        button('Preview', () => send({ action: 'module-preview', source: source.value }), off),
+        button('Check for updates', () => send({ action: 'module-updates' }), off)),
+      ...busy,
+      ...(state.messages ?? []).map((message) => element('p', { class: 'gb-note' }, message)),
+      ...(preview.length ? [element('p', {}, `${state.previewSource} offers:`), element('ul', {}, ...preview)] : []),
+      ...(updates.length ? [element('p', {}, 'Updates:'), element('ul', {}, ...updates)] : []),
+      ...(installed.length ? [element('p', {}, 'Installed:'), element('ul', {}, ...installed)] : []),
+    ];
+  };
+
+  /** The title body for <view>, or null when only download progress changed and was updated in place. */
   return (view) => {
+    const key = JSON.stringify({ ...view, modules: { ...(view.modules ?? {}), received: 0, expected: 0 } });
+    if (key === shown) {
+      modules(view.modules ?? {});
+      return null;
+    }
+
+    shown = key;
     const list = element('ul', {});
     for (const campaign of view.campaigns ?? []) {
       // Extensions the player may add: drop-in content built on the campaign's ruleset.
@@ -37,6 +84,7 @@ export function createTitle(send) {
       element('h2', {}, 'Campaigns'), list,
       row(button('Refresh', () => send({ action: 'refresh' }))),
       element('h2', {}, 'Load'),
-      row(slot, button('Load', () => send({ action: 'load', slot: slot.value }))));
+      row(slot, button('Load', () => send({ action: 'load', slot: slot.value }))),
+      ...modules(view.modules ?? {}));
   };
 }

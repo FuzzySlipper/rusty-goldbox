@@ -50,7 +50,7 @@ internal static class DistributionCommand
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            ModuleFetcher fetcher = new(Read, Download, container => IdentityOf(engine.Content, container));
+            ModuleFetcher fetcher = new(container => IdentityOf(engine.Content, container));
             foreach ((string id, InstalledSources.Entry entry) in record.OrderBy(entry => entry.Key, StringComparer.Ordinal))
             {
                 if (!ReleaseSource.TryParseArgument(entry.Releases, workingDirectory, out ReleaseSource? source))
@@ -62,7 +62,9 @@ internal static class DistributionCommand
                 ModuleVersion newestHere = entry.Versions.Keys
                     .Select(text => ModuleVersion.TryParse(text, out ModuleVersion version) ? version : default)
                     .Max();
-                ReleasedModule? newest = fetcher.Published(source!, problems)
+                List<ReleasedModule> published = [];
+                problems.AddRange(fetcher.Published(source!, published).RunWith(ReadNow, DownloadNow).Problems);
+                ReleasedModule? newest = published
                     .Where(module => module.Id == id && module.Version > newestHere)
                     .MaxBy(module => module.Version);
                 if (newest is null)
@@ -74,7 +76,7 @@ internal static class DistributionCommand
                 if (parsed.Has("--install"))
                 {
                     VersionRange.TryParse(newest.Version.ToString(), out VersionRange? exact);
-                    FetchResult result = fetcher.Get(source!, id, exact, InstalledModules.Present(searched, engine.Content), library);
+                    FetchResult result = fetcher.Get(source!, id, exact, InstalledModules.Present(searched, engine.Content), library).RunWith(ReadNow, DownloadNow);
                     installed.AddRange(result.Installed);
                     problems.AddRange(result.Problems);
                 }
@@ -211,8 +213,8 @@ internal static class DistributionCommand
         using EngineTestHost host = EngineTestHost.Create();
         FetchResult result = host.Call(engine =>
         {
-            ModuleFetcher fetcher = new(Read, Download, container => IdentityOf(engine.Content, container));
-            return fetcher.Get(source!, id, range, InstalledModules.Present(searched, engine.Content), library);
+            ModuleFetcher fetcher = new(container => IdentityOf(engine.Content, container));
+            return fetcher.Get(source!, id, range, InstalledModules.Present(searched, engine.Content), library).RunWith(ReadNow, DownloadNow);
         });
         return output.Fetched(result, library);
     }
@@ -220,6 +222,16 @@ internal static class DistributionCommand
     // GitHub's release downloads sometimes answer 5xx or drop the
     // connection for a moment; a short retry makes a fetch dependable.
     private const int Attempts = 3;
+
+    private static void ReadNow(ReadStep step)
+    {
+        (step.Body, step.Failure) = Read(step.Url, step.Headers);
+    }
+
+    private static void DownloadNow(DownloadStep step)
+    {
+        step.Failure = Download(step.Url, Path.Combine(step.Directory, step.FileName));
+    }
 
     private static (byte[]? Body, string? Failure) Read(Uri url, IReadOnlyDictionary<string, string> headers)
     {

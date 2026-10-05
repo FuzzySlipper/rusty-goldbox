@@ -97,6 +97,9 @@ dotnet run --project src/RustyGoldbox.Cli -- module updates --install
 
 Updates install beside the versions you have, so saves keep loading with the
 versions they were made under; `module remove <id>@<version>` drops an old one.
+The Game's title screen does the same under Modules: paste a repository,
+preview what it offers with licences, install with progress and Cancel, check
+for updates and remove.
 
 A manifest's optional `"releases": "github:<owner>/<repo>"`, on the module or
 on a `requires` entry, says where it and its requirements are published.

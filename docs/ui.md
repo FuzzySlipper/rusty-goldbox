@@ -65,6 +65,15 @@ manual choices use the legal targets in the projection. The menu can save
 while a turn or optional decision waits. A finished fight stays on screen with
 its outcome until Continue.
 
+The title screen's Modules section installs published modules. Paste a
+GitHub repository (its page URL or `github:owner/repo`) or a
+`module-index.json` URL and Preview: it lists each module the source offers
+with its licence and what it requires. Install fetches the module and anything
+it requires that isn't already here, showing what it is reading or
+downloading with a Cancel button that stays put while the byte count changes.
+Check for updates lists newer versions of fetched modules, and each installed
+module has Remove. A finished install refreshes the campaign list.
+
 Each campaign on the title screen lists the extensions the player may add
 (`extensions`: installed extension modules built on its ruleset that it
 doesn't require), each with a checkbox; Open sends the checked IDs with the
