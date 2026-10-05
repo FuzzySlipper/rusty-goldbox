@@ -30,7 +30,14 @@ public static class SaveFile
         "format", "modules", "extensions", "campaign", "seed", "commands", "combat_sequence", "area", "x", "y", "facing", "variables", "found_secrets", "opened_doors", "fired", "pending_menu", "pending_shop", "pending_temple", "pending_training", "pending_combat", "elapsed_days", "picture", "music", "view_event", "inventory", "ended", "party", "absent_npcs",
     ];
 
-    public static string ToJson(CampaignState state, ModuleSet set)
+    public static string ToJson(CampaignState state, ModuleSet set) => ToJson(state, set, state.PendingCombat);
+
+    /// <summary>
+    /// The save with <paramref name="pendingCombat"/> in place of the state's
+    /// own: a fight that has just finished, still marked finalized, so a
+    /// multiplayer guest can show its last moment as the host does.
+    /// </summary>
+    public static string ToJson(CampaignState state, ModuleSet set, PendingCombatState? pendingCombat)
     {
         using MemoryStream stream = new();
         using (Utf8JsonWriter writer = new(stream, WriterOptions))
@@ -118,7 +125,7 @@ public static class SaveFile
             writer.WriteString("pending_shop", state.PendingShop?.QualifiedId);
             writer.WriteString("pending_temple", state.PendingTemple?.QualifiedId);
             writer.WriteString("pending_training", state.PendingTraining?.QualifiedId);
-            WritePendingCombat(writer, state.PendingCombat);
+            WritePendingCombat(writer, pendingCombat);
             writer.WriteNumber("elapsed_days", state.ElapsedDays);
             writer.WriteString("picture", state.Picture?.QualifiedId);
             writer.WriteString("music", state.Music?.QualifiedId);

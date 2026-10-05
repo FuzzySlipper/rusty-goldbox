@@ -80,6 +80,19 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The metadata captured at the live combat boundary, including after a terminal command.</summary>
     public PendingCombatState? CombatMetadata => Runner?.State.PendingCombat ?? _completedCombatMetadata;
 
+    /// <summary>A fight that has just finished and is still on the combat screen, until Continue.</summary>
+    public PendingCombatState? FinishedFight => _completedCombat is null ? null : _completedCombatMetadata;
+
+    /// <summary>
+    /// True for a multiplayer guest: its screen comes from the host's views
+    /// (<see cref="ShowView"/>) and its commands go to the host instead of
+    /// running here.
+    /// </summary>
+    public bool Guest { get; private set; }
+
+    /// <summary>A guest's commands waiting to be sent to the host, oldest first.</summary>
+    public List<JsonElement> Outbox { get; } = [];
+
     /// <summary>The play transcript's latest lines, oldest first.</summary>
     public List<string> Log { get; } = [];
 
@@ -716,6 +729,126 @@ internal sealed class GameSession(ModuleLibrary library)
                 Notes.Add(Describe(failure.Diagnostic));
             }
         }
+    }
+
+    /// <summary>
+    /// Shows a host's view (<see cref="GameView"/>) as this guest's screen:
+    /// the same module set, loaded from this machine's bundles and library at
+    /// exactly the versions the host plays, and a campaign that is never given
+    /// a command. Problems become notes; the previous screen stays.
+    /// </summary>
+    public void ShowView(IEngineContext engine, JsonElement view)
+    {
+        Guest = true;
+        Notes.Clear();
+        List<ModuleDiagnostic> problems = [];
+        try
+        {
+            string screen = view.GetProperty("screen").GetString() ?? "";
+            if (view.TryGetProperty("save", out JsonElement save) && save.ValueKind == JsonValueKind.Object)
+            {
+                byte[] json = System.Text.Encoding.UTF8.GetBytes(save.GetRawText());
+                if (ViewSet(CampaignModule(json), SaveFile.Modules(json)) is not ModuleSet set
+                    || SaveFile.Read(json, "the host's view", set, problems) is not CampaignState state)
+                {
+                    Notes.AddRange(problems.Select(Describe));
+                    return;
+                }
+
+                Set = set;
+                Campaign = state.Campaign;
+                Seed = state.Seed;
+                Runner = new CampaignRunner(set.Rules!, state);
+                if (state.PendingCombat is not null)
+                {
+                    Runner.ObserveCombat(engine.Random);
+                }
+
+                _completedCombat = null;
+                _completedCombatMetadata = null;
+                if (view.TryGetProperty("finished", out JsonElement finished) && finished.ValueKind == JsonValueKind.Object
+                    && SaveFile.Read(System.Text.Encoding.UTF8.GetBytes(finished.GetRawText()), "the host's finished fight", set, problems) is CampaignState ended
+                    && new CampaignRunner(set.Rules!, ended).ObserveCombat(engine.Random) is CombatObservation last)
+                {
+                    _completedCombat = last;
+                    _completedCombatMetadata = ended.PendingCombat;
+                }
+            }
+            else if (view.TryGetProperty("campaign", out JsonElement campaign) && campaign.ValueKind == JsonValueKind.Object)
+            {
+                (string, string, string, List<string>) module = (
+                    campaign.GetProperty("id").GetString()!,
+                    campaign.GetProperty("version").GetString()!,
+                    campaign.GetProperty("identity").GetString()!,
+                    campaign.GetProperty("extensions").EnumerateArray().Select(entry => entry.GetString()!).ToList());
+                if (ViewSet(module, null) is not ModuleSet set)
+                {
+                    return;
+                }
+
+                Set = set;
+                Campaign = set.Rules!.OfType(DefinitionTypes.Campaign).Single(definition => definition.Module == set.Root!.Id);
+                Seed = ulong.Parse(campaign.GetProperty("seed").GetString()!, System.Globalization.CultureInfo.InvariantCulture);
+                Runner = null;
+                Party.Clear();
+                int index = 0;
+                foreach (JsonElement character in view.GetProperty("party").EnumerateArray())
+                {
+                    if (CharacterFile.Read(character, "the host's party", $"$.party[{index++}]", set, problems) is Character member)
+                    {
+                        Party.Add(member);
+                    }
+                }
+
+                Notes.AddRange(problems.Select(Describe));
+            }
+
+            Screen = screen switch
+            {
+                "party" => Screen.Party,
+                "play" => Screen.Play,
+                "combat" => Screen.Combat,
+                _ => Screen,
+            };
+            Log.Clear();
+            Log.AddRange(view.GetProperty("log").EnumerateArray().Select(line => line.GetString() ?? ""));
+            Notes.AddRange(view.GetProperty("notes").EnumerateArray().Select(line => line.GetString() ?? ""));
+        }
+        catch (Exception exception) when (exception is KeyNotFoundException or InvalidOperationException or RuleFailure)
+        {
+            Notes.Add($"The host's view couldn't be shown: {exception.Message}");
+        }
+    }
+
+    /// <summary>The module set a view is played with, reusing the loaded one when it is the same campaign at the same content.</summary>
+    private ModuleSet? ViewSet((string Id, string Version, string Identity, List<string> Extensions)? campaign, IReadOnlyList<SavedModule>? saved)
+    {
+        if (campaign is not (string id, string version, string identity, List<string> extensions))
+        {
+            Notes.Add("The host's view doesn't name its campaign.");
+            return null;
+        }
+
+        if (Set?.Root is ModuleManifest root && root.Id == id && root.Version.ToString() == version && root.Source.Identity == identity
+            && Set.Extensions.Order().SequenceEqual(extensions.Order()))
+        {
+            return Set;
+        }
+
+        if (library.BundleOf(id, version, identity) is not string bundle)
+        {
+            Notes.Add($"The host plays {id} {version}, which isn't installed here with the same content. Install it under Modules, then join again.");
+            return null;
+        }
+
+        ModuleSet set = library.Load(bundle, extensions, saved);
+        if (set.Rules is null || !set.IsValid)
+        {
+            Notes.AddRange(set.Diagnostics.Select(Describe));
+            return null;
+        }
+
+        return set;
     }
 
     /// <summary>On the combat screen after a fight has finished: returns to play.</summary>

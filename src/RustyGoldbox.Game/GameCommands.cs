@@ -100,6 +100,10 @@ internal static class GameCommands
         return input.Provenance == InputProvenance.DirectUi ? input.X > 0 : input.Edge == InputEdge.Pressed;
     }
 
+    /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
+    private static readonly HashSet<string> LocalActions =
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel"];
+
     /// <summary>Runs one <c>goldbox.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
     {
@@ -111,6 +115,13 @@ internal static class GameCommands
             }
 
             string action = Text(payload, "action");
+            if (session.Guest && !LocalActions.Contains(action))
+            {
+                // A guest's game choices are the host's to apply.
+                session.Outbox.Add(payload.Clone());
+                return;
+            }
+
             switch (action)
             {
                 case "refresh":
