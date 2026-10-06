@@ -183,6 +183,23 @@ public sealed class ModuleLoaderTests
     }
 
     [Fact]
+    public void FilesNamedAfterWindowsDevicesAreAnError()
+    {
+        using TempModules modules = new();
+        string ruleset = modules.Module("classic", "ruleset");
+        modules.Write("classic/attributes/con.json", """{ "type": "attribute", "id": "con", "name": "Constitution", "abbreviation": "CON" }""");
+        modules.Write("classic/Aux/notes.txt", "Notes.");
+        modules.Write("classic/console.json", """{ "type": "attribute", "id": "console", "name": "Console", "abbreviation": "CSL" }""");
+
+        ModuleSet set = ModuleLoader.Load(ruleset, []);
+
+        List<ModuleDiagnostic> names = set.Diagnostics.Where(diagnostic => diagnostic.Rule == "module.file-name").ToList();
+        Assert.Equal(2, names.Count);
+        Assert.Contains(names, diagnostic => diagnostic.File!.EndsWith("con.json", StringComparison.Ordinal) && diagnostic.Message.Contains("'con_.json'", StringComparison.Ordinal));
+        Assert.Contains(names, diagnostic => diagnostic.File!.EndsWith("notes.txt", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void WorkspaceFileListsSearchDirectories()
     {
         using TempModules modules = new();

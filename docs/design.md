@@ -56,6 +56,10 @@ exists. Planned work and its order are tracked as tasks in the
 A module is a directory with a `module.json` manifest and typed JSON
 definition files. The directory layout is a convention for people and agents.
 Meaning comes from the manifest and each file's declared type, not from paths.
+Names must work on every platform a player uses, so no file or directory may
+be named after a Windows device (`con`, `prn`, `aux`, `nul`, `com1`–`com9`,
+`lpt1`–`lpt9`, with any extension): Windows can't create it, and the module
+loses that file there (`module.file-name`).
 
 ```json
 {

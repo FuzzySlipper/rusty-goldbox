@@ -13,7 +13,13 @@ internal static class DefinitionFiles
     public static List<Definition> Read(ModuleManifest module, List<ModuleDiagnostic> diagnostics)
     {
         List<Definition> definitions = [];
-        foreach (string file in module.Source.ListFiles(module.Id, diagnostics).Where(IsDefinitionFile))
+        IReadOnlyList<string> files = module.Source.ListFiles(module.Id, diagnostics);
+        foreach (string file in files)
+        {
+            CheckPortableName(module, file, diagnostics);
+        }
+
+        foreach (string file in files.Where(IsDefinitionFile))
         {
             using JsonDocument? document = JsonFiles.Parse(module.Source, file, module.Id, diagnostics);
             if (document is null)
@@ -30,6 +36,32 @@ internal static class DefinitionFiles
 
         return definitions;
     }
+
+    /// <summary>
+    /// Windows can't create a file or directory named after a device, whatever
+    /// its extension, so a module holding one loses that file when it's checked
+    /// out or unpacked there.
+    /// </summary>
+    private static void CheckPortableName(ModuleManifest module, string file, List<ModuleDiagnostic> diagnostics)
+    {
+        foreach (string part in file.Split('/'))
+        {
+            string stem = part.Split('.')[0].TrimEnd(' ');
+            if (ReservedOnWindows.Contains(stem))
+            {
+                diagnostics.Add(new ModuleDiagnostic(
+                    "module.file-name",
+                    $"'{part}' is a device name on Windows, so the file can't exist there and the module loses it. Rename it, for example to '{part.Insert(stem.Length, "_")}'; a definition's id comes from its \"id\" field, not the file name.",
+                    module.Id,
+                    module.Source.PathOf(file)));
+                return;
+            }
+        }
+    }
+
+    private static readonly HashSet<string> ReservedOnWindows = new(
+        ["con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"],
+        StringComparer.OrdinalIgnoreCase);
 
     private static bool IsDefinitionFile(string file)
     {

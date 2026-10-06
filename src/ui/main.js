@@ -83,7 +83,9 @@ export function mountProductUi(root, context) {
   const playPanels = [status.node, view, log.node, side, overlay.node];
 
   // Title and party screens: one sheet, its notes, and the menu's sound and look settings (made once, never moved).
-  const sheetNotes = element('ul', { id: 'rusty-goldbox-notes', style: 'color:var(--gb-accent)' });
+  // Notes (a campaign's load errors can run to dozens) scroll inside their own box, so the sheet below stays put.
+  const sheetNotes = element('ul', { id: 'rusty-goldbox-notes', class: 'gb-notes', role: 'status' });
+  let shownNotes = '';
   const sheetBody = element('div');
   const sheet = element('section', { class: 'gb-panel gb-sheet', 'data-rusty-ui-interactive': '' }, sheetNotes, sheetBody, overlay.settings);
   const renderTitle = createTitle(send);
@@ -170,7 +172,13 @@ export function mountProductUi(root, context) {
         focusKey: sheet.contains(document.activeElement) ? document.activeElement?.getAttribute('data-focus-key') : null,
       }
       : null;
-    sheetNotes.replaceChildren(...(projection.notes ?? []).map((note) => element('li', {}, note)));
+    const notes = projection.notes ?? [];
+    const notesKey = JSON.stringify(notes);
+    if (notesKey !== shownNotes) {
+      shownNotes = notesKey;
+      sheetNotes.replaceChildren(...notes.map((note) => element('li', {}, note)));
+      sheetNotes.hidden = notes.length === 0;
+    }
     overlay.render(projection, null);
     const body = screen === 'title' ? renderTitle(projection) : screen === 'party' ? renderParty(projection) : '';
     if (body !== null) {

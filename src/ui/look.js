@@ -58,6 +58,8 @@ export const BASE_LOOK = `
 /* Title and party screens: one framed sheet over the whole stage (after the arrangements, which it overrides). */
 .gb-frame[data-screen="title"], .gb-frame[data-screen="party"] { background: var(--gb-inset); grid-template: minmax(0, 1fr) / minmax(0, 1fr); grid-template-areas: none; }
 .gb-sheet { overflow: auto; padding: .6em 1em; width: min(100%, 72em); justify-self: center; }
+.gb-notes { flex: none; color: var(--gb-accent); max-height: 9em; overflow: auto; margin: 0 0 .6em; padding: .3em .6em .3em 1.6em; border: 1px solid var(--gb-accent); overflow-wrap: anywhere; }
+.gb-notes[hidden] { display: none; }
 .gb-sheet h1 { margin: 0 0 .3em; font-size: 1.4em; color: var(--gb-accent); }
 .gb-sheet h2 { margin: .8em 0 .3em; font-size: 1.05em; color: var(--gb-accent); }
 
