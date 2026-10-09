@@ -10,6 +10,7 @@
  * The Engine draws the world in the view panel, which the frame leaves clear.
  */
 import { element } from './dom.js';
+import { installDropdowns } from './dropdowns.js';
 import { BASE_LOOK, skinLook } from './look.js';
 import { applyLayout, arrangementFor } from './layout.js';
 import { createStatus } from './panels/status.js';
@@ -94,6 +95,7 @@ export function mountProductUi(root, context) {
   const frame = element('div', { class: 'gb-frame' });
   const panel = element('div', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '' }, frame);
   root.append(skinStyle, panel);
+  installDropdowns(frame);
 
   // The player's interface scale is the Engine's UI scale, which the stylesheet multiplies every size by.
   // The saved one is applied when it arrives; the menu slider sets it live and saves it.

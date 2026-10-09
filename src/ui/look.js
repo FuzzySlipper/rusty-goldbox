@@ -36,6 +36,13 @@ export const BASE_LOOK = `
   font-size: calc(clamp(11px, 1.9cqmin, 22px) * var(--gb-text-scale) * var(--rusty-ui-scale, 1)); line-height: 1.2;
 }
 .gb-frame button, .gb-frame input, .gb-frame select { font: inherit; }
+.gb-dropdown {
+  position: absolute; z-index: 50; margin: 0; padding: 0; list-style: none; overflow: auto;
+  background: var(--gb-background); color: var(--gb-text); border: 1px solid var(--gb-border);
+}
+.gb-dropdown li { padding: .15em .6em; white-space: nowrap; cursor: pointer; }
+.gb-dropdown li[aria-selected="true"] { color: var(--gb-accent); }
+.gb-dropdown li.gb-active, .gb-dropdown li:hover { background: var(--gb-accent); color: var(--gb-background); }
 
 /* Play and combat. Standard: the view over the log; portraits, map and controls at the side. */
 .gb-frame[data-arrangement="standard"] {

@@ -100,6 +100,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `goldbox.command` intents and keeps which overlay the player opened; panels keep only their own presentation choices and unsent drafts |
 | `src/ui/layout.js` and `look.js` | The arrangement for the window's shape and its ratios as CSS variables; the stylesheet and a skin's overrides |
 | `src/ui/dom.js` | DOM image presentation over Engine image URLs, including authored sampling and isolated sheet-frame cropping |
+| `src/ui/dropdowns.js` | Opens every `<select>` as a list on the page, because the Engine's native window doesn't draw CEF's own popup for one (rusty-engine #9789); the select keeps its value and change events |
 | `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet with Use/Equip/Gear actions and derived values, shop with stock counts and disabled sold-out buys, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
 | `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
