@@ -1,0 +1,372 @@
+$ tales character new --module modules/universal-d100 --name Aldric --feature soldier --seed 4 --out aldric.json
+Aldric
+  hit points 13/13
+  credits 0
+  features: Soldier (profession)
+  str            6      Strength
+  con            13     Constitution
+  siz            13     Size
+  int            14     Intelligence
+  pow            10     Power
+  dex            15     Dexterity
+  cha            8      Charisma
+  armour         0      Armour points
+  axe            15     Melee Weapon (Axe)
+  bow            25     Missile Weapon (Bow)
+  brawl          45     Brawl
+  dagger         25     Melee Weapon (Dagger)
+  dm_d4          0      Damage modifier d4s
+  dm_d6          0      Damage modifier d6s
+  dodge          45     Dodge
+  has_shield     false  Carries a shield
+  mace           25     Melee Weapon (Mace)
+  major_wound    7      Major wound level
+  shield         55     Shield
+  spear          15     Melee Weapon (Spear)
+  sword          60     Melee Weapon (Sword)
+Saved to aldric.json.
+  seed 4: 3d6: 1+3+2 = 6; 3d6: 6+3+4 = 13; 2d6: 1+6 = 7; 2d6: 5+3 = 8; 3d6: 3+1+6 = 10; 3d6: 6+6+3 = 15; 3d6: 1+2+5 = 8
+[exit 0]
+
+$ tales character new --module modules/universal-d100 --name Mira --feature hunter --seed 9 --out mira.json
+Mira
+  hit points 12/12
+  credits 0
+  features: Hunter (profession)
+  str            9      Strength
+  con            11     Constitution
+  siz            13     Size
+  int            15     Intelligence
+  pow            6      Power
+  dex            6      Dexterity
+  cha            12     Charisma
+  armour         0      Armour points
+  axe            15     Melee Weapon (Axe)
+  bow            60     Missile Weapon (Bow)
+  brawl          25     Brawl
+  dagger         40     Melee Weapon (Dagger)
+  dm_d4          0      Damage modifier d4s
+  dm_d6          0      Damage modifier d6s
+  dodge          32     Dodge
+  has_shield     false  Carries a shield
+  mace           25     Melee Weapon (Mace)
+  major_wound    6      Major wound level
+  shield         15     Shield
+  spear          50     Melee Weapon (Spear)
+  sword          15     Melee Weapon (Sword)
+Saved to mira.json.
+  seed 9: 3d6: 2+2+5 = 9; 3d6: 1+4+6 = 11; 2d6: 5+2 = 7; 2d6: 3+6 = 9; 3d6: 1+1+4 = 6; 3d6: 1+1+4 = 6; 3d6: 4+2+6 = 12
+[exit 0]
+
+$ tales character show aldric.json --module modules/universal-d100
+Aldric
+  hit points 13/13
+  credits 0
+  features: Soldier (profession)
+  str            6      Strength
+  con            13     Constitution
+  siz            13     Size
+  int            14     Intelligence
+  pow            10     Power
+  dex            15     Dexterity
+  cha            8      Charisma
+  armour         5      Armour points
+  axe            15     Melee Weapon (Axe)
+  bow            25     Missile Weapon (Bow)
+  brawl          45     Brawl
+  dagger         25     Melee Weapon (Dagger)
+  dm_d4          0      Damage modifier d4s
+  dm_d6          0      Damage modifier d6s
+  dodge          35     Dodge
+  has_shield     true   Carries a shield
+  mace           25     Melee Weapon (Mace)
+  major_wound    7      Major wound level
+  shield         55     Shield
+  spear          15     Melee Weapon (Spear)
+  sword          60     Melee Weapon (Sword)
+[exit 0]
+
+$ tales sim combat --module modules/universal-d100 --party aldric.json,mira.json --encounter bandits --seed 1
+seed 1
+Round 1.
+  Aldric rolls 15 for initiative.
+  Mira rolls 6 for initiative.
+  Bandit 1 rolls 12 for initiative.
+  Bandit 2 rolls 12 for initiative.
+  Bandit 3 rolls 12 for initiative.
+  Aldric uses Sword (Broadsword) on Bandit 1.
+  Aldric rolls Melee Weapon (Sword): 22 against 60: success.  [1d100: 22 = 22]
+  Bandit 1 rolls Dodge: 81 against 30: failure.  [1d100: 81 = 81]
+  Bandit 1 loses 0 hit points (13 left).  [1d8: 1 = 1]
+  Bandit 1 uses Short sword on Mira.
+  Bandit 1 rolls Melee Weapon (Sword): 43 against 45: success.  [1d100: 43 = 43]
+  Mira rolls Dodge: 96 against 32: failure.  [1d100: 96 = 96]
+  Mira loses 4 hit points (8 left).  [1d6: 4 = 4]
+  Bandit 2 uses Short sword on Mira.
+  Bandit 2 rolls Melee Weapon (Sword): 49 against 45: failure.  [1d100: 49 = 49]
+  Bandit 3 uses Short sword on Mira.
+  Bandit 3 rolls Melee Weapon (Sword): 25 against 45: success.  [1d100: 25 = 25]
+  Mira rolls Dodge: 6 against 2: failure.  [1d100: 6 = 6]
+  Mira loses 2 hit points (6 left).  [1d6: 2 = 2]
+  Mira uses Bow (Self bow) on Bandit 1.
+  Mira rolls Missile Weapon (Bow): 57 against 60: success.  [1d100: 57 = 57]
+  Bandit 1 rolls Dodge: 16 against 0: failure.  [1d100: 16 = 16]
+  Bandit 1 loses 4 hit points (9 left).  [1d6: 5 = 5]
+Round 2.
+  Aldric uses Sword (Broadsword) on Bandit 1.
+  Aldric rolls Melee Weapon (Sword): 77 against 60: failure.  [1d100: 77 = 77]
+  Bandit 1 uses Short sword on Mira.
+  Bandit 1 rolls Melee Weapon (Sword): 82 against 45: failure.  [1d100: 82 = 82]
+  Bandit 2 uses Short sword on Mira.
+  Bandit 2 rolls Melee Weapon (Sword): 96 against 45: failure.  [1d100: 96 = 96]
+  Bandit 3 uses Short sword on Mira.
+  Bandit 3 rolls Melee Weapon (Sword): 43 against 45: success.  [1d100: 43 = 43]
+  Mira rolls Dodge: 85 against 32: failure.  [1d100: 85 = 85]
+  Mira loses 5 hit points (1 left).  [1d6: 5 = 5]
+  Mira is out of the fight.
+Round 3.
+  Aldric uses Sword (Broadsword) on Bandit 1.
+  Aldric rolls Melee Weapon (Sword): 62 against 60: failure.  [1d100: 62 = 62]
+  Bandit 1 uses Short sword on Aldric.
+  Bandit 1 rolls Melee Weapon (Sword): 36 against 45: success.  [1d100: 36 = 36]
+  Aldric rolls Shield parry: 72 against 55: failure.  [1d100: 72 = 72]
+  Aldric loses 0 hit points (13 left).  [1d6: 3 = 3]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 80 against 45: failure.  [1d100: 80 = 80]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 87 against 45: failure.  [1d100: 87 = 87]
+Round 4.
+  Aldric uses Sword (Broadsword) on Bandit 1.
+  Aldric rolls Melee Weapon (Sword): 51 against 60: success.  [1d100: 51 = 51]
+  Bandit 1 rolls Dodge: 48 against 30: failure.  [1d100: 48 = 48]
+  Bandit 1 loses 7 hit points (2 left).  [1d8: 8 = 8]
+  Bandit 1 is out of the fight.
+  Bandit 1 is In shock for 2 rounds.
+  Bandit 1 is Badly wounded.
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 75 against 45: failure.  [1d100: 75 = 75]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 70 against 45: failure.  [1d100: 70 = 70]
+Round 5.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 32 against 60: success.  [1d100: 32 = 32]
+  Bandit 2 rolls Dodge: 97 against 30: fumble.  [1d100: 97 = 97]
+  Bandit 2 loses 4 hit points (9 left).  [1d8: 5 = 5]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 71 against 45: failure.  [1d100: 71 = 71]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 34 against 45: success.  [1d100: 34 = 34]
+  Aldric rolls Shield parry: 55 against 55: success.  [1d100: 55 = 55]
+Round 6.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 99 against 60: fumble.  [1d100: 99 = 99]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 25 against 45: success.  [1d100: 25 = 25]
+  Aldric rolls Shield parry: 58 against 55: failure.  [1d100: 58 = 58]
+  Aldric loses 2 hit points (11 left).  [1d6: 6 = 6]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 24 against 45: success.  [1d100: 24 = 24]
+  Aldric rolls Shield parry: 89 against 25: failure.  [1d100: 89 = 89]
+  Aldric loses 2 hit points (9 left).  [1d6: 6 = 6]
+Round 7.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 17 against 60: success.  [1d100: 17 = 17]
+  Bandit 2 rolls Dodge: 20 against 30: success.  [1d100: 20 = 20]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 6 against 45: special.  [1d100: 6 = 6]
+  Aldric rolls Shield parry: 70 against 55: failure.  [1d100: 70 = 70]
+  Aldric loses 0 hit points (9 left).  [1d6: 4 = 4]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 29 against 45: success.  [1d100: 29 = 29]
+  Aldric rolls Shield parry: 78 against 25: failure.  [1d100: 78 = 78]
+  Aldric loses 1 hit points (8 left).  [1d6: 5 = 5]
+Round 8.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 45 against 60: success.  [1d100: 45 = 45]
+  Bandit 2 rolls Dodge: 54 against 30: failure.  [1d100: 54 = 54]
+  Bandit 2 loses 1 hit points (8 left).  [1d8: 2 = 2]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 50 against 45: failure.  [1d100: 50 = 50]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 85 against 45: failure.  [1d100: 85 = 85]
+Round 9.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 41 against 60: success.  [1d100: 41 = 41]
+  Bandit 2 rolls Dodge: 8 against 30: success.  [1d100: 8 = 8]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 69 against 45: failure.  [1d100: 69 = 69]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 63 against 45: failure.  [1d100: 63 = 63]
+Round 10.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 12 against 60: special.  [1d100: 12 = 12]
+  Bandit 2 rolls Dodge: 54 against 30: failure.  [1d100: 54 = 54]
+  Bandit 2 loses 2 hit points (6 left).  [1d8: 3 = 3]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 68 against 45: failure.  [1d100: 68 = 68]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 37 against 45: success.  [1d100: 37 = 37]
+  Aldric rolls Shield parry: 1 against 55: critical.  [1d100: 1 = 1]
+Round 11.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 52 against 60: success.  [1d100: 52 = 52]
+  Bandit 2 rolls Dodge: 18 against 30: success.  [1d100: 18 = 18]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 36 against 45: success.  [1d100: 36 = 36]
+  Aldric rolls Shield parry: 19 against 55: success.  [1d100: 19 = 19]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 10 against 45: success.  [1d100: 10 = 10]
+  Aldric rolls Shield parry: 8 against 25: success.  [1d100: 8 = 8]
+Round 12.
+  Aldric uses Sword (Broadsword) on Bandit 2.
+  Aldric rolls Melee Weapon (Sword): 17 against 60: success.  [1d100: 17 = 17]
+  Bandit 2 rolls Dodge: 73 against 30: failure.  [1d100: 73 = 73]
+  Bandit 2 loses 0 hit points (6 left).  [1d8: 1 = 1]
+  Bandit 2 uses Short sword on Aldric.
+  Bandit 2 rolls Melee Weapon (Sword): 34 against 45: success.  [1d100: 34 = 34]
+  Aldric rolls Shield parry: 67 against 55: failure.  [1d100: 67 = 67]
+  Aldric loses 0 hit points (8 left).  [1d6: 1 = 1]
+  Bandit 3 uses Short sword on Aldric.
+  Bandit 3 rolls Melee Weapon (Sword): 2 against 45: critical.  [1d100: 2 = 2]
+  Aldric rolls Shield parry: 73 against 25: failure.  [1d100: 73 = 73]
+  Aldric loses 7 hit points (1 left).
+  Aldric is out of the fight.
+  Aldric is In shock for 1 round.
+  Aldric is Badly wounded.
+Bandits wins after 12 rounds.
+Party: Aldric 1/13 (out), Mira 1/12 (out)
+Bandits: Bandit 1 2/13 (out), Bandit 2 6/13, Bandit 3 13/13
+[exit 0]
+
+$ tales sim combat --module modules/universal-d100 --party aldric.json,mira.json --encounter bear --seed 2
+seed 2
+Round 1.
+  Aldric rolls 15 for initiative.
+  Mira rolls 6 for initiative.
+  Bear rolls 11 for initiative.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 75 against 60: failure.  [1d100: 75 = 75]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 65 against 25: failure.  [1d100: 65 = 65]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 62 against 60: failure.  [1d100: 62 = 62]
+Round 2.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 33 against 60: success.  [1d100: 33 = 33]
+  Bear rolls Dodge: 6 against 10: success.  [1d100: 6 = 6]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 30 against 25: failure.  [1d100: 30 = 30]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 37 against 60: success.  [1d100: 37 = 37]
+  Bear rolls Dodge: 27 against -20: failure.  [1d100: 27 = 27]
+  Bear loses 2 hit points (15 left).  [1d6: 4 = 4]
+Round 3.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 100 against 60: fumble.  [1d100: 100 = 100]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 30 against 25: failure.  [1d100: 30 = 30]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 87 against 60: failure.  [1d100: 87 = 87]
+Round 4.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 68 against 60: failure.  [1d100: 68 = 68]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 76 against 25: failure.  [1d100: 76 = 76]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 23 against 60: success.  [1d100: 23 = 23]
+  Bear rolls Dodge: 59 against 10: failure.  [1d100: 59 = 59]
+  Bear loses 0 hit points (15 left).  [1d6: 1 = 1]
+Round 5.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 51 against 60: success.  [1d100: 51 = 51]
+  Bear rolls Dodge: 39 against 10: failure.  [1d100: 39 = 39]
+  Bear loses 4 hit points (11 left).  [1d8: 6 = 6]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 69 against 25: failure.  [1d100: 69 = 69]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 48 against 60: success.  [1d100: 48 = 48]
+  Bear rolls Dodge: 22 against -20: failure.  [1d100: 22 = 22]
+  Bear loses 0 hit points (11 left).  [1d6: 1 = 1]
+Round 6.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 24 against 60: success.  [1d100: 24 = 24]
+  Bear rolls Dodge: 70 against 10: failure.  [1d100: 70 = 70]
+  Bear loses 0 hit points (11 left).  [1d8: 2 = 2]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 49 against 25: failure.  [1d100: 49 = 49]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 92 against 60: failure.  [1d100: 92 = 92]
+Round 7.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 57 against 60: success.  [1d100: 57 = 57]
+  Bear rolls Dodge: 41 against 10: failure.  [1d100: 41 = 41]
+  Bear loses 4 hit points (7 left).  [1d8: 6 = 6]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 74 against 25: failure.  [1d100: 74 = 74]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 80 against 60: failure.  [1d100: 80 = 80]
+Round 8.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 86 against 60: failure.  [1d100: 86 = 86]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 53 against 25: failure.  [1d100: 53 = 53]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 71 against 60: failure.  [1d100: 71 = 71]
+Round 9.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 70 against 60: failure.  [1d100: 70 = 70]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 69 against 25: failure.  [1d100: 69 = 69]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 73 against 60: failure.  [1d100: 73 = 73]
+Round 10.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 98 against 60: failure.  [1d100: 98 = 98]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 44 against 25: failure.  [1d100: 44 = 44]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 79 against 60: failure.  [1d100: 79 = 79]
+Round 11.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 65 against 60: failure.  [1d100: 65 = 65]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 17 against 25: success.  [1d100: 17 = 17]
+  Mira rolls Dodge: 75 against 32: failure.  [1d100: 75 = 75]
+  Mira loses 7 hit points (5 left).  [1d6: 4 = 4; 2d6: 3+1 = 4]
+  Mira is In shock for 5 rounds.
+  Mira is Badly wounded.
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 19 against 60: success.  [1d100: 19 = 19]
+  Bear rolls Dodge: 84 against 10: failure.  [1d100: 84 = 84]
+  Bear loses 0 hit points (7 left).  [1d6: 1 = 1]
+Round 12.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 29 against 60: success.  [1d100: 29 = 29]
+  Bear rolls Dodge: 36 against 10: failure.  [1d100: 36 = 36]
+  Bear loses 1 hit points (6 left).  [1d8: 3 = 3]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 32 against 25: failure.  [1d100: 32 = 32]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 52 against 60: success.  [1d100: 52 = 52]
+  Bear rolls Dodge: 2 against -20: failure.  [1d100: 2 = 2]
+  Bear loses 0 hit points (6 left).  [1d6: 1 = 1]
+Round 13.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 81 against 60: failure.  [1d100: 81 = 81]
+  Bear uses Claw on Mira.
+  Bear rolls Brawl: 37 against 25: failure.  [1d100: 37 = 37]
+  Mira uses Bow (Self bow) on Bear.
+  Mira rolls Missile Weapon (Bow): 51 against 60: success.  [1d100: 51 = 51]
+  Bear rolls Dodge: 48 against 10: failure.  [1d100: 48 = 48]
+  Bear loses 0 hit points (6 left).  [1d6: 1 = 1]
+Round 14.
+  Aldric uses Sword (Broadsword) on Bear.
+  Aldric rolls Melee Weapon (Sword): 53 against 60: success.  [1d100: 53 = 53]
+  Bear rolls Dodge: 87 against 10: failure.  [1d100: 87 = 87]
+  Bear loses 4 hit points (2 left).  [1d8: 6 = 6]
+  Bear is out of the fight.
+Party wins after 14 rounds.
+Party: Aldric 13/13, Mira 5/12
+Bear: Bear 2/17 (out)
+[exit 0]
+

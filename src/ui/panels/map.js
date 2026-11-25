@@ -4,7 +4,7 @@ import { bar } from './members.js';
 /** The side column's free space: the area map in play, the other sides of the fight in combat. */
 export function createMap() {
   const title = element('h2', {});
-  const map = element('pre', { id: 'rusty-goldbox-map', 'aria-label': 'Map' });
+  const map = element('pre', { id: 'rusty-tales-map', 'aria-label': 'Map' });
   const foes = element('ul', { class: 'gb-foes' });
   const node = element('section', { class: 'gb-panel gb-map', 'data-rusty-ui-interactive': '' }, title, map, foes);
 

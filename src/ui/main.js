@@ -1,7 +1,7 @@
 /**
  * The Game's DOM panels. Engine owns the canvas, input delivery and projection
- * transport. This module shows the product's rusty.goldbox.session projection
- * and claims goldbox.command intents with goldbox.command.v1 payloads; it owns
+ * transport. This module shows the product's rusty.tales.session projection
+ * and claims tales.command intents with tales.command.v1 payloads; it owns
  * no game state. Arrow keys / WASD move, digits choose menu options, through
  * the product's key mappings.
  *
@@ -22,8 +22,8 @@ import { createOverlay } from './panels/overlays.js';
 import { createTitle } from './screens/title.js';
 import { createParty } from './screens/party.js';
 
-const COMMAND_INTENT = 'goldbox.command';
-const COMMAND_CONTRACT = 'goldbox.command.v1';
+const COMMAND_INTENT = 'tales.command';
+const COMMAND_CONTRACT = 'tales.command.v1';
 
 export function mountProductUi(root, context) {
   const send = (data) => {
@@ -85,7 +85,7 @@ export function mountProductUi(root, context) {
 
   // Title and party screens: one sheet, its notes, and the menu's sound and look settings (made once, never moved).
   // Notes (a campaign's load errors can run to dozens) scroll inside their own box, so the sheet below stays put.
-  const sheetNotes = element('ul', { id: 'rusty-goldbox-notes', class: 'gb-notes', role: 'status' });
+  const sheetNotes = element('ul', { id: 'rusty-tales-notes', class: 'gb-notes', role: 'status' });
   let shownNotes = '';
   const sheetBody = element('div');
   const sheet = element('section', { class: 'gb-panel gb-sheet', 'data-rusty-ui-interactive': '' }, sheetNotes, sheetBody, overlay.settings);
@@ -93,7 +93,7 @@ export function mountProductUi(root, context) {
   const renderParty = createParty(send, rerender);
 
   const frame = element('div', { class: 'gb-frame' });
-  const panel = element('div', { 'aria-label': 'Rusty Goldbox', 'data-goldbox-panel': '' }, frame);
+  const panel = element('div', { 'aria-label': 'Rusty Tales', 'data-tales-panel': '' }, frame);
   root.append(skinStyle, panel);
   installDropdowns(frame);
 

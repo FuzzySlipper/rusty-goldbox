@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RustyTales.Cli/RustyTales.Cli.csproj" />
+    <Project Path="src/RustyTales.Core/RustyTales.Core.csproj" />
+    <Project Path="src/RustyTales.Game/RustyTales.Game.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RustyTales.Tests/RustyTales.Tests.csproj" />
+  </Folder>
+</Solution>

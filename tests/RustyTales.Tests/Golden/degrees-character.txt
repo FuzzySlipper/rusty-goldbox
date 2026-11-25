@@ -1,0 +1,425 @@
+$ tales character new --module tests/RustyTales.Tests/Fixtures/degrees --class mystic --race sylvan --name Wren --feature stonehide,scribe,sylvan_step,spark --boosts insight,intellect,finesse,insight,finesse,stamina,presence
+error[character.feature] degrees tests/RustyTales.Tests/Fixtures/degrees/features/stonehide.json $.requirements
+  Wren doesn't meet degrees:stonehide's requirements: self.race == 'hillfolk'.
+1 error.
+[exit 1]
+
+$ tales character new --module tests/RustyTales.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry --boosts brawn,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
+error[character.feature] 
+  level 1 (degrees:standard) grants 1 ancestry feat for Tor, so choose one with --feature. Open to the character: degrees:hill_lore, degrees:hill_toughness.
+1 error.
+[exit 1]
+
+$ tales character new --module tests/RustyTales.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --out tor.json
+error[character.boosts] degrees tests/RustyTales.Tests/Fixtures/degrees/races/hillfolk.json $.boosts[2]
+  Hillfolk's boost 3 (any attribute) needs a choice; add one of brawn, finesse, intellect, presence to --boosts.
+1 error.
+[exit 1]
+
+$ tales character new --module tests/RustyTales.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --boosts stamina,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
+error[character.boosts] degrees tests/RustyTales.Tests/Fixtures/degrees/races/hillfolk.json $.boosts[2]
+  Hillfolk already boosted stamina; one source boosts each attribute at most once. Choose another for Hillfolk's boost 3 (any attribute).
+1 error.
+[exit 1]
+
+$ tales character new --module tests/RustyTales.Tests/Fixtures/degrees --class vanguard --race hillfolk --name Tor --feature stonehide,sentry,hill_toughness,shield_ward --boosts brawn,insight,stamina,brawn,brawn,stamina,finesse,insight --out tor.json
+Tor: Hillfolk Vanguard 1 (0 xp, next level at 1000)
+  hit points 23/23
+  quickened uses 1/1
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat)
+  brawn                   16     Brawn
+  finesse                 12     Finesse
+  stamina                 16     Stamina
+  intellect               10     Intellect
+  insight                 16     Insight
+  presence                8      Presence
+  ac                      16     Armour class
+  actions                 3      Actions each turn
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      3      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               3      Brawn modifier
+  finesse_mod             1      Finesse modifier
+  insight_mod             3      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  4      Reflex modifier
+  reflex_proficiency      3      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                13     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             3      Stamina modifier
+  weapon_proficiency      3      Weapon proficiency
+  weapon_proficiency_rank 1      Weapon rank (0 untrained to 4 legendary; classes raise it)
+Saved to tor.json.
+  seed 1: no dice rolled
+[exit 0]
+
+$ tales character level tor.json --module tests/RustyTales.Tests/Fixtures/degrees --xp 1000 --feature battle_cry --seed 2
+Reached level 2: +13 hit points.
+Tor: Hillfolk Vanguard 2 (1000 xp, next level at 2000)
+  hit points 36/36
+  quickened uses 1/1
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat)
+  brawn                   16     Brawn
+  finesse                 12     Finesse
+  stamina                 16     Stamina
+  intellect               10     Intellect
+  insight                 16     Insight
+  presence                8      Presence
+  ac                      17     Armour class
+  actions                 3      Actions each turn
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      4      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               3      Brawn modifier
+  finesse_mod             1      Finesse modifier
+  insight_mod             3      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  5      Reflex modifier
+  reflex_proficiency      4      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                13     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             3      Stamina modifier
+  weapon_proficiency      4      Weapon proficiency
+  weapon_proficiency_rank 1      Weapon rank (0 untrained to 4 legendary; classes raise it)
+Saved to tor.json.
+  seed 2: no dice rolled
+[exit 0]
+
+$ tales character level tor.json --module tests/RustyTales.Tests/Fixtures/degrees --xp 3000 --feature steady_stance,hill_lore --seed 2
+error[character.boosts] degrees tests/RustyTales.Tests/Fixtures/degrees/advancement/standard.json $.level_boosts[0]
+  level 5 (degrees:standard) grants 4 boosts for Tor, so give 4 more with --boosts; any of brawn, finesse, stamina, intellect, insight, presence, each once.
+1 error.
+[exit 1]
+
+$ tales character level tor.json --module tests/RustyTales.Tests/Fixtures/degrees --xp 3000 --feature steady_stance,hill_lore --boosts brawn,stamina,insight,finesse --seed 2
+Reached level 3: +13 hit points.
+Reached level 4: +13 hit points.
+Reached level 5: +13 hit points.
+Tor: Hillfolk Vanguard 5 (4000 xp, highest level)
+  hit points 80/80
+  quickened uses 1/1
+  gold 15
+  features: Stonehide hillfolk (heritage), Sentry (background), Hill toughness (ancestry feat), Shield ward (vanguard feat), Battle cry (vanguard feat), Steady stance (vanguard feat), Hill lore (ancestry feat)
+  brawn                   18     Brawn
+  finesse                 14     Finesse
+  stamina                 18     Stamina
+  intellect               10     Intellect
+  insight                 18     Insight
+  presence                8      Presence
+  ac                      21     Armour class
+  actions                 3      Actions each turn
+  ancestry_hp             10     Ancestry hit points
+  armour_proficiency      7      Armour proficiency
+  armour_proficiency_rank 1      Armour rank (0 untrained to 4 legendary; classes raise it)
+  brawn_mod               4      Brawn modifier
+  finesse_mod             2      Finesse modifier
+  insight_mod             4      Insight modifier
+  intellect_mod           0      Intellect modifier
+  presence_mod            -1     Presence modifier
+  reflex                  10     Reflex modifier
+  reflex_proficiency      7      Reflex proficiency
+  reflex_proficiency_rank 1      Reflex rank (0 untrained to 4 legendary; classes raise it)
+  spell_dc                14     Spell difficulty class
+  spell_proficiency       0      Spell proficiency
+  spell_proficiency_rank  0      Spell rank (0 untrained to 4 legendary; classes raise it)
+  stamina_mod             4      Stamina modifier
+  weapon_proficiency      9      Weapon proficiency
+  weapon_proficiency_rank 2      Weapon rank (0 untrained to 4 legendary; classes raise it)
+Saved to tor.json.
+  seed 2: no dice rolled
+[exit 0]
+
+$ tales character show tor.json --module tests/RustyTales.Tests/Fixtures/degrees --json
+{
+  "ok": true,
+  "saved_to": null,
+  "character": {
+    "format": 1,
+    "name": "Tor",
+    "modules": [
+      {
+        "id": "degrees",
+        "version": "0.1.0"
+      }
+    ],
+    "race": "degrees:hillfolk",
+    "creation": "degrees:standard",
+    "levels": [
+      {
+        "class": "degrees:vanguard",
+        "gain": 20,
+        "features": [
+          "degrees:stonehide",
+          "degrees:sentry",
+          "degrees:hill_toughness",
+          "degrees:shield_ward"
+        ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:battle_cry"
+        ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:steady_stance"
+        ]
+      },
+      {
+        "class": "degrees:vanguard",
+        "gain": 10,
+        "features": [
+          "degrees:hill_lore"
+        ],
+        "boosts": [
+          "brawn",
+          "stamina",
+          "insight",
+          "finesse"
+        ]
+      }
+    ],
+    "experience": 4000,
+    "attributes": {
+      "brawn": 18,
+      "finesse": 14,
+      "stamina": 18,
+      "intellect": 10,
+      "insight": 18,
+      "presence": 8
+    },
+    "tracks": {
+      "hit_points": {
+        "current": 80,
+        "max": 60
+      },
+      "quickened": {
+        "current": 1
+      }
+    },
+    "balances": {
+      "gold": 15
+    },
+    "equipment": [],
+    "conditions": []
+  },
+  "skill_points": null,
+  "next_level_experience": null,
+  "level_waiting": false,
+  "class_progress": null,
+  "spell_slots": [],
+  "stats": [
+    {
+      "id": "brawn",
+      "name": "Brawn",
+      "kind": "attribute",
+      "value": 18,
+      "problem": null
+    },
+    {
+      "id": "finesse",
+      "name": "Finesse",
+      "kind": "attribute",
+      "value": 14,
+      "problem": null
+    },
+    {
+      "id": "stamina",
+      "name": "Stamina",
+      "kind": "attribute",
+      "value": 18,
+      "problem": null
+    },
+    {
+      "id": "intellect",
+      "name": "Intellect",
+      "kind": "attribute",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "kind": "attribute",
+      "value": 18,
+      "problem": null
+    },
+    {
+      "id": "presence",
+      "name": "Presence",
+      "kind": "attribute",
+      "value": 8,
+      "problem": null
+    },
+    {
+      "id": "ac",
+      "name": "Armour class",
+      "kind": "derived",
+      "value": 21,
+      "problem": null
+    },
+    {
+      "id": "actions",
+      "name": "Actions each turn",
+      "kind": "derived",
+      "value": 3,
+      "problem": null
+    },
+    {
+      "id": "ancestry_hp",
+      "name": "Ancestry hit points",
+      "kind": "derived",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "armour_proficiency",
+      "name": "Armour proficiency",
+      "kind": "derived",
+      "value": 7,
+      "problem": null
+    },
+    {
+      "id": "armour_proficiency_rank",
+      "name": "Armour rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "brawn_mod",
+      "name": "Brawn modifier",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "finesse_mod",
+      "name": "Finesse modifier",
+      "kind": "derived",
+      "value": 2,
+      "problem": null
+    },
+    {
+      "id": "insight_mod",
+      "name": "Insight modifier",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "intellect_mod",
+      "name": "Intellect modifier",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "presence_mod",
+      "name": "Presence modifier",
+      "kind": "derived",
+      "value": -1,
+      "problem": null
+    },
+    {
+      "id": "reflex",
+      "name": "Reflex modifier",
+      "kind": "derived",
+      "value": 10,
+      "problem": null
+    },
+    {
+      "id": "reflex_proficiency",
+      "name": "Reflex proficiency",
+      "kind": "derived",
+      "value": 7,
+      "problem": null
+    },
+    {
+      "id": "reflex_proficiency_rank",
+      "name": "Reflex rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 1,
+      "problem": null
+    },
+    {
+      "id": "spell_dc",
+      "name": "Spell difficulty class",
+      "kind": "derived",
+      "value": 14,
+      "problem": null
+    },
+    {
+      "id": "spell_proficiency",
+      "name": "Spell proficiency",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "spell_proficiency_rank",
+      "name": "Spell rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 0,
+      "problem": null
+    },
+    {
+      "id": "stamina_mod",
+      "name": "Stamina modifier",
+      "kind": "derived",
+      "value": 4,
+      "problem": null
+    },
+    {
+      "id": "weapon_proficiency",
+      "name": "Weapon proficiency",
+      "kind": "derived",
+      "value": 9,
+      "problem": null
+    },
+    {
+      "id": "weapon_proficiency_rank",
+      "name": "Weapon rank (0 untrained to 4 legendary; classes raise it)",
+      "kind": "derived",
+      "value": 2,
+      "problem": null
+    }
+  ],
+  "tracks": [
+    {
+      "id": "hit_points",
+      "name": "Hit points",
+      "current": 80,
+      "max": 80,
+      "problem": null
+    },
+    {
+      "id": "quickened",
+      "name": "Quickened uses",
+      "current": 1,
+      "max": 1,
+      "problem": null
+    }
+  ],
+  "levels_gained": [],
+  "seed": null,
+  "rolls": []
+}
+[exit 0]
+

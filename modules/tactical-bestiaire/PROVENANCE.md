@@ -1,7 +1,7 @@
 # Provenance: tactical-bestiaire
 
 Every creature, name, number, behavior profile, and figure mapping in this
-extension is original content written for Rusty Goldbox. The module contains
+extension is original content written for Rusty Tales. The module contains
 no copied setting text, monster description, published table, or Product
 Identity. Its profiles demonstrate the data contract with short authored
 plans:

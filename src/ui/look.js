@@ -7,7 +7,7 @@
  */
 
 export const BASE_LOOK = `
-[data-goldbox-panel] {
+[data-tales-panel] {
   --gb-background: #15131c;
   --gb-inset: #0b0a10;
   --gb-text: #ebe3cc;
@@ -28,8 +28,8 @@ export const BASE_LOOK = `
   position: absolute; inset: 0; container-type: size; overflow: hidden;
   color: var(--gb-text); font-family: var(--gb-font);
 }
-[data-goldbox-panel] *, [data-goldbox-panel] *::before, [data-goldbox-panel] *::after { box-sizing: border-box; }
-[data-goldbox-panel] [hidden] { display: none !important; }
+[data-tales-panel] *, [data-tales-panel] *::before, [data-tales-panel] *::after { box-sizing: border-box; }
+[data-tales-panel] [hidden] { display: none !important; }
 .gb-frame {
   --gb-gap: clamp(3px, .7cqmin, 8px);
   position: absolute; inset: 0; display: grid; gap: var(--gb-gap); padding: var(--gb-gap);
@@ -102,14 +102,14 @@ export const BASE_LOOK = `
 img.gb-picture { object-fit: contain; }
 .gb-fill { width: 100%; height: auto; }
 
-[data-goldbox-panel] button {
+[data-tales-panel] button {
   font: inherit; cursor: pointer; border: 1px solid var(--gb-border); background: var(--gb-button); color: var(--gb-button-text);
   padding: .15em .55em; box-shadow: inset 0 -2px 0 color-mix(in srgb, #000 40%, transparent);
 }
-[data-goldbox-panel] button:hover:not(:disabled) { border-color: var(--gb-accent); }
-[data-goldbox-panel] button:disabled { opacity: .35; cursor: default; }
-[data-goldbox-panel] :focus-visible { outline: 2px solid var(--gb-accent); outline-offset: 1px; }
-[data-goldbox-panel] input, [data-goldbox-panel] select { background: var(--gb-inset); color: var(--gb-text); border: 1px solid var(--gb-border); padding: .1em .3em; }
+[data-tales-panel] button:hover:not(:disabled) { border-color: var(--gb-accent); }
+[data-tales-panel] button:disabled { opacity: .35; cursor: default; }
+[data-tales-panel] :focus-visible { outline: 2px solid var(--gb-accent); outline-offset: 1px; }
+[data-tales-panel] input, [data-tales-panel] select { background: var(--gb-inset); color: var(--gb-text); border: 1px solid var(--gb-border); padding: .1em .3em; }
 
 /* Status line */
 .gb-status { grid-area: status; flex-direction: row; align-items: center; gap: 1.2em; padding: .15em .6em; white-space: nowrap; overflow: hidden; }
@@ -206,23 +206,23 @@ export function skinLook(skin) {
 
   const imageRendering = (picture) => picture?.sampling === 'linear' ? 'auto' : 'pixelated';
   const colors = Object.entries(skin.colors ?? {}).map(([name, value]) => `--gb-${name.replace('_', '-')}:${value};`).join('');
-  let css = `[data-goldbox-panel]{${colors}}`;
+  let css = `[data-tales-panel]{${colors}}`;
   if (skin.panel?.url) {
-    css += '[data-goldbox-panel] .gb-panel:not(.gb-view){background:linear-gradient(var(--gb-background),var(--gb-background)),'
+    css += '[data-tales-panel] .gb-panel:not(.gb-view){background:linear-gradient(var(--gb-background),var(--gb-background)),'
       + `url("${skin.panel.url}") 0 0 / ${skin.panel.width * 2}px ${skin.panel.height * 2}px repeat;image-rendering:${imageRendering(skin.panel)}}`;
   }
 
   if (skin.frame?.picture?.url) {
     const width = skin.frame.slice * 2;
-    css += `[data-goldbox-panel] .gb-panel{border:${width}px solid transparent;box-shadow:none;`
+    css += `[data-tales-panel] .gb-panel{border:${width}px solid transparent;box-shadow:none;`
       + `border-image:url("${skin.frame.picture.url}") ${skin.frame.slice} / ${width}px stretch}`
-      + `[data-goldbox-panel] .gb-panel{image-rendering:${imageRendering(skin.frame.picture)}}`
-      + '[data-goldbox-panel] .gb-view{box-shadow:0 0 0 100vmax var(--gb-inset)}';
+      + `[data-tales-panel] .gb-panel{image-rendering:${imageRendering(skin.frame.picture)}}`
+      + '[data-tales-panel] .gb-view{box-shadow:0 0 0 100vmax var(--gb-inset)}';
   }
 
   if (skin.button?.picture?.url) {
     const width = skin.button.slice;
-    css += `[data-goldbox-panel] button{border:${width}px solid transparent;box-shadow:none;`
+    css += `[data-tales-panel] button{border:${width}px solid transparent;box-shadow:none;`
       + `border-image:url("${skin.button.picture.url}") ${skin.button.slice} fill / ${width}px stretch;image-rendering:${imageRendering(skin.button.picture)}}`;
   }
 

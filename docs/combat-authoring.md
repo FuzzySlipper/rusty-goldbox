@@ -10,9 +10,9 @@ make an unavailable action legal and it cannot change an action's effect.
 Start with the live format reference:
 
 ```bash
-goldbox schema combat-behavior
-goldbox schema action
-goldbox schema combat
+tales schema combat-behavior
+tales schema action
+tales schema combat
 ```
 
 Put a reusable profile in a ruleset or extension module that requires the
@@ -81,7 +81,7 @@ retained for payment and save/resume. An unaffordable committed price leaves
 resources unchanged and permits another choice; retrying it does not reroll.
 Inspecting candidates and refusing invalid commands consumes no dice.
 
-The exact fields and legal destination kinds are those printed by `goldbox
+The exact fields and legal destination kinds are those printed by `tales
 schema combat-behavior`; the example illustrates the ownership boundary rather than
 adding a new primitive. Reuse one mechanical action in several profiles when
 the creatures should differ only in policy. For example, one profile can
@@ -101,7 +101,7 @@ schema. Enemies use their authored profile by default. An NPC may also set
 it joins the party. An explicit player or campaign controller choice wins for
 the current fight and is retained by a live continuation; without `control`,
 the caller's default applies (manual in the Game, `--combat-control` for
-`goldbox play`, automatic unless set). A manual choice must still use the
+`tales play`, automatic unless set). A manual choice must still use the
 shared legal-action resolver.
 
 Test a profile in layers:
@@ -148,12 +148,12 @@ combat loop in a module.
 Useful end-to-end commands are:
 
 ```bash
-dotnet run --project src/RustyGoldbox.Cli -- schema combat-behavior
-dotnet run --project src/RustyGoldbox.Cli -- module validate modules/tactical-bestiaire --modules modules
-dotnet run --project src/RustyGoldbox.Cli -- module inspect modules/tactical-bestiaire combat-behavior
-dotnet run --project src/RustyGoldbox.Cli -- sim combat --module modules/tactical-expedition \
+dotnet run --project src/RustyTales.Cli -- schema combat-behavior
+dotnet run --project src/RustyTales.Cli -- module validate modules/tactical-bestiaire --modules modules
+dotnet run --project src/RustyTales.Cli -- module inspect modules/tactical-bestiaire combat-behavior
+dotnet run --project src/RustyTales.Cli -- sim combat --module modules/tactical-expedition \
   --modules modules --party hero.json --encounter tactical-expedition:gallery --seed 17 --trace
-dotnet run --project src/RustyGoldbox.Cli -- module pack modules/tactical-bestiaire \
+dotnet run --project src/RustyTales.Cli -- module pack modules/tactical-bestiaire \
   --output tactical-bestiaire-0.1.0.rpak --modules modules
 ```
 

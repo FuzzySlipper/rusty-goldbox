@@ -108,7 +108,7 @@ export function createTitle(send) {
     }
 
     return fragment(
-      element('h1', {}, ...(view.skin?.title?.url ? picture(view.skin.title, 'Rusty Goldbox', 480) : ['Rusty Goldbox'])),
+      element('h1', {}, ...(view.skin?.title?.url ? picture(view.skin.title, 'Rusty Tales', 480) : ['Rusty Tales'])),
       element('p', { class: 'gb-muted' }, view.status ?? ''),
       element('h2', {}, 'Campaigns'), list,
       row(button('Refresh', () => send({ action: 'refresh' }))),

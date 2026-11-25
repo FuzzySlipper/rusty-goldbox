@@ -1,0 +1,128 @@
+$ tales sim combat --module tests/RustyTales.Tests/Fixtures/degrees --party tor.json,wren.json --encounter raiders --seed 3
+seed 3
+Raider 1 is surprised for 1 round.  [1d20: 16 = 16; 1d20: 11 = 11]
+Round 1.
+  Tor rolls 9 for initiative.  [1d20: 6 = 6]
+  Wren rolls 9 for initiative.  [1d20: 6 = 6]
+  Raider 1 rolls 15 for initiative.  [1d20: 14 = 14]
+  Raider 2 rolls 7 for initiative.  [1d20: 6 = 6]
+  Raider 1 doesn't act (surprised).
+  Tor uses Strike (Longblade) on Raider 1.
+  Tor rolls Strike: 20 + 6 = 26 against 15: critical_success.  [1d20: 20 = 20]
+  Raider 1 loses 14 hit points (4 left).  [1d8: 4 = 4]
+  Wren uses Hinder on Raider 1.
+  Raider 1 is Slowed for 1 round.
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 19 + 7 = 26 against 13: critical_success.  [1d20: 19 = 19]
+  Wren loses 16 hit points (-4 left).  [1d6: 6 = 6]
+  Wren is out of the fight.
+Round 2.
+  Raider 1 uses Spear on Tor.
+  Tor reacts to Raider 1: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 1 rolls Strike: 10 + 7 = 17 against 19: failure.  [1d20: 10 = 10]
+  Raider 1 uses Spear on Tor.
+  Raider 1 rolls Strike: 2 + 2 = 4 against 19: critical_failure.  [1d20: 2 = 2]
+  Raider 1 is no longer Slowed.
+  Tor uses Power swing (Longblade) on Raider 1.
+  Tor rolls Strike: 10 + 6 = 16 against 15: success.  [1d20: 10 = 10]
+  Raider 1 loses 12 hit points (-8 left).  [1d8: 2 = 2; 1d8: 7 = 7]
+  Raider 1 is out of the fight.
+  Raider 2 reacts to Tor: Avenge.
+  Raider 2 uses Avenging spear on Tor.
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 11 + 2 = 13 against 19: failure.  [1d20: 11 = 11]
+  Tor uses Strike (Longblade) on Raider 2.
+  Tor rolls Strike: 17 + 1 = 18 against 15: success.  [1d20: 17 = 17]
+  Raider 2 loses 7 hit points (11 left).  [1d8: 4 = 4]
+  Raider 2 uses Spear on Tor.
+  Raider 2 rolls Strike: 3 + 7 = 10 against 19: failure.  [1d20: 3 = 3]
+  Raider 2 uses Spear on Tor.
+  Raider 2 rolls Strike: 1 + 2 = 3 against 19: critical_failure.  [1d20: 1 = 1]
+  Raider 2 uses Spear on Tor.
+  Raider 2 rolls Strike: 15 - 3 = 12 against 19: failure.  [1d20: 15 = 15]
+Round 3.
+  Tor uses Power swing (Longblade) on Raider 2.
+  Tor rolls Strike: 17 + 6 = 23 against 15: success.  [1d20: 17 = 17]
+  Raider 2 loses 13 hit points (-2 left).  [1d8: 4 = 4; 1d8: 6 = 6]
+  Raider 2 is out of the fight.
+  Tor is no longer Braced.
+Party wins after 3 rounds.
+Party: Tor 23/23, Wren -4/12 (out)
+Raiders: Raider 1 -8/18 (out), Raider 2 -2/18 (out)
+[exit 0]
+
+$ tales sim combat --module tests/RustyTales.Tests/Fixtures/degrees --party tor.json,wren.json --encounter raiders --seed 2
+seed 2
+Raider 2 is surprised for 1 round.  [1d20: 17 = 17; 1d20: 7 = 7]
+Round 1.
+  Tor rolls 11 for initiative.  [1d20: 8 = 8]
+  Wren rolls 23 for initiative.  [1d20: 20 = 20]
+  Raider 1 rolls 11 for initiative.  [1d20: 10 = 10]
+  Raider 2 rolls 8 for initiative.  [1d20: 7 = 7]
+  Wren uses Hinder on Raider 1.
+  Raider 1 is Slowed for 1 round.
+  Tor uses Strike (Longblade) on Raider 1.
+  Tor rolls Strike: 8 + 6 = 14 against 15: failure.  [1d20: 8 = 8]
+  Raider 1 uses Spear on Wren.
+  Raider 1 rolls Strike: 16 + 7 = 23 against 13: critical_success.  [1d20: 16 = 16]
+  Wren loses 10 hit points (2 left).  [1d6: 3 = 3]
+  Raider 1 is no longer Slowed.
+  Raider 2 doesn't act (surprised).
+Round 2.
+  Wren uses Soothe on Wren.
+  Wren regains 6 hit points (8).  [1d8: 3 = 3]
+  Wren uses Hinder on Raider 1.
+  Raider 1 is Slowed for 1 round.
+  Tor uses Power swing (Longblade) on Raider 1.
+  Tor rolls Strike: 19 + 6 = 25 against 15: critical_success.  [1d20: 19 = 19]
+  Raider 1 loses 26 hit points (-8 left).  [1d8: 3 = 3; 1d8: 7 = 7]
+  Raider 1 is out of the fight.
+  Raider 2 reacts to Tor: Avenge.
+  Raider 2 uses Avenging spear on Tor.
+  Tor reacts to Raider 2: Raise shield.
+  Tor uses Raise shield on Tor.
+  Tor is Braced for 1 round.
+  Raider 2 rolls Strike: 18 + 7 = 25 against 19: success.  [1d20: 18 = 18]
+  Tor loses 3 hit points (20 left).  [1d6: 1 = 1]
+  Tor uses Strike (Longblade) on Raider 2.
+  Tor rolls Strike: 8 + 1 = 9 against 15: failure.  [1d20: 8 = 8]
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 2 + 7 = 9 against 13: failure.  [1d20: 2 = 2]
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 11 + 2 = 13 against 13: success.  [1d20: 11 = 11]
+  Wren loses 4 hit points (4 left).  [1d6: 2 = 2]
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 10 - 3 = 7 against 13: failure.  [1d20: 10 = 10]
+Round 3.
+  Wren uses Soothe on Wren.
+  Wren regains 5 hit points (9).  [1d8: 2 = 2]
+  Wren uses Hinder on Raider 2.
+  Raider 2 is Slowed for 1 round.
+  Tor uses Power swing (Longblade) on Raider 2.
+  Tor rolls Strike: 9 + 6 = 15 against 15: success.  [1d20: 9 = 9]
+  Raider 2 loses 16 hit points (2 left).  [1d8: 8 = 8; 1d8: 5 = 5]
+  Tor uses Strike (Longblade) on Raider 2.
+  Tor rolls Strike: 1 + 1 = 2 against 15: critical_failure.  [1d20: 1 = 1]
+  Tor is no longer Braced.
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 14 + 7 = 21 against 13: success.  [1d20: 14 = 14]
+  Wren loses 8 hit points (1 left).  [1d6: 6 = 6]
+  Raider 2 uses Spear on Wren.
+  Raider 2 rolls Strike: 20 + 2 = 22 against 13: critical_success.  [1d20: 20 = 20]
+  Wren loses 16 hit points (-15 left).  [1d6: 6 = 6]
+  Wren is out of the fight.
+  Raider 2 is no longer Slowed.
+Round 4.
+  Tor uses Power swing (Longblade) on Raider 2.
+  Tor rolls Strike: 13 + 6 = 19 against 15: success.  [1d20: 13 = 13]
+  Raider 2 loses 8 hit points (-6 left).  [1d8: 3 = 3; 1d8: 2 = 2]
+  Raider 2 is out of the fight.
+Party wins after 4 rounds.
+Party: Tor 20/23, Wren -15/12 (out)
+Raiders: Raider 1 -8/18 (out), Raider 2 -6/18 (out)
+[exit 0]
+

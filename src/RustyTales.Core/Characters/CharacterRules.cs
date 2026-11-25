@@ -1,0 +1,2742 @@
+using System.Text.Json;
+using RustyTales.Core.Definitions;
+using RustyTales.Core.Expressions;
+using RustyTales.Core.Modules;
+using RustyTales.Core.Rules;
+
+namespace RustyTales.Core.Characters;
+
+/// <summary>What a new character should be.</summary>
+/// <param name="Attributes">Scores to use instead of rolling; every attribute, before racial adjustments.</param>
+/// <param name="Priority">For rulesets that let players arrange rolls: attributes from most to least important; the highest roll goes first.</param>
+/// <param name="Creation">The character-creation definition to use when the set has more than one.</param>
+/// <param name="Features">Features for the choices creation and the first level grant, matched to them by kind in order.</param>
+/// <param name="AlsoClasses">Under experience split between classes: further classes to start with, as the race's multiclasses allow.</param>
+/// <param name="Boosts">Under creation by boosts: the attribute for each boost that offers a choice, in order (race, creation features, class, creation).</param>
+/// <param name="SkillPoints">Under staged creation: profession and personal points to spend on the creation's listed skills.</param>
+/// <param name="Lifepath">The lifepath definition to resolve and run after scores and base creation are made.</param>
+/// <param name="Careers">Career IDs, one per requested term; with one ID and <paramref name="Terms"/> greater than one it repeats.</param>
+/// <param name="SkillTables">Skill-table IDs, in the order term rolls consume them.</param>
+/// <param name="Benefits">Benefit-table choices (cash or material), in the order mustering-out rolls consume them.</param>
+/// <param name="Terms">Number of terms when <paramref name="Careers"/> has one repeated career; zero means one term.</param>
+/// <param name="Class">The class; null in a ruleset without classes.</param>
+/// <param name="Race">The race; null in a ruleset without races.</param>
+public sealed record CreationRequest(
+    string Name,
+    string? Class,
+    string? Race,
+    IReadOnlyDictionary<string, decimal>? Attributes = null,
+    IReadOnlyList<string>? Priority = null,
+    string? Creation = null,
+    IReadOnlyList<string>? Features = null,
+    IReadOnlyList<string>? Boosts = null,
+    IReadOnlyList<string>? AlsoClasses = null,
+    IReadOnlyList<SkillAllocation>? SkillPoints = null,
+
+    string? Lifepath = null,
+    IReadOnlyList<string>? Careers = null,
+    IReadOnlyList<string>? SkillTables = null,
+    IReadOnlyList<string>? Benefits = null,
+    int Terms = 0);
+
+/// <summary>A choice a character makes: <see cref="Count"/> features of any of <see cref="Kinds"/>, and what grants it, for messages.</summary>
+public sealed record Grant(IReadOnlyList<string> Kinds, int Count, string From)
+{
+    public string KindText => string.Join(" or ", Kinds);
+
+    public bool Takes(Definition feature) => Kinds.Contains(feature.Json.GetProperty("kind").GetString()!);
+}
+
+/// <summary>A level gained: the character level reached, the class it was taken in, and the hit points it added.</summary>
+public sealed record LevelGain(int Level, Definition Class, decimal Amount);
+
+/// <summary>A skill moved by a milestone. IDs are ruleset stat IDs, not display names.</summary>
+public sealed record SkillSwap(string From, string To);
+
+/// <summary>The choices supplied when a milestone grants raises, swaps or features.</summary>
+public sealed record MilestoneChoices(
+    IReadOnlyDictionary<string, decimal>? Raises = null,
+    IReadOnlyList<SkillSwap>? Swaps = null,
+    IReadOnlyList<string>? Features = null);
+
+/// <summary>The result of one marked-skill improvement check.</summary>
+public sealed record SkillImprovement(string Skill, int Marks, decimal Amount, bool Improved);
+
+/// <summary>Points spent from each staged creation budget on one skill.</summary>
+public sealed record SkillAllocation(string Skill, decimal Profession = 0, decimal Personal = 0);
+
+/// <summary>One derived skill offered by a staged creation definition.</summary>
+public sealed record SkillPointOption(string Skill, decimal Base, decimal Current, bool ProfessionAllowed);
+
+/// <summary>The budgets and actual base/current values shown before staged skill choices are committed.</summary>
+public sealed record SkillPointOptions(decimal Profession, decimal Personal, IReadOnlyList<SkillPointOption> Skills);
+
+/// <summary>
+/// Creates and advances characters from the rule set's character-creation,
+/// race and class definitions. Problems are rule diagnostics, not exceptions.
+/// </summary>
+public static partial class CharacterRules
+{
+    public static Character? Create(RuleSet rules, IReadOnlyList<ModuleStamp> modules, CreationRequest request, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        Definition? creation = FindCreation(rules, request.Creation, problems);
+        Definition? characterClass = Optional(rules, DefinitionTypes.Class, request.Class, "class", "classes", problems, out bool classless);
+        List<Definition> classes = characterClass is null ? [] : [characterClass];
+        foreach (string also in request.AlsoClasses ?? [])
+        {
+            if (Find(rules, DefinitionTypes.Class, also, "class", problems) is Definition another)
+            {
+                classes.Add(another);
+            }
+        }
+
+        Definition? race = Optional(rules, DefinitionTypes.Race, request.Race, "race", "races", problems, out bool raceless);
+        List<Definition>? choices = FindFeatures(rules, request.Features, problems);
+        if (creation is null || (characterClass is null && !classless) || (race is null && !raceless) || choices is null || problems.Count > 0)
+        {
+            return null;
+        }
+
+        List<Definition> attributes = creation.Json.GetProperty("attributes").EnumerateArray()
+            .Select(entry => rules.Stats[entry.GetString()!].Definition)
+            .ToList();
+        Evaluator evaluator = new(rules, dice);
+        string method = creation.Json.TryGetProperty("method", out JsonElement declared) ? declared.GetString()! : "roll";
+        if (request.Boosts is not null && method != "boosts")
+        {
+            problems.Add(new ModuleDiagnostic("character.boosts", $"{creation.QualifiedId} makes scores by {method}, not boosts; leave the boosts out."));
+            return null;
+        }
+
+        if (request.Priority is not null && method == "boosts")
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", $"{creation.QualifiedId} makes scores by boosts, which name their attributes; a priority doesn't apply."));
+            return null;
+        }
+
+        Dictionary<string, decimal>? scores;
+        try
+        {
+            scores = (method, request.Attributes) switch
+            {
+                ("point-buy", null) => Missing(creation, "point buy spends points on scores, so give them (--attributes)", problems),
+                ("point-buy", _) => PointBuy(rules, creation, attributes, request.Attributes, request.Priority, problems),
+                (_, not null) => GivenAttributes(attributes, request.Attributes, request.Priority, problems),
+                ("array", _) => ArrayAttributes(creation, attributes, request.Priority, problems),
+                ("boosts", _) => BoostAttributes(rules, creation, attributes, race, characterClass, CreationFeatures(creation, choices), request.Boosts ?? [], problems),
+                _ => RollAttributes(rules, creation, attributes, request.Priority, evaluator, problems),
+            };
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+            return null;
+        }
+
+        if (scores is null)
+        {
+            return null;
+        }
+
+        if (race is not null)
+        {
+            Adjust(race, scores);
+            CheckRaceLimits(race, scores, problems);
+        }
+
+        if (classes.Count > 1)
+        {
+            CheckMulticlass(rules, race!, classes, problems);
+        }
+        else if (characterClass is not null)
+        {
+            CheckRaceClass(rules, race, characterClass, problems);
+        }
+
+        foreach (Definition each in classes)
+        {
+            CheckClass(each, scores, problems);
+        }
+
+        if (problems.Count > 0)
+        {
+            return null;
+        }
+
+        Character character = new() { Name = request.Name, Modules = modules, Race = race, Creation = creation };
+        foreach ((string id, decimal score) in scores)
+        {
+            character.Attributes[id] = score;
+        }
+
+        try
+        {
+            // Without classes, one classless level holds what creation chose.
+            if (classes.Count == 0)
+            {
+                character.Levels.Add(new LevelTaken(null, 0, []));
+            }
+
+            decimal kept = TakeLevels(rules, character, classes, evaluator).Sum(gain => gain.Kept);
+            if (rules.ExperienceSplit)
+            {
+                foreach (Definition each in classes)
+                {
+                    character.ClassExperience[each] = 0;
+                }
+            }
+
+            if (rules.LevelTrack is Definition levelTrack)
+            {
+                // The track's own maximum is what levels keep; StartTracks starts it at the full maximum.
+                character.Tracks[levelTrack.Id] = new TrackValue { Max = kept };
+            }
+
+            List<Grant> grants = [.. CreationGrants(creation, request.Lifepath is null), .. LevelGrants(rules, character, evaluator)];
+            if (!Choose(rules, character, grants, choices, evaluator, problems) || !NoneLeft(choices, problems))
+            {
+                return null;
+            }
+
+            if (!SpendSkillPoints(rules, creation, character, request.SkillPoints, dice, problems))
+            {
+                return null;
+            }
+
+            StartTracks(rules, character, evaluator);
+            foreach ((string currency, decimal amount) in StartingBalances(rules, creation, character, evaluator, problems))
+            {
+                character.Balances[currency] = amount;
+            }
+
+            if (request.Lifepath is string lifepath
+                && !RunLifepath(rules, character, lifepath, request.Careers, request.SkillTables, request.Benefits, request.Terms, dice, problems))
+            {
+                return null;
+            }
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The staged skill budgets or values are too large to calculate safely."));
+        }
+
+        return problems.Count > 0 ? null : character;
+    }
+
+    /// <summary>Commits the second staged-creation step to an existing draft.</summary>
+    public static bool ApplySkillPoints(RuleSet rules, Character character, IReadOnlyList<SkillAllocation> allocations, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        if (character.SkillPointsCommitted)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} already has staged skill allocations; they can't be spent a second time."));
+            return false;
+        }
+
+        if (character.SkillPointData is null)
+        {
+            if (character.Creation.Json.TryGetProperty("skill_points", out _))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} has no saved staged skill roll; make the character with the staged creation step before spending points."));
+            }
+            else
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Creation.QualifiedId} has no staged skill-points step, so leave skill choices out."));
+            }
+
+            return false;
+        }
+
+        int before = problems.Count;
+        try
+        {
+            SpendSkillPoints(rules, character.Creation, character, allocations, null, problems);
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The staged skill allocations are too large to calculate safely."));
+        }
+
+        return problems.Count == before;
+    }
+
+    /// <summary>
+    /// Reads a draft's actual staged budgets and skill values for a UI or CLI
+    /// choice screen. This uses the character's already rolled attributes and
+    /// feature modifiers, so the values are the same ones the commit step
+    /// validates.
+    /// </summary>
+    public static SkillPointOptions? GetSkillPointOptions(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        if (!character.Creation.Json.TryGetProperty("skill_points", out _))
+        {
+            return null;
+        }
+
+        if (character.SkillPointData is null)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} has no saved staged skill roll; its choices can't be shown."));
+        }
+
+        return character.SkillPointData;
+    }
+
+    /// <summary>
+    /// Checks staged creation data after it has crossed a save boundary. The
+    /// first-stage values are the recorded roll; allocations must fit those
+    /// values and produce the recorded persistent bonuses.
+    /// </summary>
+    public static void ValidateSkillPointState(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        bool hasStep = character.Creation.Json.TryGetProperty("skill_points", out JsonElement config);
+        if (!hasStep)
+        {
+            if (character.SkillPointData is not null)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", "This character records staged skill options, but its creation has no skill-points step."));
+            }
+
+            if (character.SkillAllocations.Count > 0 || character.SkillPointsCommitted)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", "This character records staged skill allocations, but its creation has no skill-points step."));
+            }
+
+            return;
+        }
+
+        if (character.SkillPointData is not SkillPointOptions options)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} is made with {character.Creation.QualifiedId}, so its saved staged skill roll must include budgets, base values and profession eligibility.", character.Creation.Module, character.Creation.File, "$.skill_point_options"));
+            return;
+        }
+
+        if (options.Profession < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The saved profession skill budget must be nonnegative.", character.Creation.Module, character.Creation.File, "$.skill_point_options.profession"));
+        }
+
+        if (options.Personal < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The saved personal skill budget must be nonnegative.", character.Creation.Module, character.Creation.File, "$.skill_point_options.personal"));
+        }
+
+        HashSet<string> professionSkills = character.Features
+            .Where(feature => feature.Json.TryGetProperty("skills", out _))
+            .SelectMany(feature => feature.Json.GetProperty("skills").EnumerateArray().Select(skill => skill.GetString()!))
+            .ToHashSet(StringComparer.Ordinal);
+        HashSet<string> configuredSkills = config.GetProperty("skills").EnumerateObject()
+            .Select(entry => entry.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        Dictionary<string, SkillPointOption> offered = [];
+        foreach (SkillPointOption option in options.Skills)
+        {
+            string at = $"$.skill_point_options.skills.{option.Skill}";
+            if (!offered.TryAdd(option.Skill, option))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"The saved staged skill options list '{option.Skill}' more than once.", character.Creation.Module, character.Creation.File, at));
+                continue;
+            }
+
+            if (!configuredSkills.Contains(option.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{option.Skill}' is not declared in {character.Creation.QualifiedId}'s skill_points.skills.", character.Creation.Module, character.Creation.File, at));
+            }
+
+            if (!rules.Stats.TryGetValue(option.Skill, out Stat? stat) || stat.IsAttribute)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{option.Skill}' is not a derived skill in {character.Creation.QualifiedId}.", character.Creation.Module, character.Creation.File, at));
+            }
+
+            if (option.ProfessionAllowed != professionSkills.Contains(option.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"The saved profession eligibility for '{option.Skill}' doesn't match the chosen profession.", character.Creation.Module, character.Creation.File, at));
+            }
+        }
+
+        foreach (JsonProperty entry in config.GetProperty("skills").EnumerateObject())
+        {
+            if (!offered.ContainsKey(entry.Name))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"The saved staged skill options omit '{entry.Name}'.", character.Creation.Module, character.Creation.File, "$.skill_point_options.skills"));
+            }
+        }
+
+        Dictionary<string, SkillAllocation> allocations = character.SkillAllocations;
+        foreach ((string skill, SkillAllocation allocation) in allocations)
+        {
+            string at = $"$.skill_allocations.{skill}";
+            if (!offered.TryGetValue(skill, out SkillPointOption? option))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{skill}' is not one of the staged skills listed by {character.Creation.QualifiedId}.", character.Creation.Module, character.Creation.File, at));
+                continue;
+            }
+
+            if (allocation.Profession < 0 || allocation.Personal < 0)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill '{skill}' has a negative saved allocation.", character.Creation.Module, character.Creation.File, at));
+            }
+
+            if (allocation.Profession > 0 && !option.ProfessionAllowed)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Profession points cannot be saved on '{skill}': the chosen profession does not list it.", character.Creation.Module, character.Creation.File, at));
+            }
+        }
+
+        if (!character.SkillPointsCommitted && allocations.Count > 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "A pending staged character can't save skill allocations before committing them.", character.Creation.Module, character.Creation.File, "$.skill_allocations"));
+        }
+
+        decimal usedProfession = 0;
+        decimal usedPersonal = 0;
+        try
+        {
+            foreach (SkillAllocation allocation in allocations.Values)
+            {
+                usedProfession = checked(usedProfession + allocation.Profession);
+                usedPersonal = checked(usedPersonal + allocation.Personal);
+            }
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The saved staged allocations are too large to add safely.", character.Creation.Module, character.Creation.File, "$.skill_allocations"));
+        }
+
+        if (character.SkillPointsCommitted)
+        {
+            if (usedProfession != options.Profession)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Saved profession allocations total {usedProfession}, but the staged budget is {options.Profession}.", character.Creation.Module, character.Creation.File, "$.skill_allocations"));
+            }
+
+            if (usedPersonal != options.Personal)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Saved personal allocations total {usedPersonal}, but the staged budget is {options.Personal}.", character.Creation.Module, character.Creation.File, "$.skill_allocations"));
+            }
+        }
+
+        if (!character.SkillPointsCommitted)
+        {
+            foreach (SkillPointOption option in options.Skills)
+            {
+                decimal actual = character.StatBonuses.GetValueOrDefault(option.Skill);
+                if (actual != 0)
+                {
+                    problems.Add(new ModuleDiagnostic("character.skill-points", $"Pending staged skill '{option.Skill}' has a saved stat bonus {actual}; commit its choices before adding bonuses.", character.Creation.Module, character.Creation.File, $"$.stat_bonuses.{option.Skill}"));
+                }
+            }
+        }
+
+        // Once choices are committed, base/current are historical creation
+        // context. Later levels, raises, equipment and conditions can change
+        // the live derived value, so don't replay that context against today's
+        // character at a save boundary.
+        if (!character.SkillPointsCommitted)
+        {
+            ValidatePendingSkillCurrentValues(rules, character, options, configuredSkills, problems);
+        }
+    }
+
+    private static void ValidatePendingSkillCurrentValues(
+        RuleSet rules,
+        Character character,
+        SkillPointOptions options,
+        IReadOnlySet<string> configuredSkills,
+        List<ModuleDiagnostic> problems)
+    {
+        Creature baseline = character.ToCreature();
+        baseline.AdvancementBonuses.Clear();
+        // Staged values are evaluated immediately after creation, before the
+        // character can acquire equipment or conditions. Those sources remain
+        // live character state and must not be treated as creation context at
+        // a later save boundary.
+        baseline.Equipment.Clear();
+        baseline.Conditions.Clear();
+        Evaluator evaluator = new(rules, null);
+        try
+        {
+            foreach (SkillPointOption option in options.Skills)
+            {
+                if (!configuredSkills.Contains(option.Skill)
+                    || !rules.Stats.TryGetValue(option.Skill, out Stat? stat)
+                    || stat.IsAttribute)
+                {
+                    continue;
+                }
+
+                string path = $"$.skill_points.skills.{option.Skill}";
+                try
+                {
+                    decimal baseValue = evaluator.Evaluate(rules.Expression(character.Creation, path), baseline, null).Number;
+                    if (baseValue != option.Base)
+                    {
+                        problems.Add(new ModuleDiagnostic(
+                            "character.skill-points",
+                            $"Saved base value for '{option.Skill}' is {option.Base}, but the persisted character state evaluates it as {baseValue}.",
+                            character.Creation.Module,
+                            character.Creation.File,
+                            $"$.skill_point_options.skills.{option.Skill}.base"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                    // A base expression that needs a dice stream cannot be
+                    // replayed at save load; the recorded value remains the
+                    // first-stage context.
+                }
+
+                try
+                {
+                    decimal current = evaluator.Stat(baseline, option.Skill).Number;
+                    if (current != option.Current)
+                    {
+                        problems.Add(new ModuleDiagnostic(
+                            "character.skill-points",
+                            $"Saved current value for '{option.Skill}' is {option.Current}, but the persisted character state evaluates it as {current} before staged points.",
+                            character.Creation.Module,
+                            character.Creation.File,
+                            $"$.skill_point_options.skills.{option.Skill}.current"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                    // A current expression that needs a dice stream cannot be
+                    // replayed at save load; the recorded value remains the
+                    // first-stage context.
+                }
+            }
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The saved staged skill values are too large to calculate safely.", character.Creation.Module, character.Creation.File, "$.skill_point_options"));
+        }
+    }
+
+    /// <summary>
+    /// Checks a character read from a file against what it could have chosen:
+    /// replaying its levels, each level's features must fill exactly what
+    /// creation (at the first level), the advancement and the class level
+    /// granted, meeting each feature's requirements and repeat rule, and its
+    /// boosts must number what the advancement granted. Requirements read the
+    /// character's current scores.
+    /// </summary>
+    public static void CheckHistory(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        Character replay = new() { Name = character.Name, Modules = character.Modules, Race = character.Race, Creation = character.Creation, Lifepath = character.Lifepath };
+        replay.LeftClasses.AddRange(character.LeftClasses);
+        if (ScoresBeforeBoosts(rules, character, problems) is not Dictionary<string, decimal> scores)
+        {
+            return;
+        }
+
+        foreach ((string id, decimal score) in scores)
+        {
+            replay.Attributes[id] = score;
+        }
+
+        Evaluator evaluator = new(rules, null);
+        for (int index = 0; index < character.Levels.Count; index++)
+        {
+            LevelTaken level = character.Levels[index];
+            replay.Levels.Add(new LevelTaken(level.Class, level.Gain, []));
+            List<ModuleDiagnostic> found = [];
+            try
+            {
+                List<Grant> grants = [.. index == 0 ? CreationGrants(character.Creation, character.Lifepath is null) : [], .. LevelGrants(rules, replay, evaluator)];
+                List<Definition> choices = [.. level.Features];
+                if (Choose(rules, replay, grants, choices, evaluator, found) && NoneLeft(choices, found))
+                {
+                    int granted = BoostsGranted(rules, replay, evaluator);
+                    if (granted != level.Boosts.Count)
+                    {
+                        found.Add(new ModuleDiagnostic("character.boosts", $"Level {index + 1} grants {granted} boosts, but the file records {level.Boosts.Count}."));
+                    }
+                }
+            }
+            catch (RuleFailure failure)
+            {
+                found.Add(failure.Diagnostic);
+            }
+
+            problems.AddRange(found.Select(problem => problem with { Message = $"Level {index + 1}{(level.Class is Definition taken ? $" ({taken.Name})" : "")}: {problem.Message}" }));
+            replay.Levels[^1] = level;
+            foreach (string boosted in level.Boosts)
+            {
+                replay.Attributes[boosted] += BoostAmount(rules, replay.Attributes[boosted]) ?? 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The character's scores before its level boosts: each boost, last first,
+    /// undone by finding the score its amounts table raised to the one after.
+    /// </summary>
+    private static Dictionary<string, decimal>? ScoresBeforeBoosts(RuleSet rules, Character character, List<ModuleDiagnostic> problems)
+    {
+        Dictionary<string, decimal> scores = new(character.Attributes);
+        foreach ((LevelTaken level, int index) in character.Levels.Select((level, index) => (level, index)).Reverse())
+        {
+            foreach (string boosted in level.Boosts.Reverse())
+            {
+                decimal after = scores[boosted];
+                decimal min = rules.Stats[boosted].Definition.Json.GetProperty("min").GetDecimal();
+                decimal? found = null;
+                for (decimal score = after - 1; score >= min && found is null; score--)
+                {
+                    if (BoostAmount(rules, score) is decimal amount && score + amount == after)
+                    {
+                        found = score;
+                    }
+                }
+
+                if (found is not decimal was)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"Level {index + 1}: no boost raises {boosted} to {after}, so the file's scores and boosts don't agree."));
+                    return null;
+                }
+
+                scores[boosted] = was;
+            }
+        }
+
+        return scores;
+    }
+
+    /// <summary>What a level boost adds to a score, from the advancement's first level boost table.</summary>
+    private static decimal? BoostAmount(RuleSet rules, decimal score)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants) || grants.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        Definition amounts = rules.Reference(advancement, "$.level_boosts[0].amounts");
+        return rules.Tables[amounts].Lookup([Value.Of(score)])?.Number;
+    }
+
+    /// <summary>How many boosts the advancement grants at the character's latest level.</summary>
+    private static int BoostsGranted(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants))
+        {
+            return 0;
+        }
+
+        int total = 0;
+        for (int index = 0; index < grants.GetArrayLength(); index++)
+        {
+            if (Holds(rules, evaluator, advancement, $"$.level_boosts[{index}].when", character.ToCreature()))
+            {
+                total += grants[index].GetProperty("count").GetInt32();
+            }
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// Why the character may not equip <paramref name="item"/>, or null when it
+    /// may: its classes' equipment rules (a class without one allows anything),
+    /// any one of them or every one as its race's multiclass_equipment says.
+    /// Classes waiting after a class change don't count.
+    /// </summary>
+    public static string? EquipmentProblem(RuleSet rules, Character character, Definition item)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        List<Definition> refusing = [];
+        foreach (Definition characterClass in creature.ClassLevels.Keys)
+        {
+            if (rules.TryExpression(characterClass, "$.equipment", out CompiledExpression? rule)
+                && !evaluator.Evaluate(rule!, new Scope(creature, null, Item: item)).Boolean)
+            {
+                refusing.Add(characterClass);
+            }
+        }
+
+        bool every = character.Race is Definition race && race.Json.TryGetProperty("multiclass_equipment", out JsonElement mode) && mode.GetString() == "all";
+        bool refused = every ? refusing.Count > 0 : refusing.Count == creature.ClassLevels.Count && refusing.Count > 0;
+        if (!refused)
+        {
+            return null;
+        }
+
+        string classes = string.Join(" and ", refusing.Select(each => each.Name));
+        return $"{character.Name} can't equip {item.Name}: {classes} {(refusing.Count == 1 ? "doesn't" : "don't")} allow it.";
+    }
+
+    /// <summary>
+    /// Why the character can't know <paramref name="spell"/>, or null when it
+    /// can: the spell must be on one of its classes' lists, castable (it has an
+    /// effect), and payable from its tracks at their maximum.
+    /// </summary>
+    public static string? SpellProblem(RuleSet rules, Character character, Definition spell)
+    {
+        Creature creature = character.ToCreature();
+        bool listed = false;
+        if (spell.Json.TryGetProperty("lists", out JsonElement lists))
+        {
+            foreach (JsonProperty entry in lists.EnumerateObject())
+            {
+                listed |= creature.ClassLevels.ContainsKey(rules.Reference(spell, $"$.lists.{entry.Name}"));
+            }
+        }
+
+        if (!listed)
+        {
+            return $"{spell.Name} isn't on the spell list of any of {character.Name}'s classes.";
+        }
+
+        if (!spell.Json.TryGetProperty("effect", out _))
+        {
+            return $"{spell.Name} has no effect to cast in combat.";
+        }
+
+        Evaluator evaluator = new(rules, null);
+        if (spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            foreach (JsonProperty entry in cost.EnumerateObject())
+            {
+                Definition track = rules.Reference(spell, $"$.cost.{entry.Name}");
+                decimal needed = evaluator.Evaluate(rules.Expression(spell, $"$.cost.{entry.Name}"), creature, null).Number;
+                decimal max = evaluator.KnownTrackMax(creature, track) ?? 0;
+                if (max < needed)
+                {
+                    return $"{character.Name} can't cast {spell.Name}: it needs {needed} {track.Name.ToLowerInvariant()}, and {character.Name} has at most {max}.";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Whether casting the spell needs a prepared copy: it is on the list of
+    /// one of the character's classes that prepares spells, and costs
+    /// something (a spell that costs nothing, a cantrip, is always ready).
+    /// </summary>
+    public static bool NeedsPreparing(RuleSet rules, Character character, Definition spell)
+    {
+        if (!spell.Json.TryGetProperty("lists", out JsonElement lists)
+            || !spell.Json.TryGetProperty("cost", out JsonElement cost) || !cost.EnumerateObject().Any())
+        {
+            return false;
+        }
+
+        foreach (JsonProperty entry in lists.EnumerateObject())
+        {
+            Definition listing = rules.Reference(spell, $"$.lists.{entry.Name}");
+            if (character.ClassLevels().ContainsKey(listing) && listing.Json.TryGetProperty("prepares_spells", out JsonElement prepares) && prepares.GetBoolean())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The copies the character prepares each day: its memorised list, or
+    /// without one, its known spells that need preparing, taken in order and
+    /// round again while its tracks can pay for another.
+    /// </summary>
+    public static List<Definition> MemorisedPlan(RuleSet rules, Character character)
+    {
+        if (character.Memorised.Count > 0)
+        {
+            return character.Memorised.ToList();
+        }
+
+        List<Definition> preparing = character.Spells.Where(spell => NeedsPreparing(rules, character, spell)).ToList();
+        List<Definition> plan = [];
+        Dictionary<Definition, decimal> left = Budgets(rules, character);
+        bool added = true;
+        for (int pass = 0; added; pass++)
+        {
+            added = false;
+            foreach (Definition spell in preparing)
+            {
+                // A spell that costs nothing is prepared once, or the passes would never end.
+                bool free = !spell.Json.TryGetProperty("cost", out JsonElement cost) || !cost.EnumerateObject().Any();
+                if ((pass == 0 || !free) && Pay(rules, character, spell, left))
+                {
+                    plan.Add(spell);
+                    added |= !free;
+                }
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>The prepared copies the character has left to cast.</summary>
+    public static List<Definition> PreparedLeft(RuleSet rules, Character character) => character.Prepared?.ToList() ?? MemorisedPlan(rules, character);
+
+    /// <summary>
+    /// Sets the copies the character memorises each day, in order, and
+    /// prepares them now: each a spell it knows that needs preparing, all of
+    /// them together payable from its tracks at their maximum.
+    /// </summary>
+    /// <param name="prepareNow">False during an adventure: the copies left stay as they are, and the new list is prepared at the next rest that prepares spells.</param>
+    public static bool SetMemorised(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems, bool prepareNow = true)
+    {
+        int before = problems.Count;
+        List<Definition> plan = [];
+        Dictionary<Definition, decimal> left = Budgets(rules, character);
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Spell, id, "spell", problems) is not Definition spell)
+            {
+                continue;
+            }
+
+            if (MemorisedProblem(rules, character, spell, left) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.spell", problem, spell.Module, spell.File, "$"));
+                continue;
+            }
+
+            plan.Add(spell);
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        List<Definition> unspent = PreparedLeft(rules, character);
+        character.Memorised.Clear();
+        character.Memorised.AddRange(plan);
+        character.Prepared = prepareNow ? null : unspent;
+        return true;
+    }
+
+    /// <summary>Why the character can't memorise another copy of the spell with what <paramref name="left"/> of its tracks remains, or null (and pays for it) when it can.</summary>
+    public static string? MemorisedProblem(RuleSet rules, Character character, Definition spell, Dictionary<Definition, decimal> left)
+    {
+        if (!character.Spells.Contains(spell))
+        {
+            return $"{character.Name} doesn't know {spell.Name}; it can memorise only spells it knows.";
+        }
+
+        if (!NeedsPreparing(rules, character, spell))
+        {
+            return $"{spell.Name} isn't prepared: none of {character.Name}'s classes that have it on their list prepares spells.";
+        }
+
+        return Pay(rules, character, spell, left) ? null : $"{character.Name} can't memorise another {spell.Name}: its tracks can't pay for every copy.";
+    }
+
+    /// <summary>The character's tracks at their maximum, for paying a day's prepared spells from.</summary>
+    public static Dictionary<Definition, decimal> Budgets(RuleSet rules, Character character)
+    {
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        return rules.Tracks.Values.ToDictionary(track => track, track => evaluator.KnownTrackMax(creature, track) ?? 0);
+    }
+
+    /// <summary>Takes the spell's cost from <paramref name="left"/> when all of it is there; returns whether it was.</summary>
+    private static bool Pay(RuleSet rules, Character character, Definition spell, Dictionary<Definition, decimal> left)
+    {
+        if (!spell.Json.TryGetProperty("cost", out JsonElement cost))
+        {
+            return true;
+        }
+
+        Creature creature = character.ToCreature();
+        Evaluator evaluator = new(rules, null);
+        Dictionary<Definition, decimal> costs = cost.EnumerateObject().ToDictionary(
+            entry => rules.Reference(spell, $"$.cost.{entry.Name}"),
+            entry => evaluator.Evaluate(rules.Expression(spell, $"$.cost.{entry.Name}"), creature, null).Number);
+        if (costs.Any(entry => left[entry.Key] < entry.Value))
+        {
+            return false;
+        }
+
+        foreach ((Definition track, decimal amount) in costs)
+        {
+            left[track] -= amount;
+        }
+
+        return true;
+    }
+
+    /// <summary>The spells the character could know, in the module set's order: those <see cref="SpellProblem"/> has nothing against.</summary>
+    public static List<Definition> CastableSpells(RuleSet rules, Character character)
+    {
+        return rules.OfType(DefinitionTypes.Spell).Where(spell => SpellProblem(rules, character, spell) is null).ToList();
+    }
+
+    /// <summary>Gives the character these spells to know, in order; problems name each one it can't.</summary>
+    public static bool SetSpells(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> spells = [];
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Spell, id, "spell", problems) is not Definition spell)
+            {
+                continue;
+            }
+
+            if (SpellProblem(rules, character, spell) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.spell", problem, spell.Module, spell.File, "$.lists"));
+            }
+            else if (!spells.Contains(spell))
+            {
+                spells.Add(spell);
+            }
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        character.Spells.Clear();
+        character.Spells.AddRange(spells);
+        // Copies of spells it no longer knows are forgotten; the rest are prepared afresh.
+        character.Memorised.RemoveAll(spell => !spells.Contains(spell));
+        character.Prepared = null;
+        return true;
+    }
+
+    /// <summary>Gives the character these items in order; problems name each one it cannot equip.</summary>
+    public static bool SetEquipment(RuleSet rules, Character character, IReadOnlyList<string> ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> equipment = [];
+        foreach (string id in ids)
+        {
+            if (Find(rules, DefinitionTypes.Item, id, "equipment", problems) is not Definition item)
+            {
+                continue;
+            }
+
+            if (EquipmentProblem(rules, character, item) is string problem)
+            {
+                problems.Add(new ModuleDiagnostic("character.equipment", problem, item.Module, item.File, "$.equipment"));
+            }
+            else
+            {
+                equipment.Add(item);
+            }
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        character.Equipment.Clear();
+        character.Equipment.AddRange(equipment);
+        return true;
+    }
+
+    /// <summary>The character-creation definition used when none is named, or null when the set has none or several without a default.</summary>
+    public static Definition? DefaultCreation(RuleSet rules) => FindCreation(rules, null, []);
+
+    /// <summary>The choices creation grants every new character.</summary>
+    public static List<Grant> CreationChoices(Definition creation) => CreationGrants(creation);
+
+    /// <summary>
+    /// The choices a new character's first level in <paramref name="characterClass"/>
+    /// grants besides creation's: the advancement's grants whose "when" holds
+    /// for a first-level creature of the class, then the class's first level.
+    /// A "when" that needs more than that (such as an attribute) is left out.
+    /// </summary>
+    public static List<Grant> FirstLevelChoices(RuleSet rules, Definition characterClass)
+    {
+        Creature probe = new("self") { Class = characterClass, Level = 1, AdvancingClasses = 1 };
+        probe.ClassLevels[characterClass] = 1;
+        Evaluator evaluator = new(rules, null);
+        List<Grant> grants = [];
+        if (rules.Advancement is Definition advancement && advancement.Json.TryGetProperty("grants", out JsonElement advancementGrants))
+        {
+            for (int index = 0; index < advancementGrants.GetArrayLength(); index++)
+            {
+                try
+                {
+                    if (evaluator.Evaluate(rules.Expression(advancement, $"$.grants[{index}].when"), probe, null).Boolean)
+                    {
+                        grants.Add(Grant(advancementGrants[index], $"level 1 ({advancement.QualifiedId})"));
+                    }
+                }
+                catch (ExpressionException)
+                {
+                }
+            }
+        }
+
+        grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[0], "grants", $"{characterClass.Name} level 1"));
+        return grants;
+    }
+
+    /// <summary>Gives a character a portrait asset; problems name the reference.</summary>
+    public static bool SetPortrait(RuleSet rules, Character character, string reference, List<ModuleDiagnostic> problems)
+    {
+        if (FindPortrait(rules, reference, problems) is not Definition portrait)
+        {
+            return false;
+        }
+
+        character.Portrait = portrait;
+        return true;
+    }
+
+    /// <summary>The portrait asset <paramref name="reference"/> names, or null with the problem.</summary>
+    public static Definition? FindPortrait(RuleSet rules, string reference, List<ModuleDiagnostic> problems)
+    {
+        if (rules.Find(DefinitionTypes.Asset, reference, out string? missing) is not Definition asset)
+        {
+            problems.Add(new ModuleDiagnostic("character.portrait", missing!));
+            return null;
+        }
+
+        if (PortraitProblem(asset) is string problem)
+        {
+            problems.Add(new ModuleDiagnostic("character.portrait", problem));
+            return null;
+        }
+
+        return asset;
+    }
+
+    /// <summary>Why an asset can't be a portrait (a picture slot), or null when it can.</summary>
+    public static string? PortraitProblem(Definition asset) => Media.Problem("picture", asset);
+
+    /// <summary>
+    /// Adds experience and gains every level it reaches, rolling hit points
+    /// for each. Under an advancement by character, each level is taken in
+    /// <paramref name="nextClass"/> (a new class must accept the character),
+    /// otherwise in the class of the latest level; with experience by class
+    /// the character stays in its class. Levelling stops where that class has
+    /// no more levels. The choices each level grants take <paramref name="features"/>
+    /// by kind, in order. On a problem it returns null and the character may
+    /// be partly advanced; don't save it.
+    /// </summary>
+    public static List<LevelGain>? AddExperience(
+        RuleSet rules,
+        Character character,
+        decimal experience,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems,
+        string? nextClass = null,
+        IReadOnlyList<string>? features = null,
+        IReadOnlyList<string>? boosts = null,
+        bool trained = false,
+        bool oneLevel = false)
+    {
+        if (rules.AdvancementKind != "experience")
+        {
+            string kind = rules.AdvancementKind;
+            string owner = rules.Advancement?.QualifiedId ?? "this ruleset";
+            problems.Add(new ModuleDiagnostic(
+                "character.experience",
+                $"{owner} selects '{kind}' advancement, which has no experience levels; character level cannot add experience or take a level."));
+            return null;
+        }
+
+        if (RequiresTraining(rules) && !trained)
+        {
+            problems.Add(new ModuleDiagnostic("character.training", "This ruleset requires paid training before a level; earn experience in play and use train <member> at a training event."));
+            return null;
+        }
+
+        // All or nothing: a level that can't be taken leaves the character as it was.
+        LevelSnapshot before = LevelSnapshot.Of(character);
+        List<LevelGain>? gains = Gain(rules, character, experience, dice, problems, nextClass, features, boosts, oneLevel);
+        if (gains is null)
+        {
+            before.Restore(character);
+        }
+
+        return gains;
+    }
+
+    /// <summary>
+    /// Adds experience earned in play. Levels it reaches are taken at once when
+    /// they need no choice; otherwise they wait (<see cref="ReadyToLevel"/>)
+    /// for <see cref="AddExperience"/> with no more experience and the choices.
+    /// Where each level's class is chosen (experience by character), every
+    /// level waits.
+    /// </summary>
+    public static bool RequiresTraining(RuleSet rules) => rules.Advancement?.Json.TryGetProperty("training", out _) == true;
+
+    /// <summary>
+    /// Records one successful use of a skill for an improvement advancement.
+    /// Combat checks call this through the character attached to their party
+    /// combatant; a ruleset without improvement advancement simply has no mark
+    /// to record.
+    /// </summary>
+    public static bool MarkSkillUse(RuleSet rules, Character character, string skill, List<ModuleDiagnostic> problems)
+    {
+        if (rules.AdvancementKind != "improvement")
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "This ruleset does not select improvement advancement."));
+            return false;
+        }
+
+        if (!rules.Stats.ContainsKey(skill))
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", $"'{skill}' is not a stat in this ruleset; a successful check can only mark a declared skill."));
+            return false;
+        }
+
+        if (ImprovementCheck(rules, skill) is null)
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", $"The advancement has no improvement check for skill '{skill}'; add it to advancement.improvement.checks or remove the check's skill."));
+            return false;
+        }
+
+        // BRP grants one experience check per skill per adventure; repeated
+        // successful uses keep that check rather than creating a queue of
+        // identical rolls.
+        character.SkillMarks[skill] = 1;
+        return true;
+    }
+
+    /// <summary>
+    /// Runs the ruleset-selected improvement check for every marked skill. A
+    /// mark is consumed after a successful or failed check; a malformed
+    /// expression leaves it in place so a caller can report and fix the
+    /// authored rule without silently losing progress.
+    /// </summary>
+    public static List<SkillImprovement> ImproveMarkedSkills(RuleSet rules, Character character, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        List<SkillImprovement> results = [];
+        if (rules.AdvancementKind != "improvement")
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "This ruleset does not select improvement advancement."));
+            return results;
+        }
+
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("improvement", out _))
+        {
+            problems.Add(new ModuleDiagnostic("character.improvement", "The improvement advancement has no improvement rules."));
+            return results;
+        }
+
+        Evaluator evaluator = new(rules, dice);
+        foreach ((string skill, int marks) in character.SkillMarks.ToList())
+        {
+            if (marks <= 0)
+            {
+                character.SkillMarks.Remove(skill);
+                continue;
+            }
+
+            if (ImprovementCheck(rules, skill) is not (JsonElement check, string path))
+            {
+                problems.Add(new ModuleDiagnostic("character.improvement", $"The advancement has no improvement check for marked skill '{skill}'.", advancement.Module, advancement.File, "$.improvement.checks"));
+                continue;
+            }
+
+            try
+            {
+                Creature creature = character.ToCreature();
+                bool improved = EvaluateValue(rules, evaluator, advancement, $"{path}.when", creature).Boolean;
+                decimal amount = improved ? EvaluateValue(rules, evaluator, advancement, $"{path}.amount", creature).Number : 0;
+                if (improved && amount <= 0)
+                {
+                    problems.Add(new ModuleDiagnostic("character.improvement", $"Improvement check for {skill} succeeded with an empty gain ({amount}); amount must be greater than 0.", advancement.Module, advancement.File, $"{path}.amount"));
+                    continue;
+                }
+
+                if (improved)
+                {
+                    character.StatBonuses[skill] = checked(character.StatBonuses.GetValueOrDefault(skill) + amount);
+                }
+
+                character.SkillMarks.Remove(skill);
+                results.Add(new SkillImprovement(skill, marks, amount, improved));
+            }
+            catch (RuleFailure failure)
+            {
+                problems.Add(failure.Diagnostic);
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>Applies a ruleset milestone choice, atomically when every choice is valid.</summary>
+    public static bool ApplyMilestone(RuleSet rules, Character character, MilestoneChoices choices, List<ModuleDiagnostic> problems)
+    {
+        if (rules.AdvancementKind != "milestone")
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", "This ruleset does not select milestone advancement."));
+            return false;
+        }
+
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("milestones", out JsonElement config))
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", "The milestone advancement has no milestone choices."));
+            return false;
+        }
+
+        int before = problems.Count;
+        Dictionary<string, decimal> attributes = new(character.Attributes);
+        Dictionary<string, decimal> bonuses = new(character.StatBonuses);
+        List<Definition> features = [.. character.MilestoneFeatures];
+        Dictionary<string, decimal> raises = choices.Raises is IReadOnlyDictionary<string, decimal> givenRaises ? new(givenRaises) : [];
+        List<SkillSwap> swaps = [.. choices.Swaps ?? []];
+        List<string> featureChoices = [.. choices.Features ?? []];
+
+        int raiseCount = config.TryGetProperty("skill_raise", out JsonElement raiseConfig) ? raiseConfig.GetProperty("count").GetInt32() : 0;
+        decimal raiseAmount = config.TryGetProperty("skill_raise", out _) ? raiseConfig.GetProperty("amount").GetDecimal() : 0;
+        int swapCount = config.TryGetProperty("skill_swap", out JsonElement swapConfig) ? swapConfig.GetProperty("count").GetInt32() : 0;
+        int featureCount = config.TryGetProperty("feature", out JsonElement featureConfig) ? featureConfig.GetProperty("count").GetInt32() : 0;
+        string featureKind = config.TryGetProperty("feature", out _) ? featureConfig.GetProperty("kind").GetString()! : "";
+
+        if (raises.Count > raiseCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {raiseCount} skill raise(s), but {raises.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.skill_raise"));
+        }
+
+        Evaluator evaluator = new(rules, null);
+        Creature currentCreature = character.ToCreature();
+        Dictionary<string, decimal> current = [];
+        foreach (string skill in raises.Keys.Concat(swaps.SelectMany(swap => new[] { swap.From, swap.To })).Distinct())
+        {
+            if (!rules.Stats.ContainsKey(skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"'{skill}' is not a stat in this ruleset; choose a declared skill."));
+                continue;
+            }
+
+            try
+            {
+                current[skill] = evaluator.Stat(currentCreature, skill).Number;
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Can't read {skill} for {character.Name}: {exception.Message}"));
+            }
+        }
+
+        HashSet<string> touched = [];
+        foreach ((string skill, decimal amount) in raises)
+        {
+            if (!touched.Add(skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone choices use {skill} more than once."));
+            }
+            if (amount != raiseAmount)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone raises must use amount {raiseAmount}, but {skill} was given {amount}.", advancement.Module, advancement.File, "$.milestones.skill_raise.amount"));
+            }
+            if (!current.TryGetValue(skill, out decimal score))
+            {
+                continue;
+            }
+            if (rules.Stats[skill].IsAttribute && rules.Stats[skill].Definition.Json.TryGetProperty("max", out JsonElement max) && score + amount > max.GetDecimal())
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Raising {skill} would exceed its maximum {max.GetDecimal()}.", rules.Stats[skill].Definition.Module, rules.Stats[skill].Definition.File, "$.max"));
+            }
+        }
+
+        if (swaps.Count > swapCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {swapCount} skill swap(s), but {swaps.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.skill_swap"));
+        }
+
+        Dictionary<string, decimal> desired = [];
+        foreach (SkillSwap swap in swaps)
+        {
+            if (!touched.Add(swap.From) || !touched.Add(swap.To) || swap.From == swap.To)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"Milestone swap {swap.From}={swap.To} must name two skills not used by another choice."));
+                continue;
+            }
+            if (current.ContainsKey(swap.From) && current.ContainsKey(swap.To))
+            {
+                desired[swap.From] = current[swap.To];
+                desired[swap.To] = current[swap.From];
+            }
+        }
+
+        if (featureChoices.Count > featureCount)
+        {
+            problems.Add(new ModuleDiagnostic("character.milestone", $"This milestone allows {featureCount} {featureKind} feature(s), but {featureChoices.Count} were chosen.", advancement.Module, advancement.File, "$.milestones.feature"));
+        }
+
+        List<Definition> chosenFeatures = [];
+        foreach (string reference in featureChoices)
+        {
+            if (Find(rules, DefinitionTypes.Feature, reference, "feature", problems) is not Definition feature)
+            {
+                continue;
+            }
+            if (feature.Json.GetProperty("kind").GetString() != featureKind)
+            {
+                problems.Add(new ModuleDiagnostic("character.milestone", $"{feature.QualifiedId} is a {feature.Json.GetProperty("kind").GetString()} feature, but this milestone grants {featureKind}."));
+                continue;
+            }
+            if (Problem(rules, character, feature, evaluator) is ModuleDiagnostic problem)
+            {
+                problems.Add(problem);
+                continue;
+            }
+            chosenFeatures.Add(feature);
+        }
+
+        if (problems.Count == before)
+        {
+            foreach ((string skill, decimal amount) in raises)
+            {
+                AddStatBonus(rules, character, skill, amount);
+            }
+            foreach ((string skill, decimal value) in desired)
+            {
+                SetStatValue(rules, character, skill, value);
+            }
+            character.MilestoneFeatures.AddRange(chosenFeatures);
+            return true;
+        }
+
+        character.Attributes.Clear();
+        foreach ((string id, decimal score) in attributes)
+        {
+            character.Attributes[id] = score;
+        }
+        character.StatBonuses.Clear();
+        foreach ((string id, decimal bonus) in bonuses)
+        {
+            character.StatBonuses[id] = bonus;
+        }
+        character.MilestoneFeatures.Clear();
+        character.MilestoneFeatures.AddRange(features);
+        return false;
+    }
+
+    public static List<LevelGain> Award(RuleSet rules, Character character, decimal experience, DiceRoller dice)
+    {
+        if (character.ForfeitsExperience)
+        {
+            return [];
+        }
+
+        bool classChosen = rules.ExperienceByCharacter;
+        if (rules.AdvancementKind == "experience"
+            && !RequiresTraining(rules)
+            && !classChosen
+            && AddExperience(rules, character, experience, dice, []) is List<LevelGain> gains)
+        {
+            return gains;
+        }
+
+        character.Experience = checked(character.Experience + experience);
+        if (rules.ExperienceSplit)
+        {
+            Share(character, experience);
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// Calls on the character's dormant classes or stops: while it does, their
+    /// abilities work as if it had never left them, and it earns no experience
+    /// for the rest of the adventure (stopping doesn't give it back).
+    /// </summary>
+    public static bool UseFormerClasses(RuleSet rules, Character character, bool use, List<ModuleDiagnostic> problems)
+    {
+        if (use && !character.HasDormantClasses())
+        {
+            problems.Add(new ModuleDiagnostic("character.class", $"{character.Name} has no class waiting for its new class to pass it, so there is nothing to call on."));
+            return false;
+        }
+
+        bool was = character.UsesFormerClasses;
+        character.UsesFormerClasses = use;
+        List<Definition> refused = character.Equipment.Where(item => EquipmentProblem(rules, character, item) is not null).ToList();
+        if (refused.Count > 0)
+        {
+            character.UsesFormerClasses = was;
+            problems.Add(new ModuleDiagnostic("character.class", $"{character.Name} holds {string.Join(", ", refused.Select(item => item.Name))}, which only a former class allows; put it away first."));
+            return false;
+        }
+
+        character.ForfeitsExperience |= use;
+        return true;
+    }
+
+    /// <summary>Whether the character has the experience for a level it hasn't taken.</summary>
+    public static bool ReadyToLevel(RuleSet rules, Character character)
+    {
+        if (rules.ExperienceSplit)
+        {
+            return character.ClassProgress().Any(progress => progress.Next is decimal needed && progress.Experience >= needed);
+        }
+
+        return character.NextLevelExperience(rules) is decimal next && character.Experience >= next;
+    }
+
+    /// <summary>With experience split, divides experience evenly (rounding down) between the classes the character advances in.</summary>
+    private static void Share(Character character, decimal experience)
+    {
+        List<Definition> advancing = character.AdvancingClasses();
+        decimal share = decimal.Floor(experience / advancing.Count);
+        foreach (Definition each in advancing)
+        {
+            character.ClassExperience[each] = checked(character.ClassExperience.GetValueOrDefault(each) + share);
+        }
+    }
+
+    /// <summary>What levelling changes, kept so a level that can't be taken can be undone.</summary>
+    private sealed record LevelSnapshot(
+        List<LevelTaken> Levels,
+        Dictionary<Definition, decimal> ClassExperience,
+        List<Definition> LeftClasses,
+        decimal Experience,
+        Dictionary<string, decimal> Attributes,
+        Dictionary<string, (decimal? Current, decimal? Max)> Tracks)
+    {
+        public static LevelSnapshot Of(Character character)
+        {
+            return new LevelSnapshot(
+                [.. character.Levels],
+                new(character.ClassExperience),
+                [.. character.LeftClasses],
+                character.Experience,
+                new(character.Attributes),
+                character.Tracks.ToDictionary(entry => entry.Key, entry => (entry.Value.Current, entry.Value.Max)));
+        }
+
+        public void Restore(Character character)
+        {
+            character.Levels.Clear();
+            character.Levels.AddRange(Levels);
+            character.ClassExperience.Clear();
+            foreach ((Definition each, decimal experience) in ClassExperience)
+            {
+                character.ClassExperience[each] = experience;
+            }
+
+            character.LeftClasses.Clear();
+            character.LeftClasses.AddRange(LeftClasses);
+            character.Experience = Experience;
+            character.Attributes.Clear();
+            foreach ((string id, decimal score) in Attributes)
+            {
+                character.Attributes[id] = score;
+            }
+
+            character.Tracks.Clear();
+            foreach ((string id, (decimal? current, decimal? max)) in Tracks)
+            {
+                character.Tracks[id] = new TrackValue { Current = current, Max = max };
+            }
+        }
+    }
+
+    private static List<LevelGain>? Gain(
+        RuleSet rules,
+        Character character,
+        decimal experience,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems,
+        string? nextClass,
+        IReadOnlyList<string>? features,
+        IReadOnlyList<string>? boosts,
+        bool oneLevel)
+    {
+        Queue<string> boostChoices = new(boosts ?? []);
+        List<Definition>? choices = FindFeatures(rules, features, problems);
+        if (choices is null)
+        {
+            return null;
+        }
+
+        Definition? chosen = null;
+        if (nextClass is not null)
+        {
+            chosen = Find(rules, DefinitionTypes.Class, nextClass, "class", problems);
+            if (chosen is null || !CanTake(rules, character, chosen, problems))
+            {
+                return null;
+            }
+        }
+
+        try
+        {
+            character.Experience = checked(character.Experience + experience);
+            Evaluator evaluator = new(rules, dice);
+            List<LevelGain> gains = [];
+            if (rules.ExperienceSplit)
+            {
+                if (chosen is not null && !character.AdvancingClasses().Contains(chosen))
+                {
+                    // Changing class: the old classes stop, and the new one starts at its first level.
+                    character.LeftClasses.AddRange(character.AdvancingClasses());
+                    character.ClassExperience[chosen] = 0;
+                    if (!Advance(rules, character, chosen, evaluator, gains, choices, boostChoices, problems))
+                    {
+                        return null;
+                    }
+                }
+
+                Share(character, experience);
+                foreach (Definition each in oneLevel && chosen is not null ? [chosen] : character.AdvancingClasses())
+                {
+                    while ((!oneLevel || gains.Count == 0) && character.ClassProgress().First(progress => progress.Class == each) is { Next: decimal needed } progress && progress.Experience >= needed)
+                    {
+                        if (!Advance(rules, character, each, evaluator, gains, choices, boostChoices, problems))
+                        {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            while ((!oneLevel || gains.Count == 0) && !rules.ExperienceSplit && character.NextLevelExperience(rules) is decimal needed && character.Experience >= needed)
+            {
+                // A class with no levels left stops here; the level waits for another class (see LevelWaiting).
+                if ((chosen ?? character.LatestClass) is not Definition characterClass
+                    || character.ClassLevels().GetValueOrDefault(characterClass) >= characterClass.Json.GetProperty("levels").GetArrayLength())
+                {
+                    break;
+                }
+
+                if (!Advance(rules, character, characterClass, evaluator, gains, choices, boostChoices, problems))
+                {
+                    return null;
+                }
+            }
+
+            if (boostChoices.Count > 0)
+            {
+                problems.Add(new ModuleDiagnostic("character.boosts", $"No level reached grants boosts for {string.Join(", ", boostChoices)}; leave them out."));
+                return null;
+            }
+
+            return NoneLeft(choices, problems) ? gains : null;
+        }
+        catch (Exception exception) when (exception is RuleFailure or OverflowException)
+        {
+            problems.Add(exception is RuleFailure failure
+                ? failure.Diagnostic
+                : new ModuleDiagnostic("character.number", "Experience or a track would become too large to be a number."));
+            return null;
+        }
+    }
+
+    /// <summary>Takes one level in <paramref name="characterClass"/>, raising the level track, then makes that level's choices.</summary>
+    private static bool Advance(
+        RuleSet rules,
+        Character character,
+        Definition characterClass,
+        Evaluator evaluator,
+        List<LevelGain> gains,
+        List<Definition> choices,
+        Queue<string> boostChoices,
+        List<ModuleDiagnostic> problems)
+    {
+        Dictionary<Definition, decimal?> before = Maxima(rules, character, evaluator);
+        (decimal kept, decimal bonus) = TakeLevels(rules, character, [characterClass], evaluator)[0];
+        decimal gain = checked(kept + bonus);
+        if (rules.LevelTrack is Definition levelTrack)
+        {
+            TrackValue value = character.Tracks[levelTrack.Id];
+            value.Max = checked((value.Max ?? 0) + kept);
+        }
+
+        gains.Add(new LevelGain(character.Level, characterClass, gain));
+        if (!Choose(rules, character, LevelGrants(rules, character, evaluator), choices, evaluator, problems)
+            || !LevelBoosts(rules, character, evaluator, boostChoices, problems))
+        {
+            return false;
+        }
+
+        // Whatever the level raised a maximum by (its gain, a toughness feat, a boosted stat) raises the current value too.
+        foreach ((Definition track, decimal? after) in Maxima(rules, character, evaluator))
+        {
+            if (before[track] is decimal was && after is decimal now && now > was)
+            {
+                TrackValue value = character.Tracks[track.Id];
+                value.Current = checked((value.Current ?? 0) + now - was);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Each track's maximum for the character now, or null where none is known.</summary>
+    private static Dictionary<Definition, decimal?> Maxima(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        Creature creature = character.ToCreature();
+        return rules.Tracks.Values.ToDictionary(track => track, track => evaluator.KnownTrackMax(creature, track));
+    }
+
+    /// <summary>A multi-classed character's classes must be a combination its race lists in multiclasses.</summary>
+    private static void CheckMulticlass(RuleSet rules, Definition race, List<Definition> classes, List<ModuleDiagnostic> problems)
+    {
+        if (!rules.ExperienceSplit)
+        {
+            problems.Add(new ModuleDiagnostic("character.multiclass", "Starting with several classes needs an advancement definition with experience \"split\"."));
+            return;
+        }
+
+        List<List<Definition>> allowed = [];
+        if (race.Json.TryGetProperty("multiclasses", out JsonElement combinations))
+        {
+            for (int index = 0; index < combinations.GetArrayLength(); index++)
+            {
+                allowed.Add(Enumerable.Range(0, combinations[index].GetArrayLength()).Select(item => rules.Reference(race, $"$.multiclasses[{index}][{item}]")).ToList());
+            }
+        }
+
+        if (!allowed.Any(combination => combination.Count == classes.Count && combination.All(classes.Contains)))
+        {
+            string listed = allowed.Count == 0 ? "none" : string.Join("; ", allowed.Select(combination => string.Join("/", combination.Select(each => each.Id))));
+            problems.Add(new ModuleDiagnostic("character.multiclass", $"{race.QualifiedId} can't combine {string.Join("/", classes.Select(each => each.Id))}. Its multi-class combinations: {listed}.", race.Module, race.File, "$.multiclasses"));
+        }
+    }
+
+    /// <summary>
+    /// Whether the character's next levels may go to <paramref name="characterClass"/>:
+    /// its own classes always; a new class only under an advancement by
+    /// character, and only if the race allows it and the character meets its
+    /// requirements.
+    /// </summary>
+    private static bool CanTake(RuleSet rules, Character character, Definition characterClass, List<ModuleDiagnostic> problems)
+    {
+        if (character.ClassLevels().ContainsKey(characterClass))
+        {
+            return true;
+        }
+
+        if (rules.ExperienceSplit)
+        {
+            Definition advancement = rules.Advancement!;
+            if (!rules.TryExpression(advancement, "$.class_change", out CompiledExpression? change))
+            {
+                problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't change to {characterClass.QualifiedId}: {advancement.QualifiedId} has no class_change.", advancement.Module, advancement.File, "$"));
+                return false;
+            }
+
+            Evaluator evaluator = new(rules, null);
+            bool allowed;
+            try
+            {
+                allowed = evaluator.Evaluate(change!, new Scope(character.ToCreature(), null, ClassLevel: 0, Class: characterClass)).Boolean;
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.evaluate", exception.Message, advancement.Module, advancement.File, "$.class_change"));
+                return false;
+            }
+
+            if (!allowed)
+            {
+                problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't change to {characterClass.QualifiedId}: {change!.Text}.", advancement.Module, advancement.File, "$.class_change"));
+                return false;
+            }
+
+            int checkedBefore = problems.Count;
+            CheckRaceClass(rules, character.Race, characterClass, problems);
+            CheckClass(characterClass, character.Attributes, problems);
+            return problems.Count == checkedBefore;
+        }
+
+        if (!rules.ExperienceByCharacter)
+        {
+            string why = rules.Advancement is Definition advancement
+                ? $"{advancement.QualifiedId} counts experience by class"
+                : "the module set has no advancement definition with experience \"character\"";
+            problems.Add(new ModuleDiagnostic("character.multiclass", $"{character.Name} can't take a level in {characterClass.QualifiedId}: {why}, so a character keeps its one class."));
+            return false;
+        }
+
+        int before = problems.Count;
+        CheckRaceClass(rules, character.Race, characterClass, problems);
+        CheckClass(characterClass, character.Attributes, problems);
+        return problems.Count == before;
+    }
+
+    /// <summary>
+    /// Adds a level in each of <paramref name="classes"/> (a new
+    /// multi-classed character's first levels, or one level), then works out
+    /// each one's hp, which is kept, and its hp_bonus as the character is now,
+    /// which the level track's maximum recomputes. Gains read the character
+    /// with all the new levels, so a multi-classed character's first levels
+    /// see every class.
+    /// </summary>
+    private static List<(decimal Kept, decimal Bonus)> TakeLevels(RuleSet rules, Character character, List<Definition> classes, Evaluator evaluator)
+    {
+        int first = character.Levels.Count;
+        foreach (Definition characterClass in classes)
+        {
+            character.Levels.Add(new LevelTaken(characterClass, 0, []));
+        }
+
+        Creature creature = character.ToCreature();
+        Dictionary<Definition, int> levels = character.ClassLevels();
+        List<(decimal Kept, decimal Bonus)> gains = [];
+        for (int index = 0; index < classes.Count; index++)
+        {
+            Definition characterClass = classes[index];
+            int classLevel = levels[characterClass];
+            Scope scope = new(creature, null, ClassLevel: classLevel, Class: characterClass);
+            string keptPath = $"$.levels[{classLevel - 1}].hp";
+            decimal kept = rules.TryExpression(characterClass, keptPath, out _) ? EvaluateValue(rules, evaluator, characterClass, keptPath, scope).Number : 0;
+            string bonusPath = $"$.levels[{classLevel - 1}].hp_bonus";
+            decimal bonus = rules.TryExpression(characterClass, bonusPath, out _) ? EvaluateValue(rules, evaluator, characterClass, bonusPath, scope).Number : 0;
+            character.Levels[first + index] = character.Levels[first + index] with { Gain = kept };
+            gains.Add((kept, bonus));
+        }
+
+        return gains;
+    }
+
+    /// <summary>The choices every new character makes, from the character-creation definition.</summary>
+    private static List<Grant> CreationGrants(Definition creation, bool includeCareer = true)
+    {
+        return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})")
+            .Where(grant => includeCareer || !grant.Kinds.Contains("career"))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Applies the optional second creation step. The ruleset supplies the
+    /// budgets and each skill's base chance; the request supplies the points
+    /// spent from the two separate pools. The resulting difference from the
+    /// ordinary derived value, plus the points spent, is a persistent stat
+    /// bonus, so a saved character keeps the choice without another state
+    /// owner.
+    /// </summary>
+    private static bool SpendSkillPoints(
+        RuleSet rules,
+        Definition creation,
+        Character character,
+        IReadOnlyList<SkillAllocation>? requested,
+        DiceRoller? dice,
+        List<ModuleDiagnostic> problems)
+    {
+        if (!creation.Json.TryGetProperty("skill_points", out JsonElement config))
+        {
+            if (requested is { Count: > 0 })
+            {
+                problems.Add(new ModuleDiagnostic(
+                    "character.skill-points",
+                    $"{creation.QualifiedId} has no staged skill-points step, so leave --skill choices out.",
+                    creation.Module,
+                    creation.File,
+                    "$.skill_points"));
+                return false;
+            }
+
+            return true;
+        }
+
+        if (character.SkillPointData is null)
+        {
+            if (dice is null)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} has no saved staged skill roll; make the character with the staged creation step before spending points."));
+                return false;
+            }
+
+            character.SkillPointData = EvaluateSkillPointOptions(rules, creation, character, config, dice, problems);
+            if (character.SkillPointData is null)
+            {
+                return false;
+            }
+        }
+
+        // A null request is the first stage: attributes and profession are
+        // now known and can be shown to the player before points are chosen.
+        if (requested is null)
+        {
+            return true;
+        }
+
+        int before = problems.Count;
+        if (character.SkillPointsCommitted)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"{character.Name} already has staged skill allocations; they can't be spent a second time."));
+            return false;
+        }
+
+        SkillPointOptions options = character.SkillPointData;
+        Dictionary<string, SkillPointOption> offered = options.Skills.ToDictionary(skill => skill.Skill, StringComparer.Ordinal);
+        Dictionary<string, SkillAllocation> allocations = [];
+        foreach (SkillAllocation allocation in requested)
+        {
+            if (!offered.ContainsKey(allocation.Skill))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{allocation.Skill}' is not one of the skills listed by {creation.QualifiedId}.", creation.Module, creation.File, "$.skill_points.skills"));
+                continue;
+            }
+
+            if (!allocations.TryAdd(allocation.Skill, allocation))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill '{allocation.Skill}' has more than one allocation; combine its profession and personal points.", creation.Module, creation.File, "$.skill_points"));
+                continue;
+            }
+
+            if (allocation.Profession < 0 || allocation.Personal < 0)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill '{allocation.Skill}' has a negative allocation; points must be nonnegative.", creation.Module, creation.File, "$.skill_points"));
+            }
+
+            if (allocation.Profession > 0 && !offered[allocation.Skill].ProfessionAllowed)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Profession points cannot be spent on '{allocation.Skill}': the chosen profession does not list that skill.", creation.Module, creation.File, "$.skill_points"));
+            }
+        }
+
+        decimal usedProfession;
+        decimal usedPersonal;
+        try
+        {
+            usedProfession = allocations.Values.Aggregate(0m, (total, allocation) => checked(total + allocation.Profession));
+            usedPersonal = allocations.Values.Aggregate(0m, (total, allocation) => checked(total + allocation.Personal));
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The staged skill allocations are too large to add safely.", creation.Module, creation.File, "$.skill_points"));
+            return false;
+        }
+
+        if (usedProfession != options.Profession)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill choices spend {usedProfession} profession point(s), but the budget is {options.Profession}; spend the full profession budget.", creation.Module, creation.File, "$.skill_points.profession"));
+        }
+
+        if (usedPersonal != options.Personal)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Skill choices spend {usedPersonal} personal point(s), but the budget is {options.Personal}; spend the full personal budget.", creation.Module, creation.File, "$.skill_points.personal"));
+        }
+
+        if (problems.Count > before)
+        {
+            return false;
+        }
+
+        try
+        {
+            foreach (SkillPointOption option in options.Skills)
+            {
+                SkillAllocation allocation = allocations.GetValueOrDefault(option.Skill) ?? new SkillAllocation(option.Skill);
+                decimal baseline = checked(option.Base - option.Current);
+                decimal total = checked(baseline + allocation.Profession + allocation.Personal);
+                if (total == 0)
+                {
+                    character.StatBonuses.Remove(option.Skill);
+                }
+                else
+                {
+                    character.StatBonuses[option.Skill] = total;
+                }
+            }
+        }
+        catch (OverflowException)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", "The staged skill values are too large to calculate safely.", creation.Module, creation.File, "$.skill_points"));
+            return false;
+        }
+
+        character.SkillAllocations.Clear();
+        foreach ((string skill, SkillAllocation allocation) in allocations)
+        {
+            if (allocation.Profession != 0 || allocation.Personal != 0)
+            {
+                character.SkillAllocations[skill] = allocation;
+            }
+        }
+
+        character.SkillPointsCommitted = true;
+
+        return true;
+    }
+
+    private static SkillPointOptions? EvaluateSkillPointOptions(
+        RuleSet rules,
+        Definition creation,
+        Character character,
+        JsonElement config,
+        DiceRoller dice,
+        List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        Evaluator evaluator = new(rules, dice);
+        Creature initial = character.ToCreature();
+        decimal professionBudget = EvaluateValue(rules, evaluator, creation, "$.skill_points.profession", initial).Number;
+        decimal personalBudget = EvaluateValue(rules, evaluator, creation, "$.skill_points.personal", initial).Number;
+        if (professionBudget < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Profession skill points evaluate to {professionBudget}; the budget must be nonnegative.", creation.Module, creation.File, "$.skill_points.profession"));
+        }
+
+        if (personalBudget < 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.skill-points", $"Personal skill points evaluate to {personalBudget}; the budget must be nonnegative.", creation.Module, creation.File, "$.skill_points.personal"));
+        }
+
+        HashSet<string> professionSkills = character.Features
+            .Where(feature => feature.Json.TryGetProperty("skills", out _))
+            .SelectMany(feature => feature.Json.GetProperty("skills").EnumerateArray().Select(skill => skill.GetString()!))
+            .ToHashSet(StringComparer.Ordinal);
+        List<SkillPointOption> skills = [];
+        foreach (JsonProperty entry in config.GetProperty("skills").EnumerateObject())
+        {
+            string skill = entry.Name;
+            if (!rules.Stats.TryGetValue(skill, out Stat? stat))
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{skill}' is not a declared stat; choose a derived skill from the creation's skill-points list.", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+                continue;
+            }
+
+            if (stat.IsAttribute)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"'{skill}' is an attribute, but staged skill points must be spent on derived skills.", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+                continue;
+            }
+
+            try
+            {
+                decimal baseChance = EvaluateValue(rules, evaluator, creation, $"$.skill_points.skills.{skill}", initial).Number;
+                decimal current = evaluator.Stat(initial, skill).Number;
+                skills.Add(new SkillPointOption(skill, baseChance, current, professionSkills.Contains(skill)));
+            }
+            catch (RuleFailure failure)
+            {
+                problems.Add(failure.Diagnostic);
+            }
+            catch (ExpressionException exception)
+            {
+                problems.Add(new ModuleDiagnostic("character.skill-points", $"Can't read {skill}: {exception.Message}", creation.Module, creation.File, $"$.skill_points.skills.{skill}"));
+            }
+        }
+
+        return problems.Count == before ? new SkillPointOptions(professionBudget, personalBudget, skills) : null;
+    }
+
+    /// <summary>
+    /// The choices the character's latest level grants: the advancement's
+    /// grants whose "when" holds now, then the class level's.
+    /// </summary>
+    private static List<Grant> LevelGrants(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        List<Grant> grants = [];
+        if (rules.Advancement is Definition advancement && advancement.Json.TryGetProperty("grants", out JsonElement advancementGrants))
+        {
+            for (int index = 0; index < advancementGrants.GetArrayLength(); index++)
+            {
+                string path = $"$.grants[{index}]";
+                if (Holds(rules, evaluator, advancement, $"{path}.when", character.ToCreature()))
+                {
+                    grants.Add(Grant(advancementGrants[index], $"level {character.Level} ({advancement.QualifiedId})"));
+                }
+            }
+        }
+
+        if (character.LatestClass is Definition characterClass)
+        {
+            int classLevel = character.ClassLevels()[characterClass];
+            grants.AddRange(Grants(characterClass.Json.GetProperty("levels")[classLevel - 1], "grants", $"{characterClass.Name} level {classLevel}"));
+        }
+
+        return grants;
+    }
+
+    private static List<Grant> Grants(JsonElement owner, string field, string from)
+    {
+        return owner.TryGetProperty(field, out JsonElement grants) ? grants.EnumerateArray().Select(grant => Grant(grant, from)).ToList() : [];
+    }
+
+    private static Grant Grant(JsonElement grant, string from)
+    {
+        int count = grant.TryGetProperty("count", out JsonElement given) ? given.GetInt32() : 1;
+        IReadOnlyList<string> kinds = grant.TryGetProperty("kinds", out JsonElement several)
+            ? several.EnumerateArray().Select(kind => kind.GetString()!).ToList()
+            : [grant.GetProperty("kind").GetString()!];
+        return new Grant(kinds, count, from);
+    }
+
+    /// <summary>
+    /// Fills each grant from <paramref name="choices"/>: the first features
+    /// left of its kind, each one's requirements met and not taken twice
+    /// unless repeatable. The chosen features join the latest level.
+    /// </summary>
+    private static bool Choose(RuleSet rules, Character character, List<Grant> grants, List<Definition> choices, Evaluator evaluator, List<ModuleDiagnostic> problems)
+    {
+        foreach (Grant grant in grants)
+        {
+            for (int made = 0; made < grant.Count; made++)
+            {
+                Definition? feature = choices.FirstOrDefault(grant.Takes);
+                if (feature is null)
+                {
+                    List<string> offered = rules.OfType(DefinitionTypes.Feature)
+                        .Where(candidate => grant.Takes(candidate) && Problem(rules, character, candidate, evaluator) is null)
+                        .Select(candidate => candidate.QualifiedId)
+                        .ToList();
+                    problems.Add(new ModuleDiagnostic(
+                        "character.feature",
+                        $"{grant.From} grants {grant.Count} {grant.KindText} for {character.Name}, so choose {(grant.Count - made == 1 ? "one" : $"{grant.Count - made} more")} with --feature. {Offer(grant.KindText, offered)}"));
+                    return false;
+                }
+
+                choices.Remove(feature);
+                if (Problem(rules, character, feature, evaluator) is ModuleDiagnostic problem)
+                {
+                    problems.Add(problem);
+                    return false;
+                }
+
+                LevelTaken latest = character.Levels[^1];
+                character.Levels[^1] = latest with { Features = [.. latest.Features, feature] };
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The advancement's level boosts for the latest level: each grant whose
+    /// "when" holds takes its count of attributes from <paramref name="chosen"/>,
+    /// all different, and raises each by its amounts table at the current score.
+    /// </summary>
+    private static bool LevelBoosts(RuleSet rules, Character character, Evaluator evaluator, Queue<string> chosen, List<ModuleDiagnostic> problems)
+    {
+        if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants))
+        {
+            return true;
+        }
+
+        List<string> boosted = [];
+        for (int index = 0; index < grants.GetArrayLength(); index++)
+        {
+            string path = $"$.level_boosts[{index}]";
+            if (!Holds(rules, evaluator, advancement, $"{path}.when", character.ToCreature()))
+            {
+                continue;
+            }
+
+            Definition amounts = rules.Reference(advancement, $"{path}.amounts");
+            int count = grants[index].GetProperty("count").GetInt32();
+            HashSet<string> thisGrant = [];
+            for (int made = 0; made < count; made++)
+            {
+                string from = $"level {character.Level} ({advancement.QualifiedId})";
+                if (!chosen.TryDequeue(out string? attribute))
+                {
+                    List<string> open = character.Attributes.Keys.Where(id => !thisGrant.Contains(id)).ToList();
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{from} grants {count} boosts for {character.Name}, so give {count - made} more with --boosts; any of {string.Join(", ", open)}, each once.", advancement.Module, advancement.File, path));
+                    return false;
+                }
+
+                if (!character.Attributes.TryGetValue(attribute, out decimal score))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"'{attribute}' is not an attribute. Attributes: {string.Join(", ", character.Attributes.Keys)}."));
+                    return false;
+                }
+
+                if (!thisGrant.Add(attribute))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{from} boosts {count} different attributes, but {attribute} is given twice.", advancement.Module, advancement.File, path));
+                    return false;
+                }
+
+                if (rules.Tables[amounts].Lookup([Value.Of(score)]) is not Value raise)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{amounts.QualifiedId} has no amount for {attribute} {score}.", amounts.Module, amounts.File, "$.rows"));
+                    return false;
+                }
+
+                decimal max = rules.Stats[attribute].Definition.Json.GetProperty("max").GetDecimal();
+                if (score + raise.Number > max)
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"A boost would take {attribute} to {score + raise.Number}, above its maximum {max}; boost another attribute."));
+                    return false;
+                }
+
+                character.Attributes[attribute] = score + raise.Number;
+                boosted.Add(attribute);
+            }
+        }
+
+        if (boosted.Count > 0)
+        {
+            character.Levels[^1] = character.Levels[^1] with { Boosts = boosted };
+        }
+
+        return true;
+    }
+
+    /// <summary>Why the character can't choose <paramref name="feature"/> now: it has it and it isn't repeatable, or it misses the requirements.</summary>
+    private static ModuleDiagnostic? Problem(RuleSet rules, Character character, Definition feature, Evaluator evaluator)
+    {
+        bool repeatable = feature.Json.TryGetProperty("repeatable", out JsonElement repeat) && repeat.GetBoolean();
+        if (!repeatable && character.Features.Contains(feature))
+        {
+            return new ModuleDiagnostic("character.feature", $"{character.Name} already has {feature.QualifiedId}, and it isn't repeatable.", feature.Module, feature.File, "$");
+        }
+
+        if (rules.TryExpression(feature, "$.requirements", out CompiledExpression? requirements)
+            && !Holds(rules, evaluator, feature, "$.requirements", character.ToCreature()))
+        {
+            return new ModuleDiagnostic(
+                "character.feature",
+                $"{character.Name} doesn't meet {feature.QualifiedId}'s requirements: {requirements!.Text}.",
+                feature.Module,
+                feature.File,
+                "$.requirements");
+        }
+
+        return null;
+    }
+
+    private static string Offer(string kind, List<string> offered)
+    {
+        return offered.Count == 0 ? $"No {kind} is open to the character now." : $"Open to the character: {string.Join(", ", offered)}.";
+    }
+
+    /// <summary>Every feature given must have filled a grant.</summary>
+    private static bool NoneLeft(List<Definition> choices, List<ModuleDiagnostic> problems)
+    {
+        foreach (Definition extra in choices)
+        {
+            problems.Add(new ModuleDiagnostic("character.feature", $"Nothing granted a {extra.Json.GetProperty("kind").GetString()} for {extra.QualifiedId}; leave it out, or give it at a level that grants one."));
+        }
+
+        return choices.Count == 0;
+    }
+
+    private static List<Definition>? FindFeatures(RuleSet rules, IReadOnlyList<string>? ids, List<ModuleDiagnostic> problems)
+    {
+        int before = problems.Count;
+        List<Definition> found = [];
+        foreach (string id in ids ?? [])
+        {
+            if (Find(rules, DefinitionTypes.Feature, id, "feature", problems) is Definition feature)
+            {
+                found.Add(feature);
+            }
+        }
+
+        return problems.Count == before ? found : null;
+    }
+
+    /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>
+    private static void StartTracks(RuleSet rules, Character character, Evaluator evaluator)
+    {
+        Creature creature = character.ToCreature();
+        foreach (Definition track in rules.Tracks.Values)
+        {
+            string path = track.Json.TryGetProperty("start", out _) ? "$.start" : "$.max";
+            Located(track, path, () =>
+            {
+                evaluator.StartTrack(creature, track);
+                return true;
+            });
+            TrackValue value = character.Tracks.TryGetValue(track.Id, out TrackValue? existing) ? existing : new TrackValue();
+            value.Current ??= creature.Track(track.Id).Current;
+            character.Tracks[track.Id] = value;
+        }
+    }
+
+    private static T Located<T>(Definition definition, string path, Func<T> work)
+    {
+        try
+        {
+            return work();
+        }
+        catch (ExpressionException exception)
+        {
+            throw new RuleFailure(new ModuleDiagnostic("character.evaluate", exception.Message, definition.Module, definition.File, path));
+        }
+    }
+
+    /// <summary>Evaluates a definition's expression; a failure names the definition, file and path.</summary>
+    private static decimal Evaluate(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
+    {
+        return EvaluateValue(rules, evaluator, definition, path, self).Number;
+    }
+
+    /// <summary>Evaluates a definition's boolean expression, such as a requirement.</summary>
+    private static bool Holds(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature self)
+    {
+        return EvaluateValue(rules, evaluator, definition, path, self).Boolean;
+    }
+
+    private static Value EvaluateValue(RuleSet rules, Evaluator evaluator, Definition definition, string path, Creature? self)
+    {
+        return EvaluateValue(rules, evaluator, definition, path, new Scope(self, null));
+    }
+
+    private static Value EvaluateValue(RuleSet rules, Evaluator evaluator, Definition definition, string path, Scope scope)
+    {
+        try
+        {
+            return evaluator.Evaluate(rules.Expression(definition, path), scope);
+        }
+        catch (ExpressionException exception)
+        {
+            throw new RuleFailure(new ModuleDiagnostic(
+                "character.evaluate",
+                $"In '{rules.Expression(definition, path).Text}': {exception.Message}",
+                definition.Module,
+                definition.File,
+                path));
+        }
+    }
+
+    /// <summary>
+    /// The starting balance for each currency: the creation's entry for a
+    /// class, else the class's own; with several classes, the highest amount
+    /// each class grants is kept. This preserves separate coins without
+    /// inventing an exchange rate.
+    /// </summary>
+    private static Dictionary<string, decimal> StartingBalances(RuleSet rules, Definition creation, Character character, Evaluator evaluator, List<ModuleDiagnostic> problems)
+    {
+        List<Dictionary<string, decimal>> amounts = [];
+        bool creationStarting = creation.Json.TryGetProperty("starting", out JsonElement starting);
+        foreach (Definition characterClass in character.ClassLevels().Keys)
+        {
+            string? classPath = null;
+            JsonElement selectedStarting = default;
+            if (creationStarting)
+            {
+                foreach (JsonProperty entry in starting.EnumerateObject())
+                {
+                    if (rules.Reference(creation, $"$.starting.{entry.Name}") == characterClass)
+                    {
+                        classPath = $"$.starting.{entry.Name}";
+                        selectedStarting = entry.Value;
+                    }
+                }
+            }
+
+            if (classPath is not null)
+            {
+                Dictionary<string, decimal> balances = [];
+                foreach (JsonProperty entry in selectedStarting.EnumerateObject())
+                {
+                    string path = $"{classPath}.{entry.Name}";
+                    decimal amount = Evaluate(rules, evaluator, creation, path, character.ToCreature());
+                    if (amount < 0)
+                    {
+                        problems.Add(new ModuleDiagnostic("character.currency", $"Starting amount for {entry.Name} cannot be negative.", creation.Module, creation.File, path));
+                    }
+                    else
+                    {
+                        balances[rules.Reference(creation, path).Id] = amount;
+                    }
+                }
+
+                amounts.Add(balances);
+            }
+            else if (characterClass.Json.TryGetProperty("starting", out JsonElement classStarting))
+            {
+                Dictionary<string, decimal> balances = [];
+                foreach (JsonProperty entry in classStarting.EnumerateObject())
+                {
+                    string path = $"$.starting.{entry.Name}";
+                    decimal amount = Evaluate(rules, evaluator, characterClass, path, character.ToCreature());
+                    if (amount < 0)
+                    {
+                        problems.Add(new ModuleDiagnostic("character.currency", $"Starting amount for {entry.Name} cannot be negative.", characterClass.Module, characterClass.File, path));
+                    }
+                    else
+                    {
+                        balances[rules.Reference(characterClass, path).Id] = amount;
+                    }
+                }
+
+                amounts.Add(balances);
+            }
+            else if (creationStarting)
+            {
+                problems.Add(new ModuleDiagnostic(
+                    "character.currency",
+                    $"{creation.QualifiedId} has no starting balance for {characterClass.QualifiedId}, and the class has none of its own. Give the class a \"starting\" map, or add \"{characterClass.Id}\" to the creation's.",
+                    creation.Module,
+                    creation.File,
+                    "$.starting"));
+            }
+        }
+
+        return amounts
+            .SelectMany(values => values)
+            .GroupBy(entry => entry.Key, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Max(entry => entry.Value), StringComparer.Ordinal);
+    }
+
+    private static Dictionary<string, decimal>? RollAttributes(
+        RuleSet rules,
+        Definition creation,
+        List<Definition> attributes,
+        IReadOnlyList<string>? priority,
+        Evaluator evaluator,
+        List<ModuleDiagnostic> problems)
+    {
+        bool arrange = creation.Json.TryGetProperty("assignment", out JsonElement assignment) && assignment.GetString() == "arrange";
+        if (!arrange && priority is not null)
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", $"{creation.QualifiedId} assigns rolls in attribute order, so a priority doesn't apply. Leave it out, or give the attribute scores."));
+            return null;
+        }
+
+        // An attribute with its own roll (SIZ at 2d6 + 6) keeps it; the others are rolled alike and arranged.
+        JsonElement own = creation.Json.TryGetProperty("attribute_rolls", out JsonElement given) ? given : default;
+        bool HasOwn(Definition attribute) => own.ValueKind == JsonValueKind.Object && own.TryGetProperty(attribute.Id, out _);
+        Dictionary<string, decimal> rolled = [];
+        foreach (Definition attribute in attributes)
+        {
+            rolled[attribute.Id] = Evaluate(rules, evaluator, creation, HasOwn(attribute) ? $"$.attribute_rolls.{attribute.Id}" : "$.attribute_roll", null);
+        }
+
+        List<Definition> shared = attributes.Where(attribute => !HasOwn(attribute)).ToList();
+        Dictionary<string, decimal>? arranged = Arrange(shared, shared.Select(attribute => rolled[attribute.Id]).ToList(), priority, problems);
+        if (arranged is null)
+        {
+            return null;
+        }
+
+        return attributes.ToDictionary(attribute => attribute.Id, attribute => HasOwn(attribute) ? rolled[attribute.Id] : arranged[attribute.Id]);
+    }
+
+    /// <summary>
+    /// Scores in attribute order, or with a priority the highest to its first
+    /// attribute, the next highest to its second, and so on.
+    /// </summary>
+    private static Dictionary<string, decimal>? Arrange(List<Definition> attributes, List<decimal> values, IReadOnlyList<string>? priority, List<ModuleDiagnostic> problems)
+    {
+        Dictionary<string, decimal> scores = [];
+        if (priority is null)
+        {
+            for (int i = 0; i < attributes.Count; i++)
+            {
+                scores[attributes[i].Id] = values[i];
+            }
+
+            return scores;
+        }
+
+        HashSet<string> known = attributes.Select(attribute => attribute.Id).ToHashSet();
+        if (priority.Count == 0 || priority.Distinct().Count() != priority.Count || priority.Any(id => !known.Contains(id)))
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", $"The priority lists attributes once each, highest first, from: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
+            return null;
+        }
+
+        // Those listed take the best values in order; the rest take what's left, in the creation's order.
+        List<string> order = [.. priority, .. attributes.Select(attribute => attribute.Id).Where(id => !priority.Contains(id))];
+        List<decimal> best = values.OrderDescending().ToList();
+        Dictionary<string, decimal> byPriority = [];
+        for (int i = 0; i < order.Count; i++)
+        {
+            byPriority[order[i]] = best[i];
+        }
+
+        foreach (Definition attribute in attributes)
+        {
+            scores[attribute.Id] = byPriority[attribute.Id];
+        }
+
+        return scores;
+    }
+
+    private static Dictionary<string, decimal>? Missing(Definition creation, string what, List<ModuleDiagnostic> problems)
+    {
+        problems.Add(new ModuleDiagnostic("character.attributes", $"{creation.QualifiedId}: {what}."));
+        return null;
+    }
+
+    /// <summary>The array's scores, highest to the first attribute of the priority (or in attribute order without one).</summary>
+    private static Dictionary<string, decimal>? ArrayAttributes(Definition creation, List<Definition> attributes, IReadOnlyList<string>? priority, List<ModuleDiagnostic> problems)
+    {
+        List<decimal> values = creation.Json.GetProperty("array").EnumerateArray().Select(value => value.GetDecimal()).ToList();
+        return Arrange(attributes, values, priority, problems);
+    }
+
+    /// <summary>Given scores, each with a cost in the creation's table, spending no more than its budget.</summary>
+    private static Dictionary<string, decimal>? PointBuy(
+        RuleSet rules,
+        Definition creation,
+        List<Definition> attributes,
+        IReadOnlyDictionary<string, decimal> given,
+        IReadOnlyList<string>? priority,
+        List<ModuleDiagnostic> problems)
+    {
+        Dictionary<string, decimal>? scores = GivenAttributes(attributes, given, priority, problems);
+        if (scores is null)
+        {
+            return null;
+        }
+
+        Definition costs = rules.Reference(creation, "$.costs");
+        decimal budget = creation.Json.GetProperty("budget").GetDecimal();
+        decimal spent = 0;
+        foreach ((string id, decimal score) in scores)
+        {
+            if (rules.Tables[costs].Lookup([Value.Of(score)]) is not Value cost)
+            {
+                problems.Add(new ModuleDiagnostic("character.point-buy", $"{id} {score} has no cost in {costs.QualifiedId}; choose a score it lists.", costs.Module, costs.File, "$.rows"));
+                continue;
+            }
+
+            spent += cost.Number;
+        }
+
+        if (problems.Count == 0 && spent > budget)
+        {
+            problems.Add(new ModuleDiagnostic("character.point-buy", $"These scores cost {spent} points, but {creation.QualifiedId} gives {budget}. Lower some scores.", creation.Module, creation.File, "$.budget"));
+        }
+
+        return problems.Count > 0 ? null : scores;
+    }
+
+    /// <summary>The features creation grants, as the matching in <see cref="Choose"/> will take them: the first of each grant's kind, in order.</summary>
+    private static List<Definition> CreationFeatures(Definition creation, List<Definition> choices)
+    {
+        List<Definition> left = [.. choices];
+        List<Definition> taken = [];
+        foreach (Grant grant in CreationGrants(creation))
+        {
+            for (int made = 0; made < grant.Count; made++)
+            {
+                if (left.FirstOrDefault(grant.Takes) is Definition feature)
+                {
+                    left.Remove(feature);
+                    taken.Add(feature);
+                }
+            }
+        }
+
+        return taken;
+    }
+
+    /// <summary>
+    /// Every attribute at the creation's base, then each source's boosts in
+    /// turn: the race, the creation features, the class and the creation. A
+    /// boost with one attribute is fixed; any other takes the next of
+    /// <paramref name="chosen"/>, which must be one it offers and not one the
+    /// same source already raised.
+    /// </summary>
+    private static Dictionary<string, decimal>? BoostAttributes(
+        RuleSet rules,
+        Definition creation,
+        List<Definition> attributes,
+        Definition? race,
+        Definition? characterClass,
+        List<Definition> features,
+        IReadOnlyList<string> chosen,
+        List<ModuleDiagnostic> problems)
+    {
+        decimal start = creation.Json.GetProperty("base").GetDecimal();
+        decimal boost = creation.Json.GetProperty("boost").GetDecimal();
+        Dictionary<string, decimal> scores = attributes.ToDictionary(attribute => attribute.Id, _ => start);
+        Queue<string> left = new(chosen);
+        foreach (Definition source in new[] { race }.Concat(features).Append(characterClass).Append(creation).OfType<Definition>())
+        {
+            if (!source.Json.TryGetProperty("boosts", out JsonElement boosts))
+            {
+                continue;
+            }
+
+            HashSet<string> raised = [];
+            int index = 0;
+            foreach (JsonElement entry in boosts.EnumerateArray())
+            {
+                string at = $"$.boosts[{index}]";
+                index++;
+                List<string> offered = entry.TryGetProperty("from", out JsonElement from)
+                    ? from.EnumerateArray().Select(attribute => attribute.GetString()!).ToList()
+                    : attributes.Select(attribute => attribute.Id).ToList();
+                string what = $"{source.Name}'s boost {index} ({(entry.TryGetProperty("from", out _) ? string.Join(" or ", offered) : "any attribute")})";
+                string attribute;
+                if (offered.Count == 1)
+                {
+                    attribute = offered[0];
+                }
+                else if (!left.TryDequeue(out string? next))
+                {
+                    List<string> open = offered.Where(id => !raised.Contains(id)).ToList();
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{what} needs a choice; add one of {string.Join(", ", open)} to --boosts.", source.Module, source.File, at));
+                    return null;
+                }
+                else if (!offered.Contains(next))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{what} can't raise '{next}'; it offers {string.Join(", ", offered)}.", source.Module, source.File, at));
+                    return null;
+                }
+                else
+                {
+                    attribute = next;
+                }
+
+                if (!raised.Add(attribute))
+                {
+                    problems.Add(new ModuleDiagnostic("character.boosts", $"{source.Name} already boosted {attribute}; one source boosts each attribute at most once. Choose another for {what}.", source.Module, source.File, at));
+                    return null;
+                }
+
+                scores[attribute] += boost;
+            }
+        }
+
+        if (left.Count > 0)
+        {
+            problems.Add(new ModuleDiagnostic("character.boosts", $"There are more boosts given than choices to make; nothing takes {string.Join(", ", left)}."));
+            return null;
+        }
+
+        foreach (Definition attribute in attributes)
+        {
+            decimal max = attribute.Json.GetProperty("max").GetDecimal();
+            if (scores[attribute.Id] > max)
+            {
+                problems.Add(new ModuleDiagnostic("character.boosts", $"Boosts take {attribute.Id} to {scores[attribute.Id]}, above its maximum {max}."));
+            }
+        }
+
+        return problems.Count > 0 ? null : scores;
+    }
+
+    private static Dictionary<string, decimal>? GivenAttributes(
+        List<Definition> attributes,
+        IReadOnlyDictionary<string, decimal> given,
+        IReadOnlyList<string>? priority,
+        List<ModuleDiagnostic> problems)
+    {
+        if (priority is not null)
+        {
+            problems.Add(new ModuleDiagnostic("character.priority", "A priority arranges rolled scores; with given attribute scores there is nothing to arrange. Use one or the other."));
+            return null;
+        }
+
+        Dictionary<string, decimal> scores = [];
+        foreach (Definition attribute in attributes)
+        {
+            if (!given.TryGetValue(attribute.Id, out decimal score))
+            {
+                problems.Add(new ModuleDiagnostic("character.attributes", $"The attribute scores have no {attribute.Id}. Give every attribute: {string.Join(", ", attributes.Select(entry => entry.Id))}."));
+                continue;
+            }
+
+            decimal min = attribute.Json.GetProperty("min").GetDecimal();
+            decimal max = attribute.Json.GetProperty("max").GetDecimal();
+            if (score < min || score > max)
+            {
+                problems.Add(new ModuleDiagnostic("character.attributes", $"{attribute.Id} {score} is outside {attribute.QualifiedId}'s range {min} to {max}."));
+            }
+
+            scores[attribute.Id] = score;
+        }
+
+        foreach (string id in given.Keys.Where(id => attributes.All(attribute => attribute.Id != id)))
+        {
+            problems.Add(new ModuleDiagnostic("character.attributes", $"'{id}' is not an attribute. Attributes: {string.Join(", ", attributes.Select(attribute => attribute.Id))}."));
+        }
+
+        return problems.Count > 0 ? null : scores;
+    }
+
+    /// <summary>
+    /// The race or class a character is made with: required when the ruleset
+    /// has any of that type, and left out when it has none (<paramref name="none"/>).
+    /// </summary>
+    private static Definition? Optional(RuleSet rules, DefinitionType type, string? id, string what, string plural, List<ModuleDiagnostic> problems, out bool none)
+    {
+        none = !rules.OfType(type).Any();
+        if (none)
+        {
+            if (id is not null)
+            {
+                problems.Add(new ModuleDiagnostic($"character.{what}", $"The module set has no {plural}, so a character has no {what}; leave it out."));
+            }
+
+            return null;
+        }
+
+        if (id is null)
+        {
+            string known = string.Join(", ", rules.OfType(type).Select(definition => definition.QualifiedId));
+            problems.Add(new ModuleDiagnostic($"character.{what}", $"Choose a {what}: {known}."));
+            return null;
+        }
+
+        return Find(rules, type, id, what, problems);
+    }
+
+    private static void Adjust(Definition race, Dictionary<string, decimal> scores)
+    {
+        if (!race.Json.TryGetProperty("ability_adjustments", out JsonElement adjustments))
+        {
+            return;
+        }
+
+        foreach (JsonProperty adjustment in adjustments.EnumerateObject())
+        {
+            scores[adjustment.Name] += adjustment.Value.GetDecimal();
+        }
+    }
+
+    private static void CheckRaceClass(RuleSet rules, Definition? race, Definition characterClass, List<ModuleDiagnostic> problems)
+    {
+        if (race is null || !race.Json.TryGetProperty("classes", out _))
+        {
+            return;
+        }
+
+        int index = 0;
+        bool allowed = false;
+        foreach (JsonElement _ in race.Json.GetProperty("classes").EnumerateArray())
+        {
+            allowed |= rules.Reference(race, $"$.classes[{index}]") == characterClass;
+            index++;
+        }
+
+        if (!allowed)
+        {
+            string classes = string.Join(", ", race.Json.GetProperty("classes").EnumerateArray().Select(entry => entry.GetString()));
+            problems.Add(new ModuleDiagnostic("character.race", $"{race.QualifiedId} can't take the class {characterClass.QualifiedId}. Its classes: {classes}.", race.Module, race.File, "$.classes"));
+        }
+    }
+
+    private static void CheckRaceLimits(Definition race, IReadOnlyDictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
+    {
+        if (race.Json.TryGetProperty("ability_limits", out JsonElement limits))
+        {
+            foreach (JsonProperty limit in limits.EnumerateObject())
+            {
+                decimal min = limit.Value[0].GetDecimal();
+                decimal max = limit.Value[1].GetDecimal();
+                decimal score = scores[limit.Name];
+                if (score < min || score > max)
+                {
+                    problems.Add(new ModuleDiagnostic(
+                        "character.race",
+                        $"{race.QualifiedId} needs {limit.Name} from {min} to {max} after adjustment, but it is {score}.",
+                        race.Module,
+                        race.File,
+                        $"$.ability_limits.{limit.Name}"));
+                }
+            }
+        }
+    }
+
+    private static void CheckClass(Definition characterClass, IReadOnlyDictionary<string, decimal> scores, List<ModuleDiagnostic> problems)
+    {
+        if (!characterClass.Json.TryGetProperty("requirements", out JsonElement requirements))
+        {
+            return;
+        }
+
+        foreach (JsonProperty requirement in requirements.EnumerateObject())
+        {
+            decimal minimum = requirement.Value.GetDecimal();
+            if (scores[requirement.Name] < minimum)
+            {
+                problems.Add(new ModuleDiagnostic(
+                    "character.class",
+                    $"{characterClass.QualifiedId} needs {requirement.Name} {minimum} or more, but it is {scores[requirement.Name]}.",
+                    characterClass.Module,
+                    characterClass.File,
+                    $"$.requirements.{requirement.Name}"));
+            }
+        }
+    }
+
+    private static Definition? FindCreation(RuleSet rules, string? id, List<ModuleDiagnostic> problems)
+    {
+        if (id is not null)
+        {
+            return Find(rules, DefinitionTypes.CharacterCreation, id, "creation", problems);
+        }
+
+        List<Definition> all = rules.OfType(DefinitionTypes.CharacterCreation).ToList();
+        List<Definition> defaults = all.Where(creation => creation.Json.TryGetProperty("default", out JsonElement isDefault) && isDefault.GetBoolean()).ToList();
+        if (all.Count == 1 || defaults.Count == 1)
+        {
+            return all.Count == 1 ? all[0] : defaults[0];
+        }
+
+        string message = all.Count == 0
+            ? "The module set has no character-creation definition. Add one (see `tales schema character-creation`)."
+            : $"The module set has more than one character-creation definition ({string.Join(", ", all.Select(definition => definition.QualifiedId))}) and none is the default; choose one by its ID.";
+        problems.Add(new ModuleDiagnostic("character.creation", message));
+        return null;
+    }
+
+    private static Definition? Find(RuleSet rules, DefinitionType type, string reference, string field, List<ModuleDiagnostic> problems)
+    {
+        Definition? found = rules.Find(type, reference, out string? problem);
+        if (found is null)
+        {
+            problems.Add(new ModuleDiagnostic("character.reference", $"{field}: {problem}"));
+        }
+
+        return found;
+    }
+
+    private static (JsonElement Element, string Path)? ImprovementCheck(RuleSet rules, string skill)
+    {
+        if (rules.Advancement is not Definition advancement
+            || !advancement.Json.TryGetProperty("improvement", out JsonElement improvement)
+            || !improvement.TryGetProperty("checks", out JsonElement checks))
+        {
+            return null;
+        }
+
+        for (int index = 0; index < checks.GetArrayLength(); index++)
+        {
+            string path = $"$.improvement.checks[{index}]";
+            if (checks[index].GetProperty("skill").GetString() == skill)
+            {
+                return (checks[index], path);
+            }
+        }
+
+        return null;
+    }
+
+    private static void AddStatBonus(RuleSet rules, Character character, string skill, decimal amount)
+    {
+        if (rules.Stats[skill].IsAttribute)
+        {
+            character.Attributes[skill] = character.Attributes.GetValueOrDefault(skill) + amount;
+        }
+        else
+        {
+            character.StatBonuses[skill] = character.StatBonuses.GetValueOrDefault(skill) + amount;
+        }
+    }
+
+    private static void SetStatValue(RuleSet rules, Character character, string skill, decimal desired)
+    {
+        if (rules.Stats[skill].IsAttribute)
+        {
+            character.Attributes[skill] = desired;
+            character.StatBonuses.Remove(skill);
+            return;
+        }
+
+        Creature baseline = character.ToCreature();
+        baseline.AdvancementBonuses.Remove(skill);
+        Evaluator evaluator = new(rules, null);
+        decimal baseValue = evaluator.Stat(baseline, skill).Number;
+        decimal bonus = desired - baseValue;
+        if (bonus == 0)
+        {
+            character.StatBonuses.Remove(skill);
+        }
+        else
+        {
+            character.StatBonuses[skill] = bonus;
+        }
+    }
+}

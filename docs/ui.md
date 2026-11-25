@@ -1,8 +1,8 @@
 # DOM companion
 
 `src/ui/main.js` exports `mountProductUi`. It renders the
-`rusty.goldbox.session` projection and claims the product's `goldbox.command`
-intent with `goldbox.command.v1` payloads for its buttons and fields. Keys
+`rusty.tales.session` projection and claims the product's `tales.command`
+intent with `tales.command.v1` payloads for its buttons and fields. Keys
 reach the product through the Engine's key mappings, not through the DOM. The
 product project selects this directory and module for SDK staging; the entry
 imports the other modules here by relative path.
@@ -151,7 +151,7 @@ content type; documentation belongs under `docs/`.
 Keep this lane to DOM presentation, accessibility and semantic actions. Game
 state lives in C#; input delivery, projection transport, the canvas and
 rendering belong to Engine. Intents are declared in the product project; keep
-the C# (`RustyGoldboxProduct`) and DOM callers aligned when an action or field
+the C# (`RustyTalesProduct`) and DOM callers aligned when an action or field
 changes. Dispose event listeners and subscriptions when the host unmounts the
 UI.
 
@@ -175,7 +175,7 @@ The look is one stylesheet (`look.js`) of theme variables (`--gb-background`,
 `--gb-button`, `--gb-button-text`, and for the log page `--gb-page`,
 `--gb-page-text`, `--gb-page-accent`, `--gb-page-link`; a skin sets them as
 `page`, `page_text`, `page_accent`, `page_link`) on the
-`[data-goldbox-panel]` root. The projection's `skin` (the player's pick, else
+`[data-tales-panel]` root. The projection's `skin` (the player's pick, else
 the open campaign's) overrides them and adds its panel tile under every panel
 but the view, its frame and button faces as nine-slice `border-image`s and its
 title art in place of the heading; the stylesheet is rewritten only when the

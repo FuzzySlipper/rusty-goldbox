@@ -1,0 +1,133 @@
+using System.Text.Json.Nodes;
+using Rusty.Engine;
+using RustyTales.Core.Modules;
+using RustyTales.Game.Presentation;
+
+namespace RustyTales.Game;
+
+/// <summary>
+/// The Engine product: runs Core campaigns from the module bundles under
+/// Engine input and persistence, draws the first-person view, and publishes
+/// the session as a projection for the DOM panels.
+/// </summary>
+public sealed class RustyTalesProduct : IEngineProduct
+{
+    private const string UiStreamId = "rusty-tales";
+    private const string UiContract = "rusty.tales.session";
+    private readonly IEngineContext _engine;
+    private readonly UiStream _uiStream;
+    private readonly GameSession _session;
+    private readonly SceneView _view;
+    private readonly UiImages _images;
+    private readonly GameAudio _audio;
+    private ulong _uiSequence;
+
+    public RustyTalesProduct(ProductCreateContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        _engine = context.Engine;
+        WorkspaceModules workspaces = WorkspaceModules.FromEnvironment();
+        ModuleLibrary library = new(
+            problems => OpenModules(context.Content, context.Engine.Content, workspaces, problems),
+            problems => workspaces.Prepare(context.Engine.Content, problems));
+        _session = new GameSession(library);
+        _view = new SceneView(_engine, library);
+        _images = new UiImages(_engine, library);
+        _audio = new GameAudio(_engine, library);
+        _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
+    }
+
+    public void Start()
+    {
+        _session.Refresh();
+        PlayerSettings.Load(_engine, _session);
+        Publish();
+    }
+
+    public ProductUpdateResult Update(ProductUpdate update)
+    {
+        bool changed = false;
+        foreach (ProductInputEvent input in update.Input)
+        {
+            changed |= GameCommands.Apply(_session, _engine, input);
+        }
+
+        changed |= _session.Installer.Tick(_engine);
+        changed |= _session.Hosting.Tick(_engine);
+        if (_session.Installer.LibraryChanged)
+        {
+            _session.Installer.LibraryChanged = false;
+            _session.Refresh();
+            changed = true;
+        }
+
+        if (changed)
+        {
+            Publish();
+        }
+
+        _view.Tick();
+        _audio.Update(_session);
+
+        return ProductUpdateResult.None;
+    }
+
+    public void Pause()
+    {
+    }
+
+    public void Resume()
+    {
+    }
+
+    public void Restart()
+    {
+        _session.Quit();
+        _session.Refresh();
+        Publish();
+    }
+
+    public void Shutdown()
+    {
+    }
+
+    public void Dispose()
+    {
+        _view.Dispose();
+        _audio.Dispose();
+        _images.Dispose();
+        _uiStream.Dispose();
+    }
+
+    /// <summary>The product's own module bundles, the modules installed in the module library, then any workspace modules in their place.</summary>
+    private static List<ProductContentBundle> OpenModules(ProductContent content, IContentService service, WorkspaceModules workspaces, List<string> problems)
+    {
+        List<ProductContentBundle> modules = [];
+        try
+        {
+            foreach (ContentBundleInfo info in content.ListBundles().Span)
+            {
+                modules.Add(content.OpenBundle(info.Id));
+            }
+
+            InstalledModules.Open(service, InstalledModules.DefaultDirectory(), modules, problems);
+            workspaces.Open(service, modules, problems);
+            return modules;
+        }
+        catch
+        {
+            // Nothing returns to dispose these, so release them before failing.
+            modules.ForEach(bundle => bundle.Dispose());
+            throw;
+        }
+    }
+
+    private void Publish()
+    {
+        _view.Show(_session);
+        JsonObject projection = SessionProjection.Build(_session, (set, asset) => _images.Url(set, asset));
+        projection["hosting"] = _session.Hosting.Readout(_engine);
+        UiValue value = SessionProjection.ToUiValue(projection);
+        _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
+    }
+}

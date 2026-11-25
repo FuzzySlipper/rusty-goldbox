@@ -1,6 +1,6 @@
-# Rusty Goldbox design
+# Rusty Tales design
 
-Rusty Goldbox is a Gold Box-style RPG engine with authoring, in the spirit of
+Rusty Tales is a Gold Box-style RPG engine with authoring, in the spirit of
 Unlimited Adventures / Dungeon Craft
 ([grannypron/uaf](https://github.com/grannypron/uaf)). A player runs a
 **campaign module** that is built on a **ruleset module** and dressed by one or
@@ -10,7 +10,7 @@ independently.
 It is a downstream [Rusty Engine](https://github.com/FuzzySlipper/rusty-engine)
 product. The Engine provides lifecycle, input, rendering, spatial queries,
 deterministic random, content bundles and containers, persistence and UI
-transport. Rusty Goldbox owns the module format, rules interpretation, the
+transport. Rusty Tales owns the module format, rules interpretation, the
 campaign runtime and the authoring CLI.
 
 UA/Dungeon Craft is a reference for features and behavior. We don't port its
@@ -20,7 +20,7 @@ came from in the commit and in the module's provenance.
 ## Audience and priorities
 
 For the near and middle term, **the author is an agent**. An agent creates
-modules by writing JSON files and checks them with the `goldbox` CLI. It
+modules by writing JSON files and checks them with the `tales` CLI. It
 "plays" them through scripted, headless runs that produce readable transcripts.
 The Engine product presents the same runtime to a player; a visual editor
 comes later. Nothing built now should assume an editor, and nothing should
@@ -40,9 +40,9 @@ In priority order:
 
 | Path | Owns |
 | --- | --- |
-| `src/RustyGoldbox.Core/` | Module format and loading, the expression language, ruleset interpretation, characters, combat, the campaign/event runtime and save data. No host and no UI. |
-| `src/RustyGoldbox.Game/` | The Engine `IEngineProduct`: opens module bundles, runs Core under Engine update and input, persists saves and publishes projections. |
-| `src/RustyGoldbox.Cli/` | The `goldbox` authoring and testing CLI over Core. |
+| `src/RustyTales.Core/` | Module format and loading, the expression language, ruleset interpretation, characters, combat, the campaign/event runtime and save data. No host and no UI. |
+| `src/RustyTales.Game/` | The Engine `IEngineProduct`: opens module bundles, runs Core under Engine update and input, persists saves and publishes projections. |
+| `src/RustyTales.Cli/` | The `tales` authoring and testing CLI over Core. |
 | `src/ui/` | DOM companion: the panels around the Engine view, laid out for the window's shape. |
 | `modules/` | First-party module sources, one directory per module. |
 | `tests/` | Focused checks: module fixtures, expression cases and golden play transcripts. |
@@ -83,15 +83,15 @@ below 1.0.0), `~1.2.0` (same minor), space-separated comparators
 The optional `releases` says where a module is published:
 `"github:<owner>/<repo>"` (that repository's GitHub releases) or the https URL
 of a `module-index.json`. A `requires` entry may carry its own `releases` for
-a module published elsewhere. `goldbox module release` publishes a module as
+a module published elsewhere. `tales module release` publishes a module as
 its container plus a `module-index.json` listing its ID, version, kind,
-requirements and content identity; `goldbox module get <source>` installs it
+requirements and content identity; `tales module get <source>` installs it
 and every requirement not already present, looking for a requirement without
 `releases` where its requirer came from, checking each container's identity
 against its index, and recording each fetched module's source and versions in
-the library's `sources.json`. `goldbox module updates` checks those sources
+the library's `sources.json`. `tales module updates` checks those sources
 for newer versions and `--install` fetches them beside the installed ones;
-`goldbox module remove <id>@<version>` drops one. Versions live side by side:
+`tales module remove <id>@<version>` drops one. Versions live side by side:
 a new game resolves the newest version each range allows, while loading a
 save pins every module it names to the exact version and content it was made
 under whenever that copy is present.
@@ -137,7 +137,7 @@ class needs no patch to the ruleset's character creation.
   required. A later range that excludes it is a conflict error; the resolver
   does not backtrack. Requirement cycles are errors.
 - Required modules are found in search directories: `--modules <dir>`
-  arguments together with the `modules` list of the nearest `goldbox.json`
+  arguments together with the `modules` list of the nearest `tales.json`
   (paths relative to it), or, with neither, the module's sibling directories.
   A search directory may itself be a module or contain module directories.
   Directories have no precedence: the same ID and version in two of them is an
@@ -149,7 +149,7 @@ class needs no patch to the ruleset's character creation.
   applied.
 - Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
-  provides the same IDs. `goldbox module validate` lists any that are missing.
+  provides the same IDs. `tales module validate` lists any that are missing.
 - An asset says what its file is, its **media**: `audio` (Ogg Vorbis or Opus,
   WAV or FLAC, the formats the Engine decodes; validation reads each header),
   an `image` (optionally with named pixel `regions`) or a `sheet` of equal frames (any frame size and
@@ -158,7 +158,7 @@ class needs no patch to the ruleset's character creation.
   height in cells. Image files are 8-bit RGBA PNGs, the format the Engine
   renderer admits, and validation reads each header to check that. A
   reference names the **slot** it fills, and the slot decides which media fit
-  (`Media` in Core, `goldbox schema media`): a `picture` (a cell's backdrop, a
+  (`Media` in Core, `tales schema media`): a `picture` (a cell's backdrop, a
   portrait, an icon, and every new place that shows a picture) takes any
   visual media; a `figure` takes a sheet that can stand; a `wall_set` takes an
   image with wall and door regions; `sound` and `music` take audio. So a new media type is added once and
@@ -278,11 +278,11 @@ taken, or a wrong number of boosts. When a level raises a track's maximum
 (its gain, a toughness feat, a boosted stat), the current value rises with it.
 
 An **advancement** may select another procedure instead of experience levels.
-`kind: "milestone"` gives a campaign or `goldbox character milestone` hook for
+`kind: "milestone"` gives a campaign or `tales character milestone` hook for
 ruleset-owned skill raises, skill swaps and feature choices. `kind:
 "improvement"` declares one check and gain expression for each marked skill;
 combat checks with `skill` mark a party character once per adventure, and
-`goldbox character improve` or an `improve` campaign event rolls those checks.
+`tales character improve` or an `improve` campaign event rolls those checks.
 The persistent `stat_bonuses`, `skill_marks` and `milestone_features` fields in
 a character file preserve these choices between commands and saves. An
 experience advancement remains the default when the legacy `experience` field
@@ -308,7 +308,7 @@ several creation definitions and mark one the default.
 A character-creation definition may also name a **lifepath** definition. It
 describes term careers as data: qualification, survival, optional commission
 and advancement, reenlistment, configured dice and skill-table rolls, ageing
-changes and mustering-out cash or material benefits. `goldbox character new`
+changes and mustering-out cash or material benefits. `tales character new`
 and the Game party command supply career, table and benefit choices; a single
 table or benefit choice repeats when the selected policy needs more rolls, and
 explicit sequences remain available. Every throw uses the Engine-backed dice
@@ -422,7 +422,7 @@ with less in a surprise round (3.5e).
 
 Each definition file holds one definition: `type`, `id` and the type's
 fields. Definition IDs use lowercase letters, digits and underscores, so they
-can appear in expressions. `goldbox schema` lists every type with its fields
+can appear in expressions. `tales schema` lists every type with its fields
 and an example, and the expression functions.
 
 State changes come from a fixed vocabulary of **operations** implemented in
@@ -588,7 +588,7 @@ Combat is built so that no die convention is assumed:
   list, so normal casting, preparation and saves see it. A member with no
   candidate produces a visible no-op fact and no draw. A one-time reward uses
   the campaign's authored once trigger or variable gate; the event has no
-  generic once state. `goldbox schema events --json` gives the minimal shape:
+  generic once state. `tales schema events --json` gives the minimal shape:
   `{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "A lesson takes hold.", "next": "road" }`.
 - **Shops** wait for `buy <n>`, `sell <n>` or `leave`. Each stock entry names
   an item, an optional campaign guard and, when finite, a `stock` reference to
@@ -625,11 +625,11 @@ Combat is built so that no die convention is assumed:
   values.
 
 An area's map is written as text that agents can read and diff, in the same
-notation `goldbox map render` prints: `+` corners, horizontal edges of two
+notation `tales map render` prints: `+` corners, horizontal edges of two
 characters (`--` wall, two spaces open, `DD` door, `SS` secret door) and
 vertical edges of one (`|`, space, `D`, `S`). Cell features and entry points
 are listed by `[x, y]`, x running east and y south from 0. Each event is a
-definition whose `kind` picks its fields (`goldbox schema events`).
+definition whose `kind` picks its fields (`tales schema events`).
 - **Encounters** reference ruleset monsters, with counts, placements and
   surprise rules. A combat event can choose starting anchors and a forced
   surprised side; its outcome branches include `on_flee`, and `flee_on_draw`
@@ -660,7 +660,7 @@ commands, rolls and outcomes.
 each, the identity being the Engine's bundle identity: a hash of the module's
 files that is the same for a directory, a bundle and a container) and the
 campaign state. They are files for the CLI and named slots in Engine
-persistence for the Game; `goldbox play --store` reads and writes the same
+persistence for the Game; `tales play --store` reads and writes the same
 slots.
 Command *n* of a campaign rolls on its own random scope, so a game saved and
 resumed rolls exactly as one played straight through. Loading a save under a different module set is
@@ -669,12 +669,12 @@ scope until a real module release needs it.
 
 ## CLI
 
-`goldbox` is how agents author and test modules. Every command accepts
+`tales` is how agents author and test modules. Every command accepts
 `--json` and returns structured results. Errors name the module, file, JSON
 path and the rule that failed. Module directories resolve through
-`--modules <dir>` and a workspace `goldbox.json`.
+`--modules <dir>` and a workspace `tales.json`.
 
-For the data above, `goldbox schema item --json` and `goldbox schema events
+For the data above, `tales schema item --json` and `tales schema events
 --json` print the accepted fields and examples. A malformed consumable points
 to its `$.use.operations[i]` field or `$.use.duration_days`; a malformed spell
 reward member points to `$.member`; shop stock and buying policy diagnostics
@@ -684,24 +684,24 @@ play syntax.
 
 | Command | Purpose |
 | --- | --- |
-| `goldbox schema [type]` | Print a definition type's fields, an example and the available operations and expression functions. This is the agent's format reference. |
-| `goldbox workspace new <dir>` | Create editable canon/art/prompts/scripts directories and a workspace manifest with separate runtime module and generated output locations. |
-| `goldbox workspace inspect [path]` | Find the nearest workspace and report its authored modules, dependency paths, editable roots and generated locations. `goldbox schema workspace` describes the manifest. |
-| `goldbox workspace build [path]` | Validate the explicit runtime modules, report included files and unresolved dependencies, and replace generated staging while preserving editable source. |
-| `goldbox workspace export [path]` | Build first, then pack each staged module independently through the pinned Engine packer into generated exports. |
-| `goldbox module new <kind> <id>` | Scaffold a module. |
-| `goldbox module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
-| `goldbox module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
-| `goldbox module deps <path>` | Show the resolved dependency graph and versions. |
-| `goldbox eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
-| `goldbox character new\|skills\|level …` | Create a character (including starting equipment and a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
-| `goldbox character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
-| `goldbox map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
-| `goldbox sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
-| `goldbox play --campaign … --seed N [--script file] [--fail-on-refusal]` | Play from a command script or stdin and emit a transcript. Use `use <member> <item-id>` for a carried consumable; `--fail-on-refusal` turns a scripted refusal into a diagnostic and exit code 1. |
-| `goldbox module pack <path> [--output <file> \| --install]` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
+| `tales schema [type]` | Print a definition type's fields, an example and the available operations and expression functions. This is the agent's format reference. |
+| `tales workspace new <dir>` | Create editable canon/art/prompts/scripts directories and a workspace manifest with separate runtime module and generated output locations. |
+| `tales workspace inspect [path]` | Find the nearest workspace and report its authored modules, dependency paths, editable roots and generated locations. `tales schema workspace` describes the manifest. |
+| `tales workspace build [path]` | Validate the explicit runtime modules, report included files and unresolved dependencies, and replace generated staging while preserving editable source. |
+| `tales workspace export [path]` | Build first, then pack each staged module independently through the pinned Engine packer into generated exports. |
+| `tales module new <kind> <id>` | Scaffold a module. |
+| `tales module validate <path>` | Check the manifest, types, references across `requires`, expression types, asset coverage and patches. |
+| `tales module inspect <path> [selector]` | Show resolved definitions after dependencies and patches. |
+| `tales module deps <path>` | Show the resolved dependency graph and versions. |
+| `tales eval <expr> --module … [--context …]` | Evaluate an expression or check, for example a level-5 fighter's THAC0 or a saving throw against a given spell; a context creature can be a saved character (`{"self": "@brom.json"}`). |
+| `tales character new\|skills\|level …` | Create a character (including starting equipment and a staged skill-choice draft), commit its profession/personal skill points, or advance it under an experience ruleset. |
+| `tales character milestone\|mark\|improve …` | Apply milestone choices, record a successful skill use, or roll marked-skill improvement under the selected advancement kind. |
+| `tales map render <area>` | Print an area as text: edge walls, doors, triggers and entry points. |
+| `tales sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
+| `tales play --campaign … --seed N [--script file] [--fail-on-refusal]` | Play from a command script or stdin and emit a transcript. Use `use <member> <item-id>` for a carried consumable; `--fail-on-refusal` turns a scripted refusal into a diagnostic and exit code 1. |
+| `tales module pack <path> [--output <file> \| --install]` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
 
-Golden transcripts from `goldbox play` and `goldbox sim` are the main
+Golden transcripts from `tales play` and `tales sim` are the main
 regression checks for module and rules behavior.
 
 ## Engine integration
@@ -715,7 +715,7 @@ regression checks for module and rules behavior.
 - **Input.** The DOM claims one declared payload intent for its actions; keys
   map to declared digital intents for moving and choosing. Play commands are
   the CLI's text commands, so the play part of a Game session is a valid
-  `goldbox play` script (the party itself is made in the Game).
+  `tales play` script (the party itself is made in the Game).
 - **Presentation.** The Engine renderer draws everything from asset-module
   art, and the art is always flat images so a campaign can bring its own
   easily:
@@ -746,17 +746,17 @@ regression checks for module and rules behavior.
     it as Engine UI image URLs (portraits, icons), and pictures over the view
     are renderer sprites.
 - **Persistence.** Saves go through `ProductStateStore` in one Engine
-  persistence scope, as the same JSON `goldbox play --save` writes. The
+  persistence scope, as the same JSON `tales play --save` writes. The
   player's settings (volumes, picked skin, layout) are one record in a scope
   of their own.
 - **Releases.** `rusty build --pack <dir> --compress` ships the product with
   its content as one zstd-compressed `.rpak`.
-- **Independent module export.** `goldbox module pack <module-dir>` validates
+- **Independent module export.** `tales module pack <module-dir>` validates
   a module with its requirements, then packs it with the pinned pair's
   `rusty pack-content --compress` into `<id>-<version>.rpak`; `--install`
-  writes it into the module library (`$GOLDBOX_MODULE_LIBRARY`, else
-  `$XDG_DATA_HOME/rusty-goldbox/modules`, else
-  `~/.local/share/rusty-goldbox/modules`). An installed container opens at run
+  writes it into the module library (`$TALES_MODULE_LIBRARY`, else
+  `$XDG_DATA_HOME/rusty-tales/modules`, else
+  `~/.local/share/rusty-tales/modules`). An installed container opens at run
   time as an ordinary bundle with `ProductContentBundle.OpenContainer`, so
   ruleset, asset and campaign modules ship and install separately. The Game
   offers the modules in its library beside its own bundles; the CLI finds
@@ -810,7 +810,7 @@ Only a completed rest restores the event's full `tracks`, prepares spells and
 chains to `next`. Rest without a policy retains immediate restoration.
 
 NPC definitions contain fixed `character` data. Create a character with the CLI,
-then `goldbox character npc <file> --module <path> --id <id> --out <npc.json>`
+then `tales character npc <file> --module <path> --id <id> --out <npc.json>`
 (also `--json`). `NpcFile` reuses `CharacterFile` to validate the template once
 at module loading, supplying module stamps from its declared dependencies.
 `join` and `dismiss` events reference the NPC definition; successful events

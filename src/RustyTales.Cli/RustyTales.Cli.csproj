@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>tales</AssemblyName>
+    <RootNamespace>RustyTales.Cli</RootNamespace>
+    <!-- In-process Engine services (Random) for headless commands; the build
+         copies the pinned pair's host library beside the tool. -->
+    <RustyEngineToolHost>true</RustyEngineToolHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RustyTales.Tests" />
+    <!-- The campaign-authoring kit must remain available to an installed or published CLI. -->
+    <EmbeddedResource Include="AuthoringKit/Resources/*.md">
+      <LogicalName>RustyTales.Cli.AuthoringKit.Resources.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <!-- module pack runs the pinned pair's own rusty when it is installed here. -->
+    <AssemblyMetadata Include="RustyEnginePairRusty" Value="$(RustyEngineCache)/pairs/$(RustyEnginePackageVersion)/runtime-pack/bin/rusty" />
+    <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
+    <ProjectReference Include="../RustyTales.Core/RustyTales.Core.csproj" />
+  </ItemGroup>
+</Project>

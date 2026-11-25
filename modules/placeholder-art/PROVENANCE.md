@@ -1,7 +1,7 @@
 # Provenance: placeholder-art
 
 The images and sounds in this module are original placeholders made for Rusty
-Goldbox: plain shapes and seeded colour noise drawn by a script (PIL), and
+Tales: plain shapes and seeded colour noise drawn by a script (PIL), and
 tones and filtered noise synthesised by a script (Python's wave module), not
 derived from any other artwork or recording. Images are 8-bit RGBA PNGs, the
 format the Engine renderer admits; sounds are 16-bit mono 22,050 Hz WAV.

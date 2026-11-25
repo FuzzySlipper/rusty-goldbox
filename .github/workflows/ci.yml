@@ -22,13 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: rusty-goldbox
+        working-directory: rusty-tales
     env:
-      GOLDBOX_BLACKAPPLE: ${{ github.workspace }}/blackapple-brugh
+      TALES_BLACKAPPLE: ${{ github.workspace }}/blackapple-brugh
     steps:
       - uses: actions/checkout@v4
         with:
-          path: rusty-goldbox
+          path: rusty-tales
 
       - uses: actions/checkout@v4
         with:
@@ -60,7 +60,7 @@ jobs:
           "$HOME/.local/bin/rusty" install
 
       - name: Test
-        run: dotnet test tests/RustyGoldbox.Tests
+        run: dotnet test tests/RustyTales.Tests
 
       - name: Check the browser UI modules
         run: |
@@ -69,7 +69,7 @@ jobs:
           done
 
       - name: Build the Game
-        run: rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
+        run: rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 
       - name: Validate first-party modules
         run: |
@@ -77,9 +77,9 @@ jobs:
           status=0
           for manifest in modules/*/module.json; do
             module=$(dirname "$manifest")
-            dotnet run --project src/RustyGoldbox.Cli -- module validate "$module" || status=1
+            dotnet run --project src/RustyTales.Cli -- module validate "$module" || status=1
           done
           exit $status
 
       - name: Build the Blackapple campaign workspace
-        run: dotnet run --project src/RustyGoldbox.Cli -- workspace build ../blackapple-brugh --json
+        run: dotnet run --project src/RustyTales.Cli -- workspace build ../blackapple-brugh --json

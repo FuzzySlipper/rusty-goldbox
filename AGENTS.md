@@ -1,6 +1,6 @@
-# Rusty Goldbox agent guidance
+# Rusty Tales agent guidance
 
-Rusty Goldbox is a Gold Box-style RPG engine with authoring, in the spirit of
+Rusty Tales is a Gold Box-style RPG engine with authoring, in the spirit of
 Unlimited Adventures / Dungeon Craft. Players run **campaign modules**, which
 are built on **ruleset modules** and dressed by **asset modules**. Every module
 is authored, validated and exported independently. It is a downstream Rusty
@@ -28,24 +28,24 @@ add or move an owner, update it and `README.md` in the same change.
 For the near and middle term, the person authoring modules is an **agent
 using the CLI**, not someone working in a visual editor. So:
 
-- Every authoring capability ships as a `goldbox` CLI command before anything
+- Every authoring capability ships as a `tales` CLI command before anything
   else. Commands accept `--json`. Errors name the module, file, JSON path and
   the rule that was broken, and a reader should be able to fix the problem
   from the error alone.
 - The format must be discoverable from the tool. When you add a definition
-  type, operation or expression function, `goldbox schema` must describe it,
+  type, operation or expression function, `tales schema` must describe it,
   with an example.
-- Behavior is checked by scripted headless runs (`goldbox play`,
-  `goldbox sim`) and golden transcripts. Don't build visual or
+- Behavior is checked by scripted headless runs (`tales play`,
+  `tales sim`) and golden transcripts. Don't build visual or
   human-interactive UI unless a task explicitly asks for it.
 
 ## Ownership
 
 | Path | Owns |
 | --- | --- |
-| `src/RustyGoldbox.Core/` | Module format and loading, expressions, operations, ruleset interpretation, characters, combat, campaign/event runtime and save data. No host or UI code. |
-| `src/RustyGoldbox.Cli/` | `goldbox` commands. Thin: parse arguments, call Core, print results. No rules logic. |
-| `src/RustyGoldbox.Game/` | The Engine product: module bundles, Engine update/input, persistence and projections over Core. |
+| `src/RustyTales.Core/` | Module format and loading, expressions, operations, ruleset interpretation, characters, combat, campaign/event runtime and save data. No host or UI code. |
+| `src/RustyTales.Cli/` | `tales` commands. Thin: parse arguments, call Core, print results. No rules logic. |
+| `src/RustyTales.Game/` | The Engine product: module bundles, Engine update/input, persistence and projections over Core. |
 | `src/ui/` | DOM companion. Observes projections and submits intents; it owns no game state. |
 | `modules/<id>/` | First-party module sources, each with `module.json`, provenance and, for adapted content, its licence. |
 | `tests/` | Focused checks and golden transcripts. |
@@ -129,13 +129,13 @@ tasks in the `rusty-goldbox` Den project, not here.
 
 Engine mechanisms this product relies on:
 
-- **Engine services in the CLI.** `RustyGoldbox.Cli` sets
-  `RustyEngineToolHost`, so `EngineTestHost.Create()` gives `goldbox` the
+- **Engine services in the CLI.** `RustyTales.Cli` sets
+  `RustyEngineToolHost`, so `EngineTestHost.Create()` gives `tales` the
   product's in-process service set (no renderer, input or lifecycle). Seeded
   `Random` draws match the running product's. Don't substitute a local RNG.
 - **Module bundles and containers.** The Game's content root is `modules/`,
   one `RustyEngineContentBundle` per module directory, opened with
-  `Content.OpenBundle`. `goldbox module pack` packs one module with the
+  `Content.OpenBundle`. `tales module pack` packs one module with the
   pinned pair's `rusty pack-content`; `ProductContentBundle.OpenContainer`
   opens an installed one (`InstalledModules`) as a bundle. Core reads either through `BundleModuleSource`, and a module's
   content identity is the Engine's bundle identity. Don't write a local
@@ -149,16 +149,16 @@ Engine mechanisms this product relies on:
 Run what covers the change. The checks are:
 
 ```bash
-dotnet test tests/RustyGoldbox.Tests
-dotnet run --project src/RustyGoldbox.Cli -- module validate modules/<id>
-rusty build --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
+dotnet test tests/RustyTales.Tests
+dotnet run --project src/RustyTales.Cli -- module validate modules/<id>
+rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 ```
 
-Golden transcripts live in `tests/RustyGoldbox.Tests/Golden/`. After an
-intended behaviour change, regenerate them with `GOLDBOX_UPDATE_GOLDEN=1 dotnet
-test tests/RustyGoldbox.Tests`, read the diff, and commit it with the change.
+Golden transcripts live in `tests/RustyTales.Tests/Golden/`. After an
+intended behaviour change, regenerate them with `TALES_UPDATE_GOLDEN=1 dotnet
+test tests/RustyTales.Tests`, read the diff, and commit it with the change.
 
-`rusty dev --project src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` is the
+`rusty dev --project src/RustyTales.Game/RustyTales.Game.csproj` is the
 edit-run loop for the product. `rusty build … --aot` is an explicit
 NativeAOT fidelity check, not a routine gate. Keep claims separate: a build,
 a validated module, a passing transcript and a visible interaction each prove

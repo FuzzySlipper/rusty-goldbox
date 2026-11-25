@@ -14,7 +14,7 @@
          only `rusty update` changes it. -->
     <RustyEnginePackageVersion>0.1.0-dev.0a5dfab7b318</RustyEnginePackageVersion>
     <!-- The product `rusty dev` and `rusty build` use when given no project. -->
-    <RustyEngineProject>src/RustyGoldbox.Game/RustyGoldbox.Game.csproj</RustyEngineProject>
+    <RustyEngineProject>src/RustyTales.Game/RustyTales.Game.csproj</RustyEngineProject>
     <!-- Every restore, plain dotnet included, takes exactly the pinned SDK from
          the pair installed in the shared rusty cache. -->
     <RustyEngineCache Condition="'$(RustyEngineCache)' == ''">$(RUSTY_ENGINE_CACHE)</RustyEngineCache>

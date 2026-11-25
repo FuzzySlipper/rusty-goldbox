@@ -214,7 +214,7 @@ Chapter VI copyright 2007-08 by Stuart Marshall, Daniel Proctor and Vincent Frug
 OSRIC appendices copyright 2006-08 by Stuart Marshall and James D. Kramer.
 Usherwood Adventures, Usherwood Publishing and the Usherwood Publishing
 logo are copyright James D. Kramer design services.
-Rusty Goldbox "classic" ruleset module copyright 2026 FuzzySlipper, adapting Open Game
+Rusty Tales "classic" ruleset module copyright 2026 FuzzySlipper, adapting Open Game
 Content from Chapters I-III of the work credited above.
 
 End of License

@@ -19,7 +19,7 @@ Lynn Willis. Source: the Basic Roleplaying ORC Content Document
 (https://www.chaosium.com/content/orclicense/BasicRoleplaying-ORC-Content-Document.pdf).
 
 If you use our Licensed Material in your own works, please credit us as
-follows: "Universal d100" ruleset module of Rusty Goldbox, by the Rusty Goldbox
+follows: "Universal d100" ruleset module of Rusty Tales, by the Rusty Tales
 contributors.
 
 ## Reserved Material

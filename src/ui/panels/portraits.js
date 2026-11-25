@@ -18,7 +18,7 @@ export function createPortraits(send, ui) {
   const next = button('›', () => setPage(page + 1), { 'aria-label': 'Next party members', title: 'Next party members', 'data-focus-key': 'roster:next' });
   const pager = element('nav', { class: 'gb-roster-nav', 'aria-label': 'Party member pages' }, previous, pageLabel, next);
   const viewport = element('div', { class: 'gb-roster-scroll', tabindex: '0', role: 'region', 'aria-label': 'Party members' });
-  const list = element('ol', { id: 'rusty-goldbox-roster' });
+  const list = element('ol', { id: 'rusty-tales-roster' });
   viewport.append(list);
   const node = element('section', { class: 'gb-panel gb-portraits', 'aria-label': 'Party', 'data-rusty-ui-interactive': '' }, title, pager, viewport);
   let page = 0;

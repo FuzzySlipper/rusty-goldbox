@@ -1,6 +1,6 @@
 name: engine-pair
 
-# Keeps Rusty Goldbox on the newest published Engine pair. The pin advances
+# Keeps Rusty Tales on the newest published Engine pair. The pin advances
 # only after the product builds, its tests pass and it serves on the proposed
 # pair; a pair that breaks the product fails this workflow and opens (or
 # updates) an issue, and the product stays on its working pin.
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PROJECT: src/RustyGoldbox.Game/RustyGoldbox.Game.csproj
+  PROJECT: src/RustyTales.Game/RustyTales.Game.csproj
   FAILURE_LABEL: engine-pair-update
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
         if: steps.propose.outputs.changed == 'true'
         run: |
           set -o pipefail
-          dotnet test tests/RustyGoldbox.Tests 2>&1 | tee test.log
+          dotnet test tests/RustyTales.Tests 2>&1 | tee test.log
 
       # The runtime renders with render-wgpu and needs a graphics adapter to
       # start. Hosted runners have no GPU, so give it Mesa's software Vulkan
@@ -86,7 +86,7 @@ jobs:
           done
           kill -TERM "$dev" 2>/dev/null || true
           wait "$dev" || true
-          if [[ "$served" != true ]] || ! grep -q '"id":"rusty-goldbox"' bootstrap.json; then
+          if [[ "$served" != true ]] || ! grep -q '"id":"rusty-tales"' bootstrap.json; then
             echo "The product did not serve on the proposed pair." | tee -a dev.log
             cat dev.log
             exit 1
@@ -111,7 +111,7 @@ jobs:
           git commit -q -F message.txt Directory.Build.props
           git push origin "HEAD:$GITHUB_REF_NAME"
           for issue in $(gh issue list --label "$FAILURE_LABEL" --state open --json number --jq '.[].number'); do
-            gh issue close "$issue" --comment "Rusty Goldbox adopted Engine pair $TO in $(git rev-parse --short HEAD)."
+            gh issue close "$issue" --comment "Rusty Tales adopted Engine pair $TO in $(git rev-parse --short HEAD)."
           done
 
       - name: Report the failed update

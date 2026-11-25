@@ -1,6 +1,6 @@
 # Provenance: tactical-expedition
 
-This campaign is original Rusty Goldbox content. The gallery, encounter
+This campaign is original Rusty Tales content. The gallery, encounter
 rosters, companion, text, map and event chains were written for the tactical
 combat authoring example and copy no published setting, monster, or adventure
 text. Its creatures and policies come from the original `tactical-bestiaire`

@@ -3,15 +3,15 @@
 > The product decides. The Engine guarantees.
 
 This describes what exists. [design.md](design.md) describes the intended
-design (Core, the `goldbox` CLI, modules).
+design (Core, the `tales` CLI, modules).
 
 ```text
 modules/<id>/module.json + definition files
-  -> RustyGoldbox.Core (load, resolve, check, evaluate; dice through Engine Random)
-  -> RustyGoldbox.Cli (`goldbox`: parse arguments, host Engine services, print text or --json)
+  -> RustyTales.Core (load, resolve, check, evaluate; dice through Engine Random)
+  -> RustyTales.Cli (`tales`: parse arguments, host Engine services, print text or --json)
 
 modules/<id>/ staged as Engine content bundles (or packed as containers)
-  -> RustyGoldbox.Game (C#: ModuleLibrary -> Core; GameSession; SessionProjection)
+  -> RustyTales.Game (C#: ModuleLibrary -> Core; GameSession; SessionProjection)
   -> Rusty.Engine safe SDK
   -> SDK-generated bind entry point and ABI
   -> packaged Rust host, input, persistence, UI transport and browser shell
@@ -22,88 +22,88 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 
 | Path or service | Responsibility |
 | --- | --- |
-| `src/RustyGoldbox.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
-| `src/RustyGoldbox.Core/Modules/ModuleManifest.cs`, `ModuleIds.cs`, `ModuleKind.cs`, `ModuleVersion.cs` and `VersionRange.cs` | A manifest's fields, module ID rules, the module kinds, versions and `requires` ranges |
-| `src/RustyGoldbox.Core/Modules/ReleaseSource.cs`, `ReleaseIndex.cs`, `ModuleFetcher.cs` and `InstalledSources.cs` | Where a module is published, the `module-index.json` a release carries, fetching a module and its missing requirements into the library with identity checks, and the library's `sources.json` record. A fetch hands out read and download steps (`ModuleFetch`), which the CLI does at once with .NET and the Game does over Engine `Http` across updates |
-| `src/RustyGoldbox.Core/Modules/ModuleSet.cs` and `ModuleDiagnostic.cs` | A loaded module set with its rules, and a diagnostic naming module, file, JSON path and rule |
-| `src/RustyGoldbox.Core/Modules/JsonFiles.cs` and `DirectoryListing.cs` | Reading JSON files with located parse errors, and listing a module's files in a stable order |
-| `src/RustyGoldbox.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `goldbox.json` |
-| `src/RustyGoldbox.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
-| `src/RustyGoldbox.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
-| `src/RustyGoldbox.Core/Modules/BundleModuleSource.cs` | A module in an Engine content bundle or container |
-| `src/RustyGoldbox.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from: module directories and installed containers in the search directories |
-| `src/RustyGoldbox.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
-| `src/RustyGoldbox.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
-| `src/RustyGoldbox.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
-| `src/RustyGoldbox.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), media: what an asset is and which media each slot accepts (`Media`), and the panel proportions a skin or the player may set (`SkinLayout`) |
-| `src/RustyGoldbox.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
-| `src/RustyGoldbox.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, asset images and wall-set frames |
-| `src/RustyGoldbox.Core/Rules/ExpressionChecker.cs` | Expression type checking against a rule set |
-| `src/RustyGoldbox.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
-| `src/RustyGoldbox.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
-| `src/RustyGoldbox.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
-| `src/RustyGoldbox.Core/Rules/DiceRoller.cs` | Dice from Engine Random, with a record of each roll; scoped streams for continuous commands and keyed draws for persisted live battles |
-| `src/RustyGoldbox.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, authored perception scope/mode and absolute campaign-day condition expiries, and the creature view expressions read |
-| `src/RustyGoldbox.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices, starting equipment and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
-| `src/RustyGoldbox.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress, lifepath age, choices, rolls and results, saved `condition_expiry` values and refusing one made under a different module set |
-| `src/RustyGoldbox.Core/Characters/CharacterSheet.cs` | A character's computed stats |
-| `src/RustyGoldbox.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
-| `src/RustyGoldbox.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
-| `src/RustyGoldbox.Core/Combat/CombatRunner.cs` and its partials | The live combat owner and shared resolver: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, legal choices, commands, flee rules, checks and operations, condition durations and defeat; automatic runs drive this same owner |
-| `src/RustyGoldbox.Core/Combat/LiveCombat.cs` | Combat command, observation, pending-decision and continuation data, including stable combatant references |
-| `src/RustyGoldbox.Core/Definitions/CombatBehavior.cs` | Checked reusable behavior profiles: finite action-use sequences, guards, scores, targets and destination preferences |
-| `src/RustyGoldbox.Core/Combat/CombatBehaviorController.cs` | Module-authored policy selection over the combat owner's legal choices; when a plan needs to move first, the runner says which endpoints make the intended action legal |
-| `src/RustyGoldbox.Core/Combat/CombatGeometry.cs` | The `combat.*` distances, nearest-enemy, allies-near and sight values that both the resolver and authored tactics evaluate |
-| `src/RustyGoldbox.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
-| `src/RustyGoldbox.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
-| `src/RustyGoldbox.Core/Combat/Encounters.cs` | Rolling an encounter's monsters into combatants and keeping combatant names distinct across sides |
-| `src/RustyGoldbox.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
-| `src/RustyGoldbox.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, current text-view event and selected member, party and inventory; characters own declared currency balances, equipment and perception results |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; resolves perception checks through the existing evaluator and selects authored member views without changing shared routes; trading changes the existing character balances, party inventory and equipment; equipment commands transfer existing copies through `CharacterRules` restrictions; optional shop buying cash lives in existing campaign/area variables; `CurrencyLedger` owns pooled payments and splits |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Consumable.cs` | The `use <member> <item-id>` command, applying an item's existing scene operations to one carried copy and expiring durable conditions when rest or training advances campaign time |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.SpellReward.cs` | The data-driven `spell_reward` event: filters known spells from ruleset castability, chooses the highest eligible active-class level, draws once among that level and adds the selected definition to the character's known spells |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Shop.cs` | Shop offers, scalar finite stock in existing campaign/area variables, optional buying fraction/cash/value policy and the buy/sell mutations |
-| `src/RustyGoldbox.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
-| `src/RustyGoldbox.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
-| `src/RustyGoldbox.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
-| `src/RustyGoldbox.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `goldbox play --store` |
-| `src/RustyGoldbox.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
-| `src/RustyGoldbox.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
-| `src/RustyGoldbox.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export and install; Engine owns the container format and identity |
-| `src/RustyGoldbox.Cli/AuthoringKit/` | Embedded, copyable revision-1.0 authoring kit with index, brief/canon/chapter/encounter/art/image-judge/handoff/workflow/revision prompts and the complete Lantern worked example, discovered through the installed authoring commands |
-| `src/RustyGoldbox.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
-| `src/RustyGoldbox.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
-| `src/RustyGoldbox.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyGoldbox.Cli/` | `goldbox` argument parsing (`GoldboxCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`, `DistributionCommand` for `module release` and `module get` over `gh` and .NET HTTP), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
-| `src/RustyGoldbox.Game/RustyGoldboxProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
-| `src/RustyGoldbox.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
-| `src/RustyGoldbox.Game/GameCommands.cs` | The input boundary: key intents and checked `goldbox.command.v1` payloads to session commands |
-| `src/RustyGoldbox.Game/WorkspaceModules.cs` | Development play from source: builds the workspaces in `$GOLDBOX_WORKSPACES` on each title listing, repacks changed modules with the Engine packer into `.goldbox/game/`, and opens them in place of installed copies |
-| `src/RustyGoldbox.Game/HostedGame.cs` | Playing together over Engine `Session` (application tag `rusty-goldbox/1`): host and join by invitation with the player's name as the Engine identity; the host seats members, sends each joiner a view (`SendView`), applies guest actions through `GameCommands.RunFor` with the Engine's `Seen`, answers refusals as notices and broadcasts a view whenever the game changed; a guest shows views, sends its outbox, installs a campaign it lacks from the view's `sources`, and returns to the title screen with the reason when the host leaves |
-| `src/RustyGoldbox.Game/SeatSlots.cs` | Who sat where in a hosted game, beside its save slot (scope `goldbox-seats`): saving while hosting writes the table, loading keeps it as `GameSession.SavedSeats`, and hosting again (`NewTable`) restores the seats without members, covering absent players' characters with automatic control until they rejoin by key |
-| `src/RustyGoldbox.Game/PartyTable.cs` | Who plays what at a hosted game: seats by Engine member and key (a rejoin keeps its seat), the passable leader that falls back to the host, which party members each seat owns, and the one check every player action passes (`GameCommands.RunFor`) before the ordinary commands run it, including refusing a menu or combat answer made against a superseded view. At an event menu a seat's `choose N` is its vote: the choice runs as one ordinary `choose N` once every voter who is here has voted or the leader calls it (`decide`), most votes winning and the leader's vote breaking a tie. `GameSession.SeatLeft` and `SeatJoined` put an absent player's characters on Core's automatic control (mid-fight too) and hand them back on rejoin |
-| `src/RustyGoldbox.Game/GameView.cs` | What a multiplayer host sends guests: screen, log and notes, the party being made (campaign identity and character files), and play state in the save format, plus a just-finished fight as a save that still holds it. `GameSession.ShowView` shows one on a guest (same modules, pinned to the host's versions, in a campaign that never runs a command), and a guest's commands go to its `Outbox` |
-| `src/RustyGoldbox.Game/ModuleInstaller.cs` | The title screen's module work over Engine `Http`: previewing what a source publishes, installing with Core's `ModuleFetcher` steps across updates (one transfer at a time, with retries and cancel), checking recorded sources for updates, and removing a version through an Engine `HttpLibrary` |
-| `src/RustyGoldbox.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
-| `src/RustyGoldbox.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
-| `src/RustyGoldbox.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL; asset sampling accompanies the projection |
-| `src/RustyGoldbox.Game/SessionProjection.cs` | The `rusty.goldbox.session` debug projection, including usable/count-grouped inventory, finite shop `remaining` and buying limits, and member `derived` values filtered by `show_on_sheet`, plus copying JSON into an Engine `UiValue` |
-| `src/RustyGoldbox.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
-| `src/RustyGoldbox.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
-| `src/RustyGoldbox.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells, an attack animation for the latest actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
-| `src/RustyGoldbox.Game/Presentation/GameAudio.cs` | Event sounds and music through Engine audio: clips opened once per asset, one-shot sounds on the Sfx bus, one looping Music voice following the campaign's music, bus volumes |
-| `src/RustyGoldbox.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
-| `src/RustyGoldbox.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
-| `src/RustyGoldbox.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
-| `src/RustyGoldbox.Game/Presentation/TextureSampling.cs` | Maps authored nearest/linear sampling to the pinned Engine resource request and isolates cropped atlas UVs by half a source pixel |
-| `src/RustyGoldbox.Game/RustyGoldbox.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
-| `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `goldbox.command` intents and keeps which overlay the player opened; panels keep only their own presentation choices and unsent drafts |
+| `src/RustyTales.Core/Modules/ManifestReader.cs` | Reading and checking one `module.json`; the manifest field list |
+| `src/RustyTales.Core/Modules/ModuleManifest.cs`, `ModuleIds.cs`, `ModuleKind.cs`, `ModuleVersion.cs` and `VersionRange.cs` | A manifest's fields, module ID rules, the module kinds, versions and `requires` ranges |
+| `src/RustyTales.Core/Modules/ReleaseSource.cs`, `ReleaseIndex.cs`, `ModuleFetcher.cs` and `InstalledSources.cs` | Where a module is published, the `module-index.json` a release carries, fetching a module and its missing requirements into the library with identity checks, and the library's `sources.json` record. A fetch hands out read and download steps (`ModuleFetch`), which the CLI does at once with .NET and the Game does over Engine `Http` across updates |
+| `src/RustyTales.Core/Modules/ModuleSet.cs` and `ModuleDiagnostic.cs` | A loaded module set with its rules, and a diagnostic naming module, file, JSON path and rule |
+| `src/RustyTales.Core/Modules/JsonFiles.cs` and `DirectoryListing.cs` | Reading JSON files with located parse errors, and listing a module's files in a stable order |
+| `src/RustyTales.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `tales.json` |
+| `src/RustyTales.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
+| `src/RustyTales.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
+| `src/RustyTales.Core/Modules/BundleModuleSource.cs` | A module in an Engine content bundle or container |
+| `src/RustyTales.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from: module directories and installed containers in the search directories |
+| `src/RustyTales.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
+| `src/RustyTales.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
+| `src/RustyTales.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
+| `src/RustyTales.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), media: what an asset is and which media each slot accepts (`Media`), and the panel proportions a skin or the player may set (`SkinLayout`) |
+| `src/RustyTales.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
+| `src/RustyTales.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, asset images and wall-set frames |
+| `src/RustyTales.Core/Rules/ExpressionChecker.cs` | Expression type checking against a rule set |
+| `src/RustyTales.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
+| `src/RustyTales.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
+| `src/RustyTales.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
+| `src/RustyTales.Core/Rules/DiceRoller.cs` | Dice from Engine Random, with a record of each roll; scoped streams for continuous commands and keyed draws for persisted live battles |
+| `src/RustyTales.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, authored perception scope/mode and absolute campaign-day condition expiries, and the creature view expressions read |
+| `src/RustyTales.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices, starting equipment and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
+| `src/RustyTales.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress, lifepath age, choices, rolls and results, saved `condition_expiry` values and refusing one made under a different module set |
+| `src/RustyTales.Core/Characters/CharacterSheet.cs` | A character's computed stats |
+| `src/RustyTales.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
+| `src/RustyTales.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
+| `src/RustyTales.Core/Combat/CombatRunner.cs` and its partials | The live combat owner and shared resolver: surprise and forced surprise, placement, rolled or elective initiative, turns, budgets, legal choices, commands, flee rules, checks and operations, condition durations and defeat; automatic runs drive this same owner |
+| `src/RustyTales.Core/Combat/LiveCombat.cs` | Combat command, observation, pending-decision and continuation data, including stable combatant references |
+| `src/RustyTales.Core/Definitions/CombatBehavior.cs` | Checked reusable behavior profiles: finite action-use sequences, guards, scores, targets and destination preferences |
+| `src/RustyTales.Core/Combat/CombatBehaviorController.cs` | Module-authored policy selection over the combat owner's legal choices; when a plan needs to move first, the runner says which endpoints make the intended action legal |
+| `src/RustyTales.Core/Combat/CombatGeometry.cs` | The `combat.*` distances, nearest-enemy, allies-near and sight values that both the resolver and authored tactics evaluate |
+| `src/RustyTales.Core/Combat/Combatant.cs` | A creature in a fight and the uses it can take (from class, monster and equipment data) |
+| `src/RustyTales.Core/Combat/CombatFact.cs` | What happened in a fight, in order: the transcript |
+| `src/RustyTales.Core/Combat/Encounters.cs` | Rolling an encounter's monsters into combatants and keeping combatant names distinct across sides |
+| `src/RustyTales.Core/Campaigns/AreaMap.cs` | Area grids with edge walls, doors and secret doors: parsing, canonical edge keys and drawing |
+| `src/RustyTales.Core/Campaigns/CampaignState.cs` | Campaign play state: position, campaign and per-area variables, discovered secret edges, opened doors, fired triggers, pending menu, shop or combat, current text-view event and selected member, party and inventory; characters own declared currency balances, equipment and perception results |
+| `src/RustyTales.Core/Campaigns/CampaignRunner.cs` and its partials | The play command surface: movement, secret search, locked-door opening, triggers, event chains, fights, combat start anchors and surprise overrides, flee routing, status and shops; resolves perception checks through the existing evaluator and selects authored member views without changing shared routes; trading changes the existing character balances, party inventory and equipment; equipment commands transfer existing copies through `CharacterRules` restrictions; optional shop buying cash lives in existing campaign/area variables; `CurrencyLedger` owns pooled payments and splits |
+| `src/RustyTales.Core/Campaigns/CampaignRunner.Consumable.cs` | The `use <member> <item-id>` command, applying an item's existing scene operations to one carried copy and expiring durable conditions when rest or training advances campaign time |
+| `src/RustyTales.Core/Campaigns/CampaignRunner.SpellReward.cs` | The data-driven `spell_reward` event: filters known spells from ruleset castability, chooses the highest eligible active-class level, draws once among that level and adds the selected definition to the character's known spells |
+| `src/RustyTales.Core/Campaigns/CampaignRunner.Shop.cs` | Shop offers, scalar finite stock in existing campaign/area variables, optional buying fraction/cash/value policy and the buy/sell mutations |
+| `src/RustyTales.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
+| `src/RustyTales.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
+| `src/RustyTales.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
+| `src/RustyTales.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `tales play --store` |
+| `src/RustyTales.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
+| `src/RustyTales.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
+| `src/RustyTales.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export and install; Engine owns the container format and identity |
+| `src/RustyTales.Cli/AuthoringKit/` | Embedded, copyable revision-1.0 authoring kit with index, brief/canon/chapter/encounter/art/image-judge/handoff/workflow/revision prompts and the complete Lantern worked example, discovered through the installed authoring commands |
+| `src/RustyTales.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
+| `src/RustyTales.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
+| `src/RustyTales.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
+| `src/RustyTales.Cli/` | `tales` argument parsing (`TalesCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`, `DistributionCommand` for `module release` and `module get` over `gh` and .NET HTTP), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyTales.Game/RustyTalesProduct.cs` | Lifecycle callbacks, opening the module bundles, publishing the projection |
+| `src/RustyTales.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
+| `src/RustyTales.Game/GameCommands.cs` | The input boundary: key intents and checked `tales.command.v1` payloads to session commands |
+| `src/RustyTales.Game/WorkspaceModules.cs` | Development play from source: builds the workspaces in `$TALES_WORKSPACES` on each title listing, repacks changed modules with the Engine packer into `.tales/game/`, and opens them in place of installed copies |
+| `src/RustyTales.Game/HostedGame.cs` | Playing together over Engine `Session` (application tag `rusty-tales/1`): host and join by invitation with the player's name as the Engine identity; the host seats members, sends each joiner a view (`SendView`), applies guest actions through `GameCommands.RunFor` with the Engine's `Seen`, answers refusals as notices and broadcasts a view whenever the game changed; a guest shows views, sends its outbox, installs a campaign it lacks from the view's `sources`, and returns to the title screen with the reason when the host leaves |
+| `src/RustyTales.Game/SeatSlots.cs` | Who sat where in a hosted game, beside its save slot (scope `tales-seats`): saving while hosting writes the table, loading keeps it as `GameSession.SavedSeats`, and hosting again (`NewTable`) restores the seats without members, covering absent players' characters with automatic control until they rejoin by key |
+| `src/RustyTales.Game/PartyTable.cs` | Who plays what at a hosted game: seats by Engine member and key (a rejoin keeps its seat), the passable leader that falls back to the host, which party members each seat owns, and the one check every player action passes (`GameCommands.RunFor`) before the ordinary commands run it, including refusing a menu or combat answer made against a superseded view. At an event menu a seat's `choose N` is its vote: the choice runs as one ordinary `choose N` once every voter who is here has voted or the leader calls it (`decide`), most votes winning and the leader's vote breaking a tie. `GameSession.SeatLeft` and `SeatJoined` put an absent player's characters on Core's automatic control (mid-fight too) and hand them back on rejoin |
+| `src/RustyTales.Game/GameView.cs` | What a multiplayer host sends guests: screen, log and notes, the party being made (campaign identity and character files), and play state in the save format, plus a just-finished fight as a save that still holds it. `GameSession.ShowView` shows one on a guest (same modules, pinned to the host's versions, in a campaign that never runs a command), and a guest's commands go to its `Outbox` |
+| `src/RustyTales.Game/ModuleInstaller.cs` | The title screen's module work over Engine `Http`: previewing what a source publishes, installing with Core's `ModuleFetcher` steps across updates (one transfer at a time, with retries and cancel), checking recorded sources for updates, and removing a version through an Engine `HttpLibrary` |
+| `src/RustyTales.Game/ModuleLibrary.cs` | The product's module bundles: listing campaigns with the extensions each may add, the skins of assets modules, and loading a module set from them |
+| `src/RustyTales.Game/GameSession.cs` | What the player is doing: screen, open module set, party being made, the running campaign, its log |
+| `src/RustyTales.Game/UiImages.cs` | Module images granted to the DOM panels as Engine UI images, one per asset content, by URL; asset sampling accompanies the projection |
+| `src/RustyTales.Game/SessionProjection.cs` | The `rusty.tales.session` debug projection, including usable/count-grouped inventory, finite shop `remaining` and buying limits, and member `derived` values filtered by `show_on_sheet`, plus copying JSON into an Engine `UiValue` |
+| `src/RustyTales.Game/Presentation/AreaMesh.cs` | First-person geometry from an area map: inward-facing wall and door quads per cell edge, floors and ceilings, UVs from the wall set's frames |
+| `src/RustyTales.Game/Presentation/SceneView.cs` | The Engine scene in the view window: the first-person area (mesh, wall-set texture, camera at the party, backdrop sprite) or the combat scene, and admitting module art once per asset content |
+| `src/RustyTales.Game/Presentation/CombatScene.cs` | The combat screen's scene: a floor field (the fight's combat field when it has one), side-view figures as spherical billboards (party left facing right, foes right facing left) standing on their cells, an attack animation for the latest actor, defeated figures leaving, and the field's terrain: each cell drawn with the sprite a `figure` gives its terrain key, else a grey block (impassable) or a low brown slab (rough ground) |
+| `src/RustyTales.Game/Presentation/GameAudio.cs` | Event sounds and music through Engine audio: clips opened once per asset, one-shot sounds on the Sfx bus, one looping Music voice following the campaign's music, bus volumes |
+| `src/RustyTales.Game/Presentation/PictureArt.cs` | Any picture-slot asset over the view window: a pixel-sized atlas sprite fitted to the window, playing a sheet's first animation |
+| `src/RustyTales.Game/Presentation/PlaybackFrames.cs` | Advancing sprite playbacks and noticing frame changes, so the scene republishes its snapshot to show them |
+| `src/RustyTales.Game/Presentation/SpriteArt.cs` | A sheet used as a figure, as an Engine sprite atlas (frames sized in cells, pivot on its anchor), figures billboarded around the vertical axis, animation playbacks, and the mirror scale that faces a figure the other way |
+| `src/RustyTales.Game/Presentation/TextureSampling.cs` | Maps authored nearest/linear sampling to the pinned Engine resource request and isolates cropped atlas UVs by half a source pixel |
+| `src/RustyTales.Game/RustyTales.Game.csproj` | Product entry, UI root, the module bundles, input intents and key mappings, projection identity |
+| `src/ui/main.js` | Mounts the panel frame, subscribes to the session projection, claims `tales.command` intents and keeps which overlay the player opened; panels keep only their own presentation choices and unsent drafts |
 | `src/ui/layout.js` and `look.js` | The arrangement for the window's shape and its ratios as CSS variables; the stylesheet and a skin's overrides |
 | `src/ui/dom.js` | DOM image presentation over Engine image URLs, including authored sampling and isolated sheet-frame cropping |
 | `src/ui/dropdowns.js` | Opens every `<select>` as a list on the page, because the Engine's native window doesn't draw CEF's own popup for one (rusty-engine #9789); the select keeps its value and change events |
 | `src/ui/panels/` | One renderer per play panel: status line, log, portraits, map (foes in combat), controls, overlays (game menu, member sheet with Use/Equip/Gear actions and derived values, shop with stock counts and disabled sold-out buys, temple, trainer) |
 | `src/ui/screens/` | The title and party-creation screens |
-| `modules/` | First-party module sources; `goldbox.json` makes it the workspace search directory |
+| `modules/` | First-party module sources; `tales.json` makes it the workspace search directory |
 | `modules/classic/` | The first ruleset: first-edition rules from OGL content, with `PROVENANCE.md` and `LICENSE-OGL.txt` |
 | `modules/fate-condensed/` | Fate Condensed's conflict rules from the CC BY SRD, with `PROVENANCE.md` and `LICENSE-CC-BY-3.0.txt`: skills, stress and consequences, no races or classes |
 | `modules/universal-d100/` | Basic Roleplaying's d100 rules from Chaosium's ORC Content Document, with `PROVENANCE.md` (ORC notices) and `LICENSE-ORC.txt`: rolled characteristics, skills by profession, dodge and shield parry, armour, major wounds |
@@ -113,8 +113,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `modules/placeholder-art/` | Placeholder assets (logical IDs to files) |
 | `modules/sample-crypt/` | The sample campaign |
 | `modules/tactical-bestiaire/` and `modules/tactical-expedition/` | Original enemies and reusable tactics, an allied warder and a playable gallery campaign supporting up to twelve members; each module validates and packs independently |
-| `tests/RustyGoldbox.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/lifepath`: original term-career data shape; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |
-| `tests/RustyGoldbox.Tests/BlackappleCheckout.cs` | Where the Blackapple Brugh regression tests find the campaign: `$GOLDBOX_BLACKAPPLE`, else a clone of FuzzySlipper/blackapple-brugh beside this repository; without one they are skipped, and CI always clones it |
+| `tests/RustyTales.Tests/` | Core and CLI checks against temporary module directories, golden transcripts (`Golden/`), and original fixture rulesets shaped like other systems (`Fixtures/ascend`: ascending AC, criticals, standard and move budget, multiclass levels, feats, point buy; `Fixtures/degrees`: ancestry, heritage, background, boosts, proficiency ranks, three actions, four degrees of success, basic saves; `Fixtures/lifepath`: original term-career data shape; `Fixtures/percentile`: d100 roll-under, specials, fumbles, active parry; `Fixtures/pools`: d10 success pools with rerolls, cancelling ones and botches, open-ended damage; `Fixtures/degrees-trial`: a one-room campaign on degrees for making characters in the Game; `Fixtures/ascend-trial`: a one-room campaign opening with a fight on ascend's field) |
+| `tests/RustyTales.Tests/BlackappleCheckout.cs` | Where the Blackapple Brugh regression tests find the campaign: `$TALES_BLACKAPPLE`, else a clone of FuzzySlipper/blackapple-brugh beside this repository; without one they are skipped, and CI always clones it |
 | Engine SDK/runtime | Generated interop, update/input admission, UI transport, host, renderer and browser shell |
 
 The original `Fixtures/tactical-zones` extension adds a shared-zone,
@@ -237,9 +237,9 @@ does not restore spent budgets. Behavior profiles propose legal commands and
 retain their committed plan state in the combat continuation. Optional CLI
 traces record the actual proposals, their source paths and alternatives.
 
-`goldbox sim combat` builds the sides from character files and an encounter
+`tales sim combat` builds the sides from character files and an encounter
 and runs the fight inside the Engine tool host; run k uses random scope
-`goldbox.sim.<k>`, so any run repeats from its seed.
+`tales.sim.<k>`, so any run repeats from its seed.
 
 ## Campaigns
 
@@ -263,7 +263,7 @@ survivors or the whole party as the advancement's `experience_to` says,
 taking levels that need no choice at once and leaving the rest for the
 `level` command, whose choices `CharacterRules.AddExperience` takes all or
 nothing. `CampaignRunner` gives command *n* a dice stream
-scoped `goldbox.play.<n>` from the campaign's seed, which a save records with
+scoped `tales.play.<n>` from the campaign's seed, which a save records with
 the command count; that is what makes a resumed save roll as an unbroken run.
 
 `CampaignRunner.Consumable.cs` checks the selected active member and carried
@@ -293,9 +293,9 @@ currency, treats an omitted `balance` as unlimited cash and an omitted
 `max_value` as no value limit. `ShopFact` carries `Remaining`, buying currency
 and maximum value to both CLI output and the Game projection.
 
-A save is the JSON `SaveFile` writes. `goldbox play` keeps it in a file, or
+A save is the JSON `SaveFile` writes. `tales play` keeps it in a file, or
 with `--store <dir>` in a `SaveSlots` slot of that Engine persistence root;
-the Game uses the same slots (scope `goldbox-saves`), so either loads the
+the Game uses the same slots (scope `tales-saves`), so either loads the
 other's saves. Pending combat saves include the active turn, budgets,
 conditions, controller state and optional decision. Every campaign fight
 uses Engine keyed random draws with its own persisted scope and draw index,
@@ -362,7 +362,7 @@ sprite animations move between inputs. Each step applies input, advances
 animations, and republishes
 only when something changed. Agent playtests can hold time with the Engine's
 `action-driven` time mode. Input is the
-`goldbox.command` intent with `goldbox.command.v1` payloads that the DOM
+`tales.command` intent with `tales.command.v1` payloads that the DOM
 claims (`{ "action": ..., fields }`: refresh, open, roll, skills, equip, spells, memorise, drop,
 begin, play, continue, combat-control, combat-action, combat-end-turn, combat-decide, save, load, quit, volume, skin, layout-config (the player's panel
 proportions) and ui-scale), plus digital intents mapped from keys: arrows and
@@ -373,8 +373,8 @@ with a positive value. Every rule decision is Core's. `GameSession` holds the sc
 module set, the party being rolled and the `CampaignRunner`. Opening a
 campaign takes a `seed` from the payload or, without one, picks one from the
 clock: roll *n* of character creation uses
-scope `goldbox.character.<n>` and the game starts from the same seed, so a
-session replays from it. Play commands are the same text commands `goldbox
+scope `tales.character.<n>` and the game starts from the same seed, so a
+session replays from it. Play commands are the same text commands `tales
 play` scripts use.
 
 The party screen exposes every available creation in `creations`, including
@@ -471,7 +471,7 @@ came from; the projection's `skin` is that pick, else the open campaign's
 `skin`, with its pictures as media objects from its own set.
 
 After each update that changed something, and on `Start` and `Restart`, the
-product shows the scene and publishes `rusty.goldbox.session`: the screen, status, notes,
+product shows the scene and publishes `rusty.tales.session`: the screen, status, notes,
 campaigns, the party, and in play the position, the player-view map, the
 waiting menu, the latest log lines, the event picture (a media object), the
 music playing, grouped inventory with its `usable` flag, and shop offers with
@@ -527,7 +527,7 @@ Only a completed rest restores the event's full `tracks`, prepares spells and
 chains to `next`. Rest without a policy retains immediate restoration.
 
 NPC definitions contain fixed `character` data. Create a character with the CLI,
-then `goldbox character npc <file> --module <path> --id <id> --out <npc.json>`
+then `tales character npc <file> --module <path> --id <id> --out <npc.json>`
 (also `--json`). `NpcFile` reuses `CharacterFile` to validate the template once
 at module loading, supplying module stamps from its declared dependencies.
 `join` and `dismiss` events reference the NPC definition; successful events

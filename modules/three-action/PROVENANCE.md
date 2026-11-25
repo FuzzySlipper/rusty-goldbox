@@ -21,8 +21,8 @@ Source: the ORC reference at https://pf2orc.d20pfsrd.com, used only for the
 rules these books release under the ORC License.
 
 If you use our Licensed Material in your own works, please credit us as
-follows: "Three-Action Fantasy" ruleset module of Rusty Goldbox, by the Rusty
-Goldbox contributors.
+follows: "Three-Action Fantasy" ruleset module of Rusty Tales, by the Rusty
+Tales contributors.
 
 ## Reserved Material
 

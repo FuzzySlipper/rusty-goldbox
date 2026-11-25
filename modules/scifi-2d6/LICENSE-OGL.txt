@@ -74,4 +74,4 @@ Traveller is © 2008 Mongoose Publishing. Traveller and related logos, character
 are trademarks of Far Future Enterprises unless otherwise noted. All Rights Reserved. Mongoose Publishing Ltd Authorized
 User.
 Cepheus Engine System Reference Document, Copyright © 2016 Samardan Press; Author Jason "Flynn" Kemp
-2D6 Science Fiction ruleset module (scifi-2d6), Copyright 2026, the Rusty Goldbox contributors.
+2D6 Science Fiction ruleset module (scifi-2d6), Copyright 2026, the Rusty Tales contributors.

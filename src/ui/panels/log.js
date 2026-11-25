@@ -23,7 +23,7 @@ export function createLog(send) {
   };
   tab.addEventListener('click', () => switchTo('log'));
   chatTab.addEventListener('click', () => switchTo('chat'));
-  const page = element('div', { class: 'gb-page', id: 'rusty-goldbox-log', 'aria-live': 'polite', 'data-rusty-ui-interactive': '' });
+  const page = element('div', { class: 'gb-page', id: 'rusty-tales-log', 'aria-live': 'polite', 'data-rusty-ui-interactive': '' });
   // The command line lives outside the re-rendered page so typing survives updates.
   const command = element('input', { 'aria-label': 'Play command', placeholder: 'type a command, for example: search north', autocomplete: 'off' });
   command.addEventListener('keydown', (event) => {
