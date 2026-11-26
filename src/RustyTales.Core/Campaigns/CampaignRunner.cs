@@ -225,6 +225,18 @@ public sealed partial class CampaignRunner
         return WithDice(random, dice => Execute(command, dice));
     }
 
+    /// <summary>Runs an authored event chain directly on its own random scope, for dev console testing.</summary>
+    public List<PlayFact> RunEvent(Definition evt, IRandomService random)
+    {
+        _state.Commands++;
+        return WithDice(random, dice =>
+        {
+            List<PlayFact> facts = [];
+            RunChain(evt, dice, facts);
+            return facts;
+        });
+    }
+
     private T WithDice<T>(IRandomService random, Func<DiceRoller, T> step)
     {
         using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(_state.Seed, $"tales.play.{_state.Commands}"));

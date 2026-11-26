@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Rusty.Engine;
+using Rusty.Engine.Debugging;
 using RustyTales.Core.Modules;
 using RustyTales.Game.Presentation;
 
@@ -10,7 +11,7 @@ namespace RustyTales.Game;
 /// Engine input and persistence, draws the first-person view, and publishes
 /// the session as a projection for the DOM panels.
 /// </summary>
-public sealed class RustyTalesProduct : IEngineProduct
+public sealed class RustyTalesProduct : IEngineProduct, IDebugCommandModuleSource
 {
     private const string UiStreamId = "rusty-tales";
     private const string UiContract = "rusty.tales.session";
@@ -20,6 +21,7 @@ public sealed class RustyTalesProduct : IEngineProduct
     private readonly SceneView _view;
     private readonly UiImages _images;
     private readonly GameAudio _audio;
+    private readonly TalesDebugModule _debug;
     private ulong _uiSequence;
 
     public RustyTalesProduct(ProductCreateContext context)
@@ -34,7 +36,14 @@ public sealed class RustyTalesProduct : IEngineProduct
         _view = new SceneView(_engine, library);
         _images = new UiImages(_engine, library);
         _audio = new GameAudio(_engine, library);
+        _debug = new TalesDebugModule(_session, _engine, Publish);
         _uiStream = _engine.Ui.OpenStream(new UiStreamRequest(UiStreamId, UiContract));
+    }
+
+    public void RegisterDebugCommands(IDebugCommandModuleRegistrar registrar)
+    {
+        ArgumentNullException.ThrowIfNull(registrar);
+        registrar.Register(_debug);
     }
 
     public void Start()

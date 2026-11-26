@@ -74,8 +74,8 @@ export function mountProductUi(root, context) {
   const status = createStatus(ui);
   const log = createLog(send);
   const portraits = createPortraits(send, ui);
-  const map = createMap();
   const controls = createControls(send, ui);
+  const map = createMap((targetId) => controls.pickTarget(targetId));
   const overlay = createOverlay(send, ui);
   // The view panel is left clear: the Engine draws the world inside it.
   const viewSurface = element('div', { class: 'gb-view-surface' });

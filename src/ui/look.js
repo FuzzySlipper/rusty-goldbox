@@ -23,8 +23,10 @@ export const BASE_LOOK = `
   --gb-good: #7fc46a;
   --gb-warn: #e6b450;
   --gb-bad: #e0604f;
-  --gb-foe: #c97ad6;
-  --gb-font: ui-monospace, "DejaVu Sans Mono", "Cascadia Mono", Consolas, monospace;
+  --gb-foe: #d58ce0;
+  --gb-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gb-prose-font: Georgia, "Iowan Old Style", "Liberation Serif", serif;
+  --gb-mono-font: ui-monospace, "DejaVu Sans Mono", "Cascadia Mono", Consolas, monospace;
   position: absolute; inset: 0; container-type: size; overflow: hidden;
   color: var(--gb-text); font-family: var(--gb-font);
 }
@@ -121,24 +123,27 @@ img.gb-picture { object-fit: contain; }
 .gb-view { grid-area: view; background: transparent; box-shadow: 0 0 0 100vmax var(--gb-inset); }
 .gb-view-surface { position: absolute; inset: 0; }
 
-/* The log: a page of text under the view */
+/* The log: a journal page under the view */
 .gb-log { grid-area: log; }
-.gb-log .gb-tab { flex: none; align-self: flex-start; margin: .25em .4em 0; padding: .1em .8em; border: 2px solid var(--gb-border); border-bottom: 0; background: var(--gb-page); color: var(--gb-page-text); }
-.gb-log .gb-page { flex: 1; min-height: 0; overflow: auto; background: var(--gb-page); color: var(--gb-page-text); border-top: 2px solid var(--gb-border); padding: .3em .7em; font-size: 1.1em; }
-.gb-log .gb-page p { margin: 0 0 .15em; white-space: pre-wrap; }
-.gb-log .gb-page p.gb-old { color: color-mix(in srgb, var(--gb-page-text) 55%, var(--gb-page)); }
-.gb-log .gb-page p.gb-note { color: var(--gb-page-accent); }
-.gb-log .gb-tabs { flex: none; display: flex; gap: .2em; }
-.gb-log .gb-tabs .gb-tab[aria-pressed="false"] { opacity: .7; }
-.gb-log .gb-page .gb-choice.gb-selected { font-weight: bold; }
+.gb-log .gb-tab { flex: none; align-self: flex-start; margin: .25em .4em 0; padding: .15em .85em; border: 2px solid var(--gb-border); border-bottom: 0; background: var(--gb-page); color: var(--gb-page-text); font-size: .85em; font-weight: 600; letter-spacing: .04em; }
+.gb-log .gb-cmd-toggle { font-family: var(--gb-mono-font); background: var(--gb-button); color: var(--gb-muted); border-color: var(--gb-border); padding: .15em .55em; }
+.gb-log .gb-cmd-toggle[aria-pressed="true"] { background: var(--gb-page); color: var(--gb-page-accent); }
+.gb-log .gb-tabs .gb-spacer { flex: 1; }
+.gb-log .gb-page { flex: 1; min-height: 0; overflow: auto; background: var(--gb-page); color: var(--gb-page-text); border-top: 2px solid var(--gb-border); padding: .45em .85em; font-family: var(--gb-prose-font); font-size: 1.08em; line-height: 1.42; }
+.gb-log .gb-page p { margin: 0 0 .35em; white-space: pre-wrap; }
+.gb-log .gb-page p.gb-old { color: color-mix(in srgb, var(--gb-page-text) 56%, var(--gb-page)); }
+.gb-log .gb-page p.gb-note { color: var(--gb-page-accent); font-family: var(--gb-font); font-size: .92em; font-weight: 600; }
+.gb-log .gb-tabs { flex: none; display: flex; gap: .2em; align-items: flex-end; }
+.gb-log .gb-tabs .gb-tab[aria-pressed="false"] { opacity: .72; }
+.gb-log .gb-page .gb-choice.gb-selected { font-weight: 700; border-color: var(--gb-page-accent); }
 .gb-owner { font-size: .75em; color: var(--gb-accent); }
-.gb-invitation { display: block; max-width: 100%; overflow-wrap: anywhere; user-select: all; text-align: left; font: .8em monospace; }
+.gb-invitation { display: block; max-width: 100%; overflow-wrap: anywhere; user-select: all; text-align: left; font: .8em var(--gb-mono-font); }
 .gb-owner.gb-away { color: var(--gb-muted); }
-.gb-log .gb-page .gb-choice { display: block; width: 100%; text-align: left; background: none; border: 0; box-shadow: none; padding: .05em 0; color: var(--gb-page-link); }
-.gb-log .gb-page .gb-choice:hover { text-decoration: underline; }
-.gb-log .gb-page .gb-choice b { color: var(--gb-page-accent); margin-inline-end: .5em; }
-.gb-log .gb-prompt { flex: none; display: flex; gap: .4em; align-items: center; padding: .15em .6em; border-top: 2px solid var(--gb-border); background: var(--gb-page); color: var(--gb-page-link); }
-.gb-log .gb-prompt input { flex: 1; min-width: 0; background: none; border: 0; color: var(--gb-page-text); padding: 0; }
+.gb-log .gb-page .gb-choice { display: flex; align-items: baseline; gap: .55em; width: 100%; text-align: left; font-family: var(--gb-font); font-size: .94em; background: color-mix(in srgb, var(--gb-page-text) 6%, var(--gb-page)); border: 1px solid color-mix(in srgb, var(--gb-page-text) 20%, transparent); border-radius: 3px; box-shadow: none; padding: .28em .55em; margin: .25em 0; color: var(--gb-page-link); }
+.gb-log .gb-page .gb-choice:hover { background: color-mix(in srgb, var(--gb-page-accent) 12%, var(--gb-page)); border-color: var(--gb-page-accent); }
+.gb-log .gb-page .gb-choice b { display: inline-grid; place-items: center; min-width: 1.45em; padding: 0 .25em; border-radius: 2px; background: var(--gb-page-accent); color: var(--gb-page); font-family: var(--gb-mono-font); font-size: .85em; }
+.gb-log .gb-prompt { flex: none; display: flex; gap: .45em; align-items: center; padding: .22em .7em; border-top: 2px solid var(--gb-border); background: var(--gb-inset); color: var(--gb-accent); font-family: var(--gb-mono-font); font-size: .9em; }
+.gb-log .gb-prompt input { flex: 1; min-width: 0; background: none; border: 0; color: var(--gb-text); padding: 0; font-family: var(--gb-mono-font); }
 
 /* Portraits. The roster viewport owns scrolling; its page controls keep a
    larger party reachable without shrinking cards into unreadable tiles. */
@@ -164,22 +169,34 @@ img.gb-picture { object-fit: contain; }
 /* Map, or foes in combat */
 .gb-map { flex: 1; min-height: 4em; }
 .gb-frame[data-screen="combat"][data-arrangement="standard"] .gb-map { min-height: 10em; }
-.gb-map pre { flex: 1; min-height: 0; margin: 0; padding: .3em; overflow: hidden; line-height: 1; font-size: .85em; display: grid; place-items: center; }
-.gb-foes { list-style: none; margin: 0; padding: .3em .5em; overflow: auto; display: grid; gap: .25em; align-content: start; }
-.gb-foes li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 .4em; align-items: center; }
+.gb-map-wrap { flex: 1; min-height: 0; padding: .45em; display: grid; place-items: center; overflow: hidden; }
+.gb-map-svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; display: block; }
+.gb-map-cell { fill: color-mix(in srgb, var(--gb-text) 7%, var(--gb-inset)); stroke: color-mix(in srgb, var(--gb-border) 22%, transparent); stroke-width: .75; }
+.gb-map-here { fill: color-mix(in srgb, var(--gb-accent) 22%, var(--gb-inset)); stroke: color-mix(in srgb, var(--gb-accent) 55%, transparent); }
+.gb-map-wall { stroke: color-mix(in srgb, var(--gb-text) 82%, var(--gb-border)); stroke-width: 3; stroke-linecap: round; }
+.gb-map-door { stroke: var(--gb-accent); stroke-width: 3.5; stroke-linecap: butt; }
+.gb-map-player { fill: var(--gb-accent); stroke: var(--gb-inset); stroke-width: 1; }
+.gb-foes { list-style: none; margin: 0; padding: .35em .45em; overflow: auto; display: grid; gap: .3em; align-content: start; }
 .gb-foes li.gb-down { opacity: .45; text-decoration: line-through; }
 .gb-foes li.gb-acting .gb-who { color: var(--gb-accent); }
-.gb-foes .gb-who { color: var(--gb-foe); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gb-foe-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .15em .45em; align-items: center; width: 100%; text-align: left; padding: .22em .35em; border-radius: 2px; border: 1px solid transparent; background: transparent; box-shadow: none; }
+.gb-foes button.gb-foe-targetable { background: color-mix(in srgb, var(--gb-button) 65%, transparent); border-color: color-mix(in srgb, var(--gb-border) 60%, transparent); }
+.gb-foes button.gb-foe-targetable:hover { border-color: var(--gb-accent); background: color-mix(in srgb, var(--gb-accent) 14%, var(--gb-button)); }
+.gb-foes .gb-who { color: var(--gb-foe); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.gb-foes .gb-num { font-family: var(--gb-mono-font); font-variant-numeric: tabular-nums; font-size: .88em; }
 .gb-foes .gb-bar { grid-column: 1 / -1; }
 
 /* Controls */
-.gb-controls { flex: 0 1 auto; min-height: 0; max-height: min(42cqh, 28em); flex-direction: row; gap: .4em; padding: .4em; align-items: start; font-size: calc(1em * var(--gb-control-scale)); overflow: hidden; }
-.gb-pad { display: grid; grid-template-columns: repeat(3, 2em); grid-auto-rows: 2em; gap: .15em; flex: none; }
+.gb-controls { flex: 0 1 auto; min-height: 0; max-height: min(42cqh, 28em); flex-direction: row; gap: .45em; padding: .45em; align-items: start; font-size: calc(1em * var(--gb-control-scale)); overflow: hidden; }
+.gb-pad { display: grid; grid-template-columns: repeat(3, 2.1em); grid-auto-rows: 2.1em; gap: .2em; flex: none; }
 .gb-pad button { padding: 0; }
-.gb-commands { flex: 1; display: flex; flex-direction: column; gap: .2em; min-width: 0; min-height: 0; overflow: auto; }
+.gb-commands { flex: 1; display: flex; flex-direction: column; gap: .25em; min-width: 0; min-height: 0; overflow: auto; }
 .gb-commands button { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gb-combat-summary { display: flex; flex-wrap: wrap; gap: .15em .35em; line-height: 1.25; }
-.gb-combat-label { color: var(--gb-muted); font-size: .8em; letter-spacing: .06em; text-transform: uppercase; margin-top: .15em; }
+.gb-combat-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2em .45em; line-height: 1.3; padding-bottom: .2em; border-bottom: 1px solid color-mix(in srgb, var(--gb-border) 45%, transparent); }
+.gb-combat-stat { font-family: var(--gb-mono-font); font-size: .88em; color: var(--gb-good); }
+.gb-combat-budget { font-family: var(--gb-mono-font); font-size: .82em; color: var(--gb-accent); padding: .05em .4em; border: 1px solid color-mix(in srgb, var(--gb-accent) 45%, transparent); border-radius: 2px; }
+.gb-combat-check { width: 100%; font-family: var(--gb-mono-font); font-size: .85em; color: var(--gb-text); }
+.gb-combat-label { color: var(--gb-muted); font-size: .74em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-top: .2em; }
 .gb-commands .gb-selected { border-color: var(--gb-accent); color: var(--gb-accent); }
 .gb-commands .gb-down { opacity: .45; text-decoration: line-through; }
 .gb-frame[data-arrangement="tall"] .gb-commands { flex-direction: row; flex-wrap: wrap; }

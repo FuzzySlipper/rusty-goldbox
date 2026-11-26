@@ -229,7 +229,7 @@ internal static partial class SessionProjection
             Screen.Title => $"{session.Campaigns.Count} campaign(s) available",
             Screen.Party => $"{session.Campaign!.Name}: making a party ({session.Party.Count})",
             Screen.Combat when session.Combat is CombatObservation { Phase: CombatPhase.Ended } ended => $"{session.Campaign!.Name}: {Outcome(ended)}",
-            Screen.Combat when session.Combat is CombatObservation live => $"{session.Campaign!.Name}: fighting{(live.ActiveActorId is string actor ? $" · {actor}" : "")}",
+            Screen.Combat when session.Combat is CombatObservation live => $"{session.Campaign!.Name}: fighting{(live.ActiveActorId is string actor ? $" — {live.Combatants.FirstOrDefault(member => member.Id == actor)?.Name ?? actor}'s turn" : "")}",
             _ => session.Runner!.State.Ended
                 ? $"{session.Campaign!.Name}: the adventure is over"
                 : $"{session.Campaign!.Name}: {session.Runner.State.Area.Name} [{session.Runner.State.X}, {session.Runner.State.Y}] facing {Facings.Name(session.Runner.State.Facing)}",

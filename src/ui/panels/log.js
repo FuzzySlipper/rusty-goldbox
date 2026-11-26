@@ -9,11 +9,19 @@ import { leading, votersFor } from '../table.js';
  */
 export function createLog(send) {
   let showing = 'log';
+  let promptOpen = false;
   let read = 0;
   let lastView = null;
   const tab = element('button', { type: 'button', class: 'gb-tab' });
   const chatTab = element('button', { type: 'button', class: 'gb-tab', hidden: '' });
-  const tabs = element('div', { class: 'gb-tabs' }, tab, chatTab);
+  const cmdToggle = element('button', {
+    type: 'button',
+    class: 'gb-tab gb-cmd-toggle',
+    title: 'Toggle command line (/)',
+    'aria-label': 'Toggle command line',
+    'aria-pressed': 'false',
+  }, '>_');
+  const tabs = element('div', { class: 'gb-tabs' }, tab, chatTab, element('span', { class: 'gb-spacer' }), cmdToggle);
   const switchTo = (which) => {
     showing = which;
     shown = '';
@@ -25,14 +33,41 @@ export function createLog(send) {
   chatTab.addEventListener('click', () => switchTo('chat'));
   const page = element('div', { class: 'gb-page', id: 'rusty-tales-log', 'aria-live': 'polite', 'data-rusty-ui-interactive': '' });
   // The command line lives outside the re-rendered page so typing survives updates.
-  const command = element('input', { 'aria-label': 'Play command', placeholder: 'type a command, for example: search north', autocomplete: 'off' });
+  // Tucked behind the `>_` toggle (or `/` key) by default so play feels like a game, not a terminal.
+  const command = element('input', { 'aria-label': 'Play command', placeholder: 'type a command (e.g. search north, status, use 1 ...)', autocomplete: 'off' });
+  const setPromptOpen = (open, focus = false) => {
+    promptOpen = open;
+    cmdToggle.setAttribute('aria-pressed', String(promptOpen));
+    prompt.hidden = !promptOpen || lastView?.screen === 'combat' || showing === 'chat';
+    if (focus && !prompt.hidden) {
+      command.focus();
+    }
+  };
+  cmdToggle.addEventListener('click', () => setPromptOpen(!promptOpen, !promptOpen));
   command.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && command.value.trim().length > 0) {
       send({ action: 'play', command: command.value.trim() });
       command.value = '';
+    } else if (event.key === 'Escape') {
+      setPromptOpen(false);
+      command.blur();
     }
   });
-  const prompt = element('label', { class: 'gb-prompt' }, element('span', {}, 'Party:'), command);
+  const onGlobalKey = (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+      return;
+    }
+    if (lastView?.screen === 'play' && showing === 'log') {
+      event.preventDefault();
+      setPromptOpen(true, true);
+    }
+  };
+  window.addEventListener('keydown', onGlobalKey);
+  const prompt = element('label', { class: 'gb-prompt', hidden: '' }, element('span', {}, '>_'), command);
   const say = element('input', { 'aria-label': 'Say to the table', placeholder: 'say something to everyone', autocomplete: 'off', maxlength: '1000' });
   say.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && say.value.trim().length > 0) {
@@ -63,7 +98,7 @@ export function createLog(send) {
       showing = 'log';
     }
 
-    tab.textContent = combat ? `Combat: ${view.fight?.encounter ?? ''}` : 'Log';
+    tab.textContent = combat ? `Battle: ${view.fight?.encounter ?? ''}` : 'Journal';
     tab.setAttribute('aria-pressed', String(showing === 'log'));
     chatTab.hidden = !chat;
     if (showing === 'chat') {
@@ -72,7 +107,8 @@ export function createLog(send) {
     const unread = chat ? Math.max(0, chat.length - read) : 0;
     chatTab.textContent = unread > 0 ? `Chat (${unread})` : 'Chat';
     chatTab.setAttribute('aria-pressed', String(showing === 'chat'));
-    prompt.hidden = combat || showing === 'chat';
+    cmdToggle.hidden = combat || showing === 'chat';
+    prompt.hidden = !promptOpen || combat || showing === 'chat';
     sayPrompt.hidden = showing !== 'chat';
 
     if (showing === 'chat') {
@@ -124,5 +160,12 @@ export function createLog(send) {
     following = true;
   };
 
-  return { node, render, dispose: () => resized.disconnect() };
+  return {
+    node,
+    render,
+    dispose: () => {
+      resized.disconnect();
+      window.removeEventListener('keydown', onGlobalKey);
+    },
+  };
 }

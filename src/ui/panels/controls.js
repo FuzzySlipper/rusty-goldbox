@@ -16,6 +16,7 @@ export function createControls(send, ui) {
   let selectedTargets = [];
   let selectedMoveKey = null;
   let selectedDecision = null;
+  let lastView = null;
 
   const text = (value, fallback = '') => value === undefined || value === null ? fallback : String(value);
   const cellText = (cell) => cell ? `(${cell.x},${cell.y})` : '';
@@ -74,15 +75,19 @@ export function createControls(send, ui) {
       && !(action?.moves?.length);
     selectedTargets = selectedTargets.filter((target) => targets.some((choice) => choice.id === target));
 
+    const heading = !actor
+      ? 'Waiting for combat'
+      : decision?.kind === 'interrupt'
+        ? `Reaction: ${actor.name}`
+        : decision?.kind === 'postroll'
+          ? `Decision: ${actor.name}`
+          : `${actor.name}'s turn`;
     const summary = element('div', { class: 'gb-combat-summary', 'aria-live': 'polite' },
-      element('strong', {}, actor ? `${decision ? 'Choose: ' : 'Turn: '}${actor.name}` : 'Waiting for combat'),
-      element('span', { class: 'gb-muted' }, actorId ? ` · ${actorId}` : ''),
-      ...(decision?.kind ? [element('span', { class: 'gb-muted' }, ` · ${decision.kind}`)] : []),
-      ...(turnActor && turnActor.id !== actorId ? [element('span', { class: 'gb-muted' }, ` · turn ${turnActor.name}`)] : []),
-      element('span', {}, actor ? ` · ${memberValue(actor)}` : ''),
-      ...(actor && budgetText(actor.budget) ? [element('span', { class: 'gb-muted' }, ` · ${budgetText(actor.budget)}`)] : []),
-      ...(actor ? [element('span', { class: 'gb-muted' }, ` · ${text(actor.controller, 'manual')}`)] : []),
-      ...(decision?.check ? [element('div', {}, checkText(decision.check))] : []));
+      element('strong', {}, heading),
+      ...(turnActor && turnActor.id !== actorId ? [element('span', { class: 'gb-muted' }, ` · during ${turnActor.name}'s turn`)] : []),
+      ...(actor && memberValue(actor) ? [element('span', { class: 'gb-combat-stat' }, memberValue(actor))] : []),
+      ...(actor && budgetText(actor.budget) ? [element('span', { class: 'gb-combat-budget' }, budgetText(actor.budget))] : []),
+      ...(decision?.check ? [element('div', { class: 'gb-combat-check' }, checkText(decision.check))] : []));
 
     const control = actor && actor.side === 0 && actor.controller
       ? button(actor.controller === 'manual' ? 'Let AI control' : 'Take control', () => send({
@@ -220,13 +225,70 @@ export function createControls(send, ui) {
     }
   };
 
+  const pickTarget = (targetId) => {
+    if (!lastView || lastView.screen !== 'combat') {
+      return;
+    }
+
+    const decision = lastView.fight?.decision;
+    const actions = decision?.actions ?? [];
+    if (!actions.length) {
+      return;
+    }
+
+    // Prefer the currently selected action if it can target this foe, else pick the first action that can.
+    let action = actions.find((choice) => choice.id === selectedAction && (choice.targets ?? []).some((t) => t.id === targetId));
+    if (!action) {
+      action = actions.find((choice) => (choice.targets ?? []).some((t) => t.id === targetId));
+      if (!action) {
+        return;
+      }
+      selectedAction = action.id;
+      selectedTargets = [];
+      selectedMoveKey = null;
+    }
+
+    const targetMode = action.targetMode ?? 'one';
+    const targetPhase = Number.isInteger(decision?.maximumTargets);
+    const maximumTargets = decision?.maximumTargets
+      ?? (targetMode === 'all' || targetMode === 'maximum' ? (action.targets ?? []).length
+        : targetMode === 'portions' && action.portionCount > 1 ? action.portionCount
+          : 1);
+    const commitsTargetCount = targetMode === 'maximum' && !targetPhase;
+    const requiresAllTargets = targetMode === 'all';
+    const fixedPortions = targetMode === 'portions' && action.portionCount > 1;
+    const autoSubmitSingle = maximumTargets <= 1
+      && !commitsTargetCount
+      && !requiresAllTargets
+      && !fixedPortions
+      && !(action.moves?.length);
+
+    if (fixedPortions && selectedTargets.length < maximumTargets) {
+      selectedTargets = [...selectedTargets, targetId];
+    } else if (maximumTargets <= 1) {
+      selectedTargets = [targetId];
+    } else if (!selectedTargets.includes(targetId) && selectedTargets.length < maximumTargets) {
+      selectedTargets = [...selectedTargets, targetId];
+    }
+
+    if (autoSubmitSingle) {
+      submitAction(decision.actorId ?? lastView.fight?.activeActorId, action, [targetId]);
+      return;
+    }
+
+    render(lastView);
+  };
+
   const render = (view) => {
+    lastView = view;
     const combat = view.screen === 'combat';
     const busy = Boolean(view.shop || view.temple || view.training);
     // A waiting menu, shop, temple or trainer takes a choice first; only Look still works.
     const choosing = (view.menu ?? []).length > 0;
     // At a hosted table only the leader moves the party; anyone may look.
     const follower = !leading(view);
+    // Hide the movement pad during combat so actions and targets get the full panel width.
+    pad.hidden = combat;
     for (const control of pad.children) {
       const looking = control.getAttribute('aria-label') === 'Look';
       control.disabled = combat || Boolean(view.ended) || ((busy || choosing || follower) && !looking);
@@ -258,5 +320,5 @@ export function createControls(send, ui) {
       ...(busy ? [button('Leave', play('leave'))] : []));
   };
 
-  return { node, render };
+  return { node, render, pickTarget };
 }

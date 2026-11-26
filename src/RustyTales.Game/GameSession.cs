@@ -1081,9 +1081,94 @@ internal sealed class GameSession(ModuleLibrary library)
         }
     }
 
+    /// <summary>Moves the party directly to an area, cell and facing without running corridor triggers (dev console).</summary>
+    public bool Teleport(Definition area, int x, int y, Facing facing)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Play || Runner is null)
+        {
+            Notes.Add("Start a campaign before teleporting.");
+            return false;
+        }
+
+        AreaMap map = Runner.PlayerMap(area);
+        if (!map.Contains(x, y))
+        {
+            Notes.Add($"[{x}, {y}] is outside {area.Name} ({map.Width}×{map.Height}).");
+            return false;
+        }
+
+        CampaignState state = Runner.State;
+        state.Area = area;
+        state.X = x;
+        state.Y = y;
+        state.Facing = facing;
+        state.Picture = null;
+        state.ViewEvent = null;
+        state.ViewedCharacter = null;
+        state.PendingMenu = null;
+        state.PendingShop = null;
+        state.PendingTemple = null;
+        state.PendingTraining = null;
+        return true;
+    }
+
+    /// <summary>Runs an authored event chain directly in the current campaign (dev console).</summary>
+    public bool TriggerEvent(IEngineContext engine, Definition evt)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Play || Runner is null)
+        {
+            Notes.Add("Start a campaign before triggering an event.");
+            return false;
+        }
+
+        try
+        {
+            Record(null, Runner.RunEvent(evt, engine.Random));
+            SyncCombat(engine);
+            return true;
+        }
+        catch (RuleFailure failure)
+        {
+            Notes.Add(Describe(failure.Diagnostic));
+            return false;
+        }
+    }
+
+    /// <summary>Restores every party member's tracks to maximum and clears active conditions (dev console).</summary>
+    public bool HealParty()
+    {
+        Notes.Clear();
+        if (Runner is null || Set?.Rules is not RuleSet rules)
+        {
+            Notes.Add("Start a campaign before healing the party.");
+            return false;
+        }
+
+        Evaluator evaluator = new(rules, null);
+        foreach (Character member in Runner.State.Party)
+        {
+            Creature view = member.ToCreature();
+            foreach (Definition track in rules.OfType(DefinitionTypes.Track))
+            {
+                if (evaluator.KnownTrackMax(view, track) is decimal max)
+                {
+                    member.Tracks[track.Id] = new TrackValue { Current = max, Max = view.Track(track.Id).Max };
+                }
+            }
+
+            member.Conditions.Clear();
+            member.ConditionExpiryDays.Clear();
+        }
+
+        return true;
+    }
+
     private void Record(string? command, IReadOnlyList<PlayFact> facts)
     {
-        if (command is not null)
+        bool quiet = command is not null && IsQuietCommand(command);
+        if (command is not null && !quiet)
         {
             Log.Add($"> {command}");
         }
@@ -1105,13 +1190,31 @@ internal sealed class GameSession(ModuleLibrary library)
                 Screen = Screen.Combat;
             }
 
-            Log.Add(fact.Describe());
+            // Media tags ([music ...], [sound ...], [picture ...]) and routine step/turn
+            // readouts are shown by audio, scene, compass and minimap rather than prose log.
+            if (fact is MediaFact || (quiet && fact is MovedFact or TurnedFact))
+            {
+                continue;
+            }
+
+            // Menu options are rendered as clickable choice buttons in the UI, so log only the prompt text.
+            Log.Add(fact is MenuFact menu ? menu.Text : fact.Describe());
         }
 
         if (Log.Count > LogLines)
         {
             Log.RemoveRange(0, Log.Count - LogLines);
         }
+    }
+
+    private static bool IsQuietCommand(string command)
+    {
+        string trimmed = command.Trim();
+        return trimmed.Equals("forward", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("back", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("left", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("right", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("around", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Describe(ModuleDiagnostic diagnostic)

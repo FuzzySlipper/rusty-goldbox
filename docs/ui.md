@@ -26,9 +26,9 @@ changes shape:
 | Class | Panel | Behaviour |
 | --- | --- | --- |
 | hero | view (`.gb-view`) | Shares the main column with the log by the log share |
-| flow | log (`panels/log.js`) | Under the view: the play or fight log as a page of text, the last action's notes, the waiting menu as numbered choices, and the `Party:` command line; the newest line stays in sight as the panel resizes unless the player scrolled back |
+| flow | log (`panels/log.js`) | Under the view: the story journal or battle log, the last action's notes, the waiting menu as clickable numbered choices, and a collapsible `>_` command bar (`/` shortcut); the newest line stays in sight as the panel resizes unless the player scrolled back |
 | count-driven | portraits (`panels/portraits.js`) | Cards sized by the visible page and portrait scale; previous/next controls reach every member, and the panel scrolls independently; in play a card opens that member's sheet, in combat it shows the party's side and who acts |
-| fill | map (`panels/map.js`) | The area map in play, its text sized to fill the panel; the other sides of the fight in combat |
+| fill | map (`panels/map.js`) | A vector SVG minimap of the current area (walls, doors and directional player marker) in play; the clickable enemy list in combat (clicking a legal target selects or attacks it) |
 | strip | status (`panels/status.js`), controls (`panels/controls.js`) | Fixed thickness: where the party is and the ≡ Menu; the movement pad and the commands that fit what the party is doing |
 | overlay | `panels/overlays.js` | Covers the view: the game menu (save, quit, sound and look) or a member's sheet when the player opens one, else the shop, temple or trainer the party is at |
 

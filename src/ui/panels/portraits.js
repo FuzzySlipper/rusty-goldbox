@@ -38,6 +38,9 @@ export function createPortraits(send, ui) {
   const card = (name, face, current, max, flags, onClick, index, id = null) => {
     const amount = flags.track && current !== undefined && current !== null ? `${flags.track} ${current}${max === null || max === undefined ? '' : `/${max}`}` : '';
     const label = [name, amount, flags.ready ? 'level ready' : ''].filter(Boolean).join(', ');
+    const controllerBadge = flags.controller === 'manual'
+      ? 'Manual'
+      : flags.controller === 'automatic' ? 'Auto' : '';
     const controllerText = flags.controller === 'manual'
       ? 'Manual · Let AI control'
       : flags.controller === 'automatic' ? 'Auto · Take control' : '';
@@ -55,7 +58,7 @@ export function createPortraits(send, ui) {
       element('span', { class: 'gb-face' }, ...(face.length ? face : [name[0] ?? '?'])),
       element('span', { class: 'gb-name' }, name, ...(flags.ready ? [element('span', { class: 'gb-flag' }, ' ▲')] : [])),
       ...(flags.mark ?? []),
-      ...(controllerText ? [element('span', { class: 'gb-amount' }, controllerText)] : []),
+      ...(controllerBadge ? [element('span', { class: 'gb-amount' }, controllerBadge)] : []),
       ...(flags.showAmount && amount ? [element('span', { class: 'gb-amount' }, `${current}${max === null || max === undefined ? '' : `/${max}`}`)] : []),
       bar(current, max));
     if (onClick) {

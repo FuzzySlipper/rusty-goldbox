@@ -27,6 +27,8 @@ internal sealed class SceneView : IDisposable
     private const ulong PropObjects = 10_000;
     private const double EyeHeight = 0.5;
     private const double FieldOfView = 70;
+    // Smooth first-person step and turn transitions over 5 ticks (~165ms at 30 Hz).
+    private const int CameraTweenSteps = 5;
 
     /// <summary>The UI anchor the camera follows: the DOM's view panel.</summary>
     public const string ViewAnchor = "hero";
@@ -43,6 +45,13 @@ internal sealed class SceneView : IDisposable
     private ulong? _viewRevision;
     private bool _showingArea;
     private string? _areaKey;
+    private string? _cameraAreaId;
+    private Vector3 _cameraFrom;
+    private Vector3 _cameraTo;
+    private double _yawFrom;
+    private double _yawTo;
+    private int _cameraTweenStep;
+    private bool _hasCameraPose;
     private MeshResource? _mesh;
     private Appearance? _area;
     private Definition? _shownPicture;
@@ -93,8 +102,7 @@ internal sealed class SceneView : IDisposable
                 _showingArea = true;
                 ShowArea(rules, session.Set, runner, state.Area, facts);
                 ShowProps(runner, state.Area, facts);
-                Vector3 eye = new(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f);
-                _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, (int)state.Facing * 90))));
+                SetFirstPersonCamera(state.Area.QualifiedId, new Vector3(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f), (int)state.Facing * 90);
                 // An event's picture covers the view until the party moves; otherwise the cell's backdrop shows.
                 Definition? shown = state.Picture ?? Backdrop(rules, state);
                 if (shown is not null && PictureOf(rules, session.Set, shown) is PictureArt picture)
@@ -118,6 +126,8 @@ internal sealed class SceneView : IDisposable
         if (!_showingArea)
         {
             StopPicture();
+            _hasCameraPose = false;
+            _cameraAreaId = null;
         }
 
         _published = facts.ToArray();
@@ -128,8 +138,8 @@ internal sealed class SceneView : IDisposable
     }
 
     /// <summary>
-    /// Fits the combat camera and advances animations; call in every update. The renderer shows a
-    /// playback's frame as of the latest snapshot, so when any frame changes
+    /// Fits the combat camera, steps first-person camera transitions and advances animations; call in every update.
+    /// The renderer shows a playback's frame as of the latest snapshot, so when any frame changes
     /// the same snapshot is published again.
     /// </summary>
     public void Tick()
@@ -143,6 +153,7 @@ internal sealed class SceneView : IDisposable
 
         if (_showingArea)
         {
+            StepFirstPersonCamera();
             if (_picturePlayback is SpritePlayback picture)
             {
                 changed |= _frames.Advance(picture);
@@ -161,6 +172,81 @@ internal sealed class SceneView : IDisposable
         {
             _engine.Graphics.PublishSnapshot(_published);
         }
+    }
+
+    /// <summary>Smoothly eases adjacent first-person steps and turns; snaps on area changes or teleports.</summary>
+    private void SetFirstPersonCamera(string areaId, Vector3 targetEye, double targetYaw)
+    {
+        if (!_hasCameraPose || _cameraAreaId != areaId || Vector3.Distance(CurrentCameraEye(), targetEye) > 1.5f)
+        {
+            _cameraAreaId = areaId;
+            _cameraFrom = targetEye;
+            _cameraTo = targetEye;
+            _yawFrom = targetYaw;
+            _yawTo = targetYaw;
+            _cameraTweenStep = CameraTweenSteps;
+            _hasCameraPose = true;
+            _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(targetEye, 0, targetYaw))));
+            return;
+        }
+
+        Vector3 currentEye = CurrentCameraEye();
+        double currentYaw = CurrentCameraYaw();
+        if (Vector3.DistanceSquared(currentEye, targetEye) < 1e-6f && Math.Abs(ShortestAngleDelta(currentYaw, targetYaw)) < 1e-4)
+        {
+            return;
+        }
+
+        _cameraFrom = currentEye;
+        _cameraTo = targetEye;
+        _yawFrom = currentYaw;
+        _yawTo = currentYaw + ShortestAngleDelta(currentYaw, targetYaw);
+        _cameraTweenStep = 0;
+    }
+
+    private void StepFirstPersonCamera()
+    {
+        if (!_hasCameraPose || _cameraTweenStep >= CameraTweenSteps)
+        {
+            return;
+        }
+
+        _cameraTweenStep++;
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(CurrentCameraEye(), 0, CurrentCameraYaw()))));
+    }
+
+    private Vector3 CurrentCameraEye()
+    {
+        float eased = EaseOutCubic((float)_cameraTweenStep / CameraTweenSteps);
+        return Vector3.Lerp(_cameraFrom, _cameraTo, eased);
+    }
+
+    private double CurrentCameraYaw()
+    {
+        double eased = EaseOutCubic((float)_cameraTweenStep / CameraTweenSteps);
+        return _yawFrom + ((_yawTo - _yawFrom) * eased);
+    }
+
+    private static float EaseOutCubic(float t)
+    {
+        float clamped = Math.Clamp(t, 0f, 1f);
+        float inv = 1f - clamped;
+        return 1f - (inv * inv * inv);
+    }
+
+    private static double ShortestAngleDelta(double fromDegrees, double toDegrees)
+    {
+        double delta = (toDegrees - fromDegrees) % 360.0;
+        if (delta > 180.0)
+        {
+            delta -= 360.0;
+        }
+        else if (delta <= -180.0)
+        {
+            delta += 360.0;
+        }
+
+        return delta;
     }
 
     /// <summary>Fit to the Engine's current view rectangle, including layout-only changes.</summary>
