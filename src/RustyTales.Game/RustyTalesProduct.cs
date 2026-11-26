@@ -22,7 +22,6 @@ public sealed class RustyTalesProduct : IEngineProduct, IDebugCommandModuleSourc
     private readonly UiImages _images;
     private readonly GameAudio _audio;
     private readonly TalesDebugModule _debug;
-    private ulong _uiSequence;
 
     public RustyTalesProduct(ProductCreateContext context)
     {
@@ -137,6 +136,6 @@ public sealed class RustyTalesProduct : IEngineProduct, IDebugCommandModuleSourc
         JsonObject projection = SessionProjection.Build(_session, (set, asset) => _images.Url(set, asset));
         projection["hosting"] = _session.Hosting.Readout(_engine);
         UiValue value = SessionProjection.ToUiValue(projection);
-        _engine.Ui.PublishProjection(new UiProjection(_uiStream, ++_uiSequence, value));
+        _engine.Ui.PublishProjection(new UiProjection(_uiStream, value));
     }
 }
