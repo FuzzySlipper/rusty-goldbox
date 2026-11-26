@@ -736,10 +736,7 @@ public static class DefinitionReader
 
         private string? SourceModuleFor(string path)
         {
-            if (fieldOrigins is not null
-                && Definition.TopLevelField(path) is string top
-                && fieldOrigins.TryGetValue(top, out FieldOrigin? origin)
-                && origin.Module != module)
+            if (Definition.FindOrigin(fieldOrigins, path) is FieldOrigin origin && origin.Module != module)
             {
                 return origin.Module;
             }
@@ -749,10 +746,7 @@ public static class DefinitionReader
 
         private void Error(string rule, string path, string message)
         {
-            if (fieldOrigins is not null
-                && Definition.TopLevelField(path) is string top
-                && fieldOrigins.TryGetValue(top, out FieldOrigin? origin)
-                && origin.AttributeErrorsToOrigin)
+            if (Definition.FindOrigin(fieldOrigins, path) is FieldOrigin origin && origin.AttributeErrorsToOrigin)
             {
                 diagnostics.Add(new ModuleDiagnostic(rule, message, origin.Module, origin.File, origin.FormatPath(path)));
                 return;

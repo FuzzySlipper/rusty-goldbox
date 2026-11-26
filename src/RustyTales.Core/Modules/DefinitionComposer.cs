@@ -98,7 +98,14 @@ internal static class DefinitionComposer
 
             if (definition is not null)
             {
-                definitions.Add(definition);
+                if (definition.Type == DefinitionTypes.Scene)
+                {
+                    definitions.AddRange(SceneLowerer.Lower(definition, diagnostics));
+                }
+                else
+                {
+                    definitions.Add(definition);
+                }
             }
         }
 

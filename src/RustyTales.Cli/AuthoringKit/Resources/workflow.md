@@ -14,7 +14,8 @@ workflow rather than an orchestration service.
    `tales workspace new <dir> --kit <tactical-dungeon|first-person-crawler|classic-jrpg>`
    and inspect the active module vocabulary with `tales schema --module <path> --json`
    before pulling individual `tales schema <topic> --json` references. Prefer
-   grouped JSON array files, `"extends"` for monster/item/event variants, and
+   grouped JSON array files, `"type": "scene"` for multi-step NPC conversations
+   and town hubs, `"extends"` for monster/item/event variants, and
    `"type": "patch"` for ruleset overrides. Keep editable canon, prompts,
    scripts, source art, accepted art, and reports separate from generated
    staging and exports.

@@ -155,6 +155,14 @@ class needs no patch to the ruleset's character creation.
   setting them to `null`. Inherited and patched fields keep their authoring
   module for unqualified references and table lookups, and patch errors point
   back to the patch file and `$.set.<field>`.
+- Multi-step NPC conversations and town hubs may be written as compact
+  `"type": "scene"` definitions (`start`, `nodes`, optional `speaker` and
+  `picture`), with inline `branch`, `say`, `set`/`give`/`take`/`open`/`xp`/`treasure`,
+  `choices` (with inline choice responses/effects), `check`, `combat`, `teleport`,
+  and external `event` handoffs. Scenes lower deterministically into standard
+  `event` definitions under their own ID during loading, statically checking
+  reachability, unguarded menus, and non-pausing loops while mapping every
+  diagnostic back to the exact scene JSON path.
 - Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
   provides the same IDs. `tales module validate` lists any that are missing.

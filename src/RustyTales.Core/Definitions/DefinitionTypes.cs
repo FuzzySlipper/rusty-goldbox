@@ -11,7 +11,7 @@ public static partial class DefinitionTypes
         [
             Attribute, Track, Currency, Derived, Table, Race, Class, Resting, Advancement, Npc, CombatBehavior,
             Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat,
-            CharacterCreation, Variable, Asset, Area, Event, Campaign, Figure, Skin, Lifepath,
+            CharacterCreation, Variable, Asset, Area, Event, Scene, Campaign, Figure, Skin, Lifepath,
         ];
         Patch = new DefinitionType(
             "patch",

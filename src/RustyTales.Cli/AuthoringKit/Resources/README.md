@@ -20,8 +20,10 @@ Start new campaigns from a genre starter kit (`tactical-dungeon`,
 to get a scoped ruleset, matching combat presentation (`tactical`, `first_person`,
 or `side_view`), starter art, a validated example campaign, and a smoke script.
 Use `tales schema --module <path> --json` to inspect only the active ruleset's
-vocabulary, group definitions into JSON arrays per file, use `"extends"` for
-variants, and use `"type": "patch"` to override required ruleset definitions.
+vocabulary, group definitions into JSON arrays per file, use `"type": "scene"`
+for compact multi-step NPC dialogues and quest hubs (which lower deterministically
+into validated events with reachability checks), use `"extends"` for variants,
+and use `"type": "patch"` to override required ruleset definitions.
 
 The kit is ready for use as a files-first authoring packet. It preserves
 observed authoring lessons as generic guidance and makes no model, strategy,

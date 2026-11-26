@@ -8,16 +8,22 @@ public sealed record ExpressionSite(string JsonPath, string Text, ExpressionKind
 /// <summary>A reference found in a definition: a <see cref="ReferenceKind"/> or a <see cref="StatKind"/>.</summary>
 public sealed record ReferenceSite(string JsonPath, string Text, FieldKind Kind, string? SourceModule = null);
 
-/// <summary>Where a top-level field of a composed definition came from (its authoring module and, for patches, diagnostic source).</summary>
+/// <summary>Where a field of a composed or lowered definition came from (its authoring module and diagnostic source).</summary>
 public sealed record FieldOrigin(
     string Module,
     string File,
     string RootPath,
     string? FieldPrefix = null,
-    bool AttributeErrorsToOrigin = false)
+    bool AttributeErrorsToOrigin = false,
+    string? ExactPath = null)
 {
     public string FormatPath(string localPath)
     {
+        if (ExactPath is not null)
+        {
+            return Definition.CombinePath(RootPath, ExactPath);
+        }
+
         string withPrefix = FieldPrefix is null
             ? localPath
             : localPath == "$"
@@ -75,15 +81,32 @@ public sealed class Definition(
 
     public (string Module, string File, string JsonPath) DiagnosticLocation(string localPath)
     {
-        if (FieldOrigins is not null
-            && TopLevelField(localPath) is string field
-            && FieldOrigins.TryGetValue(field, out FieldOrigin? origin)
-            && origin.AttributeErrorsToOrigin)
+        if (FindOrigin(FieldOrigins, localPath) is FieldOrigin origin && origin.AttributeErrorsToOrigin)
         {
             return (origin.Module, origin.File, origin.FormatPath(localPath));
         }
 
         return (Module, File, DiagnosticPath(localPath));
+    }
+
+    internal static FieldOrigin? FindOrigin(IReadOnlyDictionary<string, FieldOrigin>? origins, string localPath)
+    {
+        if (origins is null)
+        {
+            return null;
+        }
+
+        if (origins.TryGetValue(localPath, out FieldOrigin? exact))
+        {
+            return exact;
+        }
+
+        if (TopLevelField(localPath) is string field && origins.TryGetValue(field, out FieldOrigin? top))
+        {
+            return top;
+        }
+
+        return origins.TryGetValue("$", out FieldOrigin? root) ? root : null;
     }
 
     internal static string? TopLevelField(string localPath)

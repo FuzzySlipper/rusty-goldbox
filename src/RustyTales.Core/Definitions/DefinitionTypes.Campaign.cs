@@ -162,6 +162,127 @@ public static partial class DefinitionTypes
         [new("kind", new EnumKind(EventTypes.All.Select(kind => kind.Name).ToList()), true, "What the event does.")],
         EventTypes.Text.Example);
 
+    private static readonly ExpressionKind SceneGuard = new(ExprType.Boolean, Roots.Campaign | Roots.Area);
+    private static readonly MapKind SceneSetMap = new(new ReferenceKind("variable"), new ExpressionKind(null, Roots.Campaign | Roots.Area));
+    private static readonly ListKind SceneGiveList = new(new ObjectKind(
+    [
+        new("item", new ReferenceKind("item"), true, "The item to give."),
+        new("count", new IntegerKind(), false, "How many copies, a positive whole number; defaults to 1."),
+    ]));
+
+    private static readonly ObjectKind SceneBranch = new(
+    [
+        new("when", SceneGuard, true, "Condition checked before the node runs."),
+        new("goto", new TextKind(), false, "Local node ID in this scene to jump to when the condition holds."),
+        new("event", new ReferenceKind("event"), false, "External event ID to run when the condition holds (alternative to goto)."),
+    ]);
+
+    private static readonly ObjectKind SceneChoice = new(
+    [
+        new("label", new TextKind(), true, "The option text shown to the player."),
+        new("when", SceneGuard, false, "Offered only when this condition holds."),
+        new("say", new TextKind(), false, "Optional spoken or narrated response before moving on."),
+        new("speaker", new TextKind(), false, "Optional speaker override for this choice's say line (\"\" for narration)."),
+        new("set", SceneSetMap, false, "Campaign or area variables to set when chosen."),
+        new("give", SceneGiveList, false, "Items to give the party when chosen."),
+        new("open", new TextKind(), false, "Door ID in the current area to unlock and open when chosen."),
+        new("goto", new TextKind(), false, "Local node ID in this scene to continue to."),
+        new("event", new ReferenceKind("event"), false, "External event (such as a shop, rest, combat, or another scene) to hand off to."),
+        new("end", new TextKind(), false, "Ends the adventure with this closing text."),
+    ]);
+
+    private static readonly ObjectKind SceneNode = new(
+    [
+        new("branch", new ListKind(SceneBranch), false, "Conditional redirects checked first, in order; if none match, the rest of the node runs."),
+        new("say", new TextKind(), false, "Text shown to the party; prefixed with speaker when one is set."),
+        new("speaker", new TextKind(), false, "Overrides the scene's default speaker for this node (use \"\" for narration)."),
+        new("picture", new ReferenceKind("asset", "picture"), false, "Picture shown when this node runs."),
+        new("sound", new ReferenceKind("asset", "sound"), false, "One-shot sound played when this node runs."),
+        new("music", new ReferenceKind("asset", "music"), false, "Looping music started when this node runs."),
+        new("set", SceneSetMap, false, "Campaign or area variables to set, in property order."),
+        new("give", SceneGiveList, false, "Items to give the party, in order."),
+        new("take", new ObjectKind(
+        [
+            new("item", new ReferenceKind("item"), true, "The item to take."),
+            new("count", new IntegerKind(), false, "How many copies; defaults to 1."),
+            new("on_refused", new TextKind(), false, "Local node ID when the party lacks enough copies."),
+            new("on_refused_event", new ReferenceKind("event"), false, "External event ID when the party lacks enough copies."),
+        ]), false, "Takes copies of an item from the party before continuing."),
+        new("open", new TextKind(), false, "Door ID in the current area to unlock and open."),
+        new("xp", new ObjectKind(
+        [
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign | Roots.Area), true, "Experience awarded."),
+            new("each", new BooleanKind(), false, "If true, every character gets the full amount."),
+            new("text", new TextKind(), false, "Optional text shown with the award."),
+        ]), false, "Awards experience to the party."),
+        new("treasure", new ObjectKind(
+        [
+            new("currency", new ReferenceKind("currency"), false, "Currency found (required with amount)."),
+            new("amount", new ExpressionKind(ExprType.Number, Roots.Campaign | Roots.Area), false, "Currency amount expression."),
+            new("items", new ListKind(new ReferenceKind("item")), false, "Items found."),
+        ]), false, "Awards currency and/or items."),
+        new("prompt", new TextKind(), false, "Question shown above choices. Required with choices when effects run between say and choices, or when say is omitted."),
+        new("choices", new ListKind(SceneChoice), false, "Player dialogue or action options; at least one choice must omit \"when\"."),
+        new("check", new ObjectKind(
+        [
+            new("check", new ReferenceKind("check"), true, "Ruleset check to roll."),
+            new("member", new IntegerKind(), false, "1-based party member who rolls; defaults to 1."),
+            new("modifier", new ExpressionKind(ExprType.Number, Roots.Self | Roots.Campaign | Roots.Area), false, "Optional extra modifier."),
+            new("on_success", new TextKind(), false, "Local node ID on success."),
+            new("on_success_event", new ReferenceKind("event"), false, "External event ID on success."),
+            new("on_failure", new TextKind(), false, "Local node ID on failure."),
+            new("on_failure_event", new ReferenceKind("event"), false, "External event ID on failure."),
+        ]), false, "Skill or attribute check branching to local nodes or external events."),
+        new("combat", new ObjectKind(
+        [
+            new("encounter", new ReferenceKind("encounter"), true, "Encounter to fight."),
+            new("combat", new ReferenceKind("combat"), false, "Combat definition (when the module set has more than one)."),
+            new("on_win", new TextKind(), false, "Local node ID after a win."),
+            new("on_win_event", new ReferenceKind("event"), false, "External event ID after a win."),
+            new("on_lose", new TextKind(), false, "Local node ID after a loss."),
+            new("on_lose_event", new ReferenceKind("event"), false, "External event ID after a loss."),
+            new("on_flee", new TextKind(), false, "Local node ID after fleeing."),
+            new("on_flee_event", new ReferenceKind("event"), false, "External event ID after fleeing."),
+        ]), false, "Combat encounter branching to local nodes or external events."),
+        new("teleport", new ObjectKind(
+        [
+            new("area", new ReferenceKind("area"), true, "Destination area."),
+            new("entry", new TextKind(), true, "Named entry point in that area."),
+            new("goto", new TextKind(), false, "Local node ID to continue to after teleporting."),
+            new("event", new ReferenceKind("event"), false, "External event ID to continue to after teleporting."),
+        ]), false, "Moves the party to an area entry point."),
+        new("goto", new TextKind(), false, "Local node ID in this scene to continue to."),
+        new("event", new ReferenceKind("event"), false, "External event ID (such as a shop, rest, temple, or another scene) to hand off to."),
+        new("end", new TextKind(), false, "Ends the adventure with this closing text."),
+    ]);
+
+    public static DefinitionType Scene { get; } = new(
+        "scene",
+        "A compact, self-contained multi-step scene or NPC dialogue graph. Lowers deterministically into validated campaign events under its own ID so areas, menus, and other scenes reference it like any event, while statically checking node reachability, unguarded menus, and exact scene JSON paths.",
+        [
+            new("speaker", new TextKind(), false, "Optional default speaker name prefixed to \"say\" lines in this scene."),
+            new("picture", new ReferenceKind("asset", "picture"), false, "Optional default picture shown when the scene starts."),
+            new("start", new TextKind(), true, "ID of the entry node in \"nodes\"."),
+            new("nodes", new MapKind(new TextKind(), SceneNode), true, "Named scene nodes (valid local IDs). Every node must be reachable from start."),
+        ],
+        """
+        {
+          "type": "scene",
+          "id": "innkeeper",
+          "speaker": "Bram",
+          "start": "greet",
+          "nodes": {
+            "greet": {
+              "say": "Welcome to the Hearth. What can I do for you?",
+              "choices": [
+                { "label": "Ask for rumors", "say": "Strange lights were seen by the old tower.", "goto": "greet" },
+                { "label": "Leave", "say": "Safe travels." }
+              ]
+            }
+          }
+        }
+        """);
+
     /// <summary>The theme colours a skin may set.</summary>
     public static IReadOnlyList<string> SkinColors { get; } =
         ["background", "text", "muted", "accent", "border", "inset", "button", "button_text", "page", "page_text", "page_accent", "page_link"];
