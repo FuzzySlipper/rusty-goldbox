@@ -48,6 +48,86 @@ public sealed class FirstPersonTests
         AreaGeometry geometry = AreaMesh.Build(map, new Dictionary<string, UvRect>(Frames) { ["floor"] = new(0.5f, 0, 0.75f, 1), ["ceiling"] = new(0.75f, 0, 1, 1) });
 
         Assert.Equal(AreaMesh.TexturedSlot, Assert.Single(geometry.Groups).Slot);
+        AssertWoundTowardNormals(geometry);
+    }
+
+    [Fact]
+    public void StandaloneEdgeWallHasThicknessAndSolidEndCapsFromEveryAngle()
+    {
+        // A 2x3 room with one isolated interior vertical wall between (0, 1) and (1, 1).
+        AreaMap map = AreaMap.Parse(
+        [
+            "+--+--+",
+            "|     |",
+            "+  +  +",
+            "|  |  |",
+            "+  +  +",
+            "|     |",
+            "+--+--+",
+        ], [])!;
+
+        AreaGeometry geometry = AreaMesh.Build(map, Frames);
+        AssertWoundTowardNormals(geometry);
+
+        float h = AreaMesh.WallHalfThickness;
+        List<(Vector3 Normal, Vector3 Centre, float U)> interior = Quads(geometry)
+            .Where(quad => quad.Normal.Y == 0
+                && quad.Centre.X > h + 0.01f && quad.Centre.X < 2 - h - 0.01f
+                && quad.Centre.Z > h + 0.01f && quad.Centre.Z < 3 - h - 0.01f)
+            .ToList();
+
+        // Main west/east slab faces (2) plus 4 half-posts on north end and 4 half-posts on south end = 10 interior quads.
+        Assert.Equal(10, interior.Count);
+
+        // The two main side faces sit 2*h apart on opposite sides of x = 1.
+        Assert.Contains(interior, q => q.Normal == -Vector3.UnitX && MathF.Abs(q.Centre.X - (1 - h)) < 1e-4f && MathF.Abs(q.Centre.Z - 1.5f) < 1e-4f);
+        Assert.Contains(interior, q => q.Normal == Vector3.UnitX && MathF.Abs(q.Centre.X - (1 + h)) < 1e-4f && MathF.Abs(q.Centre.Z - 1.5f) < 1e-4f);
+
+        // North end-cap (z = 1 - h, normal -Z) spans both halves [1-h, 1] and [1, 1+h].
+        List<(Vector3 Normal, Vector3 Centre, float U)> northCap = interior
+            .Where(q => q.Normal == -Vector3.UnitZ && MathF.Abs(q.Centre.Z - (1 - h)) < 1e-4f)
+            .ToList();
+        Assert.Equal(2, northCap.Count);
+
+        // South end-cap (z = 2 + h, normal +Z) spans both halves [1-h, 1] and [1, 1+h].
+        List<(Vector3 Normal, Vector3 Centre, float U)> southCap = interior
+            .Where(q => q.Normal == Vector3.UnitZ && MathF.Abs(q.Centre.Z - (2 + h)) < 1e-4f)
+            .ToList();
+        Assert.Equal(2, southCap.Count);
+    }
+
+    [Fact]
+    public void OuterCornerAndOpenDoorwayHaveFlushThickenedJambs()
+    {
+        // A 3x2 map with an interior L-corner at vertex (1, 1) and an open doorway gap between (1, 1) and (2, 1).
+        AreaMap map = AreaMap.Parse(
+        [
+            "+--+--+--+",
+            "|        |",
+            "+  +--+  +",
+            "|  |     |",
+            "+--+--+--+",
+        ], [])!;
+
+        AreaGeometry geometry = AreaMesh.Build(map, Frames);
+        AssertWoundTowardNormals(geometry);
+
+        float h = AreaMesh.WallHalfThickness;
+        List<(Vector3 Normal, Vector3 Centre, float U)> walls = Quads(geometry).Where(quad => quad.Normal.Y == 0).ToList();
+
+        // Outer corner at (1, 1) seen from cell (0, 0) emits both a north-facing and west-facing quarter-post face.
+        Assert.Contains(walls, q => q.Normal == -Vector3.UnitZ && MathF.Abs(q.Centre.Z - (1 - h)) < 1e-4f && MathF.Abs(q.Centre.X - (1 - (h / 2))) < 1e-4f);
+        Assert.Contains(walls, q => q.Normal == -Vector3.UnitX && MathF.Abs(q.Centre.X - (1 - h)) < 1e-4f && MathF.Abs(q.Centre.Z - (1 - (h / 2))) < 1e-4f);
+
+        // Doorway jamb at (2, 1) has an east-facing end-cap spanning z in [1 - h, 1 + h] across cells (2, 0) and (2, 1).
+        List<(Vector3 Normal, Vector3 Centre, float U)> jamb = walls
+            .Where(q => q.Normal == Vector3.UnitX && MathF.Abs(q.Centre.X - (2 + h)) < 1e-4f && q.Centre.Z > 1 - h && q.Centre.Z < 1 + h)
+            .ToList();
+        Assert.Equal(2, jamb.Count);
+    }
+
+    private static void AssertWoundTowardNormals(AreaGeometry geometry)
+    {
         for (int i = 0; i < geometry.Indices.Length; i += 3)
         {
             Vector3 a = geometry.Positions[geometry.Indices[i]];
