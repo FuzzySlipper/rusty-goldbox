@@ -1,0 +1,146 @@
+[
+  {
+    "type": "asset",
+    "id": "keep_wall",
+    "media": "image",
+    "file": "walls/keep.png",
+    "regions": {
+      "wall": [0, 0, 128, 128],
+      "door": [128, 0, 128, 128],
+      "floor": [256, 0, 128, 128],
+      "ceiling": [384, 0, 128, 128]
+    }
+  },
+  { "type": "asset", "id": "blade_portrait", "media": "image", "file": "portraits/blade.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "whitemage_portrait", "media": "image", "file": "portraits/whitemage.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "blackmage_portrait", "media": "image", "file": "portraits/blackmage.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "ranger_portrait", "media": "image", "file": "portraits/ranger.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "gem_icon", "media": "image", "file": "icons/gem.png" },
+  { "type": "asset", "id": "citadel", "media": "image", "file": "backdrops/citadel.png" },
+  {
+    "type": "asset",
+    "id": "crystal_shrine",
+    "media": "sheet",
+    "file": "pictures/crystal_shrine.png",
+    "frame_size": [320, 200],
+    "animations": { "shimmer": { "frames": [0, 1, 2, 3], "fps": 4 } }
+  },
+  {
+    "type": "asset",
+    "id": "hero_blade",
+    "media": "sheet",
+    "file": "sprites/hero_blade.png",
+    "frame_size": [64, 96],
+    "faces": "right",
+    "height": 1.02,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "hero_whitemage",
+    "media": "sheet",
+    "file": "sprites/hero_whitemage.png",
+    "frame_size": [64, 96],
+    "faces": "left",
+    "height": 0.90,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "hero_blackmage",
+    "media": "sheet",
+    "file": "sprites/hero_blackmage.png",
+    "frame_size": [64, 96],
+    "faces": "right",
+    "height": 0.88,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "hero_ranger",
+    "media": "sheet",
+    "file": "sprites/hero_ranger.png",
+    "frame_size": [64, 96],
+    "faces": "right",
+    "height": 0.88,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "monster_slime",
+    "media": "sheet",
+    "file": "sprites/monster_slime.png",
+    "frame_size": [64, 64],
+    "faces": "right",
+    "height": 0.65,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 3 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "monster_golem",
+    "media": "sheet",
+    "file": "sprites/monster_golem.png",
+    "frame_size": [80, 104],
+    "faces": "right",
+    "height": 1.08,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "monster_drake",
+    "media": "sheet",
+    "file": "sprites/monster_drake.png",
+    "frame_size": [96, 112],
+    "faces": "right",
+    "height": 1.40,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  { "type": "asset", "id": "crystal_tile", "media": "image", "file": "skins/crystal_tile.png" },
+  { "type": "asset", "id": "crystal_frame", "media": "image", "file": "skins/crystal_frame.png" },
+  { "type": "asset", "id": "crystal_button", "media": "image", "file": "skins/crystal_button.png" },
+  { "type": "asset", "id": "crystal_title", "media": "image", "file": "skins/crystal_title.png" },
+  {
+    "type": "skin",
+    "id": "crystal",
+    "name": "Crystal Royal Blue",
+    "colors": {
+      "background": "#101f52ee",
+      "text": "#f4f8ff",
+      "muted": "#9cb4e0",
+      "accent": "#ffd35e",
+      "border": "#d6e4ff",
+      "inset": "#ffffff14",
+      "button": "#1c367c00",
+      "button_text": "#ffffff",
+      "page": "#142662",
+      "page_text": "#f2f6ff",
+      "page_accent": "#ffd35e",
+      "page_link": "#c8e4ff"
+    },
+    "panel": "crystal_tile",
+    "frame": { "picture": "crystal_frame", "slice": 8 },
+    "button": { "picture": "crystal_button", "slice": 4 },
+    "title": "crystal_title"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "jrpg-rules",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Crystal Keep JRPG Ruleset",
+  "requires": [],
+  "provenance": "Original classic side-view JRPG-lite ruleset authored for the Rusty Tales Crystal Keep showcase."
+}

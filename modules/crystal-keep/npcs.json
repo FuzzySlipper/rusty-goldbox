@@ -1,0 +1,68 @@
+[
+  {
+    "type": "npc",
+    "id": "kestrel",
+    "character": {
+      "name": "Kestrel",
+      "creation": "jrpg-rules:standard",
+      "levels": [ { "class": "jrpg-rules:blade", "gain": 28 } ],
+      "experience": 0,
+      "attributes": { "atk": 11, "def": 9, "mag": 6, "spd": 9 },
+      "tracks": { "hp": { "current": 28, "max": 28 }, "mp": { "current": 14 } },
+      "balances": { "coins": 60 },
+      "equipment": ["jrpg-rules:crystal_blade", "jrpg-rules:azure_mail"],
+      "conditions": [],
+      "portrait": "jrpg-art:blade_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "lyra",
+    "character": {
+      "name": "Lyra",
+      "creation": "jrpg-rules:standard",
+      "levels": [ { "class": "jrpg-rules:white_mage", "gain": 20 } ],
+      "experience": 0,
+      "attributes": { "atk": 6, "def": 8, "mag": 11, "spd": 8 },
+      "tracks": { "hp": { "current": 20, "max": 20 }, "mp": { "current": 19 } },
+      "balances": { "coins": 60 },
+      "equipment": ["jrpg-rules:seraph_staff"],
+      "spells": ["jrpg-rules:curaga", "jrpg-rules:radiance"],
+      "conditions": [],
+      "portrait": "jrpg-art:whitemage_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "orin",
+    "character": {
+      "name": "Orin",
+      "creation": "jrpg-rules:standard",
+      "levels": [ { "class": "jrpg-rules:black_mage", "gain": 18 } ],
+      "experience": 0,
+      "attributes": { "atk": 5, "def": 7, "mag": 12, "spd": 9 },
+      "tracks": { "hp": { "current": 18, "max": 18 }, "mp": { "current": 20 } },
+      "balances": { "coins": 60 },
+      "equipment": ["jrpg-rules:flame_rod"],
+      "spells": ["jrpg-rules:flare"],
+      "conditions": [],
+      "portrait": "jrpg-art:blackmage_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "sera",
+    "character": {
+      "name": "Sera",
+      "creation": "jrpg-rules:standard",
+      "levels": [ { "class": "jrpg-rules:ranger", "gain": 24 } ],
+      "experience": 0,
+      "attributes": { "atk": 10, "def": 8, "mag": 7, "spd": 11 },
+      "tracks": { "hp": { "current": 24, "max": 24 }, "mp": { "current": 15 } },
+      "balances": { "coins": 60 },
+      "equipment": ["jrpg-rules:yew_bow"],
+      "conditions": [],
+      "portrait": "jrpg-art:ranger_portrait"
+    }
+  }
+]

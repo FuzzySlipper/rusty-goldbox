@@ -1,0 +1,48 @@
+[
+  {
+    "type": "campaign",
+    "id": "crystal_keep",
+    "name": "Crystal Keep",
+    "start": { "area": "keep", "entry": "gate" },
+    "party": { "min": 1, "max": 4 },
+    "intro": "intro",
+    "skin": "jrpg-art:crystal",
+    "combat_presentation": "side_view",
+    "starting_party": ["kestrel", "lyra", "orin", "sera"]
+  },
+  { "type": "variable", "id": "met_archivist", "value_type": "boolean", "initial": "false" },
+  { "type": "variable", "id": "crystal_attuned", "value_type": "boolean", "initial": "false" },
+  { "type": "variable", "id": "drake_vanquished", "value_type": "boolean", "initial": "false" },
+  { "type": "figure", "id": "blade_fig", "class": "jrpg-rules:blade", "sprite": "jrpg-art:hero_blade", "icon": "jrpg-art:blade_portrait" },
+  { "type": "figure", "id": "whitemage_fig", "class": "jrpg-rules:white_mage", "sprite": "jrpg-art:hero_whitemage", "icon": "jrpg-art:whitemage_portrait" },
+  { "type": "figure", "id": "blackmage_fig", "class": "jrpg-rules:black_mage", "sprite": "jrpg-art:hero_blackmage", "icon": "jrpg-art:blackmage_portrait" },
+  { "type": "figure", "id": "ranger_fig", "class": "jrpg-rules:ranger", "sprite": "jrpg-art:hero_ranger", "icon": "jrpg-art:ranger_portrait" },
+  { "type": "figure", "id": "slime_fig", "monster": "jrpg-rules:crystal_slime", "sprite": "jrpg-art:monster_slime", "icon": "jrpg-art:gem_icon" },
+  { "type": "figure", "id": "golem_fig", "monster": "jrpg-rules:rune_golem", "sprite": "jrpg-art:monster_golem", "icon": "jrpg-art:gem_icon" },
+  { "type": "figure", "id": "drake_fig", "monster": "jrpg-rules:crimson_drake", "sprite": "jrpg-art:monster_drake", "icon": "jrpg-art:gem_icon" },
+  {
+    "type": "encounter",
+    "id": "slime_ambush",
+    "name": "Crystal Slimes",
+    "monsters": [
+      { "monster": "jrpg-rules:crystal_slime", "count": "2" }
+    ]
+  },
+  {
+    "type": "encounter",
+    "id": "golem_patrol",
+    "name": "Citadel Sentinel",
+    "monsters": [
+      { "monster": "jrpg-rules:rune_golem", "count": "1" },
+      { "monster": "jrpg-rules:crystal_slime", "count": "1" }
+    ]
+  },
+  {
+    "type": "encounter",
+    "id": "drake_finale",
+    "name": "The Crimson Drake",
+    "monsters": [
+      { "monster": "jrpg-rules:crimson_drake", "count": "1" }
+    ]
+  }
+]

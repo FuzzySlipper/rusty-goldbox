@@ -1,0 +1,46 @@
+[
+  { "type": "attribute", "id": "atk", "name": "Attack", "min": 1, "max": 99, "default": 8 },
+  { "type": "attribute", "id": "def", "name": "Defense", "min": 1, "max": 99, "default": 4 },
+  { "type": "attribute", "id": "mag", "name": "Magic", "min": 1, "max": 99, "default": 6 },
+  { "type": "attribute", "id": "spd", "name": "Speed", "min": 1, "max": 99, "default": 6 },
+  { "type": "derived", "id": "attack_power", "name": "Attack Power", "value": "self.atk + self.level * 2", "show_on_sheet": true },
+  { "type": "derived", "id": "defense", "name": "Defense", "value": "self.def + self.level", "show_on_sheet": true },
+  { "type": "derived", "id": "magic_power", "name": "Magic Power", "value": "self.mag + self.level * 2", "show_on_sheet": true },
+  { "type": "track", "id": "hp", "name": "HP", "from_levels": true },
+  { "type": "track", "id": "mp", "name": "MP", "max": "8 + self.mag" },
+  { "type": "currency", "id": "coins", "name": "Gil" },
+  { "type": "economy", "id": "standard", "sell_fraction": 0.5 },
+  {
+    "type": "resting",
+    "id": "spring",
+    "unit": "hours",
+    "restore": [
+      { "track": "hp", "amount": "self.max_hp" },
+      { "track": "mp", "amount": "self.max_mp" }
+    ]
+  },
+  {
+    "type": "advancement",
+    "id": "jrpg_levels",
+    "name": "Hero levels",
+    "kind": "experience",
+    "experience": "character",
+    "levels": [0, 50, 140, 280],
+    "experience_to": "each"
+  },
+  {
+    "type": "character-creation",
+    "id": "standard",
+    "name": "Hero baseline",
+    "attributes": ["atk", "def", "mag", "spd"],
+    "method": "array",
+    "array": [10, 8, 8, 9],
+    "default": true,
+    "starting": {
+      "blade": { "coins": "60" },
+      "white_mage": { "coins": "60" },
+      "black_mage": { "coins": "60" },
+      "ranger": { "coins": "60" }
+    }
+  }
+]

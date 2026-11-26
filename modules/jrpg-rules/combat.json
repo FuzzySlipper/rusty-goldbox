@@ -1,0 +1,82 @@
+[
+  {
+    "type": "combat",
+    "id": "side_battle",
+    "name": "Side-view battle",
+    "initiative": "self.spd + 1d6",
+    "initiative_by": "creature",
+    "initiative_order": "highest-first",
+    "initiative_each": "round",
+    "round_seconds": 6,
+    "budget": [ { "id": "action", "per_turn": 1 } ],
+    "track": "hp",
+    "defeated": "self.hp <= 0",
+    "presentation": "side_view"
+  },
+  {
+    "type": "action",
+    "id": "attack",
+    "name": "Attack",
+    "cost": { "action": 1 },
+    "target": "enemy",
+    "parameters": ["power"],
+    "check": "accuracy",
+    "outcomes": {
+      "critical": [ { "op": "damage", "amount": "max(2, (self.attack_power + use.power) * 2 - target.defense)" } ],
+      "success": [ { "op": "damage", "amount": "max(1, self.attack_power + use.power - target.defense)" } ]
+    }
+  },
+  {
+    "type": "action",
+    "id": "spell_strike",
+    "name": "Spell",
+    "cost": { "action": 1 },
+    "target": "enemy",
+    "parameters": ["power"],
+    "score": "11",
+    "always": [ { "op": "damage", "amount": "max(2, self.magic_power + use.power - floor(target.defense / 2))" } ]
+  },
+  {
+    "type": "action",
+    "id": "spell_heal",
+    "name": "Heal",
+    "cost": { "action": 1 },
+    "target": "hurt_ally",
+    "parameters": ["power"],
+    "score": "if target.hp * 2 < target.max_hp then 16 else -1",
+    "always": [ { "op": "heal", "amount": "self.magic_power + use.power" } ]
+  },
+  {
+    "type": "monster",
+    "id": "crystal_slime",
+    "name": "Crystal Slime",
+    "class": "blade",
+    "level": 1,
+    "tracks": { "hp": "16" },
+    "stats": { "attack_power": "7", "defense": "2", "spd": "6" },
+    "actions": [ { "action": "attack", "name": "shard tackle", "power": "3" } ],
+    "xp": 35
+  },
+  {
+    "type": "monster",
+    "id": "rune_golem",
+    "name": "Rune Golem",
+    "class": "blade",
+    "level": 2,
+    "tracks": { "hp": "28" },
+    "stats": { "attack_power": "10", "defense": "5", "spd": "4" },
+    "actions": [ { "action": "attack", "name": "granite slam", "power": "5" } ],
+    "xp": 65
+  },
+  {
+    "type": "monster",
+    "id": "crimson_drake",
+    "extends": "rune_golem",
+    "name": "Crimson Drake",
+    "level": 3,
+    "tracks": { "hp": "46" },
+    "stats": { "attack_power": "12", "defense": "5", "spd": "8" },
+    "actions": [ { "action": "attack", "name": "ruby flame", "power": "6" } ],
+    "xp": 150
+  }
+]

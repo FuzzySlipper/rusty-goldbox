@@ -1,0 +1,102 @@
+[
+  {
+    "type": "combat",
+    "id": "catacomb_battle",
+    "name": "First-person encounter",
+    "initiative": "1d10 + self.agility",
+    "initiative_by": "creature",
+    "initiative_order": "highest-first",
+    "initiative_each": "round",
+    "round_seconds": 6,
+    "budget": [ { "id": "action", "per_turn": 1 } ],
+    "track": "hp",
+    "defeated": "self.hp <= 0",
+    "presentation": "first_person"
+  },
+  {
+    "type": "action",
+    "id": "strike",
+    "name": "Strike",
+    "cost": { "action": 1 },
+    "target": "enemy",
+    "parameters": ["damage"],
+    "check": "strike_check",
+    "outcomes": {
+      "critical": [ { "op": "damage", "amount": "use.damage + use.damage + self.power" } ],
+      "success": [ { "op": "damage", "amount": "use.damage + self.power" } ]
+    }
+  },
+  {
+    "type": "action",
+    "id": "guard",
+    "name": "Parry",
+    "cost": { "action": 1 },
+    "target": "self",
+    "score": "-5",
+    "always": [ { "op": "apply_condition", "condition": "guarding", "to": "self", "rounds": "1" } ]
+  },
+  {
+    "type": "action",
+    "id": "cast_bolt",
+    "name": "Cast Bolt",
+    "cost": { "action": 1 },
+    "target": "enemy",
+    "parameters": ["damage"],
+    "score": "9",
+    "always": [ { "op": "damage", "amount": "use.damage" } ]
+  },
+  {
+    "type": "action",
+    "id": "cast_heal",
+    "name": "Mend",
+    "cost": { "action": 1 },
+    "target": "hurt_ally",
+    "parameters": ["amount"],
+    "score": "if target.hp * 2 < target.max_hp then 16 else -2",
+    "always": [ { "op": "heal", "amount": "use.amount" } ]
+  },
+  {
+    "type": "monster",
+    "id": "bone_guard",
+    "name": "Bone Guard",
+    "class": "knight",
+    "level": 1,
+    "tracks": { "hp": "12" },
+    "stats": { "ac": "11", "power": "1" },
+    "actions": [ { "action": "strike", "name": "rusted slash", "damage": "1d6" } ],
+    "xp": 35
+  },
+  {
+    "type": "monster",
+    "id": "crypt_gargoyle",
+    "name": "Crypt Gargoyle",
+    "class": "knight",
+    "level": 2,
+    "tracks": { "hp": "16" },
+    "stats": { "ac": "12", "power": "2" },
+    "actions": [ { "action": "strike", "name": "stone claw", "damage": "1d6 + 1" } ],
+    "xp": 55
+  },
+  {
+    "type": "monster",
+    "id": "shadow_cultist",
+    "name": "Shadow Cultist",
+    "class": "mage",
+    "level": 2,
+    "tracks": { "hp": "11" },
+    "stats": { "ac": "10", "power": "1" },
+    "actions": [ { "action": "strike", "name": "cursed hex", "damage": "1d6" } ],
+    "xp": 45
+  },
+  {
+    "type": "monster",
+    "id": "dread_knight",
+    "extends": "bone_guard",
+    "name": "The Dread Knight",
+    "level": 3,
+    "tracks": { "hp": "24" },
+    "stats": { "ac": "13", "power": "3" },
+    "actions": [ { "action": "strike", "name": "rune greatsword", "damage": "1d8 + 2" } ],
+    "xp": 120
+  }
+]

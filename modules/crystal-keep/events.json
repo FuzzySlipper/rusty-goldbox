@@ -1,0 +1,82 @@
+[
+  {
+    "type": "event",
+    "id": "intro",
+    "kind": "text",
+    "text": "Starlight glimmers across the spires of Crystal Keep. Kestrel, Lyra, Orin, and Sera gather at the south gate — step north to speak with the Keep Archivist."
+  },
+  {
+    "type": "event",
+    "id": "keep_shop",
+    "kind": "shop",
+    "text": "The travelling quartermaster lays out azure mail and Hi-Potions.",
+    "items": [
+      { "item": "jrpg-rules:hi_herb" },
+      { "item": "jrpg-rules:azure_mail" }
+    ],
+    "next": "archivist_scene"
+  },
+  {
+    "type": "event",
+    "id": "keep_spring",
+    "kind": "rest",
+    "text": "Cool crystal spring water restores every hero's HP and MP.",
+    "tracks": [],
+    "resting": "jrpg-rules:spring",
+    "periods": 1,
+    "next": "archivist_scene"
+  },
+  {
+    "type": "event",
+    "id": "guardian_crystal",
+    "kind": "text",
+    "picture": "jrpg-art:crystal_shrine",
+    "text": "The Guardian Crystal hums above its marble pedestal, resonating with Lyra's staff. A luminous Citadel Crest materialises in Kestrel's hand!",
+    "next": "check_crest"
+  },
+  {
+    "type": "event",
+    "id": "check_crest",
+    "kind": "branch",
+    "branches": [ { "when": "campaign.var.crystal_attuned", "next": "crystal_calm" } ],
+    "otherwise": "attune_crystal"
+  },
+  { "type": "event", "id": "crystal_calm", "kind": "text", "text": "The Guardian Crystal shines with a calm azure glow." },
+  { "type": "event", "id": "attune_crystal", "kind": "set", "variable": "crystal_attuned", "value": "true", "next": "give_crest" },
+  { "type": "event", "id": "give_crest", "kind": "give", "item": "jrpg-rules:citadel_crest" },
+  {
+    "type": "event",
+    "id": "slime_fight",
+    "kind": "combat",
+    "picture": "jrpg-art:citadel",
+    "encounter": "slime_ambush",
+    "combat": "jrpg-rules:side_battle",
+    "on_win": "slime_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "slime_won", "kind": "text", "text": "The Crystal Slimes dissolve into harmless sparks of sapphire dust." },
+  {
+    "type": "event",
+    "id": "golem_fight",
+    "kind": "combat",
+    "picture": "jrpg-art:citadel",
+    "encounter": "golem_patrol",
+    "combat": "jrpg-rules:side_battle",
+    "on_win": "golem_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "golem_won", "kind": "text", "text": "The Rune Golem powers down before the sealed spire doors." },
+  {
+    "type": "event",
+    "id": "drake_fight",
+    "kind": "combat",
+    "picture": "jrpg-art:citadel",
+    "encounter": "drake_finale",
+    "combat": "jrpg-rules:side_battle",
+    "on_win": "drake_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "drake_won", "kind": "set", "variable": "drake_vanquished", "value": "true", "next": "victory_end" },
+  { "type": "event", "id": "victory_end", "kind": "end", "text": "With a final flash of crystal light, the Crimson Drake yields! Dawn breaks over Crystal Keep — victory!" },
+  { "type": "event", "id": "party_fallen", "kind": "end", "text": "The heroes fall beneath the starlit spires. Crystal Keep awaits another dawn." }
+]

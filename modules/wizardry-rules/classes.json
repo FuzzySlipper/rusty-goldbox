@@ -1,0 +1,189 @@
+[
+  {
+    "type": "condition",
+    "id": "guarding",
+    "name": "Guarding",
+    "modifiers": [ { "stat": "ac", "value": "4" } ],
+    "rounds_end": "turn_start"
+  },
+  {
+    "type": "check",
+    "id": "strike_check",
+    "name": "Strike",
+    "roll": "1d20",
+    "bonus": "self.power + self.level",
+    "target": "target.ac",
+    "succeeds": "at-least",
+    "tiers": [ { "name": "critical", "when": "check.roll == 20" } ]
+  },
+  {
+    "type": "item",
+    "id": "broadsword",
+    "name": "Gothic Broadsword",
+    "kind": "weapon",
+    "cost": 18,
+    "currency": "gold",
+    "weight": 3,
+    "parameters": { "damage": "1d8 + 1" }
+  },
+  {
+    "type": "item",
+    "id": "war_mace",
+    "name": "Sanctified Mace",
+    "kind": "weapon",
+    "cost": 14,
+    "currency": "gold",
+    "weight": 3,
+    "parameters": { "damage": "1d6 + 1" }
+  },
+  {
+    "type": "item",
+    "id": "oak_staff",
+    "name": "Runed Staff",
+    "kind": "weapon",
+    "cost": 10,
+    "currency": "gold",
+    "weight": 2,
+    "parameters": { "damage": "1d4" }
+  },
+  {
+    "type": "item",
+    "id": "iron_dagger",
+    "name": "Stiletto",
+    "kind": "weapon",
+    "cost": 12,
+    "currency": "gold",
+    "weight": 1,
+    "parameters": { "damage": "1d6 + 1" }
+  },
+  {
+    "type": "item",
+    "id": "scale_mail",
+    "name": "Catacomb Plate",
+    "kind": "armour",
+    "cost": 30,
+    "currency": "gold",
+    "weight": 10,
+    "modifiers": [ { "stat": "ac", "value": "4" } ]
+  },
+  {
+    "type": "item",
+    "id": "tonic",
+    "name": "Elixir of Vigour",
+    "kind": "consumable",
+    "cost": 10,
+    "currency": "gold",
+    "weight": 1,
+    "use": {
+      "operations": [ { "op": "heal", "track": "hp", "amount": "1d8 + 4" } ]
+    }
+  },
+  {
+    "type": "item",
+    "id": "catacomb_sigil",
+    "name": "Lantern Sigil",
+    "kind": "key",
+    "cost": 0,
+    "currency": "gold",
+    "weight": 0
+  },
+  {
+    "type": "class",
+    "id": "knight",
+    "name": "Knight",
+    "prime_requisites": ["might"],
+    "levels": [
+      { "xp": 0, "hp": "18" },
+      { "xp": 100, "hp": "1d10" },
+      { "xp": 260, "hp": "1d10" }
+    ],
+    "actions": [
+      { "action": "strike", "from_item": "weapon" },
+      { "action": "guard" }
+    ]
+  },
+  {
+    "type": "class",
+    "id": "priest",
+    "name": "Priest",
+    "prime_requisites": ["mind"],
+    "levels": [
+      { "xp": 0, "hp": "14" },
+      { "xp": 100, "hp": "1d8" },
+      { "xp": 260, "hp": "1d8" }
+    ],
+    "actions": [
+      { "action": "strike", "from_item": "weapon" },
+      { "action": "guard" }
+    ]
+  },
+  {
+    "type": "class",
+    "id": "mage",
+    "name": "Mage",
+    "prime_requisites": ["mind"],
+    "levels": [
+      { "xp": 0, "hp": "11" },
+      { "xp": 100, "hp": "1d6" },
+      { "xp": 260, "hp": "1d6" }
+    ],
+    "actions": [
+      { "action": "strike", "from_item": "weapon" },
+      { "action": "guard" }
+    ]
+  },
+  {
+    "type": "class",
+    "id": "rogue",
+    "name": "Rogue",
+    "prime_requisites": ["agility"],
+    "levels": [
+      { "xp": 0, "hp": "13" },
+      { "xp": 100, "hp": "1d8" },
+      { "xp": 260, "hp": "1d8" }
+    ],
+    "actions": [
+      { "action": "strike", "from_item": "weapon" },
+      { "action": "guard" }
+    ]
+  },
+  {
+    "type": "spell",
+    "id": "firebolt",
+    "name": "Halito (Firebolt)",
+    "lists": { "mage": 1 },
+    "range": "Any enemy",
+    "duration": "Instantaneous",
+    "area": "One foe",
+    "casting_time": "1 action",
+    "cost": { "mp": "2" },
+    "effect": { "action": "cast_bolt", "damage": "2d6 + self.spell_power" },
+    "description": "Unleashes a lance of amber flame against a single foe."
+  },
+  {
+    "type": "spell",
+    "id": "mend",
+    "name": "Dios (Mend)",
+    "lists": { "priest": 1 },
+    "range": "Any ally",
+    "duration": "Instantaneous",
+    "area": "One ally",
+    "casting_time": "1 action",
+    "cost": { "mp": "2" },
+    "effect": { "action": "cast_heal", "amount": "1d8 + 4" },
+    "description": "Restores HP to a wounded companion."
+  },
+  {
+    "type": "spell",
+    "id": "smite",
+    "name": "Badios (Smite)",
+    "lists": { "priest": 1 },
+    "range": "Any enemy",
+    "duration": "Instantaneous",
+    "area": "One foe",
+    "casting_time": "1 action",
+    "cost": { "mp": "2" },
+    "effect": { "action": "cast_bolt", "damage": "1d8 + 2 + self.spell_power" },
+    "description": "Calls sacred wrath down upon the undead."
+  }
+]

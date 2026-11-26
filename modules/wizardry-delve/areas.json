@@ -1,0 +1,30 @@
+[
+  {
+    "type": "area",
+    "id": "catacombs",
+    "name": "Catacombs of Ash",
+    "wall_set": "wizardry-art:catacomb_wall",
+    "map": [
+      "+--+--+--+--+",
+      "|        D  |",
+      "+  +--+--+  +",
+      "|  |     |  |",
+      "+  +  +--+  +",
+      "|     |     |",
+      "+--+--+--+--+"
+    ],
+    "doors": [
+      { "id": "sanctum_gate", "at": [2, 0], "facing": "east", "key": "wizardry-rules:catacomb_sigil" }
+    ],
+    "cells": [
+      { "at": [0, 1], "event": "warden_scene" },
+      { "at": [1, 0], "event": "patrol_fight", "once": true },
+      { "at": [1, 2], "event": "oracle_shrine" },
+      { "at": [2, 0], "event": "gargoyle_fight", "once": true },
+      { "at": [3, 0], "backdrop": "wizardry-art:sanctum", "event": "boss_fight", "once": true }
+    ],
+    "entries": {
+      "gate": { "at": [0, 2], "facing": "north" }
+    }
+  }
+]

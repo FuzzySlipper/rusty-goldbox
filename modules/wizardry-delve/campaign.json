@@ -1,0 +1,46 @@
+[
+  {
+    "type": "campaign",
+    "id": "wizardry_delve",
+    "name": "Wizardry Delve: Catacombs of Ash",
+    "start": { "area": "catacombs", "entry": "gate" },
+    "party": { "min": 1, "max": 6 },
+    "intro": "intro",
+    "skin": "wizardry-art:grimoire",
+    "combat_presentation": "first_person",
+    "starting_party": ["roland", "seraphina", "malakor", "corvus"]
+  },
+  { "type": "variable", "id": "spoke_warden", "value_type": "boolean", "initial": "false" },
+  { "type": "variable", "id": "shrine_blessed", "value_type": "boolean", "initial": "false" },
+  { "type": "variable", "id": "dread_slain", "value_type": "boolean", "initial": "false" },
+  { "type": "figure", "id": "bone_guard_fig", "monster": "wizardry-rules:bone_guard", "sprite": "wizardry-art:bone_guard", "icon": "wizardry-art:skull_icon" },
+  { "type": "figure", "id": "gargoyle_fig", "monster": "wizardry-rules:crypt_gargoyle", "sprite": "wizardry-art:gargoyle", "icon": "wizardry-art:skull_icon" },
+  { "type": "figure", "id": "cultist_fig", "monster": "wizardry-rules:shadow_cultist", "sprite": "wizardry-art:cultist", "icon": "wizardry-art:skull_icon" },
+  { "type": "figure", "id": "dread_knight_fig", "monster": "wizardry-rules:dread_knight", "sprite": "wizardry-art:dread_knight", "icon": "wizardry-art:skull_icon" },
+  {
+    "type": "encounter",
+    "id": "catacomb_patrol",
+    "name": "Catacomb Patrol",
+    "monsters": [
+      { "monster": "wizardry-rules:bone_guard", "count": "1" },
+      { "monster": "wizardry-rules:shadow_cultist", "count": "1" }
+    ]
+  },
+  {
+    "type": "encounter",
+    "id": "gargoyle_roost",
+    "name": "Stone Gargoyles",
+    "monsters": [
+      { "monster": "wizardry-rules:crypt_gargoyle", "count": "2" }
+    ]
+  },
+  {
+    "type": "encounter",
+    "id": "sanctum_boss",
+    "name": "The Dread Knight",
+    "monsters": [
+      { "monster": "wizardry-rules:dread_knight", "count": "1" },
+      { "monster": "wizardry-rules:shadow_cultist", "count": "1" }
+    ]
+  }
+]

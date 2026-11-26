@@ -1,0 +1,107 @@
+[
+  {
+    "type": "asset",
+    "id": "catacomb_wall",
+    "media": "image",
+    "file": "walls/catacomb.png",
+    "regions": {
+      "wall": [0, 0, 128, 128],
+      "door": [128, 0, 128, 128],
+      "floor": [256, 0, 128, 128],
+      "ceiling": [384, 0, 128, 128]
+    }
+  },
+  { "type": "asset", "id": "knight_portrait", "media": "image", "file": "portraits/knight.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "priest_portrait", "media": "image", "file": "portraits/priest.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "mage_portrait", "media": "image", "file": "portraits/mage.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "rogue_portrait", "media": "image", "file": "portraits/rogue.png", "tags": ["portrait"] },
+  { "type": "asset", "id": "skull_icon", "media": "image", "file": "icons/skull.png" },
+  { "type": "asset", "id": "sanctum", "media": "image", "file": "backdrops/sanctum.png" },
+  {
+    "type": "asset",
+    "id": "shrine",
+    "media": "sheet",
+    "file": "pictures/shrine.png",
+    "frame_size": [320, 200],
+    "animations": { "glow": { "frames": [0, 1, 2, 3], "fps": 4 } }
+  },
+  {
+    "type": "asset",
+    "id": "bone_guard",
+    "media": "sheet",
+    "file": "sprites/bone_guard.png",
+    "frame_size": [96, 112],
+    "faces": "right",
+    "height": 0.92,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "gargoyle",
+    "media": "sheet",
+    "file": "sprites/gargoyle.png",
+    "frame_size": [96, 112],
+    "faces": "right",
+    "height": 0.96,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "cultist",
+    "media": "sheet",
+    "file": "sprites/cultist.png",
+    "frame_size": [96, 112],
+    "faces": "right",
+    "height": 0.94,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  {
+    "type": "asset",
+    "id": "dread_knight",
+    "media": "sheet",
+    "file": "sprites/dread_knight.png",
+    "frame_size": [96, 112],
+    "faces": "right",
+    "height": 1.22,
+    "animations": {
+      "idle": { "frames": [0, 1], "fps": 2 },
+      "attack": { "frames": [2, 3], "fps": 6, "loop": false }
+    }
+  },
+  { "type": "asset", "id": "grimoire_tile", "media": "image", "file": "skins/grimoire_tile.png" },
+  { "type": "asset", "id": "grimoire_frame", "media": "image", "file": "skins/grimoire_frame.png" },
+  { "type": "asset", "id": "grimoire_button", "media": "image", "file": "skins/grimoire_button.png" },
+  { "type": "asset", "id": "grimoire_title", "media": "image", "file": "skins/grimoire_title.png" },
+  {
+    "type": "skin",
+    "id": "grimoire",
+    "name": "Gothic Grimoire",
+    "colors": {
+      "background": "#151218ee",
+      "text": "#eee4cf",
+      "muted": "#a89b87",
+      "accent": "#e07a3c",
+      "border": "#5e4a3c",
+      "inset": "#ffffff10",
+      "button": "#332a3000",
+      "button_text": "#f4ead8",
+      "page": "#e7d8ba",
+      "page_text": "#231a12",
+      "page_accent": "#9c3018",
+      "page_link": "#7d2515"
+    },
+    "panel": "grimoire_tile",
+    "frame": { "picture": "grimoire_frame", "slice": 8 },
+    "button": { "picture": "grimoire_button", "slice": 4 },
+    "title": "grimoire_title"
+  }
+]

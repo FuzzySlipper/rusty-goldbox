@@ -1,0 +1,30 @@
+[
+  {
+    "type": "area",
+    "id": "keep",
+    "name": "Twilight Crystal Keep",
+    "wall_set": "jrpg-art:keep_wall",
+    "map": [
+      "+--+--+--+--+",
+      "|        D  |",
+      "+  +--+--+  +",
+      "|  |     |  |",
+      "+  +  +--+  +",
+      "|     |     |",
+      "+--+--+--+--+"
+    ],
+    "doors": [
+      { "id": "spire_gate", "at": [2, 0], "facing": "east", "key": "jrpg-rules:citadel_crest" }
+    ],
+    "cells": [
+      { "at": [0, 1], "event": "archivist_scene" },
+      { "at": [1, 0], "event": "slime_fight", "once": true },
+      { "at": [1, 2], "event": "guardian_crystal" },
+      { "at": [2, 0], "event": "golem_fight", "once": true },
+      { "at": [3, 0], "backdrop": "jrpg-art:citadel", "event": "drake_fight", "once": true }
+    ],
+    "entries": {
+      "gate": { "at": [0, 2], "facing": "north" }
+    }
+  }
+]

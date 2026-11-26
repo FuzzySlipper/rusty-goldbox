@@ -1,0 +1,72 @@
+[
+  {
+    "type": "npc",
+    "id": "roland",
+    "character": {
+      "name": "Roland",
+      "creation": "wizardry-rules:standard",
+      "levels": [ { "class": "wizardry-rules:knight", "gain": 18 } ],
+      "experience": 0,
+      "class_experience": { "wizardry-rules:knight": 0 },
+      "attributes": { "might": 15, "mind": 10, "grit": 13, "agility": 12 },
+      "tracks": { "hp": { "current": 18, "max": 18 }, "mp": { "current": 0 } },
+      "balances": { "gold": 40 },
+      "equipment": ["wizardry-rules:broadsword", "wizardry-rules:scale_mail"],
+      "conditions": [],
+      "portrait": "wizardry-art:knight_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "seraphina",
+    "character": {
+      "name": "Seraphina",
+      "creation": "wizardry-rules:standard",
+      "levels": [ { "class": "wizardry-rules:priest", "gain": 14 } ],
+      "experience": 0,
+      "class_experience": { "wizardry-rules:priest": 0 },
+      "attributes": { "might": 12, "mind": 15, "grit": 13, "agility": 10 },
+      "tracks": { "hp": { "current": 14, "max": 14 }, "mp": { "current": 8 } },
+      "balances": { "gold": 30 },
+      "equipment": ["wizardry-rules:war_mace"],
+      "spells": ["wizardry-rules:mend", "wizardry-rules:smite"],
+      "conditions": [],
+      "portrait": "wizardry-art:priest_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "malakor",
+    "character": {
+      "name": "Malakor",
+      "creation": "wizardry-rules:standard",
+      "levels": [ { "class": "wizardry-rules:mage", "gain": 11 } ],
+      "experience": 0,
+      "class_experience": { "wizardry-rules:mage": 0 },
+      "attributes": { "might": 10, "mind": 15, "grit": 12, "agility": 13 },
+      "tracks": { "hp": { "current": 11, "max": 11 }, "mp": { "current": 8 } },
+      "balances": { "gold": 25 },
+      "equipment": ["wizardry-rules:oak_staff"],
+      "spells": ["wizardry-rules:firebolt"],
+      "conditions": [],
+      "portrait": "wizardry-art:mage_portrait"
+    }
+  },
+  {
+    "type": "npc",
+    "id": "corvus",
+    "character": {
+      "name": "Corvus",
+      "creation": "wizardry-rules:standard",
+      "levels": [ { "class": "wizardry-rules:rogue", "gain": 13 } ],
+      "experience": 0,
+      "class_experience": { "wizardry-rules:rogue": 0 },
+      "attributes": { "might": 13, "mind": 10, "grit": 12, "agility": 15 },
+      "tracks": { "hp": { "current": 13, "max": 13 }, "mp": { "current": 0 } },
+      "balances": { "gold": 35 },
+      "equipment": ["wizardry-rules:iron_dagger"],
+      "conditions": [],
+      "portrait": "wizardry-art:rogue_portrait"
+    }
+  }
+]

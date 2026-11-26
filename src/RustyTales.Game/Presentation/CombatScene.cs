@@ -418,8 +418,8 @@ internal sealed class CombatScene : IDisposable
         List<CombatantObservation> party = observation.Combatants.Where(member => member.Side == 0).ToList();
         List<CombatantObservation> foes = observation.Combatants.Where(member => member.Side != 0).ToList();
 
-        PlaceSideColumn(party, leftSide: false, baseX: 3.45f, rankStep: 0.52f, staggerX: 0.14f, kindFor, spriteFor);
-        PlaceSideColumn(foes, leftSide: true, baseX: 1.55f, rankStep: -0.52f, staggerX: -0.12f, kindFor, spriteFor);
+        PlaceSideColumn(party, leftSide: false, baseX: 3.12f, rankStep: 0.56f, staggerX: 0.24f, kindFor, spriteFor);
+        PlaceSideColumn(foes, leftSide: true, baseX: 1.72f, rankStep: -0.56f, staggerX: -0.22f, kindFor, spriteFor);
     }
 
     private void PlaceSideColumn(
@@ -438,8 +438,8 @@ internal sealed class CombatScene : IDisposable
             int rank = index / perRank;
             int slot = index % perRank;
             int countInRank = Math.Min(perRank, members.Count - (rank * perRank));
-            float zSpan = countInRank <= 1 ? 0f : Math.Min(1.65f, (countInRank - 1) * 0.58f);
-            float z = (_depth / 2f) - (zSpan / 2f) + (countInRank <= 1 ? 0f : slot * (zSpan / (countInRank - 1)));
+            float zSpan = countInRank <= 1 ? 0f : Math.Min(1.22f, (countInRank - 1) * 0.42f);
+            float z = (_depth * 0.55f) - (zSpan / 2f) + (countInRank <= 1 ? 0f : slot * (zSpan / (countInRank - 1)));
             float x = baseX + (rank * rankStep) + (slot * staggerX);
             Vector3 spot = new(x, 0, z);
             _stageSpots[member.Id] = spot;

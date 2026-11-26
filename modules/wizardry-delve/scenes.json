@@ -1,0 +1,27 @@
+[
+  {
+    "type": "scene",
+    "id": "warden_scene",
+    "speaker": "Gate Warden",
+    "start": "topics",
+    "nodes": {
+      "topics": {
+        "say": "Hold your lantern high, delvers. What do you need before venturing deeper?",
+        "choices": [
+          { "label": "Ask about the sanctum seal", "goto": "rumor" },
+          { "label": "Buy provisions", "event": "warden_shop" },
+          { "label": "Rest by the brazier", "event": "warden_rest" },
+          { "label": "Press onward", "goto": "farewell" }
+        ]
+      },
+      "rumor": {
+        "say": "The Dread Knight lurks behind the iron vault door to the northeast. Seek the Oracle Shrine east of the gate to claim the Lantern Sigil.",
+        "set": { "spoke_warden": "true" },
+        "goto": "topics"
+      },
+      "farewell": {
+        "say": "May steel and spell see you back to the light."
+      }
+    }
+  }
+]

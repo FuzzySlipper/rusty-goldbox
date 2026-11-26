@@ -1,0 +1,27 @@
+[
+  {
+    "type": "scene",
+    "id": "archivist_scene",
+    "speaker": "Keep Archivist",
+    "start": "topics",
+    "nodes": {
+      "topics": {
+        "say": "Welcome, Guardians! The Crimson Drake nests atop the northeast spire. How can I aid your party?",
+        "choices": [
+          { "label": "Ask how to unlock the spire gate", "goto": "crest_hint" },
+          { "label": "Browse provisions", "event": "keep_shop" },
+          { "label": "Drink from the Crystal Spring", "event": "keep_spring" },
+          { "label": "Set out into the keep", "goto": "farewell" }
+        ]
+      },
+      "crest_hint": {
+        "say": "East of the south gate sits the Guardian Crystal. Attune to it to receive the Citadel Crest, then march north and east to the spire terrace.",
+        "set": { "met_archivist": "true" },
+        "goto": "topics"
+      },
+      "farewell": {
+        "say": "May the Crystal's light guide your blades!"
+      }
+    }
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "crystal-keep",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Crystal Keep (Classic JRPG)",
+  "requires": [
+    { "id": "jrpg-rules", "version": "^0.1.0" },
+    { "id": "jrpg-art", "version": "^0.1.0" }
+  ],
+  "provenance": "Original classic side-view JRPG showcase campaign authored for Rusty Tales."
+}

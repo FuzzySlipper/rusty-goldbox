@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "wizardry-delve",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Wizardry Delve: Catacombs of Ash",
+  "requires": [
+    { "id": "wizardry-rules", "version": "^0.1.0" },
+    { "id": "wizardry-art", "version": "^0.1.0" }
+  ],
+  "provenance": "Original first-person dungeon crawler showcase campaign authored for Rusty Tales."
+}

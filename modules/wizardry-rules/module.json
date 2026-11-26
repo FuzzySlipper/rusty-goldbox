@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "wizardry-rules",
+  "kind": "ruleset",
+  "version": "0.1.0",
+  "title": "Wizardry Delve Ruleset",
+  "requires": [],
+  "provenance": "Original first-person dungeon crawler ruleset authored for the Rusty Tales Wizardry Delve showcase."
+}

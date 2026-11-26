@@ -1,0 +1,82 @@
+[
+  {
+    "type": "event",
+    "id": "intro",
+    "kind": "text",
+    "text": "Torchlight trembles across the Catacombs of Ash. The iron seal of the inner sanctum waits to the northeast; step north to speak with the Gate Warden."
+  },
+  {
+    "type": "event",
+    "id": "warden_shop",
+    "kind": "shop",
+    "text": "The Warden unlocks a battered iron coffer of provisions.",
+    "items": [
+      { "item": "wizardry-rules:tonic" },
+      { "item": "wizardry-rules:scale_mail" }
+    ],
+    "next": "warden_scene"
+  },
+  {
+    "type": "event",
+    "id": "warden_rest",
+    "kind": "rest",
+    "text": "Beside the Warden's brazier, the party catches its breath and restores HP and MP.",
+    "tracks": [],
+    "resting": "wizardry-rules:camp",
+    "periods": 1,
+    "next": "warden_scene"
+  },
+  {
+    "type": "event",
+    "id": "oracle_shrine",
+    "kind": "text",
+    "picture": "wizardry-art:shrine",
+    "text": "Emerald candlelight dances around an obsidian reliquary. As Seraphina chants a brief prayer, the Lantern Sigil lifts gently from the altar stone.",
+    "next": "grant_sigil"
+  },
+  {
+    "type": "event",
+    "id": "grant_sigil",
+    "kind": "branch",
+    "branches": [ { "when": "campaign.var.shrine_blessed", "next": "shrine_quiet" } ],
+    "otherwise": "set_shrine_flag"
+  },
+  { "type": "event", "id": "shrine_quiet", "kind": "text", "text": "The shrine's emerald flame burns quietly." },
+  { "type": "event", "id": "set_shrine_flag", "kind": "set", "variable": "shrine_blessed", "value": "true", "next": "give_sigil" },
+  { "type": "event", "id": "give_sigil", "kind": "give", "item": "wizardry-rules:catacomb_sigil" },
+  {
+    "type": "event",
+    "id": "patrol_fight",
+    "kind": "combat",
+    "picture": "wizardry-art:sanctum",
+    "encounter": "catacomb_patrol",
+    "combat": "wizardry-rules:catacomb_battle",
+    "on_win": "patrol_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "patrol_won", "kind": "text", "text": "The patrol crumbles to dust beneath the gothic arches." },
+  {
+    "type": "event",
+    "id": "gargoyle_fight",
+    "kind": "combat",
+    "picture": "wizardry-art:sanctum",
+    "encounter": "gargoyle_roost",
+    "combat": "wizardry-rules:catacomb_battle",
+    "on_win": "gargoyle_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "gargoyle_won", "kind": "text", "text": "Shattered stone wings litter the threshold before the sealed vault door." },
+  {
+    "type": "event",
+    "id": "boss_fight",
+    "kind": "combat",
+    "picture": "wizardry-art:sanctum",
+    "encounter": "sanctum_boss",
+    "combat": "wizardry-rules:catacomb_battle",
+    "on_win": "boss_won",
+    "on_lose": "party_fallen"
+  },
+  { "type": "event", "id": "boss_won", "kind": "set", "variable": "dread_slain", "value": "true", "next": "victory_end" },
+  { "type": "event", "id": "victory_end", "kind": "end", "text": "The Dread Knight collapses in a ring of dying embers. The Catacombs of Ash fall silent — victory!" },
+  { "type": "event", "id": "party_fallen", "kind": "end", "text": "The torches gutter out. The catacombs claim another party." }
+]

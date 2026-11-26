@@ -1,0 +1,37 @@
+[
+  { "type": "attribute", "id": "might", "name": "Might", "min": 3, "max": 18, "default": 10 },
+  { "type": "attribute", "id": "mind", "name": "Mind", "min": 3, "max": 18, "default": 10 },
+  { "type": "attribute", "id": "grit", "name": "Grit", "min": 3, "max": 18, "default": 10 },
+  { "type": "attribute", "id": "agility", "name": "Agility", "min": 3, "max": 18, "default": 10 },
+  { "type": "derived", "id": "power", "name": "Power", "value": "floor((self.might - 10) / 2)", "show_on_sheet": true },
+  { "type": "derived", "id": "spell_power", "name": "Spell power", "value": "floor((self.mind - 10) / 2)", "show_on_sheet": true },
+  { "type": "derived", "id": "ac", "name": "Defence", "value": "10 + floor((self.agility - 10) / 2)", "show_on_sheet": true },
+  { "type": "track", "id": "hp", "name": "HP", "from_levels": true },
+  { "type": "track", "id": "mp", "name": "MP", "max": "if self.class == 'mage' or self.class == 'priest' then 6 + self.level * 2 else 0" },
+  { "type": "currency", "id": "gold", "name": "Gold" },
+  { "type": "economy", "id": "standard", "sell_fraction": 0.5 },
+  {
+    "type": "resting",
+    "id": "camp",
+    "unit": "hours",
+    "restore": [
+      { "track": "hp", "amount": "self.max_hp" },
+      { "track": "mp", "amount": "self.max_mp" }
+    ]
+  },
+  {
+    "type": "character-creation",
+    "id": "standard",
+    "name": "Standard array",
+    "attributes": ["might", "mind", "grit", "agility"],
+    "method": "array",
+    "array": [15, 13, 12, 10],
+    "default": true,
+    "starting": {
+      "knight": { "gold": "40" },
+      "priest": { "gold": "30" },
+      "mage": { "gold": "25" },
+      "rogue": { "gold": "35" }
+    }
+  }
+]

@@ -1,0 +1,175 @@
+[
+  {
+    "type": "check",
+    "id": "accuracy",
+    "name": "Hit rate",
+    "roll": "1d100",
+    "target": "94",
+    "succeeds": "at-most",
+    "tiers": [ { "name": "critical", "when": "check.roll <= 10" } ]
+  },
+  {
+    "type": "item",
+    "id": "crystal_blade",
+    "name": "Crystal Blade",
+    "kind": "weapon",
+    "cost": 25,
+    "currency": "coins",
+    "weight": 2,
+    "parameters": { "power": "5" }
+  },
+  {
+    "type": "item",
+    "id": "seraph_staff",
+    "name": "Seraph Staff",
+    "kind": "weapon",
+    "cost": 20,
+    "currency": "coins",
+    "weight": 1,
+    "parameters": { "power": "2" },
+    "modifiers": [ { "stat": "magic_power", "value": "3" } ]
+  },
+  {
+    "type": "item",
+    "id": "flame_rod",
+    "name": "Flame Rod",
+    "kind": "weapon",
+    "cost": 22,
+    "currency": "coins",
+    "weight": 1,
+    "parameters": { "power": "2" },
+    "modifiers": [ { "stat": "magic_power", "value": "4" } ]
+  },
+  {
+    "type": "item",
+    "id": "yew_bow",
+    "name": "Silverstring Bow",
+    "kind": "weapon",
+    "cost": 24,
+    "currency": "coins",
+    "weight": 2,
+    "parameters": { "power": "4" }
+  },
+  {
+    "type": "item",
+    "id": "azure_mail",
+    "name": "Azure Cuirass",
+    "kind": "armour",
+    "cost": 30,
+    "currency": "coins",
+    "weight": 3,
+    "modifiers": [ { "stat": "defense", "value": "3" } ]
+  },
+  {
+    "type": "item",
+    "id": "hi_herb",
+    "name": "Hi-Potion",
+    "kind": "consumable",
+    "cost": 12,
+    "currency": "coins",
+    "weight": 1,
+    "use": {
+      "operations": [ { "op": "heal", "track": "hp", "amount": "18" } ]
+    }
+  },
+  {
+    "type": "item",
+    "id": "citadel_crest",
+    "name": "Citadel Crest",
+    "kind": "key",
+    "cost": 0,
+    "currency": "coins",
+    "weight": 0
+  },
+  {
+    "type": "class",
+    "id": "blade",
+    "name": "Knight",
+    "prime_requisites": ["atk"],
+    "levels": [
+      { "hp": "28" },
+      { "hp": "9" },
+      { "hp": "10" },
+      { "hp": "11" }
+    ],
+    "actions": [ { "action": "attack", "from_item": "weapon" } ]
+  },
+  {
+    "type": "class",
+    "id": "white_mage",
+    "name": "White Mage",
+    "prime_requisites": ["mag"],
+    "levels": [
+      { "hp": "20" },
+      { "hp": "6" },
+      { "hp": "7" },
+      { "hp": "7" }
+    ],
+    "actions": [ { "action": "attack", "from_item": "weapon" } ]
+  },
+  {
+    "type": "class",
+    "id": "black_mage",
+    "name": "Black Mage",
+    "prime_requisites": ["mag"],
+    "levels": [
+      { "hp": "18" },
+      { "hp": "5" },
+      { "hp": "6" },
+      { "hp": "7" }
+    ],
+    "actions": [ { "action": "attack", "from_item": "weapon" } ]
+  },
+  {
+    "type": "class",
+    "id": "ranger",
+    "name": "Ranger",
+    "prime_requisites": ["spd"],
+    "levels": [
+      { "hp": "24" },
+      { "hp": "7" },
+      { "hp": "8" },
+      { "hp": "9" }
+    ],
+    "actions": [ { "action": "attack", "from_item": "weapon" } ]
+  },
+  {
+    "type": "spell",
+    "id": "flare",
+    "name": "Fira",
+    "lists": { "black_mage": 1 },
+    "range": "Any enemy",
+    "duration": "Instantaneous",
+    "area": "One foe",
+    "casting_time": "1 action",
+    "cost": { "mp": "3" },
+    "effect": { "action": "spell_strike", "power": "8" },
+    "description": "Scorches a foe with a burst of crimson fire."
+  },
+  {
+    "type": "spell",
+    "id": "curaga",
+    "name": "Cura",
+    "lists": { "white_mage": 1 },
+    "range": "Any ally",
+    "duration": "Instantaneous",
+    "area": "One ally",
+    "casting_time": "1 action",
+    "cost": { "mp": "3" },
+    "effect": { "action": "spell_heal", "power": "12" },
+    "description": "Bathes a wounded ally in warm restorative light."
+  },
+  {
+    "type": "spell",
+    "id": "radiance",
+    "name": "Dia",
+    "lists": { "white_mage": 1 },
+    "range": "Any enemy",
+    "duration": "Instantaneous",
+    "area": "One foe",
+    "casting_time": "1 action",
+    "cost": { "mp": "3" },
+    "effect": { "action": "spell_strike", "power": "5" },
+    "description": "Calls down a beam of azure starlight."
+  }
+]
