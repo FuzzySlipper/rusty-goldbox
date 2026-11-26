@@ -4,8 +4,8 @@
   "media": "sheet",
   "file": "sprites/bones.png",
   "frame_size": [
-    32,
-    16
+    64,
+    32
   ],
   "faces": "right",
   "height": 0.25

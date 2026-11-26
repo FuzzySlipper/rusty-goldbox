@@ -4,8 +4,8 @@
   "media": "sheet",
   "file": "sprites/fighter.png",
   "frame_size": [
-    32,
-    48
+    64,
+    96
   ],
   "faces": "right",
   "height": 0.9,

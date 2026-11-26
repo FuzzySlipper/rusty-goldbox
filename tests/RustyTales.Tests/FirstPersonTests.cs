@@ -184,17 +184,19 @@ public sealed class FirstPersonTests
     {
         CameraPose narrow = CombatScene.PoseFor(15, 9, 1.0);
         CameraPose wide = CombatScene.PoseFor(15, 9, 2.4);
+        double narrowHeight = CombatScene.OrthographicHeightFor(15, 9, 1.0);
+        double wideHeight = CombatScene.OrthographicHeightFor(15, 9, 2.4);
 
-        // Straight on, centred, looking down; a wide view lets it stand closer than a square one.
+        // Straight on, centred, looking steeply down in orthographic 3/4 view; a wide view needs a smaller vertical span than a square one.
         Assert.Equal(7.5f, wide.Position.X, 3);
-        Assert.Equal(-30, wide.PitchDegrees, 3);
-        Assert.True(Vector3.Distance(wide.Position, new Vector3(7.5f, 0, 4.5f)) < Vector3.Distance(narrow.Position, new Vector3(7.5f, 0, 4.5f)));
+        Assert.Equal(-CombatScene.TacticalPitch, wide.PitchDegrees, 3);
+        Assert.True(wideHeight < narrowHeight);
 
-        // The field fills the frame: every corner is inside it, and some corner reaches its margin.
-        foreach ((CameraPose pose, double aspect) in new[] { (narrow, 1.0), (wide, 2.4) })
+        // The room fills the orthographic frame cleanly: every floor corner is inside it, and the limiting axis reaches the fill margin.
+        foreach ((CameraPose pose, double orthoHeight, double aspect) in new[] { (narrow, narrowHeight, 1.0), (wide, wideHeight, 2.4) })
         {
-            double reach = Reach(pose, 15, 9, aspect);
-            Assert.InRange(reach, 0.85, 0.9001);
+            double reach = OrthographicReach(pose, orthoHeight, 15, 9, aspect);
+            Assert.InRange(reach, 0.85, 0.96);
         }
     }
 
@@ -208,24 +210,20 @@ public sealed class FirstPersonTests
         Assert.Equal((CombatScene.Width, CombatScene.Depth), CombatScene.FallbackSize([0, 1]));
     }
 
-    /// <summary>How far toward the frame's edge the field's furthest corner (with figures standing on it) appears, from 0 at the centre to 1 at the edge.</summary>
-    private static double Reach(CameraPose pose, int width, int depth, double aspect)
+    /// <summary>How far toward the orthographic frame's edge the room's furthest corner appears, from 0 at the centre to 1 at the edge.</summary>
+    private static double OrthographicReach(CameraPose pose, double orthoHeight, int width, int depth, double aspect)
     {
-        double pitch = 30 * Math.PI / 180;
-        Vector3 forward = new(0, (float)-Math.Sin(pitch), (float)-Math.Cos(pitch));
+        double pitch = CombatScene.TacticalPitch * Math.PI / 180;
         Vector3 up = new(0, (float)Math.Cos(pitch), (float)-Math.Sin(pitch));
-        double tanY = Math.Tan(CombatScene.FieldOfView * Math.PI / 360);
+        double halfH = orthoHeight / 2.0;
+        double halfW = halfH * aspect;
         double reach = 0;
-        foreach (float x in new[] { 0f, width })
+        foreach (float x in new[] { -0.35f, width + 0.35f })
         {
-            foreach (float y in new[] { 0f, 1.3f })
+            foreach ((float y, float z) in new[] { (0f, (float)depth), (1f, -0.35f) })
             {
-                foreach (float z in new[] { 0f, depth })
-                {
-                    Vector3 seen = new Vector3(x, y, z) - pose.Position;
-                    double ahead = Vector3.Dot(seen, forward);
-                    reach = Math.Max(reach, Math.Max(Math.Abs(seen.X) / (ahead * tanY * aspect), Math.Abs(Vector3.Dot(seen, up)) / (ahead * tanY)));
-                }
+                Vector3 seen = new Vector3(x, y, z) - pose.Position;
+                reach = Math.Max(reach, Math.Max(Math.Abs(seen.X) / halfW, Math.Abs(Vector3.Dot(seen, up)) / halfH));
             }
         }
 

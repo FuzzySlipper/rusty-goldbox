@@ -4,8 +4,8 @@
   "media": "sheet",
   "file": "pictures/altar.png",
   "frame_size": [
-    160,
-    100
+    320,
+    200
   ],
   "animations": {
     "glow": {

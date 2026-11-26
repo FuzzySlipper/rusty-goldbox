@@ -4,12 +4,12 @@
   "media": "sheet",
   "file": "sprites/skeleton.png",
   "frame_size": [
-    32,
-    48
+    64,
+    96
   ],
   "frame_count": 7,
   "faces": "right",
-  "height": 0.75,
+  "height": 0.88,
   "animations": {
     "idle": {
       "frames": [

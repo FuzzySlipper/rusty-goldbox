@@ -169,6 +169,52 @@ internal static class AreaMesh
     }
 
     /// <summary>
+    /// Low perimeter walls framing a top-down orthographic tactical chamber:
+    /// a full-height north wall (showing the dungeon wall stonework) plus low
+    /// west and east rim walls with dark stone top caps so the room reads like
+    /// a Gold Box / SKALD chamber without hiding front-row figures.
+    /// </summary>
+    public static AreaGeometry TacticalRoomWalls(int width, int depth, UvRect? wall, UvRect? cap)
+    {
+        Builder textured = new();
+        Builder plain = new();
+        Builder wallTarget = wall is null ? plain : textured;
+        Builder capTarget = cap is null ? plain : textured;
+        UvRect wallUv = wall ?? default;
+        UvRect capUv = cap ?? default;
+        const float northHeight = 1.0f;
+        const float sideHeight = 0.45f;
+        const float rim = 0.35f;
+
+        // North wall face (+Z) and top cap (+Y)
+        for (int x = 0; x < width; x++)
+        {
+            wallTarget.VerticalQuad(x, x + 1, 0, northHeight, 0f, Vector3.UnitZ, wallUv.U0, wallUv.V0, wallUv.U1, wallUv.V1);
+            capTarget.FlatRect(x, x + 1, -rim, 0f, northHeight, Vector3.UnitY, capUv);
+        }
+
+        // Corner caps at NW and NE, plus vertical stonework risers down to the side walls so no corner notch shows.
+        capTarget.FlatRect(-rim, 0f, -rim, 0f, northHeight, Vector3.UnitY, capUv);
+        capTarget.FlatRect(width, width + rim, -rim, 0f, northHeight, Vector3.UnitY, capUv);
+        float uRim = wallUv.U0 + ((wallUv.U1 - wallUv.U0) * rim);
+        float vRiserBottom = wallUv.V0 + ((wallUv.V1 - wallUv.V0) * (1f - sideHeight));
+        wallTarget.VerticalQuad(-rim, 0f, sideHeight, northHeight, 0f, Vector3.UnitZ, wallUv.U0, wallUv.V0, uRim, vRiserBottom);
+        wallTarget.VerticalQuad(width, width + rim, sideHeight, northHeight, 0f, Vector3.UnitZ, wallUv.U0, wallUv.V0, uRim, vRiserBottom);
+
+        // West and east low side walls (inward face + top cap)
+        float vSideTop = wallUv.V0 + ((wallUv.V1 - wallUv.V0) * (1f - sideHeight));
+        for (int z = 0; z < depth; z++)
+        {
+            wallTarget.SideQuad(0f, z, z + 1, 0f, sideHeight, Vector3.UnitX, wallUv.U0, vSideTop, wallUv.U1, wallUv.V1);
+            wallTarget.SideQuad(width, z, z + 1, 0f, sideHeight, -Vector3.UnitX, wallUv.U0, vSideTop, wallUv.U1, wallUv.V1);
+            capTarget.FlatRect(-rim, 0f, z, z + 1, sideHeight, Vector3.UnitY, capUv);
+            capTarget.FlatRect(width, width + rim, z, z + 1, sideHeight, Vector3.UnitY, capUv);
+        }
+
+        return Builder.Join(textured, plain);
+    }
+
+    /// <summary>
     /// A vertical stage backdrop quad at <paramref name="z"/> facing +Z, either
     /// tiled cell-by-cell (for dungeon wall sets) or stretched across one full
     /// scene picture for first-person and side-view combat modes.
@@ -233,10 +279,13 @@ internal static class AreaMesh
         }
 
         /// <summary>A floor (facing up) or ceiling (facing down) over the whole cell.</summary>
-        public void Flat(int x, int y, float height, Vector3 normal, UvRect frame)
+        public void Flat(int x, int y, float height, Vector3 normal, UvRect frame) => FlatRect(x, x + 1, y, y + 1, height, normal, frame);
+
+        /// <summary>A horizontal rectangle spanning x0..x1 and z0..z1 at <paramref name="height"/>.</summary>
+        public void FlatRect(float x0, float x1, float z0, float z1, float height, Vector3 normal, UvRect frame)
         {
             Quad(
-                [new(x, height, y), new(x + 1, height, y), new(x + 1, height, y + 1), new(x, height, y + 1)],
+                [new(x0, height, z0), new(x1, height, z0), new(x1, height, z1), new(x0, height, z1)],
                 [new(frame.U0, frame.V0), new(frame.U1, frame.V0), new(frame.U1, frame.V1), new(frame.U0, frame.V1)],
                 normal);
         }
@@ -246,6 +295,15 @@ internal static class AreaMesh
         {
             Quad(
                 [new(x0, y1, z), new(x1, y1, z), new(x1, y0, z), new(x0, y0, z)],
+                [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)],
+                normal);
+        }
+
+        /// <summary>A vertical quad at fixed <paramref name="x"/> spanning z0..z1 and y0..y1 facing <paramref name="normal"/>.</summary>
+        public void SideQuad(float x, float z0, float z1, float y0, float y1, Vector3 normal, float u0, float v0, float u1, float v1)
+        {
+            Quad(
+                [new(x, y1, z0), new(x, y1, z1), new(x, y0, z1), new(x, y0, z0)],
                 [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)],
                 normal);
         }

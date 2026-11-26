@@ -131,18 +131,31 @@ public sealed class TalesDebugModule : IDebugCommandModule
 
         if (!_session.HasFixedStartingParty)
         {
-            int needed = Math.Max(1, openCampaign.Json.GetProperty("party").GetProperty("min").GetInt32());
-            string? race = rules.OfType(DefinitionTypes.Race).FirstOrDefault()?.QualifiedId;
-            string? characterClass = rules.OfType(DefinitionTypes.Class).FirstOrDefault()?.QualifiedId;
+            JsonElement party = openCampaign.Json.GetProperty("party");
+            int min = Math.Max(1, party.GetProperty("min").GetInt32());
+            int max = party.TryGetProperty("max", out JsonElement maxEl) ? Math.Max(min, maxEl.GetInt32()) : min;
+            int needed = Math.Clamp(4, min, max);
+            List<Definition> races = rules.OfType(DefinitionTypes.Race).ToList();
+            List<Definition> classes = rules.OfType(DefinitionTypes.Class).ToList();
+            List<Definition> portraits = rules.OfType(DefinitionTypes.Asset)
+                .Where(asset => asset.Json.TryGetProperty("tags", out JsonElement tags)
+                    && tags.EnumerateArray().Any(tag => string.Equals(tag.GetString(), "portrait", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
             string[] names = ["Ada", "Brom", "Cora", "Dain", "Elin", "Finn"];
 
             for (int member = 0; member < needed; member++)
             {
                 string name = member < names.Length ? names[member] : $"Hero {member + 1}";
+                Definition? pickedClass = classes.Count > 0 ? classes[member % classes.Count] : null;
+                Definition? pickedRace = PickCompatibleRace(races, pickedClass);
+                string? portrait = pickedClass is not null
+                    ? portraits.FirstOrDefault(asset => string.Equals(asset.Id, $"{pickedClass.Id}_portrait", StringComparison.OrdinalIgnoreCase))?.QualifiedId
+                        ?? (portraits.Count > 0 ? portraits[member % portraits.Count].QualifiedId : null)
+                    : portraits.Count > 0 ? portraits[member % portraits.Count].QualifiedId : null;
                 int before = _session.Party.Count;
                 for (int attempt = 0; attempt < 64 && _session.Party.Count == before; attempt++)
                 {
-                    _session.Roll(_engine, name, race, characterClass);
+                    _session.Roll(_engine, name, pickedRace?.QualifiedId, pickedClass?.QualifiedId, portrait);
                 }
 
                 if (_session.Party.Count == before)
@@ -160,6 +173,28 @@ public sealed class TalesDebugModule : IDebugCommandModule
 
         _publish();
         return DebugCommandResult.Success($"Started {openCampaign.Name} (seed {parsedSeed}) at {_session.Runner!.State.Area.Id} [{_session.Runner.State.X}, {_session.Runner.State.Y}] facing {Facings.Name(_session.Runner.State.Facing)}.");
+    }
+
+    private static Definition? PickCompatibleRace(List<Definition> races, Definition? pickedClass)
+    {
+        if (races.Count == 0)
+        {
+            return null;
+        }
+
+        if (pickedClass is null)
+        {
+            return races[0];
+        }
+
+        // Prefer a race without a class allowlist, else one whose allowlist permits the picked class.
+        return races.FirstOrDefault(race => !race.Json.TryGetProperty("classes", out JsonElement allowed) || allowed.ValueKind != JsonValueKind.Array)
+            ?? races.FirstOrDefault(race => race.Json.TryGetProperty("classes", out JsonElement allowed)
+                && allowed.ValueKind == JsonValueKind.Array
+                && allowed.EnumerateArray().Any(entry =>
+                    string.Equals(entry.GetString(), pickedClass.Id, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(entry.GetString(), pickedClass.QualifiedId, StringComparison.OrdinalIgnoreCase)))
+            ?? races[0];
     }
 
     [DebugCommand("tales.play", Description = "Execute an ordinary play command in the running campaign.")]

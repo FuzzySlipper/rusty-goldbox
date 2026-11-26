@@ -4,8 +4,8 @@
   "media": "sheet",
   "file": "sprites/pillar.png",
   "frame_size": [
-    32,
-    48
+    64,
+    96
   ],
   "faces": "right",
   "height": 1.5

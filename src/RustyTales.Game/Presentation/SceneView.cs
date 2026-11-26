@@ -25,6 +25,8 @@ internal sealed class SceneView : IDisposable
     private const ulong AreaObject = 1;
     private const ulong BackdropObject = 2;
     private const ulong PropObjects = 10_000;
+    private const ulong HemisphereLightId = 1;
+    private const ulong TorchLightId = 2;
     private const double EyeHeight = 0.5;
     private const double FieldOfView = 70;
     // Smooth first-person step and turn transitions over 5 ticks (~165ms at 30 Hz).
@@ -37,6 +39,8 @@ internal sealed class SceneView : IDisposable
     private readonly ModuleLibrary _library;
     private readonly Camera _camera;
     private readonly Material _plain;
+    private readonly Light _hemisphereLight;
+    private readonly Light _torchLight;
     private readonly Dictionary<string, Art> _art = [];
     private readonly CombatScene _combat;
     private readonly List<IDisposable> _retired = [];
@@ -67,8 +71,31 @@ internal sealed class SceneView : IDisposable
         engine.CameraView.SetActiveCamera(_camera);
         // The camera draws over the panels' view element wherever the layout puts it; the whole window until a page anchors it.
         engine.CameraView.SetViewportAnchor(new CameraViewportAnchorRequest(_camera, ViewAnchor));
-        engine.CameraView.SetBackgroundColor(new SetBackgroundColorRequest(new Color(0.03f, 0.03f, 0.05f, 1)));
+        engine.CameraView.SetBackgroundColor(new SetBackgroundColorRequest(new Color(0.004f, 0.004f, 0.008f, 1)));
         _plain = engine.Graphics.CreateMaterial(new MaterialRequest(new Color(0.25f, 0.24f, 0.22f, 1), default, 0.95f, new Color(1, 1, 1, 1), Vector3.Zero, 0, false));
+        // Hemisphere lighting illuminates both upward-facing floors and downward-facing dungeon ceilings.
+        _hemisphereLight = engine.Graphics.CreateLight(new LightRequest(
+            HemisphereLightId,
+            false,
+            0,
+            new LightDescriptor(
+                LightKind.Hemisphere,
+                new Vector3(0.86f, 0.82f, 0.76f),
+                0.65f,
+                true,
+                Vector3.Zero,
+                -Vector3.UnitY,
+                false,
+                0,
+                0,
+                0,
+                0,
+                LightShadowIntent.Disabled,
+                0,
+                0,
+                false,
+                new Vector3(0.76f, 0.68f, 0.60f))));
+        _torchLight = engine.Graphics.CreateLight(TorchRequest(false, Vector3.Zero));
         _combat = new CombatScene(engine.Graphics, _plain);
         _frames = new PlaybackFrames(engine.Graphics);
     }
@@ -97,6 +124,7 @@ internal sealed class SceneView : IDisposable
                     field,
                     Floor(rules, session.Set, state.Area),
                     CombatBackdrop(rules, session.Set, state, pending.Event),
+                    RoomWalls(rules, session.Set, state.Area),
                     facts);
                 FitCombatCamera(force: true);
             }
@@ -129,6 +157,7 @@ internal sealed class SceneView : IDisposable
         if (!_showingArea)
         {
             StopPicture();
+            UpdateTorch(false, Vector3.Zero);
             _hasCameraPose = false;
             _cameraAreaId = null;
         }
@@ -190,6 +219,7 @@ internal sealed class SceneView : IDisposable
             _cameraTweenStep = CameraTweenSteps;
             _hasCameraPose = true;
             _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(targetEye, 0, targetYaw))));
+            UpdateTorch(true, targetEye);
             return;
         }
 
@@ -197,6 +227,7 @@ internal sealed class SceneView : IDisposable
         double currentYaw = CurrentCameraYaw();
         if (Vector3.DistanceSquared(currentEye, targetEye) < 1e-6f && Math.Abs(ShortestAngleDelta(currentYaw, targetYaw)) < 1e-4)
         {
+            UpdateTorch(true, currentEye);
             return;
         }
 
@@ -215,7 +246,36 @@ internal sealed class SceneView : IDisposable
         }
 
         _cameraTweenStep++;
-        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(CurrentCameraEye(), 0, CurrentCameraYaw()))));
+        Vector3 eye = CurrentCameraEye();
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, CurrentCameraYaw()))));
+        UpdateTorch(true, eye);
+    }
+
+    private void UpdateTorch(bool enabled, Vector3 eye)
+    {
+        Vector3 position = enabled ? eye + new Vector3(0, 0.1f, 0) : Vector3.Zero;
+        _engine.Graphics.UpdateLight(new LightUpdateRequest(_torchLight, TorchRequest(enabled, position)));
+    }
+
+    private static LightRequest TorchRequest(bool enabled, Vector3 position)
+    {
+        return new LightRequest(
+            TorchLightId,
+            false,
+            0,
+            new LightDescriptor(
+                LightKind.Point,
+                new Vector3(1.0f, 0.80f, 0.54f),
+                1.9f,
+                enabled,
+                position,
+                -Vector3.UnitZ,
+                true,
+                7.0f,
+                1.4f,
+                0,
+                0,
+                LightShadowIntent.Disabled));
     }
 
     private Vector3 CurrentCameraEye()
@@ -267,7 +327,10 @@ internal sealed class SceneView : IDisposable
         double width = (anchor.Reported ? anchor.Width : 1) * surface.CssWidth;
         double height = (anchor.Reported ? anchor.Height : 1) * surface.CssHeight;
         double aspect = width > 0 && height > 0 ? width / height : 16.0 / 9;
-        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(aspect), _combat.ActiveFieldOfView)));
+        CameraDescriptor descriptor = _combat.IsOrthographic
+            ? OrthographicCamera(_combat.PoseIn(aspect), _combat.OrthographicHeightIn(aspect))
+            : Camera(_combat.PoseIn(aspect), _combat.ActiveFieldOfView);
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, descriptor));
         return true;
     }
 
@@ -287,6 +350,8 @@ internal sealed class SceneView : IDisposable
             art.Texture.Dispose();
         }
 
+        _torchLight.Dispose();
+        _hemisphereLight.Dispose();
         _plain.Dispose();
         _camera.Dispose();
     }
@@ -496,6 +561,17 @@ internal sealed class SceneView : IDisposable
             CameraViewports.Full);
     }
 
+    /// <summary>An orthographic top-down camera drawing into the view panel for Gold Box / SKALD-style tactical fights.</summary>
+    private CameraDescriptor OrthographicCamera(CameraPose pose, double verticalSize)
+    {
+        return new CameraDescriptor(
+            pose,
+            CameraBasisMode.Derived,
+            default,
+            new CameraProjection(CameraProjectionKind.Orthographic, 0, verticalSize, 0.05, 64),
+            CameraViewports.Full);
+    }
+
     /// <summary>The sprite a monster or class is drawn with, from the set's figures.</summary>
     private SpriteArt? SpriteFor(RuleSet rules, ModuleSet set, Definition kind)
     {
@@ -552,12 +628,31 @@ internal sealed class SceneView : IDisposable
         return frames.TryGetValue("floor", out UvRect floor) && ArtFor(set, wallSet) is Art art ? (art.Material, floor) : null;
     }
 
-    /// <summary>Stage backdrop for first-person and side-view combat: event picture, else cell backdrop, else area wall tile.</summary>
+    /// <summary>The area's wall and cap frames for perimeter walls around an orthographic tactical arena.</summary>
+    private (Material Material, UvRect Wall, UvRect? Cap)? RoomWalls(RuleSet rules, ModuleSet set, Definition area)
+    {
+        if (!area.Json.TryGetProperty("wall_set", out _))
+        {
+            return null;
+        }
+
+        Definition wallSet = rules.Reference(area, "$.wall_set");
+        Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
+        if (!frames.TryGetValue("wall", out UvRect wall) || ArtFor(set, wallSet) is not Art art)
+        {
+            return null;
+        }
+
+        UvRect? cap = frames.TryGetValue("ceiling", out UvRect ceiling) ? ceiling : null;
+        return (art.Material, wall, cap);
+    }
+
+    /// <summary>Stage backdrop for first-person and side-view combat: event picture, else cell backdrop, else combat event's cell backdrop, else area wall tile.</summary>
     private (Material Material, UvRect Frame, bool Tile)? CombatBackdrop(RuleSet rules, ModuleSet set, CampaignState state, Definition combatEvent)
     {
         Definition? picture = combatEvent.Json.TryGetProperty("picture", out _)
             ? rules.Reference(combatEvent, "$.picture")
-            : Backdrop(rules, state);
+            : Backdrop(rules, state) ?? EventCellBackdrop(rules, state.Area, combatEvent);
         if (picture is not null && Media.MediaOf(picture) == "image" && ArtFor(set, picture) is Art pictureArt)
         {
             return (pictureArt.Material, new UvRect(0, 0, 1, 1), false);
@@ -571,6 +666,29 @@ internal sealed class SceneView : IDisposable
             {
                 return (wallArt.Material, wall, true);
             }
+        }
+
+        return null;
+    }
+
+    private static Definition? EventCellBackdrop(RuleSet rules, Definition area, Definition combatEvent)
+    {
+        if (!area.Json.TryGetProperty("cells", out JsonElement cells))
+        {
+            return null;
+        }
+
+        int index = 0;
+        foreach (JsonElement cell in cells.EnumerateArray())
+        {
+            if (cell.TryGetProperty("backdrop", out _)
+                && cell.TryGetProperty("event", out _)
+                && rules.Reference(area, $"$.cells[{index}].event").QualifiedId == combatEvent.QualifiedId)
+            {
+                return rules.Reference(area, $"$.cells[{index}].backdrop");
+            }
+
+            index++;
         }
 
         return null;

@@ -23,8 +23,8 @@ internal sealed class CombatScene : IDisposable
 
     private const int FirstPersonWidth = 6;
     private const int FirstPersonDepth = 4;
-    private const int SideViewWidth = 7;
-    private const int SideViewDepth = 4;
+    private const int SideViewWidth = 5;
+    private const int SideViewDepth = 3;
 
     private const ulong FloorObject = 100;
     private const ulong BackdropObject = 101;
@@ -61,25 +61,22 @@ internal sealed class CombatScene : IDisposable
         _plain = plain;
     }
 
-    /// <summary>The tactical combat camera's vertical field of view: narrower than the corridor's, framing the field.</summary>
-    public const double FieldOfView = 46;
+    /// <summary>Whether the active combat presentation uses an orthographic top-down camera.</summary>
+    public bool IsOrthographic => _presentation == "tactical";
 
-    /// <summary>The active camera vertical field of view for the current combat presentation.</summary>
+    /// <summary>The tactical combat camera's downward pitch, in degrees (Gold Box / SKALD 3/4 top-down).</summary>
+    public const double TacticalPitch = 60;
+
+    /// <summary>The active camera vertical field of view for perspective combat presentations.</summary>
     public double ActiveFieldOfView => _presentation switch
     {
-        "first_person" => 44,
-        "side_view" => 42,
-        _ => FieldOfView,
+        "first_person" => 36,
+        "side_view" => 34,
+        _ => 36,
     };
 
-    /// <summary>How far the tactical camera looks down, in degrees.</summary>
-    private const double Pitch = 30;
-
-    /// <summary>How tall a figure stands, in cells, so the far row's heads stay in the frame.</summary>
-    private const double FigureHeight = 1.3;
-
-    /// <summary>How much of the frame the field may fill, leaving a margin on every side.</summary>
-    private const double Fill = 0.9;
+    /// <summary>How much of the viewport the tactical orthographic room fills, leaving a slim margin on every side.</summary>
+    private const double Fill = 0.94;
 
     /// <summary>Where the camera stands for the current fight in a view of the given width-to-height <paramref name="aspect"/>.</summary>
     public CameraPose PoseIn(double aspect) => _presentation switch
@@ -89,92 +86,74 @@ internal sealed class CombatScene : IDisposable
         _ => PoseFor(_width, _depth, aspect),
     };
 
+    /// <summary>Orthographic vertical world size framing the current tactical room cleanly in <paramref name="aspect"/>.</summary>
+    public double OrthographicHeightIn(double aspect) => OrthographicHeightFor(_width, _depth, aspect);
+
     /// <summary>
-    /// Straight on, centred and 30 degrees down, as close as it can stand
-    /// with the whole field and the figures on it inside the frame: a wide
-    /// view brings it closer, a narrow or deep one sends it back.
+    /// Gold Box / SKALD-style orthographic top-down camera (60 degrees down):
+    /// every tile across the room keeps uniform screen proportions with no
+    /// perspective trapezoid distortion, and upright figures read identically
+    /// from the back row to the front row.
     /// </summary>
-    public static CameraPose PoseFor(int width, int depth, double aspect) => PoseForAngle(width, depth, aspect, Pitch, FieldOfView, FigureHeight, Fill);
-
-    /// <summary>Eye-level Wizardry / Dragon Quest camera framing the enemy ranks and stage backdrop.</summary>
-    public static CameraPose PoseForFirstPerson(int width, int depth, double aspect)
+    public static CameraPose PoseFor(int width, int depth, double aspect)
     {
-        double pitch = 5;
-        double fov = 44;
-        double tanY = Math.Tan(fov * Math.PI / 360);
-        double tanX = tanY * Math.Max(0.4, aspect);
-        // Keep a ~4.4-cell horizontal enemy lineup and ~1.6-cell figure height framed comfortably.
-        double halfWidth = 2.3;
-        double distForWidth = halfWidth / (0.86 * tanX);
-        double distForHeight = 0.9 / (0.84 * tanY);
-        double distance = Math.Max(2.3, Math.Max(distForWidth, distForHeight));
-        float targetZ = depth * 0.45f;
-        return new CameraPose(new Vector3(width / 2f, 0.78f + (float)(distance * Math.Sin(pitch * Math.PI / 180)), targetZ + (float)distance), -pitch, 0);
-    }
-
-    /// <summary>Lower theatrical JRPG side-view camera framing party on the right and enemies on the left.</summary>
-    public static CameraPose PoseForSideView(int width, int depth, double aspect) => PoseForAngle(width, depth, aspect, 12, 40, 1.35, 0.96);
-
-    private static CameraPose PoseForAngle(int width, int depth, double aspect, double pitchDegrees, double fovDegrees, double figureHeight, double fill)
-    {
-        double pitch = pitchDegrees * Math.PI / 180;
+        double pitch = TacticalPitch * Math.PI / 180;
         Vector3 forward = new(0, (float)-Math.Sin(pitch), (float)-Math.Cos(pitch));
         Vector3 up = new(0, (float)Math.Cos(pitch), (float)-Math.Sin(pitch));
-        Vector3 centre = new(width / 2f, 0, depth / 2f);
-        double tanY = Math.Tan(fovDegrees * Math.PI / 360);
-        double tanX = tanY * Math.Max(0.1, aspect);
-        Vector3[] corners =
-        [
-            new(0, 0, 0), new(width, 0, 0), new(0, 0, depth), new(width, 0, depth),
-            new(0, (float)figureHeight, 0), new(width, (float)figureHeight, 0), new(0, (float)figureHeight, depth), new(width, (float)figureHeight, depth),
-        ];
 
-        // Where each corner shows in the frame from an eye: -1 to 1 across and up, or null behind the camera.
-        (double X, double Y)? Seen(Vector3 eye, Vector3 corner)
-        {
-            Vector3 seen = corner - eye;
-            double ahead = Vector3.Dot(seen, forward);
-            return ahead <= 0.1 ? null : (seen.X / (ahead * tanX), Vector3.Dot(seen, up) / (ahead * tanY));
-        }
+        // Center vertically between the near floor edge (z = depth, y = 0) and top of the north wall (z = -0.35, y = 1.0).
+        double topY = (1.0 * Math.Cos(pitch)) + (0.35 * Math.Sin(pitch));
+        double botY = -depth * Math.Sin(pitch);
+        double midY = (topY + botY) / 2.0;
+        Vector3 centre = new(width / 2f, 0, 0);
+        // Shift from (width/2, 0, 0) along `up` by midY so the projected vertical bounds sit centered.
+        Vector3 target = centre + (up * (float)midY);
+        const float distance = 18f;
+        return new CameraPose(target - (forward * distance), -TacticalPitch, 0);
+    }
 
-        bool Fits(Vector3 eye)
-        {
-            return corners.All(corner => Seen(eye, corner) is var (x, y) && Math.Abs(x) <= fill && Math.Abs(y) <= fill);
-        }
+    /// <summary>Orthographic vertical height that fits a <paramref name="width"/> by <paramref name="depth"/> tactical room (with perimeter walls) into <paramref name="aspect"/>.</summary>
+    public static double OrthographicHeightFor(int width, int depth, double aspect)
+    {
+        double pitch = TacticalPitch * Math.PI / 180;
+        double spanX = width + 0.7;
+        double spanY = (depth * Math.Sin(pitch)) + (1.0 * Math.Cos(pitch)) + (0.35 * Math.Sin(pitch));
+        double safeAspect = Math.Max(0.25, aspect);
+        return Math.Max(spanY / Fill, (spanX / safeAspect) / Fill);
+    }
 
-        // The field shrinks in the frame as the camera backs away, so the closest distance that fits is a bisection.
-        Vector3 Closest(Vector3 target)
-        {
-            double near = 0.5;
-            double far = 4 * (width + depth + 4);
-            for (int step = 0; step < 40; step++)
-            {
-                double middle = (near + far) / 2;
-                if (Fits(target - (forward * (float)middle)))
-                {
-                    far = middle;
-                }
-                else
-                {
-                    near = middle;
-                }
-            }
+    /// <summary>Eye-level Wizardry / Dragon Quest camera framing the enemy ranks heroically against the stage backdrop.</summary>
+    public static CameraPose PoseForFirstPerson(int width, int depth, double aspect)
+    {
+        double pitch = 4;
+        double fov = 36;
+        double tanY = Math.Tan(fov * Math.PI / 360);
+        double tanX = tanY * Math.Max(0.4, aspect);
+        // Frame a ~3.0-cell enemy lineup closely so sprites fill ~55-65% of the viewport height.
+        double halfWidth = 1.5;
+        double distForWidth = halfWidth / (0.88 * tanX);
+        double distForHeight = 0.54 / (0.86 * tanY);
+        double distance = Math.Max(1.65, Math.Max(distForWidth, distForHeight));
+        float targetZ = depth * 0.66f;
+        return new CameraPose(new Vector3(width / 2f, 0.52f + (float)(distance * Math.Sin(pitch * Math.PI / 180)), targetZ + (float)distance), -pitch, 0);
+    }
 
-            return target - (forward * (float)far);
-        }
-
-        // Looking down, the field's near edge sits low and the far edge high but not as far; aim
-        // a little off the centre so the field sits in the middle of the frame, then close in again.
-        Vector3 target = centre;
-        for (int pass = 0; pass < 3; pass++)
-        {
-            Vector3 eye = Closest(target);
-            List<double> heights = corners.Select(corner => Seen(eye, corner)!.Value.Y).ToList();
-            double middle = (heights.Min() + heights.Max()) / 2;
-            target += up * (float)(middle * Vector3.Distance(eye, target) * tanY);
-        }
-
-        return new CameraPose(Closest(target), -pitchDegrees, 0);
+    /// <summary>Close theatrical JRPG side-view camera framing party on the right and enemies on the left.</summary>
+    public static CameraPose PoseForSideView(int width, int depth, double aspect)
+    {
+        double pitch = 12;
+        double fov = 34;
+        double tanY = Math.Tan(fov * Math.PI / 360);
+        double tanX = tanY * Math.Max(0.4, aspect);
+        // Frame both opposing columns tightly so heroes and monsters read large and clear.
+        double halfWidth = Math.Max(1.85, width * 0.36);
+        double distForWidth = halfWidth / (0.90 * tanX);
+        double distForHeight = 0.72 / (0.88 * tanY);
+        double distance = Math.Max(2.2, Math.Max(distForWidth, distForHeight));
+        float targetZ = depth * 0.68f;
+        float cameraZ = Math.Max(depth + 0.6f, targetZ + (float)distance);
+        float dz = cameraZ - (depth * 0.5f);
+        return new CameraPose(new Vector3(width / 2f, 0.42f + (float)(dz * Math.Sin(pitch * Math.PI / 180)), cameraZ), -pitch, 0);
     }
 
     /// <summary>
@@ -207,6 +186,7 @@ internal sealed class CombatScene : IDisposable
     /// <param name="terrainFor">The sprite a terrain key of the fight's field is drawn with, or null.</param>
     /// <param name="floor">The floor material and frame (the area's wall set floor), or null for plain.</param>
     /// <param name="backdrop">Optional stage backdrop material, UV frame and tiling flag for first-person and side-view modes.</param>
+    /// <param name="roomWalls">Optional wall set material and wall/cap frames for framing the tactical room perimeter.</param>
     public void Show(
         string fightKey,
         string presentation,
@@ -217,12 +197,13 @@ internal sealed class CombatScene : IDisposable
         CombatField? field,
         (Material Material, UvRect Frame)? floor,
         (Material Material, UvRect Frame, bool Tile)? backdrop,
+        (Material Material, UvRect Wall, UvRect? Cap)? roomWalls,
         List<AppearanceFact> facts)
     {
         string sceneKey = $"{fightKey}@{presentation}";
         if (sceneKey != _fightKey)
         {
-            Build(sceneKey, presentation, observation, kindFor, spriteFor, terrainFor, field, floor, backdrop);
+            Build(sceneKey, presentation, observation, kindFor, spriteFor, terrainFor, field, floor, backdrop, roomWalls);
         }
 
         facts.Add(new AppearanceFact(FloorObject, false, 0, _floorPlacement, _floor!, true, RenderLayer.Scene));
@@ -324,7 +305,8 @@ internal sealed class CombatScene : IDisposable
         Func<char, SpriteArt?> terrainFor,
         CombatField? field,
         (Material Material, UvRect Frame)? floor,
-        (Material Material, UvRect Frame, bool Tile)? backdrop)
+        (Material Material, UvRect Frame, bool Tile)? backdrop,
+        (Material Material, UvRect Wall, UvRect? Cap)? roomWalls)
     {
         Retire();
         _fightKey = sceneKey;
@@ -359,9 +341,10 @@ internal sealed class CombatScene : IDisposable
         if (stageMode)
         {
             // Fill the viewport edge-to-edge behind the fighters without dark side bars on widescreen layouts.
-            int wallMargin = presentation == "first_person" ? 2 : 3;
-            float wallHeight = presentation == "first_person" ? 4.2f : 4.8f;
-            _backdropPlacement = new Transform(new Vector3(-wallMargin, 0, 0), Quaternion.Identity, Vector3.One);
+            int wallMargin = 1;
+            float wallHeight = presentation == "first_person" ? 2.6f : 2.9f;
+            float wallZ = presentation == "first_person" ? 0.6f : 0.0f;
+            _backdropPlacement = new Transform(new Vector3(-wallMargin, 0, wallZ), Quaternion.Identity, Vector3.One);
             AreaGeometry wallGeo = AreaMesh.BackdropWall(_width + (wallMargin * 2), wallHeight, 0f, backdrop?.Frame, backdrop?.Tile ?? true);
             _backdropMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
                 wallGeo.Positions,
@@ -370,6 +353,20 @@ internal sealed class CombatScene : IDisposable
                 wallGeo.Indices,
                 wallGeo.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
                 wallGeo.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? backdrop!.Value.Material : _plain)).ToArray()));
+            _backdrop = _graphics.CreateMeshAppearance(_backdropMesh);
+        }
+        else if (roomWalls is not null)
+        {
+            // Frame the orthographic tactical battlefield with perimeter dungeon stone walls (Gold Box / SKALD style).
+            _backdropPlacement = new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One);
+            AreaGeometry roomGeo = AreaMesh.TacticalRoomWalls(_width, _depth, roomWalls.Value.Wall, roomWalls.Value.Cap ?? roomWalls.Value.Wall);
+            _backdropMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
+                roomGeo.Positions,
+                roomGeo.Normals,
+                roomGeo.Uvs,
+                roomGeo.Indices,
+                roomGeo.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
+                roomGeo.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? roomWalls.Value.Material : _plain)).ToArray()));
             _backdrop = _graphics.CreateMeshAppearance(_backdropMesh);
         }
 
@@ -405,10 +402,10 @@ internal sealed class CombatScene : IDisposable
             bool back = index >= frontCount;
             int rowIndex = back ? index - frontCount : index;
             int rowSize = back ? backCount : frontCount;
-            float spacing = rowSize <= 2 ? 1.35f : 1.1f;
+            float spacing = rowSize <= 2 ? 1.05f : 0.88f;
             float startX = (_width / 2f) - ((rowSize - 1) * spacing / 2f);
-            float x = startX + (rowIndex * spacing) + (back ? 0.25f : 0f);
-            float z = back ? 1.1f : 2.0f;
+            float x = startX + (rowIndex * spacing) + (back ? 0.2f : 0f);
+            float z = back ? 1.95f : 2.65f;
             Vector3 spot = new(x, 0, z);
             _stageSpots[member.Id] = spot;
             AddFigure(member, spot, faceRight: false, kindFor, spriteFor);
@@ -421,8 +418,8 @@ internal sealed class CombatScene : IDisposable
         List<CombatantObservation> party = observation.Combatants.Where(member => member.Side == 0).ToList();
         List<CombatantObservation> foes = observation.Combatants.Where(member => member.Side != 0).ToList();
 
-        PlaceSideColumn(party, leftSide: false, baseX: 5.3f, rankStep: 0.7f, staggerX: 0.18f, kindFor, spriteFor);
-        PlaceSideColumn(foes, leftSide: true, baseX: 1.75f, rankStep: -0.75f, staggerX: -0.15f, kindFor, spriteFor);
+        PlaceSideColumn(party, leftSide: false, baseX: 3.45f, rankStep: 0.52f, staggerX: 0.14f, kindFor, spriteFor);
+        PlaceSideColumn(foes, leftSide: true, baseX: 1.55f, rankStep: -0.52f, staggerX: -0.12f, kindFor, spriteFor);
     }
 
     private void PlaceSideColumn(
@@ -441,7 +438,7 @@ internal sealed class CombatScene : IDisposable
             int rank = index / perRank;
             int slot = index % perRank;
             int countInRank = Math.Min(perRank, members.Count - (rank * perRank));
-            float zSpan = countInRank <= 1 ? 0f : Math.Min(2.3f, (countInRank - 1) * 0.85f);
+            float zSpan = countInRank <= 1 ? 0f : Math.Min(1.65f, (countInRank - 1) * 0.58f);
             float z = (_depth / 2f) - (zSpan / 2f) + (countInRank <= 1 ? 0f : slot * (zSpan / (countInRank - 1)));
             float x = baseX + (rank * rankStep) + (slot * staggerX);
             Vector3 spot = new(x, 0, z);
