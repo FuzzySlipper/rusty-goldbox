@@ -45,10 +45,15 @@ internal static class TalesCli
               version that satisfies its requirements, and a save keeps the versions it was made with.
           tales module remove <id>@<version>
               Removes one installed version from the module library and its record.
-          tales schema [<type> | workspace | module | expressions | operations | events | media | live-combat]
-              The format reference: definition types with fields and examples.
-          tales workspace new <dir>
+          tales schema [<type> | kits | workspace | module | expressions | operations | events | media | live-combat]
+          tales schema --module <path> [--modules <dir>]... [--extension <id>]...
+              The format reference: definition types with fields and examples, genre starter kits,
+              or with --module a scoped summary of the active ruleset/campaign's stats, actions,
+              items, spells, monsters, and asset slots.
+          tales workspace new <dir> [--kit <id>] [--id <campaign-id>] [--title <title>]
               Creates tales.json plus editable canon/art/prompts/scripts and generated staging/export directories.
+              With --kit (see `tales schema kits`), also scaffolds a complete genre starter ruleset,
+              starter art module, example campaign, smoke playtest script, and kit guide.
           tales workspace inspect [<path>]
               Finds the nearest tales.json and lists dependency search paths, authored modules, editable roots and outputs.
           tales workspace build [<path>]
@@ -186,7 +191,7 @@ internal static class TalesCli
         switch (args[0])
         {
             case "schema":
-                return SchemaCommand.Run(args.Skip(1), printer);
+                return SchemaCommand.Run(args.Skip(1), printer, workingDirectory);
             case "workspace":
                 return WorkspaceCommand.Run(args.Skip(1), printer, workingDirectory);
             case "authoring":

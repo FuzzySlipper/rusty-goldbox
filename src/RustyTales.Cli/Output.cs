@@ -67,7 +67,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         return ok ? TalesCli.Ok : TalesCli.Invalid;
     }
 
-    public int WorkspaceCreated(Workspace? workspace, IReadOnlyList<ModuleDiagnostic> diagnostics)
+    public int WorkspaceCreated(Workspace? workspace, IReadOnlyList<ModuleDiagnostic> diagnostics, GenreKit? kit = null)
     {
         bool ok = workspace is not null && diagnostics.Count == 0;
         if (json)
@@ -75,6 +75,7 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             WriteJson(new
             {
                 ok,
+                kit = kit?.Id,
                 workspace = workspace is null ? null : new
                 {
                     root = Display(workspace.RootDirectory),
@@ -92,9 +93,20 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
         }
         else if (ok)
         {
-            writer.WriteLine($"Created authoring workspace at {Display(workspace!.RootDirectory)}.");
+            string fromKit = kit is null ? "" : $" from genre kit '{kit.Id}' ({kit.Title})";
+            writer.WriteLine($"Created authoring workspace{fromKit} at {Display(workspace!.RootDirectory)}.");
             writer.WriteLine($"  inspect it with: tales workspace inspect {Display(workspace.RootDirectory)}");
-            writer.WriteLine($"  add runtime module paths to {Display(workspace.ManifestPath)} under authoring.modules.");
+            if (kit is null)
+            {
+                writer.WriteLine($"  add runtime module paths to {Display(workspace.ManifestPath)} under authoring.modules.");
+            }
+            else
+            {
+                string campaignPath = Display(workspace.Authoring!.ModuleDirectories.Last());
+                writer.WriteLine($"  scoped schema:   tales schema --module {campaignPath}");
+                writer.WriteLine($"  build it with:   tales workspace build {Display(workspace.RootDirectory)}");
+                writer.WriteLine($"  smoke test with: tales play --campaign {campaignPath} --modules {Display(workspace.ModuleDirectories[0])} --script {Display(Path.Combine(workspace.RootDirectory, "scripts/smoke.txt"))} --seed 1 --fail-on-refusal");
+            }
         }
         else
         {

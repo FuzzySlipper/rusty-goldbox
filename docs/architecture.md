@@ -67,7 +67,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
 | `src/RustyTales.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
 | `src/RustyTales.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `tales play --store` |
-| `src/RustyTales.Core/Authoring/` | Editable workspace manifest, scaffolding, inspection and validated runtime staging; shares its module search paths with module loading |
+| `src/RustyTales.Core/Authoring/` | Editable workspace manifest, scaffolding (`WorkspaceScaffold` with `--kit` genre starter kits in `GenreKits` and procedural 8-bit RGBA starter art in `StarterPng`), inspection and validated runtime staging; shares its module search paths with module loading |
 | `src/RustyTales.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
 | `src/RustyTales.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export and install; Engine owns the container format and identity |
 | `src/RustyTales.Cli/AuthoringKit/` | Embedded, copyable revision-1.0 authoring kit with index, brief/canon/chapter/encounter/art/image-judge/handoff/workflow/revision prompts and the complete Lantern worked example, discovered through the installed authoring commands |

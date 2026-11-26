@@ -6,11 +6,22 @@ without a repository checkout, this chat, or a private skill:
 
 ```text
 tales --help
+tales schema kits --json
+tales workspace new my-adventure --kit classic-jrpg --json
+tales schema --module my-adventure/modules/my-adventure --json
 tales authoring list --json
 tales authoring show workflow --json
 tales authoring show worked-example --json
 tales authoring copy --all --out .tales/authoring --json
 ```
+
+Start new campaigns from a genre starter kit (`tactical-dungeon`,
+`first-person-crawler`, or `classic-jrpg`) via `tales workspace new <dir> --kit <id>`
+to get a scoped ruleset, matching combat presentation (`tactical`, `first_person`,
+or `side_view`), starter art, a validated example campaign, and a smoke script.
+Use `tales schema --module <path> --json` to inspect only the active ruleset's
+vocabulary, group definitions into JSON arrays per file, use `"extends"` for
+variants, and use `"type": "patch"` to override required ruleset definitions.
 
 The kit is ready for use as a files-first authoring packet. It preserves
 observed authoring lessons as generic guidance and makes no model, strategy,

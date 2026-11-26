@@ -19,11 +19,32 @@ public static class WorkspaceScaffold
 
     /// <summary>
     /// Creates <paramref name="directory"/> and its conventional editable and
-    /// generated directories. Existing files are preserved; an existing
+    /// generated directories. When <paramref name="kitId"/> is given, also
+    /// scaffolds that genre starter kit's ruleset, starter art, campaign,
+    /// smoke script and kit guide. Existing files are preserved; an existing
     /// <c>tales.json</c> is an error.
     /// </summary>
-    public static Workspace? Create(string directory, List<ModuleDiagnostic> diagnostics)
+    public static Workspace? Create(
+        string directory,
+        List<ModuleDiagnostic> diagnostics,
+        string? kitId = null,
+        string? campaignId = null,
+        string? title = null)
     {
+        GenreKit? kit = null;
+        if (kitId is not null)
+        {
+            kit = GenreKits.Find(kitId);
+            if (kit is null)
+            {
+                string known = string.Join(", ", GenreKits.All.Select(entry => entry.Id));
+                diagnostics.Add(new ModuleDiagnostic(
+                    "workspace.kit",
+                    $"'{kitId}' is not a genre starter kit. Kits: {known}. Run `tales schema kits` for details."));
+                return null;
+            }
+        }
+
         string root;
         try
         {
@@ -35,6 +56,23 @@ public static class WorkspaceScaffold
                     $"{root} is a file. Choose a directory for the workspace.",
                     File: root));
                 return null;
+            }
+
+            string? resolvedCampaignId = null;
+            string? resolvedTitle = null;
+            if (kit is not null)
+            {
+                resolvedCampaignId = campaignId ?? GenreKits.DefaultCampaignId(root, kit);
+                resolvedTitle = string.IsNullOrWhiteSpace(title) ? GenreKits.DefaultTitle(resolvedCampaignId, kit) : title.Trim();
+                if (!ModuleIds.IsValid(resolvedCampaignId)
+                    || !ModuleIds.IsValid($"{resolvedCampaignId}-rules")
+                    || !ModuleIds.IsValid($"{resolvedCampaignId}-art"))
+                {
+                    diagnostics.Add(new ModuleDiagnostic(
+                        "workspace.kit.id",
+                        $"'{resolvedCampaignId}' is not a valid module ID. Use {ModuleIds.FormatDescription}."));
+                    return null;
+                }
             }
 
             Directory.CreateDirectory(root);
@@ -54,7 +92,34 @@ public static class WorkspaceScaffold
                 Directory.CreateDirectory(Path.Combine(root, relative));
             }
 
-            File.WriteAllText(manifest, Manifest);
+            string manifestText = kit is null
+                ? Manifest
+                : $$"""
+                    {
+                      "modules": ["modules"],
+                      "authoring": {
+                        "modules": [
+                          "modules/{{resolvedCampaignId}}-rules",
+                          "modules/{{resolvedCampaignId}}-art",
+                          "modules/{{resolvedCampaignId}}"
+                        ],
+                        "staging": ".tales/staged",
+                        "exports": "exports"
+                      }
+                    }
+
+                    """;
+            File.WriteAllText(manifest, manifestText);
+
+            if (kit is not null)
+            {
+                GenreKits.Scaffold(kit, root, resolvedCampaignId!, resolvedTitle!, diagnostics);
+                if (diagnostics.Count > 0)
+                {
+                    return null;
+                }
+            }
+
             return Workspace.Read(manifest, diagnostics);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)

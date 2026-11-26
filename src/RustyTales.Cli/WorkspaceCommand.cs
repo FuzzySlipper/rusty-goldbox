@@ -10,10 +10,10 @@ internal static class WorkspaceCommand
 {
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--kit", "--id", "--title"], []);
         if (error is null && parsed.Positionals.Count == 0)
         {
-            error = "Usage: tales workspace new <dir> | inspect [<path>] | build [<path>] | export [<path>] | install [<path>]";
+            error = "Usage: tales workspace new <dir> [--kit <id>] [--id <campaign-id>] [--title <title>] | inspect [<path>] | build [<path>] | export [<path>] | install [<path>]";
         }
 
         if (error is not null)
@@ -21,28 +21,42 @@ internal static class WorkspaceCommand
             return output.UsageError(error);
         }
 
-        return parsed.Positionals[0] switch
+        string command = parsed.Positionals[0];
+        if (command != "new" && (parsed.Single("--kit") is not null || parsed.Single("--id") is not null || parsed.Single("--title") is not null))
         {
-            "new" => New(parsed.Positionals.Skip(1), output, workingDirectory),
+            return output.UsageError($"--kit, --id and --title only apply to `tales workspace new`.");
+        }
+
+        return command switch
+        {
+            "new" => New(parsed, output, workingDirectory),
             "inspect" => Inspect(parsed.Positionals.Skip(1), output, workingDirectory),
             "build" => Build(parsed.Positionals.Skip(1), output, workingDirectory),
             "export" => Export(parsed.Positionals.Skip(1), output, workingDirectory, install: false),
             "install" => Export(parsed.Positionals.Skip(1), output, workingDirectory, install: true),
-            _ => output.UsageError($"Unknown workspace command '{parsed.Positionals[0]}'. Use new, inspect, build, export or install."),
+            _ => output.UsageError($"Unknown workspace command '{command}'. Use new, inspect, build, export or install."),
         };
     }
 
-    private static int New(IEnumerable<string> positionals, Output output, string workingDirectory)
+    private static int New(Arguments parsed, Output output, string workingDirectory)
     {
-        string[] values = positionals.ToArray();
+        string[] values = parsed.Positionals.Skip(1).ToArray();
         if (values.Length != 1)
         {
-            return output.UsageError("Usage: tales workspace new <dir>");
+            return output.UsageError("Usage: tales workspace new <dir> [--kit <id>] [--id <campaign-id>] [--title <title>]");
+        }
+
+        string? kitId = parsed.Single("--kit");
+        string? campaignId = parsed.Single("--id");
+        string? title = parsed.Single("--title");
+        if (kitId is null && (campaignId is not null || title is not null))
+        {
+            return output.UsageError("--id and --title require --kit <id>. Run `tales schema kits` to list available genre kits.");
         }
 
         List<ModuleDiagnostic> diagnostics = [];
-        Workspace? workspace = WorkspaceScaffold.Create(Path.GetFullPath(values[0], workingDirectory), diagnostics);
-        return output.WorkspaceCreated(workspace, diagnostics);
+        Workspace? workspace = WorkspaceScaffold.Create(Path.GetFullPath(values[0], workingDirectory), diagnostics, kitId, campaignId, title);
+        return output.WorkspaceCreated(workspace, diagnostics, kitId is null ? null : GenreKits.Find(kitId));
     }
 
     private static int Inspect(IEnumerable<string> positionals, Output output, string workingDirectory)

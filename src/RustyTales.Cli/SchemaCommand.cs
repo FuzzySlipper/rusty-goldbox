@@ -1,6 +1,9 @@
+using System.Text.Json;
+using RustyTales.Core.Authoring;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
 using RustyTales.Core.Modules;
+using RustyTales.Core.Rules;
 
 namespace RustyTales.Cli;
 
@@ -31,12 +34,23 @@ internal static class SchemaCommand
         }
         """;
 
-    public static int Run(IEnumerable<string> args, Output output)
+    public static int Run(IEnumerable<string> args, Output output, string workingDirectory = ".")
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, [], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension"], []);
         if (error is null && parsed.Positionals.Count > 1)
         {
-            error = "Usage: tales schema [type | workspace | module | expressions | operations | events | media | live-combat]";
+            error = "Usage: tales schema [type | kits | workspace | module | expressions | operations | events | media | live-combat] | tales schema --module <path> [--modules <dir>]... [--extension <id>]...";
+        }
+
+        string? moduleArg = parsed.Single("--module");
+        if (error is null && moduleArg is not null && parsed.Positionals.Count > 0)
+        {
+            error = "Pass either a schema topic or --module <path>, not both.";
+        }
+
+        if (error is null && moduleArg is null && (parsed.All("--modules").Count > 0 || parsed.All("--extension").Count > 0))
+        {
+            error = "--modules and --extension require --module <path>.";
         }
 
         if (error is not null)
@@ -44,10 +58,20 @@ internal static class SchemaCommand
             return output.UsageError(error);
         }
 
+        if (moduleArg is not null)
+        {
+            return ScopedModule(moduleArg, parsed, output, workingDirectory);
+        }
+
         string? topic = parsed.Positionals.Count == 0 ? null : parsed.Positionals[0];
         if (topic is null)
         {
             return Overview(output);
+        }
+
+        if (topic == "kits")
+        {
+            return Kits(output);
         }
 
         if (topic == "module")
@@ -89,7 +113,7 @@ internal static class SchemaCommand
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, workspace, module, expressions, operations, events, media, live-combat.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, kits, workspace, module, expressions, operations, events, media, live-combat.");
         }
 
         return Type(output, type);
@@ -102,7 +126,8 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "workspace", "module", "expressions", "operations", "events", "media", "live-combat" },
+                topics = new[] { "kits", "workspace", "module", "expressions", "operations", "events", "media", "live-combat" },
+                scopedDiscovery = "tales schema --module <path> [--modules <dir>]... [--json]",
             });
             return TalesCli.Ok;
         }
@@ -110,7 +135,7 @@ internal static class SchemaCommand
         output.Line("A module is a directory with module.json and .json definition files.");
         output.Line("Each definition file holds one definition object or an array of definitions, each with \"type\" (below) and \"id\".");
         output.Line("Definitions may inherit top-level fields with \"extends\", and extension/campaign modules may override required modules' definitions with \"type\": \"patch\".");
-        output.Line("Run `tales schema <topic>` for details.");
+        output.Line("Run `tales schema <topic>` for details, or `tales schema --module <path>` for a scoped summary of one ruleset or campaign.");
         output.Line();
         output.Line("Definition types:");
         foreach (DefinitionType type in DefinitionTypes.All)
@@ -120,13 +145,228 @@ internal static class SchemaCommand
 
         output.Line();
         output.Line("Other topics:");
+        output.Line("  kits                Modular genre starter kits for `tales workspace new --kit <id>`.");
         output.Line("  module              The module.json manifest.");
         output.Line("  workspace           The tales.json authoring workspace.");
         output.Line("  expressions         The expression language and its functions.");
         output.Line("  operations          What actions and conditions can do: damage, heal, conditions, checks.");
         output.Line("  events              Campaign event kinds and their fields.");
+        output.Line("  media               Asset media kinds, sampling, and slot compatibility.");
         output.Line("  live-combat         Script commands and JSON observations for a suspended fight.");
         return TalesCli.Ok;
+    }
+
+    private static int Kits(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                kits = GenreKits.All.Select(kit => new
+                {
+                    id = kit.Id,
+                    title = kit.Title,
+                    summary = kit.Summary,
+                    combatPresentation = kit.CombatPresentation,
+                    partyStyle = kit.PartyStyle,
+                    highlights = kit.Highlights,
+                    patterns = kit.Patterns,
+                    scaffold = $"tales workspace new <dir> --kit {kit.Id}",
+                }),
+            });
+            return TalesCli.Ok;
+        }
+
+        output.Line("Genre starter kits scaffold a complete, validated workspace (scoped ruleset, starter art,");
+        output.Line("example campaign, smoke playtest script, and kit guide):");
+        foreach (GenreKit kit in GenreKits.All)
+        {
+            output.Line();
+            output.Line($"{kit.Id}: {kit.Title}");
+            output.Line($"  {kit.Summary}");
+            output.Line($"  combat presentation: {kit.CombatPresentation}");
+            output.Line($"  party style:         {kit.PartyStyle}");
+            output.Line($"  scaffold:            tales workspace new <dir> --kit {kit.Id}");
+            output.Line("  highlights:");
+            foreach (string highlight in kit.Highlights)
+            {
+                output.Line($"    - {highlight}");
+            }
+
+            output.Line("  reusable patterns:");
+            foreach (string pattern in kit.Patterns)
+            {
+                output.Line($"    - {pattern}");
+            }
+        }
+
+        return TalesCli.Ok;
+    }
+
+    private static int ScopedModule(string moduleArg, Arguments parsed, Output output, string workingDirectory)
+    {
+        string path = Path.GetFullPath(moduleArg, workingDirectory);
+        List<string> searchDirectories = parsed.All("--modules").Select(directory => Path.GetFullPath(directory, workingDirectory)).ToList();
+        ModuleSet set = ModuleSets.Load(path, searchDirectories, ModuleSets.Extensions(parsed));
+        if (!set.IsValid || set.Rules is null)
+        {
+            return output.ModuleErrors(set);
+        }
+
+        RuleSet rules = set.Rules;
+        LoadedModule? rulesetModule = set.LoadOrder.FirstOrDefault(module => module.Manifest.Kind == ModuleKind.Ruleset);
+        Definition? campaign = rules.OfType(DefinitionTypes.Campaign).FirstOrDefault();
+        List<Definition> combats = rules.OfType(DefinitionTypes.Combat).ToList();
+        string presentation = campaign?.Json.TryGetProperty("combat_presentation", out JsonElement campPres) == true
+            ? campPres.GetString()!
+            : combats.FirstOrDefault()?.Json.TryGetProperty("presentation", out JsonElement combPres) == true
+                ? combPres.GetString()!
+                : "tactical";
+
+        var attributes = rules.OfType(DefinitionTypes.Attribute).Select(def => new
+        {
+            id = def.Id,
+            name = def.Name,
+            min = def.Json.GetProperty("min").GetInt32(),
+            max = def.Json.GetProperty("max").GetInt32(),
+        }).ToList();
+
+        var derived = rules.OfType(DefinitionTypes.Derived).Select(def => new
+        {
+            id = def.Id,
+            name = def.Name,
+            type = ExprTypes.Name(rules.Stats[def.Id].Type),
+            showOnSheet = def.Json.TryGetProperty("show_on_sheet", out JsonElement show) && show.GetBoolean(),
+        }).ToList();
+
+        var tracks = rules.OfType(DefinitionTypes.Track).Select(def => new
+        {
+            id = def.Id,
+            name = def.Name,
+            fromLevels = def.Json.TryGetProperty("from_levels", out JsonElement fl) && fl.GetBoolean(),
+        }).ToList();
+
+        var currencies = rules.OfType(DefinitionTypes.Currency).Select(def => new { id = def.Id, name = def.Name }).ToList();
+        var classes = rules.OfType(DefinitionTypes.Class).Select(def => new { id = def.QualifiedId, name = def.Name, levels = def.Json.GetProperty("levels").GetArrayLength() }).ToList();
+        var races = rules.OfType(DefinitionTypes.Race).Select(def => new { id = def.QualifiedId, name = def.Name }).ToList();
+        var checks = rules.OfType(DefinitionTypes.Check).Select(def => new { id = def.QualifiedId, name = def.Name, succeeds = def.Json.GetProperty("succeeds").GetString()! }).ToList();
+        var conditions = rules.OfType(DefinitionTypes.Condition).Select(def => new { id = def.QualifiedId, name = def.Name }).ToList();
+        var actions = rules.OfType(DefinitionTypes.Action).Select(def => new
+        {
+            id = def.QualifiedId,
+            name = def.Name,
+            target = def.Json.GetProperty("target").GetString()!,
+            parameters = def.Json.TryGetProperty("parameters", out JsonElement parameters)
+                ? parameters.EnumerateArray().Select(entry => entry.GetString()!).ToList()
+                : [],
+        }).ToList();
+        var items = rules.OfType(DefinitionTypes.Item).Select(def => new
+        {
+            id = def.QualifiedId,
+            name = def.Name,
+            kind = def.Json.GetProperty("kind").GetString()!,
+            cost = def.Json.GetProperty("cost").GetDecimal(),
+            currency = def.Json.GetProperty("currency").GetString()!,
+        }).ToList();
+        var spells = rules.OfType(DefinitionTypes.Spell).Select(def => new { id = def.QualifiedId, name = def.Name }).ToList();
+        var monsters = rules.OfType(DefinitionTypes.Monster).Select(def => new { id = def.QualifiedId, name = def.Name, xp = def.Json.GetProperty("xp").GetInt32() }).ToList();
+        var resting = rules.OfType(DefinitionTypes.Resting).Select(def => new { id = def.QualifiedId, unit = def.Json.GetProperty("unit").GetString()! }).ToList();
+        var assets = rules.OfType(DefinitionTypes.Asset).Select(def => new
+        {
+            id = def.QualifiedId,
+            media = Media.MediaOf(def),
+            slots = Media.Slots.Where(slot => Media.Problem(slot.Name, def) is null).Select(slot => slot.Name).ToList(),
+        }).ToList();
+        var skins = rules.OfType(DefinitionTypes.Skin).Select(def => new { id = def.QualifiedId, name = def.Name }).ToList();
+        var variables = rules.Variables.Values.Concat(rules.AreaVariables.Values).Select(def => new
+        {
+            id = def.Id,
+            scope = def.Json.TryGetProperty("scope", out JsonElement scope) ? scope.GetString()! : "campaign",
+            type = def.Json.GetProperty("value_type").GetString()!,
+        }).ToList();
+
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                ok = true,
+                module = new { id = set.Root!.Id, kind = ModuleKinds.Name(set.Root.Kind), version = set.Root.Version.ToString() },
+                ruleset = rulesetModule?.Manifest.Id,
+                combatPresentation = presentation,
+                hasStartingParty = campaign?.Json.TryGetProperty("starting_party", out _) == true,
+                combats = combats.Select(def => new
+                {
+                    id = def.QualifiedId,
+                    hasField = def.Json.TryGetProperty("field", out _),
+                    budgets = def.Json.GetProperty("budget").EnumerateArray().Select(entry => entry.GetProperty("id").GetString()!).ToList(),
+                    track = def.Json.GetProperty("track").GetString()!,
+                }),
+                attributes,
+                derived,
+                tracks,
+                currencies,
+                classes,
+                races,
+                checks,
+                conditions,
+                actions,
+                items,
+                spells,
+                monsters,
+                resting,
+                assets,
+                skins,
+                variables,
+                authoringTips = new[]
+                {
+                    "Group related definitions into JSON arrays in a single .json file (e.g. events.json, monsters.json).",
+                    "Use \"extends\": \"<id>\" or \"<module>:<id>\" to derive variants without copying unchanged fields.",
+                    "Use \"type\": \"patch\" in an extension or campaign module to override fields on a required module's definition.",
+                },
+            });
+            return TalesCli.Ok;
+        }
+
+        output.Line($"Scoped schema for {set.Root!.Id} ({ModuleKinds.Name(set.Root.Kind)}, ruleset: {rulesetModule?.Manifest.Id ?? "none"})");
+        output.Line($"  combat presentation: {presentation}");
+        if (campaign is not null)
+        {
+            string partyMode = campaign.Json.TryGetProperty("starting_party", out JsonElement sp)
+                ? $"fixed starting_party ({sp.GetArrayLength()} NPCs)"
+                : $"custom party ({campaign.Json.GetProperty("party").GetProperty("min").GetInt32()}..{campaign.Json.GetProperty("party").GetProperty("max").GetInt32()})";
+            output.Line($"  party mode:          {partyMode}");
+        }
+
+        WriteIdList(output, "attributes", attributes.Select(a => $"{a.id} ({a.min}..{a.max})"));
+        WriteIdList(output, "derived", derived.Select(d => d.showOnSheet ? $"{d.id} [{d.type}, sheet]" : $"{d.id} [{d.type}]"));
+        WriteIdList(output, "tracks", tracks.Select(t => t.fromLevels ? $"{t.id} (from_levels)" : t.id));
+        WriteIdList(output, "currencies", currencies.Select(c => c.id));
+        WriteIdList(output, "classes", classes.Select(c => $"{c.id} ({c.levels} lvls)"));
+        WriteIdList(output, "races", races.Select(r => r.id));
+        WriteIdList(output, "checks", checks.Select(c => $"{c.id} ({c.succeeds})"));
+        WriteIdList(output, "conditions", conditions.Select(c => c.id));
+        WriteIdList(output, "actions", actions.Select(a => a.parameters.Count == 0 ? $"{a.id} [{a.target}]" : $"{a.id} [{a.target}; params: {string.Join(", ", a.parameters)}]"));
+        WriteIdList(output, "items", items.Select(i => $"{i.id} ({i.kind}, {i.cost} {i.currency})"));
+        WriteIdList(output, "spells", spells.Select(s => s.id));
+        WriteIdList(output, "monsters", monsters.Select(m => $"{m.id} ({m.xp} xp)"));
+        WriteIdList(output, "resting", resting.Select(r => $"{r.id} ({r.unit})"));
+        WriteIdList(output, "assets", assets.Select(a => $"{a.id} [{a.media}: {string.Join("/", a.slots)}]"));
+        WriteIdList(output, "skins", skins.Select(s => s.id));
+        WriteIdList(output, "variables", variables.Select(v => $"{v.scope}.var.{v.id} ({v.type})"));
+        output.Line();
+        output.Line("Authoring tips: use multi-definition JSON arrays, \"extends\" for variants, and \"type\": \"patch\" for overrides.");
+        return TalesCli.Ok;
+    }
+
+    private static void WriteIdList(Output output, string label, IEnumerable<string> entries)
+    {
+        List<string> list = entries.ToList();
+        if (list.Count == 0)
+        {
+            return;
+        }
+
+        output.Line($"  {label,-12} {string.Join(", ", list)}");
     }
 
     private static int Type(Output output, DefinitionType type)

@@ -9,9 +9,13 @@ workflow rather than an orchestration service.
    available to the author and reviewer.
 2. Copy `canon.md`, choose module identities, rights, ruleset dependencies,
    local IDs, variables, and cross-scene interfaces.
-3. Start discovery with global `tales --help`, then use
-   `tales schema <topic> --json` for the relevant schema topics. Create or edit
-   the workspace's runtime module directories; keep editable canon, prompts,
+3. Start discovery with global `tales --help` and `tales schema kits --json`.
+   When starting a new project, scaffold from a genre kit with
+   `tales workspace new <dir> --kit <tactical-dungeon|first-person-crawler|classic-jrpg>`
+   and inspect the active module vocabulary with `tales schema --module <path> --json`
+   before pulling individual `tales schema <topic> --json` references. Prefer
+   grouped JSON array files, `"extends"` for monster/item/event variants, and
+   `"type": "patch"` for ruleset overrides. Keep editable canon, prompts,
    scripts, source art, accepted art, and reports separate from generated
    staging and exports.
 4. Write chapter contracts, encounter contracts, and art direction. Keep
