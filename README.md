@@ -1,23 +1,46 @@
 # Rusty Tales
 
-A Gold Box-style RPG engine with authoring, in the spirit of Unlimited
-Adventures / Dungeon Craft, built as a downstream
-[Rusty Engine](https://github.com/FuzzySlipper/rusty-engine) product. Players
-run campaign modules built on ruleset modules and dressed by asset modules.
-See [docs/design.md](docs/design.md) for the module format, runtime and CLI.
-Planned work is tracked in the `rusty-goldbox` Den project.
+An **offline, data-driven RPG toolkit and runtime** built on
+[Rusty Engine](https://github.com/FuzzySlipper/rusty-engine) — inspired by
+Unlimited Adventures / Dungeon Craft, Wizardry, and classic 16-bit JRPGs.
 
-## Setup
+Players run **campaign modules** built on **ruleset modules** and dressed by
+**asset modules**, each authored, validated, and distributed independently as
+Engine content containers (`.rpak`). Authors (human or AI agents) build
+adventures as readable JSON + expressions, verify them headlessly with the
+`tales` CLI, and play or host them in the desktop/browser runtime.
 
-The supported runtime pair targets Linux x64. Install the .NET 10 SDK, `curl`
-and `tar`. NativeAOT also needs the platform compiler/linker prerequisites
-(Clang and zlib development headers on Linux). Get the Engine's `rusty` command once:
+- **Three combat presentations out of the box:** angled 3D `tactical` grid
+  (Gold Box style), eye-level `first_person` lineup (Wizardry / Dragon Quest
+  style), and `side_view` formations (JRPG style), plus fixed `starting_party`
+  or custom character creation.
+- **Modular genre starter kits:** scaffold a complete, validated, playable
+  workspace in one command (`tactical-dungeon`, `first-person-crawler`,
+  `classic-jrpg`).
+- **Low-friction authoring:** multi-definition JSON array files, `extends`
+  inheritance, `patch` overrides, compact `scene` dialogue graphs with static
+  reachability/softlock checking, and scoped schema discovery
+  (`tales schema --module`).
+- **Data-driven rules:** rulesets live in JSON + a statically type-checked
+  expression language (shipping with open-licensed `classic`, `fifth-srd`,
+  `three-action`, `fate-condensed`, `scifi-2d6`, and `universal-d100` rulesets,
+  plus original genre kits).
+
+See [docs/design.md](docs/design.md) for the module format and runtime contract,
+and [docs/architecture.md](docs/architecture.md) for current code owners.
+
+---
+
+## Quick start (players & local dev)
+
+Requires the .NET 10 SDK, `curl`, and `tar` on Linux x64 (Clang and zlib
+development headers for NativeAOT). Install the Rusty Engine CLI once:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FuzzySlipper/rusty-engine/main/scripts/install-rusty.sh | bash
 ```
 
-Then, from this repository:
+Then from this repository:
 
 ```bash
 rusty status
@@ -25,448 +48,156 @@ rusty install
 rusty dev --port 8787
 ```
 
-`Directory.Build.props` names the Game as the default project, so `rusty dev`
-and `rusty build` need no `--project` from anywhere in the repository. Open
-the URL printed by the host. `rusty dev` runs the pinned pair's runtime:
-CoreCLR loads the product, and changes to C#, UI or content inputs rebuild and
-reload it; module edits reload as content bundles without a restart. See
-`rusty dev --help` for `--bind-host`, `--live-debug` and `--debugger`.
+Open the URL printed by `rusty dev`. `Directory.Build.props` sets
+`RustyTales.Game` as the default project, so `rusty dev` and `rusty build` need
+no `--project` flag. Module edits reload as content bundles without a restart.
 
-The first-person view draws in the top-left window and the panel sits beside it. Open a campaign, roll a party (and give it
-equipment and spells), then play with the buttons, a typed command, or the keys: arrows
-or WASD move and turn, X turns around, L looks, digits choose menu options.
-Combat uses a live tactical screen. Party members wait for player choices by
-default: choose a movement path, action and target, then finish the turn when
-ready. Eligible members can use automatic control instead; a fight the whole
-party leaves to automatic control shows its result on the same screen until
-Continue. Saves can retain a battle at a pending decision.
-Saves go to named slots in the Engine persistence root, which `rusty dev`
-keeps in `.runtime/persistence`; `tales play --store .runtime/persistence`
-loads and writes the same slots.
+### Playing & controls
+- **Exploration:** arrows or WASD move and turn, `X` turns around, `L` looks,
+  digits choose menu options, `/` focuses the collapsible command bar.
+- **Combat:** supports `tactical`, `first_person`, and `side_view` modes, with
+  per-character manual or automatic control and mid-battle save/resume.
+- **Multiplayer:** host from the title screen's **Play together** panel and
+  share the invite; the host runs Core, players vote on menus and control their
+  own characters in combat.
+- **Dev console:** under `rusty dev --live-debug`, `rusty-live-debug` exposes
+  `tales.help`, `tales.campaigns`, `tales.start`, `tales.play`, `tales.goto`,
+  `tales.tp`, `tales.event`, `tales.heal`, `tales.combat-view`, and `tales.quit`.
 
-A release is one compressed container plus the managed files beside it, with
-every module bundle inside:
+---
+
+## Quick start (authoring a campaign)
+
+The `tales` CLI is self-describing and every command supports `--json`.
+
+### 1. Scaffold from a genre starter kit
 
 ```bash
-rusty build --project src/RustyTales.Game/RustyTales.Game.csproj --pack release --compress
+# List available genre kits (tactical-dungeon, first-person-crawler, classic-jrpg)
+dotnet run --project src/RustyTales.Cli -- schema kits
+
+# Scaffold a complete workspace (scoped ruleset, starter art, campaign, smoke script, kit guide)
+dotnet run --project src/RustyTales.Cli -- workspace new my-tale --kit classic-jrpg --id my-tale --title "My Tale"
+
+# Inspect only this campaign's active stats, actions, items, spells, monsters, and asset slots
+dotnet run --project src/RustyTales.Cli -- schema --module my-tale/modules/my-tale
 ```
 
-Modules also ship and install on their own, as Engine content containers.
-`tales module pack` validates a module and packs it; `--install` puts it in
-the Game's module library (`$TALES_MODULE_LIBRARY`, else
-`$XDG_DATA_HOME/rusty-tales/modules`, else
-`~/.local/share/rusty-tales/modules`), where the Game offers it beside its
-own modules without a rebuild:
+### 2. Validate, playtest headlessly, and iterate
 
 ```bash
-dotnet run --project src/RustyTales.Cli -- module pack modules/sample-crypt --install
+# Validate and stage all authored modules in the workspace
+dotnet run --project src/RustyTales.Cli -- workspace build my-tale
+
+# Run a seeded headless playtest (fails on any refused command)
+dotnet run --project src/RustyTales.Cli -- play \
+  --campaign my-tale/modules/my-tale \
+  --modules my-tale/modules \
+  --script my-tale/scripts/smoke.txt \
+  --seed 1 --fail-on-refusal
+
+# Simulate combat balance over 200 seeded runs
+dotnet run --project src/RustyTales.Cli -- sim combat \
+  --module modules/classic --party ada.json,brom.json --encounter ogre --runs 200
 ```
 
-The Game's own content root is `modules/`; campaigns live in their own
-repositories. Install a published one with everything it needs, then press
-Refresh on the title screen:
+Play live against your working checkout without installing:
 
 ```bash
-dotnet run --project src/RustyTales.Cli -- module get github:FuzzySlipper/blackapple-brugh
+TALES_WORKSPACES=$PWD/my-tale rusty dev
 ```
 
-A campaign workspace you have checked out installs the same way with
-`workspace install <workspace>`. While you are editing one, point the Game at
-it instead and skip installing (here a clone beside this repository):
+### 3. Pack, install, and distribute modules
 
 ```bash
-TALES_WORKSPACES=$PWD/../blackapple-brugh rusty dev
-```
+# Export independent .rpak containers for every module in the workspace
+dotnet run --project src/RustyTales.Cli -- workspace export my-tale
 
-Each title listing (startup and Refresh) builds the named workspaces (separate
-several like `PATH`), repacks any module whose content changed into the
-workspace's ignored `.tales/game/`, and plays those in place of installed
-copies of the same modules. Re-open the campaign to play an edit; a changed
-workspace adds a second or two to Refresh. A workspace that doesn't build
-leaves a note on the title screen and keeps its last packed modules.
+# Install directly into the Game's module library (Title screen -> Refresh picks it up)
+dotnet run --project src/RustyTales.Cli -- workspace install my-tale
 
-Modules published to GitHub releases install the same way, with whatever they
-require that isn't already here. `module release` publishes one (through `gh`,
-or `--output <dir>` to write the files), and `module get` fetches one:
-
-```bash
+# Publish to GitHub Releases or fetch a published campaign with its dependencies
 dotnet run --project src/RustyTales.Cli -- module release modules/my-campaign --repo alice/my-campaign
 dotnet run --project src/RustyTales.Cli -- module get github:alice/my-campaign
 dotnet run --project src/RustyTales.Cli -- module updates --install
 ```
 
-Updates install beside the versions you have, so saves keep loading with the
-versions they were made under; `module remove <id>@<version>` drops an old one.
-To play together, one player hosts from the title screen's Play together
-section and shares the invitation it shows; friends paste it to join. The
-host runs the game: the leader moves the party, everyone votes at event menus
-(the leader breaks ties), each player fights their own characters, and
-everyone can chat.
+The Game's title screen also includes a **Modules** browser to preview, install,
+update, and remove published module repositories. Installed containers live in
+`$TALES_MODULE_LIBRARY` (default `$XDG_DATA_HOME/rusty-tales/modules`, or
+`~/.local/share/rusty-tales/modules`).
 
-The Game's title screen does the same under Modules: paste a repository,
-preview what it offers with licences, install with progress and Cancel, check
-for updates and remove.
+---
 
-A manifest's optional `"releases": "github:<owner>/<repo>"`, on the module or
-on a `requires` entry, says where it and its requirements are published.
+## Authoring building blocks
 
-The CLI reads installed containers too: any `.rpak` in a search directory is
-a candidate module, and a command's module path may be one.
-
-`--pack` and `rusty pack-content` are commands of the pinned pair's own
-`rusty` (`~/.cache/rusty-engine/pairs/<pin>/runtime-pack/bin/rusty`); an older
-bootstrap `rusty` on `PATH` may not have them until it is refreshed with the
-install script above. `tales module pack` uses the pair's copy when it is
-installed.
-
-## Authoring modules
-
-Campaigns are authored as workspaces in their own repositories, with canon
-beside the editable content. [The Blackapple Brugh](https://github.com/FuzzySlipper/blackapple-brugh)
-is the worked example: its canon records story, characters, source adaptation
-and licence, and its art bible defines original references, continuity and
-runtime slots, with exact prompts and provenance beside the art. Its
-regression tests here read a clone beside this repository (or
-`$TALES_BLACKAPPLE`) and are skipped without one; CI always clones it.
-
-`tales` is the authoring CLI. From the repository root:
+Discover exact schemas and examples directly from the CLI:
 
 ```bash
 dotnet run --project src/RustyTales.Cli -- --help
-dotnet run --project src/RustyTales.Cli -- module new ruleset my-rules
-dotnet run --project src/RustyTales.Cli -- module validate modules/my-rules
-dotnet run --project src/RustyTales.Cli -- module deps modules/my-rules --json
+dotnet run --project src/RustyTales.Cli -- schema                  # overview of all definition types & topics
+dotnet run --project src/RustyTales.Cli -- schema scene            # compact multi-step NPC dialogue & hub graphs
+dotnet run --project src/RustyTales.Cli -- schema patch            # override fields on a required module's definitions
+dotnet run --project src/RustyTales.Cli -- schema events --json    # event kinds (shop, rest, temple, combat, check, ...)
+dotnet run --project src/RustyTales.Cli -- schema media --json     # image, sheet, sampling, audio & slot rules
+dotnet run --project src/RustyTales.Cli -- schema live-combat      # suspended manual combat script commands
+dotnet run --project src/RustyTales.Cli -- authoring list --json   # embedded campaign-authoring workflow & templates
 ```
 
-`tales.json` makes `modules/` the workspace search directory, so new modules
-go there and required modules are found there. Every command accepts `--json`.
+- **Grouped definition files:** any `.json` file in a module may hold a single
+  definition object or a JSON array of definitions (`$[i].field` diagnostics).
+- **Inheritance & overrides:** any non-patch definition may set `"extends"` to
+  inherit and override fields from another visible definition of the same type
+  (setting an optional field to `null` removes it); `extension` and `campaign`
+  modules may override required modules' definitions with `"type": "patch"`.
+- **Compact scenes & dialogues:** `"type": "scene"` writes branching NPC
+  conversations, stateful topics, skill checks, item grants, and service
+  handoffs as one readable graph that lowers deterministically into validated
+  events with reachability, menu-softlock, and loop checking.
+- **Saves & slots:** saves use Engine `SaveSlots` (`.runtime/persistence` under
+  `rusty dev`; reachable from the CLI via `tales play --store .runtime/persistence`).
+- **Additional docs:** [docs/authoring-workspaces.md](docs/authoring-workspaces.md),
+  [docs/combat-authoring.md](docs/combat-authoring.md), and
+  [docs/ui.md](docs/ui.md).
 
-An editable authoring workspace keeps canon, reference and accepted art,
-prompts, and scripts outside runtime module directories. Create or inspect it
-through the CLI:
+---
 
-```bash
-dotnet run --project src/RustyTales.Cli -- workspace new my-campaign
-dotnet run --project src/RustyTales.Cli -- workspace inspect my-campaign --json
-dotnet run --project src/RustyTales.Cli -- workspace build my-campaign --json
-dotnet run --project src/RustyTales.Cli -- workspace export my-campaign --json
-dotnet run --project src/RustyTales.Cli -- workspace install my-campaign
-dotnet run --project src/RustyTales.Cli -- schema workspace --json
-```
-
-The optional `authoring` object in `tales.json` lists each owned module source
-directory and the generated staging/export locations. The existing top-level
-`modules` array remains the dependency search path. Workspace inspection
-reports both, so a copied workspace can be resumed from its files.
-Build validates the explicit authored modules and replaces their generated
-staging tree; export independently packs each staged module through the pinned
-Engine packer. Canon, prompts and source art remain editable outside the
-runtime modules. See [authoring-workspaces.md](docs/authoring-workspaces.md).
-
-The installed CLI also carries the ready revision-1.0 authoring kit.
-`tales authoring list --json` discovers its twelve resources, while
-`tales authoring show workflow --json` and
-`tales authoring show worked-example --json` print the coordinator workflow
-and complete Lantern example. `tales authoring copy --all
---out my-campaign/prompts --json` copies the kit index, brief, canon, chapter,
-encounter, art, individual/batch image judges, handoff, workflow, revision, and
-worked example. The kit points to `tales schema <topic> --json` for format
-details and works outside this repository. The Lantern example is text-only;
-`encounter.md` and [Authoring tactical combat](docs/combat-authoring.md) retain
-the manual-combat, data-authored behavior, AI-debug trace, and refusal-repair
-recipes with fixture-vs-normal-route labels.
-
-The format is described by the tool itself, and rules can be tried against a
-module:
-
-```bash
-dotnet run --project src/RustyTales.Cli -- schema
-dotnet run --project src/RustyTales.Cli -- schema class
-dotnet run --project src/RustyTales.Cli -- schema item --json
-dotnet run --project src/RustyTales.Cli -- schema events --json
-dotnet run --project src/RustyTales.Cli -- module inspect modules/classic
-dotnet run --project src/RustyTales.Cli -- eval "self.thac0" --module modules/classic --context '{"self": {"class": "fighter", "level": 5}}'
-dotnet run --project src/RustyTales.Cli -- eval --check attack --module modules/classic --seed 7 --context '{"self": {"class": "fighter", "level": 5, "str": 17}, "target": {"monster": "ogre"}}'
-```
-
-Characters are JSON files made and advanced under a module set:
-
-```bash
-dotnet run --project src/RustyTales.Cli -- character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
-dotnet run --project src/RustyTales.Cli -- character new --module modules/fifth-srd --class fighter --race human --feature soldier,savage_attacker,defense --equipment longsword,chain_mail --out ada.json
-dotnet run --project src/RustyTales.Cli -- character level brom.json --module modules/classic --xp 5000 --seed 3
-dotnet run --project src/RustyTales.Cli -- character show brom.json --module modules/classic
-dotnet run --project src/RustyTales.Cli -- eval --check save_spell --module modules/classic --context '{"self": "@brom.json", "target": {"monster": "skeleton"}}'
-dotnet run --project src/RustyTales.Cli -- character new --module modules/sample-crypt --class fighter --race human --name Ada --portrait placeholder-art:fighter_portrait --out ada.json
-dotnet run --project src/RustyTales.Cli -- character new --module modules/universal-d100 --creation staged --feature staged_soldier --name Rook --seed 4 --out rook.json
-dotnet run --project src/RustyTales.Cli -- character skills rook.json --module modules/universal-d100 --skill sword=profession:100+personal:90,shield=profession:50,dodge=profession:40+personal:40,brawl=profession:30,bow=profession:30
-dotnet run --project src/RustyTales.Cli -- character new --module modules/scifi-2d6 --name Vance --lifepath prior_history --career marine --terms 1 --skill-table service,service,service --benefit cash --seed 3 --out vance.json
-dotnet run --project src/RustyTales.Cli -- character milestone ruth.json --module modules/fate-condensed --raise fight --feature deadeye
-dotnet run --project src/RustyTales.Cli -- character improve rook.json --module modules/universal-d100 --seed 7
-dotnet run --project src/RustyTales.Cli -- character mark rook.json --module modules/universal-d100 --skill sword
-dotnet run --project src/RustyTales.Cli -- character new --module modules/classic --class magic_user --race human --name Mira --seed 5 --out mira.json
-dotnet run --project src/RustyTales.Cli -- character spells mira.json --module modules/classic --set magic_missile,sleep --memorise magic_missile
-dotnet run --project src/RustyTales.Cli -- character former aldo.json --module modules/classic on
-```
-
-The Game's party creator shows the selected method's authored scores and costs.
-For point buy, enter each attribute score before **Roll**; for a standard array
-or arranged rolls, assign each score's attribute using the priority selectors.
-Core checks the submitted choices and reports any budget or assignment error.
-
-When a character-creation definition names a `lifepath`, `--career` chooses
-the career for each term (one choice repeats with `--terms`),
-`--skill-table` supplies the visible table choice for each actual configured
-skill-die roll (one choice repeats when the policy asks for more rolls), and
-`--benefit` chooses cash or material for each mustering-out roll (one choice
-also repeats).
-The saved character keeps its age, term choices, roll totals and results in
-`career_terms`; `tales character show --json` and the Game party projection
-expose that ledger.
-
-Derived definitions may set `show_on_sheet: true`. The member projection then
-evaluates and exposes that named value in `derived`; the member sheet renders
-the same list. This is an authored display flag and uses the existing
-evaluator, so adding a derived value does not require a named stat in C#.
-
-Campaigns play from command scripts, and save and resume:
-
-```bash
-dotnet run --project src/RustyTales.Cli -- map render entrance --module modules/sample-crypt
-dotnet run --project src/RustyTales.Cli -- play --campaign modules/sample-crypt --party ada.json,brom.json --seed 1 --script tests/RustyTales.Tests/Fixtures/scripts/crypt.script --save game.json
-dotnet run --project src/RustyTales.Cli -- play --campaign modules/sample-crypt --load game.json --script more.script
-```
-
-For manual battle scripts, add `--combat-control manual`. `combat inspect`
-prints stable actor/action/target IDs, budgets and legal paths; use those IDs
-with `combat action`, `combat move`, `combat end-turn` and `combat decide`.
-Each offered path lists its legal target IDs. Choose the target first and use
-a path associated with it; a mismatched pair is refused before movement or
-spending.
-`combat auto-step` assists the current manual turn through Core without
-changing the member's saved control preference.
-Inspecting choices consumes no dice. A selected spell commits any random
-resource price once, and saves retain it; an unaffordable committed price
-leaves resources unchanged so the actor can choose another action.
-`tales schema live-combat --json` describes the command surface. Saves retain
-the current decision, and `--trace` explains authored AI choices without
-changing the rolls. [Authoring tactical combat](docs/combat-authoring.md)
-shows how to add reusable profiles and data-only enemies; the original
-`tactical-expedition` campaign permits up to twelve members.
-
-The sample crypt's outfitter is at `[1,2]` in the entrance. Shops list guarded
-stock and carried gear with prices: `buy <n>`, `sell <n>` and `leave` work in
-scripts and the Game's shop buttons. A stock entry can name a numeric campaign
-or area variable holding a nonnegative whole scalar count; each successful buy
-decrements it, while omitted stock is unlimited. Declared currency balances stay
-on characters and purchases join party inventory; selling equipped gear removes
-it from its wearer. Each item names its payment currency, and the ruleset
-declares resale in `economy.sell_fraction` (`tales schema economy`). A shop's
-optional `buying` policy requires a currency, defaults its fraction to the
-ruleset `sell_fraction` (0.5 in classic and fifth-srd), and may name a numeric
-cash `balance` or `max_value`; omitted balance means unlimited cash and omitted
-maximum means no value limit. `tales schema events` describes these fields
-and the input diagnostics identify `$.items[i].stock` or `$.buying.*`. Areas can mark secret
-doors with `SS`; `search [direction]` uses the area's search check and saves
-discovered edges. `DD` edges may be declared as locked doors with key, pick,
-force or event mechanisms; `open`, `pick` and `force` use those declarations
-and saves keep opened doors and an open shop.
-
-Between conversations, services and fights, `equip <member> <item-id>` moves
-one carried item onto that member; `unequip <member> <item-id>` returns one
-equipped copy to party inventory. The member sheet's Equipment table offers
-the same choices. Class and race restrictions still apply, and saves retain
-both equipped and carried copies. A shop can override its buying rate and
-use a numeric campaign or area variable for its remaining cash with `buying`;
-`tales schema events` includes the policy and an example.
-
-Carried consumables use `use <member> <item-id>` with a one-based active member
-and a local or qualified item ID. One carried copy is consumed and the item's
-existing scene operations run outside combat and pending menu, shop, temple or
-training interactions; an equipped copy cannot be used. The item schema's
-minimal form is:
-
-```json
-{ "type": "item", "id": "healing_draught", "name": "Healing draught", "kind": "consumable", "cost": 5, "currency": "gold", "weight": 1, "use": { "operations": [{ "op": "heal", "track": "hit_points", "amount": "1d8 + 1" }] } }
-```
-
-`use.duration_days` is a nonnegative expression evaluated once on use with
-the selected member as `self`; only authored rest and training advance
-fictional `ElapsedDays`. An applied condition stores its absolute expiry in
-the saved character's `condition_expiry` map. Combat rounds, transient
-condition values and turn hooks are rejected for this campaign-time use.
-`tales schema item --json` prints the fields and example, and errors identify
-paths such as `$.use.operations[0].track` and `$.use.duration_days`.
-
-Campaign `give` and `take` events name an `item` and an optional positive
-`count` (one by default). Giving adds carried copies. Taking removes carried
-copies first, then equipped ones; it follows `on_refused` and removes nothing
-if the party lacks the full count. Guards and menus can use
-`carried(item.id == 'dagger') > 0` for possession or `carried(item.kind == 'gear')`
-for a count. This includes the active party's equipment and excludes absent
-NPCs. The sample crypt's altar consumes its offered dagger.
-
-Scene `check` events roll a declared check for a numbered active member and
-follow its success or failure branch. Scene `effect` events apply explicit
-track damage/healing and durable condition changes through the existing
-character state. Authors supply recovery and defeat routing; timed or
-turn-hook conditions belong to combat. `party_size()` reads the live active
-count in campaign expressions, so an authored lift or passage can respond to
-recruitment and dismissal. See `tales schema events` and
-`tales schema expressions` for the fields and examples.
-
-`spell_reward` is the data event for a ruleset-selected lesson. It may name a
-positive `member` or award every active member. For each member it uses the
-ruleset's castable eligibility, keeps the highest level on an active class list,
-then filters known spells and draws once among that level's unknown spells.
-The selected definition is added to the ordinary known list, so casting,
-preparation and save/load use it. No eligible spell emits a visible no-op fact
-and consumes no random draw. Gate a one-time reward with the authored event
-trigger or variable path; `spell_reward` has no generic once flag. Its minimal
-authoring form is `{ "type": "event", "id": "scroll_reward", "kind": "spell_reward", "text": "A lesson takes hold.", "next": "road" }`.
-
-For scripted runs, `--fail-on-refusal` converts a refusal into a diagnostic and
-exit code 1. Otherwise refusals remain transcript facts, which keeps a script
-readable while allowing authors to choose whether a refusal should fail a
-headless check.
-
-With `--store <dir>`, `--load` and `--save` name save slots in that Engine
-persistence root instead of files, such as the Game's under `rusty dev`:
-
-```bash
-dotnet run --project src/RustyTales.Cli -- play --campaign modules/sample-crypt --store .runtime/persistence --load slot-1 --script more.script --save slot-2
-```
-
-Fights run headless from a seed; one run prints the transcript, more print
-distributions:
-
-```bash
-dotnet run --project src/RustyTales.Cli -- sim combat --module modules/classic --party ada.json,brom.json --encounter crypt_guard --seed 3
-dotnet run --project src/RustyTales.Cli -- sim combat --module modules/classic --party ada.json,brom.json --encounter ogre --runs 200
-```
-
-Combat definitions can use the default grid or shared `field.mode: "zones"`
-cells, where several creatures may share a zone and same-zone distance is
-zero. Combat events can anchor each side with `party_start` and
-`monsters_start`, force a side's opening surprise with `surprise`, and route a
-fleeing side through `on_flee` (with `flee_on_draw` for round-limit draws).
-Rulesets that use Fate-style popcorn order set
-`initiative_mode: "elective"` and may provide an `initiative_score` expression;
-the schema command documents these fields and the resulting transcript records
-each actor's next-choice fact.
-
-## Tests
+## Verification & release builds
 
 ```bash
 dotnet test tests/RustyTales.Tests
+dotnet run --project src/RustyTales.Cli -- module validate modules/sample-crypt
+rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 ```
 
-The `ci` workflow runs these tests, builds the Game and validates every
-module under `modules/` on each push to `main` and each pull request.
+Release & NativeAOT fidelity builds:
 
-## Engine pin
+```bash
+rusty build --project src/RustyTales.Game/RustyTales.Game.csproj --pack release --compress
+rusty build --project src/RustyTales.Game/RustyTales.Game.csproj --aot
+```
 
-`Directory.Build.props` pins the exact SDK/runtime pair. `rusty install`
-downloads it once into the shared Engine cache; later builds and runs work
-offline. No Engine source checkout is required.
-
-To adopt the newest published pair deliberately:
+To advance the pinned Rusty Engine SDK/runtime pair in `Directory.Build.props`:
 
 ```bash
 rusty update
 rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 ```
 
-`rusty update` lists the release notes to read; commit the changed
-`Directory.Build.props` with any product changes they call for. The
-`engine-pair` workflow does the same every six hours: it moves the pin only
-after the product builds and serves on the new pair, and otherwise opens an
-`engine-pair-update` issue with the build output and the notes to read.
-
-For an explicit NativeAOT fidelity/release check:
-
-```bash
-rusty build --project src/RustyTales.Game/RustyTales.Game.csproj --aot
-```
+---
 
 ## Repository shape
 
 | Path | Responsibility |
 | --- | --- |
-| `src/RustyTales.Core/` | Module format and loading (from directories or Engine bundles), definition types, expressions, rule evaluation, characters, combat, campaigns and saves |
-| `src/RustyTales.Cli/` | The `tales` authoring CLI |
-| `src/RustyTales.Game/` | Engine product: module bundles and installed modules, input intents, save slots, the first-person and combat scenes (`Presentation/`) and the session projection over Core |
-| `src/ui/` | DOM panels: `main.js` mounts the panel frame and claims intents; `panels/` and `screens/` render the projection, `layout.js` picks the arrangement, `look.js` holds the stylesheet and skins |
-| `modules/` | First-party module sources: rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`), the `placeholder-art` assets, the `tactical-bestiaire` extension and the `sample-crypt` and `tactical-expedition` campaigns. Also the Game's content root: each directory is a content bundle |
-| `tales.json` | Workspace: module search directories |
-| `tests/RustyTales.Tests/` | Core and CLI checks, golden transcripts (`Golden/`) and original fixture rulesets (`Fixtures/`) |
-| `Directory.Build.props` | Engine SDK/runtime pin |
-| `docs/design.md` | Design: module format, runtime, CLI, Engine boundary |
-| `docs/architecture.md` | Current owners and data flow |
-| `docs/ui.md` | DOM companion contract |
-| `docs/agent-review/` | Review workflow and lane packets |
-
-Combat framing follows the Engine's `hero` viewport anchor and surface CSS
-dimensions. Resizes and layout changes refit the camera in the product update;
-the UI only registers the anchor.
+| `src/RustyTales.Core/` | Module format and loading, `patch`/`extends` composition, `scene` lowering, expressions, rule evaluation, characters, combat, campaigns, saves, and genre starter kits |
+| `src/RustyTales.Cli/` | The `tales` authoring, validation, simulation, playtest, and distribution CLI |
+| `src/RustyTales.Game/` | Engine product: module bundles, live-debug commands, input intents, save slots, 3D exploration & multi-style combat scenes (`Presentation/`), and session projection |
+| `src/ui/` | DOM companion panels (`main.js`, `panels/`, `screens/`, `layout.js`, `look.js`) |
+| `modules/` | First-party rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`), `placeholder-art`, `tactical-bestiaire`, `sample-crypt`, and `tactical-expedition` |
+| `tales.json` | Workspace module search directories |
+| `tests/RustyTales.Tests/` | Core, CLI, kit, scene, and golden transcript tests (`Golden/`, `Fixtures/`) |
+| `Directory.Build.props` | Pinned Rusty Engine SDK/runtime version |
+| `docs/` | [design.md](docs/design.md), [architecture.md](docs/architecture.md), [ui.md](docs/ui.md), [authoring-workspaces.md](docs/authoring-workspaces.md), [combat-authoring.md](docs/combat-authoring.md), [agent-review/](docs/agent-review/README.md) |
 
 Read [AGENTS.md](AGENTS.md) before changing anything.
-
-Temples offer numbered services through `serve <service> <member>` and `leave`.
-Service expressions read the chosen character as `self` and campaign variables;
-`heal` names its track and `remove_condition` names a condition. The campaign
-runner uses existing character tracks, conditions and pooled balances in each service's declared currency;
-`CampaignRunner.Temple.cs` owns these commands and `TrackOperations` shares
-healing with combat. Saves retain an open temple and Game projections expose
-prices for each member.
-
-An advancement may declare `training: { "cost": "self.level * 20", "currency": "gold", "days": "2" }`.
-Experience still accumulates, but levels wait for `train <member>` at a training
-event, with the same class, feature and boost choices as `level`. One payment
-buys one level; a failure to choose or pay leaves the named balance and time unchanged.
-`CampaignRunner.Training.cs` uses `CharacterRules` for advancement and the
-existing character balances for fees. Campaign state stores fictional `ElapsedDays`
-and the open trainer in saves; this is game time, independent of Engine clocks.
-Rulesets without training retain their existing immediate advancement.
-
-`character level --trained` is an authoring assertion that training happened
-outside the campaign, for importing or preparing a character file. In play,
-only the paid `train` command gains a training-required level.
-
-A `resting` ruleset definition gives the period (`rounds`, `hours` or `days`)
-and per-period `restore` track/amount pairs. Rounds reference the ruleset's
-`combat` definition for its existing `round_seconds`. A rest event selects it with `resting` and a positive `periods`.
-`CampaignRunner.Rest.cs` advances fictional campaign days and applies shared
-track healing for every uninterrupted period. Optional `wandering.when` rolls
-once per attempted period: a hit advances that period's time, grants no recovery,
-ends rest and runs `wandering.event` (a combat event and its usual outcome chains).
-Only a completed rest restores the event's full `tracks`, prepares spells and
-chains to `next`. Rest without a policy retains immediate restoration.
-
-NPC definitions contain fixed `character` data. Create a character with the CLI,
-then `tales character npc <file> --module <path> --id <id> --out <npc.json>`
-(also `--json`). `NpcFile` reuses `CharacterFile` to validate the template once
-at module loading, supplying module stamps from its declared dependencies.
-`join` and `dismiss` events reference the NPC definition; successful events
-chain to `next`, refusals to `on_refused` (or end the chain). They enforce the
-campaign's party maximum/minimum and never remove player characters.
-`CampaignRunner.Party.cs` moves the same NPC character between `Party` and
-`AbsentNpcs`; rejoining preserves wounds, balances and gear. Saves keep both lists
-and NPC identity, rejecting duplicate identities at the save boundary. The Game
-roster observes the existing party, with no separate NPC runtime or state.
-
-For scenes perceived differently by party members, author a `perception` event
-with `scope`, `check`, `success_mode` and `failure_mode`, then a text event with
-matching `views`. `tales schema events --json` describes both and includes
-examples. `view <member>` in scripted play, or the member sheet's view control
-in the Game, selects the member's text and picture over the shared area. Results
-belong to the existing character and survive save/load and NPC dismissal.
-Use `reset: true` on an expedition-entry event when the same scope must be
-rolled again; ordinary same-scope room events preserve the result.
-
-Illustrated image and sheet assets can declare `"sampling": "linear"`;
-omitting it keeps nearest sampling for pixel art. `tales schema media --json`
-lists the modes and examples. Engine scene textures and DOM pictures use the
-same authored policy, with isolated sheet frames and named regions. Validation
-identifies one-pixel linear crops that the pinned Engine cannot represent and
-suggests nearest sampling or a wider crop.
