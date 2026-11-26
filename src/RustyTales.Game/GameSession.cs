@@ -67,6 +67,33 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The party being made, before play starts.</summary>
     public List<Character> Party { get; } = [];
 
+    /// <summary>True when the open campaign declares a pre-authored <c>starting_party</c>.</summary>
+    public bool HasFixedStartingParty => Campaign is Definition campaign && campaign.Json.TryGetProperty("starting_party", out _);
+
+    /// <summary>Optional dev-console override for combat framing ("tactical", "first_person" or "side_view").</summary>
+    public string? CombatPresentationOverride { get; set; }
+
+    /// <summary>Resolved combat presentation mode: dev override, else campaign override, else combat definition, else tactical.</summary>
+    public string CombatPresentation(Definition? combat)
+    {
+        if (CombatPresentationOverride is string forced)
+        {
+            return forced;
+        }
+
+        if (Campaign is Definition campaign && campaign.Json.TryGetProperty("combat_presentation", out JsonElement fromCampaign) && fromCampaign.GetString() is string campaignMode)
+        {
+            return campaignMode;
+        }
+
+        if (combat is not null && combat.Json.TryGetProperty("presentation", out JsonElement fromCombat) && fromCombat.GetString() is string combatMode)
+        {
+            return combatMode;
+        }
+
+        return "tactical";
+    }
+
     private readonly List<Definition> _sounds = [];
 
     public CampaignRunner? Runner { get; private set; }
@@ -394,6 +421,11 @@ internal sealed class GameSession(ModuleLibrary library)
         Seed = seed;
         _rolls = 0;
         Party.Clear();
+        if (CampaignRunner.StartingParty(set.Rules!, Campaign) is List<Character> fixedParty)
+        {
+            Party.AddRange(fixedParty);
+        }
+
         Runner = null;
         _completedCombat = null;
         _completedCombatMetadata = null;

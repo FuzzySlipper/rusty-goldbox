@@ -159,6 +159,26 @@ public sealed partial class CampaignRunner
         return new CampaignCombatCommandResult(accepted, reason, _combat?.Observe() ?? observation, facts);
     }
 
+    /// <summary>Clones the campaign's authored <c>starting_party</c> NPCs into a fresh party, or null when the campaign uses party creation.</summary>
+    public static List<Character>? StartingParty(RuleSet rules, Definition campaign)
+    {
+        if (!campaign.Json.TryGetProperty("starting_party", out JsonElement entries))
+        {
+            return null;
+        }
+
+        List<Character> party = [];
+        for (int index = 0; index < entries.GetArrayLength(); index++)
+        {
+            Definition npc = rules.Reference(campaign, $"$.starting_party[{index}]");
+            Character member = rules.Npcs[npc].Copy();
+            member.Perception = null;
+            party.Add(member);
+        }
+
+        return party;
+    }
+
     /// <summary>A new campaign: the party at the start entry, variables at their initial values.</summary>
     public static CampaignState NewState(RuleSet rules, Definition campaign, IEnumerable<Character> party, ulong seed)
     {

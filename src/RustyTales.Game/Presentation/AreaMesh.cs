@@ -168,6 +168,39 @@ internal static class AreaMesh
         return Builder.Join(textured, plain);
     }
 
+    /// <summary>
+    /// A vertical stage backdrop quad at <paramref name="z"/> facing +Z, either
+    /// tiled cell-by-cell (for dungeon wall sets) or stretched across one full
+    /// scene picture for first-person and side-view combat modes.
+    /// </summary>
+    public static AreaGeometry BackdropWall(int width, float height, float z, UvRect? frame, bool tileHorizontally)
+    {
+        Builder textured = new();
+        Builder plain = new();
+        Builder target = frame is null ? plain : textured;
+        UvRect uv = frame ?? default;
+        if (tileHorizontally)
+        {
+            int rows = Math.Max(1, (int)MathF.Ceiling(height));
+            for (int row = 0; row < rows; row++)
+            {
+                float y0 = row;
+                float y1 = MathF.Min(height, row + 1f);
+                float vTop = uv.V0 + ((uv.V1 - uv.V0) * (1f - (y1 - y0)));
+                for (int x = 0; x < width; x++)
+                {
+                    target.VerticalQuad(x, x + 1, y0, y1, z, Vector3.UnitZ, uv.U0, vTop, uv.U1, uv.V1);
+                }
+            }
+        }
+        else
+        {
+            target.VerticalQuad(0, width, 0, height, z, Vector3.UnitZ, uv.U0, uv.V0, uv.U1, uv.V1);
+        }
+
+        return Builder.Join(textured, plain);
+    }
+
     private sealed class Builder
     {
         public List<Vector3> Positions { get; } = [];
@@ -205,6 +238,15 @@ internal static class AreaMesh
             Quad(
                 [new(x, height, y), new(x + 1, height, y), new(x + 1, height, y + 1), new(x, height, y + 1)],
                 [new(frame.U0, frame.V0), new(frame.U1, frame.V0), new(frame.U1, frame.V1), new(frame.U0, frame.V1)],
+                normal);
+        }
+
+        /// <summary>A vertical quad at fixed <paramref name="z"/> spanning x0..x1 and y0..y1 facing <paramref name="normal"/>.</summary>
+        public void VerticalQuad(float x0, float x1, float y0, float y1, float z, Vector3 normal, float u0, float v0, float u1, float v1)
+        {
+            Quad(
+                [new(x0, y1, z), new(x1, y1, z), new(x1, y0, z), new(x0, y0, z)],
+                [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)],
                 normal);
         }
 

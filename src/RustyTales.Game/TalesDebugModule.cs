@@ -41,6 +41,7 @@ public sealed class TalesDebugModule : IDebugCommandModule
             "tales.goto <area> <x> <y> [facing]     Teleport to an area, cell and facing (north|east|south|west)",
             "tales.tp <x> <y> [facing]              Teleport within the current area",
             "tales.event <event>                    Trigger an authored event chain immediately",
+            "tales.combat-view <mode>               Switch combat view: tactical, first_person, side_view or auto",
             "tales.heal                             Restore every party member's tracks and clear conditions",
             "tales.quit                             Return to the title screen",
         ]));
@@ -128,23 +129,26 @@ public sealed class TalesDebugModule : IDebugCommandModule
             return DebugCommandResult.Failure(DebugCommandStatus.Failed, string.Join(" ", _session.Notes));
         }
 
-        int needed = Math.Max(1, openCampaign.Json.GetProperty("party").GetProperty("min").GetInt32());
-        string? race = rules.OfType(DefinitionTypes.Race).FirstOrDefault()?.QualifiedId;
-        string? characterClass = rules.OfType(DefinitionTypes.Class).FirstOrDefault()?.QualifiedId;
-        string[] names = ["Ada", "Brom", "Cora", "Dain", "Elin", "Finn"];
-
-        for (int member = 0; member < needed; member++)
+        if (!_session.HasFixedStartingParty)
         {
-            string name = member < names.Length ? names[member] : $"Hero {member + 1}";
-            int before = _session.Party.Count;
-            for (int attempt = 0; attempt < 64 && _session.Party.Count == before; attempt++)
-            {
-                _session.Roll(_engine, name, race, characterClass);
-            }
+            int needed = Math.Max(1, openCampaign.Json.GetProperty("party").GetProperty("min").GetInt32());
+            string? race = rules.OfType(DefinitionTypes.Race).FirstOrDefault()?.QualifiedId;
+            string? characterClass = rules.OfType(DefinitionTypes.Class).FirstOrDefault()?.QualifiedId;
+            string[] names = ["Ada", "Brom", "Cora", "Dain", "Elin", "Finn"];
 
-            if (_session.Party.Count == before)
+            for (int member = 0; member < needed; member++)
             {
-                return DebugCommandResult.Failure(DebugCommandStatus.Failed, $"Could not auto-roll party member {name}: {string.Join(" ", _session.Notes)}");
+                string name = member < names.Length ? names[member] : $"Hero {member + 1}";
+                int before = _session.Party.Count;
+                for (int attempt = 0; attempt < 64 && _session.Party.Count == before; attempt++)
+                {
+                    _session.Roll(_engine, name, race, characterClass);
+                }
+
+                if (_session.Party.Count == before)
+                {
+                    return DebugCommandResult.Failure(DebugCommandStatus.Failed, $"Could not auto-roll party member {name}: {string.Join(" ", _session.Notes)}");
+                }
             }
         }
 
@@ -237,6 +241,27 @@ public sealed class TalesDebugModule : IDebugCommandModule
 
         _publish();
         return DebugCommandResult.Success($"Triggered {evt.QualifiedId} (screen: {_session.Screen}).");
+    }
+
+    [DebugCommand("tales.combat-view", Description = "Override combat presentation mode: tactical, first_person, side_view or auto.")]
+    public DebugCommandResult CombatView(string mode)
+    {
+        string normalized = mode.Trim().ToLowerInvariant();
+        if (normalized is "auto" or "default" or "")
+        {
+            _session.CombatPresentationOverride = null;
+            _publish();
+            return DebugCommandResult.Success("Combat presentation restored to authored default.");
+        }
+
+        if (normalized is not ("tactical" or "first_person" or "side_view"))
+        {
+            return DebugCommandResult.Failure(DebugCommandStatus.InvalidArguments, $"'{mode}' is not a combat view. Use tactical, first_person, side_view or auto.");
+        }
+
+        _session.CombatPresentationOverride = normalized;
+        _publish();
+        return DebugCommandResult.Success($"Combat presentation set to {normalized}.");
     }
 
     [DebugCommand("tales.heal", Description = "Restore all party tracks to maximum and clear conditions.")]

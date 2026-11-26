@@ -256,6 +256,7 @@ internal static partial class SessionProjection
         JsonObject fight = new()
         {
             ["encounter"] = pending.Encounter.Name,
+            ["presentation"] = session.CombatPresentation(pending.Combat),
             ["track"] = track.Name,
             ["trackId"] = track.QualifiedId,
             ["phase"] = observation.Phase.ToString().ToLowerInvariant(),

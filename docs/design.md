@@ -633,7 +633,15 @@ definition whose `kind` picks its fields (`tales schema events`).
 - **Encounters** reference ruleset monsters, with counts, placements and
   surprise rules. A combat event can choose starting anchors and a forced
   surprised side; its outcome branches include `on_flee`, and `flee_on_draw`
-  can route an otherwise undecided round-limit fight there.
+  can route an otherwise undecided round-limit fight there. A combat definition's
+  optional `presentation` (or a campaign's `combat_presentation` override) picks
+  how the Game frames fights: `tactical` (angled floor grid, the default),
+  `first_person` (Wizardry/Dragon Quest enemy lineup over a backdrop) or
+  `side_view` (JRPG formation rows over a backdrop).
+- **Fixed starting parties.** A campaign may declare `starting_party` as a list
+  of distinct NPC definition references satisfying `party.min`..`party.max`.
+  When present, single-player Game sessions skip party creation and `tales play`
+  needs no `--party` files.
 
 ## Runtime
 

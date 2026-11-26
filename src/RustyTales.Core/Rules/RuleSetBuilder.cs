@@ -1649,6 +1649,25 @@ public sealed class RuleSetBuilder
                 {
                     Error(definition, "campaign.party", "$.party", $"Party size needs 1 <= min <= max, but min is {min} and max is {max}.");
                 }
+
+                if (definition.Json.TryGetProperty("starting_party", out JsonElement startingParty))
+                {
+                    int count = startingParty.GetArrayLength();
+                    if (count < min || count > max)
+                    {
+                        Error(definition, "campaign.starting-party", "$.starting_party", $"starting_party has {count} member(s), outside the campaign's party size {min}..{max}.");
+                    }
+
+                    HashSet<Definition> seen = [];
+                    for (int index = 0; index < count; index++)
+                    {
+                        string path = $"$.starting_party[{index}]";
+                        if (_rules.References.TryGetValue((definition, path), out Definition? npc) && !seen.Add(npc))
+                        {
+                            Error(definition, "campaign.starting-party", path, $"Duplicate starting_party NPC '{npc.QualifiedId}'. Each starting member must be distinct.");
+                        }
+                    }
+                }
             }
         }
 

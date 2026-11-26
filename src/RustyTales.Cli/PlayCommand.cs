@@ -18,9 +18,9 @@ namespace RustyTales.Cli;
 internal static class PlayCommand
 {
     private const string Usage =
-        "Usage: tales play --campaign <path> --party <file>,... [--seed <n>] [--script <file>] [--save <save>] [--combat-control auto|manual] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
+        "Usage: tales play --campaign <path> [--party <file>,...] [--seed <n>] [--script <file>] [--save <save>] [--combat-control auto|manual] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
         + "       tales play --campaign <path> --load <save> [--script <file>] [--save <save>] [--trace] [--fail-on-refusal] [--store <dir>] [--modules <dir>]... [--extension <id>]...\n"
-        + "A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
+        + "Omit --party only for campaigns that declare starting_party. A save is a file, or with --store a save slot in that Engine persistence root (the Game's is .runtime/persistence under rusty dev).";
 
     private sealed record ScriptLine(string Text, int Number);
 
@@ -28,7 +28,7 @@ internal static class PlayCommand
     {
         (Arguments parsed, string? error) = Arguments.Parse(args, ["--campaign", "--modules", "--extension", "--party", "--seed", "--script", "--save", "--load", "--store", "--combat-control"], ["--trace", "--fail-on-refusal"]);
         bool loading = parsed.Single("--load") is not null;
-        if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || loading == (parsed.Single("--party") is not null)))
+        if (error is null && (parsed.Positionals.Count != 0 || parsed.Single("--campaign") is null || (loading && parsed.Single("--party") is not null)))
         {
             error = Usage;
         }
@@ -96,7 +96,7 @@ internal static class PlayCommand
         RuleSet rules = set.Rules;
         CampaignState? state = loadedSave is { } saved
             ? SaveFile.Read(saved.Json, saved.Location, set, problems)
-            : NewGame(rules, set, parsed.Single("--party")!, seed, workingDirectory, problems);
+            : NewGame(rules, set, parsed.Single("--party"), seed, workingDirectory, problems);
         if (state is null)
         {
             return output.Problems(problems);
@@ -374,7 +374,7 @@ internal static class PlayCommand
         }
     }
 
-    private static CampaignState? NewGame(RuleSet rules, ModuleSet set, string partyFiles, ulong seed, string workingDirectory, List<ModuleDiagnostic> problems)
+    private static CampaignState? NewGame(RuleSet rules, ModuleSet set, string? partyFiles, ulong seed, string workingDirectory, List<ModuleDiagnostic> problems)
     {
         List<Definition> campaigns = rules.OfType(DefinitionTypes.Campaign).Where(campaign => campaign.Module == set.Root!.Id).ToList();
         if (campaigns.Count != 1)
@@ -384,12 +384,24 @@ internal static class PlayCommand
         }
 
         List<Character> party = [];
-        foreach (string file in partyFiles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        if (partyFiles is not null)
         {
-            if (CharacterFile.Read(Path.GetFullPath(file, workingDirectory), set, problems) is Character character)
+            foreach (string file in partyFiles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
             {
-                party.Add(character);
+                if (CharacterFile.Read(Path.GetFullPath(file, workingDirectory), set, problems) is Character character)
+                {
+                    party.Add(character);
+                }
             }
+        }
+        else if (CampaignRunner.StartingParty(rules, campaigns[0]) is List<Character> fixedParty)
+        {
+            party.AddRange(fixedParty);
+        }
+        else
+        {
+            problems.Add(new ModuleDiagnostic("play.party", $"{campaigns[0].Name} has no starting_party; pass --party <file>,... or declare starting_party on the campaign.", campaigns[0].Module, campaigns[0].File, "$.party"));
+            return null;
         }
 
         System.Text.Json.JsonElement size = campaigns[0].Json.GetProperty("party");

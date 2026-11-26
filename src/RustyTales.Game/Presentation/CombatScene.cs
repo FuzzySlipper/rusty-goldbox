@@ -7,21 +7,27 @@ using RustyTales.Core.Definitions;
 namespace RustyTales.Game.Presentation;
 
 /// <summary>
-/// The combat screen's scene: a floor field, the party on the left facing
-/// right and its foes on the right facing left, each a side-view sprite
-/// billboarded fully to a camera looking down at 30 degrees. It follows a
-/// Core combat observation: the latest actor plays its attack, the others
-/// idle, the defeated leave the field, and in a fight on a combat field each
-/// figure stands on its cell. Figures
-/// without a figure definition draw as plain blocks.
+/// The combat screen's 3D scene supporting three authored presentation modes
+/// over the same Core <see cref="CombatObservation"/>:
+/// <list type="bullet">
+/// <item><description><c>tactical</c>: Gold Box-style angled 3D floor grid with terrain and cell positions.</description></item>
+/// <item><description><c>first_person</c>: Wizardry / Dragon Quest-style eye-level enemy lineup over a stage backdrop (party shown in UI cards).</description></item>
+/// <item><description><c>side_view</c>: JRPG-style fixed formation stage with enemies on the left and party on the right over a backdrop.</description></item>
+/// </list>
 /// </summary>
 internal sealed class CombatScene : IDisposable
 {
-    /// <summary>The field of a fight without positions.</summary>
+    /// <summary>The field of a tactical fight without positions.</summary>
     public const int Width = 6;
     public const int Depth = 5;
 
+    private const int FirstPersonWidth = 6;
+    private const int FirstPersonDepth = 4;
+    private const int SideViewWidth = 7;
+    private const int SideViewDepth = 4;
+
     private const ulong FloorObject = 100;
+    private const ulong BackdropObject = 101;
     private const ulong FigureObjects = 1000;
     private const ulong TerrainObjects = 100_000;
 
@@ -35,10 +41,16 @@ internal sealed class CombatScene : IDisposable
     private readonly Material _plain;
     private readonly List<IDisposable> _retired = [];
     private readonly Dictionary<string, Figure> _figures = [];
+    private readonly Dictionary<string, Vector3> _stageSpots = [];
     private readonly List<Figure> _terrain = [];
     private string? _fightKey;
+    private string _presentation = "tactical";
     private MeshResource? _floorMesh;
     private Appearance? _floor;
+    private Transform _floorPlacement = new(Vector3.Zero, Quaternion.Identity, Vector3.One);
+    private MeshResource? _backdropMesh;
+    private Appearance? _backdrop;
+    private Transform _backdropPlacement = new(Vector3.Zero, Quaternion.Identity, Vector3.One);
     private int _acted;
     private int _width = Width;
     private int _depth = Depth;
@@ -49,10 +61,18 @@ internal sealed class CombatScene : IDisposable
         _plain = plain;
     }
 
-    /// <summary>The combat camera's vertical field of view: narrower than the corridor's, framing the field.</summary>
+    /// <summary>The tactical combat camera's vertical field of view: narrower than the corridor's, framing the field.</summary>
     public const double FieldOfView = 46;
 
-    /// <summary>How far the camera looks down, in degrees.</summary>
+    /// <summary>The active camera vertical field of view for the current combat presentation.</summary>
+    public double ActiveFieldOfView => _presentation switch
+    {
+        "first_person" => 44,
+        "side_view" => 42,
+        _ => FieldOfView,
+    };
+
+    /// <summary>How far the tactical camera looks down, in degrees.</summary>
     private const double Pitch = 30;
 
     /// <summary>How tall a figure stands, in cells, so the far row's heads stay in the frame.</summary>
@@ -61,26 +81,52 @@ internal sealed class CombatScene : IDisposable
     /// <summary>How much of the frame the field may fill, leaving a margin on every side.</summary>
     private const double Fill = 0.9;
 
-    /// <summary>Where the camera stands for the current field in a view of the given width-to-height <paramref name="aspect"/>.</summary>
-    public CameraPose PoseIn(double aspect) => PoseFor(_width, _depth, aspect);
+    /// <summary>Where the camera stands for the current fight in a view of the given width-to-height <paramref name="aspect"/>.</summary>
+    public CameraPose PoseIn(double aspect) => _presentation switch
+    {
+        "first_person" => PoseForFirstPerson(_width, _depth, aspect),
+        "side_view" => PoseForSideView(_width, _depth, aspect),
+        _ => PoseFor(_width, _depth, aspect),
+    };
 
     /// <summary>
     /// Straight on, centred and 30 degrees down, as close as it can stand
     /// with the whole field and the figures on it inside the frame: a wide
     /// view brings it closer, a narrow or deep one sends it back.
     /// </summary>
-    public static CameraPose PoseFor(int width, int depth, double aspect)
+    public static CameraPose PoseFor(int width, int depth, double aspect) => PoseForAngle(width, depth, aspect, Pitch, FieldOfView, FigureHeight, Fill);
+
+    /// <summary>Eye-level Wizardry / Dragon Quest camera framing the enemy ranks and stage backdrop.</summary>
+    public static CameraPose PoseForFirstPerson(int width, int depth, double aspect)
     {
-        double pitch = Pitch * Math.PI / 180;
+        double pitch = 5;
+        double fov = 44;
+        double tanY = Math.Tan(fov * Math.PI / 360);
+        double tanX = tanY * Math.Max(0.4, aspect);
+        // Keep a ~4.4-cell horizontal enemy lineup and ~1.6-cell figure height framed comfortably.
+        double halfWidth = 2.3;
+        double distForWidth = halfWidth / (0.86 * tanX);
+        double distForHeight = 0.9 / (0.84 * tanY);
+        double distance = Math.Max(2.3, Math.Max(distForWidth, distForHeight));
+        float targetZ = depth * 0.45f;
+        return new CameraPose(new Vector3(width / 2f, 0.78f + (float)(distance * Math.Sin(pitch * Math.PI / 180)), targetZ + (float)distance), -pitch, 0);
+    }
+
+    /// <summary>Lower theatrical JRPG side-view camera framing party on the right and enemies on the left.</summary>
+    public static CameraPose PoseForSideView(int width, int depth, double aspect) => PoseForAngle(width, depth, aspect, 12, 40, 1.35, 0.96);
+
+    private static CameraPose PoseForAngle(int width, int depth, double aspect, double pitchDegrees, double fovDegrees, double figureHeight, double fill)
+    {
+        double pitch = pitchDegrees * Math.PI / 180;
         Vector3 forward = new(0, (float)-Math.Sin(pitch), (float)-Math.Cos(pitch));
         Vector3 up = new(0, (float)Math.Cos(pitch), (float)-Math.Sin(pitch));
         Vector3 centre = new(width / 2f, 0, depth / 2f);
-        double tanY = Math.Tan(FieldOfView * Math.PI / 360);
+        double tanY = Math.Tan(fovDegrees * Math.PI / 360);
         double tanX = tanY * Math.Max(0.1, aspect);
         Vector3[] corners =
         [
             new(0, 0, 0), new(width, 0, 0), new(0, 0, depth), new(width, 0, depth),
-            new(0, (float)FigureHeight, 0), new(width, (float)FigureHeight, 0), new(0, (float)FigureHeight, depth), new(width, (float)FigureHeight, depth),
+            new(0, (float)figureHeight, 0), new(width, (float)figureHeight, 0), new(0, (float)figureHeight, depth), new(width, (float)figureHeight, depth),
         ];
 
         // Where each corner shows in the frame from an eye: -1 to 1 across and up, or null behind the camera.
@@ -93,7 +139,7 @@ internal sealed class CombatScene : IDisposable
 
         bool Fits(Vector3 eye)
         {
-            return corners.All(corner => Seen(eye, corner) is var (x, y) && Math.Abs(x) <= Fill && Math.Abs(y) <= Fill);
+            return corners.All(corner => Seen(eye, corner) is var (x, y) && Math.Abs(x) <= fill && Math.Abs(y) <= fill);
         }
 
         // The field shrinks in the frame as the camera backs away, so the closest distance that fits is a bisection.
@@ -128,7 +174,7 @@ internal sealed class CombatScene : IDisposable
             target += up * (float)(middle * Vector3.Distance(eye, target) * tanY);
         }
 
-        return new CameraPose(Closest(target), -Pitch, 0);
+        return new CameraPose(Closest(target), -pitchDegrees, 0);
     }
 
     /// <summary>
@@ -152,36 +198,59 @@ internal sealed class CombatScene : IDisposable
 
     /// <summary>
     /// Shows a Core combat observation, live or finished. The scene is built
-    /// once per fight (<paramref name="fightKey"/>), keyed by each combatant's
-    /// stable ID, and reads positions, defeated state and active state directly
+    /// once per fight and presentation (<paramref name="fightKey"/> + <paramref name="presentation"/>),
+    /// keyed by each combatant's stable ID, and reads positions, defeated state and active state directly
     /// from the observation; it never infers an actor from its display name.
     /// </summary>
+    /// <param name="presentation">Combat framing mode: <c>tactical</c>, <c>first_person</c> or <c>side_view</c>.</param>
     /// <param name="spriteFor">The sprite a monster or class is drawn with, or null.</param>
     /// <param name="terrainFor">The sprite a terrain key of the fight's field is drawn with, or null.</param>
     /// <param name="floor">The floor material and frame (the area's wall set floor), or null for plain.</param>
-    public void Show(string fightKey, CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, CombatField? field, (Material Material, UvRect Frame)? floor, List<AppearanceFact> facts)
+    /// <param name="backdrop">Optional stage backdrop material, UV frame and tiling flag for first-person and side-view modes.</param>
+    public void Show(
+        string fightKey,
+        string presentation,
+        CombatObservation observation,
+        Func<string, Definition?> kindFor,
+        Func<Definition, SpriteArt?> spriteFor,
+        Func<char, SpriteArt?> terrainFor,
+        CombatField? field,
+        (Material Material, UvRect Frame)? floor,
+        (Material Material, UvRect Frame, bool Tile)? backdrop,
+        List<AppearanceFact> facts)
     {
-        if (fightKey != _fightKey)
+        string sceneKey = $"{fightKey}@{presentation}";
+        if (sceneKey != _fightKey)
         {
-            Build(fightKey, observation, kindFor, spriteFor, terrainFor, field, floor);
+            Build(sceneKey, presentation, observation, kindFor, spriteFor, terrainFor, field, floor, backdrop);
         }
 
-        facts.Add(new AppearanceFact(FloorObject, false, 0, new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One), _floor!, true, RenderLayer.Scene));
+        facts.Add(new AppearanceFact(FloorObject, false, 0, _floorPlacement, _floor!, true, RenderLayer.Scene));
+        if (_backdrop is not null)
+        {
+            facts.Add(new AppearanceFact(BackdropObject, false, 0, _backdropPlacement, _backdrop, true, RenderLayer.Scene));
+        }
+
         ulong ground = TerrainObjects;
         foreach (Figure piece in _terrain)
         {
             facts.Add(new AppearanceFact(ground++, false, 0, piece.Placement, piece.Appearance, true, RenderLayer.Scene));
         }
 
+        HashSet<string> actingSubjects = [];
+        CombatFact? latestAction = observation.Facts
+            .LastOrDefault(fact => fact.Kind is "action" or "portion" or "reaction" or "move");
+        if (latestAction is not null)
+        {
+            actingSubjects = latestAction.SubjectIds.ToHashSet(StringComparer.Ordinal);
+        }
+
         if (observation.Facts.Count != _acted)
         {
             _acted = observation.Facts.Count;
-            CombatFact? action = observation.Facts
-                .LastOrDefault(fact => fact.Kind is "action" or "portion" or "reaction" or "move");
-            HashSet<string> subjects = action?.SubjectIds.ToHashSet(StringComparer.Ordinal) ?? [];
             foreach ((string key, Figure figure) in _figures)
             {
-                figure.Play(subjects.Contains(key) ? "attack" : "idle");
+                figure.Play(actingSubjects.Contains(key) ? "attack" : "idle");
             }
         }
 
@@ -191,9 +260,22 @@ internal sealed class CombatScene : IDisposable
         {
             if (current.TryGetValue(key, out CombatantObservation? member))
             {
-                if (member.Position is Cell cell)
+                if (_presentation == "tactical")
                 {
-                    figure.StandOn(new Vector3(cell.X + 0.5f, 0, cell.Y + 0.5f));
+                    if (member.Position is Cell cell)
+                    {
+                        figure.StandOn(new Vector3(cell.X + 0.5f, 0, cell.Y + 0.5f));
+                    }
+                }
+                else if (_stageSpots.TryGetValue(key, out Vector3 spot))
+                {
+                    // Step slightly forward during an attack so the acting combatant pops visually.
+                    Vector3 lunge = actingSubjects.Contains(key)
+                        ? _presentation == "first_person"
+                            ? new Vector3(0, 0, 0.32f)
+                            : new Vector3(member.Side == 0 ? -0.45f : 0.45f, 0, 0)
+                        : Vector3.Zero;
+                    figure.StandOn(spot + lunge);
                 }
 
                 facts.Add(new AppearanceFact(id++, false, 0, figure.Placement, figure.Appearance, !member.Defeated && !member.Escaped, RenderLayer.Scene));
@@ -233,17 +315,38 @@ internal sealed class CombatScene : IDisposable
         ReleaseRetired();
     }
 
-    private void Build(string fightKey, CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor, Func<char, SpriteArt?> terrainFor, CombatField? field, (Material Material, UvRect Frame)? floor)
+    private void Build(
+        string sceneKey,
+        string presentation,
+        CombatObservation observation,
+        Func<string, Definition?> kindFor,
+        Func<Definition, SpriteArt?> spriteFor,
+        Func<char, SpriteArt?> terrainFor,
+        CombatField? field,
+        (Material Material, UvRect Frame)? floor,
+        (Material Material, UvRect Frame, bool Tile)? backdrop)
     {
         Retire();
-        _fightKey = fightKey;
+        _fightKey = sceneKey;
+        _presentation = presentation;
         _acted = 0;
-        (int width, int depth) = field is not null
-            ? (field.Width, field.Height)
-            : FallbackSize(observation.Combatants.Select(member => member.Side).ToList());
+
+        (int width, int depth) = presentation switch
+        {
+            "first_person" => (FirstPersonWidth, FirstPersonDepth),
+            "side_view" => (SideViewWidth, SideViewDepth),
+            _ => field is not null
+                ? (field.Width, field.Height)
+                : FallbackSize(observation.Combatants.Select(member => member.Side).ToList()),
+        };
         _width = width;
         _depth = depth;
-        AreaGeometry geometry = AreaMesh.Floor(_width, _depth, floor?.Frame);
+
+        bool stageMode = presentation is "first_person" or "side_view";
+        int floorMargin = stageMode ? 4 : 0;
+        int floorDepthExtra = stageMode ? 4 : 0;
+        _floorPlacement = new Transform(new Vector3(-floorMargin, 0, 0), Quaternion.Identity, Vector3.One);
+        AreaGeometry geometry = AreaMesh.Floor(_width + (floorMargin * 2), _depth + floorDepthExtra, floor?.Frame);
         _floorMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
             geometry.Positions,
             geometry.Normals,
@@ -253,6 +356,107 @@ internal sealed class CombatScene : IDisposable
             geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floor!.Value.Material : _plain)).ToArray()));
         _floor = _graphics.CreateMeshAppearance(_floorMesh);
 
+        if (stageMode)
+        {
+            // Fill the viewport edge-to-edge behind the fighters without dark side bars on widescreen layouts.
+            int wallMargin = presentation == "first_person" ? 2 : 3;
+            float wallHeight = presentation == "first_person" ? 4.2f : 4.8f;
+            _backdropPlacement = new Transform(new Vector3(-wallMargin, 0, 0), Quaternion.Identity, Vector3.One);
+            AreaGeometry wallGeo = AreaMesh.BackdropWall(_width + (wallMargin * 2), wallHeight, 0f, backdrop?.Frame, backdrop?.Tile ?? true);
+            _backdropMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
+                wallGeo.Positions,
+                wallGeo.Normals,
+                wallGeo.Uvs,
+                wallGeo.Indices,
+                wallGeo.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
+                wallGeo.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? backdrop!.Value.Material : _plain)).ToArray()));
+            _backdrop = _graphics.CreateMeshAppearance(_backdropMesh);
+        }
+
+        if (presentation == "first_person")
+        {
+            BuildFirstPersonFigures(observation, kindFor, spriteFor);
+        }
+        else if (presentation == "side_view")
+        {
+            BuildSideViewFigures(observation, kindFor, spriteFor);
+        }
+        else
+        {
+            BuildTacticalFigures(observation, kindFor, spriteFor, terrainFor, field);
+        }
+
+        foreach (Figure figure in _figures.Values)
+        {
+            figure.Play("idle");
+        }
+    }
+
+    private void BuildFirstPersonFigures(CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor)
+    {
+        // Only foes stand in front of the camera; the party is represented by the UI roster cards.
+        List<CombatantObservation> foes = observation.Combatants.Where(member => member.Side != 0).ToList();
+        int frontCount = Math.Min(foes.Count, 4);
+        int backCount = Math.Max(0, foes.Count - frontCount);
+
+        for (int index = 0; index < foes.Count; index++)
+        {
+            CombatantObservation member = foes[index];
+            bool back = index >= frontCount;
+            int rowIndex = back ? index - frontCount : index;
+            int rowSize = back ? backCount : frontCount;
+            float spacing = rowSize <= 2 ? 1.35f : 1.1f;
+            float startX = (_width / 2f) - ((rowSize - 1) * spacing / 2f);
+            float x = startX + (rowIndex * spacing) + (back ? 0.25f : 0f);
+            float z = back ? 1.1f : 2.0f;
+            Vector3 spot = new(x, 0, z);
+            _stageSpots[member.Id] = spot;
+            AddFigure(member, spot, faceRight: false, kindFor, spriteFor);
+        }
+    }
+
+    private void BuildSideViewFigures(CombatObservation observation, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor)
+    {
+        // Classic JRPG staging: foes on the left facing right, party in a staggered diagonal column on the right facing left.
+        List<CombatantObservation> party = observation.Combatants.Where(member => member.Side == 0).ToList();
+        List<CombatantObservation> foes = observation.Combatants.Where(member => member.Side != 0).ToList();
+
+        PlaceSideColumn(party, leftSide: false, baseX: 5.3f, rankStep: 0.7f, staggerX: 0.18f, kindFor, spriteFor);
+        PlaceSideColumn(foes, leftSide: true, baseX: 1.75f, rankStep: -0.75f, staggerX: -0.15f, kindFor, spriteFor);
+    }
+
+    private void PlaceSideColumn(
+        List<CombatantObservation> members,
+        bool leftSide,
+        float baseX,
+        float rankStep,
+        float staggerX,
+        Func<string, Definition?> kindFor,
+        Func<Definition, SpriteArt?> spriteFor)
+    {
+        int perRank = Math.Max(1, Math.Min(4, members.Count));
+        for (int index = 0; index < members.Count; index++)
+        {
+            CombatantObservation member = members[index];
+            int rank = index / perRank;
+            int slot = index % perRank;
+            int countInRank = Math.Min(perRank, members.Count - (rank * perRank));
+            float zSpan = countInRank <= 1 ? 0f : Math.Min(2.3f, (countInRank - 1) * 0.85f);
+            float z = (_depth / 2f) - (zSpan / 2f) + (countInRank <= 1 ? 0f : slot * (zSpan / (countInRank - 1)));
+            float x = baseX + (rank * rankStep) + (slot * staggerX);
+            Vector3 spot = new(x, 0, z);
+            _stageSpots[member.Id] = spot;
+            AddFigure(member, spot, faceRight: leftSide, kindFor, spriteFor);
+        }
+    }
+
+    private void BuildTacticalFigures(
+        CombatObservation observation,
+        Func<string, Definition?> kindFor,
+        Func<Definition, SpriteArt?> spriteFor,
+        Func<char, SpriteArt?> terrainFor,
+        CombatField? field)
+    {
         foreach (IGrouping<int, CombatantObservation> side in observation.Combatants.GroupBy(member => member.Side))
         {
             List<CombatantObservation> members = side.ToList();
@@ -274,17 +478,8 @@ internal sealed class CombatScene : IDisposable
                     z = cell.Y + 0.5f;
                 }
 
-                Definition? kind = kindFor(member.Id);
-                SpriteArt? art = kind is null ? null : spriteFor(kind);
-                _figures[member.Id] = art is null
-                    ? Figure.Block(_graphics, new Vector3(x, 0, z), SideColours[Math.Min(side.Key, 1)])
-                    : new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(new Vector3(x, 0, z), Quaternion.Identity, art.Scale(faceRight: left)));
+                AddFigure(member, new Vector3(x, 0, z), faceRight: left, kindFor, spriteFor);
             }
-        }
-
-        foreach (Figure figure in _figures.Values)
-        {
-            figure.Play("idle");
         }
 
         foreach ((Cell cell, Terrain terrain) in field?.Terrain ?? new Dictionary<Cell, Terrain>())
@@ -299,6 +494,15 @@ internal sealed class CombatScene : IDisposable
         }
     }
 
+    private void AddFigure(CombatantObservation member, Vector3 spot, bool faceRight, Func<string, Definition?> kindFor, Func<Definition, SpriteArt?> spriteFor)
+    {
+        Definition? kind = kindFor(member.Id);
+        SpriteArt? art = kind is null ? null : spriteFor(kind);
+        _figures[member.Id] = art is null
+            ? Figure.Block(_graphics, spot, SideColours[Math.Min(member.Side, 1)])
+            : new Figure(art, art.CreateFigure(BillboardMode.Spherical), new Transform(spot, Quaternion.Identity, art.Scale(faceRight)));
+    }
+
     /// <summary>Takes the current fight's scene out of use; it is released after the next publish.</summary>
     private void Retire()
     {
@@ -308,6 +512,7 @@ internal sealed class CombatScene : IDisposable
         }
 
         _figures.Clear();
+        _stageSpots.Clear();
         foreach (Figure piece in _terrain)
         {
             _retired.AddRange(piece.Owned());
@@ -320,8 +525,16 @@ internal sealed class CombatScene : IDisposable
             _retired.Add(_floorMesh!);
         }
 
+        if (_backdrop is not null)
+        {
+            _retired.Add(_backdrop);
+            _retired.Add(_backdropMesh!);
+        }
+
         _floor = null;
         _floorMesh = null;
+        _backdrop = null;
+        _backdropMesh = null;
         _fightKey = null;
     }
 

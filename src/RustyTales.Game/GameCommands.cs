@@ -269,6 +269,11 @@ internal static class GameCommands
                     ulong seed = payload.TryGetProperty("seed", out _) ? Seed(payload) : (ulong)DateTime.UtcNow.Ticks;
                     IReadOnlyList<string>? extensions = payload.TryGetProperty("extensions", out _) ? Texts(payload, "extensions") : null;
                     session.Open(Text(payload, "campaign"), seed, extensions);
+                    // Campaigns with a fixed starting_party skip party creation in single-player play.
+                    if (session.Screen == Screen.Party && session.HasFixedStartingParty && session.Table is null)
+                    {
+                        session.Begin(engine);
+                    }
                     break;
                 case "roll":
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;

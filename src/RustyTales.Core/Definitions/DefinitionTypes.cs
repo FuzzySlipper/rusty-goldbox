@@ -565,6 +565,7 @@ public static class DefinitionTypes
             new("rolled", new EnumKind(["turn", "round"]), false, "What self.rolled.<check> counts: checks made since the creature's own turn began (\"turn\", the default; a multiple attack penalty) or since the round began (\"round\"; a penalty for each defence after the first in a round)."),
             new("actions", new ListKind(Use), false, "Actions every creature in these fights can take, after its own, such as attacking with any skill where a system lets anyone try anything; uses as in classes and monsters."),
             new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down each round, though it takes no actions (bleeding out, a save to stabilise). It does so at its place in the turn order; with initiative each round a defeated creature isn't rolled for, so it does so at the round's end, as does one out of the fight from the start. Without it, a defeated creature's conditions wait."),
+            new("presentation", new EnumKind(["tactical", "first_person", "side_view"]), false, "How the Game frames fights using this combat definition: \"tactical\" (angled 3D floor grid, the default), \"first_person\" (Wizardry / Dragon Quest style: foes arrayed facing the camera over a backdrop), or \"side_view\" (JRPG style: party on the right and foes on the left in fixed formation rows)."),
         ],
         """
         {
@@ -777,6 +778,8 @@ public static class DefinitionTypes
             ]), true, "Party size."),
             new("intro", new ReferenceKind("event"), false, "An event that runs before the first command."),
             new("skin", new ReferenceKind("skin"), false, "How the Game's panels look while this campaign plays, unless the player picks another skin."),
+            new("starting_party", new ListKind(new ReferenceKind("npc")), false, "Pre-authored NPC characters who start the campaign as the party. When present, single-player play in the Game skips party creation and `tales play` needs no `--party` files."),
+            new("combat_presentation", new EnumKind(["tactical", "first_person", "side_view"]), false, "Default combat framing for this campaign (\"tactical\", \"first_person\" or \"side_view\"), overriding the combat definition's presentation when set."),
         ],
         """
         { "type": "campaign", "id": "crypt", "name": "The Crypt", "start": { "area": "hall", "entry": "start" }, "party": { "min": 1, "max": 6 } }

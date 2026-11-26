@@ -86,14 +86,17 @@ internal sealed class SceneView : IDisposable
             {
                 _showingCombat = true;
                 CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
+                string presentation = session.CombatPresentation(pending.Combat);
                 _combat.Show(
                     pending.Continuation.RandomScope!,
+                    presentation,
                     live,
                     id => LiveKind(rules, pending, id),
                     kind => SpriteFor(rules, session.Set, kind),
                     key => field is not null && rules.TerrainFigures.TryGetValue((field.Combat, key), out Definition? sprite) ? SpriteArtOf(rules, session.Set, sprite!) : null,
                     field,
                     Floor(rules, session.Set, state.Area),
+                    CombatBackdrop(rules, session.Set, state, pending.Event),
                     facts);
                 FitCombatCamera(force: true);
             }
@@ -264,7 +267,7 @@ internal sealed class SceneView : IDisposable
         double width = (anchor.Reported ? anchor.Width : 1) * surface.CssWidth;
         double height = (anchor.Reported ? anchor.Height : 1) * surface.CssHeight;
         double aspect = width > 0 && height > 0 ? width / height : 16.0 / 9;
-        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(aspect), CombatScene.FieldOfView)));
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(_combat.PoseIn(aspect), _combat.ActiveFieldOfView)));
         return true;
     }
 
@@ -547,6 +550,30 @@ internal sealed class SceneView : IDisposable
         Definition wallSet = rules.Reference(area, "$.wall_set");
         Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
         return frames.TryGetValue("floor", out UvRect floor) && ArtFor(set, wallSet) is Art art ? (art.Material, floor) : null;
+    }
+
+    /// <summary>Stage backdrop for first-person and side-view combat: event picture, else cell backdrop, else area wall tile.</summary>
+    private (Material Material, UvRect Frame, bool Tile)? CombatBackdrop(RuleSet rules, ModuleSet set, CampaignState state, Definition combatEvent)
+    {
+        Definition? picture = combatEvent.Json.TryGetProperty("picture", out _)
+            ? rules.Reference(combatEvent, "$.picture")
+            : Backdrop(rules, state);
+        if (picture is not null && Media.MediaOf(picture) == "image" && ArtFor(set, picture) is Art pictureArt)
+        {
+            return (pictureArt.Material, new UvRect(0, 0, 1, 1), false);
+        }
+
+        if (state.Area.Json.TryGetProperty("wall_set", out _))
+        {
+            Definition wallSet = rules.Reference(state.Area, "$.wall_set");
+            Dictionary<string, UvRect> frames = Frames(wallSet, rules.ImageSizes[wallSet]);
+            if (frames.TryGetValue("wall", out UvRect wall) && ArtFor(set, wallSet) is Art wallArt)
+            {
+                return (wallArt.Material, wall, true);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>A cell's prop: its figure and animation, where it stands, and the condition that hides it.</summary>
