@@ -11,18 +11,21 @@ namespace RustyTales.Core.Definitions;
 /// </summary>
 public static class DefinitionReader
 {
-    public static Definition? Read(JsonElement root, string module, string file, List<ModuleDiagnostic> diagnostics)
+    public static Definition? Read(JsonElement root, string module, string file, List<ModuleDiagnostic> diagnostics, string rootPath = "$")
     {
         if (root.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("type", out JsonElement typeElement)
             || typeElement.ValueKind != JsonValueKind.String)
         {
+            string message = rootPath == "$"
+                ? $"A definition file must be a JSON object (or an array of definition objects) with a string \"type\" field. Types: {TypeList()}."
+                : $"Each entry in a definition file array must be a JSON object with a string \"type\" field. Types: {TypeList()}.";
             diagnostics.Add(new ModuleDiagnostic(
                 "definition.type-missing",
-                $"A definition file must be a JSON object with a string \"type\" field. Types: {TypeList()}.",
+                message,
                 module,
                 file,
-                "$.type"));
+                Definition.CombinePath(rootPath, "$.type")));
             return null;
         }
 
@@ -35,17 +38,17 @@ public static class DefinitionReader
                 $"'{typeName}' is not a definition type. Types: {TypeList()}. Run `tales schema <type>` for a type's fields.",
                 module,
                 file,
-                "$.type"));
+                Definition.CombinePath(rootPath, "$.type")));
             return null;
         }
 
-        Reader reader = new(type, module, file, diagnostics);
+        Reader reader = new(type, module, file, rootPath, diagnostics);
         return reader.Read(root);
     }
 
     private static string TypeList() => string.Join(", ", DefinitionTypes.All.Select(type => type.Name));
 
-    private sealed class Reader(DefinitionType type, string module, string file, List<ModuleDiagnostic> diagnostics)
+    private sealed class Reader(DefinitionType type, string module, string file, string rootPath, List<ModuleDiagnostic> diagnostics)
     {
         private readonly int _errorsBefore = diagnostics.Count;
         private readonly List<ExpressionSite> _expressions = [];
@@ -114,7 +117,7 @@ public static class DefinitionReader
                 return null;
             }
 
-            return new Definition(type, id!, module, file, root.Clone(), _expressions, _references);
+            return new Definition(type, id!, module, file, root.Clone(), _expressions, _references, rootPath);
         }
 
         private void ReadObject(JsonElement element, IReadOnlyList<Field> fields, string path, string what)
@@ -667,7 +670,7 @@ public static class DefinitionReader
 
         private void Error(string rule, string path, string message)
         {
-            diagnostics.Add(new ModuleDiagnostic(rule, message, module, file, path));
+            diagnostics.Add(new ModuleDiagnostic(rule, message, module, file, Definition.CombinePath(rootPath, path)));
         }
     }
 }

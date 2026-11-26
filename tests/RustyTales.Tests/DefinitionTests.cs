@@ -263,5 +263,118 @@ public sealed class DefinitionTests
         Assert.Contains("Its values: amount", Message(set, "expression.type"), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MultiDefinitionFilesLoadResolveAndEvaluate()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/empty.json", "[]");
+        modules.Write("rules/bundle.json", """
+            [
+              { "type": "currency", "id": "silver", "name": "Silver" },
+              { "type": "item", "id": "dagger", "name": "Dagger", "kind": "weapon", "cost": 2, "currency": "silver", "weight": 1,
+                "modifiers": [ { "stat": "hit", "value": "1" } ] },
+              { "type": "race", "id": "elf", "name": "Elf", "classes": ["warrior"],
+                "modifiers": [ { "stat": "hit", "value": "table(bonus, self.str)" } ] },
+              { "type": "monster", "id": "goblin", "name": "Goblin", "class": "warrior", "level": 1,
+                "tracks": { "hit_points": "1d6" }, "stats": { "hit": "self.str + 1" }, "actions": [], "xp": 10 }
+            ]
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Empty(set.Diagnostics);
+        Definition dagger = set.Rules!.Find(DefinitionTypes.Item, "rules:dagger", out _)!;
+        Definition elf = set.Rules.Find(DefinitionTypes.Race, "rules:elf", out _)!;
+        Definition goblin = set.Rules.Find(DefinitionTypes.Monster, "rules:goblin", out _)!;
+        Assert.Equal("$[1]", dagger.RootPath);
+        Assert.Equal("rules:silver", set.Rules.Reference(dagger, "$.currency").QualifiedId);
+        Assert.Equal("rules:warrior", set.Rules.Reference(elf, "$.classes[0]").QualifiedId);
+        Assert.Equal("rules:warrior", set.Rules.Reference(goblin, "$.class").QualifiedId);
+        Assert.True(set.Rules.TryExpression(goblin, "$.stats.hit", out _));
+        Assert.True(set.Rules.TryExpression(dagger, "$.modifiers[0].value", out _));
+        Assert.True(set.Rules.TryExpression(elf, "$.modifiers[0].value", out _));
+    }
+
+    [Fact]
+    public void MultiDefinitionFileDiagnosticsReportArrayIndices()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/bad_entries.json", """
+            [
+              42,
+              { "type": "nonsense", "id": "x" },
+              { "type": "class", "id": "Bad-Id", "name": 3, "colour": "red" }
+            ]
+            """);
+
+        ModuleSet readerSet = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [
+                ("definition.type-missing", "$[0].type"),
+                ("definition.type-unknown", "$[1].type"),
+                ("definition.unknown-field", "$[2].colour"),
+                ("definition.field-type", "$[2].name"),
+                ("definition.field-required", "$[2]"),
+                ("definition.id", "$[2].id"),
+            ],
+            readerSet.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)));
+
+        modules.Write("rules/bad_entries.json", """
+            [
+              { "type": "currency", "id": "silver", "name": "Silver" },
+              { "type": "race", "id": "elf", "name": "Elf", "classes": ["wizard"] },
+              { "type": "condition", "id": "flag", "name": "Flag", "modifiers": [ { "stat": "strong", "value": "1" } ] },
+              { "type": "currency", "id": "silver", "name": "Duplicate Silver" }
+            ]
+            """);
+
+        ModuleSet builderSet = ModuleLoader.Load(root, []);
+
+        Assert.Equal(
+            [
+                ("definition.duplicate", "$[3].id"),
+                ("expression.type", "$[2].modifiers[0].stat"),
+                ("reference.not-found", "$[1].classes[0]"),
+            ],
+            builderSet.Diagnostics.Select(diagnostic => (diagnostic.Rule, diagnostic.JsonPath!)).Order());
+    }
+
+    [Fact]
+    public void MultiDefinitionNpcDiagnosticsReportArrayIndices()
+    {
+        using TempModules modules = new();
+        string root = Rules.WriteSmallRuleset(modules);
+        modules.Write("rules/npcs.json", """
+            [
+              { "type": "currency", "id": "silver", "name": "Silver" },
+              {
+                "type": "npc",
+                "id": "broken_guide",
+                "character": {
+                  "name": "Guide",
+                  "race": "rules:missing_race",
+                  "creation": "rules:standard",
+                  "levels": [ { "class": "rules:warrior", "gain": 4 } ],
+                  "experience": 0,
+                  "attributes": { "str": 10 },
+                  "tracks": { "hit_points": { "current": 4, "max": 4 } },
+                  "balances": { "gold": 0 },
+                  "equipment": [],
+                  "conditions": []
+                }
+              }
+            ]
+            """);
+
+        ModuleSet set = ModuleLoader.Load(root, []);
+
+        Assert.Contains(set.Diagnostics, diagnostic =>
+            diagnostic.JsonPath is not null
+            && diagnostic.JsonPath.StartsWith("$[1].character", StringComparison.Ordinal));
+    }
+
     private static string Message(ModuleSet set, string rule) => set.Diagnostics.First(diagnostic => diagnostic.Rule == rule).Message;
 }

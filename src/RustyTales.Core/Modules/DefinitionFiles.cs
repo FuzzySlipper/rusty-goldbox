@@ -5,8 +5,9 @@ namespace RustyTales.Core.Modules;
 
 /// <summary>
 /// Reads a module's definition files: every <c>.json</c> file other than
-/// <c>module.json</c>, outside hidden directories, each holding one
-/// definition whose <c>type</c> field names its definition type.
+/// <c>module.json</c>, outside hidden directories, each holding either one
+/// definition object or a JSON array of definition objects whose <c>type</c>
+/// field names their definition type.
 /// </summary>
 internal static class DefinitionFiles
 {
@@ -27,7 +28,25 @@ internal static class DefinitionFiles
                 continue;
             }
 
-            Definition? definition = DefinitionReader.Read(document.RootElement, module.Id, module.Source.PathOf(file), diagnostics);
+            string path = module.Source.PathOf(file);
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                int index = 0;
+                foreach (JsonElement element in document.RootElement.EnumerateArray())
+                {
+                    Definition? entry = DefinitionReader.Read(element, module.Id, path, diagnostics, $"$[{index}]");
+                    if (entry is not null)
+                    {
+                        definitions.Add(entry);
+                    }
+
+                    index++;
+                }
+
+                continue;
+            }
+
+            Definition? definition = DefinitionReader.Read(document.RootElement, module.Id, path, diagnostics);
             if (definition is not null)
             {
                 definitions.Add(definition);

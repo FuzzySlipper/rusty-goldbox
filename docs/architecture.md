@@ -34,10 +34,10 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from: module directories and installed containers in the search directories |
 | `src/RustyTales.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
 | `src/RustyTales.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
-| `src/RustyTales.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files |
-| `src/RustyTales.Core/Definitions/` | Definition types and their fields (`DefinitionTypes`, the `schema` source), checking one file against its type (`DefinitionReader`), media: what an asset is and which media each slot accepts (`Media`), and the panel proportions a skin or the player may set (`SkinLayout`) |
+| `src/RustyTales.Core/Modules/DefinitionFiles.cs` | Finding and parsing a module's definition files (single definition object or JSON array of definitions per `.json` file) |
+| `src/RustyTales.Core/Definitions/` | Definition types and their fields (`DefinitionTypes` and its domain partials, the `schema` source), checking one definition against its type (`DefinitionReader`), media: what an asset is and which media each slot accepts (`Media`), and the panel proportions a skin or the player may set (`SkinLayout`) |
 | `src/RustyTales.Core/Expressions/` | Expression lexer, parser, values, functions and the language reference |
-| `src/RustyTales.Core/Rules/RuleSetBuilder.cs` | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, asset images and wall-set frames |
+| `src/RustyTales.Core/Rules/RuleSetBuilder.cs` and its partials | Cross-module checks: references and `requires` visibility (and that an asset fits its media slot), stats, table rows, expression types, modifiers, characters/lifepaths, combat/behaviors, campaigns, asset images and wall-set frames |
 | `src/RustyTales.Core/Rules/ExpressionChecker.cs` | Expression type checking against a rule set |
 | `src/RustyTales.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
 | `src/RustyTales.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |

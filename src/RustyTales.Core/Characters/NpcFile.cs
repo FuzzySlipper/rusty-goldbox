@@ -27,7 +27,7 @@ public static class NpcFile
                 .Select(module => (JsonNode)new JsonObject { ["id"] = module.Manifest.Id, ["version"] = module.Manifest.Version.ToString() }).ToArray());
             using JsonDocument document = JsonDocument.Parse(data.ToJsonString());
             List<ModuleDiagnostic> characterProblems = [];
-            Character? character = CharacterFile.Read(document.RootElement, npc.File, "$.character", set, characterProblems);
+            Character? character = CharacterFile.Read(document.RootElement, npc.File, npc.DiagnosticPath("$.character"), set, characterProblems);
             problems.AddRange(characterProblems.Select(problem => problem with { Module = npc.Module }));
             if (character is not null)
             {

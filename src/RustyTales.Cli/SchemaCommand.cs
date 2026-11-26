@@ -107,8 +107,8 @@ internal static class SchemaCommand
             return TalesCli.Ok;
         }
 
-        output.Line("A module is a directory with module.json and one definition per .json file.");
-        output.Line("Each definition file has \"type\" (below) and \"id\". Run `tales schema <topic>` for details.");
+        output.Line("A module is a directory with module.json and .json definition files.");
+        output.Line("Each definition file holds one definition object or an array of definitions, each with \"type\" (below) and \"id\". Run `tales schema <topic>` for details.");
         output.Line();
         output.Line("Definition types:");
         foreach (DefinitionType type in DefinitionTypes.All)

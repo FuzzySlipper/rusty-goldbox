@@ -16,7 +16,8 @@ public sealed class Definition(
     string file,
     JsonElement json,
     IReadOnlyList<ExpressionSite> expressions,
-    IReadOnlyList<ReferenceSite> references)
+    IReadOnlyList<ReferenceSite> references,
+    string rootPath = "$")
 {
     public DefinitionType Type { get; } = type;
 
@@ -25,6 +26,9 @@ public sealed class Definition(
     public string Module { get; } = module;
 
     public string File { get; } = file;
+
+    /// <summary>Location of this definition inside <see cref="File"/>: <c>$</c> or <c>$[i]</c>.</summary>
+    public string RootPath { get; } = rootPath;
 
     /// <summary>The definition's JSON, checked against <see cref="Type"/>.</summary>
     public JsonElement Json { get; } = json;
@@ -36,4 +40,16 @@ public sealed class Definition(
     public string QualifiedId => $"{Module}:{Id}";
 
     public string Name => Json.TryGetProperty("name", out JsonElement name) ? name.GetString()! : Id;
+
+    public string DiagnosticPath(string localPath) => CombinePath(RootPath, localPath);
+
+    internal static string CombinePath(string rootPath, string localPath)
+    {
+        if (rootPath == "$" || !localPath.StartsWith('$'))
+        {
+            return localPath;
+        }
+
+        return $"{rootPath}{localPath[1..]}";
+    }
 }

@@ -295,8 +295,12 @@ public sealed class ModuleLoaderTests
         ModuleSet set = ModuleLoader.Load(ruleset, []);
 
         Assert.Equal(
-            [("definition.type-unknown", "fighter.json"), ("definition.type-missing", "notes.json")],
-            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!))));
+            [
+                ("definition.type-unknown", "fighter.json", "$.type"),
+                ("definition.type-missing", "notes.json", "$[0].type"),
+                ("definition.type-missing", "notes.json", "$[1].type"),
+            ],
+            set.Diagnostics.Select(diagnostic => (diagnostic.Rule, Path.GetFileName(diagnostic.File!), diagnostic.JsonPath!)));
         Assert.Contains("currency", set.Diagnostics[0].Message, StringComparison.Ordinal);
     }
 }

@@ -96,9 +96,10 @@ a new game resolves the newest version each range allows, while loading a
 save pins every module it names to the exact version and content it was made
 under whenever that copy is present.
 
-Every other `.json` file in the module directory is a definition file: a JSON
-object whose `type` field names its definition type. Other files (media,
-`PROVENANCE.md`) are not read as definitions.
+Every other `.json` file in the module directory is a definition file: either a
+single JSON object or a JSON array of definition objects, each with a `type`
+field naming its definition type. Other files (media, `PROVENANCE.md`) are not
+read as definitions.
 
 ### Kinds
 
