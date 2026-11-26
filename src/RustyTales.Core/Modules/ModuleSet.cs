@@ -37,6 +37,9 @@ public sealed class ModuleSet
     /// <summary>IDs of the extensions added to the set though nothing in it requires them (a user's own class book), in the order given.</summary>
     public IReadOnlyList<string> Extensions { get; init; } = [];
 
+    /// <summary>Patches applied to definitions while loading this module set, in load order.</summary>
+    public IReadOnlyList<AppliedPatch> Patches { get; init; } = [];
+
     /// <summary>Every definition of the set, checked; null when earlier problems stopped the checks.</summary>
     public RuleSet? Rules { get; }
 

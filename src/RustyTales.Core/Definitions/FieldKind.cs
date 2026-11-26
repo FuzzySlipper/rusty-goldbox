@@ -229,5 +229,14 @@ public sealed record TableRowsKind : FieldKind
     }
 }
 
+/// <summary>Top-level field replacements in a <c>patch</c> definition.</summary>
+public sealed record PatchSetKind : FieldKind
+{
+    public override string Describe()
+    {
+        return "object mapping target_type fields to replacement values, or null to remove an optional field";
+    }
+}
+
 /// <summary>One field of a definition type or object.</summary>
 public sealed record Field(string Name, FieldKind Kind, bool Required, string Description);

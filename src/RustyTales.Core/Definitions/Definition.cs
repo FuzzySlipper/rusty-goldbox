@@ -3,10 +3,31 @@ using System.Text.Json;
 namespace RustyTales.Core.Definitions;
 
 /// <summary>An expression found in a definition, checked once the whole module set is known.</summary>
-public sealed record ExpressionSite(string JsonPath, string Text, ExpressionKind Kind);
+public sealed record ExpressionSite(string JsonPath, string Text, ExpressionKind Kind, string? SourceModule = null);
 
 /// <summary>A reference found in a definition: a <see cref="ReferenceKind"/> or a <see cref="StatKind"/>.</summary>
-public sealed record ReferenceSite(string JsonPath, string Text, FieldKind Kind);
+public sealed record ReferenceSite(string JsonPath, string Text, FieldKind Kind, string? SourceModule = null);
+
+/// <summary>Where a top-level field of a composed definition came from (its authoring module and, for patches, diagnostic source).</summary>
+public sealed record FieldOrigin(
+    string Module,
+    string File,
+    string RootPath,
+    string? FieldPrefix = null,
+    bool AttributeErrorsToOrigin = false)
+{
+    public string FormatPath(string localPath)
+    {
+        string withPrefix = FieldPrefix is null
+            ? localPath
+            : localPath == "$"
+                ? FieldPrefix
+                : localPath.StartsWith('$')
+                    ? $"{FieldPrefix}{localPath[1..]}"
+                    : localPath;
+        return Definition.CombinePath(RootPath, withPrefix);
+    }
+}
 
 /// <summary>One definition read from a module file.</summary>
 public sealed class Definition(
@@ -17,7 +38,8 @@ public sealed class Definition(
     JsonElement json,
     IReadOnlyList<ExpressionSite> expressions,
     IReadOnlyList<ReferenceSite> references,
-    string rootPath = "$")
+    string rootPath = "$",
+    IReadOnlyDictionary<string, FieldOrigin>? fieldOrigins = null)
 {
     public DefinitionType Type { get; } = type;
 
@@ -37,11 +59,48 @@ public sealed class Definition(
 
     public IReadOnlyList<ReferenceSite> References { get; } = references;
 
+    /// <summary>Per-field authoring provenance when composed via <c>extends</c> or <c>patch</c>.</summary>
+    public IReadOnlyDictionary<string, FieldOrigin>? FieldOrigins { get; } = fieldOrigins;
+
     public string QualifiedId => $"{Module}:{Id}";
 
     public string Name => Json.TryGetProperty("name", out JsonElement name) ? name.GetString()! : Id;
 
+    public string ModuleOf(string topLevelField) =>
+        FieldOrigins is not null && FieldOrigins.TryGetValue(topLevelField, out FieldOrigin? origin)
+            ? origin.Module
+            : Module;
+
     public string DiagnosticPath(string localPath) => CombinePath(RootPath, localPath);
+
+    public (string Module, string File, string JsonPath) DiagnosticLocation(string localPath)
+    {
+        if (FieldOrigins is not null
+            && TopLevelField(localPath) is string field
+            && FieldOrigins.TryGetValue(field, out FieldOrigin? origin)
+            && origin.AttributeErrorsToOrigin)
+        {
+            return (origin.Module, origin.File, origin.FormatPath(localPath));
+        }
+
+        return (Module, File, DiagnosticPath(localPath));
+    }
+
+    internal static string? TopLevelField(string localPath)
+    {
+        if (!localPath.StartsWith("$.", StringComparison.Ordinal) || localPath.Length <= 2)
+        {
+            return null;
+        }
+
+        int end = 2;
+        while (end < localPath.Length && localPath[end] != '.' && localPath[end] != '[')
+        {
+            end++;
+        }
+
+        return localPath[2..end];
+    }
 
     internal static string CombinePath(string rootPath, string localPath)
     {

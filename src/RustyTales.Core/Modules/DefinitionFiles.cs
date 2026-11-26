@@ -3,6 +3,9 @@ using RustyTales.Core.Definitions;
 
 namespace RustyTales.Core.Modules;
 
+/// <summary>One raw definition entry parsed from a module's JSON file before patches or inheritance apply.</summary>
+internal sealed record RawDefinition(DefinitionType Type, string Module, string File, string RootPath, JsonElement Json);
+
 /// <summary>
 /// Reads a module's definition files: every <c>.json</c> file other than
 /// <c>module.json</c>, outside hidden directories, each holding either one
@@ -11,9 +14,9 @@ namespace RustyTales.Core.Modules;
 /// </summary>
 internal static class DefinitionFiles
 {
-    public static List<Definition> Read(ModuleManifest module, List<ModuleDiagnostic> diagnostics)
+    public static List<RawDefinition> ReadRaw(ModuleManifest module, List<ModuleDiagnostic> diagnostics)
     {
-        List<Definition> definitions = [];
+        List<RawDefinition> definitions = [];
         IReadOnlyList<string> files = module.Source.ListFiles(module.Id, diagnostics);
         foreach (string file in files)
         {
@@ -34,10 +37,11 @@ internal static class DefinitionFiles
                 int index = 0;
                 foreach (JsonElement element in document.RootElement.EnumerateArray())
                 {
-                    Definition? entry = DefinitionReader.Read(element, module.Id, path, diagnostics, $"$[{index}]");
-                    if (entry is not null)
+                    string rootPath = $"$[{index}]";
+                    DefinitionType? entryType = DefinitionReader.ReadType(element, module.Id, path, rootPath, diagnostics);
+                    if (entryType is not null)
                     {
-                        definitions.Add(entry);
+                        definitions.Add(new RawDefinition(entryType, module.Id, path, rootPath, element.Clone()));
                     }
 
                     index++;
@@ -46,10 +50,10 @@ internal static class DefinitionFiles
                 continue;
             }
 
-            Definition? definition = DefinitionReader.Read(document.RootElement, module.Id, path, diagnostics);
-            if (definition is not null)
+            DefinitionType? type = DefinitionReader.ReadType(document.RootElement, module.Id, path, "$", diagnostics);
+            if (type is not null)
             {
-                definitions.Add(definition);
+                definitions.Add(new RawDefinition(type, module.Id, path, "$", document.RootElement.Clone()));
             }
         }
 

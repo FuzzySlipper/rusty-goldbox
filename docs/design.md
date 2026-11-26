@@ -145,9 +145,16 @@ class needs no patch to the ruleset's character creation.
   error.
 - Load order is dependency order. Two modules defining the same qualified ID
   is impossible by construction. Changing another module's definition takes an
-  explicit `patch` entry in an `extension` or `campaign`. A patch names its
-  target and the fields it replaces, and validation reports every patch it
-  applied.
+  explicit `patch` entry (`"type": "patch"`, `"target_type"`, `"target": "module:id"`,
+  `"set": { ... }`) in an `extension` or `campaign`. A patch replaces top-level
+  fields (or removes an optional field when set to `null`) in module load order,
+  and validation reports every patch it applied.
+- Any non-patch definition may declare `"extends": "id"` or `"extends": "module:id"`
+  to inherit top-level fields from another visible definition of the same type,
+  overriding any fields it lists and removing optional inherited fields by
+  setting them to `null`. Inherited and patched fields keep their authoring
+  module for unqualified references and table lookups, and patch errors point
+  back to the patch file and `$.set.<field>`.
 - Asset references are logical IDs (`stonecrypt:stone_wall`), never file
   paths. Swapping one art module for another works as long as the new one
   provides the same IDs. `tales module validate` lists any that are missing.

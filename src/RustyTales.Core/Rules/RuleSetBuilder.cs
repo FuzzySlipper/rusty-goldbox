@@ -192,7 +192,7 @@ public sealed partial class RuleSetBuilder
                 switch (site.Kind)
                 {
                     case ReferenceKind reference:
-                        Definition? target = Resolve(definition, DefinitionTypes.Find(reference.DefinitionType)!, site.Text, site.JsonPath);
+                        Definition? target = Resolve(definition, site.SourceModule ?? definition.Module, DefinitionTypes.Find(reference.DefinitionType)!, site.Text, site.JsonPath);
                         if (target is not null)
                         {
                             _rules.References[(definition, site.JsonPath)] = target;
@@ -223,15 +223,15 @@ public sealed partial class RuleSetBuilder
         }
     }
 
-    private Definition? Resolve(Definition from, DefinitionType type, string text, string path)
+    private Definition? Resolve(Definition from, string sourceModule, DefinitionType type, string text, string path)
     {
         int colon = text.IndexOf(':', StringComparison.Ordinal);
-        string module = colon < 0 ? from.Module : text[..colon];
+        string module = colon < 0 ? sourceModule : text[..colon];
         string id = colon < 0 ? text : text[(colon + 1)..];
-        if (!_rules.VisibleModules[from.Module].Contains(module))
+        if (!_rules.VisibleModules[sourceModule].Contains(module))
         {
             Error(from, "reference.module", path,
-                $"'{text}' refers to module '{module}', which '{from.Module}' does not require. A module can refer only to itself and the modules in its own requires; add {{ \"id\": \"{module}\", \"version\": \"...\" }} to requires.");
+                $"'{text}' refers to module '{module}', which '{sourceModule}' does not require. A module can refer only to itself and the modules in its own requires; add {{ \"id\": \"{module}\", \"version\": \"...\" }} to requires.");
             return null;
         }
 
@@ -319,7 +319,7 @@ public sealed partial class RuleSetBuilder
             return null;
         }
 
-        ExpressionChecker checker = new(_rules, definition.Module, site.Kind.Roots, UseParameters(definition), ConditionValues(definition), InferDerived, IsInferring, BehaviorParameters(definition));
+        ExpressionChecker checker = new(_rules, site.SourceModule ?? definition.Module, site.Kind.Roots, UseParameters(definition), ConditionValues(definition), InferDerived, IsInferring, BehaviorParameters(definition));
         ExprType type;
         try
         {
@@ -600,6 +600,7 @@ public sealed partial class RuleSetBuilder
 
     private void Error(Definition definition, string rule, string path, string message)
     {
-        _diagnostics.Add(new ModuleDiagnostic(rule, message, definition.Module, definition.File, definition.DiagnosticPath(path)));
+        (string module, string file, string jsonPath) = definition.DiagnosticLocation(path);
+        _diagnostics.Add(new ModuleDiagnostic(rule, message, module, file, jsonPath));
     }
 }

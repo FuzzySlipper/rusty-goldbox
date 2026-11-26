@@ -16,6 +16,21 @@ public sealed record DefinitionType(
         new("type", new TextKind(), true, "The definition type, for example \"class\"."),
         new("id", new TextKind(), true, $"Local ID: {DefinitionIds.FormatDescription}. Other modules refer to it as \"module:id\"."),
     ];
+
+    /// <summary>Optional inheritance field accepted on every non-patch definition.</summary>
+    public static Field ExtendsField { get; } = new(
+        "extends",
+        new TextKind(),
+        false,
+        "Optional ID (\"id\" or \"module:id\") of another definition of the same type to inherit top-level fields from. Fields set here replace the parent's; set an optional field to null to remove it.");
+
+    /// <summary>All fields accepted on a definition of <paramref name="type"/>.</summary>
+    public static IReadOnlyList<Field> FieldsFor(DefinitionType type)
+    {
+        return type == DefinitionTypes.Patch
+            ? [.. CommonFields, .. type.Fields]
+            : [.. CommonFields, ExtendsField, .. type.Fields];
+    }
 }
 
 public static class DefinitionIds

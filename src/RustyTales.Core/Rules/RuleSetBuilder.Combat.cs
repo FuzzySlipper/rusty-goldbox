@@ -291,21 +291,37 @@ public sealed partial class RuleSetBuilder
 
     private static bool BelongsTo(Definition definition, ModuleDiagnostic diagnostic)
     {
-        if (diagnostic.Module != definition.Module || diagnostic.File != definition.File)
+        if (MatchesOrigin(definition.Module, definition.File, definition.RootPath, diagnostic))
+        {
+            return true;
+        }
+
+        if (definition.FieldOrigins is null)
         {
             return false;
         }
 
-        if (definition.RootPath == "$")
+        return definition.FieldOrigins.Values.Any(origin =>
+            origin.AttributeErrorsToOrigin && MatchesOrigin(origin.Module, origin.File, origin.RootPath, diagnostic));
+    }
+
+    private static bool MatchesOrigin(string module, string file, string rootPath, ModuleDiagnostic diagnostic)
+    {
+        if (diagnostic.Module != module || diagnostic.File != file)
+        {
+            return false;
+        }
+
+        if (rootPath == "$")
         {
             return true;
         }
 
         string? path = diagnostic.JsonPath;
         return path is not null
-            && (path == definition.RootPath
-                || path.StartsWith($"{definition.RootPath}.", StringComparison.Ordinal)
-                || path.StartsWith($"{definition.RootPath}[", StringComparison.Ordinal));
+            && (path == rootPath
+                || path.StartsWith($"{rootPath}.", StringComparison.Ordinal)
+                || path.StartsWith($"{rootPath}[", StringComparison.Ordinal));
     }
 
     private void CheckBehaviorSpell(Definition behavior, JsonElement step, string stepPath)

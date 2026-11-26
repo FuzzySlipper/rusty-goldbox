@@ -108,7 +108,9 @@ internal static class SchemaCommand
         }
 
         output.Line("A module is a directory with module.json and .json definition files.");
-        output.Line("Each definition file holds one definition object or an array of definitions, each with \"type\" (below) and \"id\". Run `tales schema <topic>` for details.");
+        output.Line("Each definition file holds one definition object or an array of definitions, each with \"type\" (below) and \"id\".");
+        output.Line("Definitions may inherit top-level fields with \"extends\", and extension/campaign modules may override required modules' definitions with \"type\": \"patch\".");
+        output.Line("Run `tales schema <topic>` for details.");
         output.Line();
         output.Line("Definition types:");
         foreach (DefinitionType type in DefinitionTypes.All)
@@ -129,7 +131,7 @@ internal static class SchemaCommand
 
     private static int Type(Output output, DefinitionType type)
     {
-        List<Field> fields = [.. DefinitionType.CommonFields, .. type.Fields];
+        List<Field> fields = [.. DefinitionType.FieldsFor(type)];
         if (output.Json)
         {
             output.WriteJson(new

@@ -124,11 +124,13 @@ public static class ModuleLoader
     {
         ModuleResolver resolver = new(catalog, diagnostics);
         List<LoadedModule> order = resolver.Resolve(root, extensions);
-        List<Definition> definitions = [];
+        List<RawDefinition> rawDefinitions = [];
         foreach (LoadedModule loaded in order)
         {
-            definitions.AddRange(DefinitionFiles.Read(loaded.Manifest, diagnostics));
+            rawDefinitions.AddRange(DefinitionFiles.ReadRaw(loaded.Manifest, diagnostics));
         }
+
+        (List<Definition> definitions, List<AppliedPatch> patches) = DefinitionComposer.Compose(order, rawDefinitions, diagnostics);
 
         // Cross-definition checks run once every file reads cleanly; otherwise
         // one broken file would surface again as every reference to it.
@@ -138,7 +140,11 @@ public static class ModuleLoader
             rules = RuleSetBuilder.Build(order, definitions, diagnostics);
         }
 
-        ModuleSet set = new(root, searched, order, rules, diagnostics) { Extensions = resolver.Added.Select(added => added.Id).ToList() };
+        ModuleSet set = new(root, searched, order, rules, diagnostics)
+        {
+            Extensions = resolver.Added.Select(added => added.Id).ToList(),
+            Patches = patches,
+        };
         if (set.IsValid)
         {
             Characters.NpcFile.Check(set, diagnostics);

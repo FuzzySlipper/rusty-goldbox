@@ -7,13 +7,33 @@ public static partial class DefinitionTypes
 {
     static DefinitionTypes()
     {
-        All =
+        IReadOnlyList<DefinitionType> targetTypes =
         [
             Attribute, Track, Currency, Derived, Table, Race, Class, Resting, Advancement, Npc, CombatBehavior,
             Feature, Reaction, Check, Condition, Item, Economy, Spell, Monster, Action, Encounter, Combat,
             CharacterCreation, Variable, Asset, Area, Event, Campaign, Figure, Skin, Lifepath,
         ];
+        Patch = new DefinitionType(
+            "patch",
+            "Replaces or removes top-level fields of an existing definition in a required module. Allowed in extension and campaign modules; patches apply in module load order and validation reports each one.",
+            [
+                new("target_type", new EnumKind(targetTypes.Select(type => type.Name).ToList()), true, "The definition type of the target, for example \"economy\", \"combat\" or \"monster\"."),
+                new("target", new TextKind(), true, "The target definition in a required module, written as \"module:id\"."),
+                new("set", new PatchSetKind(), true, "Top-level fields of target_type to replace (or set to null to remove an optional field). Cannot set \"type\", \"id\" or \"extends\"."),
+            ],
+            """
+            {
+              "type": "patch",
+              "id": "generous_shops",
+              "target_type": "economy",
+              "target": "classic:standard",
+              "set": { "sell_fraction": 0.75 }
+            }
+            """);
+        All = [.. targetTypes, Patch];
     }
+
+    public static DefinitionType Patch { get; }
 
     public static IReadOnlyList<DefinitionType> All { get; }
 

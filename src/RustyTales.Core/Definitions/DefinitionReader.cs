@@ -11,7 +11,26 @@ namespace RustyTales.Core.Definitions;
 /// </summary>
 public static class DefinitionReader
 {
-    public static Definition? Read(JsonElement root, string module, string file, List<ModuleDiagnostic> diagnostics, string rootPath = "$")
+    public static Definition? Read(
+        JsonElement root,
+        string module,
+        string file,
+        List<ModuleDiagnostic> diagnostics,
+        string rootPath = "$",
+        IReadOnlyDictionary<string, FieldOrigin>? fieldOrigins = null,
+        IReadOnlyDictionary<string, FieldOrigin>? removedOrigins = null)
+    {
+        DefinitionType? type = ReadType(root, module, file, rootPath, diagnostics);
+        if (type is null)
+        {
+            return null;
+        }
+
+        Reader reader = new(type, module, file, rootPath, fieldOrigins, removedOrigins, diagnostics);
+        return reader.Read(root);
+    }
+
+    internal static DefinitionType? ReadType(JsonElement root, string module, string file, string rootPath, List<ModuleDiagnostic> diagnostics)
     {
         if (root.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("type", out JsonElement typeElement)
@@ -42,13 +61,19 @@ public static class DefinitionReader
             return null;
         }
 
-        Reader reader = new(type, module, file, rootPath, diagnostics);
-        return reader.Read(root);
+        return type;
     }
 
     private static string TypeList() => string.Join(", ", DefinitionTypes.All.Select(type => type.Name));
 
-    private sealed class Reader(DefinitionType type, string module, string file, string rootPath, List<ModuleDiagnostic> diagnostics)
+    private sealed class Reader(
+        DefinitionType type,
+        string module,
+        string file,
+        string rootPath,
+        IReadOnlyDictionary<string, FieldOrigin>? fieldOrigins,
+        IReadOnlyDictionary<string, FieldOrigin>? removedOrigins,
+        List<ModuleDiagnostic> diagnostics)
     {
         private readonly int _errorsBefore = diagnostics.Count;
         private readonly List<ExpressionSite> _expressions = [];
@@ -56,7 +81,7 @@ public static class DefinitionReader
 
         public Definition? Read(JsonElement root)
         {
-            List<Field> fields = [.. DefinitionType.CommonFields, .. type.Fields];
+            List<Field> fields = [.. DefinitionType.FieldsFor(type)];
             string what = $"a {type.Name}";
             if (type == DefinitionTypes.Event
                 && root.TryGetProperty("kind", out JsonElement kindElement)
@@ -117,7 +142,7 @@ public static class DefinitionReader
                 return null;
             }
 
-            return new Definition(type, id!, module, file, root.Clone(), _expressions, _references, rootPath);
+            return new Definition(type, id!, module, file, root.Clone(), _expressions, _references, rootPath, fieldOrigins);
         }
 
         private void ReadObject(JsonElement element, IReadOnlyList<Field> fields, string path, string what)
@@ -145,7 +170,22 @@ public static class DefinitionReader
                 }
                 else if (field.Required)
                 {
-                    Error("definition.field-required", path, $"Missing required field \"{field.Name}\": {field.Kind.Describe()}. {field.Description}");
+                    if (path == "$"
+                        && removedOrigins is not null
+                        && removedOrigins.TryGetValue(field.Name, out FieldOrigin? remover)
+                        && remover.AttributeErrorsToOrigin)
+                    {
+                        diagnostics.Add(new ModuleDiagnostic(
+                            "definition.field-required",
+                            $"Missing required field \"{field.Name}\": {field.Kind.Describe()}. {field.Description}",
+                            remover.Module,
+                            remover.File,
+                            remover.FormatPath($"$.{field.Name}")));
+                    }
+                    else
+                    {
+                        Error("definition.field-required", path, $"Missing required field \"{field.Name}\": {field.Kind.Describe()}. {field.Description}");
+                    }
                 }
             }
         }
@@ -180,7 +220,7 @@ public static class DefinitionReader
                 case ReferenceKind or StatKind:
                     if (ExpectKind(value, JsonValueKind.String, path, kind))
                     {
-                        _references.Add(new ReferenceSite(path, value.GetString()!, kind));
+                        _references.Add(new ReferenceSite(path, value.GetString()!, kind, SourceModuleFor(path)));
                     }
 
                     break;
@@ -198,6 +238,9 @@ public static class DefinitionReader
                     break;
                 case TableRowsKind:
                     ExpectKind(value, JsonValueKind.Array, path, kind);
+                    break;
+                case PatchSetKind patchSet:
+                    ReadPatchSet(value, patchSet, path);
                     break;
                 case BooleanKind:
                     if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
@@ -298,7 +341,7 @@ public static class DefinitionReader
                 return;
             }
 
-            _references.Add(new ReferenceSite($"{path}.action", action.GetString()!, new ReferenceKind("action")));
+            _references.Add(new ReferenceSite($"{path}.action", action.GetString()!, new ReferenceKind("action"), SourceModuleFor($"{path}.action")));
             foreach (JsonProperty property in value.EnumerateObject())
             {
                 string at = $"{path}.{property.Name}";
@@ -319,24 +362,47 @@ public static class DefinitionReader
             }
         }
 
+        private void ReadPatchSet(JsonElement value, PatchSetKind kind, string path)
+        {
+            if (!ExpectKind(value, JsonValueKind.Object, path, kind))
+            {
+                return;
+            }
+
+            bool any = false;
+            foreach (JsonProperty property in value.EnumerateObject())
+            {
+                any = true;
+                if (property.Name is "type" or "id" or "extends")
+                {
+                    Error("patch.field", $"{path}.{property.Name}", $"A patch cannot change \"{property.Name}\".");
+                }
+            }
+
+            if (!any)
+            {
+                Error("patch.set", path, "A patch \"set\" object must name at least one field to replace or remove.");
+            }
+        }
+
         private void ReadExpression(JsonElement value, ExpressionKind kind, string path)
         {
             if (value.ValueKind is JsonValueKind.True or JsonValueKind.False && kind.Expected is null or ExprType.Boolean)
             {
-                _expressions.Add(new ExpressionSite(path, value.GetBoolean() ? "true" : "false", kind));
+                _expressions.Add(new ExpressionSite(path, value.GetBoolean() ? "true" : "false", kind, SourceModuleFor(path)));
                 return;
             }
 
             // A plain number is a constant expression; it saves quoting "3".
             if (value.ValueKind == JsonValueKind.Number && kind.Expected is null or ExprType.Number)
             {
-                _expressions.Add(new ExpressionSite(path, value.GetRawText(), kind));
+                _expressions.Add(new ExpressionSite(path, value.GetRawText(), kind, SourceModuleFor(path)));
                 return;
             }
 
             if (ExpectKind(value, JsonValueKind.String, path, kind))
             {
-                _expressions.Add(new ExpressionSite(path, value.GetString()!, kind));
+                _expressions.Add(new ExpressionSite(path, value.GetString()!, kind, SourceModuleFor(path)));
             }
         }
 
@@ -372,7 +438,7 @@ public static class DefinitionReader
             foreach (JsonProperty property in value.EnumerateObject())
             {
                 string entry = $"{path}.{property.Name}";
-                _references.Add(new ReferenceSite(entry, property.Name, map.Key));
+                _references.Add(new ReferenceSite(entry, property.Name, map.Key, SourceModuleFor(entry)));
                 ReadValue(property.Value, map.Value, entry);
             }
         }
@@ -668,8 +734,30 @@ public static class DefinitionReader
                 : JsonFiles.Describe(value.ValueKind);
         }
 
+        private string? SourceModuleFor(string path)
+        {
+            if (fieldOrigins is not null
+                && Definition.TopLevelField(path) is string top
+                && fieldOrigins.TryGetValue(top, out FieldOrigin? origin)
+                && origin.Module != module)
+            {
+                return origin.Module;
+            }
+
+            return null;
+        }
+
         private void Error(string rule, string path, string message)
         {
+            if (fieldOrigins is not null
+                && Definition.TopLevelField(path) is string top
+                && fieldOrigins.TryGetValue(top, out FieldOrigin? origin)
+                && origin.AttributeErrorsToOrigin)
+            {
+                diagnostics.Add(new ModuleDiagnostic(rule, message, origin.Module, origin.File, origin.FormatPath(path)));
+                return;
+            }
+
             diagnostics.Add(new ModuleDiagnostic(rule, message, module, file, Definition.CombinePath(rootPath, path)));
         }
     }

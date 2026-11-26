@@ -23,12 +23,14 @@ public static class NpcFile
         {
             JsonObject data = JsonNode.Parse(npc.Json.GetProperty("character").GetRawText())!.AsObject();
             data["format"] = CharacterFile.CurrentFormat;
-            data["modules"] = new JsonArray(set.LoadOrder.Where(module => set.Rules.VisibleModules[npc.Module].Contains(module.Manifest.Id))
+            string characterModule = npc.ModuleOf("character");
+            data["modules"] = new JsonArray(set.LoadOrder.Where(module => set.Rules.VisibleModules[characterModule].Contains(module.Manifest.Id))
                 .Select(module => (JsonNode)new JsonObject { ["id"] = module.Manifest.Id, ["version"] = module.Manifest.Version.ToString() }).ToArray());
             using JsonDocument document = JsonDocument.Parse(data.ToJsonString());
             List<ModuleDiagnostic> characterProblems = [];
-            Character? character = CharacterFile.Read(document.RootElement, npc.File, npc.DiagnosticPath("$.character"), set, characterProblems);
-            problems.AddRange(characterProblems.Select(problem => problem with { Module = npc.Module }));
+            (string diagModule, string diagFile, string diagPath) = npc.DiagnosticLocation("$.character");
+            Character? character = CharacterFile.Read(document.RootElement, diagFile, diagPath, set, characterProblems);
+            problems.AddRange(characterProblems.Select(problem => problem with { Module = diagModule }));
             if (character is not null)
             {
                 character.Npc = npc;

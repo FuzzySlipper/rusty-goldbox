@@ -284,6 +284,16 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
                 ok = set.IsValid,
                 module = set.Root is null ? null : ModuleJson(set.Root),
                 modules = set.LoadOrder.Select(loaded => $"{loaded.Manifest.Id}@{loaded.Manifest.Version}"),
+                patches = set.Patches.Select(patch => new
+                {
+                    id = patch.PatchId,
+                    module = patch.Module,
+                    file = Display(patch.File),
+                    jsonPath = patch.RootPath,
+                    targetType = patch.TargetType,
+                    target = patch.TargetId,
+                    fields = patch.Fields,
+                }),
                 diagnostics = set.Diagnostics.Select(ToJson),
             });
         }
@@ -293,6 +303,14 @@ internal sealed class Output(TextWriter writer, string workingDirectory, bool js
             int others = set.LoadOrder.Count - 1;
             string with = others == 0 ? "" : $" with {others} required module{(others == 1 ? "" : "s")}";
             writer.WriteLine($"ok: {root.Id} {root.Version} ({ModuleKinds.Name(root.Kind)}){with} is valid.");
+            if (set.Patches.Count > 0)
+            {
+                writer.WriteLine($"patches applied ({set.Patches.Count}):");
+                foreach (AppliedPatch patch in set.Patches)
+                {
+                    writer.WriteLine($"  {patch.PatchId} -> {patch.TargetType} {patch.TargetId} ({string.Join(", ", patch.Fields)})");
+                }
+            }
         }
         else
         {
