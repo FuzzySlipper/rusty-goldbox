@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rusty Tales Workbench</title>
+  <link rel="stylesheet" href="/workbench.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">RT</span>
+        <div class="brand-meta">
+          <div class="brand-title-row">
+            <h1 id="module-title">Loading module…</h1>
+            <span id="module-kind" class="pill pill-kind">—</span>
+            <span id="module-version" class="pill pill-muted">—</span>
+            <span id="module-valid" class="pill pill-ok">valid</span>
+          </div>
+          <div id="module-subtitle" class="brand-subtitle"></div>
+        </div>
+      </div>
+
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="overview" role="tab">Flow Overview</button>
+        <button class="tab" data-tab="maps" role="tab">2D Area Maps <span id="tab-maps-count" class="badge">0</span></button>
+        <button class="tab" data-tab="events" role="tab">Events &amp; Scenes <span id="tab-events-count" class="badge">0</span></button>
+        <button class="tab" data-tab="issues" role="tab">Diagnostics <span id="tab-issues-count" class="badge badge-ok">0</span></button>
+      </nav>
+
+      <div class="topbar-actions">
+        <span id="reload-status" class="reload-status"></span>
+        <button id="btn-reload" class="btn btn-primary" title="Reload module files from disk">↻ Reload</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <main class="stage">
+        <!-- TAB 1: FLOW OVERVIEW -->
+        <section id="view-overview" class="view active">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <span class="toolbar-label">Navigation Graph</span>
+              <span id="overview-summary" class="toolbar-hint"></span>
+            </div>
+            <div class="toolbar-group legend-inline">
+              <span class="legend-chip"><i class="dot dot-start"></i>Start</span>
+              <span class="legend-chip"><i class="dot dot-end"></i>Has Ending</span>
+              <span class="legend-chip"><i class="dot dot-warn"></i>Dead End</span>
+              <span class="legend-chip"><i class="dot dot-err"></i>Unreachable</span>
+              <span class="legend-chip"><i class="line line-tp"></i>Teleport</span>
+              <span class="legend-chip"><i class="line line-key"></i>Key → Door</span>
+            </div>
+          </div>
+          <div class="overview-grid">
+            <div class="canvas-shell" id="overview-canvas-shell">
+              <svg id="overview-svg" class="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+            <div class="overview-rail">
+              <div class="rail-card">
+                <h3>Campaign &amp; Module Summary</h3>
+                <dl id="campaign-facts" class="kv-list"></dl>
+              </div>
+              <div class="rail-card">
+                <h3>Dependencies</h3>
+                <ul id="dependency-list" class="compact-list"></ul>
+              </div>
+              <div class="rail-card">
+                <h3>Quick Issues <span id="rail-issues-count" class="badge">0</span></h3>
+                <ul id="rail-issues-list" class="compact-list"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: 2D AREA MAPS -->
+        <section id="view-maps" class="view">
+          <div class="split-view">
+            <aside class="sidebar">
+              <div class="sidebar-head">
+                <h2>Areas</h2>
+                <input id="area-search" class="search-input" type="search" placeholder="Filter areas…" />
+              </div>
+              <ul id="area-list" class="item-list"></ul>
+            </aside>
+            <div class="map-stage">
+              <div class="toolbar">
+                <div class="toolbar-group">
+                  <strong id="active-area-title">Select an area</strong>
+                  <span id="active-area-meta" class="toolbar-hint"></span>
+                </div>
+                <div class="toolbar-group">
+                  <label class="toggle"><input type="checkbox" id="chk-player-view" /> Player View (hide secrets)</label>
+                  <label class="toggle"><input type="checkbox" id="chk-reachability" checked /> Reachability</label>
+                  <label class="toggle"><input type="checkbox" id="chk-coords" checked /> Coords</label>
+                  <button id="btn-map-zoom-out" class="btn btn-sm" title="Zoom out">−</button>
+                  <button id="btn-map-zoom-reset" class="btn btn-sm" title="Reset zoom">100%</button>
+                  <button id="btn-map-zoom-in" class="btn btn-sm" title="Zoom in">+</button>
+                </div>
+              </div>
+              <div class="map-legend">
+                <span class="legend-chip"><i class="swatch sw-open"></i>Walkable</span>
+                <span class="legend-chip"><i class="swatch sw-locked"></i>Behind Locked Door</span>
+                <span class="legend-chip"><i class="swatch sw-secret"></i>Secret-Only</span>
+                <span class="legend-chip"><i class="swatch sw-unreach"></i>Walled / Unreachable</span>
+                <span class="legend-chip"><i class="edge-sw edge-wall"></i>Wall</span>
+                <span class="legend-chip"><i class="edge-sw edge-door"></i>Door</span>
+                <span class="legend-chip"><i class="edge-sw edge-locked"></i>Locked</span>
+                <span class="legend-chip"><i class="edge-sw edge-secret"></i>Secret</span>
+                <span class="legend-chip">★ Start · ⚔ Combat · 💬 Menu/Scene · 🌀 Teleport · 🛒 Shop · ⚑ End · ◆ Prop</span>
+              </div>
+              <div class="canvas-shell map-shell" id="map-canvas-shell">
+                <svg id="map-svg" class="map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: EVENTS & SCENES -->
+        <section id="view-events" class="view">
+          <div class="split-view">
+            <aside class="sidebar">
+              <div class="sidebar-head">
+                <h2>Events &amp; Scenes</h2>
+                <input id="event-search" class="search-input" type="search" placeholder="Search id or text…" />
+                <div class="filter-row">
+                  <select id="event-scope-filter" class="select-input">
+                    <option value="all">All events</option>
+                    <option value="unreachable">Unreachable only</option>
+                    <option value="scenes">Lowered scenes only</option>
+                  </select>
+                  <select id="event-kind-filter" class="select-input">
+                    <option value="all">All kinds</option>
+                  </select>
+                </div>
+              </div>
+              <ul id="event-list" class="item-list"></ul>
+            </aside>
+            <div class="map-stage">
+              <div class="toolbar">
+                <div class="toolbar-group">
+                  <strong id="events-graph-title">Event Flow Graph</strong>
+                  <span id="events-graph-meta" class="toolbar-hint"></span>
+                </div>
+                <div class="toolbar-group">
+                  <select id="scene-group-filter" class="select-input">
+                    <option value="all">Show all matching</option>
+                  </select>
+                </div>
+              </div>
+              <div class="canvas-shell" id="events-canvas-shell">
+                <svg id="events-svg" class="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: DIAGNOSTICS -->
+        <section id="view-issues" class="view">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <strong>Structural &amp; Validation Diagnostics</strong>
+              <span id="issues-summary" class="toolbar-hint"></span>
+            </div>
+            <div class="toolbar-group" id="issue-filter-pills">
+              <button class="pill-btn active" data-severity="all">All</button>
+              <button class="pill-btn" data-severity="error">Errors</button>
+              <button class="pill-btn" data-severity="warning">Warnings</button>
+              <button class="pill-btn" data-severity="info">Info</button>
+            </div>
+          </div>
+          <div class="issues-container">
+            <table class="issues-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Rule / Code</th>
+                  <th>Message</th>
+                  <th>Location</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="issues-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <aside class="inspector" id="inspector">
+        <div class="inspector-head">
+          <div>
+            <div id="inspector-kind" class="inspector-kind">INSPECTOR</div>
+            <h2 id="inspector-title">Select any node, cell, door, or event</h2>
+          </div>
+        </div>
+        <div id="inspector-body" class="inspector-body">
+          <p class="empty-hint">
+            Click an <strong>Area</strong> in the Flow Overview, any <strong>Cell</strong> or <strong>Door</strong> on a 2D Area Map,
+            or any <strong>Event</strong> to inspect its metadata, file provenance, asset previews, and raw JSON.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <script src="/workbench.js"></script>
+</body>
+</html>

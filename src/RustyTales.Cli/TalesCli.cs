@@ -22,6 +22,12 @@ internal static class TalesCli
           tales module inspect <path> [<type> | <id> | <module>:<id>] [--trace] [--modules <dir>]...
               Lists the resolved definitions and stats, or shows the selected ones. With --trace,
               combat-behavior selections include authored guards, scores, plan steps and source paths.
+          tales module graph <path> [--modules <dir>]... [--extension <id>]...
+              Builds the campaign navigation graph, 2D area topology, event/scene flow, asset
+              usage, and reachability/dead-end diagnostics (identical JSON to the Workbench API).
+          tales workbench <path> [--port <n>] [--host <addr>] [--modules <dir>]... [--extension <id>]...
+              Serves the local diagnostic & review Workbench web UI directly from Core
+              (default http://127.0.0.1:4173/). Use --once to print startup info and exit.
           tales module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...
               Validates the module, then packs it into an Engine content container
               (<id>-<version>.rpak here, or in the Game's module library with --install:
@@ -206,6 +212,8 @@ internal static class TalesCli
                 return MapCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "play":
                 return PlayCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "workbench":
+                return WorkbenchCommand.Run(args.Skip(1), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:
@@ -225,13 +233,14 @@ internal static class TalesCli
             "validate" => ModuleValidate(rest, printer, workingDirectory),
             "deps" => ModuleDeps(rest, printer, workingDirectory),
             "inspect" => InspectCommand.Run(rest, printer, workingDirectory),
+            "graph" => GraphCommand.Run(rest, printer, workingDirectory),
             "pack" => PackCommand.Run(rest, printer, workingDirectory),
             "release" => DistributionCommand.Release(rest, printer, workingDirectory),
             "get" => DistributionCommand.Get(rest, printer, workingDirectory),
             "updates" => DistributionCommand.Updates(rest, printer, workingDirectory),
             "remove" => DistributionCommand.Remove(rest, printer, workingDirectory),
             "--help" or "-h" => Print(output, Help),
-            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect, pack, release, get, updates and remove."),
+            _ => printer.UsageError($"Unknown command 'module {args[1]}'. Module commands are new, validate, deps, inspect, graph, pack, release, get, updates and remove."),
         };
     }
 

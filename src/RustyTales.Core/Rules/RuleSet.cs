@@ -117,6 +117,9 @@ public sealed class RuleSet
 
     public Definition Reference(Definition definition, string path) => References[(definition, path)];
 
+    public Definition? TryReference(Definition definition, string path) =>
+        References.TryGetValue((definition, path), out Definition? target) ? target : null;
+
     public IReadOnlyList<Modifier> ModifiersOf(Definition definition)
     {
         return Modifiers.TryGetValue(definition, out List<Modifier>? modifiers) ? modifiers : [];

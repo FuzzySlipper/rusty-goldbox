@@ -14,6 +14,16 @@
     <EmbeddedResource Include="AuthoringKit/Resources/*.md">
       <LogicalName>RustyTales.Cli.AuthoringKit.Resources.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
+    <!-- Local diagnostic Workbench UI assets served by `tales workbench`. -->
+    <EmbeddedResource Include="Workbench/index.html">
+      <LogicalName>RustyTales.Cli.Workbench.index.html</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Workbench/workbench.css">
+      <LogicalName>RustyTales.Cli.Workbench.workbench.css</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Workbench/workbench.js">
+      <LogicalName>RustyTales.Cli.Workbench.workbench.js</LogicalName>
+    </EmbeddedResource>
     <!-- module pack runs the pinned pair's own rusty when it is installed here. -->
     <AssemblyMetadata Include="RustyEnginePairRusty" Value="$(RustyEngineCache)/pairs/$(RustyEnginePackageVersion)/runtime-pack/bin/rusty" />
     <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
