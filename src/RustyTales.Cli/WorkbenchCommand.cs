@@ -11,11 +11,11 @@ namespace RustyTales.Cli;
 internal static class WorkbenchCommand
 {
     public const string Usage =
-        "Usage: tales workbench <path> [--port <n>] [--host <addr>] [--modules <dir>]... [--extension <id>]... [--once]";
+        "Usage: tales workbench <path> [--port <n>] [--host <addr>] [--reviews <file>] [--modules <dir>]... [--extension <id>]... [--once]";
 
     public static int Run(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--port", "--host", "--modules", "--extension"], ["--once", "--no-open"]);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--port", "--host", "--reviews", "--modules", "--extension"], ["--once", "--no-open"]);
         string? target = parsed.Single("--module") ?? (parsed.Positionals.Count == 1 ? parsed.Positionals[0] : null);
         if (error is null && (target is null || (parsed.Single("--module") is not null && parsed.Positionals.Count > 0) || parsed.Positionals.Count > 1))
         {
@@ -38,6 +38,9 @@ internal static class WorkbenchCommand
         }
 
         string path = Path.GetFullPath(target!, workingDirectory);
+        string? reviewsPath = parsed.Single("--reviews") is string customReviews
+            ? Path.GetFullPath(customReviews, workingDirectory)
+            : null;
         List<string> searchDirectories = parsed.All("--modules")
             .Select(directory => Path.GetFullPath(directory, workingDirectory))
             .ToList();
@@ -46,7 +49,7 @@ internal static class WorkbenchCommand
         WorkbenchServer server;
         try
         {
-            server = new WorkbenchServer(path, searchDirectories, extensions, host, port);
+            server = new WorkbenchServer(path, searchDirectories, extensions, host, port, reviewsPath);
         }
         catch (Exception exception)
         {

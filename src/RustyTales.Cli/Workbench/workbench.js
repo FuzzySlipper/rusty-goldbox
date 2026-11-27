@@ -3,11 +3,16 @@
 
   const state = {
     graph: null,
+    reviews: [],
+    reviewCounts: { total: 0, open: 0, needsFix: 0, question: 0, approved: 0, stale: 0, resolved: 0 },
+    reviewStorePath: "",
+    reviewFilter: "all",
     activeTab: "overview",
     selectedAreaId: null,
     selectedCell: null, // { areaId, x, y }
     selectedDoor: null, // { areaId, doorId }
     selectedEventId: null,
+    lastInspector: null, // () => void to refresh inspector after pin edits
     mapZoom: 1,
     playerView: false,
     showReachability: true,
@@ -19,6 +24,24 @@
     sceneGroup: "all",
     areaSearch: "",
   };
+
+  const PIN_META = {
+    "needs-fix": { glyph: "✗", color: "#eb5d5d", pill: "pill-err", label: "Needs Fix" },
+    question: { glyph: "?", color: "#64a5f6", pill: "pill-info", label: "Question" },
+    approved: { glyph: "✓", color: "#3dc4ab", pill: "pill-ok", label: "Approved" },
+    stale: { glyph: "⚠", color: "#f0a43b", pill: "pill-warn", label: "Stale" },
+    resolved: { glyph: "✔", color: "#9aa4b6", pill: "pill-resolved", label: "Resolved" },
+  };
+
+  function pinStyle(pin) {
+    if (!pin) return null;
+    if (pin.stale) return PIN_META.stale;
+    return PIN_META[pin.status] || PIN_META["needs-fix"];
+  }
+
+  function findPin(targetKind, target) {
+    return state.reviews.find((p) => p.targetKind === targetKind && p.target === target) || null;
+  }
 
   const KIND_ICON = {
     combat: "⚔",
@@ -103,6 +126,63 @@
     return state.graph?.assets?.find((a) => a.id === qualifiedId) || null;
   }
 
+  async function loadReviews() {
+    try {
+      const res = await fetch("/api/reviews");
+      if (!res.ok) return;
+      const data = await res.json();
+      state.reviews = data.pins || [];
+      state.reviewCounts = data.counts || state.reviewCounts;
+      state.reviewStorePath = data.storePath || "";
+    } catch {
+      // keep existing review state
+    }
+  }
+
+  async function savePin(targetKind, target, status, note) {
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetKind, target, status, note: note || "", author: "human" }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadReviews();
+    renderAll();
+    if (state.lastInspector) state.lastInspector();
+  }
+
+  async function resolvePin(id, resolution = "") {
+    const res = await fetch(`/api/reviews/${encodeURIComponent(id)}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resolution }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadReviews();
+    renderAll();
+    if (state.lastInspector) state.lastInspector();
+  }
+
+  async function deletePin(id) {
+    const res = await fetch(`/api/reviews/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadReviews();
+    renderAll();
+    if (state.lastInspector) state.lastInspector();
+  }
+
+  async function clearResolvedPins() {
+    const res = await fetch("/api/reviews/clear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "resolved" }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadReviews();
+    renderAll();
+    if (state.lastInspector) state.lastInspector();
+  }
+
   async function loadGraph(reload = false) {
     const status = document.getElementById("reload-status");
     status.textContent = reload ? "reloading…" : "loading…";
@@ -112,6 +192,7 @@
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       state.graph = await res.json();
+      await loadReviews();
       if (!state.selectedAreaId && state.graph.areas.length > 0) {
         state.selectedAreaId = state.graph.areas[0].id;
       } else if (state.selectedAreaId && !state.graph.areas.some((a) => a.id === state.selectedAreaId)) {
@@ -119,6 +200,7 @@
       }
       populateFilters();
       renderAll();
+      if (state.lastInspector) state.lastInspector();
       const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       status.textContent = `loaded ${now}`;
     } catch (err) {
@@ -137,6 +219,7 @@
     if (tab === "overview") renderOverview();
     if (tab === "maps") renderMaps();
     if (tab === "events") renderEvents();
+    if (tab === "reviews") renderReviews();
     if (tab === "issues") renderIssues();
   }
 
@@ -165,6 +248,7 @@
     renderOverview();
     renderMaps();
     renderEvents();
+    renderReviews();
     renderIssues();
   }
 
@@ -181,6 +265,12 @@
 
     document.getElementById("tab-maps-count").textContent = String(g.counts.areas);
     document.getElementById("tab-events-count").textContent = String(g.counts.events);
+
+    const revBadge = document.getElementById("tab-reviews-count");
+    const rc = state.reviewCounts;
+    const attention = (rc.open || 0) + (rc.stale || 0);
+    revBadge.textContent = String(attention > 0 ? attention : rc.total || 0);
+    revBadge.className = `badge ${rc.needsFix > 0 ? "badge-err" : (rc.question > 0 || rc.stale > 0) ? "badge-warn" : "badge-ok"}`;
 
     const issuesBadge = document.getElementById("tab-issues-count");
     issuesBadge.textContent = String(g.counts.issues);
@@ -463,10 +553,24 @@
       const evtCount = area.cells.filter((c) => c.eventId).length;
       const combatCount = area.cells.filter((c) => c.eventKind === "combat").length;
       const unreachCells = area.cells.filter((c) => c.reachability === "unreachable").length;
+      const areaPins = state.reviews.filter((pin) => pin.areaId === area.id || (pin.targetKind === "area" && pin.target === area.id));
+      const openAreaPins = areaPins.filter((pin) => pin.status === "needs-fix" || pin.status === "question" || pin.stale);
+      const approvedAreaPins = areaPins.filter((pin) => pin.status === "approved" && !pin.stale);
       grp.appendChild(svgEl("text", { x: 14, y: 72, fill: "#cbd5e1", "font-size": 11 },
         `Entries: ${area.entries.length}   Doors: ${area.doors.length}   Triggers: ${evtCount}`));
-      grp.appendChild(svgEl("text", { x: 14, y: 92, fill: unreachCells > 0 ? "#eb5d5d" : "#9aa4b6", "font-size": 11 },
-        `${combatCount > 0 ? `⚔ ${combatCount} combat · ` : ""}${unreachCells > 0 ? `${unreachCells} walled cells` : "dbl-click for 2D map"}`));
+      const pinNote = openAreaPins.length > 0
+        ? `✗ ${openAreaPins.length} flagged`
+        : approvedAreaPins.length > 0
+          ? `✓ ${approvedAreaPins.length} approved`
+          : unreachCells > 0
+            ? `${unreachCells} walled cells`
+            : "dbl-click for 2D map";
+      grp.appendChild(svgEl("text", {
+        x: 14,
+        y: 92,
+        fill: openAreaPins.length > 0 ? "#eb5d5d" : approvedAreaPins.length > 0 ? "#3dc4ab" : unreachCells > 0 ? "#eb5d5d" : "#9aa4b6",
+        "font-size": 11,
+      }, `${combatCount > 0 ? `⚔ ${combatCount} combat · ` : ""}${pinNote}`));
 
       grp.addEventListener("click", () => {
         state.selectedAreaId = area.id;
@@ -658,11 +762,33 @@
         }, lbl));
       }
 
+      const cellPin = findPin("cell", `${area.id}@[${cell.x},${cell.y}]`);
+      if (cellPin) {
+        const ps = pinStyle(cellPin);
+        cellG.appendChild(svgEl("circle", {
+          cx: cx + CELL - 11,
+          cy: cy + CELL - 11,
+          r: 8,
+          fill: "#11151d",
+          stroke: ps.color,
+          "stroke-width": 1.6,
+        }));
+        cellG.appendChild(svgEl("text", {
+          x: cx + CELL - 11,
+          y: cy + CELL - 7.5,
+          fill: ps.color,
+          "font-size": 9.5,
+          "font-weight": 800,
+          "text-anchor": "middle",
+        }, ps.glyph));
+      }
+
       const tipLines = [`[${cell.x}, ${cell.y}] (${cell.reachability})`];
       if (cell.zone) tipLines.push(`zone: ${cell.zone}`);
       if (entriesHere.length) tipLines.push(`entry: ${entriesHere.map((e) => `${e.name} (${e.facing})`).join(", ")}`);
       if (cell.eventId) tipLines.push(`event: ${cell.eventId} (${cell.eventKind})`);
       if (cell.propSprite) tipLines.push(`prop: ${cell.propSprite}`);
+      if (cellPin) tipLines.push(`review [${cellPin.stale ? "stale" : cellPin.status}]: ${cellPin.note || "(no note)"}`);
       cellG.appendChild(svgEl("title", {}, tipLines.join("\n")));
 
       cellG.addEventListener("click", () => {
@@ -743,9 +869,14 @@
         "stroke-linecap": "round",
       }));
       if (door) {
+        const doorPin = findPin("door", `${area.id}#${door.id}`);
+        const pinSt = pinStyle(doorPin);
+        if (pinSt) {
+          g.appendChild(svgEl("circle", { cx: mx, cy: my, r: 13, fill: "none", stroke: pinSt.color, "stroke-width": 2, "stroke-dasharray": doorPin.stale ? "3 2" : null }));
+        }
         g.appendChild(svgEl("circle", { cx: mx, cy: my, r: 9, fill: "#131720", stroke: color, "stroke-width": 1.6 }));
         g.appendChild(svgEl("text", { x: mx, y: my + 3.5, fill: color, "font-size": 10, "text-anchor": "middle" }, isLocked ? "🔒" : "D"));
-        g.appendChild(svgEl("title", {}, `Door '${door.id}' (${isLocked ? "locked" : "unlocked"})`));
+        g.appendChild(svgEl("title", {}, `Door '${door.id}' (${isLocked ? "locked" : "unlocked"})${doorPin ? `\nreview [${doorPin.status}]: ${doorPin.note}` : ""}`));
         g.addEventListener("click", (ev) => {
           ev.stopPropagation();
           state.selectedDoor = { areaId: area.id, doorId: door.id };
@@ -960,6 +1091,13 @@
       grp.appendChild(svgEl("text", { x: 12, y: 54, fill: "#6f7a8d", "font-size": 9.5, "font-family": "var(--font-mono)" },
         footer.length > 32 ? footer.slice(0, 31) + "…" : footer));
 
+      const evtPin = findPin("event", evt.id);
+      if (evtPin) {
+        const ps = pinStyle(evtPin);
+        grp.appendChild(svgEl("circle", { cx: NODE_W - 14, cy: 14, r: 8, fill: "#11151d", stroke: ps.color, "stroke-width": 1.6 }));
+        grp.appendChild(svgEl("text", { x: NODE_W - 14, y: 17.5, fill: ps.color, "font-size": 9.5, "font-weight": 800, "text-anchor": "middle" }, ps.glyph));
+      }
+
       grp.addEventListener("click", () => {
         state.selectedEventId = evt.id;
         renderEvents();
@@ -969,7 +1107,131 @@
     }
   }
 
-  // ==================== TAB 4: DIAGNOSTICS ====================
+  // ==================== TAB 4: REVIEW QUEUE ====================
+  function renderReviews() {
+    const g = state.graph;
+    if (!g) return;
+
+    const rc = state.reviewCounts;
+    document.getElementById("reviews-summary").textContent =
+      `${rc.open} open (${rc.needsFix} needs-fix · ${rc.question} question) · ${rc.approved} approved · ${rc.stale} stale · ${rc.resolved} resolved`;
+
+    const cliCmd = `tales review list ${g.module.location} --status open --json`;
+    document.getElementById("review-cli-cmd").textContent = cliCmd;
+    document.getElementById("review-store-path").textContent = state.reviewStorePath ? `sidecar: ${state.reviewStorePath}` : "";
+
+    const filtered = state.reviews.filter((pin) => {
+      if (state.reviewFilter === "all") return true;
+      if (state.reviewFilter === "open") return pin.status === "needs-fix" || pin.status === "question";
+      if (state.reviewFilter === "stale") return pin.stale === true;
+      return pin.status === state.reviewFilter;
+    });
+
+    const tbody = document.getElementById("reviews-tbody");
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+      const tr = el("tr");
+      tr.appendChild(el("td", { colspan: "6", style: "color:var(--text-dim);text-align:center;padding:28px" },
+        "No review pins match this filter. Click any area, map cell, door, event, or asset to drop a review pin."));
+      tbody.appendChild(tr);
+      return;
+    }
+
+    for (const pin of filtered) {
+      const tr = el("tr");
+      tr.appendChild(el("td", { style: "font-family:var(--font-mono);color:var(--gold);white-space:nowrap" }, pin.id));
+
+      const tdStatus = el("td", { style: "white-space:nowrap" });
+      const ps = pinStyle(pin);
+      tdStatus.appendChild(el("span", { class: `pill ${ps.pill}` }, `${ps.glyph} ${pin.stale ? "Stale Approval" : ps.label}`));
+      if (!pin.exists) {
+        tdStatus.appendChild(el("div", { style: "margin-top:4px;font-size:10px;color:var(--red)" }, "missing target"));
+      }
+      tr.appendChild(tdStatus);
+
+      const tdTarget = el("td");
+      tdTarget.appendChild(el("div", { style: "font-family:var(--font-mono);font-size:11px;color:var(--text)" }, `${pin.targetKind}: ${pin.target}`));
+      tdTarget.appendChild(el("div", { style: "font-size:11.5px;color:var(--text-dim);margin-top:2px" }, pin.summary));
+      tr.appendChild(tdTarget);
+
+      const tdNote = el("td");
+      tdNote.appendChild(el("div", {}, pin.note || "—"));
+      if (pin.resolution) {
+        tdNote.appendChild(el("div", { style: "margin-top:4px;font-size:11px;color:var(--teal)" }, `Resolved: ${pin.resolution}`));
+      }
+      tr.appendChild(tdNote);
+
+      const loc = [pin.file, pin.jsonPath].filter(Boolean).join(" ");
+      tr.appendChild(el("td", { style: "font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);max-width:220px;word-break:break-word" }, loc || "—"));
+
+      const tdAct = el("td", { style: "white-space:nowrap" });
+      const actWrap = el("div", { class: "insp-actions" });
+      const btnJump = el("button", { class: "btn btn-sm" }, "Jump →");
+      btnJump.addEventListener("click", () => jumpToPin(pin));
+      actWrap.appendChild(btnJump);
+      if (pin.status !== "resolved") {
+        const btnRes = el("button", { class: "btn btn-sm" }, "Resolve");
+        btnRes.addEventListener("click", () => resolvePin(pin.id));
+        actWrap.appendChild(btnRes);
+      }
+      const btnDel = el("button", { class: "btn btn-sm" }, "✕");
+      btnDel.title = "Delete pin";
+      btnDel.addEventListener("click", () => deletePin(pin.id));
+      actWrap.appendChild(btnDel);
+      tdAct.appendChild(actWrap);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    }
+  }
+
+  function jumpToPin(pin) {
+    const g = state.graph;
+    if (pin.targetKind === "cell" && pin.areaId && pin.cell) {
+      const area = g.areas.find((a) => a.id === pin.areaId);
+      if (area) {
+        state.selectedAreaId = area.id;
+        state.selectedCell = { areaId: area.id, x: pin.cell[0], y: pin.cell[1] };
+        switchTab("maps");
+        const cell = area.cells.find((c) => c.x === pin.cell[0] && c.y === pin.cell[1]);
+        if (cell) inspectCell(area, cell, area.entries.filter((e) => e.x === cell.x && e.y === cell.y));
+        return;
+      }
+    }
+    if (pin.targetKind === "door" && pin.areaId && pin.doorId) {
+      const area = g.areas.find((a) => a.id === pin.areaId);
+      if (area) {
+        state.selectedAreaId = area.id;
+        state.selectedDoor = { areaId: area.id, doorId: pin.doorId };
+        switchTab("maps");
+        const door = area.doors.find((d) => d.id === pin.doorId);
+        if (door) inspectDoor(area, door);
+        return;
+      }
+    }
+    if (pin.targetKind === "area" && pin.areaId) {
+      const area = g.areas.find((a) => a.id === pin.areaId);
+      if (area) {
+        state.selectedAreaId = area.id;
+        switchTab("maps");
+        inspectArea(area);
+        return;
+      }
+    }
+    if (pin.targetKind === "event" && pin.eventId) {
+      const evt = g.events.find((e) => e.id === pin.eventId);
+      if (evt) {
+        state.selectedEventId = evt.id;
+        switchTab("events");
+        inspectEvent(evt);
+        return;
+      }
+    }
+    if (pin.targetKind === "asset") {
+      inspectAsset(pin.target);
+    }
+  }
+
+  // ==================== TAB 5: DIAGNOSTICS ====================
   function renderIssues() {
     const g = state.graph;
     if (!g) return;
@@ -1065,6 +1327,68 @@
     return sec;
   }
 
+  function makeReviewPinCard(targetKind, target) {
+    const existing = findPin(targetKind, target);
+    const card = el("div", { class: "review-card" });
+
+    const head = el("div", { class: "review-card-head" });
+    head.appendChild(el("h4", {}, existing ? `Review Pin · ${existing.id}` : "Review Pin"));
+    if (existing) {
+      const ps = pinStyle(existing);
+      head.appendChild(el("span", { class: `pill ${ps.pill}` }, `${ps.glyph} ${existing.stale ? "Stale" : ps.label}`));
+    }
+    card.appendChild(head);
+
+    if (existing?.stale) {
+      card.appendChild(el("div", { class: "review-stale-banner" },
+        "Target changed on disk since this approval. Re-approve or flag needs-fix."));
+    }
+
+    const noteInput = el("textarea", {
+      class: "review-note-input",
+      placeholder: "Optional note for the agent (e.g. 'Door feels misplaced, add hint on wall')…",
+    });
+    noteInput.value = existing?.note || "";
+
+    const statusRow = el("div", { class: "review-status-row" });
+    const statuses = [
+      { id: "needs-fix", text: "✗ Needs Fix" },
+      { id: "question", text: "? Question" },
+      { id: "approved", text: "✓ Approve" },
+      { id: "resolved", text: "✔ Resolve" },
+    ];
+    for (const st of statuses) {
+      const isCurrent = existing?.status === st.id && !existing?.stale;
+      const btn = el("button", {
+        class: `rev-btn${isCurrent ? ` active-${st.id}` : ""}`,
+        type: "button",
+      }, st.text);
+      btn.addEventListener("click", () => savePin(targetKind, target, st.id, noteInput.value));
+      statusRow.appendChild(btn);
+    }
+    card.appendChild(statusRow);
+    card.appendChild(noteInput);
+
+    noteInput.addEventListener("keydown", (ev) => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
+        savePin(targetKind, target, existing?.status || "needs-fix", noteInput.value);
+      }
+    });
+
+    const foot = el("div", { class: "review-card-foot" });
+    const saveBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, existing ? "Update Note" : "Save Pin");
+    saveBtn.addEventListener("click", () => savePin(targetKind, target, existing?.status || "needs-fix", noteInput.value));
+    foot.appendChild(saveBtn);
+
+    if (existing) {
+      const delBtn = el("button", { class: "btn btn-sm", type: "button" }, "Remove Pin");
+      delBtn.addEventListener("click", () => deletePin(existing.id));
+      foot.appendChild(delBtn);
+    }
+    card.appendChild(foot);
+    return card;
+  }
+
   function makeAssetPreviewSection(label, qualifiedAssetId) {
     const asset = findAsset(qualifiedAssetId);
     const url = assetUrl(qualifiedAssetId);
@@ -1084,8 +1408,37 @@
       wrap.appendChild(el("div", { style: "font-size:11px;color:var(--text-dim);font-family:var(--font-mono)" },
         `${asset.file} · ${asset.media} · ${asset.sampling}`));
     }
+    const existing = findPin("asset", qualifiedAssetId);
+    const mini = el("div", { class: "review-mini-bar" });
+    const btnApp = el("button", { class: "btn btn-sm", type: "button" }, existing?.status === "approved" && !existing.stale ? "✓ Asset Approved" : "✓ Approve Art");
+    btnApp.addEventListener("click", () => savePin("asset", qualifiedAssetId, "approved", existing?.note || ""));
+    const btnFix = el("button", { class: "btn btn-sm", type: "button" }, "✗ Flag Art");
+    btnFix.addEventListener("click", () => inspectAsset(qualifiedAssetId));
+    mini.appendChild(btnApp);
+    mini.appendChild(btnFix);
+    wrap.appendChild(mini);
     sec.appendChild(wrap);
     return sec;
+  }
+
+  function inspectAsset(qualifiedAssetId) {
+    state.lastInspector = () => inspectAsset(qualifiedAssetId);
+    const asset = findAsset(qualifiedAssetId);
+    const sections = [makeReviewPinCard("asset", qualifiedAssetId)];
+    const preview = makeAssetPreviewSection("Preview", qualifiedAssetId);
+    if (preview) sections.push(preview);
+    if (asset) {
+      sections.push(makeKvSection("Asset Metadata", [
+        ["ID", asset.id],
+        ["File", asset.file],
+        ["Media", asset.media],
+        ["Sampling", asset.sampling],
+        ["Tags", asset.tags?.join(", ") || "none"],
+        ["Used By", asset.usedBy?.join(", ") || "unused"],
+      ]));
+    }
+    sections.push(makeJsonSection(qualifiedAssetId, "asset"));
+    setInspector("ASSET", qualifiedAssetId, sections);
   }
 
   function makeJsonSection(qualifiedId, defType) {
@@ -1109,7 +1462,11 @@
   }
 
   function inspectArea(area) {
-    const sections = [];
+    state.lastInspector = () => {
+      const fresh = state.graph?.areas.find((a) => a.id === area.id);
+      if (fresh) inspectArea(fresh);
+    };
+    const sections = [makeReviewPinCard("area", area.id)];
     const actionsSec = el("div", { class: "insp-section" });
     actionsSec.appendChild(el("h4", {}, "Actions"));
     const actRow = el("div", { class: "insp-actions" });
@@ -1141,7 +1498,12 @@
   }
 
   function inspectCell(area, cell, entriesHere) {
-    const sections = [];
+    state.lastInspector = () => {
+      const freshArea = state.graph?.areas.find((a) => a.id === area.id);
+      const freshCell = freshArea?.cells.find((c) => c.x === cell.x && c.y === cell.y);
+      if (freshArea && freshCell) inspectCell(freshArea, freshCell, freshArea.entries.filter((e) => e.x === freshCell.x && e.y === freshCell.y));
+    };
+    const sections = [makeReviewPinCard("cell", `${area.id}@[${cell.x},${cell.y}]`)];
     sections.push(makeKvSection("Cell Metadata", [
       ["Area", `${area.name} (${area.localId})`],
       ["Coords", `[${cell.x}, ${cell.y}]`],
@@ -1196,7 +1558,12 @@
   }
 
   function inspectDoor(area, door) {
-    const sections = [];
+    state.lastInspector = () => {
+      const freshArea = state.graph?.areas.find((a) => a.id === area.id);
+      const freshDoor = freshArea?.doors.find((d) => d.id === door.id);
+      if (freshArea && freshDoor) inspectDoor(freshArea, freshDoor);
+    };
+    const sections = [makeReviewPinCard("door", `${area.id}#${door.id}`)];
     sections.push(makeKvSection("Door Details", [
       ["Door ID", door.id],
       ["Area", `${area.name} (${area.localId})`],
@@ -1214,7 +1581,11 @@
   }
 
   function inspectEvent(evt) {
-    const sections = [];
+    state.lastInspector = () => {
+      const fresh = state.graph?.events.find((e) => e.id === evt.id);
+      if (fresh) inspectEvent(fresh);
+    };
+    const sections = [makeReviewPinCard("event", evt.id)];
     const outgoing = state.graph.eventEdges.filter((e) => e.from === evt.id);
 
     sections.push(makeKvSection("Event Details", [
@@ -1351,6 +1722,27 @@
       document.querySelectorAll("#issue-filter-pills .pill-btn").forEach((b) => b.classList.toggle("active", b === btn));
       renderIssues();
     });
+  });
+
+  document.querySelectorAll("#review-filter-pills .pill-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.reviewFilter = btn.dataset.reviewFilter;
+      document.querySelectorAll("#review-filter-pills .pill-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      renderReviews();
+    });
+  });
+
+  document.getElementById("btn-clear-resolved").addEventListener("click", () => clearResolvedPins());
+
+  document.getElementById("btn-copy-cli").addEventListener("click", () => {
+    const text = document.getElementById("review-cli-cmd").textContent;
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("btn-copy-cli");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy Agent CLI"; }, 1200);
+      }).catch(() => {});
+    }
   });
 
   loadGraph(false);

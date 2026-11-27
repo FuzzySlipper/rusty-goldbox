@@ -26,6 +26,7 @@
         <button class="tab active" data-tab="overview" role="tab">Flow Overview</button>
         <button class="tab" data-tab="maps" role="tab">2D Area Maps <span id="tab-maps-count" class="badge">0</span></button>
         <button class="tab" data-tab="events" role="tab">Events &amp; Scenes <span id="tab-events-count" class="badge">0</span></button>
+        <button class="tab" data-tab="reviews" role="tab">Review Queue <span id="tab-reviews-count" class="badge badge-ok">0</span></button>
         <button class="tab" data-tab="issues" role="tab">Diagnostics <span id="tab-issues-count" class="badge badge-ok">0</span></button>
       </nav>
 
@@ -156,7 +157,50 @@
           </div>
         </section>
 
-        <!-- TAB 4: DIAGNOSTICS -->
+        <!-- TAB 4: REVIEW QUEUE -->
+        <section id="view-reviews" class="view">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <strong>Human Review Queue</strong>
+              <span id="reviews-summary" class="toolbar-hint"></span>
+            </div>
+            <div class="toolbar-group" id="review-filter-pills">
+              <button class="pill-btn active" data-review-filter="all">All</button>
+              <button class="pill-btn" data-review-filter="open">Open</button>
+              <button class="pill-btn" data-review-filter="needs-fix">Needs Fix</button>
+              <button class="pill-btn" data-review-filter="question">Questions</button>
+              <button class="pill-btn" data-review-filter="approved">Approved</button>
+              <button class="pill-btn" data-review-filter="stale">Stale</button>
+              <button class="pill-btn" data-review-filter="resolved">Resolved</button>
+            </div>
+            <div class="toolbar-group">
+              <button id="btn-copy-cli" class="btn btn-sm" title="Copy agent CLI command for open review pins">Copy Agent CLI</button>
+              <button id="btn-clear-resolved" class="btn btn-sm" title="Clear all resolved pins">Clear Resolved</button>
+            </div>
+          </div>
+          <div class="review-cli-bar">
+            <span class="review-cli-label">Agent CLI:</span>
+            <code id="review-cli-cmd" class="review-cli-code"></code>
+            <span id="review-store-path" class="review-store-path"></span>
+          </div>
+          <div class="issues-container">
+            <table class="issues-table">
+              <thead>
+                <tr>
+                  <th>Pin</th>
+                  <th>Status</th>
+                  <th>Target &amp; Summary</th>
+                  <th>Note / Resolution</th>
+                  <th>Location</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reviews-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 5: DIAGNOSTICS -->
         <section id="view-issues" class="view">
           <div class="toolbar">
             <div class="toolbar-group">

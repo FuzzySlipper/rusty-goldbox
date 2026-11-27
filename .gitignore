@@ -18,6 +18,7 @@ __pycache__/
 **/.tales/staged/
 **/.tales/party/
 **/.tales/game/
+**/.tales/reviews/
 **/exports/
 
 # Windows Explorer generated thumbnail caches.

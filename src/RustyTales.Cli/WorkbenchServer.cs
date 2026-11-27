@@ -17,12 +17,15 @@ namespace RustyTales.Cli;
 /// </summary>
 internal sealed class WorkbenchServer : IDisposable
 {
+    private static readonly object PortBindLock = new();
+
     private readonly string _modulePath;
     private readonly IReadOnlyList<string> _searchDirectories;
     private readonly IReadOnlyList<string> _extensions;
     private readonly HttpListener _listener;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _stateLock = new();
+    private readonly ReviewStore _reviews;
     private Task? _loop;
 
     private ModuleSet _set;
@@ -33,24 +36,63 @@ internal sealed class WorkbenchServer : IDisposable
         IReadOnlyList<string> searchDirectories,
         IReadOnlyList<string> extensions,
         string host = "127.0.0.1",
-        int port = 4173)
+        int port = 4173,
+        string? reviewsPath = null)
     {
         _modulePath = Path.GetFullPath(modulePath);
         _searchDirectories = searchDirectories.ToList();
         _extensions = extensions.ToList();
 
         (_set, _graph) = LoadNow();
+        _reviews = new ReviewStore(
+            reviewsPath ?? ReviewStore.DefaultPathFor(_modulePath, _graph.Module.Id),
+            _graph.Module.Id);
 
-        int actualPort = port == 0 ? PickFreePort() : port;
         string prefixHost = host is "0.0.0.0" or "*" ? "+" : host;
         string displayHost = host is "0.0.0.0" or "*" or "+" ? "127.0.0.1" : host;
 
-        _listener = new HttpListener();
-        _listener.Prefixes.Add($"http://{prefixHost}:{actualPort}/");
-        _listener.Start();
+        (_listener, Port) = BindListener(prefixHost, port);
+        Url = $"http://{displayHost}:{Port}/";
+    }
 
-        Port = actualPort;
-        Url = $"http://{displayHost}:{actualPort}/";
+    private static (HttpListener Listener, int Port) BindListener(string prefixHost, int requestedPort)
+    {
+        if (requestedPort != 0)
+        {
+            HttpListener fixedListener = new();
+            fixedListener.Prefixes.Add($"http://{prefixHost}:{requestedPort}/");
+            fixedListener.Start();
+            return (fixedListener, requestedPort);
+        }
+
+        lock (PortBindLock)
+        {
+            HttpListenerException? lastError = null;
+            for (int attempt = 0; attempt < 16; attempt++)
+            {
+                int candidate = PickFreePort();
+                HttpListener listener = new();
+                listener.Prefixes.Add($"http://{prefixHost}:{candidate}/");
+                try
+                {
+                    listener.Start();
+                    return (listener, candidate);
+                }
+                catch (HttpListenerException exception)
+                {
+                    lastError = exception;
+                    try
+                    {
+                        listener.Close();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            throw (Exception?)lastError ?? new InvalidOperationException("Could not bind an ephemeral loopback port.");
+        }
     }
 
     public int Port { get; }
@@ -97,7 +139,7 @@ internal sealed class WorkbenchServer : IDisposable
 
             _listener.Close();
         }
-        catch (ObjectDisposedException)
+        catch (Exception exception) when (exception is ObjectDisposedException or HttpListenerException)
         {
         }
 
@@ -146,7 +188,7 @@ internal sealed class WorkbenchServer : IDisposable
             if (path.StartsWith("/api/", StringComparison.Ordinal))
             {
                 response.Headers["Access-Control-Allow-Origin"] = "*";
-                response.Headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+                response.Headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
                 response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
                 if (request.HttpMethod.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
                 {
@@ -176,7 +218,8 @@ internal sealed class WorkbenchServer : IDisposable
 
             if (path == "/api/health")
             {
-                ModuleGraph graph = CurrentGraph;
+                (ModuleSet set, ModuleGraph graph) = Snapshot();
+                ReviewCounts reviewCounts = ReviewResolver.Summarize(ReviewResolver.ResolveAll(_reviews.List(), set, graph));
                 WriteJson(response, 200, new
                 {
                     ok = true,
@@ -189,7 +232,14 @@ internal sealed class WorkbenchServer : IDisposable
                     events = graph.Counts.Events,
                     scenes = graph.Counts.Scenes,
                     issues = graph.Counts.Issues,
+                    reviews = reviewCounts,
                 });
+                return;
+            }
+
+            if (path == "/api/reviews" || path.StartsWith("/api/reviews/", StringComparison.Ordinal))
+            {
+                HandleReviews(request, response, path);
                 return;
             }
 
@@ -243,6 +293,159 @@ internal sealed class WorkbenchServer : IDisposable
             {
             }
         }
+    }
+
+    private (ModuleSet Set, ModuleGraph Graph) Snapshot()
+    {
+        lock (_stateLock)
+        {
+            return (_set, _graph);
+        }
+    }
+
+    private void HandleReviews(HttpListenerRequest request, HttpListenerResponse response, string path)
+    {
+        (ModuleSet set, ModuleGraph graph) = Snapshot();
+        string method = request.HttpMethod.ToUpperInvariant();
+
+        if (path == "/api/reviews" && method == "GET")
+        {
+            List<ResolvedReviewPin> all = ReviewResolver.ResolveAll(_reviews.List(), set, graph);
+            List<ResolvedReviewPin> filtered = ReviewCommand.FilterPins(all, request.QueryString["status"], request.QueryString["kind"]);
+            ReviewCounts counts = ReviewResolver.Summarize(all);
+            WriteRawJson(response, 200, JsonSerializer.Serialize(new
+            {
+                ok = true,
+                module = graph.Module.Id,
+                storePath = _reviews.FilePath,
+                counts,
+                pins = filtered,
+            }, ReviewStore.JsonOptions));
+            return;
+        }
+
+        if (path == "/api/reviews" && method == "POST")
+        {
+            using StreamReader reader = new(request.InputStream, request.ContentEncoding);
+            string body = reader.ReadToEnd();
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(body);
+            }
+            catch (JsonException exception)
+            {
+                WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                return;
+            }
+
+            using (doc)
+            {
+                JsonElement root = doc.RootElement;
+                string? kind = root.TryGetProperty("targetKind", out JsonElement kEl) && kEl.ValueKind == JsonValueKind.String ? kEl.GetString() : null;
+                string? target = root.TryGetProperty("target", out JsonElement tEl) && tEl.ValueKind == JsonValueKind.String ? tEl.GetString() : null;
+                string? status = root.TryGetProperty("status", out JsonElement sEl) && sEl.ValueKind == JsonValueKind.String ? sEl.GetString() : null;
+                string note = root.TryGetProperty("note", out JsonElement nEl) && nEl.ValueKind == JsonValueKind.String ? nEl.GetString() ?? "" : "";
+                string author = root.TryGetProperty("author", out JsonElement aEl) && aEl.ValueKind == JsonValueKind.String ? aEl.GetString() ?? "human" : "human";
+
+                if (!ReviewTargetKinds.IsValid(kind) || string.IsNullOrWhiteSpace(target) || !ReviewStatuses.IsValid(status))
+                {
+                    WriteJson(response, 400, new { ok = false, error = "targetKind, target, and valid status (needs-fix, approved, question, resolved) are required." });
+                    return;
+                }
+
+                ReviewResolver.TargetMeta meta = ReviewResolver.DescribeTarget(kind!, target!, set, graph);
+                ReviewPin saved = _reviews.Upsert(kind!, target!, status!, note, author, meta.Revision, meta.AreaId, meta.Cell, meta.DoorId, meta.EventId);
+                ResolvedReviewPin resolved = ReviewResolver.Resolve(saved, set, graph);
+                ReviewCounts counts = ReviewResolver.Summarize(ReviewResolver.ResolveAll(_reviews.List(), set, graph));
+                WriteRawJson(response, 200, JsonSerializer.Serialize(new { ok = true, pin = resolved, counts }, ReviewStore.JsonOptions));
+                return;
+            }
+        }
+
+        if (path == "/api/reviews/clear" && method == "POST")
+        {
+            string statusFilter = ReviewStatuses.Resolved;
+            using (StreamReader reader = new(request.InputStream, request.ContentEncoding))
+            {
+                string body = reader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    try
+                    {
+                        using JsonDocument doc = JsonDocument.Parse(body);
+                        if (doc.RootElement.TryGetProperty("status", out JsonElement stEl) && stEl.ValueKind == JsonValueKind.String)
+                        {
+                            statusFilter = stEl.GetString()!;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                    }
+                }
+            }
+
+            int cleared = _reviews.Clear(statusFilter);
+            ReviewCounts counts = ReviewResolver.Summarize(ReviewResolver.ResolveAll(_reviews.List(), set, graph));
+            WriteRawJson(response, 200, JsonSerializer.Serialize(new { ok = true, cleared, counts }, ReviewStore.JsonOptions));
+            return;
+        }
+
+        string tail = path["/api/reviews/".Length..];
+        if (tail.EndsWith("/resolve", StringComparison.Ordinal) && method == "POST")
+        {
+            string id = Uri.UnescapeDataString(tail[..^"/resolve".Length]);
+            string? resolution = null;
+            using (StreamReader reader = new(request.InputStream, request.ContentEncoding))
+            {
+                string body = reader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    try
+                    {
+                        using JsonDocument doc = JsonDocument.Parse(body);
+                        if (doc.RootElement.TryGetProperty("resolution", out JsonElement rEl) && rEl.ValueKind == JsonValueKind.String)
+                        {
+                            resolution = rEl.GetString();
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                    }
+                }
+            }
+
+            ReviewPin? existing = _reviews.Find(id);
+            if (existing is null)
+            {
+                WriteJson(response, 404, new { ok = false, error = $"Review pin '{id}' was not found." });
+                return;
+            }
+
+            ReviewResolver.TargetMeta meta = ReviewResolver.DescribeTarget(existing.TargetKind, existing.Target, set, graph);
+            ReviewPin resolvedRaw = _reviews.Resolve(id, resolution, meta.Revision)!;
+            ResolvedReviewPin pin = ReviewResolver.Resolve(resolvedRaw, set, graph);
+            ReviewCounts counts = ReviewResolver.Summarize(ReviewResolver.ResolveAll(_reviews.List(), set, graph));
+            WriteRawJson(response, 200, JsonSerializer.Serialize(new { ok = true, pin, counts }, ReviewStore.JsonOptions));
+            return;
+        }
+
+        if (method == "DELETE" && !tail.Contains('/'))
+        {
+            string id = Uri.UnescapeDataString(tail);
+            bool deleted = _reviews.Delete(id);
+            if (!deleted)
+            {
+                WriteJson(response, 404, new { ok = false, error = $"Review pin '{id}' was not found." });
+                return;
+            }
+
+            ReviewCounts counts = ReviewResolver.Summarize(ReviewResolver.ResolveAll(_reviews.List(), set, graph));
+            WriteRawJson(response, 200, JsonSerializer.Serialize(new { ok = true, deleted = true, counts }, ReviewStore.JsonOptions));
+            return;
+        }
+
+        WriteJson(response, 405, new { ok = false, error = $"Unsupported review request {method} {path}." });
     }
 
     private void HandleDefinition(HttpListenerRequest request, HttpListenerResponse response)

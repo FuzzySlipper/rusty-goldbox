@@ -25,9 +25,12 @@ internal static class TalesCli
           tales module graph <path> [--modules <dir>]... [--extension <id>]...
               Builds the campaign navigation graph, 2D area topology, event/scene flow, asset
               usage, and reachability/dead-end diagnostics (identical JSON to the Workbench API).
-          tales workbench <path> [--port <n>] [--host <addr>] [--modules <dir>]... [--extension <id>]...
+          tales workbench <path> [--port <n>] [--host <addr>] [--reviews <file>] [--modules <dir>]... [--extension <id>]...
               Serves the local diagnostic & review Workbench web UI directly from Core
               (default http://127.0.0.1:4173/). Use --once to print startup info and exit.
+          tales review list|show|set|resolve|clear <module-path> [...] [--reviews <file>] [--json]
+              Reads and updates Workbench review pins (needs-fix, approved, question, resolved)
+              with exact module, file, JSON path and stale-approval detection for agent workflows.
           tales module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...
               Validates the module, then packs it into an Engine content container
               (<id>-<version>.rpak here, or in the Game's module library with --install:
@@ -214,6 +217,8 @@ internal static class TalesCli
                 return PlayCommand.Run(args.Skip(1), printer, workingDirectory);
             case "workbench":
                 return WorkbenchCommand.Run(args.Skip(1), printer, workingDirectory);
+            case "review":
+                return ReviewCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:
