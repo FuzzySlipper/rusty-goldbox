@@ -20,9 +20,56 @@ export function createPortraits(send, ui) {
   const viewport = element('div', { class: 'gb-roster-scroll', tabindex: '0', role: 'region', 'aria-label': 'Party members' });
   const list = element('ol', { id: 'rusty-tales-roster' });
   viewport.append(list);
-  const node = element('section', { class: 'gb-panel gb-portraits', 'aria-label': 'Party', 'data-rusty-ui-interactive': '' }, title, pager, viewport);
+  const floatLayer = element('div', { class: 'gb-portrait-float-layer', 'aria-hidden': 'true' });
+  const node = element('section', { class: 'gb-panel gb-portraits', 'aria-label': 'Party', 'data-rusty-ui-interactive': '' }, title, pager, viewport, floatLayer);
   let page = 0;
   let mode = null;
+
+  /** Spawns colored floating combat text anchored over a party member's portrait card. */
+  const spawnFloat = (combatId, text, kind = 'damage', staggerIndex = 0) => {
+    if (!combatId || !text) {
+      return false;
+    }
+
+    const cards = list.querySelectorAll('[data-combat-id]');
+    let match = null;
+    for (const candidate of cards) {
+      if (candidate.getAttribute('data-combat-id') === combatId) {
+        match = candidate;
+        break;
+      }
+    }
+    if (!match) {
+      return false;
+    }
+
+    const panelRect = node.getBoundingClientRect();
+    const cardRect = match.getBoundingClientRect();
+    if (panelRect.width < 10 || panelRect.height < 10 || cardRect.width < 4) {
+      return false;
+    }
+
+    const x = Math.max(24, Math.min(panelRect.width - 24, (cardRect.left - panelRect.left) + (cardRect.width / 2)));
+    const y = Math.max(18, Math.min(panelRect.height - 16, (cardRect.top - panelRect.top) + Math.min(cardRect.height * 0.48, 40) - staggerIndex * 26));
+    const delayMs = staggerIndex * 180;
+    const tag = element('div', {
+      class: `gb-float-text gb-float-${kind}`,
+      'data-float-target': combatId,
+      'data-float-kind': kind,
+    }, text);
+    tag.style.left = `${Math.round(x)}px`;
+    tag.style.top = `${Math.round(y)}px`;
+    if (delayMs > 0) {
+      tag.style.animationDelay = `${delayMs}ms`;
+    }
+    floatLayer.append(tag);
+    setTimeout(() => tag.remove(), 1450 + delayMs);
+    return true;
+  };
+
+  const clearFloats = () => {
+    floatLayer.replaceChildren();
+  };
 
   function setPage(nextPage) {
     if (lastView === null) {
@@ -74,6 +121,9 @@ export function createPortraits(send, ui) {
     if (mode !== currentMode) {
       mode = currentMode;
       page = 0;
+      if (currentMode !== 'combat') {
+        floatLayer.replaceChildren();
+      }
     }
 
     // Projection updates replace card nodes. Remember the scroll/focus that
@@ -159,5 +209,5 @@ export function createPortraits(send, ui) {
     nextFocus?.focus({ preventScroll: true });
   };
 
-  return { node, render };
+  return { node, render, spawnFloat, clearFloats };
 }

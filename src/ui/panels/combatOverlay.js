@@ -141,7 +141,7 @@ function gridDistance(a, b, metric = 'chebyshev') {
  * - Spawns floating error messages at the exact click site when an invalid square or unit is clicked
  * - Hosts the floating combat text layer over sprites (filled by combat feedback events)
  */
-export function createCombatOverlay(surface, controls) {
+export function createCombatOverlay(surface, controls, onPortraitFloat = null, onClearPortraitFloats = null) {
   const svg = svgEl('svg', { class: 'gb-combat-svg', preserveAspectRatio: 'none' });
   const banner = element('div', { class: 'gb-combat-banner', hidden: 'hidden' });
   const floatLayer = element('div', { class: 'gb-float-layer', 'aria-hidden': 'true' });
@@ -150,10 +150,16 @@ export function createCombatOverlay(surface, controls) {
 
   let lastView = null;
   let hoverCellKey = null;
+  let lastFightKey = null;
+  let lastEventIndex = -1;
 
   /** Spawns a floating message at pixel coordinates inside the combat viewport. */
-  const spawnFloatAt = (xPx, yPx, text, kind = 'error', delayMs = 0) => {
-    const tag = element('div', { class: `gb-float-text gb-float-${kind}` }, text);
+  const spawnFloatAt = (xPx, yPx, text, kind = 'error', delayMs = 0, targetId = null) => {
+    const tag = element('div', {
+      class: `gb-float-text gb-float-${kind}`,
+      ...(targetId ? { 'data-float-target': targetId } : {}),
+      'data-float-kind': kind,
+    }, text);
     tag.style.left = `${Math.round(xPx)}px`;
     tag.style.top = `${Math.round(yPx)}px`;
     if (delayMs > 0) {
@@ -177,9 +183,73 @@ export function createCombatOverlay(surface, controls) {
     const pt = projectWorld(member.worldPos.x, member.worldPos.y + headY, member.worldPos.z, fight, w / h);
     if (!pt) return false;
     const x = Math.max(36, Math.min(w - 36, pt.u * w));
-    const y = Math.max(26, Math.min(h - 26, pt.v * h - staggerIndex * 20));
-    spawnFloatAt(x, y, text, kind, staggerIndex * 110);
+    const y = Math.max(26, Math.min(h - 26, pt.v * h - staggerIndex * 26));
+    spawnFloatAt(x, y, text, kind, staggerIndex * 180, memberId);
     return true;
+  };
+
+  /**
+   * Processes new chronological combat feedback events (`fight.events`) into animated floating text:
+   * - Enemy targets float over their combat sprite in all 3 modes (first_person, side_view, tactical).
+   * - Party targets always float over their portrait card, and also float over their combat sprite in
+   *   tactical and side_view (JRPG) modes.
+   */
+  const emitCombatEvents = (view) => {
+    if (!view || view.screen !== 'combat' || !view.fight) {
+      if (lastFightKey !== null) {
+        lastFightKey = null;
+        lastEventIndex = -1;
+        floatLayer.replaceChildren();
+        onClearPortraitFloats?.();
+      }
+      return;
+    }
+
+    const fight = view.fight;
+    const members = fight.members ?? [];
+    const events = fight.events ?? [];
+    const fightKey = `${fight.encounter ?? ''}|${fight.presentation ?? ''}|${members.map((m) => m.id).join(',')}`;
+    const maxIndex = events.length > 0 ? events[events.length - 1].index : -1;
+
+    if (fightKey !== lastFightKey || maxIndex < lastEventIndex) {
+      if (lastFightKey !== null) {
+        floatLayer.replaceChildren();
+        onClearPortraitFloats?.();
+      }
+      lastFightKey = fightKey;
+      // Avoid flooding historical numbers when loading a mid-fight save; still show opening round-1 hits.
+      const isMidFightReload = (fight.round ?? 1) > 1 || maxIndex >= 20;
+      lastEventIndex = isMidFightReload ? maxIndex : -1;
+    }
+
+    const fresh = events.filter((ev) => typeof ev.index === 'number' && ev.index > lastEventIndex);
+    if (fresh.length === 0) {
+      return;
+    }
+
+    lastEventIndex = Math.max(lastEventIndex, ...fresh.map((ev) => ev.index));
+    const memberById = new Map(members.map((m) => [m.id, m]));
+    const staggerByTarget = new Map();
+
+    for (const ev of fresh) {
+      const member = memberById.get(ev.targetId);
+      if (!member || !ev.text) {
+        continue;
+      }
+
+      const stagger = staggerByTarget.get(member.id) ?? 0;
+      staggerByTarget.set(member.id, stagger + 1);
+      const kind = ev.kind || 'damage';
+
+      if (member.side !== 0) {
+        spawnOnMember(member.id, ev.text, kind, stagger);
+      } else {
+        onPortraitFloat?.(member.id, ev.text, kind, stagger);
+        if (fight.presentation === 'tactical' || fight.presentation === 'side_view') {
+          spawnOnMember(member.id, ev.text, kind, stagger);
+        }
+      }
+    }
   };
 
   const clientToLocal = (event) => {
@@ -553,6 +623,7 @@ export function createCombatOverlay(surface, controls) {
   const render = (view) => {
     lastView = view;
     renderOverlay();
+    emitCombatEvents(view);
   };
 
   return {

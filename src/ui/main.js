@@ -83,7 +83,12 @@ export function mountProductUi(root, context) {
   // The view panel is left clear: the Engine draws the world inside it.
   // In combat, combatOverlay projects an interactive tactical grid, unit hitboxes, and floating text over it.
   const viewSurface = element('div', { class: 'gb-view-surface' });
-  const combatOverlay = createCombatOverlay(viewSurface, controls);
+  const combatOverlay = createCombatOverlay(
+    viewSurface,
+    controls,
+    (memberId, text, kind, stagger) => portraits.spawnFloat(memberId, text, kind, stagger),
+    () => portraits.clearFloats(),
+  );
   const unsubSelection = controls.onSelectionChange(() => combatOverlay.refresh());
   const view = element('section', { class: 'gb-panel gb-view', 'aria-label': 'View' }, viewSurface);
   const side = element('div', { class: 'gb-side' }, portraits.node, map.node, controls.node);
