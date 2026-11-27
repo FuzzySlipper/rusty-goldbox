@@ -412,6 +412,32 @@ public sealed partial class CombatRunner
             return Refused("That action is no longer available to the active actor.");
         }
 
+        // Contemporary free tactical movement: a pure movement action with an explicit
+        // path to any reachable cell does not need an enemy target.
+        bool freeMove = choice.IsMoveAction
+            && command.Path is not null
+            && command.Path.Count > 0
+            && (command.TargetIds.Count == 0 || (command.TargetIds.Count == 1 && command.TargetIds[0] == actor.Id))
+            && HasFreeMovementPath(choice, command.Path);
+        if (freeMove)
+        {
+            if (!Affordable(actor, use.Action))
+            {
+                return Refused($"{actor.Name} cannot afford {use.Name}.");
+            }
+
+            ResolveChosenAction(
+                actor,
+                use,
+                [actor],
+                command.Path,
+                committedPortions: choice.PortionCount,
+                committedSpellCosts: choice.SpellCosts,
+                explicitTargets: true);
+            _pendingDecision = null;
+            return CombatCommandResult.AcceptedResult(AdvanceAfterAction());
+        }
+
         string targetKind = use.Action.Json.GetProperty("target").GetString()!;
         bool hasMaximumTargets = HasMaximumTargets(use.Action);
         bool hasPortions = use.Action.Json.TryGetProperty("portions", out _);
@@ -719,6 +745,12 @@ public sealed partial class CombatRunner
         _pendingTargetRollsRestored = false;
     }
 
+    private static bool HasFreeMovementPath(CombatActionChoice choice, IReadOnlyList<Cell> path)
+    {
+        return choice.FreeMoves is not null
+            && choice.FreeMoves.Any(move => move.Path.SequenceEqual(path));
+    }
+
     private static bool HasMovementPath(
         CombatActionChoice choice,
         string targetId,
@@ -824,6 +856,7 @@ public sealed partial class CombatRunner
     private CombatDecision BuildDecision(Combatant actor)
     {
         List<CombatActionChoice> actions = [];
+        HashSet<int> includedUses = [];
         foreach ((UseOption use, List<Combatant> candidates, IReadOnlyDictionary<string, decimal>? spellCosts, int? portionCount) in Options(actor, preview: true, allCandidates: true))
         {
             int index = actor.Uses.IndexOf(use);
@@ -846,6 +879,11 @@ public sealed partial class CombatRunner
                 }
             }
 
+            bool isPureMove = IsPureMoveAction(use.Action);
+            List<CombatMoveChoice>? freeMoves = isPureMove ? FreeMoveChoices(actor, use, preview: true) : null;
+            decimal? range = PreviewRange(actor, use);
+
+            includedUses.Add(index);
             actions.Add(new CombatActionChoice(
                 ActionUseId(actor, index, use),
                 use.Action.QualifiedId,
@@ -857,7 +895,91 @@ public sealed partial class CombatRunner
                 TargetKind(use.Action),
                 TargetMode(use.Action),
                 portionCount,
-                spellCosts));
+                spellCosts,
+                isPureMove,
+                freeMoves,
+                range));
+        }
+
+        // Also offer affordable pure move actions (Stride / Move / Close) for free
+        // grid positioning even when adjacent to an enemy, plus record unavailable
+        // non-move actions so the UI can show clear click-site error feedback.
+        List<CombatUnavailableAction> unavailable = [];
+        for (int index = 0; index < actor.Uses.Count; index++)
+        {
+            if (includedUses.Contains(index))
+            {
+                continue;
+            }
+
+            UseOption use = actor.Uses[index];
+            string actionChoiceId = ActionUseId(actor, index, use);
+            if (_behaviorRejectedActionIds?.Contains(actionChoiceId) == true)
+            {
+                continue;
+            }
+
+            Dictionary<string, int> cost = use.Action.Json.GetProperty("cost")
+                .EnumerateObject()
+                .ToDictionary(entry => entry.Name, entry => entry.Value.GetInt32());
+            bool affordable = Affordable(actor, use.Action);
+            bool available = true;
+            if (affordable && use.Action.Json.TryGetProperty("available", out _))
+            {
+                try
+                {
+                    available = PreviewBoolean(use.Action, "$.available", new Scope(actor.Creature, null, use.Parameters)) is true;
+                }
+                catch (RuleFailure)
+                {
+                    available = false;
+                }
+            }
+
+            if (IsPureMoveAction(use.Action) && affordable && available && _field is not null && actor.Creature.Position is not null)
+            {
+                List<CombatMoveChoice> freeMoves = FreeMoveChoices(actor, use, preview: true);
+                if (freeMoves.Count > 0)
+                {
+                    includedUses.Add(index);
+                    actions.Add(new CombatActionChoice(
+                        actionChoiceId,
+                        use.Action.QualifiedId,
+                        use.Name,
+                        use.Spell?.QualifiedId,
+                        cost,
+                        [],
+                        [],
+                        TargetKind(use.Action),
+                        TargetMode(use.Action),
+                        null,
+                        null,
+                        IsMoveAction: true,
+                        FreeMoves: freeMoves,
+                        Range: null));
+                    continue;
+                }
+            }
+
+            if (!IsPureMoveAction(use.Action))
+            {
+                string reason = !affordable
+                    ? "Not enough actions remaining"
+                    : use.Spell is Definition spell && !actor.CanCast(spell)
+                        ? "No spell uses remaining"
+                        : !available
+                            ? "Condition prevents this action"
+                            : "No valid targets in range";
+                unavailable.Add(new CombatUnavailableAction(
+                    actionChoiceId,
+                    use.Action.QualifiedId,
+                    use.Name,
+                    use.Spell?.QualifiedId,
+                    cost,
+                    TargetKind(use.Action),
+                    PreviewRange(actor, use),
+                    reason));
+            }
         }
 
         return new CombatDecision(
@@ -867,7 +989,8 @@ public sealed partial class CombatRunner
             _round,
             actions,
             actions.SelectMany(action => action.Moves).Distinct().ToList(),
-            true);
+            true,
+            UnavailableActions: unavailable.Count > 0 ? unavailable : null);
     }
 
     private CombatTargetChoice ToTargetChoice(Combatant target)
@@ -970,6 +1093,103 @@ public sealed partial class CombatRunner
     }
 
     private static bool ActionHasMove(Definition action) => ContainsOperation(action.Json, "move");
+
+    /// <summary>
+    /// True for dedicated tactical movement actions (Stride, Close, Move, etc.) whose
+    /// sole effect is moving without a check, escape-only flee, damage, or healing.
+    /// </summary>
+    private static bool IsPureMoveAction(Definition action)
+    {
+        if (!ActionHasMove(action)
+            || action.Json.TryGetProperty("check", out _)
+            || action.Json.TryGetProperty("outcomes", out _)
+            || action.Json.TryGetProperty("save", out _))
+        {
+            return false;
+        }
+
+        if (!action.Json.TryGetProperty("always", out JsonElement always) || always.ValueKind != JsonValueKind.Array || always.GetArrayLength() != 1)
+        {
+            return false;
+        }
+
+        JsonElement op = always[0];
+        if (op.ValueKind != JsonValueKind.Object || !op.TryGetProperty("op", out JsonElement opName) || opName.GetString() != "move")
+        {
+            return false;
+        }
+
+        if (op.TryGetProperty("escape", out JsonElement esc) && esc.ValueKind == JsonValueKind.True)
+        {
+            return false;
+        }
+
+        // Keep away-only withdraw/flee actions distinct from general movement.
+        if (op.TryGetProperty("toward", out JsonElement toward) && toward.GetString() == "away")
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private List<CombatMoveChoice> FreeMoveChoices(Combatant actor, UseOption use, bool preview = false)
+    {
+        if (_field is null || actor.Creature.Position is not Cell start)
+        {
+            return [];
+        }
+
+        JsonElement? op = FindMoveOperation(use.Action.Json);
+        string? movePath = FindMovePath(use.Action.Json);
+        if (op is not JsonElement operation || string.IsNullOrEmpty(movePath) || !operation.TryGetProperty("distance", out _))
+        {
+            return [];
+        }
+
+        decimal? distance;
+        try
+        {
+            Scope scope = new(actor.Creature, null, use.Parameters);
+            distance = preview ? PreviewNumber(use.Action, $"{movePath}.distance", scope) : Number(use.Action, $"{movePath}.distance", scope);
+        }
+        catch (RuleFailure)
+        {
+            return [];
+        }
+
+        if (distance is not decimal knownDistance || knownDistance <= 0)
+        {
+            return [];
+        }
+
+        HashSet<Cell> blocked = BlockedCells(actor);
+        Dictionary<Cell, (int Cost, IReadOnlyList<Cell> Path)> paths = Reachable(actor, start, (int)Math.Floor(knownDistance), blocked);
+        return paths
+            .Where(entry => entry.Key != start)
+            .OrderBy(entry => entry.Value.Cost)
+            .ThenBy(entry => entry.Key.X)
+            .ThenBy(entry => entry.Key.Y)
+            .Select(entry => new CombatMoveChoice(entry.Key, entry.Value.Path, entry.Value.Cost))
+            .ToList();
+    }
+
+    private decimal? PreviewRange(Combatant actor, UseOption use)
+    {
+        if (!use.Action.Json.TryGetProperty("range", out _))
+        {
+            return null;
+        }
+
+        try
+        {
+            return PreviewNumber(use.Action, "$.range", new Scope(actor.Creature, null, use.Parameters));
+        }
+        catch (RuleFailure)
+        {
+            return null;
+        }
+    }
 
     private static bool ContainsOperation(JsonElement element, string name)
     {

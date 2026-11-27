@@ -339,6 +339,84 @@ public sealed class LiveGameCombatTests
         });
     }
 
+    [Fact]
+    public void FreeTacticalMovementAndCombatProjectionExposeGridWorldSpotsAndFeedbackEvents()
+    {
+        using TempModules scratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            string[] moduleIds = ["three-action", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
+            List<string> containers = moduleIds
+                .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+                .ToList();
+            GameSession session = new(new ModuleLibrary(_ => containers
+                .Select(path => ProductContentBundle.OpenContainer(engine.Content, path))
+                .ToList()));
+            session.Refresh();
+            Run(session, engine, JsonSerializer.Serialize(new
+            {
+                action = "open",
+                campaign = Assert.Single(session.Campaigns).Bundle,
+                seed = "42",
+            }));
+            Run(session, engine, JsonSerializer.Serialize(new
+            {
+                action = "roll",
+                name = "Ada",
+                creation = "three-action:standard",
+                race = "three-action:human",
+                @class = "three-action:fighter",
+                features = new[] { "three-action:versatile_human", "three-action:warrior", "three-action:vicious_swing" },
+                boosts = new[] { "str", "con", "str", "dex", "str", "str", "dex", "con", "wis" },
+            }));
+            Run(session, engine, """{ "action": "equip", "member": 0, "item": "three-action:longsword" }""");
+            Run(session, engine, """{ "action": "begin" }""");
+            Run(session, engine, """{ "action": "play", "command": "choose 2" }""");
+            Run(session, engine, """{ "action": "play", "command": "forward" }""");
+            Assert.Equal(Screen.Combat, session.Screen);
+
+            JsonObject fight = SessionProjection.Build(session)["fight"]!.AsObject();
+            Assert.Equal("tactical", fight["presentation"]!.GetValue<string>());
+            Assert.Equal(12, fight["field"]!["width"]!.GetValue<int>());
+            Assert.Equal(8, fight["field"]!["depth"]!.GetValue<int>());
+            Assert.NotEmpty(fight["field"]!["terrain"]!.AsArray());
+            Assert.True(fight["camera"]!["orthographic"]!.GetValue<bool>());
+            Assert.All(fight["members"]!.AsArray(), m => Assert.NotNull(m!["worldPos"]));
+
+            JsonObject decision = fight["decision"]!.AsObject();
+            string actorId = decision["actorId"]!.GetValue<string>();
+            JsonObject stride = decision["actions"]!.AsArray()
+                .Select(node => node!.AsObject())
+                .Single(choice => choice["isMove"]!.GetValue<bool>());
+            JsonArray freeMoves = stride["freeMoves"]!.AsArray();
+            Assert.True(freeMoves.Count >= 10, $"Expected many reachable tactical grid squares, got {freeMoves.Count}");
+            // Longsword should appear in unavailableActions when starting across the gallery from enemies.
+            Assert.NotNull(decision["unavailableActions"]);
+            Assert.Contains(decision["unavailableActions"]!.AsArray(), node => node!["name"]!.GetValue<string>().Contains("Longsword", StringComparison.OrdinalIgnoreCase));
+
+            // Pick a free destination cell not adjacent to any enemy and move directly there via GameCommands!
+            JsonObject moveOption = freeMoves.Last()!.AsObject();
+            int destX = moveOption["destination"]!["x"]!.GetValue<int>();
+            int destY = moveOption["destination"]!["y"]!.GetValue<int>();
+            Run(session, engine, JsonSerializer.Serialize(new
+            {
+                action = "combat-action",
+                actor = actorId,
+                choice = stride["id"]!.GetValue<string>(),
+                targets = Array.Empty<string>(),
+                path = moveOption["path"],
+            }));
+
+            JsonObject afterMove = SessionProjection.Build(session)["fight"]!.AsObject();
+            JsonObject movedActor = afterMove["members"]!.AsArray()
+                .Select(node => node!.AsObject())
+                .Single(m => m["id"]!.GetValue<string>() == actorId);
+            Assert.Equal(destX, movedActor["position"]!["x"]!.GetValue<int>());
+            Assert.Equal(destY, movedActor["position"]!["y"]!.GetValue<int>());
+        });
+    }
+
     private static void Run(GameSession session, IEngineContext engine, string payload)
     {
         using JsonDocument document = JsonDocument.Parse(payload);

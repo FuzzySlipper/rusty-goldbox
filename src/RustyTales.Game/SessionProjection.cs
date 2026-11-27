@@ -271,14 +271,49 @@ internal static partial class SessionProjection
             metadata[source.Id] = (source, index < pending.Members.Count ? pending.Members[index] : null);
         }
 
+        string presentation = session.CombatPresentation(pending.Combat);
+        CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
+        (int fieldWidth, int fieldDepth) = RustyTales.Game.Presentation.CombatScene.FieldSizeFor(presentation, observation, field);
+        Dictionary<string, System.Numerics.Vector3> worldSpots = RustyTales.Game.Presentation.CombatScene.WorldSpotsFor(presentation, observation, field);
+        string fieldMetric = pending.Combat.Json.TryGetProperty("field", out JsonElement fieldJson)
+            && fieldJson.TryGetProperty("metric", out JsonElement metricEl)
+            && metricEl.GetString() is string metricName
+            ? metricName
+            : "chebyshev";
         string? decisionActorId = observation.PendingDecision?.ActorId;
         string? turnActorId = observation.ActiveActorId;
         string? highlightedActorId = decisionActorId ?? turnActorId;
-        JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, observation, member, highlightedActorId, track, metadata, imageUrl)).ToArray());
+        JsonArray members = new(observation.Combatants.Select(member => LiveMember(session, observation, member, highlightedActorId, track, metadata, imageUrl, worldSpots)).ToArray());
         JsonObject fight = new()
         {
             ["encounter"] = pending.Encounter.Name,
-            ["presentation"] = session.CombatPresentation(pending.Combat),
+            ["presentation"] = presentation,
+            ["field"] = new JsonObject
+            {
+                ["width"] = fieldWidth,
+                ["depth"] = fieldDepth,
+                ["hasGrid"] = field is not null,
+                ["mode"] = field?.Zones == true ? "zones" : "grid",
+                ["metric"] = fieldMetric,
+                ["terrain"] = new JsonArray((field?.Terrain ?? new Dictionary<Cell, Terrain>())
+                    .Select(entry => (JsonNode)new JsonObject
+                    {
+                        ["x"] = entry.Key.X,
+                        ["y"] = entry.Key.Y,
+                        ["key"] = entry.Value.Key.ToString(),
+                        ["name"] = entry.Value.Name,
+                        ["passable"] = entry.Value.Passable,
+                        ["blocksSight"] = entry.Value.BlocksSight,
+                        ["cost"] = entry.Value.Cost,
+                    }).ToArray()),
+            },
+            ["camera"] = new JsonObject
+            {
+                ["orthographic"] = presentation == "tactical",
+                ["pitch"] = presentation == "tactical" ? RustyTales.Game.Presentation.CombatScene.TacticalPitch : presentation == "first_person" ? 4.0 : 12.0,
+                ["fov"] = presentation == "first_person" ? 36.0 : presentation == "side_view" ? 34.0 : 36.0,
+                ["fill"] = RustyTales.Game.Presentation.CombatScene.Fill,
+            },
             ["track"] = track.Name,
             ["trackId"] = track.QualifiedId,
             ["phase"] = observation.Phase.ToString().ToLowerInvariant(),
@@ -292,12 +327,182 @@ internal static partial class SessionProjection
             ["fledSide"] = observation.FledSide,
             ["members"] = members,
             ["decision"] = observation.PendingDecision is CombatDecision decision ? Decision(decision, rules) : null,
+            ["events"] = CombatFeedbackEvents(observation, track),
             ["log"] = Strings(observation.Facts.TakeLast(14).Select(fact => fact.Describe())),
         };
         return fight;
     }
 
-    private static JsonObject LiveMember(GameSession session, CombatObservation observation, CombatantObservation member, string? highlightedActorId, Definition track, Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata, Func<Definition, string?> imageUrl)
+    private static JsonArray CombatFeedbackEvents(CombatObservation observation, Definition primaryTrack)
+    {
+        List<JsonNode> events = [];
+        int total = observation.Facts.Count;
+        int start = Math.Max(0, total - 60);
+        string? recentCritTarget = null;
+        int recentCritIndex = -10;
+
+        for (int index = start; index < total; index++)
+        {
+            CombatFact fact = observation.Facts[index];
+            string desc = fact.Describe();
+            switch (fact.Kind)
+            {
+                case "check":
+                {
+                    string? targetId = fact.TargetIds.FirstOrDefault();
+                    bool isCrit = fact is CheckFact cf
+                        ? cf.Result.Tier == "critical_success"
+                        : desc.EndsWith(": critical_success.", StringComparison.Ordinal);
+                    bool isMiss = fact is CheckFact cf2
+                        ? !cf2.Result.Success
+                        : desc.EndsWith(": failure.", StringComparison.Ordinal) || desc.EndsWith(": critical_failure.", StringComparison.Ordinal);
+                    bool isCritFail = fact is CheckFact cf3
+                        ? cf3.Result.Tier == "critical_failure"
+                        : desc.EndsWith(": critical_failure.", StringComparison.Ordinal);
+                    if (isCrit)
+                    {
+                        recentCritTarget = targetId;
+                        recentCritIndex = index;
+                    }
+                    else if (isMiss && !string.IsNullOrEmpty(targetId))
+                    {
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = "miss",
+                            ["targetId"] = targetId,
+                            ["text"] = isCritFail ? "CRIT MISS" : "MISS",
+                        });
+                    }
+
+                    break;
+                }
+                case "damage":
+                {
+                    string? targetId = fact.SubjectIds.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(targetId))
+                    {
+                        decimal amount = fact is DamageFact df ? df.Amount : ParseFactAmount(desc, " loses ");
+                        bool isCrit = index - recentCritIndex <= 3 && (recentCritTarget is null || recentCritTarget == targetId);
+                        string suffix = fact is DamageFact df2
+                            ? (df2.Track.QualifiedId == primaryTrack.QualifiedId ? "" : $" {df2.Track.Name}")
+                            : "";
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = isCrit ? "crit" : "damage",
+                            ["targetId"] = targetId,
+                            ["amount"] = (double)amount,
+                            ["text"] = isCrit ? $"CRIT -{Number(amount)}{suffix}!" : $"-{Number(amount)}{suffix}",
+                        });
+                    }
+
+                    break;
+                }
+                case "heal":
+                {
+                    string? targetId = fact.SubjectIds.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(targetId))
+                    {
+                        decimal amount = fact is HealFact hf ? hf.Amount : ParseFactAmount(desc, " regains ");
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = "heal",
+                            ["targetId"] = targetId,
+                            ["amount"] = (double)amount,
+                            ["text"] = $"+{Number(amount)}",
+                        });
+                    }
+
+                    break;
+                }
+                case "condition_applied":
+                {
+                    string? targetId = fact.SubjectIds.FirstOrDefault();
+                    string condName = fact is ConditionFact cond ? cond.Condition : ParseConditionName(desc);
+                    if (!string.IsNullOrEmpty(targetId)
+                        && !string.IsNullOrEmpty(condName)
+                        && !string.Equals(condName, "hit", StringComparison.OrdinalIgnoreCase))
+                    {
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = "condition",
+                            ["targetId"] = targetId,
+                            ["text"] = $"+{condName}",
+                        });
+                    }
+
+                    break;
+                }
+                case "defeated":
+                {
+                    string? targetId = fact.SubjectIds.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(targetId))
+                    {
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = "defeated",
+                            ["targetId"] = targetId,
+                            ["text"] = "DOWN!",
+                        });
+                    }
+
+                    break;
+                }
+                case "escaped":
+                {
+                    string? targetId = fact.SubjectIds.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(targetId))
+                    {
+                        events.Add(new JsonObject
+                        {
+                            ["index"] = index,
+                            ["kind"] = "flee",
+                            ["targetId"] = targetId,
+                            ["text"] = "FLED",
+                        });
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return new JsonArray(events.ToArray());
+    }
+
+    private static decimal ParseFactAmount(string description, string marker)
+    {
+        int at = description.IndexOf(marker, StringComparison.Ordinal);
+        if (at < 0)
+        {
+            return 0;
+        }
+
+        string rest = description[(at + marker.Length)..];
+        int end = rest.IndexOf(' ');
+        string token = end >= 0 ? rest[..end] : rest.TrimEnd('.');
+        return decimal.TryParse(token, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out decimal value) ? value : 0;
+    }
+
+    private static string ParseConditionName(string description)
+    {
+        const string marker = " is ";
+        int at = description.IndexOf(marker, StringComparison.Ordinal);
+        if (at < 0)
+        {
+            return "";
+        }
+
+        string rest = description[(at + marker.Length)..].TrimEnd('.');
+        int forAt = rest.IndexOf(" for ", StringComparison.Ordinal);
+        return forAt >= 0 ? rest[..forAt] : rest;
+    }
+
+    private static JsonObject LiveMember(GameSession session, CombatObservation observation, CombatantObservation member, string? highlightedActorId, Definition track, Dictionary<string, (PendingCombatantSource Source, PendingFightMember? Member)> metadata, Func<Definition, string?> imageUrl, Dictionary<string, System.Numerics.Vector3> worldSpots)
     {
         RuleSet rules = session.Set!.Rules!;
         if (!metadata.TryGetValue(member.Id, out (PendingCombatantSource Source, PendingFightMember? Member) info))
@@ -329,6 +534,9 @@ internal static partial class SessionProjection
             ["max"] = info.Member?.Max is decimal maximum ? (double)maximum : null,
             ["budget"] = new JsonObject(member.Budget.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),
             ["position"] = member.Position is Cell position ? new JsonObject { ["x"] = position.X, ["y"] = position.Y } : null,
+            ["worldPos"] = worldSpots.TryGetValue(member.Id, out System.Numerics.Vector3 spot)
+                ? new JsonObject { ["x"] = Math.Round(spot.X, 4), ["y"] = Math.Round(spot.Y, 4), ["z"] = Math.Round(spot.Z, 4) }
+                : null,
             ["icon"] = icon?.QualifiedId,
             ["iconPicture"] = icon is null ? null : Picture(rules, icon, imageUrl),
             ["portraitPicture"] = portrait is null ? null : Picture(rules, portrait, imageUrl),
@@ -344,6 +552,19 @@ internal static partial class SessionProjection
             ["actorId"] = decision.ActorId,
             ["round"] = decision.Round,
             ["actions"] = new JsonArray(decision.Actions.Select(choice => ActionChoice(choice, rules)).ToArray()),
+            ["unavailableActions"] = decision.UnavailableActions is null
+                ? null
+                : new JsonArray(decision.UnavailableActions.Select(u => (JsonNode)new JsonObject
+                {
+                    ["id"] = u.Id,
+                    ["actionId"] = u.ActionId,
+                    ["name"] = u.Name,
+                    ["spellId"] = u.SpellId,
+                    ["cost"] = new JsonObject(u.Cost.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)entry.Value))),
+                    ["targetKind"] = u.TargetKind,
+                    ["range"] = u.Range is decimal r ? (double)r : null,
+                    ["reason"] = u.Reason,
+                }).ToArray()),
             ["moves"] = new JsonArray(decision.Moves.Select(MoveChoice).ToArray()),
             ["canEndTurn"] = decision.CanEndTurn,
             ["operationOwner"] = decision.OperationOwner,
@@ -381,6 +602,8 @@ internal static partial class SessionProjection
             ["targetKind"] = choice.TargetKind,
             ["targetMode"] = choice.TargetMode,
             ["portionCount"] = choice.PortionCount,
+            ["isMove"] = choice.IsMoveAction,
+            ["range"] = choice.Range is decimal rangeValue ? (double)rangeValue : null,
             ["targets"] = new JsonArray(choice.Targets.Select(target => new JsonObject
             {
                 ["id"] = target.Id, ["name"] = target.Name, ["side"] = target.Side,
@@ -390,6 +613,7 @@ internal static partial class SessionProjection
                 ["position"] = target.Position is Cell position ? new JsonObject { ["x"] = position.X, ["y"] = position.Y } : null,
             }).ToArray()),
             ["moves"] = new JsonArray(choice.Moves.Select(MoveChoice).ToArray()),
+            ["freeMoves"] = choice.FreeMoves is null ? null : new JsonArray(choice.FreeMoves.Select(MoveChoice).ToArray()),
         };
     }
 

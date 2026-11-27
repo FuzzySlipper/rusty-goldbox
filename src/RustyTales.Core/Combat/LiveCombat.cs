@@ -70,7 +70,21 @@ public sealed record CombatActionChoice(
     string? TargetKind = null,
     string TargetMode = "one",
     int? PortionCount = null,
-    IReadOnlyDictionary<string, decimal>? SpellCosts = null);
+    IReadOnlyDictionary<string, decimal>? SpellCosts = null,
+    bool IsMoveAction = false,
+    IReadOnlyList<CombatMoveChoice>? FreeMoves = null,
+    decimal? Range = null);
+
+/// <summary>An action owned by the active actor that is currently unavailable (out of range, unaffordable, etc.).</summary>
+public sealed record CombatUnavailableAction(
+    string Id,
+    string ActionId,
+    string Name,
+    string? SpellId,
+    IReadOnlyDictionary<string, int> Cost,
+    string? TargetKind,
+    decimal? Range,
+    string Reason);
 
 /// <summary>The decision currently required from a controller.</summary>
 public sealed record CombatDecision(
@@ -87,7 +101,8 @@ public sealed record CombatDecision(
     CombatInterruptState? Interrupt = null,
     CombatCheckState? Check = null,
     string? ActionId = null,
-    int? MaximumTargets = null);
+    int? MaximumTargets = null,
+    IReadOnlyList<CombatUnavailableAction>? UnavailableActions = null);
 
 /// <summary>
 /// One legal choice for an interrupt or other non-action decision. The

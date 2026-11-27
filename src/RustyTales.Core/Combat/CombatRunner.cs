@@ -941,7 +941,7 @@ public sealed partial class CombatRunner
             Path = path,
             Scope = scope,
             Actor = actor,
-            Target = target,
+            Target = target ?? actor,
             Source = source,
             UseId = _actionContinuation is null ? parent?.UseId : UseId(_actionContinuation.Actor, _actionContinuation.Use),
             ActionId = _actionContinuation?.Use.Action.QualifiedId ?? parent?.ActionId,
@@ -1340,7 +1340,7 @@ public sealed partial class CombatRunner
             Path = path,
             Scope = scope,
             Actor = actor,
-            Target = target,
+            Target = target ?? actor,
             Start = start,
             Here = start,
             Allowed = allowed,
@@ -1371,7 +1371,14 @@ public sealed partial class CombatRunner
         Combatant? target,
         IReadOnlyList<Cell> selected)
     {
-        if (_field is null || selected.Count == 0 || actor.Creature.Position is not Cell start || target?.Creature.Position is not Cell goal || target == actor)
+        if (_field is null || selected.Count == 0 || actor.Creature.Position is not Cell start)
+        {
+            return;
+        }
+
+        // Free destination moves target the actor itself (or null); target-bound moves require a positioned target.
+        bool freeDestination = target is null || target == actor;
+        if (!freeDestination && target!.Creature.Position is null)
         {
             return;
         }
@@ -1389,7 +1396,7 @@ public sealed partial class CombatRunner
             Path = path,
             Scope = scope,
             Actor = actor,
-            Target = target,
+            Target = target ?? actor,
             Start = start,
             Here = start,
             Allowed = allowed,

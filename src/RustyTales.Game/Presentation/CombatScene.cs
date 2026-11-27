@@ -76,7 +76,98 @@ internal sealed class CombatScene : IDisposable
     };
 
     /// <summary>How much of the viewport the tactical orthographic room fills, leaving a slim margin on every side.</summary>
-    private const double Fill = 0.94;
+    public const double Fill = 0.94;
+
+    /// <summary>Board dimensions used for <paramref name="presentation"/>.</summary>
+    public static (int Width, int Depth) FieldSizeFor(string presentation, CombatObservation observation, CombatField? field) => presentation switch
+    {
+        "first_person" => (FirstPersonWidth, FirstPersonDepth),
+        "side_view" => (SideViewWidth, SideViewDepth),
+        _ => field is not null
+            ? (field.Width, field.Height)
+            : FallbackSize(observation.Combatants.Select(member => member.Side).ToList()),
+    };
+
+    /// <summary>
+    /// Computes the exact 3D ground position of every combatant in the given
+    /// <paramref name="presentation"/> so the DOM overlay can project hitboxes
+    /// and floating combat text pixel-aligned with the 3D figures.
+    /// </summary>
+    public static Dictionary<string, Vector3> WorldSpotsFor(string presentation, CombatObservation observation, CombatField? field)
+    {
+        (int width, int depth) = FieldSizeFor(presentation, observation, field);
+        Dictionary<string, Vector3> spots = new(StringComparer.Ordinal);
+        if (presentation == "first_person")
+        {
+            List<CombatantObservation> foes = observation.Combatants.Where(member => member.Side != 0).ToList();
+            int frontCount = Math.Min(foes.Count, 4);
+            int backCount = Math.Max(0, foes.Count - frontCount);
+            for (int index = 0; index < foes.Count; index++)
+            {
+                CombatantObservation member = foes[index];
+                bool back = index >= frontCount;
+                int rowIndex = back ? index - frontCount : index;
+                int rowSize = back ? backCount : frontCount;
+                float spacing = rowSize <= 2 ? 1.05f : 0.88f;
+                float startX = (width / 2f) - ((rowSize - 1) * spacing / 2f);
+                float x = startX + (rowIndex * spacing) + (back ? 0.2f : 0f);
+                float z = back ? 1.95f : 2.65f;
+                spots[member.Id] = new Vector3(x, 0, z);
+            }
+
+            return spots;
+        }
+
+        if (presentation == "side_view")
+        {
+            static void PlaceColumn(List<CombatantObservation> members, int d, float baseX, float rankStep, float staggerX, Dictionary<string, Vector3> output)
+            {
+                int perRank = Math.Max(1, Math.Min(4, members.Count));
+                for (int index = 0; index < members.Count; index++)
+                {
+                    CombatantObservation member = members[index];
+                    int rank = index / perRank;
+                    int slot = index % perRank;
+                    int countInRank = Math.Min(perRank, members.Count - (rank * perRank));
+                    float zSpan = countInRank <= 1 ? 0f : Math.Min(1.22f, (countInRank - 1) * 0.42f);
+                    float z = (d * 0.55f) - (zSpan / 2f) + (countInRank <= 1 ? 0f : slot * (zSpan / (countInRank - 1)));
+                    float x = baseX + (rank * rankStep) + (slot * staggerX);
+                    output[member.Id] = new Vector3(x, 0, z);
+                }
+            }
+
+            PlaceColumn(observation.Combatants.Where(member => member.Side == 0).ToList(), depth, baseX: 3.12f, rankStep: 0.56f, staggerX: 0.24f, spots);
+            PlaceColumn(observation.Combatants.Where(member => member.Side != 0).ToList(), depth, baseX: 1.72f, rankStep: -0.56f, staggerX: -0.22f, spots);
+            return spots;
+        }
+
+        foreach (IGrouping<int, CombatantObservation> side in observation.Combatants.GroupBy(member => member.Side))
+        {
+            List<CombatantObservation> members = side.ToList();
+            int slots = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(members.Count)));
+            int rows = Math.Max(1, depth - 2);
+            slots = Math.Min(slots, rows);
+            int rowOffset = Math.Max(0, (rows - slots) / 2);
+            for (int index = 0; index < members.Count; index++)
+            {
+                CombatantObservation member = members[index];
+                bool left = side.Key == 0;
+                int rank = index / slots;
+                int row = index % slots;
+                float x = left ? 1f + rank : width - 1f - rank;
+                float z = 1f + rowOffset + row;
+                if (member.Position is Cell cell)
+                {
+                    x = cell.X + 0.5f;
+                    z = cell.Y + 0.5f;
+                }
+
+                spots[member.Id] = new Vector3(x, 0, z);
+            }
+        }
+
+        return spots;
+    }
 
     /// <summary>Where the camera stands for the current fight in a view of the given width-to-height <paramref name="aspect"/>.</summary>
     public CameraPose PoseIn(double aspect) => _presentation switch
