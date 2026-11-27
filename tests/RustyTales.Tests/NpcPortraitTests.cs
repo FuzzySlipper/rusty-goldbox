@@ -8,6 +8,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class NpcPortraitTests
@@ -103,7 +105,7 @@ public sealed class NpcPortraitTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            PartyFact joined = Assert.Single(runner.Begin(engine.Random).OfType<PartyFact>());
+            PartyFact joined = Assert.Single(runner.Begin(new EngineRandom(engine.Random)).OfType<PartyFact>());
             Assert.True(joined.Joined);
             Character npc = Assert.Single(runner.State.Party.Skip(1));
             Assert.Equal("tale:guide", npc.Npc!.QualifiedId);

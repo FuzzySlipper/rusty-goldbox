@@ -1,26 +1,26 @@
 $ tales character new --module tests/RustyTales.Tests/Fixtures/ascend --class warrior --race stoneborn --name Kara --priority might,grit,grace,wit --feature iron_will,weapon_focus --seed 5 --out kara.json
 Kara: Stoneborn Warrior 1 (0 xp, next level at 1000)
   hit points 13/13
-  gold 110
+  gold 100
   features: Iron will (feat), Weapon focus (combat feat)
-  might            15     Might
-  grace            8      Grace
+  might            18     Might
+  grace            11     Grace
   grit             16     Grit
-  wit              6      Wit
-  ac               9      Armour class (higher is better)
+  wit              9      Wit
+  ac               10     Armour class (higher is better)
   attack_bonus     1      Base attack bonus (each class adds its own)
   fort_base        2      Base Fortitude save (each class adds its own)
-  grace_mod        -1     Grace modifier
+  grace_mod        0      Grace modifier
   grit_mod         3      Grit modifier
-  initiative_bonus -1     Initiative bonus
-  might_mod        2      Might modifier
+  initiative_bonus 0      Initiative bonus
+  might_mod        4      Might modifier
   reflex_base      0      Base Reflex save (each class adds its own)
-  save_dc          8      Difficulty class of the creature's hexes
+  save_dc          9      Difficulty class of the creature's hexes
   speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
-  wit_mod          -2     Wit modifier
+  wit_mod          -1     Wit modifier
 Saved to kara.json.
-  seed 5: 4d6 keep 3: 2+1+2+2 = 6; 4d6 keep 3: 6+3+6+3 = 15; 4d6 keep 3: 4+2+4+1 = 10; 4d6 keep 3: 4+4+4+6 = 14; 4d4: 4+1+2+4 = 11
+  seed 5: 4d6 keep 3: 2+6+1+6 = 14; 4d6 keep 3: 5+2+5+3 = 13; 4d6 keep 3: 6+6+5+6 = 18; 4d6 keep 3: 1+1+4+4 = 9; 4d4: 3+2+3+2 = 10
 [exit 0]
 
 $ tales character level kara.json --module tests/RustyTales.Tests/Fixtures/ascend --xp 3500 --seed 8
@@ -36,37 +36,37 @@ error[character.feature] kara.json
 [exit 1]
 
 $ tales character level kara.json --module tests/RustyTales.Tests/Fixtures/ascend --xp 3500 --feature improved_initiative,lightning_reflexes --seed 8
-Reached level 2: +4 hit points.
-Reached level 3: +8 hit points.
+Reached level 2: +6 hit points.
+Reached level 3: +13 hit points.
 Kara: Stoneborn Warrior 3 (3500 xp, next level at 6000)
-  hit points 25/25
-  gold 110
+  hit points 32/32
+  gold 100
   features: Iron will (feat), Weapon focus (combat feat), Improved initiative (combat feat), Lightning reflexes (feat)
-  might            15     Might
-  grace            8      Grace
+  might            18     Might
+  grace            11     Grace
   grit             16     Grit
-  wit              6      Wit
-  ac               9      Armour class (higher is better)
+  wit              9      Wit
+  ac               10     Armour class (higher is better)
   attack_bonus     3      Base attack bonus (each class adds its own)
   fort_base        3      Base Fortitude save (each class adds its own)
-  grace_mod        -1     Grace modifier
+  grace_mod        0      Grace modifier
   grit_mod         3      Grit modifier
-  initiative_bonus 3      Initiative bonus
-  might_mod        2      Might modifier
+  initiative_bonus 4      Initiative bonus
+  might_mod        4      Might modifier
   reflex_base      3      Base Reflex save (each class adds its own)
-  save_dc          9      Difficulty class of the creature's hexes
+  save_dc          10     Difficulty class of the creature's hexes
   speed            30     Speed in feet
   will_base        1      Base Will save (each class adds its own)
-  wit_mod          -2     Wit modifier
+  wit_mod          -1     Wit modifier
 Saved to kara.json.
-  seed 8: 1d10: 1 = 1; 1d10: 5 = 5
+  seed 8: 1d10: 3 = 3; 1d10: 10 = 10
 [exit 0]
 
 $ tales character level kara.json --module tests/RustyTales.Tests/Fixtures/ascend --xp 3000 --class adept --seed 9
 error[character.race] ascend tests/RustyTales.Tests/Fixtures/ascend/races/stoneborn.json $.classes
   ascend:stoneborn can't take the class ascend:adept. Its classes: warrior.
 error[character.class] ascend tests/RustyTales.Tests/Fixtures/ascend/classes/adept.json $.requirements.wit
-  ascend:adept needs wit 10 or more, but it is 6.
+  ascend:adept needs wit 10 or more, but it is 9.
 2 errors.
 [exit 1]
 
@@ -79,7 +79,7 @@ error[character.point-buy] ascend tests/RustyTales.Tests/Fixtures/ascend/creatio
 $ tales character new --module tests/RustyTales.Tests/Fixtures/ascend --creation point_buy --class warrior --race folk --name Pell --attributes might=16,grace=14,grit=12,wit=10 --feature iron_will,improved_initiative
 Pell: Folk Warrior 1 (0 xp, next level at 1000)
   hit points 11/11
-  gold 90
+  gold 80
   features: Iron will (feat), Improved initiative (combat feat)
   might            16     Might
   grace            14     Grace
@@ -97,13 +97,13 @@ Pell: Folk Warrior 1 (0 xp, next level at 1000)
   speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
   wit_mod          0      Wit modifier
-  seed 1: 4d4: 1+3+3+2 = 9
+  seed 1: 4d4: 2+4+1+1 = 8
 [exit 0]
 
 $ tales character new --module tests/RustyTales.Tests/Fixtures/ascend --creation array --class warrior --race folk --name Quill --priority might,grit,grace,wit --feature iron_will,improved_initiative
 Quill: Folk Warrior 1 (0 xp, next level at 1000)
   hit points 12/12
-  gold 90
+  gold 80
   features: Iron will (feat), Improved initiative (combat feat)
   might            15     Might
   grace            13     Grace
@@ -121,7 +121,7 @@ Quill: Folk Warrior 1 (0 xp, next level at 1000)
   speed            30     Speed in feet
   will_base        0      Base Will save (each class adds its own)
   wit_mod          1      Wit modifier
-  seed 1: 4d4: 1+3+3+2 = 9
+  seed 1: 4d4: 2+4+1+1 = 8
 [exit 0]
 
 $ tales character new --module tests/RustyTales.Tests/Fixtures/ascend --class adept --race folk --name Ilse --attributes might=9,grace=12,grit=10,wit=16 --feature iron_will --out ilse.json
@@ -148,14 +148,14 @@ Ilse: Folk Adept 1 (0 xp, next level at 1000)
   will_base        2      Base Will save (each class adds its own)
   wit_mod          3      Wit modifier
 Saved to ilse.json.
-  seed 1: 3d4: 1+3+3 = 7
+  seed 1: 3d4: 2+4+1 = 7
 [exit 0]
 
 $ tales character level ilse.json --module tests/RustyTales.Tests/Fixtures/ascend --xp 1000 --class warrior --feature improved_initiative --seed 4
-Reached level 2 (Warrior 1): +1 hit points.
+Reached level 2 (Warrior 1): +10 hit points.
 Ilse: Folk Adept 1 / Warrior 1 (level 2, 1000 xp, next level at 3000)
   1st circle slots 1/1
-  hit points 7/7
+  hit points 16/16
   gold 70
   features: Iron will (feat), Improved initiative (combat feat)
   Adept spells per day by spell level: 1
@@ -176,7 +176,7 @@ Ilse: Folk Adept 1 / Warrior 1 (level 2, 1000 xp, next level at 3000)
   will_base        2      Base Will save (each class adds its own)
   wit_mod          3      Wit modifier
 Saved to ilse.json.
-  seed 4: 1d10: 1 = 1
+  seed 4: 1d10: 10 = 10
 [exit 0]
 
 $ tales character show ilse.json --module tests/RustyTales.Tests/Fixtures/ascend --json
@@ -204,7 +204,7 @@ $ tales character show ilse.json --module tests/RustyTales.Tests/Fixtures/ascend
       },
       {
         "class": "ascend:warrior",
-        "gain": 1,
+        "gain": 10,
         "features": [
           "ascend:improved_initiative"
         ]
@@ -219,8 +219,8 @@ $ tales character show ilse.json --module tests/RustyTales.Tests/Fixtures/ascend
     },
     "tracks": {
       "hit_points": {
-        "current": 7,
-        "max": 7
+        "current": 16,
+        "max": 16
       },
       "arcana_1": {
         "current": 1
@@ -369,8 +369,8 @@ $ tales character show ilse.json --module tests/RustyTales.Tests/Fixtures/ascend
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 7,
-      "max": 7,
+      "current": 16,
+      "max": 16,
       "problem": null
     }
   ],

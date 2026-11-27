@@ -10,6 +10,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class ConsumableItemTests
@@ -37,8 +39,8 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            List<PlayFact> facts = runner.Execute($"use 1 {item.QualifiedId}", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> facts = runner.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random));
             Assert.Single(facts.OfType<ItemUseFact>());
             SceneHealFact healing = Assert.Single(facts.OfType<SceneHealFact>());
             Assert.Equal(1, healing.Amount);
@@ -54,7 +56,7 @@ public sealed class ConsumableItemTests
             Assert.Empty(saveProblems);
             Assert.Single(restored.Inventory);
             CampaignRunner resumed = new(set.Rules, restored);
-            List<PlayFact> second = resumed.Execute($"use 1 {item.QualifiedId}", engine.Random);
+            List<PlayFact> second = resumed.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random));
             Assert.Single(second.OfType<ItemUseFact>());
             Assert.Empty(restored.Inventory);
         });
@@ -81,8 +83,8 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            List<PlayFact> used = runner.Execute($"use 1 {item.QualifiedId}", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> used = runner.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random));
             Assert.Contains(used, fact => fact is SceneConditionFact { Applied: true });
             Assert.Contains(condition, party[0].Conditions);
             Assert.Equal(1, party[0].ConditionExpiryDays[condition]);
@@ -97,7 +99,7 @@ public sealed class ConsumableItemTests
             Assert.Equal(1, restored.Party[0].ConditionExpiryDays[condition]);
 
             CampaignRunner resumed = new(set.Rules, restored);
-            List<PlayFact> rested = resumed.Execute("forward", engine.Random);
+            List<PlayFact> rested = resumed.Execute("forward", new EngineRandom(engine.Random));
             Assert.Equal(1, resumed.State.ElapsedDays);
             Assert.DoesNotContain(condition, resumed.State.Party[0].Conditions);
             Assert.Contains(rested, fact => fact is SceneConditionFact { Applied: false, Condition: "Ready" or "Prone" });
@@ -124,12 +126,12 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            Assert.Contains(runner.Execute("use 1 rules:draught", engine.Random), fact => fact is SceneConditionFact { Applied: true });
+            runner.Begin(new EngineRandom(engine.Random));
+            Assert.Contains(runner.Execute("use 1 rules:draught", new EngineRandom(engine.Random)), fact => fact is SceneConditionFact { Applied: true });
             Assert.Equal(1, party[0].ConditionExpiryDays[condition]);
 
             state.PendingTemple = temple;
-            List<PlayFact> facts = runner.Execute("serve 1 1", engine.Random);
+            List<PlayFact> facts = runner.Execute("serve 1 1", new EngineRandom(engine.Random));
             Assert.Contains(facts, fact => fact is TextFact { Text: "A receives Cure for 1 gold." });
             Assert.DoesNotContain(condition, party[0].Conditions);
             Assert.DoesNotContain(condition, party[0].ConditionExpiryDays.Keys);
@@ -208,11 +210,11 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            Assert.Contains(runner.Execute("use 1 tale:draught", engine.Random), fact => fact is SceneConditionFact { Applied: true });
+            runner.Begin(new EngineRandom(engine.Random));
+            Assert.Contains(runner.Execute("use 1 tale:draught", new EngineRandom(engine.Random)), fact => fact is SceneConditionFact { Applied: true });
             Assert.Equal(20, party[0].ConditionExpiryDays[condition]);
 
-            List<PlayFact> facts = runner.Execute("forward", engine.Random);
+            List<PlayFact> facts = runner.Execute("forward", new EngineRandom(engine.Random));
             Assert.Contains(facts, fact => fact is FightFact);
             Assert.DoesNotContain(condition, party[0].Conditions);
             Assert.DoesNotContain(condition, party[0].ConditionExpiryDays.Keys);
@@ -238,21 +240,21 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            AssertRefused(runner.Execute($"use 0 {item.QualifiedId}", engine.Random), "party member");
+            runner.Begin(new EngineRandom(engine.Random));
+            AssertRefused(runner.Execute($"use 0 {item.QualifiedId}", new EngineRandom(engine.Random)), "party member");
             Assert.Single(state.Inventory);
-            AssertRefused(runner.Execute("use 1 camp:missing", engine.Random), "missing");
+            AssertRefused(runner.Execute("use 1 camp:missing", new EngineRandom(engine.Random)), "missing");
             Assert.Single(state.Inventory);
 
             Definition tool = set.Rules.Find(DefinitionTypes.Item, "camp:tool", out _)
                 ?? set.Rules.Find(DefinitionTypes.Item, "fifth-srd:dagger", out _)!;
             party[0].Equipment.Add(tool);
-            AssertRefused(runner.Execute($"use 1 {tool.QualifiedId}", engine.Random), "inventory");
+            AssertRefused(runner.Execute($"use 1 {tool.QualifiedId}", new EngineRandom(engine.Random)), "inventory");
             Assert.Single(party[0].Equipment);
 
             Definition wait = set.Rules.Find(DefinitionTypes.Event, "camp:wait", out _)!;
             state.PendingMenu = wait;
-            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", engine.Random), "choose");
+            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random)), "choose");
             state.PendingMenu = null;
 
             state.PendingCombat = new PendingCombatState
@@ -262,11 +264,11 @@ public sealed class ConsumableItemTests
                 Combat = set.Rules.Find(DefinitionTypes.Combat, "fifth-srd:standard", out _)!,
                 Continuation = new CombatContinuationState(),
             };
-            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", engine.Random), "combat");
+            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random)), "combat");
             state.PendingCombat = null;
 
             state.Ended = true;
-            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", engine.Random), "ended");
+            AssertRefused(runner.Execute($"use 1 {item.QualifiedId}", new EngineRandom(engine.Random)), "ended");
             Assert.Single(state.Inventory);
         });
     }
@@ -317,8 +319,8 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("use 1 rules:runtime_bad", engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("use 1 rules:runtime_bad", new EngineRandom(engine.Random)));
             Assert.Equal("$.use.operations[0].amount", failure.Diagnostic.JsonPath);
             Assert.Equal(Path.Combine(modules.Root, "rules/runtime_bad.json"), failure.Diagnostic.File);
         });
@@ -344,8 +346,8 @@ public sealed class ConsumableItemTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("use 1 rules:negative_duration", engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("use 1 rules:negative_duration", new EngineRandom(engine.Random)));
             Assert.Equal("$.use.duration_days", failure.Diagnostic.JsonPath);
             Assert.Single(state.Inventory);
             Assert.Empty(party[0].Conditions);
@@ -445,7 +447,8 @@ public sealed class ConsumableItemTests
         List<Character> party = [];
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9395, "consumable.fifth"));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9395, "consumable.fifth");
             Character? character = CharacterRules.Create(
                 set.Rules!,
                 Character.StampsOf(set),
@@ -455,7 +458,7 @@ public sealed class ConsumableItemTests
                     "human",
                     Attributes: new Dictionary<string, decimal> { ["str"] = 12, ["dex"] = 12, ["con"] = 14, ["int"] = 10, ["wis"] = 10, ["cha"] = 10 },
                     Features: ["soldier", "savage_attacker", "defense"]),
-                new DiceRoller(engine.Random, stream),
+                new DiceRoller(streamRandom, stream),
                 []);
             Assert.NotNull(character);
             party.Add(character!);

@@ -6,6 +6,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class TempleTests
@@ -26,30 +28,30 @@ public sealed class TempleTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.IsType<TempleFact>(runner.Begin(engine.Random).Last());
+            Assert.IsType<TempleFact>(runner.Begin(new EngineRandom(engine.Random)).Last());
             foreach (string command in new[] { "forward", "serve 0 1", "serve 1 0", "serve 5 1", "buy 1" })
             {
-                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, new EngineRandom(engine.Random))));
             }
 
             party.ForEach(character => character.Balances["gold"] = 0);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("serve 1 2", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("serve 1 2", new EngineRandom(engine.Random))));
             Assert.Equal(1, party[1].Tracks["hit_points"].Current);
             party[0].Balances["gold"] = 1;
             party[1].Balances["gold"] = 1;
-            runner.Execute("serve 1 2", engine.Random);
+            runner.Execute("serve 1 2", new EngineRandom(engine.Random));
             Assert.Equal(0, party[0].Balances["gold"]);
             Assert.Equal(0, party[1].Balances["gold"]);
             Assert.Equal(party[1].Tracks["hit_points"].Max, party[1].Tracks["hit_points"].Current);
             Assert.Equal(0, party[0].Tracks["hit_points"].Current);
-            runner.Execute("serve 2 2", engine.Random);
+            runner.Execute("serve 2 2", new EngineRandom(engine.Random));
             Assert.Empty(party[1].Conditions);
             List<ModuleDiagnostic> problems = [];
             CampaignState restored = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
             Assert.Empty(problems);
             Assert.Equal("shrine", restored.PendingTemple!.Id);
             Assert.Empty(restored.Party[1].Conditions);
-            Assert.Contains(new CampaignRunner(set.Rules, restored).Execute("leave", engine.Random), fact => fact is TextFact { Text: "Safe travels." });
+            Assert.Contains(new CampaignRunner(set.Rules, restored).Execute("leave", new EngineRandom(engine.Random)), fact => fact is TextFact { Text: "Safe travels." });
         });
     }
 
@@ -72,10 +74,10 @@ public sealed class TempleTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             decimal before = party.Sum(member => member.Balances["gold"]);
             Assert.Equal(4, runner.Temple()!.Services[0].Prices[0]);
-            List<PlayFact> facts = runner.Execute("serve 1 1", engine.Random);
+            List<PlayFact> facts = runner.Execute("serve 1 1", new EngineRandom(engine.Random));
             Assert.Contains(facts, fact => fact is TextFact { Text: "A receives Mend the party for 4 gold." });
             Assert.Equal(before - 4, party.Sum(member => member.Balances["gold"]));
             Assert.Equal(3, party[0].Tracks["hit_points"].Current);

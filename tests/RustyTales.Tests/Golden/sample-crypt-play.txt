@@ -61,67 +61,41 @@ seed 1
 > forward
   The party moves to [3, 2], facing south.
   [music placeholder-art:battle_music]
-    Party is surprised for 1 round.  [1d6: 1 = 1]
     Round 1.
-    Party rolls 2 for initiative.  [1d6: 2 = 2]
-    Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
+    Party rolls 4 for initiative.  [1d6: 4 = 4]
+    Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
     Skeleton 1 uses claw (charging) on Ada.
     Skeleton 1 moves 8 cells to (1, 2).
     Skeleton 1 is Winded for 10 rounds.
-    Skeleton 1 rolls Melee attack: 15 + 2 modifiers = 17 against 15: success.  [1d20: 15 = 15]
-    Ada loses 3 hit points (7 left).  [1d6: 3 = 3]
+    Skeleton 1 rolls Melee attack: 10 + 2 modifiers = 12 against 15: failure.  [1d20: 10 = 10]
     Skeleton 2 uses claw (charging) on Ada.
     Skeleton 2 moves 8 cells to (1, 3).
     Skeleton 2 is Winded for 10 rounds.
     Skeleton 2 rolls Melee attack: 17 + 2 modifiers = 19 against 15: success.  [1d20: 17 = 17]
-    Ada loses 3 hit points (4 left).  [1d6: 3 = 3]
-    Ada doesn't act (surprised).
-    Brom doesn't act (surprised).
-    Round 2.
-    Party rolls 3 for initiative.  [1d6: 3 = 3]
-    Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-    Skeleton 1 uses claw on Ada.
-    Skeleton 1 rolls Melee attack: 15 against 15: success.  [1d20: 15 = 15]
-    Ada loses 3 hit points (1 left).  [1d6: 3 = 3]
-    Skeleton 2 uses claw on Ada.
-    Skeleton 2 rolls Melee attack: 10 against 15: failure.  [1d20: 10 = 10]
+    Ada loses 6 hit points (1 left).  [1d6: 6 = 6]
     Ada uses Melee attack (Long sword) on Skeleton 1.
-    Ada rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
-    Skeleton 1 loses 7 hit points (-6 left).  [1d8: 6 = 6]
+    Ada rolls Melee attack: 19 against 13: success.  [1d20: 19 = 19]
+    Skeleton 1 loses 6 hit points (-3 left).  [1d8: 5 = 5]
     Skeleton 1 is out of the fight.
     Brom uses Cure light wounds on Ada.
     Brom spends 1 1st level spells (0 left).
-    Ada regains 8 hit points (9).  [1d8: 8 = 8]
-    Round 3.
-    Party rolls 3 for initiative.  [1d6: 3 = 3]
-    Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-    Skeleton 2 uses claw on Brom.
-    Skeleton 2 rolls Melee attack: 4 against 14: failure.  [1d20: 4 = 4]
+    Ada regains 3 hit points (4).  [1d8: 3 = 3]
+    Round 2.
+    Party rolls 1 for initiative.  [1d6: 1 = 1]
+    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
+    Skeleton 2 uses claw on Ada.
+    Skeleton 2 rolls Melee attack: 18 against 15: success.  [1d20: 18 = 18]
+    Ada loses 3 hit points (1 left).  [1d6: 3 = 3]
     Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 11 against 13: failure.  [1d20: 11 = 11]
-    Brom uses Melee attack (Heavy mace) on Skeleton 2.
-    Brom rolls Melee attack: 6 against 13: failure.  [1d20: 6 = 6]
-    Round 4.
-    Party rolls 6 for initiative.  [1d6: 6 = 6]
-    Crypt guard rolls 6 for initiative.  [1d6: 6 = 6]
-    Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 12 against 13: failure.  [1d20: 12 = 12]
+    Ada rolls Melee attack: 5 against 13: failure.  [1d20: 5 = 5]
     Brom uses Melee attack (Heavy mace) on Skeleton 2.
     Brom rolls Melee attack: 13 against 13: success.  [1d20: 13 = 13]
-    Skeleton 2 loses 2 hit points (3 left).  [1d6: 1 = 1]
-    Skeleton 2 uses claw on Brom.
-    Skeleton 2 rolls Melee attack: 7 against 14: failure.  [1d20: 7 = 7]
-    Round 5.
-    Party rolls 3 for initiative.  [1d6: 3 = 3]
-    Crypt guard rolls 1 for initiative.  [1d6: 1 = 1]
-    Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 20 against 13: success.  [1d20: 20 = 20]
-    Skeleton 2 loses 7 hit points (-4 left).  [1d8: 6 = 6]
+    Skeleton 2 loses 6 hit points (-2 left).  [1d6: 5 = 5]
     Skeleton 2 is out of the fight.
-    Party wins after 5 rounds.
+    Party wins after 2 rounds.
   Combat with Crypt guard: the party wins.
   Experience: Ada 14, Brom 14.
-  The party finds 110 gold.  [2d6: 5+6 = 11]
+  The party finds 50 gold.  [2d6: 4+1 = 5]
   The party receives 1 × Dagger.
   guards_defeated is now true.
   In the quiet guardroom you bind your wounds and pray.
@@ -130,7 +104,7 @@ seed 1
   Brom recovers 0 hit points.
   The rattling stops. A draught rises from somewhere to the west.
 > status
-  Ada (hit points 10/10, 14 xp) | Brom (hit points 4/4, 1st level spells 1/1, 14 xp) | gold 195 + 165 | carrying Dagger
+  Ada (hit points 2/7, 14 xp) | Brom (hit points 5/5, 1st level spells 1/1, 14 xp) | gold 185 + 95 | carrying Dagger
 > around
   The party faces north.
 > forward
@@ -155,13 +129,13 @@ seed 1
   The party faces east.
 > forward
   The party moves to [1, 2], facing east.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 360 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 280 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > buy 1
   The party buys Dagger for 2 gold.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 358 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Dagger 1 gold  [3] Long sword (Ada) 7.5 gold  [4] Chain mail (Ada) 37.5 gold  [5] Shield (Ada) 6 gold  [6] Heavy mace (Brom) 5 gold  [7] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 278 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Dagger 1 gold  [3] Long sword (Ada) 7.5 gold  [4] Chain mail (Ada) 37.5 gold  [5] Shield (Ada) 6 gold  [6] Heavy mace (Brom) 5 gold  [7] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > sell 1
   The party sells Dagger for 1 gold.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 359 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 279 gold. Buy: [1] Dagger 2 gold  [2] Long sword 15 gold. Sell: [1] Dagger 1 gold  [2] Long sword (Ada) 7.5 gold  [3] Chain mail (Ada) 37.5 gold  [4] Shield (Ada) 6 gold  [5] Heavy mace (Brom) 5 gold  [6] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
@@ -209,12 +183,12 @@ seed 1
   The party faces east.
 > forward
   The party moves to [1, 2], facing east.
-  A travelling outfitter offers supplies by the crypt gate. Balances: 250 gold. Buy: [1] Dagger 2 gold. Sell: [1] Long sword (Ada) 7.5 gold  [2] Chain mail (Ada) 37.5 gold  [3] Shield (Ada) 6 gold  [4] Heavy mace (Brom) 5 gold  [5] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
+  A travelling outfitter offers supplies by the crypt gate. Balances: 230 gold. Buy: [1] Dagger 2 gold. Sell: [1] Long sword (Ada) 7.5 gold  [2] Chain mail (Ada) 37.5 gold  [3] Shield (Ada) 6 gold  [4] Heavy mace (Brom) 5 gold  [5] Chain mail (Brom) 37.5 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > serve 1 1
-  Ada receives Healing for 5 gold.  [1d8: 3 = 3]
+  Ada receives Healing for 5 gold.  [1d8: 6 = 6]
   The gate shrine offers healing to travellers. [1] Healing: member 1 5 gold, member 2 5 gold. Commands: serve <service> <member>, leave.
 > leave
   The party leaves the temple.

@@ -43,9 +43,9 @@ using the CLI**, not someone working in a visual editor. So:
 
 | Path | Owns |
 | --- | --- |
-| `src/RustyTales.Core/` | Module format and loading, expressions, operations, ruleset interpretation, characters, combat, campaign/event runtime and save data. No host or UI code. |
-| `src/RustyTales.Cli/` | `tales` commands. Thin: parse arguments, call Core, print results. No rules logic. |
-| `src/RustyTales.Game/` | The Engine product: module bundles, Engine update/input, persistence and projections over Core. |
+| `src/RustyTales.Core/` | Pure-.NET module format and loading, expressions, operations, ruleset interpretation, deterministic RNG (`DeterministicRandom`), characters/stable, combat, campaign/event runtime and persistence seams (`IStateStore`, `SaveSlots`, `CharacterStableStore`). Zero `Rusty.Engine`, host or UI dependency. |
+| `src/RustyTales.Cli/` | `tales` commands. Thin: parse arguments, call Core, print results. No rules logic. Uses Core's `DeterministicRandom.Shared` directly; keeps a small `EngineBridge` strictly for `.rpak` container reads and Engine `--store` save slots (until standalone `.rpak` support lands in `rusty-engine` #11155). |
+| `src/RustyTales.Game/` | The Engine product: thin Engine adapters (`EngineAdapters.cs`), module bundles, Engine update/input, persistence and projections over Core. |
 | `src/ui/` | DOM companion. Observes projections and submits intents; it owns no game state. |
 | `modules/<id>/` | First-party module sources, each with `module.json`, provenance and, for adapted content, its licence. |
 | `tests/` | Focused checks and golden transcripts. |
@@ -56,9 +56,10 @@ containers, persistence primitives, UI transport and host integration. Search
 the safe SDK before adding a mechanism. The SDK generates the bind entry point
 and interop under ignored `obj/`, and product code stays safe C#.
 
-There is one Engine-admitted update path. Don't add another loop, clock,
-scheduler, renderer or state authority. All randomness goes through Engine
-`Random` with an explicit seed.
+There is one Engine-admitted update path in `RustyTales.Game`. Don't add another loop, clock,
+scheduler, renderer or state authority. All gameplay randomness goes through Core's
+`ITalesRandom` (`DeterministicRandom.Shared`) with an explicit seed so the CLI,
+desktop Game and any future web client produce identical seeded rolls and saves.
 
 ## Module rules
 
@@ -129,20 +130,33 @@ tasks in the `rusty-goldbox` Den project, not here.
 
 Engine mechanisms this product relies on:
 
-- **Engine services in the CLI.** `RustyTales.Cli` sets
-  `RustyEngineToolHost`, so `EngineTestHost.Create()` gives `tales` the
-  product's in-process service set (no renderer, input or lifecycle). Seeded
-  `Random` draws match the running product's. Don't substitute a local RNG.
+- **Pure Core with thin host adapters.** `RustyTales.Core` has no `Rusty.Engine`
+  reference; it exposes `ITalesRandom` (with pure-C# `DeterministicRandom.Shared`),
+  `IModuleContainerOpener`, and `IStateStore` (with `FileStateStore`). Both the
+  CLI and `RustyTales.Game` use `DeterministicRandom.Shared` for gameplay dice so
+  seeded runs, saves and live combat continuations match across hosts.
+- **Engine services in the CLI.** `RustyTales.Cli` sets `RustyEngineToolHost`
+  only for `.rpak` container reads (`CliContainerOpener`) and `--store` Engine
+  save slots (`CliEngineStateStore`) via `EngineBridge.cs`, pending upstream
+  standalone `.rpak` tooling (`rusty-engine` #11155). Directory-based runs,
+  `tales character`, `tales sim`, and file-backed `tales play` run purely in
+  .NET without starting `EngineTestHost`.
 - **Module bundles and containers.** The Game's content root is `modules/`,
   one `RustyEngineContentBundle` per module directory, opened with
   `Content.OpenBundle`. `tales module pack` packs one module with the
   pinned pair's `rusty pack-content`; `ProductContentBundle.OpenContainer`
-  opens an installed one (`InstalledModules`) as a bundle. Core reads either through `BundleModuleSource`, and a module's
+  opens an installed one (`InstalledModules`) as a bundle. Core reads either
+  through host `ModuleSource` / `IModuleContainerOpener` adapters
+  (`BundleModuleSource` in `RustyTales.Game/EngineAdapters.cs` and
+  `CliBundleModuleSource` in `RustyTales.Cli/EngineBridge.cs`), and a module's
   content identity is the Engine's bundle identity. Don't write a local
   container format, archive reader or second identity hash.
-- **Persistence.** Saves are `SaveSlots` over `ProductStateStore` in the
-  Engine persistence root; the CLI reaches the same slots through the tool
-  host's `PersistenceRoot`. Don't write save files from the Game.
+- **Persistence.** Saves (`SaveSlots`) and the ruleset-bound character stable
+  (`CharacterStableStore`) operate over Core's `IStateStore`. The Game backs
+  them with `EngineStateStore` (`ProductStateStore` in the Engine persistence
+  root); the CLI reaches the same Engine slots through `--store`
+  (`CliEngineStateStore`) and standalone callers can use `FileStateStore`. Don't
+  write raw save files from the Game.
 
 ## Verification
 

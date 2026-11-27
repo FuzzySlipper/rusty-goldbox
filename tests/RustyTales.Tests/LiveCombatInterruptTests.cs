@@ -5,6 +5,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -876,8 +878,9 @@ public sealed class LiveCombatInterruptTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "live-combat-interrupt-tests"));
-            work(new DiceRoller(engine.Random, stream));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "live-combat-interrupt-tests");
+            work(new DiceRoller(streamRandom, stream));
         });
     }
 

@@ -6,6 +6,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class NpcTests
@@ -22,8 +24,8 @@ public sealed class NpcTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            List<PlayFact> recruited = runner.Execute("choose 1", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> recruited = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Contains(recruited, fact => fact is PartyFact { Joined: true });
             Assert.Contains(recruited, fact => fact is PerceptionFact { Scope: "brugh-entry", Mode: "truth" });
             PerceptionFact guidePerception = Assert.Single(recruited.OfType<PerceptionFact>(), fact => fact.Who == "Guide");
@@ -34,14 +36,14 @@ public sealed class NpcTests
             guide.Balances["gold"] = 0;
             guide.Tracks["hit_points"].Current = 1;
             guide.Equipment.Add(set.Rules.Find(DefinitionTypes.Item, "tool", out _)!);
-            Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is RefusedFact);
+            Assert.Contains(runner.Execute("choose 1", new EngineRandom(engine.Random)), fact => fact is RefusedFact);
             Assert.Equal(2, runner.State.Party.Count);
             List<ModuleDiagnostic> problems = [];
             CampaignState restored = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
             Assert.Empty(problems);
             Assert.Equal("tale:guide", restored.Party[1].Npc!.QualifiedId);
             runner = new(set.Rules, restored);
-            runner.Execute("choose 2", engine.Random);
+            runner.Execute("choose 2", new EngineRandom(engine.Random));
             Assert.Single(runner.State.Party);
             Assert.Single(runner.State.AbsentNpcs);
             restored = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
@@ -49,7 +51,7 @@ public sealed class NpcTests
             runner = new(set.Rules, restored);
             guide = Assert.Single(restored.AbsentNpcs);
             Assert.Equal(new PerceptionState("brugh-entry", "truth"), guide.Perception);
-            List<PlayFact> rejoined = runner.Execute("choose 1", engine.Random);
+            List<PlayFact> rejoined = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.DoesNotContain(rejoined, fact => fact is PerceptionFact);
             Assert.Same(guide, restored.Party[1]);
             Assert.Empty(restored.AbsentNpcs);
@@ -71,14 +73,14 @@ public sealed class NpcTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is RefusedFact);
-            Assert.Contains(runner.Execute("choose 2", engine.Random), fact => fact is RefusedFact);
+            runner.Begin(new EngineRandom(engine.Random));
+            Assert.Contains(runner.Execute("choose 1", new EngineRandom(engine.Random)), fact => fact is RefusedFact);
+            Assert.Contains(runner.Execute("choose 2", new EngineRandom(engine.Random)), fact => fact is RefusedFact);
             Assert.Equal(2, runner.State.Party.Count);
             runner.State.Party.RemoveAt(1);
-            runner.Execute("choose 1", engine.Random);
+            runner.Execute("choose 1", new EngineRandom(engine.Random));
             runner.State.Party.RemoveAt(0);
-            Assert.Contains(runner.Execute("choose 2", engine.Random), fact => fact is RefusedFact);
+            Assert.Contains(runner.Execute("choose 2", new EngineRandom(engine.Random)), fact => fact is RefusedFact);
             Assert.Single(runner.State.Party);
             Assert.Empty(runner.State.AbsentNpcs);
         });
@@ -100,7 +102,7 @@ public sealed class NpcTests
         var party = ShopTests.Party(modules, campaign, set).Take(1).ToList();
         CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!, party, 1));
         using EngineTestHost host = EngineTestHost.Create();
-        host.Call(engine => { runner.Begin(engine.Random); runner.Execute("choose 1", engine.Random); });
+        host.Call(engine => { runner.Begin(new EngineRandom(engine.Random)); runner.Execute("choose 1", new EngineRandom(engine.Random)); });
         JsonObject saved = JsonNode.Parse(SaveFile.ToJson(runner.State, set))!.AsObject();
         saved["absent_npcs"]!.AsArray().Add(saved["party"]![1]!.DeepClone());
         List<ModuleDiagnostic> problems = [];

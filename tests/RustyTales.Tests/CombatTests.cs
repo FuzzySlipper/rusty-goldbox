@@ -10,6 +10,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -1398,8 +1400,9 @@ public sealed class CombatTests
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "tests"));
-            return work(new DiceRoller(engine.Random, stream));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "tests");
+            return work(new DiceRoller(streamRandom, stream));
         });
     }
 }

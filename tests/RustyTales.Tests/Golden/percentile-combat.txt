@@ -1,162 +1,207 @@
 $ tales sim combat --module tests/RustyTales.Tests/Fixtures/percentile --party sten.json --encounter wolves --seed 13
 seed 13
+Party is surprised for 1 round.  [1d100: 98 = 98]
 Round 1.
-  Sten rolls 22 for initiative.  [1d10: 9 = 9]
-  Wolf 1 rolls 15 for initiative.  [1d10: 1 = 1]
-  Wolf 2 rolls 19 for initiative.  [1d10: 5 = 5]
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 53 against 51: failure.  [1d100: 53 = 53]
-  Sten loses 3 fatigue (12 left).
-  Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 16 against 53: success.  [1d100: 16 = 16]
-  Sten rolls Parry: 22 against 41: success.  [1d100: 22 = 22]
-  Sten loses 1 hit points (24 left).
+  Sten rolls 17 for initiative.  [1d10: 4 = 4]
+  Wolf 1 rolls 17 for initiative.  [1d10: 3 = 3]
+  Wolf 2 rolls 17 for initiative.  [1d10: 3 = 3]
+  Sten doesn't act (surprised).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 49 against 53: success.  [1d100: 49 = 49]
-  Sten rolls Parry: 74 against 21: failure.  [1d100: 74 = 74]
-  Sten loses 5 hit points (19 left).  [1d6: 5 = 5]
+  Wolf 1 rolls Strike: 71 against 53: failure.  [1d100: 71 = 71]
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 60 against 53: failure.  [1d100: 60 = 60]
 Round 2.
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 88 against 51: failure.  [1d100: 88 = 88]
-  Sten loses 3 fatigue (9 left).
-  Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 45 against 53: success.  [1d100: 45 = 45]
-  Sten rolls Parry: 91 against 41: failure.  [1d100: 91 = 91]
-  Sten loses 6 hit points (13 left).  [1d6: 6 = 6]
+  Sten uses Power strike (Sword) on Wolf 2.
+  Sten rolls Strike: 64 against 51: failure.  [1d100: 64 = 64]
+  Sten loses 3 fatigue (12 left).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 36 against 53: success.  [1d100: 36 = 36]
-  Sten rolls Parry: 9 against 21: success.  [1d100: 9 = 9]
-  Sten loses 0 hit points (13 left).
+  Wolf 1 rolls Strike: 22 against 53: success.  [1d100: 22 = 22]
+  Sten rolls Parry: 30 against 41: success.  [1d100: 30 = 30]
+  Sten loses 2 hit points (23 left).
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 4 against 53: special.  [1d100: 4 = 4]
+  Sten loses 4 hit points (19 left).  [1d6: 2 = 2]
 Round 3.
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 32 against 51: success.  [1d100: 32 = 32]
-  Wolf 1 rolls Parry: 46 against 43: failure.  [1d100: 46 = 46]
-  Wolf 1 loses 7 hit points (1 left).  [1d8: 2 = 2]
-  Sten loses 3 fatigue (6 left).
-  Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 94 against 53: failure.  [1d100: 94 = 94]
+  Sten uses Power strike (Sword) on Wolf 2.
+  Sten rolls Strike: 72 against 51: failure.  [1d100: 72 = 72]
+  Sten loses 3 fatigue (9 left).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 58 against 53: failure.  [1d100: 58 = 58]
+  Wolf 1 rolls Strike: 51 against 53: success.  [1d100: 51 = 51]
+  Sten rolls Parry: 16 against 41: success.  [1d100: 16 = 16]
+  Sten loses 0 hit points (19 left).
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 46 against 53: success.  [1d100: 46 = 46]
+  Sten rolls Parry: 58 against 21: failure.  [1d100: 58 = 58]
+  Sten loses 4 hit points (15 left).  [1d6: 4 = 4]
 Round 4.
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 85 against 51: failure.  [1d100: 85 = 85]
-  Sten loses 3 fatigue (3 left).
-  Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 97 against 53: fumble.  [1d100: 97 = 97]
-  Wolf 2 is Off balance for 1 round.
+  Sten uses Power strike (Sword) on Wolf 2.
+  Sten rolls Strike: 99 against 51: fumble.  [1d100: 99 = 99]
+  Sten is Off balance for 1 round.
+  Sten loses 3 fatigue (6 left).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 90 against 53: failure.  [1d100: 90 = 90]
+  Wolf 1 rolls Strike: 14 against 53: success.  [1d100: 14 = 14]
+  Sten rolls Parry: 29 against 41: success.  [1d100: 29 = 29]
+  Sten loses 2 hit points (13 left).
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 18 against 53: success.  [1d100: 18 = 18]
+  Sten rolls Parry: 94 against 21: failure.  [1d100: 94 = 94]
+  Sten loses 6 hit points (7 left).  [1d6: 6 = 6]
 Round 5.
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 39 against 51: success.  [1d100: 39 = 39]
-  Wolf 1 rolls Parry: 61 against 43: failure.  [1d100: 61 = 61]
-  Wolf 1 loses 11 hit points (-10 left).  [1d8: 6 = 6]
-  Wolf 1 is out of the fight.
-  Sten loses 3 fatigue (0 left).
-  Wolf 2 doesn't act (off balance).
-  Wolf 2 is no longer Off balance.
+  Sten doesn't act (off balance).
+  Sten is no longer Off balance.
+  Wolf 1 uses Bite on Sten.
+  Wolf 1 rolls Strike: 21 against 53: success.  [1d100: 21 = 21]
+  Sten rolls Parry: 13 against 41: success.  [1d100: 13 = 13]
+  Sten loses 0 hit points (7 left).
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 39 against 53: success.  [1d100: 39 = 39]
+  Sten rolls Parry: 2 against 21: success.  [1d100: 2 = 2]
+  Sten loses 0 hit points (7 left).
 Round 6.
-  Sten uses Strike (Sword) on Wolf 2.
-  Sten rolls Strike: 35 against 51: success.  [1d100: 35 = 35]
-  Wolf 2 rolls Parry: 27 against 43: success.  [1d100: 27 = 27]
-  Wolf 2 loses 0 hit points (15 left).
+  Sten uses Power strike (Sword) on Wolf 2.
+  Sten rolls Strike: 21 against 51: success.  [1d100: 21 = 21]
+  Wolf 2 rolls Parry: 4 against 43: success.  [1d100: 4 = 4]
+  Wolf 2 loses 0 hit points (10 left).
+  Sten loses 3 fatigue (3 left).
+  Wolf 1 uses Bite on Sten.
+  Wolf 1 rolls Strike: 46 against 53: success.  [1d100: 46 = 46]
+  Sten rolls Parry: 47 against 41: failure.  [1d100: 47 = 47]
+  Sten loses 6 hit points (1 left).  [1d6: 6 = 6]
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 12 against 53: success.  [1d100: 12 = 12]
-  Sten rolls Parry: 39 against 41: success.  [1d100: 39 = 39]
-  Sten loses 3 hit points (10 left).
+  Wolf 2 rolls Strike: 81 against 53: failure.  [1d100: 81 = 81]
 Round 7.
-  Sten uses Strike (Sword) on Wolf 2.
-  Sten rolls Strike: 24 against 51: success.  [1d100: 24 = 24]
-  Wolf 2 rolls Parry: 62 against 43: failure.  [1d100: 62 = 62]
-  Wolf 2 loses 10 hit points (5 left).  [1d8: 8 = 8]
+  Sten uses Power strike (Sword) on Wolf 2.
+  Sten rolls Strike: 69 against 51: failure.  [1d100: 69 = 69]
+  Sten loses 3 fatigue (0 left).
+  Wolf 1 uses Bite on Sten.
+  Wolf 1 rolls Strike: 100 against 53: fumble.  [1d100: 100 = 100]
+  Wolf 1 is Off balance for 1 round.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 16 against 53: success.  [1d100: 16 = 16]
-  Sten rolls Parry: 53 against 41: failure.  [1d100: 53 = 53]
-  Sten loses 2 hit points (8 left).  [1d6: 2 = 2]
+  Wolf 2 rolls Strike: 57 against 53: failure.  [1d100: 57 = 57]
 Round 8.
   Sten uses Strike (Sword) on Wolf 2.
-  Sten rolls Strike: 86 against 51: failure.  [1d100: 86 = 86]
+  Sten rolls Strike: 80 against 51: failure.  [1d100: 80 = 80]
+  Wolf 1 doesn't act (off balance).
+  Wolf 1 is no longer Off balance.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 84 against 53: failure.  [1d100: 84 = 84]
+  Wolf 2 rolls Strike: 27 against 53: success.  [1d100: 27 = 27]
+  Sten rolls Parry: 17 against 41: success.  [1d100: 17 = 17]
+  Sten loses 0 hit points (1 left).
 Round 9.
   Sten uses Strike (Sword) on Wolf 2.
-  Sten rolls Strike: 28 against 51: success.  [1d100: 28 = 28]
-  Wolf 2 rolls Parry: 65 against 43: failure.  [1d100: 65 = 65]
-  Wolf 2 loses 7 hit points (-2 left).  [1d8: 5 = 5]
-  Wolf 2 is out of the fight.
-Party wins after 9 rounds.
-Party: Sten 8/25
-Wolves: Wolf 1 -10/8 (out), Wolf 2 -2/15 (out)
+  Sten rolls Strike: 12 against 51: success.  [1d100: 12 = 12]
+  Wolf 2 rolls Parry: 91 against 43: failure.  [1d100: 91 = 91]
+  Wolf 2 loses 7 hit points (3 left).  [1d8: 5 = 5]
+  Wolf 1 uses Bite on Sten.
+  Wolf 1 rolls Strike: 53 against 53: success.  [1d100: 53 = 53]
+  Sten rolls Parry: 6 against 41: success.  [1d100: 6 = 6]
+  Sten loses 0 hit points (1 left).
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 44 against 53: success.  [1d100: 44 = 44]
+  Sten rolls Parry: 73 against 21: failure.  [1d100: 73 = 73]
+  Sten loses 6 hit points (-5 left).  [1d6: 6 = 6]
+  Sten is out of the fight.
+Wolves wins after 9 rounds.
+Party: Sten -5/25 (out)
+Wolves: Wolf 1 12/12, Wolf 2 3/10
 [exit 0]
 
 $ tales sim combat --module tests/RustyTales.Tests/Fixtures/percentile --party sten.json --encounter wolves --seed 2
 seed 2
+Party is surprised for 1 round.  [1d100: 71 = 71]
+Wolves is surprised for 1 round.  [1d100: 88 = 88]
 Round 1.
-  Sten rolls 20 for initiative.  [1d10: 7 = 7]
+  Sten rolls 15 for initiative.  [1d10: 2 = 2]
   Wolf 1 rolls 21 for initiative.  [1d10: 7 = 7]
-  Wolf 2 rolls 22 for initiative.  [1d10: 8 = 8]
-  Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 100 against 53: fumble.  [1d100: 100 = 100]
-  Wolf 2 is Off balance for 1 round.
-  Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 30 against 53: success.  [1d100: 30 = 30]
-  Sten rolls Parry: 87 against 41: failure.  [1d100: 87 = 87]
-  Sten loses 6 hit points (19 left).  [1d6: 6 = 6]
-  Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 76 against 51: failure.  [1d100: 76 = 76]
-  Sten loses 3 fatigue (12 left).
+  Wolf 2 rolls 24 for initiative.  [1d10: 10 = 10]
+  Wolf 2 doesn't act (surprised).
+  Wolf 1 doesn't act (surprised).
+  Sten doesn't act (surprised).
 Round 2.
-  Wolf 2 doesn't act (off balance).
-  Wolf 2 is no longer Off balance.
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 29 against 53: success.  [1d100: 29 = 29]
+  Sten rolls Parry: 27 against 41: success.  [1d100: 27 = 27]
+  Sten loses 1 hit points (24 left).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 23 against 53: success.  [1d100: 23 = 23]
-  Sten rolls Parry: 59 against 41: failure.  [1d100: 59 = 59]
-  Sten loses 1 hit points (18 left).  [1d6: 1 = 1]
+  Wolf 1 rolls Strike: 82 against 53: failure.  [1d100: 82 = 82]
   Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 51 against 51: success.  [1d100: 51 = 51]
-  Wolf 1 rolls Parry: 39 against 43: success.  [1d100: 39 = 39]
-  Wolf 1 loses 0 hit points (10 left).
-  Sten loses 3 fatigue (9 left).
+  Sten rolls Strike: 56 against 51: failure.  [1d100: 56 = 56]
+  Sten loses 3 fatigue (12 left).
 Round 3.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 18 against 53: success.  [1d100: 18 = 18]
-  Sten rolls Parry: 69 against 41: failure.  [1d100: 69 = 69]
-  Sten loses 4 hit points (14 left).  [1d6: 4 = 4]
+  Wolf 2 rolls Strike: 54 against 53: failure.  [1d100: 54 = 54]
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 22 against 53: success.  [1d100: 22 = 22]
-  Sten rolls Parry: 91 against 21: failure.  [1d100: 91 = 91]
-  Sten loses 2 hit points (12 left).  [1d6: 2 = 2]
+  Wolf 1 rolls Strike: 95 against 53: failure.  [1d100: 95 = 95]
   Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 70 against 51: failure.  [1d100: 70 = 70]
-  Sten loses 3 fatigue (6 left).
+  Sten rolls Strike: 80 against 51: failure.  [1d100: 80 = 80]
+  Sten loses 3 fatigue (9 left).
 Round 4.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 6 against 53: special.  [1d100: 6 = 6]
-  Sten loses 2 hit points (10 left).  [1d6: 1 = 1]
+  Wolf 2 rolls Strike: 11 against 53: success.  [1d100: 11 = 11]
+  Sten rolls Parry: 40 against 41: success.  [1d100: 40 = 40]
+  Sten loses 4 hit points (20 left).
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 92 against 53: failure.  [1d100: 92 = 92]
+  Wolf 1 rolls Strike: 56 against 53: failure.  [1d100: 56 = 56]
   Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 57 against 51: failure.  [1d100: 57 = 57]
-  Sten loses 3 fatigue (3 left).
+  Sten rolls Strike: 14 against 51: success.  [1d100: 14 = 14]
+  Wolf 1 rolls Parry: 15 against 43: success.  [1d100: 15 = 15]
+  Wolf 1 loses 0 hit points (8 left).
+  Sten loses 3 fatigue (6 left).
 Round 5.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 41 against 53: success.  [1d100: 41 = 41]
-  Sten rolls Parry: 54 against 41: failure.  [1d100: 54 = 54]
-  Sten loses 6 hit points (4 left).  [1d6: 6 = 6]
+  Wolf 2 rolls Strike: 65 against 53: failure.  [1d100: 65 = 65]
   Wolf 1 uses Bite on Sten.
-  Wolf 1 rolls Strike: 80 against 53: failure.  [1d100: 80 = 80]
+  Wolf 1 rolls Strike: 15 against 53: success.  [1d100: 15 = 15]
+  Sten rolls Parry: 79 against 41: failure.  [1d100: 79 = 79]
+  Sten loses 2 hit points (18 left).  [1d6: 2 = 2]
   Sten uses Power strike (Sword) on Wolf 1.
-  Sten rolls Strike: 86 against 51: failure.  [1d100: 86 = 86]
-  Sten loses 3 fatigue (0 left).
+  Sten rolls Strike: 53 against 51: failure.  [1d100: 53 = 53]
+  Sten loses 3 fatigue (3 left).
 Round 6.
   Wolf 2 uses Bite on Sten.
-  Wolf 2 rolls Strike: 53 against 53: success.  [1d100: 53 = 53]
-  Sten rolls Parry: 71 against 41: failure.  [1d100: 71 = 71]
-  Sten loses 4 hit points (0 left).  [1d6: 4 = 4]
+  Wolf 2 rolls Strike: 5 against 53: special.  [1d100: 5 = 5]
+  Sten loses 2 hit points (16 left).  [1d6: 1 = 1]
+  Wolf 1 uses Bite on Sten.
+  Wolf 1 rolls Strike: 87 against 53: failure.  [1d100: 87 = 87]
+  Sten uses Power strike (Sword) on Wolf 1.
+  Sten rolls Strike: 2 against 51: special.  [1d100: 2 = 2]
+  Wolf 1 loses 17 hit points (-9 left).  [1d8: 6 = 6]
+  Wolf 1 is out of the fight.
+  Sten loses 3 fatigue (0 left).
+Round 7.
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 44 against 53: success.  [1d100: 44 = 44]
+  Sten rolls Parry: 43 against 41: failure.  [1d100: 43 = 43]
+  Sten loses 5 hit points (11 left).  [1d6: 5 = 5]
+  Sten uses Strike (Sword) on Wolf 2.
+  Sten rolls Strike: 63 against 51: failure.  [1d100: 63 = 63]
+Round 8.
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 49 against 53: success.  [1d100: 49 = 49]
+  Sten rolls Parry: 51 against 41: failure.  [1d100: 51 = 51]
+  Sten loses 6 hit points (5 left).  [1d6: 6 = 6]
+  Sten uses Strike (Sword) on Wolf 2.
+  Sten rolls Strike: 41 against 51: success.  [1d100: 41 = 41]
+  Wolf 2 rolls Parry: 7 against 43: success.  [1d100: 7 = 7]
+  Wolf 2 loses 0 hit points (12 left).
+Round 9.
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 17 against 53: success.  [1d100: 17 = 17]
+  Sten rolls Parry: 98 against 41: failure.  [1d100: 98 = 98]
+  Sten loses 1 hit points (4 left).  [1d6: 1 = 1]
+  Sten uses Strike (Sword) on Wolf 2.
+  Sten rolls Strike: 23 against 51: success.  [1d100: 23 = 23]
+  Wolf 2 rolls Parry: 19 against 43: success.  [1d100: 19 = 19]
+  Wolf 2 loses 0 hit points (12 left).
+Round 10.
+  Wolf 2 uses Bite on Sten.
+  Wolf 2 rolls Strike: 22 against 53: success.  [1d100: 22 = 22]
+  Sten rolls Parry: 61 against 41: failure.  [1d100: 61 = 61]
+  Sten loses 6 hit points (-2 left).  [1d6: 6 = 6]
   Sten is out of the fight.
-Wolves wins after 6 rounds.
-Party: Sten 0/25 (out)
-Wolves: Wolf 1 10/10, Wolf 2 11/11
+Wolves wins after 10 rounds.
+Party: Sten -2/25 (out)
+Wolves: Wolf 1 -9/8 (out), Wolf 2 12/12
 [exit 0]
 
 $ tales sim combat --module tests/RustyTales.Tests/Fixtures/percentile --party sten.json --encounter wolves --seed 13 --runs 100 --json
@@ -165,17 +210,17 @@ $ tales sim combat --module tests/RustyTales.Tests/Fixtures/percentile --party s
   "seed": 13,
   "runs": 100,
   "wins": {
-    "Party": 59,
-    "Wolves": 41
+    "Party": 62,
+    "Wolves": 38
   },
   "undecided": 0,
   "rounds": {
-    "min": 3,
-    "mean": 8.69,
-    "max": 23
+    "min": 2,
+    "mean": 7.68,
+    "max": 19
   },
   "party_survival": {
-    "Sten": 59
+    "Sten": 62
   }
 }
 [exit 0]

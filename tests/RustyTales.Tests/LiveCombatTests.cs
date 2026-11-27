@@ -6,6 +6,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>Focused checks for the resumable live combat owner.</summary>
@@ -698,8 +700,9 @@ public sealed class LiveCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "live-combat-tests"));
-            work(new DiceRoller(engine.Random, stream));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "live-combat-tests");
+            work(new DiceRoller(streamRandom, stream));
         });
     }
 }

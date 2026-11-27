@@ -9,6 +9,8 @@ using RustyTales.Core.Expressions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class ShopTests
@@ -25,45 +27,45 @@ public sealed class ShopTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             ShopFact shop = runner.Shop()!;
             Assert.Equal("tool", Assert.Single(shop.Stock).Item.Id);
             Assert.Equal(3.5m, shop.Stock[0].Price);
             foreach (string command in new[] { "forward", "choose 1", "buy 0", "buy 2", "sell 1", "buy nope" })
             {
-                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, new EngineRandom(engine.Random))));
             }
 
             runner.State.Variables["licensed"] = Value.Of(true);
             Assert.Equal(2, runner.Shop()!.Stock.Count);
             party[0].Balances["gold"] = 1;
             party[1].Balances["gold"] = 2.5m;
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 2", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 2", new EngineRandom(engine.Random))));
             Assert.Empty(runner.State.Inventory);
             Assert.Equal([1m, 2.5m], party.Select(member => member.Balances["gold"]));
 
-            runner.Execute("buy 1", engine.Random);
+            runner.Execute("buy 1", new EngineRandom(engine.Random));
             Assert.Equal([0m, 0m], party.Select(member => member.Balances["gold"]));
             Definition tool = Assert.Single(runner.State.Inventory);
             // Duplicate items are separate copies; selling one leaves the other and the worn one.
             runner.State.Inventory.Add(tool);
             party[1].Equipment.Add(tool);
             Assert.Equal([0.875m, 0.875m, 0.875m], runner.Shop()!.Carried.Select(offer => offer.Price));
-            runner.Execute("sell 2", engine.Random);
+            runner.Execute("sell 2", new EngineRandom(engine.Random));
             Assert.Single(runner.State.Inventory);
             Assert.Single(party[1].Equipment);
             Assert.Equal([0.875m, 0m], party.Select(member => member.Balances["gold"]));
             Assert.Equal("B", runner.Shop()!.Carried[1].Holder);
-            runner.Execute("sell 2", engine.Random);
+            runner.Execute("sell 2", new EngineRandom(engine.Random));
             Assert.Empty(party[1].Equipment);
             Assert.Single(runner.State.Inventory);
 
-            Assert.Contains(runner.Execute("leave", engine.Random), fact => fact is TextFact { Text: "Safe travels." });
+            Assert.Contains(runner.Execute("leave", new EngineRandom(engine.Random)), fact => fact is TextFact { Text: "Safe travels." });
             Assert.Null(runner.State.PendingShop);
-            Assert.IsType<MovedFact>(Assert.Single(runner.Execute("forward", engine.Random)));
+            Assert.IsType<MovedFact>(Assert.Single(runner.Execute("forward", new EngineRandom(engine.Random))));
             foreach (string command in new[] { "buy 1", "sell 1", "leave" })
             {
-                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+                Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, new EngineRandom(engine.Random))));
             }
         });
     }
@@ -151,12 +153,12 @@ public sealed class ShopTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             Assert.Empty(runner.Shop()!.Stock);
             Assert.Equal(0, Assert.Single(runner.Shop()!.Carried).Price);
-            runner.Execute("sell 1", engine.Random);
+            runner.Execute("sell 1", new EngineRandom(engine.Random));
             Assert.Empty(state.Inventory);
-            runner.Execute("leave", engine.Random);
+            runner.Execute("leave", new EngineRandom(engine.Random));
             Assert.Null(state.PendingShop);
         });
     }
@@ -176,8 +178,8 @@ public sealed class ShopTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("sell 1", engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            RuleFailure failure = Assert.Throws<RuleFailure>(() => runner.Execute("sell 1", new EngineRandom(engine.Random)));
             Assert.Equal("$.sell_fraction", failure.Diagnostic.JsonPath);
             Assert.Single(state.Inventory);
             Assert.Equal([decimal.MaxValue, 0m], party.Select(member => member.Balances["gold"]));

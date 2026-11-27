@@ -7,6 +7,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class CampaignTests
@@ -128,7 +130,7 @@ public sealed class CampaignTests
         {
             host.Call(engine =>
             {
-                using SaveSlots slots = new(engine);
+                using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
                 Assert.Equal(half, System.Text.Encoding.UTF8.GetString(slots.Read("from-cli")!));
 
                 // The Game writes slots through the same SaveSlots.
@@ -142,7 +144,7 @@ public sealed class CampaignTests
         {
             string resumed = host.Call(engine =>
             {
-                using SaveSlots slots = new(engine);
+                using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
                 return System.Text.Encoding.UTF8.GetString(slots.Read("resumed")!);
             });
             Assert.Equal(File.ReadAllText(Path.Combine(scratch.Root, "whole.json")), resumed);

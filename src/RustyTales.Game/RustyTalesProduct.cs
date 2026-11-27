@@ -119,7 +119,7 @@ public sealed class RustyTalesProduct : IEngineProduct, IDebugCommandModuleSourc
                 modules.Add(content.OpenBundle(info.Id));
             }
 
-            InstalledModules.Open(service, InstalledModules.DefaultDirectory(), modules, problems);
+            EngineContainerOpener.OpenAll(service, InstalledModules.DefaultDirectory(), modules, problems);
             workspaces.Open(service, modules, problems);
             return modules;
         }

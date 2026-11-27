@@ -790,11 +790,16 @@ regression checks for module and rules behavior.
   Replace an installed container by renaming a new file into place (`rusty
   pack-content` does), never by rewriting it while open. Don't write a local
   container format or archive reader.
-- **The CLI and Engine services.** The CLI sets `RustyEngineToolHost` and
-  creates the Engine service set in process with `EngineTestHost.Create()`:
-  no renderer, input or lifecycle, but the same `Random` (and content
-  container) services as the running product, so a seed and script reproduce
-  the same rolls in both. Don't swap in a local RNG.
+- **Pure Core and the CLI.** `RustyTales.Core` has no `Rusty.Engine` package
+  reference and provides Core's own pure-C# deterministic RNG
+  (`DeterministicRandom.Shared`), `IModuleContainerOpener`, and `IStateStore`
+  (`FileStateStore`, `SaveSlots`, `CharacterStableStore`). Both the CLI and the
+  desktop Game use `DeterministicRandom.Shared`, so a seed and script reproduce
+  identical rolls, saves and combat continuations across CLI, desktop Game and
+  any future web client. The CLI keeps `RustyEngineToolHost` strictly in
+  `EngineBridge.cs` for reading `.rpak` containers (until standalone `.rpak`
+  tooling lands upstream in `rusty-engine` #11155) and accessing `--store`
+  Engine save slots.
 
 ## Non-goals
 

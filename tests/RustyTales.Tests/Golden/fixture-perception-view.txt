@@ -50,12 +50,12 @@ seed 7
   The party is in Hall at [0, 0], facing east.
 > forward
   The party moves to [1, 0], facing east.
-  Ada resolves entry-1 as glamour (roll 2 + 2 + -1 = 3, needs 10).  [1d20: 2 = 2]
+  Ada resolves entry-1 as truth (roll 13 + 2 + -1 = 14, needs 10).  [1d20: 13 = 13]
   The room waits.
 > look
   Hall [1, 0], facing east. east: open; south: wall; west: open; north: wall.
 > view 1
-  Ada's glamour view: The palace is a lie. [picture placeholder-art:altar]
+  Ada's truth view: The buried halls are real. [picture placeholder-art:altar]
 > look
   Hall [1, 0], facing east. east: open; south: wall; west: open; north: wall.
 [exit 0]

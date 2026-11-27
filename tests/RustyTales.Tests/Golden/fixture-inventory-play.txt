@@ -4,13 +4,13 @@ seed 1
   The party receives 2 × Tool.
   Offer? [1] Offer two  [2] Leave
 > status
-  A (hit points 7/7, 0 xp) | B (hit points 7/7, 0 xp) | gold 5 + 5 | carrying Tool, Tool
+  A (hit points 6/6, 0 xp) | B (hit points 6/6, 0 xp) | gold 5 + 5 | carrying Tool, Tool
 > choose 1
   The party chooses 1: Offer two.
   The party hands over 2 × Tool.
   Paid. [1] Empty
 > status
-  A (hit points 7/7, 0 xp) | B (hit points 7/7, 0 xp) | gold 5 + 5
+  A (hit points 6/6, 0 xp) | B (hit points 6/6, 0 xp) | gold 5 + 5
 > choose 1
   The party chooses 1: Empty.
 [exit 0]

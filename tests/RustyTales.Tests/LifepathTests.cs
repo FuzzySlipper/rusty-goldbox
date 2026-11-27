@@ -17,7 +17,7 @@ public sealed class LifepathTests
         using TempModules scratch = new();
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Fixture, "--name", "Original", "--lifepath", "careers", "--career", "maker", "--terms", "1",
-                "--skill-table", "professional", "--benefit", "material", "--seed", "4", "--out", "maker.json", "--json"],
+                "--skill-table", "professional", "--benefit", "material", "--seed", "7", "--out", "maker.json", "--json"],
             ["character", "show", "maker.json", "--module", Fixture, "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
@@ -44,7 +44,7 @@ public sealed class LifepathTests
         using TempModules scratch = new();
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Scifi, "--name", "Retired", "--attributes", "str=10,dex=10,end=10,int=10,edu=10,soc=10",
-                "--lifepath", "prior_history", "--career", "scout", "--terms", "1", "--skill-table", "personal", "--benefit", "cash", "--seed", "29", "--out", "retired.json", "--json"],
+                "--lifepath", "prior_history", "--career", "scout", "--terms", "1", "--skill-table", "personal", "--benefit", "cash", "--seed", "1", "--out", "retired.json", "--json"],
             ["character", "show", "retired.json", "--module", Scifi, "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
@@ -60,7 +60,7 @@ public sealed class LifepathTests
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Scifi, "--name", "Vance", "--priority", "end,dex,str,int,edu,soc",
                 "--lifepath", "prior_history", "--career", "marine", "--terms", "1", "--skill-table", "personal",
-                "--benefit", "cash", "--seed", "3", "--out", "vance.json", "--json"]);
+                "--benefit", "cash", "--seed", "5", "--out", "vance.json", "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
         ModuleSet set = ModuleLoader.Load(Scifi, []);
@@ -79,7 +79,7 @@ public sealed class LifepathTests
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Scifi, "--name", "Vance", "--priority", "end,dex,str,int,edu,soc",
                 "--lifepath", "prior_history", "--career", "marine", "--terms", "1", "--skill-table", "service,service,service",
-                "--benefit", "cash", "--seed", "3", "--out", "vance.json", "--json"]);
+                "--benefit", "cash", "--seed", "5", "--out", "vance.json", "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
         ModuleSet set = ModuleLoader.Load(Scifi, []);
@@ -104,7 +104,7 @@ public sealed class LifepathTests
         string transcript = CliTranscript.Run(scratch.Root,
             ["character", "new", "--module", Fixture, "--name", "Multi", "--lifepath", "careers", "--career", "maker",
                 "--terms", "2", "--skill-table", "professional", "--benefit", "cash",
-                "--seed", "7", "--out", "multi.json", "--json"]);
+                "--seed", "9", "--out", "multi.json", "--json"]);
 
         Assert.Contains("[exit 0]", transcript, StringComparison.Ordinal);
         ModuleSet set = ModuleLoader.Load(Fixture, []);

@@ -8,6 +8,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class OriginalRulesetExplorationTests
@@ -57,22 +59,22 @@ public sealed class OriginalRulesetExplorationTests
         CampaignRunner runner = new(rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is RefusedFact refused && refused.Reason.Contains("wall", StringComparison.Ordinal));
 
-        facts = host.Call(engine => runner.Execute("search", engine.Random));
+        facts = host.Call(engine => runner.Execute("search", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is SearchFact { Found: true });
         Assert.Equal(Edge.Door, runner.PlayerMap(hall).EdgeOf(0, 0, Facing.East));
 
-        facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        facts = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is VariableFact { Variable: "opened", Value.Boolean: true });
         Assert.Contains(facts, fact => fact is TextFact { Text: "The area is open." });
         Assert.True(state.ValuesFor(hall)["opened"].Boolean);
 
-        facts = host.Call(engine => runner.Execute("pick", engine.Random));
+        facts = host.Call(engine => runner.Execute("pick", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is DoorFact { Method: "pick", Opened: true });
         Assert.Equal(Edge.Open, runner.PlayerMap(hall).EdgeOf(1, 0, Facing.East));
-        Assert.Contains(host.Call(engine => runner.Execute("forward", engine.Random)), fact => fact is MovedFact { X: 2, Y: 0 });
+        Assert.Contains(host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random))), fact => fact is MovedFact { X: 2, Y: 0 });
 
         string json = SaveFile.ToJson(state, set);
         using JsonDocument save = JsonDocument.Parse(json);

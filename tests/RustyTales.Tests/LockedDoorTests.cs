@@ -7,6 +7,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class LockedDoorTests
@@ -63,22 +65,22 @@ public sealed class LockedDoorTests
         CampaignRunner runner = new(set.Rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> facts = host.Call(engine => runner.Execute("open", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("open", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is DoorFact { Method: "key", Opened: true });
         Assert.Equal(Edge.Open, runner.PlayerMap(hall).EdgeOf(0, 0, Facing.East));
-        host.Call(engine => runner.Execute("forward", engine.Random));
+        host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
 
-        facts = host.Call(engine => runner.Execute("pick east", engine.Random));
+        facts = host.Call(engine => runner.Execute("pick east", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is DoorFact { Method: "pick", Opened: true });
-        host.Call(engine => runner.Execute("forward", engine.Random));
+        host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
 
-        facts = host.Call(engine => runner.Execute("open east", engine.Random));
+        facts = host.Call(engine => runner.Execute("open east", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is RefusedFact refused && refused.Reason.Contains("force east", StringComparison.Ordinal));
-        facts = host.Call(engine => runner.Execute("force", engine.Random));
+        facts = host.Call(engine => runner.Execute("force", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is DoorFact { Method: "force", Opened: true });
-        host.Call(engine => runner.Execute("forward", engine.Random));
+        host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
 
-        facts = host.Call(engine => runner.Execute("open", engine.Random));
+        facts = host.Call(engine => runner.Execute("open", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is DoorFact { Method: "event", Opened: true });
         Assert.Equal(4, state.OpenedDoors.Count);
         Assert.Equal(Edge.Open, runner.PlayerMap(hall).EdgeOf(3, 0, Facing.East));
@@ -111,7 +113,7 @@ public sealed class LockedDoorTests
         CampaignRunner runner = new(set.Rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        RuleFailure failure = Assert.Throws<RuleFailure>(() => host.Call(engine => runner.Execute("pick", engine.Random)));
+        RuleFailure failure = Assert.Throws<RuleFailure>(() => host.Call(engine => runner.Execute("pick", new EngineRandom(engine.Random))));
         Assert.Equal("event.evaluate", failure.Diagnostic.Rule);
         Assert.Equal("tale", failure.Diagnostic.Module);
         Assert.Equal(Path.Combine(modules.Root, "tale/pick_lock.json"), failure.Diagnostic.File);
@@ -138,7 +140,7 @@ public sealed class LockedDoorTests
         Definition hall = rules.Find(DefinitionTypes.Area, "tale:hall", out _)!;
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is ArrivedFact { Area: "Yard", X: 0, Y: 0 });
         Assert.DoesNotContain(facts, fact => fact is MovedFact);
         Assert.DoesNotContain(facts, fact => fact is TextFact { Text: "The yard cell fires." });
@@ -164,7 +166,7 @@ public sealed class LockedDoorTests
         CampaignRunner runner = new(rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is EndedFact { Text: "The gate closes behind you." });
         Assert.DoesNotContain(facts, fact => fact is MovedFact);
         Assert.True(state.Ended);
@@ -188,7 +190,7 @@ public sealed class LockedDoorTests
         CampaignRunner runner = new(rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(facts, fact => fact is MenuFact { Text: "Continue?" });
         Assert.DoesNotContain(facts, fact => fact is MovedFact);
         Assert.NotNull(state.PendingMenu);

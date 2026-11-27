@@ -5,6 +5,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class CharacterTests
@@ -947,8 +949,9 @@ public sealed class CharacterTests
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, "tests"));
-            return work(new DiceRoller(engine.Random, stream));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(seed, "tests");
+            return work(new DiceRoller(streamRandom, stream));
         });
     }
 

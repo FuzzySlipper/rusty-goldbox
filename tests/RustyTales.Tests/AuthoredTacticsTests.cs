@@ -8,6 +8,8 @@ using RustyTales.Core.Expressions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>Original data-only examples for authored combat behavior and its module workflow.</summary>
@@ -94,8 +96,8 @@ public sealed class AuthoredTacticsTests
         {
             CampaignState state = CampaignRunner.NewState(set.Rules!, campaign, party, 9345);
             CampaignRunner campaignRunner = new(set.Rules!, state);
-            campaignRunner.Begin(engine.Random);
-            campaignRunner.Execute("choose 1", engine.Random);
+            campaignRunner.Begin(new EngineRandom(engine.Random));
+            campaignRunner.Execute("choose 1", new EngineRandom(engine.Random));
             Character ivy = Assert.Single(state.Party, character => character.Npc is not null);
             Character allyCharacter = Assert.Single(state.Party, character => character.Npc is null);
 
@@ -105,7 +107,7 @@ public sealed class AuthoredTacticsTests
                 set.Rules!,
                 set.Rules!.Find(DefinitionTypes.Monster, "tactical-bestiaire:dusklark", out _)!,
                 "Dusklark",
-                new Evaluator(set.Rules!, new DiceRoller(engine.Random, engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "warder-companion")))));
+                new Evaluator(set.Rules!, new DiceRoller(new EngineRandom(engine.Random), new EngineRandom(engine.Random).CreateScoped(9344, "warder-companion"))));
             Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "tactical-bestiaire:approach_ally");
             Assert.Contains(ivyCombatant.Uses, use => use.Spell?.QualifiedId == "classic:cure_light_wounds");
             Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "classic:melee_attack" && use.FromItem == "weapon");
@@ -124,7 +126,7 @@ public sealed class AuthoredTacticsTests
                     new CombatSide("Party", [ivyCombatant, ally]),
                     new CombatSide("Enemy", [enemy]),
                 ],
-                new DiceRoller(engine.Random, engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "warder-companion-fight"))),
+                new DiceRoller(new EngineRandom(engine.Random), new EngineRandom(engine.Random).CreateScoped(9344, "warder-companion-fight")),
                 setup: new CombatSetup([new Cell(0, 0), new Cell(1, 0)]));
             runner.CollectBehaviorTraces = true;
             runner.SetController(ivyCombatant.Id, CombatControlMode.Manual);
@@ -177,8 +179,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "phase-watcher-guards"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "phase-watcher-guards");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant watcher = Combatant.FromMonster(rules, watcherDefinition, "Phase watcher", evaluator);
             Combatant target = Combatant.FromMonster(rules, targetDefinition, "Mossward", evaluator);
@@ -312,8 +315,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9346, $"authored-zones-reaction-{accept}"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9346, $"authored-zones-reaction-{accept}");
+            DiceRoller dice = new(streamRandom, stream);
             List<ModuleDiagnostic> problems = [];
             Character guardCharacter = CharacterRules.Create(
                 rules,
@@ -399,8 +403,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-grid-combat"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-grid-combat");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant glasswing = Combatant.FromMonster(rules, glasswingDefinition, "Glasswing", evaluator);
             Combatant dusklark = Combatant.FromMonster(rules, dusklarkDefinition, "Dusklark", evaluator);
@@ -467,8 +472,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-grid-automatic"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-grid-automatic");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant glasswing = Combatant.FromMonster(rules, glasswingDefinition, "Glasswing", evaluator);
             Combatant dusklark = Combatant.FromMonster(rules, dusklarkDefinition, "Dusklark", evaluator);
@@ -505,8 +511,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-grid-restore"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-grid-restore");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant glasswing = Combatant.FromMonster(rules, glasswingDefinition, "Glasswing", evaluator);
             Combatant dusklark = Combatant.FromMonster(rules, dusklarkDefinition, "Dusklark", evaluator);
@@ -550,8 +557,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-zones-combat"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-zones-combat");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant first = Combatant.FromMonster(rules, monster, "Zone Alpha", evaluator);
             Combatant second = Combatant.FromMonster(rules, monster, "Zone Beta", evaluator);
@@ -618,8 +626,9 @@ public sealed class AuthoredTacticsTests
                 IEngineContext engine,
                 bool collect)
             {
-                using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-zones-trace-compare"));
-                DiceRoller dice = new(engine.Random, stream);
+                ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-zones-trace-compare");
+                DiceRoller dice = new(streamRandom, stream);
                 Evaluator evaluator = new(rules, dice);
                 Combatant first = Combatant.FromMonster(rules, monster, "Zone Alpha", evaluator);
                 Combatant second = Combatant.FromMonster(rules, monster, "Zone Beta", evaluator);
@@ -684,8 +693,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-retreat"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-retreat");
+            DiceRoller dice = new(streamRandom, stream);
             Creature retreatCreature = new("Retreater");
             retreatCreature.Values["max_hit_points"] = 20;
             retreatCreature.Track("hit_points").Current = 20;
@@ -736,8 +746,9 @@ public sealed class AuthoredTacticsTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9344, "authored-zones-movement"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9344, "authored-zones-movement");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant first = Combatant.FromMonster(rules, monster, "Zone Alpha", evaluator);
             Combatant second = Combatant.FromMonster(rules, monster, "Zone Beta", evaluator);
@@ -773,8 +784,8 @@ public sealed class AuthoredTacticsTests
         {
             CampaignState state = CampaignRunner.NewState(set.Rules!, campaign, party, 9345);
             CampaignRunner runner = new(set.Rules!, state);
-            runner.Begin(engine.Random);
-            runner.Execute("choose 1", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Equal(12, state.Party.Count);
             Character ivy = Assert.Single(state.Party, character => character.Npc is not null);
             Combatant companion = Combatant.FromCharacter(set.Rules!, ivy);
@@ -783,7 +794,7 @@ public sealed class AuthoredTacticsTests
             controller.Register([companion]);
             Assert.Equal("tactical-bestiaire:warder", controller.ProfileFor(companion)?.Definition.QualifiedId);
 
-            List<PlayFact> fightFacts = runner.Execute("forward", engine.Random);
+            List<PlayFact> fightFacts = runner.Execute("forward", new EngineRandom(engine.Random));
             FightFact fight = Assert.Single(fightFacts.OfType<FightFact>());
             IReadOnlyList<FightMember> partyMembers = fight.Members.Where(member => member.Side == 0).ToList();
             Assert.Equal(12, partyMembers.Count);
@@ -810,12 +821,12 @@ public sealed class AuthoredTacticsTests
             {
                 DefaultCombatControl = CombatControlMode.Manual,
             };
-            runner.Begin(engine.Random);
-            runner.Execute("choose 1", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            runner.Execute("choose 1", new EngineRandom(engine.Random));
             Character ivy = Assert.Single(state.Party, character => character.Npc is not null);
             decimal? spellsBefore = ivy.Tracks["spells_1"].Current;
 
-            runner.Execute("forward", engine.Random);
+            runner.Execute("forward", new EngineRandom(engine.Random));
             Assert.NotNull(state.PendingCombat);
             CombatObservation waiting = Assert.IsType<CombatObservation>(runner.Combat);
             Assert.Equal(CombatPhase.AwaitingAction, waiting.Phase);
@@ -823,13 +834,13 @@ public sealed class AuthoredTacticsTests
             Assert.Equal(CombatControlMode.Automatic, ivyView.Controller);
             Assert.Equal(spellsBefore, ivyView.Tracks["spells_1"]);
 
-            CampaignCombatCommandResult manualResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Manual, engine.Random);
+            CampaignCombatCommandResult manualResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Manual, new EngineRandom(engine.Random));
             Assert.True(manualResult.Accepted, manualResult.Reason);
             CombatantObservation ivyManual = Assert.Single(manualResult.Observation.Combatants, member => member.Id == ivyView.Id);
             Assert.Equal(CombatControlMode.Manual, ivyManual.Controller);
             Assert.Equal(spellsBefore, ivyManual.Tracks["spells_1"]);
 
-            CampaignCombatCommandResult switchResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Automatic, engine.Random);
+            CampaignCombatCommandResult switchResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Automatic, new EngineRandom(engine.Random));
             Assert.True(switchResult.Accepted, switchResult.Reason);
             Assert.Equal(CombatControlMode.Automatic, switchResult.Observation.Combatants.Single(member => member.Id == ivyView.Id).Controller);
             Assert.Equal(spellsBefore, switchResult.Observation.Combatants.Single(member => member.Id == ivyView.Id).Tracks["spells_1"]);
@@ -845,7 +856,7 @@ public sealed class AuthoredTacticsTests
                 Assert.NotEmpty(manualParty);
                 foreach (string actorId in manualParty)
                 {
-                    CampaignCombatCommandResult result = runner.SetCombatController(actorId, CombatControlMode.Automatic, engine.Random);
+                    CampaignCombatCommandResult result = runner.SetCombatController(actorId, CombatControlMode.Automatic, new EngineRandom(engine.Random));
                     Assert.True(result.Accepted, result.Reason);
                     facts.AddRange(result.Facts);
                     if (state.PendingCombat is null)
@@ -882,9 +893,9 @@ public sealed class AuthoredTacticsTests
                 {
                     DefaultCombatControl = CombatControlMode.Manual,
                 };
-                runner.Begin(engine.Random);
-                runner.Execute("choose 1", engine.Random);
-                runner.Execute("forward", engine.Random);
+                runner.Begin(new EngineRandom(engine.Random));
+                runner.Execute("choose 1", new EngineRandom(engine.Random));
+                runner.Execute("forward", new EngineRandom(engine.Random));
                 Assert.NotNull(state.PendingCombat);
                 return SaveFile.ToJson(state, source);
             });
@@ -917,7 +928,7 @@ public sealed class AuthoredTacticsTests
                 Assert.Empty(problems);
                 Assert.NotNull(state);
                 CampaignRunner runner = new(installed.Rules!, state!);
-                Assert.NotNull(runner.ObserveCombat(engine.Random));
+                Assert.NotNull(runner.ObserveCombat(new EngineRandom(engine.Random)));
 
                 List<PlayFact> facts = [];
                 while (state!.PendingCombat is not null)
@@ -930,7 +941,7 @@ public sealed class AuthoredTacticsTests
                     Assert.NotEmpty(manualParty);
                     foreach (string actorId in manualParty)
                     {
-                        CampaignCombatCommandResult result = runner.SetCombatController(actorId, CombatControlMode.Automatic, engine.Random);
+                        CampaignCombatCommandResult result = runner.SetCombatController(actorId, CombatControlMode.Automatic, new EngineRandom(engine.Random));
                         Assert.True(result.Accepted, result.Reason);
                         facts.AddRange(result.Facts);
                         if (state.PendingCombat is null)
@@ -1006,8 +1017,8 @@ public sealed class AuthoredTacticsTests
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
         CampaignState state = CampaignRunner.NewState(set.Rules!, campaign, party, 17);
         CampaignRunner runner = new(set.Rules!, state);
-        runner.Begin(engine.Random);
-        runner.Execute("status", engine.Random);
+        runner.Begin(new EngineRandom(engine.Random));
+        runner.Execute("status", new EngineRandom(engine.Random));
         return SaveFile.ToJson(state, set);
     }
 

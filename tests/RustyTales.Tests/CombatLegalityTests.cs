@@ -5,6 +5,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -136,7 +138,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-derived-legality";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
             Combatant guard = Combatant.FromMonster(rules, guardDefinition, "Guard", evaluator);
@@ -202,7 +204,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9341;
             const string scope = "cross-target-close";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Creature actorCreature = new("Mover");
             actorCreature.Track("hit_points").Current = 20;
             actorCreature.Track("hit_points").Max = 20;
@@ -306,7 +308,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-spell-cost-refusal";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
                 rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -365,7 +367,7 @@ public sealed class CombatLegalityTests
             Assert.Equal(rollsBefore, dice.Rolls.Count);
             Assert.Equal(factsBefore, refusedActor.Observation.Facts.Select(FactLine));
 
-            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
             Evaluator restoredEvaluator = new(rules, restoredDice);
             CombatRunner restored = CombatRunner.Restore(
                 rules,
@@ -414,7 +416,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-spell-cost-accept";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
                 rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -429,7 +431,7 @@ public sealed class CombatLegalityTests
             Assert.Equal(rollsBeforeOffer, rollsAtOffer);
             CombatContinuationState saved = RoundTrip(runner.Capture());
 
-            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
             Evaluator restoredEvaluator = new(rules, restoredDice);
             CombatRunner restored = CombatRunner.Restore(
                 rules,
@@ -540,7 +542,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-spell-cost-constant";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
                 rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -580,7 +582,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-spell-cost-unaffordable";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
                 rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -609,7 +611,7 @@ public sealed class CombatLegalityTests
             Assert.InRange(committedPrice, 1, 2);
 
             CombatContinuationState saved = RoundTrip(runner.Capture());
-            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
             Evaluator restoredEvaluator = new(rules, restoredDice);
             CombatRunner restored = CombatRunner.Restore(
                 rules,
@@ -658,7 +660,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9337;
             const string scope = "combat-spell-cost-max-target";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
                 rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -684,7 +686,7 @@ public sealed class CombatLegalityTests
             Assert.Single(committed.Observation.Facts.OfType<SpentFact>(), fact => fact.Amount == quotedMana);
 
             CombatContinuationState saved = RoundTrip(runner.Capture());
-            DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+            DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
             Evaluator restoredEvaluator = new(rules, restoredDice);
             CombatRunner restored = CombatRunner.Restore(
                 rules,
@@ -754,7 +756,7 @@ public sealed class CombatLegalityTests
         Definition combat = rules.Find(DefinitionTypes.Combat, "duel", out _)!;
         Definition attackerDefinition = rules.Find(DefinitionTypes.Monster, "attacker", out _)!;
         Definition guardDefinition = rules.Find(DefinitionTypes.Monster, "guard", out _)!;
-        DiceRoller dice = new(random, 9337, scope);
+        DiceRoller dice = new(new EngineRandom(random), 9337, scope);
         (CombatRunner runner, Combatant attacker, Combatant guard) = CreateSpellCostCombat(
             rules, combat, attackerDefinition, guardDefinition, dice);
 
@@ -889,7 +891,7 @@ public sealed class CombatLegalityTests
         {
             const ulong seed = 9336;
             const string scope = "combat-legality-false";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
             attacker.Creature.Track("hit_points").Current = 10;
@@ -919,7 +921,7 @@ public sealed class CombatLegalityTests
             CombatDecision activeOffered = offered;
             if (restore)
             {
-                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                activeDice = new DiceRoller(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, activeDice);
                 active = CombatRunner.Restore(rules, combat,
                 [

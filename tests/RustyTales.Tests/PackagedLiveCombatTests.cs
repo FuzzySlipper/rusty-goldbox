@@ -6,6 +6,8 @@ using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>Live decisions and Engine save slots with independently packed original modules.</summary>
@@ -83,21 +85,21 @@ public sealed class PackagedLiveCombatTests
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-zones-trial:trial", out _)!;
         CampaignState state = CampaignRunner.NewState(set.Rules, campaign, party, 9346);
         CampaignRunner runner = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
-        runner.Begin(engine.Random);
-        runner.Execute("choose 1", engine.Random);
-        CombatObservation waiting = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+        runner.Begin(new EngineRandom(engine.Random));
+        runner.Execute("choose 1", new EngineRandom(engine.Random));
+        CombatObservation waiting = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
         Assert.Equal(CombatDecisionKind.Action, waiting.PendingDecision!.Kind);
         CombatantObservation actor = Assert.Single(waiting.Combatants, member => member.Id == waiting.ActiveActorId);
         Assert.Equal(3, actor.Budget["standard"]);
 
         CombatActionChoice attack = waiting.PendingDecision.Actions.First(choice => choice.ActionId == "ascend:melee_attack");
         CampaignCombatCommandResult first = runner.SubmitCombat(
-            new CombatCommand.UseAction(actor.Id, attack.Id, [attack.Targets[0].Id]), engine.Random);
+            new CombatCommand.UseAction(actor.Id, attack.Id, [attack.Targets[0].Id]), new EngineRandom(engine.Random));
         Assert.True(first.Accepted, first.Reason);
         Assert.Equal(2, first.Observation.Combatants.Single(member => member.Id == actor.Id).Budget["standard"]);
         Assert.NotNull(state.PendingCombat);
 
-        using SaveSlots slots = new(engine);
+        using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
         slots.Write("live-zone", SaveFile.ToJson(state, set));
         List<ModuleDiagnostic> diagnostics = [];
         CampaignState loaded = SaveFile.Read(slots.Read("live-zone")!, SaveSlots.Location("live-zone"), set, diagnostics)!;
@@ -108,14 +110,14 @@ public sealed class PackagedLiveCombatTests
 
         while (state.PendingCombat is not null)
         {
-            CombatObservation before = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
-            CombatObservation after = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation before = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
+            CombatObservation after = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(before.Phase, after.Phase);
             Assert.Equal(before.ActiveActorId, after.ActiveActorId);
             Assert.Equal(before.PendingDecision?.Id, after.PendingDecision?.Id);
             CombatCommand command = ChooseCommand(before);
-            CampaignCombatCommandResult uninterrupted = runner.SubmitCombat(command, engine.Random);
-            CampaignCombatCommandResult restored = resumed.SubmitCombat(command, engine.Random);
+            CampaignCombatCommandResult uninterrupted = runner.SubmitCombat(command, new EngineRandom(engine.Random));
+            CampaignCombatCommandResult restored = resumed.SubmitCombat(command, new EngineRandom(engine.Random));
             Assert.True(uninterrupted.Accepted, uninterrupted.Reason);
             Assert.True(restored.Accepted, restored.Reason);
             Assert.Equal(uninterrupted.Observation.Facts.Select(fact => fact.Describe()),

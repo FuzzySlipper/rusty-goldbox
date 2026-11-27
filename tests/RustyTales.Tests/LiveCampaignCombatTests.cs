@@ -7,6 +7,8 @@ using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>Campaign-level checks for a combat that remains owned by Core between commands.</summary>
@@ -27,14 +29,14 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             Assert.NotNull(state.PendingCombat);
             string before = SaveFile.ToJson(state, set);
             string equipped = party[0].Equipment[0].QualifiedId;
 
             foreach (string command in new[] { "equip 1 classic:dagger", $"unequip 1 {equipped}" })
             {
-                RefusedFact refusal = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+                RefusedFact refusal = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, new EngineRandom(engine.Random))));
                 Assert.Contains("combat", refusal.Reason, StringComparison.Ordinal);
                 Assert.Empty(refusal.Rolls);
                 Assert.Equal(before, SaveFile.ToJson(state, set));
@@ -55,18 +57,18 @@ public sealed class LiveCampaignCombatTests
         host.Call(engine =>
         {
             CampaignRunner automatic = new(set.Rules, CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7));
-            FightFact expected = automatic.Begin(engine.Random).OfType<FightFact>().First();
+            FightFact expected = automatic.Begin(new EngineRandom(engine.Random)).OfType<FightFact>().First();
 
             // The same fight under manual control, handed back to Core one
             // member at a time, rolls exactly what the automatic fight rolled.
             CampaignState state = CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7);
             CampaignRunner manual = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
-            manual.Begin(engine.Random);
+            manual.Begin(new EngineRandom(engine.Random));
             List<PlayFact> facts = [];
             while (!facts.OfType<FightFact>().Any())
             {
-                string actor = manual.ObserveCombat(engine.Random)!.PendingDecision!.ActorId;
-                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, engine.Random).Facts);
+                string actor = manual.ObserveCombat(new EngineRandom(engine.Random))!.PendingDecision!.ActorId;
+                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, new EngineRandom(engine.Random)).Facts);
             }
 
             FightFact actual = facts.OfType<FightFact>().First();
@@ -87,20 +89,20 @@ public sealed class LiveCampaignCombatTests
         FightFact expected = host.Call(engine =>
         {
             CampaignRunner automatic = new(set.Rules, CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7));
-            return automatic.Begin(engine.Random).OfType<FightFact>().First();
+            return automatic.Begin(new EngineRandom(engine.Random)).OfType<FightFact>().First();
         });
 
         // Each command arrives in its own callback, as the Game's inputs do.
         CampaignState state = CampaignRunner.NewState(set.Rules, definition, Party(modules, campaign, set), 7);
         CampaignRunner manual = new(set.Rules, state) { DefaultCombatControl = CombatControlMode.Manual };
-        host.Call(engine => manual.Begin(engine.Random));
+        host.Call(engine => manual.Begin(new EngineRandom(engine.Random)));
         List<PlayFact> facts = [];
         while (!facts.OfType<FightFact>().Any())
         {
             host.Call(engine =>
             {
-                string actor = manual.ObserveCombat(engine.Random)!.PendingDecision!.ActorId;
-                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, engine.Random).Facts);
+                string actor = manual.ObserveCombat(new EngineRandom(engine.Random))!.PendingDecision!.ActorId;
+                facts.AddRange(manual.SetCombatController(actor, CombatControlMode.Automatic, new EngineRandom(engine.Random)).Facts);
             });
         }
 
@@ -126,13 +128,13 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            List<PlayFact> facts = runner.Begin(engine.Random);
+            List<PlayFact> facts = runner.Begin(new EngineRandom(engine.Random));
             Assert.DoesNotContain(facts, fact => fact is FightFact);
             Assert.NotNull(state.PendingCombat);
             Assert.NotNull(state.PendingCombat!.Continuation.RandomScope);
             Assert.True(state.PendingCombat.Continuation.NextRandomKey >= 0);
 
-            CombatObservation before = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            CombatObservation before = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.NotEqual(CombatPhase.Ended, before.Phase);
             Assert.NotNull(before.PendingDecision);
             Assert.Equal(before.Combatants.Select(member => member.Id), state.PendingCombat!.Continuation.Combatants.Select(member => member.Id));
@@ -150,7 +152,7 @@ public sealed class LiveCampaignCombatTests
             {
                 DefaultCombatControl = CombatControlMode.Manual,
             };
-            CombatObservation after = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation after = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(before.Phase, after.Phase);
             Assert.Equal(before.Round, after.Round);
             Assert.Equal(before.ActiveActorId, after.ActiveActorId);
@@ -160,8 +162,8 @@ public sealed class LiveCampaignCombatTests
 
             Assert.Equal(CombatDecisionKind.Action, before.PendingDecision!.Kind);
             CombatCommand.EndTurn endTurn = new(before.ActiveActorId!);
-            CampaignCombatCommandResult uninterrupted = runner.SubmitCombat(endTurn, engine.Random);
-            CampaignCombatCommandResult resumedResult = resumed.SubmitCombat(endTurn, engine.Random);
+            CampaignCombatCommandResult uninterrupted = runner.SubmitCombat(endTurn, new EngineRandom(engine.Random));
+            CampaignCombatCommandResult resumedResult = resumed.SubmitCombat(endTurn, new EngineRandom(engine.Random));
             Assert.Equal(uninterrupted.Accepted, resumedResult.Accepted);
             Assert.Equal(uninterrupted.Facts.Select(fact => fact.Describe()), resumedResult.Facts.Select(fact => fact.Describe()));
             Assert.Equal(uninterrupted.Observation.Phase, resumedResult.Observation.Phase);
@@ -187,7 +189,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             PendingCombatState pending = Assert.IsType<PendingCombatState>(state.PendingCombat);
             CombatObservation observation = Assert.IsType<CombatObservation>(runner.Combat);
             Dictionary<string, Cell?> live = observation.Combatants.ToDictionary(member => member.Id, member => member.Position, StringComparer.Ordinal);
@@ -215,10 +217,10 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
             CombatCommand opening = CommandFor(initial);
-            CampaignCombatCommandResult openingResult = runner.SubmitCombat(opening, engine.Random);
+            CampaignCombatCommandResult openingResult = runner.SubmitCombat(opening, new EngineRandom(engine.Random));
             Assert.True(openingResult.Accepted, openingResult.Reason);
             Assert.NotNull(state.PendingCombat);
             Assert.Equal(1, state.CombatSequence);
@@ -230,7 +232,7 @@ public sealed class LiveCampaignCombatTests
             Assert.Equal(state.CombatSequence, loaded.CombatSequence);
 
             CampaignRunner resumed = new(set.Rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
-            CombatObservation waiting = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation waiting = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(openingResult.Observation.PendingDecision?.Id, waiting.PendingDecision?.Id);
 
             List<PlayFact> uninterrupted = FinishCombatChain(runner, engine.Random);
@@ -263,25 +265,25 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
             string reactor = Assert.Single(state.PendingCombat!.Participants, participant => participant.Side == 1).Id;
-            CampaignCombatCommandResult controller = runner.SetCombatController(reactor, CombatControlMode.Manual, engine.Random);
+            CampaignCombatCommandResult controller = runner.SetCombatController(reactor, CombatControlMode.Manual, new EngineRandom(engine.Random));
             Assert.True(controller.Accepted, controller.Reason);
-            CombatObservation action = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            CombatObservation action = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
 
             CombatCommand.UseAction attack = Assert.IsType<CombatCommand.UseAction>(CommandFor(action));
-            CampaignCombatCommandResult hit = runner.SubmitCombat(attack, engine.Random);
+            CampaignCombatCommandResult hit = runner.SubmitCombat(attack, new EngineRandom(engine.Random));
             Assert.True(hit.Accepted, hit.Reason);
             Assert.Equal(CombatDecisionKind.Interrupt, hit.Observation.PendingDecision?.Kind);
             Assert.NotNull(state.PendingCombat!.Continuation.PendingInterrupt);
 
             // Text commands are inspection/refusal while combat is pending; they do not move the battle cursor.
             long nextKey = state.PendingCombat.Continuation.NextRandomKey;
-            List<PlayFact> inspection = runner.Execute("forward", engine.Random);
+            List<PlayFact> inspection = runner.Execute("forward", new EngineRandom(engine.Random));
             Assert.Single(inspection.OfType<RefusedFact>());
             Assert.Equal(nextKey, state.PendingCombat.Continuation.NextRandomKey);
-            CombatObservation observed = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            CombatObservation observed = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(hit.Observation.PendingDecision?.Id, observed.PendingDecision?.Id);
 
             string json = SaveFile.ToJson(state, set);
@@ -291,7 +293,7 @@ public sealed class LiveCampaignCombatTests
             Assert.NotNull(loaded.PendingCombat!.Continuation.PendingInterrupt);
 
             CampaignRunner resumed = new(set.Rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
-            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(observed.PendingDecision?.Id, restored.PendingDecision?.Id);
             Assert.Equal(observed.PendingDecision?.Kind, restored.PendingDecision?.Kind);
             Assert.Equal(observed.PendingDecision?.Interrupt, restored.PendingDecision?.Interrupt);
@@ -299,8 +301,8 @@ public sealed class LiveCampaignCombatTests
             Assert.Equal(observed.Facts.Select(fact => fact.Describe()), restored.Facts.Select(fact => fact.Describe()));
 
             CombatCommand.Decide decline = new(observed.PendingDecision!.Id);
-            CampaignCombatCommandResult left = runner.SubmitCombat(decline, engine.Random);
-            CampaignCombatCommandResult right = resumed.SubmitCombat(decline, engine.Random);
+            CampaignCombatCommandResult left = runner.SubmitCombat(decline, new EngineRandom(engine.Random));
+            CampaignCombatCommandResult right = resumed.SubmitCombat(decline, new EngineRandom(engine.Random));
             Assert.True(left.Accepted, left.Reason);
             Assert.True(right.Accepted, right.Reason);
             Assert.Equal(left.Facts.Select(fact => fact.Describe()), right.Facts.Select(fact => fact.Describe()));
@@ -323,7 +325,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject pending = save["pending_combat"]!.AsObject();
             JsonArray participants = pending["participants"]!.AsArray();
@@ -361,7 +363,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
             int orderLength = continuation["TurnOrder"]!.AsArray().Count;
@@ -390,7 +392,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonArray tookTurns = save["pending_combat"]!["continuation"]!["TookTurns"]!.AsArray();
             int invalidIndex = tookTurns.Count;
@@ -419,7 +421,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             save["pending_combat"]!["continuation"]!["ActiveActorId"] = "missing-combatant";
 
@@ -446,7 +448,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             save["pending_combat"]!["continuation"]!["Combatants"]!.AsArray()[0]!["Id"] = null;
 
@@ -473,7 +475,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
             Assert.NotEmpty(facts);
@@ -507,7 +509,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
             Assert.NotEmpty(facts);
@@ -537,7 +539,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonArray facts = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray();
             Assert.NotEmpty(facts);
@@ -548,7 +550,7 @@ public sealed class LiveCampaignCombatTests
             Assert.Empty(problems);
 
             CampaignRunner resumed = new(set.Rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
-            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.NotEmpty(restored.Facts);
             Assert.Equal(string.Empty, restored.Facts[0].Describe());
         });
@@ -571,7 +573,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject fact = save["pending_combat"]!["continuation"]!["Facts"]!.AsArray()[0]!.AsObject();
             JsonArray rolls = new();
@@ -621,7 +623,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
             JsonArray rolls = new();
@@ -674,7 +676,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
             JsonObject decision = continuation["PendingDecision"]!.AsObject();
@@ -744,7 +746,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject uncommittedSave = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject uncommittedAction = uncommittedSave["pending_combat"]!["continuation"]!["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
             uncommittedAction["SpellId"] = "classic:magic_missile";
@@ -761,7 +763,7 @@ public sealed class LiveCampaignCombatTests
             {
                 DefaultCombatControl = CombatControlMode.Manual,
             };
-            CombatObservation uncommittedObservation = Assert.IsType<CombatObservation>(uncommittedRunner.ObserveCombat(engine.Random));
+            CombatObservation uncommittedObservation = Assert.IsType<CombatObservation>(uncommittedRunner.ObserveCombat(new EngineRandom(engine.Random)));
             CombatActionChoice uncommittedChoice = Assert.Single(
                 uncommittedObservation.PendingDecision!.Actions,
                 action => action.SpellId == "classic:magic_missile");
@@ -783,7 +785,7 @@ public sealed class LiveCampaignCombatTests
             {
                 DefaultCombatControl = CombatControlMode.Manual,
             };
-            CombatObservation committedObservation = Assert.IsType<CombatObservation>(committedRunner.ObserveCombat(engine.Random));
+            CombatObservation committedObservation = Assert.IsType<CombatObservation>(committedRunner.ObserveCombat(new EngineRandom(engine.Random)));
             CombatActionChoice committedChoice = Assert.Single(
                 committedObservation.PendingDecision!.Actions,
                 action => action.SpellId == "classic:magic_missile");
@@ -806,7 +808,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
             JsonObject action = continuation["PendingDecision"]!["Actions"]!.AsArray()[0]!.AsObject();
@@ -839,7 +841,7 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             JsonObject save = JsonNode.Parse(SaveFile.ToJson(state, set))!.AsObject();
             JsonObject continuation = save["pending_combat"]!["continuation"]!.AsObject();
             string actorId = continuation["Combatants"]!.AsArray()[0]!["Id"]!.GetValue<string>();
@@ -888,13 +890,13 @@ public sealed class LiveCampaignCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(engine.Random));
+            runner.Begin(new EngineRandom(engine.Random));
+            CombatObservation initial = Assert.IsType<CombatObservation>(runner.ObserveCombat(new EngineRandom(engine.Random)));
             CombatantObservation preferenceActor = initial.Combatants
                 .Where(member => member.Side == 0)
                 .Single(member => member.Id != initial.ActiveActorId);
 
-            CampaignCombatCommandResult changed = runner.SetCombatController(preferenceActor.Id, CombatControlMode.Automatic, engine.Random);
+            CampaignCombatCommandResult changed = runner.SetCombatController(preferenceActor.Id, CombatControlMode.Automatic, new EngineRandom(engine.Random));
             Assert.True(changed.Accepted, changed.Reason);
             int partyIndex = state.PendingCombat!.Participants.Single(participant => participant.Id == preferenceActor.Id).PartyIndex!.Value;
             Assert.Equal(CombatControlMode.Automatic, state.Party[partyIndex].CombatControlPreference);
@@ -906,7 +908,7 @@ public sealed class LiveCampaignCombatTests
             Assert.Equal(CombatControlMode.Automatic, loaded.Party[partyIndex].CombatControlPreference);
 
             CampaignRunner resumed = new(set.Rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
-            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(engine.Random));
+            CombatObservation restored = Assert.IsType<CombatObservation>(resumed.ObserveCombat(new EngineRandom(engine.Random)));
             Assert.Equal(CombatControlMode.Automatic, restored.Combatants.Single(member => member.Id == preferenceActor.Id).Controller);
 
             ReachCombatSequence(runner, engine.Random, 2);
@@ -923,12 +925,13 @@ public sealed class LiveCampaignCombatTests
 
     private static List<PlayFact> FinishCombatChain(CampaignRunner runner, Rusty.Engine.IRandomService random)
     {
+        EngineRandom talesRandom = new(random);
         List<PlayFact> facts = [];
         for (int steps = 0; runner.State.PendingCombat is not null; steps++)
         {
             Assert.True(steps < 100, "The campaign combat chain did not reach a terminal outcome.");
-            CombatObservation observation = Assert.IsType<CombatObservation>(runner.ObserveCombat(random));
-            CampaignCombatCommandResult result = runner.SubmitCombat(CommandFor(observation), random);
+            CombatObservation observation = Assert.IsType<CombatObservation>(runner.ObserveCombat(talesRandom));
+            CampaignCombatCommandResult result = runner.SubmitCombat(CommandFor(observation), talesRandom);
             Assert.True(result.Accepted, result.Reason);
             facts.AddRange(result.Facts);
         }
@@ -938,10 +941,11 @@ public sealed class LiveCampaignCombatTests
 
     private static void ReachCombatSequence(CampaignRunner runner, Rusty.Engine.IRandomService random, long sequence)
     {
+        EngineRandom talesRandom = new(random);
         for (int steps = 0; steps < 100 && runner.State.PendingCombat is not null && runner.State.CombatSequence < sequence; steps++)
         {
-            CombatObservation observation = Assert.IsType<CombatObservation>(runner.ObserveCombat(random));
-            CampaignCombatCommandResult result = runner.SubmitCombat(CommandFor(observation), random);
+            CombatObservation observation = Assert.IsType<CombatObservation>(runner.ObserveCombat(talesRandom));
+            CampaignCombatCommandResult result = runner.SubmitCombat(CommandFor(observation), talesRandom);
             Assert.True(result.Accepted, result.Reason);
         }
 

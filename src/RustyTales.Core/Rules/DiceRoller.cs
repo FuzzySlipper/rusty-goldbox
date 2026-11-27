@@ -1,5 +1,3 @@
-using Rusty.Engine;
-
 namespace RustyTales.Core.Rules;
 
 /// <summary>
@@ -31,31 +29,29 @@ public sealed record DiceRoll(int Count, int Sides, IReadOnlyList<int> Faces, in
 }
 
 /// <summary>
-/// Rolls dice from an Engine random stream and records every roll. Engine
-/// calls are callback-confined, so use it only inside the host callback that
-/// supplied <paramref name="random"/>.
+/// Rolls dice from a deterministic random source (<see cref="ITalesRandom"/>)
+/// and records every roll. Hosts backed by Engine random supply an adapter;
+/// pure-.NET tools and web clients use <see cref="DeterministicRandom.Shared"/>.
 /// </summary>
 public sealed class DiceRoller
 {
-    private IRandomService _random;
-    private readonly Rng? _stream;
+    private ITalesRandom _random;
+    private readonly ITalesRandomStream? _stream;
     private readonly ulong? _seed;
     private readonly string? _scope;
     private long _nextKey;
     private readonly List<DiceRoll> _rolls = [];
 
-    public DiceRoller(IRandomService random, Rng stream)
+    public DiceRoller(ITalesRandom random, ITalesRandomStream stream)
     {
         _random = random;
         _stream = stream;
     }
 
     /// <summary>
-    /// Creates a callback-confined roller whose individual draws are keyed by
-    /// their persisted ordinal. Unlike an Engine stream, this roller has no
-    /// disposable cursor to retain between callbacks.
+    /// Creates a roller whose individual draws are keyed by their persisted ordinal.
     /// </summary>
-    public DiceRoller(IRandomService random, ulong seed, string scope, long nextKey = 0)
+    public DiceRoller(ITalesRandom random, ulong seed, string scope, long nextKey = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scope);
         if (nextKey < 0)
@@ -77,14 +73,14 @@ public sealed class DiceRoller
     /// <summary>The next keyed draw ordinal, or zero for a legacy stream roller.</summary>
     public long NextRandomKey => _nextKey;
 
-    /// <summary>Whether this roller can be reconstructed without retaining an Engine stream.</summary>
+    /// <summary>Whether this roller can be reconstructed without retaining a stream.</summary>
     public bool IsKeyed => _scope is not null;
 
     /// <summary>
-    /// Points a keyed roller at the current callback's Engine random service,
+    /// Points a keyed roller at the current callback's random service,
     /// so a live fight can keep its roller between callbacks.
     /// </summary>
-    public void Use(IRandomService random)
+    public void Use(ITalesRandom random)
     {
         if (!IsKeyed)
         {
@@ -94,7 +90,7 @@ public sealed class DiceRoller
         _random = random;
     }
 
-    /// <summary>Creates another keyed roller over the same Engine random service.</summary>
+    /// <summary>Creates another keyed roller over the same random service.</summary>
     public DiceRoller Keyed(ulong seed, string scope, long nextKey = 0) => new(_random, seed, scope, nextKey);
 
     public long Roll(int count, int sides) => Roll(count, sides, count);
@@ -161,9 +157,9 @@ public sealed class DiceRoller
         if (_scope is string scope && _seed is ulong seed)
         {
             long key = _nextKey++;
-            return checked((uint)_random.DrawKeyed(new KeyedRngRequest(seed, scope, $"draw:{key}", 0, exclusiveMaximum - 1)).Value);
+            return _random.DrawKeyed(seed, scope, $"draw:{key}", (uint)exclusiveMaximum);
         }
 
-        return checked((uint)_random.NextBoundedU32(new ScopedRngBoundedRequest(_stream!, (uint)exclusiveMaximum)).Value);
+        return _stream!.NextBounded((uint)exclusiveMaximum);
     }
 }

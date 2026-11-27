@@ -152,7 +152,7 @@ public sealed class LiveGameCombatTests
             List<string> containers = moduleIds
                 .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
                 .ToList();
-            using SaveSlots slots = new(engine);
+            using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
             slots.Write("bridge-before", File.ReadAllText(beforePath));
             GameSession session = new(new ModuleLibrary(_ => containers
                 .Select(path => ProductContentBundle.OpenContainer(engine.Content, path))
@@ -210,7 +210,7 @@ public sealed class LiveGameCombatTests
             List<string> containers = moduleIds
                 .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
                 .ToList();
-            using SaveSlots slots = new(engine);
+            using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
             slots.Write("bridge-before", File.ReadAllText(beforePath));
             GameSession session = new(new ModuleLibrary(_ => containers
                 .Select(path => ProductContentBundle.OpenContainer(engine.Content, path))

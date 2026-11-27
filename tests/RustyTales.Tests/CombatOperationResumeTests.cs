@@ -6,6 +6,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -216,7 +218,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 7799;
             const string scope = "operation-tail-post-roll";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
             attacker.Creature.Track("hit_points").Current = 5;
@@ -240,7 +242,7 @@ public sealed class CombatOperationResumeTests
             CombatRunner active = runner;
             if (restore)
             {
-                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                activeDice = new DiceRoller(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, activeDice);
                 active = CombatRunner.Restore(rules, combat,
                 [
@@ -270,7 +272,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 7799;
             const string scope = "condition-post-roll";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Conditioned", evaluator);
             attacker.Creature.Conditions.Add(rules.Find(DefinitionTypes.Condition, "focus", out _)!);
@@ -292,7 +294,7 @@ public sealed class CombatOperationResumeTests
             CombatRunner active = runner;
             if (restore)
             {
-                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                activeDice = new DiceRoller(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, activeDice);
                 Combatant restoredAttacker = Combatant.FromMonster(rules, attackerDefinition, "Conditioned", restoredEvaluator);
                 restoredAttacker.Creature.Conditions.Add(rules.Find(DefinitionTypes.Condition, "focus", out _)!);
@@ -464,7 +466,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 7799;
             const string scope = "operation-skill-post-roll";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             RuleSet rules = set.Rules!;
             Character character = CreateImprovementCharacter(set, engine.Random, "skill-post-roll-character");
             Evaluator evaluator = new(rules, dice);
@@ -493,7 +495,7 @@ public sealed class CombatOperationResumeTests
             Character activeCharacter = character;
             if (restore)
             {
-                activeDice = new DiceRoller(engine.Random, seed, scope, saved.NextRandomKey);
+                activeDice = new DiceRoller(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, activeDice);
                 activeCharacter = CreateImprovementCharacter(set, engine.Random, "skill-post-roll-character-restored");
                 Combatant restoredTemplate = Combatant.FromMonster(rules, attackerDefinition, activeCharacter.Name, restoredEvaluator);
@@ -522,7 +524,7 @@ public sealed class CombatOperationResumeTests
             set.Rules!,
             Character.StampsOf(set),
             new CreationRequest("Ada", "warrior", null, Attributes: new Dictionary<string, decimal> { ["str"] = 15 }),
-            new DiceRoller(random, 7798, scope),
+            new DiceRoller(new EngineRandom(random), 7798, scope),
             problems)!;
         Assert.Empty(problems);
         return character;
@@ -560,7 +562,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 9335;
             const string scope = "operation-tail-hit";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
             attacker.Creature.Track("hit_points").Current = 5;
@@ -583,7 +585,7 @@ public sealed class CombatOperationResumeTests
             CombatRunner active = runner;
             if (restore)
             {
-                DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+                DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, restoredDice);
                 active = CombatRunner.Restore(rules, combat,
                 [
@@ -612,7 +614,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 9335;
             const string scope = "operation-tail-nested";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant attacker = Combatant.FromMonster(rules, attackerDefinition, "Attacker", evaluator);
             attacker.Creature.Track("hit_points").Current = 5;
@@ -635,7 +637,7 @@ public sealed class CombatOperationResumeTests
             CombatRunner active = runner;
             if (restore)
             {
-                DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+                DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, restoredDice);
                 active = CombatRunner.Restore(rules, combat,
                 [
@@ -663,7 +665,7 @@ public sealed class CombatOperationResumeTests
         {
             const ulong seed = 9335;
             const string scope = "operation-tail-movement";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Combatant mover = Combatant.FromMonster(rules, moverDefinition, "Mover", evaluator);
             mover.Creature.Track("hit_points").Current = 5;
@@ -687,7 +689,7 @@ public sealed class CombatOperationResumeTests
             CombatRunner active = runner;
             if (restore)
             {
-                DiceRoller restoredDice = new(engine.Random, seed, scope, saved.NextRandomKey);
+                DiceRoller restoredDice = new(new EngineRandom(engine.Random), seed, scope, saved.NextRandomKey);
                 Evaluator restoredEvaluator = new(rules, restoredDice);
                 active = CombatRunner.Restore(rules, combat,
                 [

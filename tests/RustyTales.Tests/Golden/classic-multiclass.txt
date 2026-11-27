@@ -6,8 +6,8 @@ error[character.multiclass] classic modules/classic/races/dwarf.json $.multiclas
 
 $ tales character new --module modules/classic --class fighter,thief --race dwarf --name Thror --attributes str=15,dex=14,con=15,int=10,wis=10,cha=9 --seed 4 --out thror.json
 Thror: Dwarf Fighter 1 / Thief 1 (level 2, 0 xp, Fighter 0 of 1900, Thief 0 of 1250)
-  hit points 3/3
-  gold 130
+  hit points 8/8
+  gold 100
   str            15     Strength
   dex            14     Dexterity
   con            16     Constitution
@@ -26,16 +26,16 @@ Thror: Dwarf Fighter 1 / Thief 1 (level 2, 0 xp, Fighter 0 of 1900, Thief 0 of 1
   undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to thror.json.
-  seed 4: 1d10: 1 = 1; 1d6: 3 = 3; 3d6: 2+6+3 = 11; 2d6: 4+1 = 5
+  seed 4: 1d10: 10 = 10; 1d6: 3 = 3; 3d6: 3+1+2 = 6; 2d6: 5+5 = 10
 [exit 0]
 
 $ tales character level thror.json --module modules/classic --xp 5000 --seed 3 --trained
 Reached level 3 (Fighter 2): +5 hit points.
-Reached level 4 (Thief 2): +3 hit points.
-Reached level 5 (Thief 3): +3 hit points.
+Reached level 4 (Thief 2): +1 hit points.
+Reached level 5 (Thief 3): +1 hit points.
 Thror: Dwarf Fighter 2 / Thief 3 (level 5, 5000 xp, Fighter 2500 of 4250, Thief 2500 of 5000)
-  hit points 14/14
-  gold 130
+  hit points 15/15
+  gold 100
   str            15     Strength
   dex            14     Dexterity
   con            16     Constitution
@@ -54,13 +54,13 @@ Thror: Dwarf Fighter 2 / Thief 3 (level 5, 5000 xp, Fighter 2500 of 4250, Thief 
   undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to thror.json.
-  seed 3: 1d10: 9 = 9; 1d6: 5 = 5; 1d6: 4 = 4
+  seed 3: 1d10: 8 = 8; 1d6: 1 = 1; 1d6: 1 = 1
 [exit 0]
 
 $ tales character new --module modules/classic --class fighter --race human --name Aldo --attributes str=16,dex=12,con=13,int=17,wis=10,cha=10 --out aldo.json
 Aldo: Human Fighter 1 (0 xp, Fighter 0 of 1900)
-  hit points 7/7
-  gold 180
+  hit points 6/6
+  gold 100
   str            16     Strength
   dex            12     Dexterity
   con            13     Constitution
@@ -79,7 +79,7 @@ Aldo: Human Fighter 1 (0 xp, Fighter 0 of 1900)
   undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
-  seed 1: 1d10: 7 = 7; 3d6: 5+5+6 = 16
+  seed 1: 1d10: 6 = 6; 3d6: 6+1+1 = 8
 [exit 0]
 
 $ tales character level aldo.json --module modules/classic --xp 4500 --class thief --seed 2 --trained
@@ -89,11 +89,11 @@ error[character.multiclass] classic modules/classic/advancement/standard.json $.
 [exit 1]
 
 $ tales character level aldo.json --module modules/classic --xp 4500 --seed 2 --trained
-Reached level 2: +9 hit points.
-Reached level 3: +5 hit points.
+Reached level 2: +6 hit points.
+Reached level 3: +6 hit points.
 Aldo: Human Fighter 3 (4500 xp, Fighter 4500 of 7750)
-  hit points 21/21
-  gold 180
+  hit points 18/18
+  gold 100
   str            16     Strength
   dex            12     Dexterity
   con            13     Constitution
@@ -112,16 +112,16 @@ Aldo: Human Fighter 3 (4500 xp, Fighter 4500 of 7750)
   undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
-  seed 2: 1d10: 9 = 9; 1d10: 5 = 5
+  seed 2: 1d10: 6 = 6; 1d10: 6 = 6
 [exit 0]
 
 $ tales character level aldo.json --module modules/classic --xp 0 --class magic_user --seed 5 --trained
 Reached level 4 (Magic user 1): +0 hit points.
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
   former class (Fighter) waits for the new class to pass it (character former <file> on to call on it)
-  hit points 21/21
+  hit points 18/18
   1st level spells 1/1
-  gold 180
+  gold 100
   Magic user spells per day by spell level: 1
   str            16     Strength
   dex            12     Dexterity
@@ -147,9 +147,9 @@ Saved to aldo.json.
 $ tales character former aldo.json --module modules/classic on
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
   calling on its former class (Fighter), forfeiting experience
-  hit points 21/21
+  hit points 18/18
   1st level spells 1/1
-  gold 180
+  gold 100
   Magic user spells per day by spell level: 1
   str            16     Strength
   dex            12     Dexterity
@@ -174,9 +174,9 @@ Saved to aldo.json.
 $ tales character former aldo.json --module modules/classic off
 Aldo: Human Fighter 3 / Magic user 1 (level 4, 4500 xp, Magic user 0 of 2400, left Fighter)
   former class (Fighter) waits for the new class to pass it (character former <file> on to call on it)
-  hit points 21/21
+  hit points 18/18
   1st level spells 1/1
-  gold 180
+  gold 100
   Magic user spells per day by spell level: 1
   str            16     Strength
   dex            12     Dexterity
@@ -201,12 +201,12 @@ Saved to aldo.json.
 $ tales character level aldo.json --module modules/classic --xp 20000 --seed 6 --trained
 Reached level 5 (Magic user 2): +0 hit points.
 Reached level 6 (Magic user 3): +0 hit points.
-Reached level 7 (Magic user 4): +3 hit points.
+Reached level 7 (Magic user 4): +2 hit points.
 Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 22000, left Fighter)
-  hit points 24/24
+  hit points 20/20
   1st level spells 3/3
   2nd level spells 2/2
-  gold 180
+  gold 100
   Magic user spells per day by spell level: 3 / 2
   str            16     Strength
   dex            12     Dexterity
@@ -226,7 +226,7 @@ Aldo: Human Fighter 3 / Magic user 4 (level 7, 24500 xp, Magic user 20000 of 220
   undead         false  Undead
   wis_save       0      Wisdom mental saving throw bonus
 Saved to aldo.json.
-  seed 6: 1d4: 3 = 3
+  seed 6: 1d4: 2 = 2
 [exit 0]
 
 $ tales character former aldo.json --module modules/classic on
@@ -253,15 +253,15 @@ $ tales character show aldo.json --module modules/classic --json
     "levels": [
       {
         "class": "classic:fighter",
-        "gain": 7
+        "gain": 6
       },
       {
         "class": "classic:fighter",
-        "gain": 9
+        "gain": 6
       },
       {
         "class": "classic:fighter",
-        "gain": 5
+        "gain": 6
       },
       {
         "class": "classic:magic_user",
@@ -277,7 +277,7 @@ $ tales character show aldo.json --module modules/classic --json
       },
       {
         "class": "classic:magic_user",
-        "gain": 3
+        "gain": 2
       }
     ],
     "experience": 24500,
@@ -298,8 +298,8 @@ $ tales character show aldo.json --module modules/classic --json
     },
     "tracks": {
       "hit_points": {
-        "current": 24,
-        "max": 24
+        "current": 20,
+        "max": 20
       },
       "spells_1": {
         "current": 3
@@ -318,7 +318,7 @@ $ tales character show aldo.json --module modules/classic --json
       }
     },
     "balances": {
-      "gold": 180
+      "gold": 100
     },
     "equipment": [],
     "forfeits_experience": true,
@@ -468,8 +468,8 @@ $ tales character show aldo.json --module modules/classic --json
     {
       "id": "hit_points",
       "name": "Hit points",
-      "current": 24,
-      "max": 24,
+      "current": 20,
+      "max": 20,
       "problem": null
     },
     {

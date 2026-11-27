@@ -5,6 +5,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class InventoryTests
@@ -25,7 +27,7 @@ public sealed class InventoryTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.Contains(runner.Begin(engine.Random), fact => fact is ItemsFact { Given: true, Count: 2 });
+            Assert.Contains(runner.Begin(new EngineRandom(engine.Random)), fact => fact is ItemsFact { Given: true, Count: 2 });
             Assert.Equal("Offer three", runner.MenuOptions()[0].Label);
             Assert.Equal(3, runner.State.CarriedItems.Count());
 
@@ -34,7 +36,7 @@ public sealed class InventoryTests
             Assert.Empty(problems);
             runner = new CampaignRunner(set.Rules, resumed);
             Assert.Equal("Offer three", runner.MenuOptions()[0].Label);
-            Assert.Contains(runner.Execute("choose 1", engine.Random), fact => fact is ItemsFact { Given: false, Count: 3 });
+            Assert.Contains(runner.Execute("choose 1", new EngineRandom(engine.Random)), fact => fact is ItemsFact { Given: false, Count: 3 });
             Assert.Empty(runner.State.Inventory);
             Assert.Empty(runner.State.Party.SelectMany(member => member.Equipment));
             Assert.Equal("Empty", Assert.Single(runner.MenuOptions()).Label);
@@ -62,7 +64,7 @@ public sealed class InventoryTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.Contains(runner.Begin(engine.Random), fact => fact is RefusedFact);
+            Assert.Contains(runner.Begin(new EngineRandom(engine.Random)), fact => fact is RefusedFact);
             Assert.Single(state.Inventory);
             Assert.Single(absent.Equipment);
             Assert.Equal("One owned", runner.MenuOptions()[0].Label);
@@ -87,9 +89,9 @@ public sealed class InventoryTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             Assert.Equal(2, runner.Temple()!.Services[0].Prices[0]);
-            runner.Execute("serve 1 1", engine.Random);
+            runner.Execute("serve 1 1", new EngineRandom(engine.Random));
             Assert.Equal(3, party[0].Tracks["hit_points"].Current);
             Assert.Equal(2, state.CarriedItems.Count());
         });

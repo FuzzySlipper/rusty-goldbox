@@ -9,6 +9,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class CurrencyTests
@@ -35,15 +37,15 @@ public sealed class CurrencyTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.IsType<ShopFact>(runner.Begin(engine.Random).Last());
+            Assert.IsType<ShopFact>(runner.Begin(new EngineRandom(engine.Random)).Last());
             Assert.Equal("silver", Assert.Single(runner.Shop()!.Stock).Currency.Id);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", new EngineRandom(engine.Random))));
             party[0].Balances["silver"] = 1;
             party[1].Balances["silver"] = 2;
-            Assert.DoesNotContain(runner.Execute("buy 1", engine.Random), fact => fact is RefusedFact);
+            Assert.DoesNotContain(runner.Execute("buy 1", new EngineRandom(engine.Random)), fact => fact is RefusedFact);
             Assert.Equal(0, party.Sum(member => member.Balances["silver"]));
             Assert.Equal(200, party.Sum(member => member.Balances["gold"]));
-            Assert.Contains(runner.Execute("leave", engine.Random), fact => fact is TreasureFact { Amount: 3 });
+            Assert.Contains(runner.Execute("leave", new EngineRandom(engine.Random)), fact => fact is TreasureFact { Amount: 3 });
             Assert.Equal([2m, 1m], party.Select(member => member.Balances["silver"]));
 
             party[0].Balances["silver"] = 7;
@@ -75,7 +77,7 @@ public sealed class CurrencyTests
         host.Call(engine =>
         {
             List<ModuleDiagnostic> problems = [];
-            Character character = CharacterRules.Create(set.Rules, Character.StampsOf(set), new CreationRequest("A", "warrior", "folk"), new DiceRoller(engine.Random, engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "currency-none"))), problems)!;
+            Character character = CharacterRules.Create(set.Rules, Character.StampsOf(set), new CreationRequest("A", "warrior", "folk"), new DiceRoller(new EngineRandom(engine.Random), new EngineRandom(engine.Random).CreateScoped(1, "currency-none")), problems)!;
             Assert.Empty(problems);
             Assert.Empty(character.Balances);
             string file = Path.Combine(modules.Root, "none.json");

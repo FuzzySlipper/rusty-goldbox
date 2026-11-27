@@ -7,6 +7,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class RestTests
@@ -27,8 +29,8 @@ public sealed class RestTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            List<PlayFact> facts = runner.Execute("choose 1", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> facts = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Equal(6, facts.Count(fact => fact.Describe().Contains("recovers", StringComparison.Ordinal)));
             Assert.Equal(party[0].Tracks["hit_points"].Max, party[0].Tracks["hit_points"].Current);
             Assert.Contains(facts, fact => fact is TextFact { Text: "Safe travels." });
@@ -55,8 +57,8 @@ public sealed class RestTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            List<PlayFact> facts = runner.Execute("choose 1", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> facts = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Equal(6, facts.Count(fact => fact.Describe().Contains("recovers", StringComparison.Ordinal)));
             Assert.Equal(6, party[0].Tracks["ward"].Current);
             Assert.Equal(9, party[1].Tracks["ward"].Current);
@@ -93,12 +95,12 @@ public sealed class RestTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             List<ModuleDiagnostic> problems = [];
             CampaignState saved = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
             Assert.Empty(problems);
 
-            List<PlayFact> wholeRest = runner.Execute("choose 1", engine.Random);
+            List<PlayFact> wholeRest = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Contains(wholeRest, fact => fact is TextFact { Text: "Safe travels." });
             Assert.Equal(0, party[0].Tracks["hit_points"].Current);
             Assert.Contains(dead, party[0].Conditions);
@@ -107,19 +109,19 @@ public sealed class RestTests
             Assert.Equal(1, runner.State.ElapsedDays);
 
             CampaignRunner resumed = new(set.Rules, saved);
-            List<PlayFact> resumedFacts = resumed.Execute("choose 1", engine.Random);
+            List<PlayFact> resumedFacts = resumed.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Equal(wholeRest.Select(fact => fact.Describe()), resumedFacts.Select(fact => fact.Describe()));
             Assert.Equal(0, resumed.State.Party[0].Tracks["hit_points"].Current);
             Assert.Equal(livingMax, resumed.State.Party[1].Tracks["hit_points"].Current);
             Assert.Equal(1, resumed.State.ElapsedDays);
 
             CampaignRunner temple = new(set.Rules, saved);
-            temple.Begin(engine.Random);
-            temple.Execute("choose 2", engine.Random);
-            temple.Execute("serve 1 1", engine.Random);
+            temple.Begin(new EngineRandom(engine.Random));
+            temple.Execute("choose 2", new EngineRandom(engine.Random));
+            temple.Execute("serve 1 1", new EngineRandom(engine.Random));
             Assert.Equal(0, temple.State.Party[0].Tracks["hit_points"].Current);
             Assert.Contains(dead, temple.State.Party[0].Conditions);
-            temple.Execute("serve 1 2", engine.Random);
+            temple.Execute("serve 1 2", new EngineRandom(engine.Random));
             Assert.Equal(livingMax, temple.State.Party[1].Tracks["hit_points"].Current);
 
             List<ModuleDiagnostic> templeProblems = [];
@@ -179,13 +181,13 @@ public sealed class RestTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             List<ModuleDiagnostic> problems = [];
             CampaignState saved = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
             Assert.Empty(problems);
-            List<PlayFact> first = runner.Execute("choose 1", engine.Random);
+            List<PlayFact> first = runner.Execute("choose 1", new EngineRandom(engine.Random));
             CampaignRunner resumed = new(set.Rules, saved);
-            List<PlayFact> second = resumed.Execute("choose 1", engine.Random);
+            List<PlayFact> second = resumed.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Equal(first.Select(fact => fact.Describe()), second.Select(fact => fact.Describe()));
             Assert.Equal(first.SelectMany(fact => fact.Rolls).Select(roll => roll.ToString()), second.SelectMany(fact => fact.Rolls).Select(roll => roll.ToString()));
             Assert.Single(first.OfType<FightFact>());

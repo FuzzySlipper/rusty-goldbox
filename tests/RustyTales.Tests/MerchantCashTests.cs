@@ -5,6 +5,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class MerchantCashTests
@@ -34,10 +36,10 @@ public sealed class MerchantCashTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.Contains("Buying cash: 7 gold", runner.Begin(engine.Random).OfType<ShopFact>().Single().Text, StringComparison.Ordinal);
+            Assert.Contains("Buying cash: 7 gold", runner.Begin(new EngineRandom(engine.Random)).OfType<ShopFact>().Single().Text, StringComparison.Ordinal);
             Assert.Equal([3.15m, 3.15m, 3.15m], runner.Shop()!.Carried.Select(offer => offer.Price));
 
-            runner.Execute("sell 1", engine.Random);
+            runner.Execute("sell 1", new EngineRandom(engine.Random));
             Assert.Equal(3.15m, party.Sum(member => member.Balances["gold"]));
             Assert.Equal(3.85m, state.ValuesFor(state.Area)["cash"].Number);
             Assert.Equal(2, state.Inventory.Count);
@@ -49,12 +51,12 @@ public sealed class MerchantCashTests
             Assert.Equal(3.85m, restored.ValuesFor(restored.Area)["cash"].Number);
             runner = new CampaignRunner(set.Rules, restored);
 
-            runner.Execute("sell 1", engine.Random);
+            runner.Execute("sell 1", new EngineRandom(engine.Random));
             Assert.Equal(0.7m, restored.ValuesFor(restored.Area)["cash"].Number);
             Assert.Single(restored.Inventory);
             decimal beforeCash = restored.ValuesFor(restored.Area)["cash"].Number;
             decimal beforeGold = restored.Party.Sum(member => member.Balances["gold"]);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("sell 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("sell 1", new EngineRandom(engine.Random))));
             Assert.Equal(beforeCash, restored.ValuesFor(restored.Area)["cash"].Number);
             Assert.Equal(beforeGold, restored.Party.Sum(member => member.Balances["gold"]));
             Assert.Single(restored.Inventory);
@@ -89,13 +91,13 @@ public sealed class MerchantCashTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             ShopOffer offer = Assert.Single(runner.Shop()!.Carried);
             Assert.Equal(2.7m, offer.Price);
             Assert.Equal("silver", offer.Currency.Id);
             Assert.Contains("7 gold", runner.Shop()!.Text, StringComparison.Ordinal);
 
-            Assert.Contains("only gold", Assert.Single(runner.Execute("sell 1", engine.Random)).Describe(), StringComparison.Ordinal);
+            Assert.Contains("only gold", Assert.Single(runner.Execute("sell 1", new EngineRandom(engine.Random))).Describe(), StringComparison.Ordinal);
             Assert.Single(state.Inventory);
             Assert.Equal(7m, state.ValuesFor(state.Area)["cash"].Number);
             Assert.Equal(0m, party.Sum(member => member.Balances["gold"]));
@@ -136,9 +138,9 @@ public sealed class MerchantCashTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             Assert.Equal(90, Assert.Single(runner.Shop()!.Carried).Price);
-            Assert.Contains(runner.Execute("sell 1", engine.Random), fact => fact is TradeFact);
+            Assert.Contains(runner.Execute("sell 1", new EngineRandom(engine.Random)), fact => fact is TradeFact);
             Assert.Equal(90, hero.Balances["gold"]);
             Assert.Equal(1310, state.Variables["merchant_cash"].Number);
             Assert.Empty(state.Inventory);

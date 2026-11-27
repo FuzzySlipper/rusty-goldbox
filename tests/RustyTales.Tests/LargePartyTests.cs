@@ -7,6 +7,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -356,13 +358,13 @@ public sealed class LargePartyTests
             {
                 CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 1);
                 CampaignRunner runner = new(set.Rules, state);
-                List<PlayFact> played = runner.Begin(engine.Random);
+                List<PlayFact> played = runner.Begin(new EngineRandom(engine.Random));
                 foreach (string command in cryptLines
                     .Select(line => line.Contains('#', StringComparison.Ordinal) ? line[..line.IndexOf('#', StringComparison.Ordinal)] : line)
                     .Select(line => line.Trim())
                     .Where(line => line.Length > 0))
                 {
-                    played.AddRange(runner.Execute(command, engine.Random));
+                    played.AddRange(runner.Execute(command, new EngineRandom(engine.Random)));
                 }
 
                 return played;

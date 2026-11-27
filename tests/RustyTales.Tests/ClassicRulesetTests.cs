@@ -4,6 +4,8 @@ using Rusty.Engine.Testing;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -121,8 +123,9 @@ public sealed class ClassicRulesetTests
         using EngineTestHost host = EngineTestHost.Create();
         List<DiceRoll> rolls = host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "tests"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "tests");
+            DiceRoller dice = new(streamRandom, stream);
             new Evaluator(Classic, dice).Evaluate(Classic.Expression(sword, "$.parameters.damage"), Character("fighter", 1), target);
             return dice.Rolls.ToList();
         });
@@ -161,8 +164,9 @@ public sealed class ClassicRulesetTests
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, "tests"));
-            return new Evaluator(Classic, new DiceRoller(engine.Random, stream)).Check(definition, self, target);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(seed, "tests");
+            return new Evaluator(Classic, new DiceRoller(streamRandom, stream)).Check(definition, self, target);
         });
     }
 }

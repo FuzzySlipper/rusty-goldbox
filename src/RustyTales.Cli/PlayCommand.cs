@@ -70,12 +70,11 @@ internal static class PlayCommand
             return output.UsageError($"--combat-control must be auto or manual, but was '{controlText}'.");
         }
 
-        using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
         List<ModuleDiagnostic> problems = [];
         (byte[] Json, string Location)? loadedSave = null;
         if (loading)
         {
-            loadedSave = ReadSave(host, store, parsed.Single("--load")!, workingDirectory, problems);
+            loadedSave = ReadSave(store, parsed.Single("--load")!, workingDirectory, problems);
             if (loadedSave is null)
             {
                 return output.Problems(problems);
@@ -124,57 +123,55 @@ internal static class PlayCommand
         bool invalidScript = false;
         try
         {
-            host.Call(engine =>
+            ITalesRandom random = DeterministicRandom.Shared;
+            if (!loading)
             {
-                if (!loading)
+                transcript.Add(new PlayStep(null, runner.Begin(random)));
+            }
+
+            foreach (ScriptLine scriptLine in commands)
+            {
+                string command = scriptLine.Text;
+                if (!CombatScript.IsCombatCommand(command))
                 {
-                    transcript.Add(new PlayStep(null, runner.Begin(engine.Random)));
+                    List<PlayFact> facts = runner.Execute(command, random);
+                    transcript.Add(new PlayStep(command, facts));
+                    if (parsed.Has("--fail-on-refusal"))
+                    {
+                        AddRefusals(refusals, facts, scriptLine, scriptPath!, state, set.Root!.Id);
+                    }
+
+                    continue;
                 }
 
-                foreach (ScriptLine scriptLine in commands)
+                (CombatScriptCommand? combatCommand, string? scriptError) = CombatScript.Parse(command);
+                if (scriptError is not null)
                 {
-                    string command = scriptLine.Text;
-                    if (!CombatScript.IsCombatCommand(command))
-                    {
-                        List<PlayFact> facts = runner.Execute(command, engine.Random);
-                        transcript.Add(new PlayStep(command, facts));
-                        if (parsed.Has("--fail-on-refusal"))
-                        {
-                            AddRefusals(refusals, facts, scriptLine, scriptPath!, state, set.Root!.Id);
-                        }
-
-                        continue;
-                    }
-
-                    (CombatScriptCommand? combatCommand, string? scriptError) = CombatScript.Parse(command);
-                    if (scriptError is not null)
-                    {
-                        invalidScript = true;
-                        transcript.Add(new PlayStep(command, [], Error: scriptError));
-                        continue;
-                    }
-
-                    CampaignCombatCommandResult result = ExecuteCombat(runner, combatCommand!, engine.Random);
-                    bool trace = parsed.Has("--trace");
-                    transcript.Add(new PlayStep(
-                        command,
-                        result.Facts,
-                        result,
-                        Trace: trace,
-                        BehaviorTrace: trace ? result.Observation.BehaviorTrace : null));
-                    if (parsed.Has("--fail-on-refusal") && !result.Accepted)
-                    {
-                        AddRefusal(
-                            refusals,
-                            result.Reason ?? "the combat command was refused.",
-                            scriptLine,
-                            scriptPath!,
-                            state,
-                            set.Root!.Id,
-                            "Use `combat inspect` to see the active actor, legal actions, target IDs, and paths, then retry with a valid combat choice.");
-                    }
+                    invalidScript = true;
+                    transcript.Add(new PlayStep(command, [], Error: scriptError));
+                    continue;
                 }
-            });
+
+                CampaignCombatCommandResult result = ExecuteCombat(runner, combatCommand!, random);
+                bool trace = parsed.Has("--trace");
+                transcript.Add(new PlayStep(
+                    command,
+                    result.Facts,
+                    result,
+                    Trace: trace,
+                    BehaviorTrace: trace ? result.Observation.BehaviorTrace : null));
+                if (parsed.Has("--fail-on-refusal") && !result.Accepted)
+                {
+                    AddRefusal(
+                        refusals,
+                        result.Reason ?? "the combat command was refused.",
+                        scriptLine,
+                        scriptPath!,
+                        state,
+                        set.Root!.Id,
+                        "Use `combat inspect` to see the active actor, legal actions, target IDs, and paths, then retry with a valid combat choice.");
+                }
+            }
         }
         catch (RuleFailure failure)
         {
@@ -188,7 +185,7 @@ internal static class PlayCommand
             return output.Problems([failure.Diagnostic]);
         }
 
-        if (parsed.Single("--save") is string save && Save(host, store, save, SaveFile.ToJson(state, set), workingDirectory) is ModuleDiagnostic problem)
+        if (parsed.Single("--save") is string save && Save(store, save, SaveFile.ToJson(state, set), workingDirectory) is ModuleDiagnostic problem)
         {
             return output.Problems([problem]);
         }
@@ -202,7 +199,7 @@ internal static class PlayCommand
         return invalidScript ? TalesCli.Invalid : TalesCli.Ok;
     }
 
-    private static CampaignCombatCommandResult ExecuteCombat(CampaignRunner runner, CombatScriptCommand command, Rusty.Engine.IRandomService random)
+    private static CampaignCombatCommandResult ExecuteCombat(CampaignRunner runner, CombatScriptCommand command, ITalesRandom random)
     {
         if (command is CombatInspectCommand)
         {
@@ -302,7 +299,7 @@ internal static class PlayCommand
     }
 
     /// <summary>The save's JSON and where it came from (a file, or a slot in the store), for messages.</summary>
-    private static (byte[] Json, string Location)? ReadSave(EngineTestHost host, string? store, string save, string workingDirectory, List<ModuleDiagnostic> problems)
+    private static (byte[] Json, string Location)? ReadSave(string? store, string save, string workingDirectory, List<ModuleDiagnostic> problems)
     {
         if (store is null)
         {
@@ -322,9 +319,10 @@ internal static class PlayCommand
         byte[]? json;
         try
         {
+            using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
             json = host.Call(engine =>
             {
-                using SaveSlots slots = new(engine);
+                using SaveSlots slots = new(new CliEngineStateStore(engine, SaveSlots.Scope));
                 return slots.Read(save);
             });
         }
@@ -343,7 +341,7 @@ internal static class PlayCommand
         return (json, location);
     }
 
-    private static ModuleDiagnostic? Save(EngineTestHost host, string? store, string save, string json, string workingDirectory)
+    private static ModuleDiagnostic? Save(string? store, string save, string json, string workingDirectory)
     {
         if (store is null)
         {
@@ -361,9 +359,10 @@ internal static class PlayCommand
 
         try
         {
+            using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions { PersistenceRoot = store });
             host.Call(engine =>
             {
-                using SaveSlots slots = new(engine);
+                using SaveSlots slots = new(new CliEngineStateStore(engine, SaveSlots.Scope));
                 slots.Write(save, json);
             });
             return null;

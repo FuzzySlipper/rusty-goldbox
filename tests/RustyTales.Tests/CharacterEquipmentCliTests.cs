@@ -56,7 +56,7 @@ public sealed class CharacterEquipmentCliTests
     public void StartingEquipmentDoesNotChangeSeededCreationResults()
     {
         using TempModules scratch = new();
-        string[] common = ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "human", "--seed", "1", "--json"];
+        string[] common = ["character", "new", "--module", Rules.ClassicPath, "--class", "fighter", "--race", "human", "--seed", "2", "--json"];
         (int withoutCode, string withoutText) = Run(scratch.Root, common);
         (int withCode, string withText) = Run(scratch.Root, [.. common, "--equipment", "long_sword,chain_mail"]);
 

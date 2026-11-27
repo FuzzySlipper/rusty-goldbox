@@ -1,5 +1,3 @@
-using Rusty.Engine;
-
 namespace RustyTales.Core.Modules;
 
 /// <summary>
@@ -49,39 +47,15 @@ public static class InstalledModules
     }
 
     /// <summary>
-    /// Opens every container in <paramref name="directory"/> and adds it to
-    /// <paramref name="opened"/>; the caller disposes them. A container that
-    /// doesn't open is left out and described in <paramref name="problems"/>.
-    /// Call inside a host callback.
-    /// </summary>
-    public static void Open(IContentService content, string directory, List<ProductContentBundle> opened, List<string> problems)
-    {
-        List<ModuleDiagnostic> listing = [];
-        List<string> containers = In(directory, listing);
-        problems.AddRange(listing.Select(diagnostic => $"{diagnostic.File}: {diagnostic.Message}"));
-        foreach (string path in containers)
-        {
-            try
-            {
-                opened.Add(ProductContentBundle.OpenContainer(content, path));
-            }
-            catch (EngineCallException exception)
-            {
-                problems.Add($"{path} isn't a usable module container: {exception.Message}");
-            }
-        }
-    }
-
-    /// <summary>
     /// The modules in <paramref name="directories"/> (module directories and
-    /// installed containers), as (id, version). Call inside a host callback.
+    /// installed containers when <paramref name="containers"/> is supplied), as (id, version).
     /// </summary>
-    public static List<(string Id, ModuleVersion Version)> Present(IReadOnlyList<string> directories, IContentService content)
+    public static List<(string Id, ModuleVersion Version)> Present(IReadOnlyList<string> directories, IModuleContainerOpener? containers = null)
     {
-        List<ProductContentBundle> opened = [];
+        List<IDisposable> opened = [];
         try
         {
-            return ModuleCatalog.Sources(directories, "", content, opened, [], [])
+            return ModuleCatalog.Sources(directories, "", containers, opened, [], [])
                 .Select(source => ManifestReader.Read(source, []))
                 .OfType<ModuleManifest>()
                 .Select(manifest => (manifest.Id, manifest.Version))

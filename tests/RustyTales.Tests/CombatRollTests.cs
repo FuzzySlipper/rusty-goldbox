@@ -6,6 +6,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class CombatRollTests
@@ -397,8 +399,9 @@ public sealed class CombatRollTests
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "combat-roll-tests"));
-            return work(new DiceRoller(engine.Random, stream));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "combat-roll-tests");
+            return work(new DiceRoller(streamRandom, stream));
         });
     }
 

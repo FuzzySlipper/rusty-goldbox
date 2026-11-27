@@ -47,7 +47,7 @@ internal sealed class WorkspaceModules
                 continue;
             }
 
-            WorkspaceBuildResult result = WorkspaceBuilder.Build(workspace, content);
+            WorkspaceBuildResult result = WorkspaceBuilder.Build(workspace, new EngineContainerOpener(content));
             if (!result.IsValid)
             {
                 problems.Add($"Workspace {root} doesn't build, so its last packed modules are used: {Describe(result.Diagnostics)} Run `tales workspace build {root}` for every error.");
@@ -91,7 +91,7 @@ internal sealed class WorkspaceModules
         List<ProductContentBundle> authored = [];
         foreach (string root in _roots)
         {
-            InstalledModules.Open(content, PackedDirectory(root), authored, problems);
+            EngineContainerOpener.OpenAll(content, PackedDirectory(root), authored, problems);
         }
 
         HashSet<string> ids = authored.Select(ModuleId).OfType<string>().ToHashSet(StringComparer.Ordinal);

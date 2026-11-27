@@ -338,12 +338,12 @@ Saved to ilsa.json.
 $ tales sim combat --module modules/three-action --party bram.json,pip.json,hild.json,ilsa.json --encounter wolf_pack --seed 5
 seed 5
 Round 1.
-  Bram rolls 23 for initiative.  [1d20: 17 = 17]
-  Pip rolls 25 for initiative.  [1d20: 17 = 17]
-  Hild rolls 26 for initiative.  [1d20: 19 = 19]
-  Ilsa rolls 20 for initiative.  [1d20: 15 = 15]
-  Wolf 1 rolls 17 for initiative.  [1d20: 10 = 10]
-  Wolf 2 rolls 20 for initiative.  [1d20: 13 = 13]
+  Bram rolls 21 for initiative.  [1d20: 15 = 15]
+  Pip rolls 15 for initiative.  [1d20: 7 = 7]
+  Hild rolls 25 for initiative.  [1d20: 18 = 18]
+  Ilsa rolls 24 for initiative.  [1d20: 19 = 19]
+  Wolf 1 rolls 11 for initiative.  [1d20: 4 = 4]
+  Wolf 2 rolls 21 for initiative.  [1d20: 14 = 14]
   Hild uses Bless on Bram, Pip, Hild, Ilsa.
   Hild spends 1 rank 1 spell slots (1 left).
   Bram is Blessed for 10 rounds.
@@ -352,57 +352,60 @@ Round 1.
   Ilsa is Blessed for 10 rounds.
   Hild uses Shield on Hild.
   Hild is Shield for 1 round.
-  Pip uses Strike (Shortbow) on Wolf 1.
-  Pip rolls Ranged Strike: 15 + 5 + 3 modifiers = 23 against 15: success.  [1d20: 15 = 15]
-  Wolf 1 loses 3 hit points (21 left).  [1d6: 3 = 3]
-  Pip uses Strike (Shortbow) on Wolf 1.
-  Pip rolls Ranged Strike: 15 + 5 - 2 modifiers = 18 against 15: success.  [1d20: 15 = 15]
-  Wolf 1 loses 3 hit points (18 left).  [1d6: 3 = 3]
-  Pip uses Strike (Shortbow) on Wolf 1.
-  Pip rolls Ranged Strike: 4 + 5 - 7 modifiers = 2 against 15: critical_failure.  [1d20: 4 = 4]
-  Bram uses Sudden Charge (Longsword) on Wolf 1.
-  Bram is Flourished for 1 round.
-  Bram moves 10 cells to (10, 3).
-  Bram rolls Melee Strike: 3 + 5 + 5 modifiers = 13 against 15: failure.  [1d20: 3 = 3]
-  Bram uses Strike (Longsword) on Wolf 1.
-  Bram rolls Melee Strike: 13 + 5 = 18 against 15: success.  [1d20: 13 = 13]
-  Wolf 1 loses 9 hit points (9 left).  [1d8: 5 = 5]
   Ilsa uses Force Barrage on Wolf 1.
   Ilsa spends 1 rank 1 spell slots (1 left).
   Force Barrage 1 of 2 goes to Wolf 1.
-  Wolf 1 loses 5 hit points (4 left).  [1d4: 4 = 4]
+  Wolf 1 loses 4 hit points (20 left).  [1d4: 3 = 3]
   Force Barrage 2 of 2 goes to Wolf 1.
-  Wolf 1 loses 4 hit points (0 left).  [1d4: 3 = 3]
-  Wolf 1 is out of the fight.
+  Wolf 1 loses 4 hit points (16 left).  [1d4: 3 = 3]
   Ilsa uses Shield on Ilsa.
   Ilsa is Shield for 1 round.
+  Bram uses Sudden Charge (Longsword) on Wolf 1.
+  Bram is Flourished for 1 round.
+  Bram moves 10 cells to (10, 3).
+  Bram rolls Melee Strike: 8 + 5 + 5 modifiers = 18 against 15: success.  [1d20: 8 = 8]
+  Wolf 1 loses 10 hit points (6 left).  [1d8: 6 = 6]
+  Bram uses Strike (Longsword) on Wolf 1.
+  Bram rolls Melee Strike: 20 + 5 = 25 against 15: critical_success.  [1d20: 20 = 20]
+  Wolf 1 loses 6 hit points (0 left).  [1d8: 6 = 6]
+  Wolf 1 is out of the fight.
   Wolf 2 uses Jaws on Bram.
-  Wolf 2 rolls Strike: 18 + 9 modifiers = 27 against 18: success.  [1d20: 18 = 18]
+  Wolf 2 rolls Strike: 14 + 9 modifiers = 23 against 18: success.  [1d20: 14 = 14]
   Bram loses 7 hit points (13 left).  [1d6: 5 = 5]
   Bram is Prone.
   Wolf 2 uses Jaws on Bram.
-  Wolf 2 rolls Strike: 7 + 4 modifiers = 11 against 16: failure.  [1d20: 7 = 7]
+  Wolf 2 rolls Strike: 8 + 4 modifiers = 12 against 16: failure.  [1d20: 8 = 8]
+  Pip uses Strike (Shortbow) on Wolf 2.
+  Pip rolls Ranged Strike: 4 + 5 + 3 modifiers = 12 against 15: failure.  [1d20: 4 = 4]
+  Pip uses Strike (Shortbow) on Wolf 2.
+  Pip rolls Ranged Strike: 18 + 5 - 2 modifiers = 21 against 15: success.  [1d20: 18 = 18]
+  Wolf 2 loses 2 hit points (22 left).  [1d6: 2 = 2]
+  Pip uses Strike (Shortbow) on Wolf 2.
+  Pip rolls Ranged Strike: 15 + 5 - 7 modifiers = 13 against 15: failure.  [1d20: 15 = 15]
 Round 2.
   Hild is no longer Shield.
   Hild uses Divine Lance on Wolf 2.
-  Hild rolls Spell attack: 14 + 8 = 22 against 15: success.  [1d20: 14 = 14]
-  Wolf 2 loses 6 hit points (18 left).  [2d4: 2+4 = 6]
+  Hild rolls Spell attack: 16 + 8 = 24 against 15: success.  [1d20: 16 = 16]
+  Wolf 2 loses 4 hit points (18 left).  [2d4: 3+1 = 4]
   Hild uses Shield on Hild.
   Hild is Shield for 1 round.
-  Pip uses Strike (Shortbow) on Wolf 2.
-  Pip rolls Ranged Strike: 16 + 5 + 3 modifiers = 24 against 15: success.  [1d20: 16 = 16]
-  Wolf 2 loses 4 hit points (14 left).  [1d6: 4 = 4]
-  Pip uses Strike (Shortbow) on Wolf 2.
-  Pip rolls Ranged Strike: 4 + 5 - 2 modifiers = 7 against 15: failure.  [1d20: 4 = 4]
-  Pip uses Strike (Shortbow) on Wolf 2.
-  Pip rolls Ranged Strike: 19 + 5 - 7 modifiers = 17 against 15: success.  [1d20: 19 = 19]
-  Wolf 2 loses 5 hit points (9 left).  [1d6: 5 = 5]
+  Ilsa is no longer Shield.
+  Ilsa uses Force Barrage on Wolf 2.
+  Ilsa spends 1 rank 1 spell slots (0 left).
+  Force Barrage 1 of 2 goes to Wolf 2.
+  Wolf 2 loses 4 hit points (14 left).  [1d4: 3 = 3]
+  Force Barrage 2 of 2 goes to Wolf 2.
+  Wolf 2 loses 2 hit points (12 left).  [1d4: 1 = 1]
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
   Bram is no longer Flourished.
   Bram uses Stand on Bram.
   Bram is no longer Prone.
   Bram uses Strike (Longsword) on Wolf 2.
-  Bram rolls Melee Strike: 9 + 5 + 5 modifiers = 19 against 15: success.  [1d20: 9 = 9]
-  Wolf 2 loses 9 hit points (0 left).  [1d8: 7 = 7]
+  Bram rolls Melee Strike: 4 + 5 + 5 modifiers = 14 against 15: failure.  [1d20: 4 = 4]
+  Bram uses Strike (Longsword) on Wolf 2.
+  Bram rolls Melee Strike: 20 + 5 = 25 against 15: critical_success.  [1d20: 20 = 20]
+  Wolf 2 loses 12 hit points (0 left).  [1d8: 3 = 3]
   Wolf 2 is out of the fight.
 Party wins after 2 rounds.
 Party: Bram 13/20, Pip 16/16, Hild 21/21, Ilsa 12/12
@@ -412,12 +415,12 @@ Wolf pack: Wolf 1 0/24 (out), Wolf 2 0/24 (out)
 $ tales sim combat --module modules/three-action --party bram.json,pip.json,hild.json,ilsa.json --encounter highway_robbery --seed 4
 seed 4
 Round 1.
-  Bram rolls 15 for initiative.  [1d20: 9 = 9]
-  Pip rolls 13 for initiative.  [1d20: 5 = 5]
-  Hild rolls 23 for initiative.  [1d20: 16 = 16]
-  Ilsa rolls 16 for initiative.  [1d20: 11 = 11]
-  Bandit rolls 17 for initiative.  [1d20: 11 = 11]
-  Ruffian rolls 13 for initiative.  [1d20: 5 = 5]
+  Bram rolls 12 for initiative.  [1d20: 6 = 6]
+  Pip rolls 10 for initiative.  [1d20: 2 = 2]
+  Hild rolls 27 for initiative.  [1d20: 20 = 20]
+  Ilsa rolls 15 for initiative.  [1d20: 10 = 10]
+  Bandit rolls 24 for initiative.  [1d20: 18 = 18]
+  Ruffian rolls 17 for initiative.  [1d20: 9 = 9]
   Hild uses Bless on Bram, Pip, Hild, Ilsa.
   Hild spends 1 rank 1 spell slots (1 left).
   Bram is Blessed for 10 rounds.
@@ -429,205 +432,162 @@ Round 1.
   Bandit uses Stride on Bram.
   Bandit moves 5 cells to (6, 3).
   Bandit uses Sling on Ilsa.
-  Bandit rolls Strike: 20 + 9 modifiers = 29 against 16: critical_success.  [1d20: 20 = 20]
-  Ilsa loses 12 hit points (0 left).  [1d6: 3 = 3]
+  Bandit rolls Strike: 9 + 9 modifiers = 18 against 16: success.  [1d20: 9 = 9]
+  Ilsa loses 9 hit points (3 left).  [1d6: 6 = 6]
+  Bandit uses Sling on Ilsa.
+  Bandit rolls Strike: 6 + 4 modifiers = 10 against 16: failure.  [1d20: 6 = 6]
+  Ruffian uses Stride on Bram.
+  Ruffian moves 5 cells to (6, 4).
+  Ruffian uses Sling on Ilsa.
+  Ruffian rolls Strike: 7 + 8 modifiers = 15 against 16: failure.  [1d20: 7 = 7]
+  Ruffian uses Sling on Ilsa.
+  Ruffian rolls Strike: 15 + 3 modifiers = 18 against 16: success.  [1d20: 15 = 15]
+  Ilsa loses 3 hit points (0 left).  [1d6: 6 = 6]
   Ilsa is out of the fight.
-  Ilsa regains 2 dying (2).
+  Ilsa regains 1 dying (1).
   Ilsa is Dying.
-  Bandit uses Sling on Pip.
-  Bandit rolls Strike: 1 + 4 modifiers = 5 against 18: critical_failure.  [1d20: 1 = 1]
-  Ilsa rolls Recovery check: 19 against 12: success.  [1d20: 19 = 19]
-  Ilsa loses 1 dying (1 left).
+  Ilsa rolls Recovery check: 16 against 11: success.  [1d20: 16 = 16]
+  Ilsa loses 1 dying (0 left).
+  Ilsa is no longer Dying.
+  Ilsa is Unconscious.
+  Ilsa regains 1 wounded (1).
   Bram uses Sudden Charge (Longsword) on Bandit.
   Bram is Flourished for 1 round.
   Bram moves 5 cells to (5, 3).
-  Bram rolls Melee Strike: 4 + 5 + 5 modifiers = 14 against 19: failure.  [1d20: 4 = 4]
+  Bram rolls Melee Strike: 14 + 5 + 5 modifiers = 24 against 19: success.  [1d20: 14 = 14]
+  Bandit loses 8 hit points (22 left).  [1d8: 4 = 4]
   Bram uses Strike (Longsword) on Bandit.
-  Bram rolls Melee Strike: 7 + 5 = 12 against 19: failure.  [1d20: 7 = 7]
+  Bram rolls Melee Strike: 16 + 5 = 21 against 19: success.  [1d20: 16 = 16]
+  Bandit loses 5 hit points (17 left).  [1d8: 1 = 1]
   Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 4 + 5 + 3 modifiers = 12 against 19: failure.  [1d20: 4 = 4]
+  Pip rolls Ranged Strike: 1 + 5 + 3 modifiers = 9 against 19: critical_failure.  [1d20: 1 = 1]
   Pip uses Strike (Shortbow) on Bandit.
   Pip rolls Ranged Strike: 8 + 5 - 2 modifiers = 11 against 19: failure.  [1d20: 8 = 8]
   Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 1 + 5 - 7 modifiers = -1 against 19: critical_failure.  [1d20: 1 = 1]
-  Ruffian uses Sling on Bram.
-  Ruffian rolls Strike: 2 + 8 modifiers = 10 against 18: failure.  [1d20: 2 = 2]
-  Ruffian uses Sling on Bram.
-  Ruffian rolls Strike: 6 + 3 modifiers = 9 against 18: failure.  [1d20: 6 = 6]
-  Ruffian uses Sling on Bram.
-  Ruffian rolls Strike: 15 - 2 modifiers = 13 against 18: failure.  [1d20: 15 = 15]
+  Pip rolls Ranged Strike: 14 + 5 - 7 modifiers = 12 against 19: failure.  [1d20: 14 = 14]
 Round 2.
   Hild is no longer Shield.
   Hild uses Heal on Ilsa.
   Hild spends 1 divine font heals (3 left).
-  Ilsa regains 11 hit points (11).  [1d8: 3 = 3]
+  Ilsa regains 12 hit points (12).  [1d8: 5 = 5]
   Ilsa is back in the fight.
-  Ilsa regains 1 wounded (1).
-  Ilsa loses 1 dying (0 left).
-  Ilsa is no longer Dying.
+  Ilsa is no longer Unconscious.
   Hild uses Shield on Hild.
   Hild is Shield for 1 round.
   Bandit uses Machete on Bram.
-  Bandit rolls Strike: 18 + 9 modifiers = 27 against 18: success.  [1d20: 18 = 18]
-  Bram loses 9 hit points (11 left).  [1d6: 4 = 4]
+  Bandit rolls Strike: 1 + 9 modifiers = 10 against 16: critical_failure.  [1d20: 1 = 1]
   Bandit uses Machete on Bram.
-  Bandit rolls Strike: 18 + 4 modifiers = 22 against 18: success.  [1d20: 18 = 18]
-  Bram loses 7 hit points (4 left).  [1d6: 2 = 2]
+  Bandit rolls Strike: 8 + 4 modifiers = 12 against 16: failure.  [1d20: 8 = 8]
   Bandit uses Machete on Bram.
-  Bandit rolls Strike: 7 - 1 modifiers = 6 against 18: critical_failure.  [1d20: 7 = 7]
+  Bandit rolls Strike: 15 - 1 modifiers = 14 against 16: failure.  [1d20: 15 = 15]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 9 + 9 modifiers = 18 against 16: success.  [1d20: 9 = 9]
+  Bram loses 15 hit points (5 left).  [1d6: 4 = 4; 1d6: 6 = 6]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 1 + 4 modifiers = 5 against 16: critical_failure.  [1d20: 1 = 1]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 12 - 1 modifiers = 11 against 16: failure.  [1d20: 12 = 12]
   Ilsa uses Force Barrage on Bandit.
   Ilsa spends 1 rank 1 spell slots (1 left).
   Force Barrage 1 of 2 goes to Bandit.
-  Bandit loses 5 hit points (25 left).  [1d4: 4 = 4]
+  Bandit loses 2 hit points (15 left).  [1d4: 1 = 1]
   Force Barrage 2 of 2 goes to Bandit.
-  Bandit loses 4 hit points (21 left).  [1d4: 3 = 3]
+  Bandit loses 5 hit points (10 left).  [1d4: 4 = 4]
   Ilsa uses Shield on Ilsa.
   Ilsa is Shield for 1 round.
   Bram is no longer Flourished.
-  Bram uses Sudden Charge (Longsword) on Ruffian.
-  Bram is Flourished for 1 round.
-  Bram moves 5 cells to (10, 4).
-  Bram rolls Melee Strike: 6 + 5 + 5 modifiers = 16 against 18: failure.  [1d20: 6 = 6]
-  Bram uses Strike (Longsword) on Ruffian.
-  Bram rolls Melee Strike: 9 + 5 = 14 against 18: failure.  [1d20: 9 = 9]
+  Bram uses Strike (Longsword) on Bandit.
+  Bram rolls Melee Strike: 12 + 5 + 5 modifiers = 22 against 19: success.  [1d20: 12 = 12]
+  Bandit loses 8 hit points (2 left).  [1d8: 4 = 4]
+  Bram uses Strike (Longsword) on Bandit.
+  Bram rolls Melee Strike: 11 + 5 = 16 against 19: failure.  [1d20: 11 = 11]
+  Bram uses Raise a Shield on Bram.
+  Bram is Shield raised for 1 round.
   Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 18 + 5 + 3 modifiers = 26 against 19: success.  [1d20: 18 = 18]
-  Bandit loses 5 hit points (16 left).  [1d6: 5 = 5]
+  Pip rolls Ranged Strike: 9 + 5 + 3 modifiers = 17 against 19: failure.  [1d20: 9 = 9]
   Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 10 + 5 - 2 modifiers = 13 against 19: failure.  [1d20: 10 = 10]
+  Pip rolls Ranged Strike: 5 + 5 - 2 modifiers = 8 against 19: critical_failure.  [1d20: 5 = 5]
   Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 12 + 5 - 7 modifiers = 10 against 19: failure.  [1d20: 12 = 12]
-  Ruffian uses Club on Bram.
-  Ruffian rolls Strike: 2 + 9 modifiers = 11 against 18: failure.  [1d20: 2 = 2]
-  Ruffian uses Club on Bram.
-  Ruffian rolls Strike: 12 + 4 modifiers = 16 against 18: failure.  [1d20: 12 = 12]
-  Ruffian uses Club on Bram.
-  Ruffian rolls Strike: 4 - 1 modifiers = 3 against 18: critical_failure.  [1d20: 4 = 4]
+  Pip rolls Ranged Strike: 17 + 5 - 7 modifiers = 15 against 19: failure.  [1d20: 17 = 17]
 Round 3.
   Hild is no longer Shield.
-  Hild uses Divine Lance on Bandit.
-  Hild rolls Spell attack: 5 + 8 = 13 against 19: failure.  [1d20: 5 = 5]
+  Hild uses Heal (wounds) on Bram.
+  Hild spends 1 divine font heals (2 left).
+  Bram regains 9 hit points (14).  [1d8: 1 = 1]
   Hild uses Shield on Hild.
   Hild is Shield for 1 round.
-  Bandit uses Sling on Bram.
-  Bandit rolls Strike: 2 + 9 modifiers = 11 against 18: failure.  [1d20: 2 = 2]
-  Bandit uses Sling on Bram.
-  Bandit rolls Strike: 15 + 4 modifiers = 19 against 18: success.  [1d20: 15 = 15]
-  Bram loses 4 hit points (0 left).  [1d6: 4 = 4]
-  Bram is out of the fight.
-  Bram regains 1 dying (1).
-  Bram is Dying.
-  Bandit uses Sling on Ilsa.
-  Bandit rolls Strike: 14 - 1 modifiers = 13 against 17: failure.  [1d20: 14 = 14]
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 6 + 9 modifiers = 15 against 18: failure.  [1d20: 6 = 6]
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 16 + 4 modifiers = 20 against 18: success.  [1d20: 16 = 16]
+  Bram reacts to Bandit: Shield Block.  [1d6: 1 = 1]
+  Bram uses Shield Block on Bram.
+  Bram loses 1 shield hit points (19 left).
+  Bram loses 1 hit points (13 left).
+  Bandit uses Machete on Bram.
+  Bandit rolls Strike: 4 - 1 modifiers = 3 against 18: critical_failure.  [1d20: 4 = 4]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 5 + 9 modifiers = 14 against 18: failure.  [1d20: 5 = 5]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 9 + 4 modifiers = 13 against 18: failure.  [1d20: 9 = 9]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 14 - 1 modifiers = 13 against 18: failure.  [1d20: 14 = 14]
   Ilsa is no longer Shield.
   Ilsa uses Force Barrage on Bandit.
   Ilsa spends 1 rank 1 spell slots (0 left).
   Force Barrage 1 of 2 goes to Bandit.
-  Bandit loses 2 hit points (14 left).  [1d4: 1 = 1]
-  Force Barrage 2 of 2 goes to Bandit.
-  Bandit loses 4 hit points (10 left).  [1d4: 3 = 3]
+  Bandit loses 2 hit points (0 left).  [1d4: 1 = 1]
+  Bandit is out of the fight.
+  Force Barrage 2 of 2 goes to Ruffian.
+  Ruffian loses 2 hit points (28 left).  [1d4: 1 = 1]
   Ilsa uses Shield on Ilsa.
   Ilsa is Shield for 1 round.
-  Bram is no longer Flourished.
-  Bram rolls Recovery check: 16 against 11: success.  [1d20: 16 = 16]
-  Bram loses 1 dying (0 left).
-  Bram is no longer Dying.
-  Bram is Unconscious.
-  Bram regains 1 wounded (1).
-  Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 12 + 5 + 3 modifiers = 20 against 19: success.  [1d20: 12 = 12]
-  Bandit loses 4 hit points (6 left).  [1d6: 4 = 4]
-  Pip uses Strike (Shortbow) on Bandit.
-  Pip rolls Ranged Strike: 20 + 5 - 2 modifiers = 23 against 19: critical_success.  [1d20: 20 = 20]
-  Bandit loses 6 hit points (0 left).  [1d6: 2 = 2; 1d10: 7 = 7]
-  Bandit is out of the fight.
+  Bram is no longer Shield raised.
+  Bram uses Strike (Longsword) on Ruffian.
+  Bram rolls Melee Strike: 4 + 5 + 5 modifiers = 14 against 18: failure.  [1d20: 4 = 4]
+  Bram uses Strike (Longsword) on Ruffian.
+  Bram rolls Melee Strike: 11 + 5 = 16 against 18: failure.  [1d20: 11 = 11]
+  Bram uses Raise a Shield on Bram.
+  Bram is Shield raised for 1 round.
   Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 15 + 5 - 7 modifiers = 13 against 18: failure.  [1d20: 15 = 15]
-  Ruffian uses Stride on Pip.
-  Ruffian moves 5 cells to (6, 4).
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 2 + 8 modifiers = 10 against 17: failure.  [1d20: 2 = 2]
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 7 + 3 modifiers = 10 against 17: failure.  [1d20: 7 = 7]
+  Pip rolls Ranged Strike: 20 + 5 + 3 modifiers = 28 against 18: critical_success.  [1d20: 20 = 20]
+  Ruffian loses 13 hit points (15 left).  [1d6: 4 = 4; 1d10: 5 = 5]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 15 + 5 - 2 modifiers = 18 against 18: success.  [1d20: 15 = 15]
+  Ruffian loses 5 hit points (10 left).  [1d6: 5 = 5]
+  Pip uses Strike (Shortbow) on Ruffian.
+  Pip rolls Ranged Strike: 18 + 5 - 7 modifiers = 16 against 18: failure.  [1d20: 18 = 18]
 Round 4.
   Hild is no longer Shield.
   Hild uses Divine Lance on Ruffian.
-  Hild rolls Spell attack: 7 + 8 = 15 against 18: failure.  [1d20: 7 = 7]
+  Hild rolls Spell attack: 3 + 8 = 11 against 18: failure.  [1d20: 3 = 3]
   Hild uses Shield on Hild.
   Hild is Shield for 1 round.
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 10 + 9 modifiers = 19 against 20: failure.  [1d20: 10 = 10]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 4 + 4 modifiers = 8 against 20: critical_failure.  [1d20: 4 = 4]
+  Ruffian uses Club on Bram.
+  Ruffian rolls Strike: 14 - 1 modifiers = 13 against 20: failure.  [1d20: 14 = 14]
   Ilsa is no longer Shield.
   Ilsa uses Ignition on Ruffian.
-  Ilsa rolls Spell attack: 20 + 8 = 28 against 18: critical_success.  [1d20: 20 = 20]
-  Ruffian loses 4 hit points (26 left).  [2d4: 1+1 = 2]
+  Ilsa rolls Spell attack: 10 + 8 = 18 against 18: success.  [1d20: 10 = 10]
+  Ruffian loses 6 hit points (4 left).  [2d4: 2+4 = 6]
   Ilsa uses Shield on Ilsa.
   Ilsa is Shield for 1 round.
+  Bram is no longer Shield raised.
+  Bram uses Strike (Longsword) on Ruffian.
+  Bram rolls Melee Strike: 6 + 5 + 5 modifiers = 16 against 18: failure.  [1d20: 6 = 6]
+  Bram uses Strike (Longsword) on Ruffian.
+  Bram rolls Melee Strike: 10 + 5 = 15 against 18: failure.  [1d20: 10 = 10]
+  Bram uses Raise a Shield on Bram.
+  Bram is Shield raised for 1 round.
   Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 2 + 5 + 3 modifiers = 10 against 18: failure.  [1d20: 2 = 2]
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 10 + 5 - 2 modifiers = 13 against 18: failure.  [1d20: 10 = 10]
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 20 + 5 - 7 modifiers = 18 against 18: critical_success.  [1d20: 20 = 20]
-  Ruffian loses 9 hit points (17 left).  [1d6: 4 = 4; 1d10: 1 = 1]
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 5 + 8 modifiers = 13 against 17: failure.  [1d20: 5 = 5]
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 1 + 3 modifiers = 4 against 17: critical_failure.  [1d20: 1 = 1]
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 7 - 2 modifiers = 5 against 17: critical_failure.  [1d20: 7 = 7]
-Round 5.
-  Hild is no longer Shield.
-  Hild uses Divine Lance on Ruffian.
-  Hild rolls Spell attack: 10 + 8 = 18 against 18: success.  [1d20: 10 = 10]
-  Ruffian loses 6 hit points (11 left).  [2d4: 3+3 = 6]
-  Hild uses Shield on Hild.
-  Hild is Shield for 1 round.
-  Ilsa is no longer Shield.
-  Ilsa uses Ignition on Ruffian.
-  Ilsa rolls Spell attack: 18 + 8 = 26 against 18: success.  [1d20: 18 = 18]
-  Ruffian loses 5 hit points (6 left).  [2d4: 1+4 = 5]
-  Ilsa uses Shield on Ilsa.
-  Ilsa is Shield for 1 round.
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 11 + 5 + 3 modifiers = 19 against 18: success.  [1d20: 11 = 11]
-  Ruffian loses 5 hit points (1 left).  [1d6: 5 = 5]
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 11 + 5 - 2 modifiers = 14 against 18: failure.  [1d20: 11 = 11]
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 2 + 5 - 7 modifiers = 0 against 18: critical_failure.  [1d20: 2 = 2]
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 13 + 8 modifiers = 21 against 17: success.  [1d20: 13 = 13]
-  Ilsa reacts to Ruffian: Shield Block.  [1d6: 1 = 1]
-  Ilsa uses Shield Block on Ilsa.
-  Ilsa is no longer Shield.
-  Ilsa is Shield spent for 100 rounds.
-  Ilsa loses 1 hit points (10 left).
-  Ruffian uses Sling on Ilsa.
-  Ruffian rolls Strike: 14 + 3 modifiers = 17 against 16: success.  [1d20: 14 = 14]
-  Ilsa loses 10 hit points (0 left).  [1d6: 6 = 6]
-  Ilsa is out of the fight.
-  Ilsa regains 2 dying (2).
-  Ilsa is Dying.
-  Ruffian uses Sling on Pip.
-  Ruffian rolls Strike: 19 - 2 modifiers = 17 against 18: failure.  [1d20: 19 = 19]
-Round 6.
-  Hild is no longer Shield.
-  Hild uses Heal on Ilsa.
-  Hild spends 1 divine font heals (2 left).
-  Ilsa regains 12 hit points (12).  [1d8: 5 = 5]
-  Ilsa is back in the fight.
-  Ilsa regains 1 wounded (2).
-  Ilsa loses 2 dying (0 left).
-  Ilsa is no longer Dying.
-  Hild uses Shield on Hild.
-  Hild is Shield for 1 round.
-  Ilsa uses Ignition on Ruffian.
-  Ilsa rolls Spell attack: 4 + 8 = 12 against 18: failure.  [1d20: 4 = 4]
-  Pip uses Strike (Shortbow) on Ruffian.
-  Pip rolls Ranged Strike: 12 + 5 + 3 modifiers = 20 against 18: success.  [1d20: 12 = 12]
-  Ruffian loses 1 hit points (0 left).  [1d6: 1 = 1]
+  Pip rolls Ranged Strike: 20 + 5 + 3 modifiers = 28 against 18: critical_success.  [1d20: 20 = 20]
+  Ruffian loses 4 hit points (0 left).  [1d6: 6 = 6; 1d10: 5 = 5]
   Ruffian is out of the fight.
-Party wins after 6 rounds.
-Party: Bram 0/20 (out), Pip 16/16, Hild 21/21, Ilsa 12/12
+Party wins after 4 rounds.
+Party: Bram 13/20, Pip 16/16, Hild 21/21, Ilsa 12/12
 Highway robbery: Bandit 0/30 (out), Ruffian 0/30 (out)
 [exit 0]
 
@@ -900,33 +860,47 @@ Saved to ilsa.json.
 $ tales sim combat --module modules/three-action --party bram.json,ilsa.json --encounter shambling_dead --seed 2
 seed 2
 Round 1.
-  Bram rolls 26 for initiative.  [1d20: 15 = 15]
-  Ilsa rolls 15 for initiative.  [1d20: 5 = 5]
-  Zombie Shambler 1 rolls 2 for initiative.  [1d20: 2 = 2]
-  Zombie Shambler 2 rolls 13 for initiative.  [1d20: 13 = 13]
-  Zombie Shambler 3 rolls 6 for initiative.  [1d20: 6 = 6]
-  Zombie Shambler 4 rolls 10 for initiative.  [1d20: 10 = 10]
+  Bram rolls 28 for initiative.  [1d20: 17 = 17]
+  Ilsa rolls 29 for initiative.  [1d20: 19 = 19]
+  Zombie Shambler 1 rolls 4 for initiative.  [1d20: 4 = 4]
+  Zombie Shambler 2 rolls 12 for initiative.  [1d20: 12 = 12]
+  Zombie Shambler 3 rolls 11 for initiative.  [1d20: 11 = 11]
+  Zombie Shambler 4 rolls 8 for initiative.  [1d20: 8 = 8]
+  Ilsa uses Fireball on Zombie Shambler 1, Zombie Shambler 2, Zombie Shambler 3, Zombie Shambler 4.
+  Ilsa spends 1 rank 3 spell slots (1 left).
+  Zombie Shambler 1 rolls Reflex save: 12 against 21: failure.  [1d20: 12 = 12]
+  Zombie Shambler 1 loses 19 hit points (1 left).  [6d6: 3+2+1+3+4+6 = 19]
+  Zombie Shambler 2 rolls Reflex save: 14 against 21: failure.  [1d20: 14 = 14]
+  Zombie Shambler 2 loses 20 hit points (0 left).  [6d6: 5+6+1+6+4+6 = 28]
+  Zombie Shambler 2 is out of the fight.
+  Zombie Shambler 3 rolls Reflex save: 15 against 21: failure.  [1d20: 15 = 15]
+  Zombie Shambler 3 loses 13 hit points (7 left).  [6d6: 1+1+5+2+1+3 = 13]
+  Zombie Shambler 4 rolls Reflex save: 13 against 21: failure.  [1d20: 13 = 13]
+  Zombie Shambler 4 loses 19 hit points (1 left).  [6d6: 1+4+2+6+1+5 = 19]
+  Ilsa uses Shield on Ilsa.
+  Ilsa is Shield for 1 round.
   Bram uses Sudden Charge (Longsword) on Zombie Shambler 1.
   Bram is Flourished for 1 round.
   Bram moves 10 cells to (10, 3).
-  Bram rolls Melee Strike: 17 + 4 + 11 modifiers = 32 against 12: critical_success.  [1d20: 17 = 17]
-  Zombie Shambler 1 loses 20 hit points (0 left).  [1d8: 7 = 7]
+  Bram rolls Melee Strike: 3 + 4 + 11 modifiers = 18 against 12: success.  [1d20: 3 = 3]
+  Zombie Shambler 1 loses 1 hit points (0 left).  [1d8: 5 = 5]
   Zombie Shambler 1 is out of the fight.
-  Bram uses Strike (Longsword) on Zombie Shambler 2.
-  Bram rolls Melee Strike: 8 + 4 + 6 modifiers = 18 against 12: success.  [1d20: 8 = 8]
-  Zombie Shambler 2 loses 13 hit points (7 left).  [1d8: 4 = 4]
-  Ilsa uses Fireball on Zombie Shambler 2, Zombie Shambler 3, Zombie Shambler 4.
-  Ilsa spends 1 rank 3 spell slots (1 left).
-  Zombie Shambler 2 rolls Reflex save: 10 against 21: critical_failure.  [1d20: 10 = 10]
-  Zombie Shambler 2 loses 7 hit points (0 left).  [6d6: 1+6+6+3+1+1 = 18]
-  Zombie Shambler 2 is out of the fight.
-  Zombie Shambler 3 rolls Reflex save: 11 against 21: critical_failure.  [1d20: 11 = 11]
-  Zombie Shambler 3 loses 20 hit points (0 left).  [6d6: 5+2+1+4+4+1 = 17]
+  Bram uses Strike (Longsword) on Zombie Shambler 3.
+  Bram rolls Melee Strike: 11 + 4 + 6 modifiers = 21 against 12: success.  [1d20: 11 = 11]
+  Zombie Shambler 3 loses 7 hit points (0 left).  [1d8: 2 = 2]
   Zombie Shambler 3 is out of the fight.
-  Zombie Shambler 4 rolls Reflex save: 4 against 21: critical_failure.  [1d20: 4 = 4]
-  Zombie Shambler 4 loses 20 hit points (0 left).  [6d6: 2+4+1+2+1+5 = 15]
+  Zombie Shambler 4 uses Stride on Bram.
+  Zombie Shambler 4 moves 1 cell to (11, 4).
+  Zombie Shambler 4 uses Fist on Bram.
+  Zombie Shambler 4 rolls Strike: 1 + 7 modifiers = 8 against 22: critical_failure.  [1d20: 1 = 1]
+Round 2.
+  Ilsa is no longer Shield.
+  Ilsa uses Fireball on Zombie Shambler 4.
+  Ilsa spends 1 rank 3 spell slots (0 left).
+  Zombie Shambler 4 rolls Reflex save: 7 against 21: critical_failure.  [1d20: 7 = 7]
+  Zombie Shambler 4 loses 1 hit points (0 left).  [6d6: 1+6+1+3+3+2 = 16]
   Zombie Shambler 4 is out of the fight.
-Party wins after 1 round.
+Party wins after 2 rounds.
 Party: Bram 78/78, Ilsa 46/46
 Shambling dead: Zombie Shambler 1 0/20 (out), Zombie Shambler 2 0/20 (out), Zombie Shambler 3 0/20 (out), Zombie Shambler 4 0/20 (out)
 [exit 0]

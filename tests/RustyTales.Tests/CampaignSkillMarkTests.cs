@@ -8,6 +8,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class CampaignSkillMarkTests
@@ -28,13 +30,13 @@ public sealed class CampaignSkillMarkTests
             CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 7);
             CampaignRunner runner = new(set.Rules, state);
 
-            SearchFact search = Assert.Single(runner.Execute("search", engine.Random).OfType<SearchFact>());
+            SearchFact search = Assert.Single(runner.Execute("search", new EngineRandom(engine.Random)).OfType<SearchFact>());
             Assert.True(search.Found);
             Assert.Empty(party[0].SkillMarks);
             Assert.Equal(1, party[1].SkillMarks["craft"]);
 
-            Assert.Contains(runner.Execute("forward", engine.Random), fact => fact is MovedFact { X: 1, Y: 0 });
-            DoorFact pick = Assert.Single(runner.Execute("pick east", engine.Random).OfType<DoorFact>());
+            Assert.Contains(runner.Execute("forward", new EngineRandom(engine.Random)), fact => fact is MovedFact { X: 1, Y: 0 });
+            DoorFact pick = Assert.Single(runner.Execute("pick east", new EngineRandom(engine.Random)).OfType<DoorFact>());
             Assert.True(pick.Opened);
             Assert.Empty(party[0].SkillMarks);
             Assert.Equal(1, party[1].SkillMarks["craft"]);
@@ -46,10 +48,11 @@ public sealed class CampaignSkillMarkTests
             Assert.Equal(1, restored.Party[1].SkillMarks["craft"]);
 
             List<ModuleDiagnostic> improvementProblems = [];
-            using Rng improvementStream = engine.Random.CreateScoped(new ScopedRngCreateRequest(7, "campaign-skill-improvement"));
+            ITalesRandom improvementStreamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream improvementStream = improvementStreamRandom.CreateScoped(7, "campaign-skill-improvement");
             List<SkillImprovement> improvements = CharacterRules.ImproveMarkedSkills(
                 set.Rules, restored.Party[1],
-                new DiceRoller(engine.Random, improvementStream),
+                new DiceRoller(improvementStreamRandom, improvementStream),
                 improvementProblems);
             Assert.Empty(improvementProblems);
             Assert.Equal(new SkillImprovement("craft", 1, 1, true), Assert.Single(improvements));
@@ -76,12 +79,12 @@ public sealed class CampaignSkillMarkTests
             CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, party, 11);
             CampaignRunner runner = new(set.Rules, state);
 
-            SearchFact search = Assert.Single(runner.Execute("search", engine.Random).OfType<SearchFact>());
+            SearchFact search = Assert.Single(runner.Execute("search", new EngineRandom(engine.Random)).OfType<SearchFact>());
             Assert.False(search.Found);
             Assert.Empty(party[0].SkillMarks);
 
             state.X = 1;
-            DoorFact pick = Assert.Single(runner.Execute("pick east", engine.Random).OfType<DoorFact>());
+            DoorFact pick = Assert.Single(runner.Execute("pick east", new EngineRandom(engine.Random)).OfType<DoorFact>());
             Assert.False(pick.Opened);
             Assert.Empty(party[0].SkillMarks);
         });
@@ -102,7 +105,8 @@ public sealed class CampaignSkillMarkTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(13, "universal-campaign-skill"));
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(13, "universal-campaign-skill");
             List<ModuleDiagnostic> creationProblems = [];
             Character character = CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest(
                 "Ada", null, null,
@@ -111,13 +115,13 @@ public sealed class CampaignSkillMarkTests
                     ["str"] = 10, ["con"] = 10, ["siz"] = 10, ["int"] = 10,
                     ["pow"] = 10, ["dex"] = 10, ["cha"] = 10,
                 },
-                Features: ["soldier"]), new DiceRoller(engine.Random, stream), creationProblems)!;
+                Features: ["soldier"]), new DiceRoller(streamRandom, stream), creationProblems)!;
             Assert.Empty(creationProblems);
 
             Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignState state = CampaignRunner.NewState(set.Rules, campaignDefinition, [character], 13);
             CampaignRunner runner = new(set.Rules, state);
-            SearchFact search = Assert.Single(runner.Execute("search", engine.Random).OfType<SearchFact>());
+            SearchFact search = Assert.Single(runner.Execute("search", new EngineRandom(engine.Random)).OfType<SearchFact>());
 
             Assert.True(search.Found);
             Assert.Equal(1, character.SkillMarks["sword"]);
@@ -152,8 +156,9 @@ public sealed class CampaignSkillMarkTests
 
     private static List<Character> OriginalParty(ModuleSet set, IRandomService random)
     {
-        using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(5, "campaign-skill-characters"));
-        DiceRoller dice = new(random, stream);
+        ITalesRandom streamRandom = new EngineRandom(random);
+        using ITalesRandomStream stream = streamRandom.CreateScoped(5, "campaign-skill-characters");
+        DiceRoller dice = new(streamRandom, stream);
         List<ModuleDiagnostic> problems = [];
         Character first = CharacterRules.Create(set.Rules!, Character.StampsOf(set), new CreationRequest(
             "Failing", "warrior", null, Attributes: new Dictionary<string, decimal> { ["str"] = 9 }), dice, problems)!;

@@ -7,11 +7,11 @@ design (Core, the `tales` CLI, modules).
 
 ```text
 modules/<id>/module.json + definition files
-  -> RustyTales.Core (load, resolve, check, evaluate; dice through Engine Random)
-  -> RustyTales.Cli (`tales`: parse arguments, host Engine services, print text or --json)
+  -> RustyTales.Core (pure .NET: load, resolve, check, evaluate, DeterministicRandom, IStateStore)
+  -> RustyTales.Cli (`tales`: parse arguments, call Core, EngineBridge for .rpak/--store, print text or --json)
 
 modules/<id>/ staged as Engine content bundles (or packed as containers)
-  -> RustyTales.Game (C#: ModuleLibrary -> Core; GameSession; SessionProjection)
+  -> RustyTales.Game (C#: EngineAdapters, ModuleLibrary -> Core; GameSession; SessionProjection)
   -> Rusty.Engine safe SDK
   -> SDK-generated bind entry point and ABI
   -> packaged Rust host, input, persistence, UI transport and browser shell
@@ -30,7 +30,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Modules/ModuleSearchPaths.cs` | Search directories from `--modules` and `tales.json` |
 | `src/RustyTales.Core/Modules/ModuleResolver.cs` | Version selection, load order, cycles and kind rules |
 | `src/RustyTales.Core/Modules/ModuleSource.cs` | Where a module's files come from (`DirectoryModuleSource` on disk), and its content identity |
-| `src/RustyTales.Core/Modules/BundleModuleSource.cs` | A module in an Engine content bundle or container |
+| `src/RustyTales.Core/Modules/ModuleContainers.cs` | Core's `IModuleContainerOpener` / `OpenedModuleContainer` seam for reading packaged `.rpak` containers without depending on `Rusty.Engine` |
 | `src/RustyTales.Core/Modules/ModuleCatalog.cs` | The candidate modules a load picks requirements from: module directories and installed containers in the search directories |
 | `src/RustyTales.Core/Modules/PngImage.cs` | Checking an asset image is a PNG the renderer admits (8-bit RGBA) and reading its size |
 | `src/RustyTales.Core/Modules/InstalledModules.cs` | Installed module containers: the module library directory, file names, opening the containers in a directory |
@@ -42,11 +42,11 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Rules/RuleSet.cs` | The checked definitions of a module set, lookups and ad hoc compilation |
 | `src/RustyTales.Core/Rules/Evaluator.cs` | Evaluating expressions, stats with modifiers, and checks |
 | `src/RustyTales.Core/Rules/Creature.cs` | A creature an expression reads, and reading one from JSON |
-| `src/RustyTales.Core/Rules/DiceRoller.cs` | Dice from Engine Random, with a record of each roll; scoped streams for continuous commands and keyed draws for persisted live battles |
+| `src/RustyTales.Core/Rules/TalesRandom.cs` and `DiceRoller.cs` | Pure-.NET deterministic RNG (`ITalesRandom`, `DeterministicRandom.Shared`) and dice roller with roll records; scoped streams for continuous commands and keyed draws for persisted live battles |
 | `src/RustyTales.Core/Characters/Character.cs` | A character's state, including the persisted term-career ledger, authored perception scope/mode and absolute campaign-day condition expiries, and the creature view expressions read |
 | `src/RustyTales.Core/Characters/CharacterRules.cs` and `LifepathRules.cs` | Creating characters (attributes, race, class checks, level-1 hit points, declared currency balances, staged profession/personal skill choices, starting equipment and data-driven term careers), giving them a portrait asset, applying milestones and skill improvements, and gaining levels in one class or several, from character-creation, lifepath, advancement, race and class data; lifepath throws use the caller's Engine-backed dice and apply table choices to the existing attributes, stat bonuses, balances and equipment |
 | `src/RustyTales.Core/Characters/CharacterFile.cs` | The character JSON file, including staged skill-choice progress, lifepath age, choices, rolls and results, saved `condition_expiry` values and refusing one made under a different module set |
-| `src/RustyTales.Core/Characters/CharacterImport.cs` and `CharacterRoster.cs` | Best-effort fail-open ruleset-bound character importer (honouring campaign `import` level policy and logging every item, spell, stat, feature and portrait adjustment) and portable JSON codec for the player's persistent character stable |
+| `src/RustyTales.Core/Characters/CharacterImport.cs`, `CharacterRoster.cs` and `CharacterStableStore.cs` | Best-effort fail-open ruleset-bound character importer (honouring campaign `import` level policy and logging every item, spell, stat, feature and portrait adjustment), portable JSON codec for the player's persistent character stable, and `IStateStore`-backed stable persistence |
 | `src/RustyTales.Core/Characters/CharacterSheet.cs` | A character's computed stats |
 | `src/RustyTales.Core/Definitions/OperationTypes.cs` | The operation vocabulary and its fields (the `schema operations` source) |
 | `src/RustyTales.Core/Combat/CombatField.cs` | A combat definition's field with an encounter's terrain: grid or shared-zone cells, distance, neighbours, what can be entered and at what cost, line of sight, and where each side starts |
@@ -67,7 +67,7 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Campaigns/CampaignRunner.Inventory.cs` | Give/take events and the existing party item stores used by removal and shop offers; `carried()` reads those items without owning another inventory |
 | `src/RustyTales.Core/Campaigns/PendingCombatState.cs` | The suspended combat event, participant definition/party references, initial presentation metadata and the combat owner's primitive continuation |
 | `src/RustyTales.Core/Campaigns/SaveFile.cs` | Saves, and refusing one made under a different module set |
-| `src/RustyTales.Core/Campaigns/SaveSlots.cs` | Named save slots in Engine persistence, shared by the Game and `tales play --store` |
+| `src/RustyTales.Core/Persistence/StateStore.cs` and `src/RustyTales.Core/Campaigns/SaveSlots.cs` | Host-agnostic `IStateStore` seam (with atomic `FileStateStore`) and named save slots shared by the Game (`EngineStateStore`), `tales play --store` (`CliEngineStateStore`), and standalone callers |
 | `src/RustyTales.Core/Authoring/` | Editable workspace manifest, scaffolding (`WorkspaceScaffold` with `--kit` genre starter kits in `GenreKits` and procedural 8-bit RGBA starter art in `StarterPng`), inspection and validated runtime staging; shares its module search paths with module loading |
 | `src/RustyTales.Cli/WorkspaceCommand.cs` | Workspace command arguments and output over the Core workspace owner |
 | `src/RustyTales.Cli/ContentPacker.cs` | Shared invocation of the pinned Engine packer for module pack and workspace export and install; Engine owns the container format and identity |
@@ -75,7 +75,8 @@ modules/<id>/ staged as Engine content bundles (or packed as containers)
 | `src/RustyTales.Core/Definitions/EventTypes.cs` | The event kind vocabulary and its fields (the `schema events` source), including `spell_reward`, finite shop stock and optional buying policy, plus combat placement, surprise and flee branches |
 | `src/RustyTales.Core/Modules/ModuleLoader.cs` | Entry point: load a module and everything it requires into a `ModuleSet` |
 | `src/RustyTales.Core/Modules/ModuleScaffold.cs` | Writing a new module's starting manifest |
-| `src/RustyTales.Cli/` | `tales` argument parsing (`TalesCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`, `DistributionCommand` for `module release` and `module get` over `gh` and .NET HTTP), checked arguments (`Arguments`), module loading with the Engine content service (`ModuleSets`), the Engine tool host with seeded dice (`EngineDice`), and text/JSON output (`Output`) |
+| `src/RustyTales.Cli/` | `tales` argument parsing (`TalesCli`, `SchemaCommand`, `EvalCommand`, `InspectCommand`, `CharacterCommand`, `SimCommand`, `MapCommand`, `PlayCommand` with `LiveCombatCli` for its `combat ...` script lines, `PackCommand`, `DistributionCommand` for `module release` and `module get` over `gh` and .NET HTTP), checked arguments (`Arguments`), pure deterministic dice (`EngineDice`), thin Engine bridge for `.rpak`/`--store` (`EngineBridge`, `ModuleSets`), and text/JSON output (`Output`) |
+| `src/RustyTales.Game/EngineAdapters.cs` | Thin Engine adapters implementing Core's host seams (`BundleModuleSource`, `EngineContainerOpener`, `EngineStateStore`, `EngineRandom`) |
 | `src/RustyTales.Game/RustyTalesProduct.cs` | Lifecycle callbacks, opening the module bundles, registering `TalesDebugModule` with the Engine debug catalog, and publishing the projection |
 | `src/RustyTales.Game/TalesDebugModule.cs` | Compiled `IDebugCommandModule` dev console shortcuts (`tales.help`, `tales.state`, `tales.campaigns`, `tales.start`, `tales.play`, `tales.goto`, `tales.tp`, `tales.event`, `tales.heal`, `tales.quit`) over `rusty-live-debug` |
 | `src/RustyTales.Game/PlayerSettings.cs` | The player's volumes, picked skin, interface scale and layout, kept between runs in their own persistence scope and loaded through the session's checks |
@@ -157,10 +158,10 @@ as a whole and produces the `RuleSet`; a file-level error stops that stage so
 it doesn't reappear as every reference to the broken definition. Expressions
 are compiled once there; `Evaluator` only evaluates them.
 
-Dice need Engine `Random`, whose calls are confined to a host callback.
-Commands that roll (`eval`, `character new`, `character level`) create the
-Engine tool host (`RustyEngineToolHost`, `EngineTestHost.Create()`), open a
-stream seeded from `--seed` and do their work inside one `Call`.
+Dice use Core's pure deterministic `ITalesRandom` (`DeterministicRandom.Shared`),
+so `eval`, `character new`, `character level`, `sim combat`, `play` and the desktop
+`RustyTales.Game` client all produce identical seeded rolls without needing an
+Engine host callback.
 
 ## Combat
 

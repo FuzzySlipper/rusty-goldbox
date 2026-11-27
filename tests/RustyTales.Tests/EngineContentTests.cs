@@ -5,6 +5,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>
@@ -158,7 +160,7 @@ public sealed class EngineContentTests
             using EngineTestHost host = EngineTestHost.Create();
             List<string> problems = [];
             List<ProductContentBundle> opened = [];
-            host.Call(engine => InstalledModules.Open(engine.Content, library, opened, problems));
+            host.Call(engine => EngineContainerOpener.OpenAll(engine.Content, library, opened, problems));
 
             Assert.Empty(opened);
             Assert.Contains("Can't read the directory", Assert.Single(problems), StringComparison.Ordinal);
@@ -172,7 +174,7 @@ public sealed class EngineContentTests
     private static ModuleSet Load(string path)
     {
         using EngineTestHost host = EngineTestHost.Create();
-        return host.Call(engine => ModuleLoader.Load(path, [], engine.Content));
+        return host.Call(engine => ModuleLoader.Load(path, [], new EngineContainerOpener(engine.Content)));
     }
 
     private static string PlayAndSave(ModuleSet set, TempModules scratch, List<string> script, IEngineContext engine)
@@ -185,10 +187,10 @@ public sealed class EngineContentTests
         Definition campaign = set.Rules!.OfType(DefinitionTypes.Campaign).Single();
         CampaignState state = CampaignRunner.NewState(set.Rules, campaign, party, 3);
         CampaignRunner runner = new(set.Rules, state);
-        runner.Begin(engine.Random);
+        runner.Begin(new EngineRandom(engine.Random));
         foreach (string command in script)
         {
-            runner.Execute(command, engine.Random);
+            runner.Execute(command, new EngineRandom(engine.Random));
         }
 
         return SaveFile.ToJson(state, set);

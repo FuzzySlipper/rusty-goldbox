@@ -3,7 +3,7 @@ seed 1
   The party is in Hall at [0, 0], facing east.
   Welcome to the store. Balances: 10 gold. Buy: [1] Tool 3.5 gold. Sell: none. Commands: buy <n>, sell <n>, leave.
 > status
-  A (hit points 7/7, 0 xp) | B (hit points 7/7, 0 xp) | gold 5 + 5
+  A (hit points 6/6, 0 xp) | B (hit points 6/6, 0 xp) | gold 5 + 5
   Welcome to the store. Balances: 10 gold. Buy: [1] Tool 3.5 gold. Sell: none. Commands: buy <n>, sell <n>, leave.
 > forward
   Can't: leave the shop first, or trade with buy <n> or sell <n>.
@@ -17,7 +17,7 @@ seed 1
   The party sells Tool for 0.875 gold.
   Welcome to the store. Balances: 3.875 gold. Buy: [1] Tool 3.5 gold. Sell: [1] Tool 0.875 gold. Commands: buy <n>, sell <n>, leave.
 > status
-  A (hit points 7/7, 0 xp) | B (hit points 7/7, 0 xp) | gold 0.875 + 3 | carrying Tool
+  A (hit points 6/6, 0 xp) | B (hit points 6/6, 0 xp) | gold 0.875 + 3 | carrying Tool
   Welcome to the store. Balances: 3.875 gold. Buy: [1] Tool 3.5 gold. Sell: [1] Tool 0.875 gold. Commands: buy <n>, sell <n>, leave.
 > leave
   The party leaves the shop.

@@ -161,7 +161,7 @@ public sealed class GameTests
             GameSession session = new(new ModuleLibrary(problems =>
             {
                 List<ProductContentBundle> opened = [];
-                InstalledModules.Open(engine.Content, library, opened, problems);
+                EngineContainerOpener.OpenAll(engine.Content, library, opened, problems);
                 return opened;
             }));
             session.Refresh();

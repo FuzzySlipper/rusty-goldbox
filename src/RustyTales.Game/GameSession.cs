@@ -471,8 +471,8 @@ internal sealed class GameSession(ModuleLibrary library)
         }
 
         int roll = ++_rolls;
-        using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.{roll}"));
-        DiceRoller dice = new(engine.Random, stream);
+        using ITalesRandomStream stream = DeterministicRandom.Shared.CreateScoped(Seed, $"{CharacterScope}.{roll}");
+        DiceRoller dice = new(DeterministicRandom.Shared, stream);
         Character? character = CharacterRules.Create(rules, Character.StampsOf(Set), new CreationRequest(name, characterClass, race, Creation: creation, Attributes: attributes, Priority: priority, SkillPoints: skillPoints, Features: features, Boosts: boosts, Lifepath: lifepath, Careers: careers, SkillTables: skillTables, Benefits: benefits, Terms: terms), dice, problems);
         if (character is null)
         {
@@ -754,8 +754,8 @@ internal sealed class GameSession(ModuleLibrary library)
 
         Character character = Party[member];
         List<ModuleDiagnostic> problems = [];
-        using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(Seed, $"{CharacterScope}.skills.{member}"));
-        DiceRoller dice = new(engine.Random, stream);
+        using ITalesRandomStream stream = DeterministicRandom.Shared.CreateScoped(Seed, $"{CharacterScope}.skills.{member}");
+        DiceRoller dice = new(DeterministicRandom.Shared, stream);
         if (!CharacterRules.ApplySkillPoints(Set!.Rules!, character, allocations, dice, problems))
         {
             Notes.AddRange(problems.Select(problem => problem.Message));
@@ -877,7 +877,7 @@ internal sealed class GameSession(ModuleLibrary library)
             _shownCombatKey = null;
             Log.Clear();
             Screen = Screen.Play;
-            Record(null, Runner.Begin(engine.Random));
+            Record(null, Runner.Begin(DeterministicRandom.Shared));
             SyncCombat(engine);
         }
         catch (RuleFailure failure)
@@ -903,7 +903,7 @@ internal sealed class GameSession(ModuleLibrary library)
 
         try
         {
-            Record(command, Runner!.Execute(command, engine.Random));
+            Record(command, Runner!.Execute(command, DeterministicRandom.Shared));
             SyncCombat(engine);
         }
         catch (RuleFailure failure)
@@ -925,7 +925,7 @@ internal sealed class GameSession(ModuleLibrary library)
         try
         {
             PendingCombatState? before = Runner.State.PendingCombat;
-            ApplyCombat(Runner.SetCombatController(actorId, mode, engine.Random), before);
+            ApplyCombat(Runner.SetCombatController(actorId, mode, DeterministicRandom.Shared), before);
         }
         catch (RuleFailure failure)
         {
@@ -963,7 +963,7 @@ internal sealed class GameSession(ModuleLibrary library)
         try
         {
             PendingCombatState? before = Runner.State.PendingCombat;
-            ApplyCombat(Runner.SubmitCombat(command, engine.Random), before);
+            ApplyCombat(Runner.SubmitCombat(command, DeterministicRandom.Shared), before);
         }
         catch (RuleFailure failure)
         {
@@ -988,7 +988,7 @@ internal sealed class GameSession(ModuleLibrary library)
     {
         if (Runner?.State.PendingCombat is not null)
         {
-            CombatObservation? observation = Runner.ObserveCombat(engine.Random);
+            CombatObservation? observation = Runner.ObserveCombat(DeterministicRandom.Shared);
             if (observation is not null)
             {
                 AppendCombatFacts(observation, Runner.State.PendingCombat);
@@ -1040,10 +1040,10 @@ internal sealed class GameSession(ModuleLibrary library)
             // it, ensuring the continuation written here is the current one.
             if (Screen == Screen.Combat && Runner.State.PendingCombat is not null)
             {
-                Runner.ObserveCombat(engine.Random);
+                Runner.ObserveCombat(DeterministicRandom.Shared);
             }
 
-            using SaveSlots slots = new(engine);
+            using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
             slots.Write(slot, SaveFile.ToJson(Runner.State, Set!));
             // Who sat where goes beside the save, so the game can be hosted again with the same people.
             using SeatSlots seats = new(engine);
@@ -1063,7 +1063,7 @@ internal sealed class GameSession(ModuleLibrary library)
         byte[]? json;
         try
         {
-            using SaveSlots slots = new(engine);
+            using SaveSlots slots = new(new EngineStateStore(engine, SaveSlots.Scope));
             json = slots.Read(slot);
         }
         catch (Exception exception) when (exception is PersistenceStorageException or EngineCallException)
@@ -1162,14 +1162,14 @@ internal sealed class GameSession(ModuleLibrary library)
                 Runner = new CampaignRunner(set.Rules!, state);
                 if (state.PendingCombat is not null)
                 {
-                    Runner.ObserveCombat(engine.Random);
+                    Runner.ObserveCombat(DeterministicRandom.Shared);
                 }
 
                 _completedCombat = null;
                 _completedCombatMetadata = null;
                 if (view.TryGetProperty("finished", out JsonElement finished) && finished.ValueKind == JsonValueKind.Object
                     && SaveFile.Read(System.Text.Encoding.UTF8.GetBytes(finished.GetRawText()), "the host's finished fight", set, problems) is CampaignState ended
-                    && new CampaignRunner(set.Rules!, ended).ObserveCombat(engine.Random) is CombatObservation last)
+                    && new CampaignRunner(set.Rules!, ended).ObserveCombat(DeterministicRandom.Shared) is CombatObservation last)
                 {
                     _completedCombat = last;
                     _completedCombatMetadata = ended.PendingCombat;
@@ -1410,7 +1410,7 @@ internal sealed class GameSession(ModuleLibrary library)
 
         try
         {
-            Record(null, Runner.RunEvent(evt, engine.Random));
+            Record(null, Runner.RunEvent(evt, DeterministicRandom.Shared));
             SyncCombat(engine);
             return true;
         }

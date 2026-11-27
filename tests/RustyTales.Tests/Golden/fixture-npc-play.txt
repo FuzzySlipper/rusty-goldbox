@@ -1,12 +1,12 @@
 $ tales character new --module tale --modules . --class warrior --race folk --name A --seed 1 --out a.json
 A: Folk Warrior 1 (0 xp, highest level)
-  hit points 7/7
+  hit points 6/6
   gold 5
   str            10     Strength
   hit            0      Hit bonus
   strong         false  Strong
 Saved to a.json.
-  seed 1: 1d10: 7 = 7
+  seed 1: 1d10: 6 = 6
 [exit 0]
 
 $ tales character npc a.json --module tale --modules . --id exported --out exported.json --json
@@ -28,7 +28,7 @@ seed 1
   Guide resolves brugh-entry as truth (roll 1 + 0 + 0 = 1, needs 1).  [1d1: 1 = 1]
   Company? [1] Recruit  [2] Dismiss
 > status
-  A (hit points 7/7, 0 xp) | Guide (hit points 7/7, 0 xp) | gold 5 + 5
+  A (hit points 6/6, 0 xp) | Guide (hit points 6/6, 0 xp) | gold 5 + 5
 > choose 1
   The party chooses 1: Recruit.
   Can't: Guide is already in the party.
@@ -42,6 +42,6 @@ seed 1
   Guide joins the party (2 members).
   Company? [1] Recruit  [2] Dismiss
 > status
-  A (hit points 7/7, 0 xp) | Guide (hit points 7/7, 0 xp) | gold 5 + 5
+  A (hit points 6/6, 0 xp) | Guide (hit points 6/6, 0 xp) | gold 5 + 5
 [exit 0]
 

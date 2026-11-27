@@ -9,6 +9,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class SceneEventTests
@@ -25,12 +27,12 @@ public sealed class SceneEventTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Character member = CreateFifth(set, engine.Random, "Ada");
+            Character member = CreateFifth(set, new EngineRandom(engine.Random), "Ada");
             member.Tracks["hit_points"].Current = 10;
             Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [member], 19));
 
-            List<PlayFact> facts = runner.Begin(engine.Random);
+            List<PlayFact> facts = runner.Begin(new EngineRandom(engine.Random));
             SceneCheckFact check = Assert.Single(facts.OfType<SceneCheckFact>());
             Assert.True(check.Result.Success);
             Assert.Single(check.Rolls);
@@ -50,7 +52,7 @@ public sealed class SceneEventTests
             Assert.Contains(set.Rules.Find(DefinitionTypes.Condition, "prone", out _)!, restored.Party[0].Conditions);
 
             CampaignRunner resumed = new(set.Rules, restored);
-            List<PlayFact> continued = resumed.Execute("choose 1", engine.Random);
+            List<PlayFact> continued = resumed.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Contains(continued, fact => fact is TextFact { Text: "The ledge is safe." });
         });
     }
@@ -81,15 +83,15 @@ public sealed class SceneEventTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Character first = CreateFifth(set, engine.Random, "First", 14);
-            Character selected = CreateFifth(set, engine.Random, "Selected", constitution);
+            Character first = CreateFifth(set, new EngineRandom(engine.Random), "First", 14);
+            Character selected = CreateFifth(set, new EngineRandom(engine.Random), "Selected", constitution);
             Evaluator evaluator = new(set.Rules!, null);
             Assert.Equal(4, evaluator.Stat(first.ToCreature(), "con_save").Number);
             Assert.Equal(expectedBonus, evaluator.Stat(selected.ToCreature(), "con_save").Number);
 
             Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [first, selected], 9374));
-            List<PlayFact> facts = runner.Begin(engine.Random);
+            List<PlayFact> facts = runner.Begin(new EngineRandom(engine.Random));
             SceneCheckFact check = Assert.Single(facts.OfType<SceneCheckFact>());
             DiceRoll roll = Assert.Single(check.Rolls);
             Assert.Equal(1, roll.Count);
@@ -119,16 +121,16 @@ public sealed class SceneEventTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Character template = CreateOriginal(firstSet, engine.Random, "Guide");
+            Character template = CreateOriginal(firstSet, new EngineRandom(engine.Random), "Guide");
             modules.Write("tale/guide.json", NpcFile.ToJson(template, "guide"));
             WriteOriginalPartyEvents(modules);
             ModuleSet set = ModuleLoader.Load(campaign, [modules.Root, fixtures, repositoryModules]);
             Assert.Empty(set.Diagnostics);
-            Character member = CreateOriginal(set, engine.Random, "Wren");
+            Character member = CreateOriginal(set, new EngineRandom(engine.Random), "Wren");
             Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [member], 23));
 
-            List<PlayFact> facts = runner.Begin(engine.Random);
+            List<PlayFact> facts = runner.Begin(new EngineRandom(engine.Random));
             Assert.Contains(facts, fact => fact is PartyFact { Joined: true, Members: 2 });
             Assert.Contains(facts, fact => fact is PartyFact { Joined: false, Members: 1 });
             Assert.Single(facts.OfType<SceneCheckFact>());
@@ -137,12 +139,12 @@ public sealed class SceneEventTests
             Assert.Single(runner.State.Party);
             Assert.Single(runner.MenuOptions());
 
-            List<PlayFact> continued = runner.Execute("choose 1", engine.Random);
+            List<PlayFact> continued = runner.Execute("choose 1", new EngineRandom(engine.Random));
             Assert.Contains(continued, fact => fact is TextFact { Text: "The road is clear." });
 
-            CampaignRunner refusal = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateOriginal(set, engine.Random, "Sable")], 23));
-            refusal.Begin(engine.Random);
-            Assert.Contains(refusal.Execute("choose 1", engine.Random), fact => fact is TextFact { Text: "The road is clear." });
+            CampaignRunner refusal = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateOriginal(set, new EngineRandom(engine.Random), "Sable")], 23));
+            refusal.Begin(new EngineRandom(engine.Random));
+            Assert.Contains(refusal.Execute("choose 1", new EngineRandom(engine.Random)), fact => fact is TextFact { Text: "The road is clear." });
         });
     }
 
@@ -158,22 +160,22 @@ public sealed class SceneEventTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Character member = CreateFifth(set, engine.Random, "Ada");
+            Character member = CreateFifth(set, new EngineRandom(engine.Random), "Ada");
             Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [member], 7));
-            runner.Begin(engine.Random);
-            List<PlayFact> facts = runner.Execute("choose 2", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> facts = runner.Execute("choose 2", new EngineRandom(engine.Random));
             Assert.Contains(facts, fact => fact is RefusedFact refused && refused.Reason.Contains("active party member", StringComparison.Ordinal));
 
-            CampaignRunner avoided = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateFifth(set, engine.Random, "Brom")], 7));
-            avoided.Begin(engine.Random);
-            List<PlayFact> safeFacts = avoided.Execute("choose 3", engine.Random);
+            CampaignRunner avoided = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateFifth(set, new EngineRandom(engine.Random), "Brom")], 7));
+            avoided.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> safeFacts = avoided.Execute("choose 3", new EngineRandom(engine.Random));
             Assert.Contains(safeFacts, fact => fact is SceneCheckFact { Result.Success: false });
             Assert.Contains(safeFacts, fact => fact is TextFact { Text: "The ledge is safe." });
 
-            CampaignRunner capped = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateFifth(set, engine.Random, "Cyra")], 7));
-            capped.Begin(engine.Random);
-            List<PlayFact> cappedFacts = capped.Execute("choose 4", engine.Random);
+            CampaignRunner capped = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [CreateFifth(set, new EngineRandom(engine.Random), "Cyra")], 7));
+            capped.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> cappedFacts = capped.Execute("choose 4", new EngineRandom(engine.Random));
             SceneDamageFact floor = Assert.Single(cappedFacts.OfType<SceneDamageFact>());
             SceneHealFact cap = Assert.Single(cappedFacts.OfType<SceneHealFact>());
             Assert.Equal(0, floor.Left);
@@ -252,9 +254,10 @@ public sealed class SceneEventTests
         Assert.Contains(set.Diagnostics, problem => problem.Rule == "event.effect" && problem.JsonPath == "$.operations[0].condition" && problem.Message.Contains("on_apply", StringComparison.Ordinal));
     }
 
-    private static Character CreateFifth(ModuleSet set, IRandomService random, string name, int constitution = 14)
+    private static Character CreateFifth(ModuleSet set, ITalesRandom random, string name, int constitution = 14)
     {
-        using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(401, $"scene.fifth.{name}"));
+        ITalesRandom streamRandom = random;
+        using ITalesRandomStream stream = streamRandom.CreateScoped(401, $"scene.fifth.{name}");
         List<ModuleDiagnostic> problems = [];
         Character? character = CharacterRules.Create(
             set.Rules!,
@@ -265,15 +268,16 @@ public sealed class SceneEventTests
                 "human",
                 Attributes: new Dictionary<string, decimal> { ["str"] = 12, ["dex"] = 12, ["con"] = constitution, ["int"] = 10, ["wis"] = 10, ["cha"] = 10 },
                 Features: ["soldier", "savage_attacker", "defense"]),
-            new DiceRoller(random, stream),
+            new DiceRoller(streamRandom, stream),
             problems);
         Assert.True(character is not null, string.Join("; ", problems.Select(problem => problem.Message)));
         return character!;
     }
 
-    private static Character CreateOriginal(ModuleSet set, IRandomService random, string name)
+    private static Character CreateOriginal(ModuleSet set, ITalesRandom random, string name)
     {
-        using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(402, $"scene.original.{name}"));
+        ITalesRandom streamRandom = random;
+        using ITalesRandomStream stream = streamRandom.CreateScoped(402, $"scene.original.{name}");
         List<ModuleDiagnostic> problems = [];
         Character? character = CharacterRules.Create(
             set.Rules!,
@@ -285,7 +289,7 @@ public sealed class SceneEventTests
                 Attributes: new Dictionary<string, decimal> { ["brawn"] = 12, ["finesse"] = 12, ["stamina"] = 12, ["intellect"] = 12, ["insight"] = 12, ["presence"] = 12 },
                 Features: ["stonehide", "sentry", "hill_toughness", "shield_ward"],
                 Boosts: ["insight", "intellect", "finesse", "stamina", "brawn", "presence", "insight", "finesse"]),
-            new DiceRoller(random, stream),
+            new DiceRoller(streamRandom, stream),
             problems);
         Assert.True(character is not null, string.Join("; ", problems.Select(problem => problem.Message)));
         return character!;

@@ -93,7 +93,7 @@ public sealed class CharacterImportTests
             "--class", "fighter",
             "--equipment", "long_sword,dagger,campaign-a:crypt_relic",
             "--portrait", "placeholder-art:fighter_portrait",
-            "--seed", "42",
+            "--seed", "2",
             "--out", charFile);
         Assert.True(newCode == 0, newOut);
 
@@ -165,7 +165,7 @@ public sealed class CharacterImportTests
             "--name", "Roland",
             "--race", "human",
             "--class", "fighter",
-            "--seed", "7",
+            "--seed", "2",
             "--out", classicChar);
         Assert.True(code == 0, output);
 

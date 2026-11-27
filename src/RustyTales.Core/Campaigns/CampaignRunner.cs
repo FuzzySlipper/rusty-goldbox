@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Rusty.Engine;
 using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
@@ -54,7 +53,7 @@ public sealed partial class CampaignRunner
     public CombatObservation? Combat => _combat?.Observe();
 
     /// <summary>Loads a saved live combat when needed and observes it without advancing or drawing.</summary>
-    public CombatObservation? ObserveCombat(IRandomService random)
+    public CombatObservation? ObserveCombat(ITalesRandom random)
     {
         if (_state.PendingCombat is null)
         {
@@ -65,7 +64,7 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Submits one typed combat command through the campaign owner.</summary>
-    public CampaignCombatCommandResult SubmitCombat(CombatCommand command, IRandomService random)
+    public CampaignCombatCommandResult SubmitCombat(CombatCommand command, ITalesRandom random)
     {
         ArgumentNullException.ThrowIfNull(command);
         if (_state.PendingCombat is null)
@@ -81,7 +80,7 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Changes one combatant's controller without changing its turn or resources.</summary>
-    public CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, IRandomService random)
+    public CampaignCombatCommandResult SetCombatController(string actorId, CombatControlMode mode, ITalesRandom random)
     {
         if (_state.PendingCombat is null)
         {
@@ -105,7 +104,7 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Temporarily resolves one manual actor's current turn automatically.</summary>
-    public CampaignCombatCommandResult StepCombatAutomatically(string actorId, IRandomService random)
+    public CampaignCombatCommandResult StepCombatAutomatically(string actorId, ITalesRandom random)
     {
         if (_state.PendingCombat is null)
         {
@@ -126,7 +125,7 @@ public sealed partial class CampaignRunner
     /// when needed. A step that fails partway reloads the fight from its last
     /// committed continuation before the failure is reported.
     /// </summary>
-    private T InCombat<T>(IRandomService random, Func<T> step)
+    private T InCombat<T>(ITalesRandom random, Func<T> step)
     {
         EnsureCombat(random);
         try
@@ -225,13 +224,13 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Begins play: where the party is, then the campaign's intro event. Rolls on scope tales.play.0.</summary>
-    public List<PlayFact> Begin(IRandomService random)
+    public List<PlayFact> Begin(ITalesRandom random)
     {
         return WithDice(random, Begin);
     }
 
     /// <summary>Takes the next command, rolling on its own scope.</summary>
-    public List<PlayFact> Execute(string command, IRandomService random)
+    public List<PlayFact> Execute(string command, ITalesRandom random)
     {
         // A live combat owns its own keyed cursor. Legacy text commands are
         // only inspection/refusal while it waits, so they must not move the
@@ -246,7 +245,7 @@ public sealed partial class CampaignRunner
     }
 
     /// <summary>Runs an authored event chain directly on its own random scope, for dev console testing.</summary>
-    public List<PlayFact> RunEvent(Definition evt, IRandomService random)
+    public List<PlayFact> RunEvent(Definition evt, ITalesRandom random)
     {
         _state.Commands++;
         return WithDice(random, dice =>
@@ -257,9 +256,9 @@ public sealed partial class CampaignRunner
         });
     }
 
-    private T WithDice<T>(IRandomService random, Func<DiceRoller, T> step)
+    private T WithDice<T>(ITalesRandom random, Func<DiceRoller, T> step)
     {
-        using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(_state.Seed, $"tales.play.{_state.Commands}"));
+        using ITalesRandomStream stream = random.CreateScoped(_state.Seed, $"tales.play.{_state.Commands}");
         return step(new DiceRoller(random, stream));
     }
 
@@ -274,7 +273,7 @@ public sealed partial class CampaignRunner
         []);
 
     /// <summary>The live fight, kept between commands; loaded from the saved continuation after a save load or a failed step.</summary>
-    private void EnsureCombat(IRandomService random)
+    private void EnsureCombat(ITalesRandom random)
     {
         if (_combat is not null)
         {

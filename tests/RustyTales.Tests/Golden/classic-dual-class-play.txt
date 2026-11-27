@@ -1,68 +1,41 @@
 seed 3
   The party is in Hall at [0, 0], facing east.
 > status
-  Aldo (hit points 21/21, 1st level spells 1/1, 4500 xp) | Ada (hit points 10/10, 0 xp) | gold 180 + 140
+  Aldo (hit points 18/18, 1st level spells 1/1, 4500 xp) | Ada (hit points 7/7, 0 xp) | gold 100 + 160
 > former 2 on
   Can't: Ada has no class waiting for its new class to pass it, so there is nothing to call on.
 > former 1 on
   Aldo calls on the old ways, and will earn no experience for the rest of this adventure.
 > forward
   The party moves to [1, 0], facing east.
-    Party is surprised for 1 round.  [1d6: 2 = 2]
     Round 1.
-    Party rolls 4 for initiative.  [1d6: 4 = 4]
-    Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
-    Aldo doesn't act (surprised).
-    Ada doesn't act (surprised).
+    Party rolls 2 for initiative.  [1d6: 2 = 2]
+    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
     Skeleton 1 uses claw (charging) on Aldo.
     Skeleton 1 moves 8 cells to (1, 2).
     Skeleton 1 is Winded for 10 rounds.
-    Skeleton 1 rolls Melee attack: 5 + 2 modifiers = 7 against 9: failure.  [1d20: 5 = 5]
+    Skeleton 1 rolls Melee attack: 9 + 2 modifiers = 11 against 9: success.  [1d20: 9 = 9]
+    Aldo loses 1 hit points (17 left).  [1d6: 1 = 1]
     Skeleton 2 uses claw (charging) on Aldo.
     Skeleton 2 moves 8 cells to (1, 3).
     Skeleton 2 is Winded for 10 rounds.
-    Skeleton 2 rolls Melee attack: 15 + 2 modifiers = 17 against 9: success.  [1d20: 15 = 15]
-    Aldo loses 6 hit points (15 left).  [1d6: 6 = 6]
-    Round 2.
-    Party rolls 6 for initiative.  [1d6: 6 = 6]
-    Crypt guard rolls 4 for initiative.  [1d6: 4 = 4]
-    Aldo uses Melee attack (Dagger) on Skeleton 2.
-    Aldo rolls Melee attack: 5 against 11: failure.  [1d20: 5 = 5]
-    Ada uses Melee attack (Long sword) on Skeleton 2.
-    Ada rolls Melee attack: 13 against 13: success.  [1d20: 13 = 13]
-    Skeleton 2 loses 7 hit points (-3 left).  [1d8: 6 = 6]
-    Skeleton 2 is out of the fight.
-    Skeleton 1 uses claw on Ada.
-    Skeleton 1 rolls Melee attack: 1 against 15: failure.  [1d20: 1 = 1]
-    Round 3.
-    Party rolls 2 for initiative.  [1d6: 2 = 2]
-    Crypt guard rolls 5 for initiative.  [1d6: 5 = 5]
-    Skeleton 1 uses claw on Ada.
-    Skeleton 1 rolls Melee attack: 5 against 15: failure.  [1d20: 5 = 5]
+    Skeleton 2 rolls Melee attack: 3 + 2 modifiers = 5 against 9: failure.  [1d20: 3 = 3]
     Aldo uses Melee attack (Dagger) on Skeleton 1.
     Aldo rolls Melee attack: 2 against 11: failure.  [1d20: 2 = 2]
     Ada uses Melee attack (Long sword) on Skeleton 1.
-    Ada rolls Melee attack: 8 against 13: failure.  [1d20: 8 = 8]
-    Round 4.
-    Party rolls 6 for initiative.  [1d6: 6 = 6]
-    Crypt guard rolls 3 for initiative.  [1d6: 3 = 3]
-    Aldo uses Melee attack (Dagger) on Skeleton 1.
-    Aldo rolls Melee attack: 20 against 11: success.  [1d20: 20 = 20]
-    Skeleton 1 loses 5 hit points (1 left).  [1d4: 4 = 4]
-    Ada uses Melee attack (Long sword) on Skeleton 1.
-    Ada rolls Melee attack: 2 against 13: failure.  [1d20: 2 = 2]
-    Skeleton 1 uses claw on Ada.
-    Skeleton 1 rolls Melee attack: 2 against 15: failure.  [1d20: 2 = 2]
-    Round 5.
-    Party rolls 4 for initiative.  [1d6: 4 = 4]
+    Ada rolls Melee attack: 3 against 13: failure.  [1d20: 3 = 3]
+    Round 2.
+    Party rolls 5 for initiative.  [1d6: 5 = 5]
     Crypt guard rolls 2 for initiative.  [1d6: 2 = 2]
     Aldo uses Melee attack (Dagger) on Skeleton 1.
-    Aldo rolls Melee attack: 4 against 11: failure.  [1d20: 4 = 4]
-    Ada uses Melee attack (Long sword) on Skeleton 1.
-    Ada rolls Melee attack: 19 against 13: success.  [1d20: 19 = 19]
-    Skeleton 1 loses 2 hit points (-1 left).  [1d8: 1 = 1]
+    Aldo rolls Melee attack: 16 against 11: success.  [1d20: 16 = 16]
+    Skeleton 1 loses 5 hit points (-4 left).  [1d4: 4 = 4]
     Skeleton 1 is out of the fight.
-    Party wins after 5 rounds.
+    Ada uses Melee attack (Long sword) on Skeleton 2.
+    Ada rolls Melee attack: 17 against 13: success.  [1d20: 17 = 17]
+    Skeleton 2 loses 7 hit points (-4 left).  [1d8: 6 = 6]
+    Skeleton 2 is out of the fight.
+    Party wins after 2 rounds.
   Combat with Crypt guard: the party wins.
   Experience: Aldo 14 (forfeited: called on a former class), Ada 14.
 > former 1 off
@@ -71,4 +44,4 @@ seed 3
   The party moves to [2, 0], facing east.
   Experience: Aldo 100 (forfeited: called on a former class), Ada 100.
 > status
-  Aldo (hit points 15/21, 1st level spells 1/1, 4500 xp, forfeiting experience) | Ada (hit points 10/10, 114 xp) | gold 180 + 140
+  Aldo (hit points 17/18, 1st level spells 1/1, 4500 xp, forfeiting experience) | Ada (hit points 7/7, 114 xp) | gold 100 + 160

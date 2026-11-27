@@ -1,4 +1,3 @@
-using Rusty.Engine;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Rules;
 
@@ -12,24 +11,22 @@ public static class ModuleLoader
 {
     /// <param name="modulePath">The module directory, or an installed module container (<c>.rpak</c>), to load.</param>
     /// <param name="searchDirectories">Explicit <c>--modules</c> directories; may be empty.</param>
-    /// <param name="content">
-    /// The Engine content service, used inside a host callback to open module
-    /// containers: the module path when it is one, and every <c>.rpak</c> in
-    /// the search directories. Without it only module directories are searched.
+    /// <param name="containers">
+    /// Optional container opener for packaged <c>.rpak</c> modules. Without it only module directories are searched.
     /// </param>
     /// <param name="extensions">IDs of extension modules to add to the set, found where requirements are.</param>
     /// <param name="saved">The modules a save was made under; each is loaded at exactly that version and content, even beside newer ones.</param>
-    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IContentService? content = null, IReadOnlyList<string>? extensions = null, IReadOnlyList<SavedModule>? saved = null)
+    public static ModuleSet Load(string modulePath, IReadOnlyList<string> searchDirectories, IModuleContainerOpener? containers = null, IReadOnlyList<string>? extensions = null, IReadOnlyList<SavedModule>? saved = null)
     {
         // "house/" and "house" are the same module; the parent lookup for
         // sibling search needs the form without the trailing separator.
         modulePath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(modulePath));
         List<ModuleDiagnostic> diagnostics = [];
-        List<ProductContentBundle> opened = [];
+        List<IDisposable> opened = [];
         try
         {
             ModuleManifest? root = InstalledModules.IsContainer(modulePath)
-                ? ReadContainer(modulePath, content, opened, diagnostics)
+                ? ReadContainer(modulePath, containers, opened, diagnostics)
                 : ManifestReader.Read(modulePath, diagnostics);
             List<string> directories = ModuleSearchPaths.Find(modulePath, searchDirectories, diagnostics);
             if (root is null)
@@ -38,7 +35,7 @@ public static class ModuleLoader
             }
 
             List<string> unreadable = [];
-            List<ModuleSource> available = AsSaved(ModuleCatalog.Sources(directories, modulePath, content, opened, unreadable, diagnostics), saved);
+            List<ModuleSource> available = AsSaved(ModuleCatalog.Sources(directories, modulePath, containers, opened, unreadable, diagnostics), saved);
             string howToAdd = "Add the directory that holds it (a module directory or an installed .rpak) with --modules <dir> or to the \"modules\" list in tales.json.";
             ModuleCatalog catalog = ModuleCatalog.Read(available, root, directories, howToAdd, unreadable);
             return Load(root, catalog, directories, extensions ?? [], diagnostics);
@@ -46,7 +43,7 @@ public static class ModuleLoader
         finally
         {
             // Loading copies what it reads; only identities outlive it, and those are copied too.
-            foreach (ProductContentBundle bundle in opened)
+            foreach (IDisposable bundle in opened)
             {
                 bundle.Dispose();
             }
@@ -80,21 +77,21 @@ public static class ModuleLoader
             .ToList();
     }
 
-    private static ModuleManifest? ReadContainer(string path, IContentService? content, List<ProductContentBundle> opened, List<ModuleDiagnostic> diagnostics)
+    private static ModuleManifest? ReadContainer(string path, IModuleContainerOpener? containers, List<IDisposable> opened, List<ModuleDiagnostic> diagnostics)
     {
-        if (content is null)
+        if (containers is null)
         {
-            diagnostics.Add(new ModuleDiagnostic("container.open", "Opening a module container needs the Engine content service; load it from inside a host callback.", File: path));
+            diagnostics.Add(new ModuleDiagnostic("container.open", "Opening a module container needs a container opener (.rpak support).", File: path));
             return null;
         }
 
         try
         {
-            ProductContentBundle bundle = ProductContentBundle.OpenContainer(content, path);
-            opened.Add(bundle);
-            return ManifestReader.Read(new BundleModuleSource(bundle), diagnostics);
+            OpenedModuleContainer container = containers.Open(path);
+            opened.Add(container);
+            return ManifestReader.Read(container.Source, diagnostics);
         }
-        catch (EngineCallException exception)
+        catch (Exception exception) when (exception is IOException or InvalidOperationException)
         {
             diagnostics.Add(new ModuleDiagnostic("container.open", $"Can't open the module container: {exception.Message} Pack it again with `tales module pack`.", File: path));
             return null;

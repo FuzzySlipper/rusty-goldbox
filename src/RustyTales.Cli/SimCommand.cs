@@ -1,6 +1,4 @@
 using System.Globalization;
-using Rusty.Engine;
-using Rusty.Engine.Testing;
 using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
@@ -78,31 +76,25 @@ internal static class SimCommand
 
         try
         {
-            using EngineTestHost host = EngineTestHost.Create();
-            List<CombatResult> results = host.Call(engine =>
+            List<CombatResult> results = [];
+            for (int run = 1; run <= runs; run++)
             {
-                List<CombatResult> all = [];
-                for (int run = 1; run <= runs; run++)
-                {
-                    using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, $"tales.sim.{run}"));
-                    DiceRoller dice = new(engine.Random, stream);
-                    List<CombatSide> sides = Encounters.Distinct(
-                    [
-                        new("Party", party.Select(character => Combatant.FromCharacter(rules, character)).ToList()),
-                        new(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
-                    ]);
-                    all.Add(CombatRunner.Run(
-                        rules,
-                        combat,
-                        sides,
-                        dice,
-                        roundLimit,
-                        encounter,
-                        collectBehaviorTraces: parsed.Has("--trace")));
-                }
-
-                return all;
-            });
+                using ITalesRandomStream stream = DeterministicRandom.Shared.CreateScoped(seed, $"tales.sim.{run}");
+                DiceRoller dice = new(DeterministicRandom.Shared, stream);
+                List<CombatSide> sides = Encounters.Distinct(
+                [
+                    new("Party", party.Select(character => Combatant.FromCharacter(rules, character)).ToList()),
+                    new(encounter.Name, Encounters.Spawn(rules, encounter, dice)),
+                ]);
+                results.Add(CombatRunner.Run(
+                    rules,
+                    combat,
+                    sides,
+                    dice,
+                    roundLimit,
+                    encounter,
+                    collectBehaviorTraces: parsed.Has("--trace")));
+            }
 
             if (runs == 1)
             {

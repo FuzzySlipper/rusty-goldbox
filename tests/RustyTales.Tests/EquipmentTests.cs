@@ -6,6 +6,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class EquipmentTests
@@ -33,7 +35,7 @@ public sealed class EquipmentTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            List<PlayFact> equipped = runner.Execute("equip 1 rules:blade", engine.Random);
+            List<PlayFact> equipped = runner.Execute("equip 1 rules:blade", new EngineRandom(engine.Random));
             EquipmentFact change = Assert.Single(equipped.OfType<EquipmentFact>());
             Assert.True(change.Equipped);
             Assert.Equal(1, change.Member);
@@ -43,7 +45,7 @@ public sealed class EquipmentTests
             Assert.Single(state.Inventory, item => item == blade);
             Assert.All(equipped, fact => Assert.Empty(fact.Rolls));
 
-            List<PlayFact> unequipped = runner.Execute("unequip 1 blade", engine.Random);
+            List<PlayFact> unequipped = runner.Execute("unequip 1 blade", new EngineRandom(engine.Random));
             Assert.True(Assert.Single(unequipped.OfType<EquipmentFact>()).Equipped is false);
             Assert.Equal(0, evaluator.Stat(party[0].ToCreature(), "hit").Number);
             Assert.Equal(2, state.Inventory.Count(item => item == blade));
@@ -76,24 +78,24 @@ public sealed class EquipmentTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            RefusedFact restricted = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 1 blade", engine.Random)));
+            RefusedFact restricted = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 1 blade", new EngineRandom(engine.Random))));
             Assert.Contains("can't equip Blade", restricted.Reason, StringComparison.Ordinal);
             Assert.Contains("rules:blade", restricted.Reason, StringComparison.Ordinal);
             Assert.Single(state.Inventory);
             Assert.DoesNotContain(party[0].Equipment, item => item == blade);
             Assert.Empty(restricted.Rolls);
 
-            RefusedFact unknown = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 1 rules:missing", engine.Random)));
+            RefusedFact unknown = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 1 rules:missing", new EngineRandom(engine.Random))));
             Assert.Contains("There is no item 'rules:missing'", unknown.Reason, StringComparison.Ordinal);
             Assert.Contains("Carried: rules:blade", unknown.Reason, StringComparison.Ordinal);
             Assert.Single(state.Inventory);
 
-            RefusedFact member = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 0 blade", engine.Random)));
+            RefusedFact member = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("equip 0 blade", new EngineRandom(engine.Random))));
             Assert.Contains("Members: 1=A, 2=B", member.Reason, StringComparison.Ordinal);
             Assert.Contains("equip <member> <item-id>", member.Reason, StringComparison.Ordinal);
             Assert.Single(state.Inventory);
 
-            RefusedFact unequip = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("unequip 1 blade", engine.Random)));
+            RefusedFact unequip = Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("unequip 1 blade", new EngineRandom(engine.Random))));
             Assert.Contains("does not have Blade equipped", unequip.Reason, StringComparison.Ordinal);
             Assert.Contains("equipped items: none", unequip.Reason, StringComparison.Ordinal);
             Assert.Single(state.Inventory);
@@ -122,7 +124,7 @@ public sealed class EquipmentTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.IsType<EquipmentFact>(Assert.Single(runner.Execute("equip 1 classic:chain_mail", engine.Random)));
+            Assert.IsType<EquipmentFact>(Assert.Single(runner.Execute("equip 1 classic:chain_mail", new EngineRandom(engine.Random))));
             decimal after = evaluator.Stat(ada.ToCreature(), "ac").Number;
             Assert.Equal(before - 5, after);
             Assert.Equal(2, ada.Equipment.Count(item => item == chainMail));
@@ -152,7 +154,7 @@ public sealed class EquipmentTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.IsType<EquipmentFact>(Assert.Single(runner.Execute("equip 1 chain_mail", engine.Random)));
+            Assert.IsType<EquipmentFact>(Assert.Single(runner.Execute("equip 1 chain_mail", new EngineRandom(engine.Random))));
             Assert.Equal(before + 5, evaluator.Stat(character.ToCreature(), "ac").Number);
             Assert.Single(character.Equipment, item => item == chainMail);
             Assert.Empty(state.Inventory);

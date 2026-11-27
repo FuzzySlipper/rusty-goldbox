@@ -50,7 +50,8 @@ internal static class DistributionCommand
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            ModuleFetcher fetcher = new(container => IdentityOf(engine.Content, container));
+            CliContainerOpener containers = new(engine.Content);
+            ModuleFetcher fetcher = new(container => IdentityOf(containers, container));
             foreach ((string id, InstalledSources.Entry entry) in record.OrderBy(entry => entry.Key, StringComparer.Ordinal))
             {
                 if (!ReleaseSource.TryParseArgument(entry.Releases, workingDirectory, out ReleaseSource? source))
@@ -76,7 +77,7 @@ internal static class DistributionCommand
                 if (parsed.Has("--install"))
                 {
                     VersionRange.TryParse(newest.Version.ToString(), out VersionRange? exact);
-                    FetchResult result = fetcher.Get(source!, id, exact, InstalledModules.Present(searched, engine.Content), library).RunWith(ReadNow, DownloadNow);
+                    FetchResult result = fetcher.Get(source!, id, exact, InstalledModules.Present(searched, containers), library).RunWith(ReadNow, DownloadNow);
                     installed.AddRange(result.Installed);
                     problems.AddRange(result.Problems);
                 }
@@ -213,8 +214,9 @@ internal static class DistributionCommand
         using EngineTestHost host = EngineTestHost.Create();
         FetchResult result = host.Call(engine =>
         {
-            ModuleFetcher fetcher = new(container => IdentityOf(engine.Content, container));
-            return fetcher.Get(source!, id, range, InstalledModules.Present(searched, engine.Content), library).RunWith(ReadNow, DownloadNow);
+            CliContainerOpener containers = new(engine.Content);
+            ModuleFetcher fetcher = new(container => IdentityOf(containers, container));
+            return fetcher.Get(source!, id, range, InstalledModules.Present(searched, containers), library).RunWith(ReadNow, DownloadNow);
         });
         return output.Fetched(result, library);
     }
@@ -345,14 +347,14 @@ internal static class DistributionCommand
             : "";
     }
 
-    private static string? IdentityOf(IContentService content, string container)
+    private static string? IdentityOf(IModuleContainerOpener containers, string container)
     {
         try
         {
-            using ProductContentBundle bundle = ProductContentBundle.OpenContainer(content, container);
-            return new BundleModuleSource(bundle).Identity;
+            using OpenedModuleContainer opened = containers.Open(container);
+            return opened.Source.Identity;
         }
-        catch (EngineCallException)
+        catch (IOException)
         {
             return null;
         }

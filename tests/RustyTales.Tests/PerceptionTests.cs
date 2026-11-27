@@ -48,8 +48,8 @@ public sealed class PerceptionTests
                 ?? throw new InvalidOperationException("campaign fixture missing");
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [first, second], 7));
 
-            Assert.Single(runner.Begin(engine.Random));
-            List<PlayFact> facts = runner.Execute("forward", engine.Random);
+            Assert.Single(runner.Begin(new EngineRandom(engine.Random)));
+            List<PlayFact> facts = runner.Execute("forward", new EngineRandom(engine.Random));
             PerceptionFact[] resolved = facts.OfType<PerceptionFact>().ToArray();
             Assert.Equal(2, resolved.Length);
             Assert.All(resolved, fact => Assert.Single(fact.Rolls));
@@ -58,7 +58,7 @@ public sealed class PerceptionTests
             Assert.All(resolved, fact => Assert.Equal(-1m, fact.Result.Modifier));
             Assert.Equal(1, runner.State.X);
 
-            facts = runner.Execute("view 1", engine.Random);
+            facts = runner.Execute("view 1", new EngineRandom(engine.Random));
             ViewFact selected = Assert.Single(facts.OfType<ViewFact>());
             Assert.Equal(first.Perception.Mode, selected.Mode);
             Assert.Equal(first.Perception.Mode == "truth" ? "The buried halls are real." : "The palace is a lie.", selected.Text);
@@ -67,15 +67,15 @@ public sealed class PerceptionTests
             int commands = runner.State.Commands;
             PerceptionState firstResult = first.Perception;
 
-            facts = runner.Execute("view 1", engine.Random);
+            facts = runner.Execute("view 1", new EngineRandom(engine.Random));
             Assert.DoesNotContain(facts, fact => fact is PerceptionFact);
             Assert.Equal(firstResult, first.Perception);
             Assert.Equal(x, runner.State.X);
 
             // Re-entering the same event scope after a room change keeps the
             // existing member results and spends no new dice.
-            runner.Execute("back", engine.Random);
-            facts = runner.Execute("forward", engine.Random);
+            runner.Execute("back", new EngineRandom(engine.Random));
+            facts = runner.Execute("forward", new EngineRandom(engine.Random));
             Assert.DoesNotContain(facts, fact => fact is PerceptionFact);
             Assert.Equal(firstResult, first.Perception);
             Assert.Equal(commands + 3, runner.State.Commands);
@@ -92,7 +92,7 @@ public sealed class PerceptionTests
             Assert.Equal("tale:mirror", restored.ViewEvent!.QualifiedId);
 
             CampaignRunner resumed = new(set.Rules, restored);
-            facts = resumed.Execute("view 2", engine.Random);
+            facts = resumed.Execute("view 2", new EngineRandom(engine.Random));
             ViewFact resumedView = Assert.Single(facts.OfType<ViewFact>());
             Assert.Equal(restored.Party[1].Perception!.Mode, resumedView.Mode);
             Assert.Equal(restored.Party[1].Perception!.Mode == "truth" ? "The buried halls are real." : "The palace is a lie.", resumedView.Text);
@@ -123,9 +123,9 @@ public sealed class PerceptionTests
                 ?? throw new InvalidOperationException("campaign fixture missing");
             CampaignState state = CampaignRunner.NewState(set.Rules, tale, [player], 7);
             CampaignRunner runner = new(set.Rules, state);
-            Assert.Contains(runner.Begin(engine.Random), fact => fact is PartyFact { Joined: true });
+            Assert.Contains(runner.Begin(new EngineRandom(engine.Random)), fact => fact is PartyFact { Joined: true });
             Character guide = state.Party[1];
-            PerceptionFact[] first = runner.Execute("forward", engine.Random).OfType<PerceptionFact>().ToArray();
+            PerceptionFact[] first = runner.Execute("forward", new EngineRandom(engine.Random)).OfType<PerceptionFact>().ToArray();
             Assert.Equal(2, first.Length);
             Assert.NotNull(guide.Perception);
 
@@ -139,8 +139,8 @@ public sealed class PerceptionTests
             restored.AbsentNpcs.Add(absentGuide);
 
             CampaignRunner resumed = new(set.Rules, restored);
-            resumed.Execute("back", engine.Random);
-            PerceptionFact[] reset = resumed.Execute("forward", engine.Random).OfType<PerceptionFact>().ToArray();
+            resumed.Execute("back", new EngineRandom(engine.Random));
+            PerceptionFact[] reset = resumed.Execute("forward", new EngineRandom(engine.Random)).OfType<PerceptionFact>().ToArray();
             Assert.Single(reset);
             Assert.Equal("entry-1", reset[0].Scope);
             Assert.Single(reset[0].Rolls);
@@ -250,8 +250,8 @@ public sealed class PerceptionTests
             Definition tale = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!
                 ?? throw new InvalidOperationException("campaign fixture missing");
             CampaignRunner runner = new(set.Rules, CampaignRunner.NewState(set.Rules, tale, [member], 12));
-            runner.Begin(engine.Random);
-            List<PlayFact> facts = runner.Execute("forward", engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
+            List<PlayFact> facts = runner.Execute("forward", new EngineRandom(engine.Random));
             PerceptionFact perception = Assert.Single(facts.OfType<PerceptionFact>());
             Assert.Single(perception.Rolls);
             Assert.Contains(perception.Mode, new[] { "truth", "glamour" });
@@ -263,7 +263,8 @@ public sealed class PerceptionTests
 
     private static Character Create(ModuleSet set, IRandomService random, string name, int constitution, string characterClass = "fighter", string race = "human", IReadOnlyList<string>? features = null, int intelligence = 10)
     {
-        using Rng stream = random.CreateScoped(new ScopedRngCreateRequest(991, $"perception.character.{name}"));
+        ITalesRandom streamRandom = new EngineRandom(random);
+        using ITalesRandomStream stream = streamRandom.CreateScoped(991, $"perception.character.{name}");
         List<ModuleDiagnostic> problems = [];
         IReadOnlyList<string> choices = features ?? ["soldier", "savage_attacker", "defense"];
         Character? character = CharacterRules.Create(
@@ -278,7 +279,7 @@ public sealed class PerceptionTests
                     : new Dictionary<string, decimal> { ["brawn"] = 12, ["finesse"] = 12, ["stamina"] = 12, ["intellect"] = constitution, ["insight"] = 12, ["presence"] = 12 },
                 Features: choices,
                 Boosts: characterClass == "fighter" ? null : ["insight", "intellect", "finesse", "stamina", "brawn", "presence", "insight", "finesse"]),
-            new DiceRoller(random, stream),
+            new DiceRoller(streamRandom, stream),
             problems);
         Assert.True(character is not null, string.Join("; ", problems.Select(problem => problem.Message)));
         return character!;

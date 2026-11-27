@@ -1,13 +1,7 @@
 $ tales character new --module modules/classic --class fighter --race dwarf --name Brom --seed 11 --out brom.json
-error[character.race] classic modules/classic/races/dwarf.json $.ability_limits.str
-  classic:dwarf needs str from 8 to 18 after adjustment, but it is 7.
 error[character.race] classic modules/classic/races/dwarf.json $.ability_limits.con
-  classic:dwarf needs con from 12 to 19 after adjustment, but it is 8.
-error[character.class] classic modules/classic/classes/fighter.json $.requirements.str
-  classic:fighter needs str 9 or more, but it is 7.
-error[character.class] classic modules/classic/classes/fighter.json $.requirements.cha
-  classic:fighter needs cha 6 or more, but it is 4.
-4 errors.
+  classic:dwarf needs con from 12 to 19 after adjustment, but it is 11.
+1 error.
 [exit 1]
 
 $ tales character level brom.json --module modules/classic --xp 5000 --seed 3 --trained
@@ -19,6 +13,8 @@ error[file.read] brom.json
 $ tales character new --module modules/classic --class magic_user --race dwarf --seed 1
 error[character.race] classic modules/classic/races/dwarf.json $.classes
   classic:dwarf can't take the class classic:magic_user. Its classes: cleric, fighter, thief.
-1 error.
+error[character.class] classic modules/classic/classes/magic_user.json $.requirements.dex
+  classic:magic_user needs dex 6 or more, but it is 3.
+2 errors.
 [exit 1]
 

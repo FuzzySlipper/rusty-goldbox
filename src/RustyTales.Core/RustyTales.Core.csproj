@@ -2,9 +2,4 @@
   <PropertyGroup>
     <RootNamespace>RustyTales.Core</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Engine Random for dice; callers supply the service from a host callback. -->
-    <PackageReference Include="Rusty.Engine" Version="[$(RustyEnginePackageVersion)]" />
-  </ItemGroup>
 </Project>

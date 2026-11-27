@@ -5,6 +5,8 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class ShopStockTests
@@ -26,25 +28,25 @@ public sealed class ShopStockTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             ShopFact opening = runner.Shop()!;
             ShopOffer offer = Assert.Single(opening.Stock);
             Assert.Equal(2m, offer.Remaining);
             Assert.Equal(5m, opening.MaxBuyValue);
             Assert.Equal("rules:silver", opening.BuyingCurrency!.QualifiedId);
 
-            runner.Execute("buy 1", engine.Random);
+            runner.Execute("buy 1", new EngineRandom(engine.Random));
             Assert.Equal(1m, runner.Shop()!.Stock[0].Remaining);
             Assert.Single(state.Inventory);
             Assert.Equal(7m, party.Sum(member => member.Balances["silver"]));
 
-            runner.Execute("buy 1", engine.Random);
+            runner.Execute("buy 1", new EngineRandom(engine.Random));
             Assert.Equal(0m, runner.Shop()!.Stock[0].Remaining);
             Assert.Equal(2, state.Inventory.Count);
             decimal silverBeforeSoldOut = party.Sum(member => member.Balances["silver"]);
             Assert.Contains("0 left", runner.Shop()!.Describe(), StringComparison.Ordinal);
 
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", new EngineRandom(engine.Random))));
             Assert.Equal(silverBeforeSoldOut, party.Sum(member => member.Balances["silver"]));
             Assert.Equal(2, state.Inventory.Count);
 
@@ -54,7 +56,7 @@ public sealed class ShopStockTests
             Assert.Empty(problems);
             runner = new CampaignRunner(set.Rules, restored);
             Assert.Equal(0m, runner.Shop()!.Stock[0].Remaining);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", new EngineRandom(engine.Random))));
             Assert.Equal(2, restored.Inventory.Count);
         });
     }
@@ -75,8 +77,8 @@ public sealed class ShopStockTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", engine.Random)));
+            runner.Begin(new EngineRandom(engine.Random));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("buy 1", new EngineRandom(engine.Random))));
             Assert.Equal(2m, runner.Shop()!.Stock[0].Remaining);
             Assert.Empty(state.Inventory);
             Assert.Equal(0m, party.Sum(member => member.Balances.GetValueOrDefault("silver")));
@@ -102,17 +104,17 @@ public sealed class ShopStockTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             ShopFact opening = runner.Shop()!;
             Assert.Equal([0.75m, 25m], opening.Carried.Select(offer => offer.Price));
             Assert.Equal([true, false], opening.Carried.Select(offer => offer.Sellable));
             Assert.Contains("cannot sell", opening.Describe(), StringComparison.Ordinal);
             Assert.Contains("at most", opening.Carried[1].RefusalReason, StringComparison.Ordinal);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("sell 2", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("sell 2", new EngineRandom(engine.Random))));
             Assert.Equal(2, state.Inventory.Count);
             Assert.Equal(0m, party.Sum(member => member.Balances.GetValueOrDefault("silver")));
 
-            runner.Execute("sell 1", engine.Random);
+            runner.Execute("sell 1", new EngineRandom(engine.Random));
             Assert.Single(state.Inventory);
             Assert.Equal(expensive, state.Inventory[0]);
             Assert.Equal(0.75m, party.Sum(member => member.Balances["silver"]));

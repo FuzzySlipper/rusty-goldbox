@@ -7,6 +7,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class TrainingTests
@@ -19,8 +21,9 @@ public sealed class TrainingTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(1, "training-class-change"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(1, "training-class-change");
+            DiceRoller dice = new(streamRandom, stream);
             List<ModuleDiagnostic> problems = [];
             Character character = CharacterRules.Create(set.Rules!, Character.StampsOf(set),
                 new CreationRequest("Aldo", "fighter", "human", Attributes: new Dictionary<string, decimal>
@@ -37,20 +40,20 @@ public sealed class TrainingTests
             state.PendingTraining = set.Rules!.Find(DefinitionTypes.Event, "trainer", out _)!;
             CampaignRunner runner = new(set.Rules!, state);
 
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", engine.Random)));
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class cleric", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", new EngineRandom(engine.Random))));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class cleric", new EngineRandom(engine.Random))));
             Assert.Equal(3, character.Level);
             Assert.Equal(10000, character.Balances["gold"]);
             Assert.Equal(0, state.ElapsedDays);
 
             character.Balances["gold"] = 4499;
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class magic_user", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class magic_user", new EngineRandom(engine.Random))));
             Assert.Equal(3, character.Level);
             Assert.Equal(4499, character.Balances["gold"]);
             Assert.Equal(0, state.ElapsedDays);
             character.Balances["gold"] = 10000;
 
-            var facts = runner.Execute("train 1 --class magic_user", engine.Random);
+            var facts = runner.Execute("train 1 --class magic_user", new EngineRandom(engine.Random));
             Assert.DoesNotContain(facts, fact => fact is RefusedFact);
             Assert.Single(facts.OfType<LevelFact>());
             Assert.Equal(4, character.Level);
@@ -81,7 +84,7 @@ public sealed class TrainingTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute(command, new EngineRandom(engine.Random))));
             Assert.Equal(1, party[0].Level);
             Assert.Equal(gold, party.Sum(character => character.Balances["gold"]));
             Assert.Equal(0, state.ElapsedDays);
@@ -100,29 +103,29 @@ public sealed class TrainingTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            runner.Begin(engine.Random);
+            runner.Begin(new EngineRandom(engine.Random));
             Assert.All(party, character => Assert.Equal(1, character.Level));
             Assert.All(party, character => Assert.Equal(30, character.Experience));
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("level 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("level 1", new EngineRandom(engine.Random))));
             party.ForEach(character => character.Balances["gold"] = 0);
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", new EngineRandom(engine.Random))));
             Assert.Equal(0, runner.State.ElapsedDays);
             party[0].Balances["gold"] = 1;
             party[1].Balances["gold"] = 5;
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class missing", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1 --class missing", new EngineRandom(engine.Random))));
             Assert.Equal(1, party[0].Level);
             Assert.Equal(1, party[0].Balances["gold"]);
             Assert.Equal(5, party[1].Balances["gold"]);
-            runner.Execute("train 1", engine.Random);
+            runner.Execute("train 1", new EngineRandom(engine.Random));
             Assert.Equal(2, party[0].Level);
             Assert.Equal(1, party[1].Level);
             Assert.Equal(2, runner.State.ElapsedDays);
             Assert.Equal(4, party.Sum(character => character.Balances["gold"]));
-            runner.Execute("train 1", engine.Random);
+            runner.Execute("train 1", new EngineRandom(engine.Random));
             Assert.Equal(3, party[0].Level);
             Assert.Equal(4, runner.State.ElapsedDays);
             Assert.Equal(0, party.Sum(character => character.Balances["gold"]));
-            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", engine.Random)));
+            Assert.IsType<RefusedFact>(Assert.Single(runner.Execute("train 1", new EngineRandom(engine.Random))));
             List<ModuleDiagnostic> problems = [];
             CampaignState saved = SaveFile.Read(Encoding.UTF8.GetBytes(SaveFile.ToJson(runner.State, set)), "save", set, problems)!;
             Assert.Empty(problems);
@@ -142,7 +145,7 @@ public sealed class TrainingTests
         var party = ShopTests.Party(modules, campaign, set);
         CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!, party, 1));
         using EngineTestHost host = EngineTestHost.Create();
-        host.Call(engine => runner.Begin(engine.Random));
+        host.Call(engine => runner.Begin(new EngineRandom(engine.Random)));
         Assert.All(party, character => Assert.Equal(3, character.Level));
     }
 

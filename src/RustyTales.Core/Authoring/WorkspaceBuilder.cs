@@ -1,4 +1,3 @@
-using Rusty.Engine;
 using RustyTales.Core.Modules;
 
 namespace RustyTales.Core.Authoring;
@@ -50,7 +49,7 @@ public static class WorkspaceBuilder
     /// service lets the normal module loader resolve installed containers as
     /// dependencies while the CLI runs inside its tool host.
     /// </summary>
-    public static WorkspaceBuildResult Build(Workspace workspace, IContentService? content = null)
+    public static WorkspaceBuildResult Build(Workspace workspace, IModuleContainerOpener? containers = null)
     {
         List<ModuleDiagnostic> diagnostics = [];
         List<WorkspaceDependency> unresolved = [];
@@ -111,7 +110,7 @@ public static class WorkspaceBuilder
         foreach (WorkspaceModule authored in inspection.AuthoredModules)
         {
             ModuleManifest manifest = authored.Manifest!;
-            ModuleSet set = ModuleLoader.Load(authored.Path, authoredDirectories, content);
+            ModuleSet set = ModuleLoader.Load(authored.Path, authoredDirectories, containers);
             if (!set.IsValid)
             {
                 diagnostics.AddRange(set.Diagnostics);

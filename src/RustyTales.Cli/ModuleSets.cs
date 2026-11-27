@@ -12,14 +12,14 @@ internal static class ModuleSets
     public static ModuleSet Load(string path, IReadOnlyList<string> searchDirectories, IReadOnlyList<string>? extensions = null, IReadOnlyList<SavedModule>? saved = null)
     {
         using EngineTestHost host = EngineTestHost.Create();
-        return host.Call(engine => ModuleLoader.Load(path, searchDirectories, engine.Content, extensions, saved));
+        return host.Call(engine => ModuleLoader.Load(path, searchDirectories, new CliContainerOpener(engine.Content), extensions, saved));
     }
 
     /// <summary>Builds an authoring workspace with the same Engine content service the CLI uses for module loads.</summary>
     public static WorkspaceBuildResult BuildWorkspace(Workspace workspace)
     {
         using EngineTestHost host = EngineTestHost.Create();
-        return host.Call(engine => WorkspaceBuilder.Build(workspace, engine.Content));
+        return host.Call(engine => WorkspaceBuilder.Build(workspace, new CliContainerOpener(engine.Content)));
     }
 
     /// <summary>The extension IDs given with <c>--extension</c>, which may repeat or list several: <c>--extension a,b</c>.</summary>

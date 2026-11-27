@@ -1,4 +1,3 @@
-using System.Buffers;
 using Rusty.Engine;
 using Rusty.Engine.Persistence;
 using RustyTales.Core.Characters;
@@ -7,22 +6,22 @@ namespace RustyTales.Game;
 
 /// <summary>
 /// Persists the player's ruleset-bound character stable in Engine persistence
-/// (apart from campaign save slots), so characters rolled or exported from one
-/// campaign can be imported into any other campaign sharing the same baseline
-/// ruleset.
+/// via Core's <see cref="CharacterStableStore"/>, so characters rolled or
+/// exported from one campaign can be imported into any other campaign sharing
+/// the same baseline ruleset.
 /// </summary>
 internal static class CharacterStable
 {
-    public const string Scope = "tales-stable";
-    public const string Key = "roster";
+    public const string Scope = CharacterStableStore.Scope;
+    public const string Key = CharacterStableStore.Key;
 
     /// <summary>Saves the session's stable entries to Engine persistence, ignoring hosts with no persistence root.</summary>
     public static void Save(IEngineContext engine, GameSession session)
     {
         try
         {
-            using ProductStateStore<byte[]> store = new(engine, Scope, new Utf8Codec());
-            store.Save(Key, CharacterRoster.Write(session.Stable));
+            using EngineStateStore store = new(engine, Scope);
+            CharacterStableStore.Save(store, session.Stable);
         }
         catch (EngineCallException)
         {
@@ -37,12 +36,17 @@ internal static class CharacterStable
     /// <summary>Loads the player's character stable into <paramref name="session"/>; unreadable entries become warnings.</summary>
     public static void Load(IEngineContext engine, GameSession session)
     {
-        byte[]? bytes;
+        List<string> warnings = [];
+        List<StableEntry> entries;
         try
         {
-            using ProductStateStore<byte[]> store = new(engine, Scope, new Utf8Codec());
-            ProductStateLoad<byte[]> load = store.Load(Key);
-            bytes = load.Present ? load.State : null;
+            using EngineStateStore store = new(engine, Scope);
+            if (store.Load(Key) is null)
+            {
+                return;
+            }
+
+            entries = CharacterStableStore.Load(store, warnings);
         }
         catch (EngineCallException)
         {
@@ -54,22 +58,8 @@ internal static class CharacterStable
             return;
         }
 
-        if (bytes is null)
-        {
-            return;
-        }
-
-        List<string> warnings = [];
-        List<StableEntry> entries = CharacterRoster.Read(bytes, warnings);
         session.Stable.Clear();
         session.Stable.AddRange(entries);
         session.Notes.AddRange(warnings);
-    }
-
-    private sealed class Utf8Codec : IProductStateCodec<byte[]>
-    {
-        public void Encode(in byte[] state, IBufferWriter<byte> destination) => destination.Write(state);
-
-        public byte[] Decode(ReadOnlySpan<byte> payload) => payload.ToArray();
     }
 }

@@ -8,6 +8,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class SpellRewardTests
@@ -31,10 +33,10 @@ public sealed class SpellRewardTests
                 {
                     ["str"] = 10, ["dex"] = 10, ["con"] = 10, ["int"] = 16, ["wis"] = 10, ["cha"] = 10,
                 }),
-                new DiceRoller(engine.Random, 7, "spell-reward-create"),
+                new DiceRoller(new EngineRandom(engine.Random), 7, "spell-reward-create"),
                 problems)!;
             Assert.Empty(problems);
-            Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(engine.Random, 7, "spell-reward-level"), problems, trained: true));
+            Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(new EngineRandom(engine.Random), 7, "spell-reward-level"), problems, trained: true));
             Assert.Empty(problems);
             Assert.Equal(3, character.Level);
             Assert.True(CharacterRules.SetSpells(set.Rules!, character, ["magic_missile"], problems));
@@ -42,7 +44,7 @@ public sealed class SpellRewardTests
 
             Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, campaignDefinition, [character], 23));
-            List<PlayFact> facts = runner.Begin(engine.Random);
+            List<PlayFact> facts = runner.Begin(new EngineRandom(engine.Random));
             SpellRewardFact reward = Assert.Single(facts.OfType<SpellRewardFact>());
             Assert.True(reward.Granted);
             Assert.Equal(2, reward.Level);
@@ -87,16 +89,16 @@ public sealed class SpellRewardTests
                 {
                     ["str"] = 10, ["dex"] = 10, ["con"] = 10, ["int"] = 16, ["wis"] = 10, ["cha"] = 10,
                 }),
-                new DiceRoller(engine.Random, 8, "spell-reward-create"),
+                new DiceRoller(new EngineRandom(engine.Random), 8, "spell-reward-create"),
                 problems)!;
             Assert.Empty(problems);
-            Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(engine.Random, 8, "spell-reward-level"), problems, trained: true));
+            Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(new EngineRandom(engine.Random), 8, "spell-reward-level"), problems, trained: true));
             Assert.True(CharacterRules.SetSpells(set.Rules!, character, knowsLowerLevelSpells ? ["magic_missile", "sleep", "arc"] : ["arc"], problems));
             Assert.Empty(problems);
 
             Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, campaignDefinition, [character], 24));
-            SpellRewardFact reward = Assert.Single(runner.Begin(engine.Random).OfType<SpellRewardFact>());
+            SpellRewardFact reward = Assert.Single(runner.Begin(new EngineRandom(engine.Random)).OfType<SpellRewardFact>());
             Assert.False(reward.Granted);
             Assert.Null(reward.Spell);
             Assert.Empty(reward.Rolls);
@@ -136,13 +138,13 @@ public sealed class SpellRewardTests
                     Priority: ["int", "con", "dex", "wis", "cha", "str"],
                     Creation: "standard_array",
                     Features: ["sage", "alert"]),
-                new DiceRoller(engine.Random, 9, "fifth-spell-reward-create"),
+                new DiceRoller(new EngineRandom(engine.Random), 9, "fifth-spell-reward-create"),
                 problems)!;
             Assert.Empty(problems);
 
             Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, campaignDefinition, [character], 25));
-            SpellRewardFact reward = Assert.Single(runner.Begin(engine.Random).OfType<SpellRewardFact>());
+            SpellRewardFact reward = Assert.Single(runner.Begin(new EngineRandom(engine.Random)).OfType<SpellRewardFact>());
             Assert.True(reward.Granted);
             Assert.Equal(1, reward.Level);
             Assert.Equal("fifth-srd:magic_missile", reward.Spell!.QualifiedId);
@@ -188,12 +190,12 @@ public sealed class SpellRewardTests
                     {
                         ["str"] = 16, ["dex"] = 12, ["con"] = 13, ["int"] = 17, ["wis"] = 17, ["cha"] = 10,
                     }),
-                    new DiceRoller(engine.Random, 12, $"spell-reward-dual-{scope}-create"),
+                    new DiceRoller(new EngineRandom(engine.Random), 12, $"spell-reward-dual-{scope}-create"),
                     problems)!;
                 Assert.Empty(problems);
-                Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(engine.Random, 12, $"spell-reward-dual-{scope}-level"), problems, trained: true));
+                Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 4800, new DiceRoller(new EngineRandom(engine.Random), 12, $"spell-reward-dual-{scope}-level"), problems, trained: true));
                 Assert.Empty(problems);
-                Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 0, new DiceRoller(engine.Random, 12, $"spell-reward-dual-{scope}-change"), problems, "cleric", trained: true));
+                Assert.NotNull(CharacterRules.AddExperience(set.Rules!, character, 0, new DiceRoller(new EngineRandom(engine.Random), 12, $"spell-reward-dual-{scope}-change"), problems, "cleric", trained: true));
                 Assert.Empty(problems);
                 Assert.Equal(4, character.Level);
                 Assert.Equal(3, character.ClassLevels().Single(entry => entry.Key.Id == "magic_user").Value);
@@ -211,7 +213,7 @@ public sealed class SpellRewardTests
             }
             Assert.Null(CharacterRules.SpellProblem(set.Rules!, dormant, calledArc));
             CampaignRunner dormantRunner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, firstCampaign, [dormant], 26));
-            SpellRewardFact dormantReward = Assert.Single(dormantRunner.Begin(engine.Random).OfType<SpellRewardFact>());
+            SpellRewardFact dormantReward = Assert.Single(dormantRunner.Begin(new EngineRandom(engine.Random)).OfType<SpellRewardFact>());
             Assert.True(dormantReward.Granted);
             Assert.Equal("gift:dual_arc_called", dormantReward.Spell!.QualifiedId);
             Assert.Equal(1, dormantReward.Level);
@@ -231,7 +233,7 @@ public sealed class SpellRewardTests
             Assert.True(calledOn.UsesFormerClasses);
             Assert.Contains(calledOn.ToCreature().ClassLevels.Keys, characterClass => characterClass.Id == "magic_user");
             CampaignRunner calledOnRunner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, firstCampaign, [calledOn], 27));
-            SpellRewardFact calledOnReward = Assert.Single(calledOnRunner.Begin(engine.Random).OfType<SpellRewardFact>());
+            SpellRewardFact calledOnReward = Assert.Single(calledOnRunner.Begin(new EngineRandom(engine.Random)).OfType<SpellRewardFact>());
             Assert.True(calledOnReward.Granted);
             Assert.Equal("gift:dual_arc_called", calledOnReward.Spell!.QualifiedId);
             Assert.Equal(3, calledOnReward.Level);
@@ -258,13 +260,13 @@ public sealed class SpellRewardTests
                 {
                     ["might"] = 9, ["grace"] = 12, ["grit"] = 16, ["wit"] = 16,
                 }, Features: ["lightning_reflexes"]),
-                new DiceRoller(engine.Random, 13, "spell-reward-ascend-create"),
+                new DiceRoller(new EngineRandom(engine.Random), 13, "spell-reward-ascend-create"),
                 problems)!;
             Assert.Empty(problems);
 
             Definition campaignDefinition = set.Rules!.Find(DefinitionTypes.Campaign, "tale", out _)!;
             CampaignRunner runner = new(set.Rules!, CampaignRunner.NewState(set.Rules!, campaignDefinition, [character], 28));
-            SpellRewardFact reward = Assert.Single(runner.Begin(engine.Random).OfType<SpellRewardFact>());
+            SpellRewardFact reward = Assert.Single(runner.Begin(new EngineRandom(engine.Random)).OfType<SpellRewardFact>());
             Assert.True(reward.Granted);
             Assert.Equal("ascend:flare", reward.Spell!.QualifiedId);
             Assert.Equal(1, reward.Level);
@@ -294,8 +296,8 @@ public sealed class SpellRewardTests
             CombatResult result = CombatRunner.Run(
                 set.Rules!,
                 combat,
-                [new CombatSide("Party", [combatant]), new CombatSide("Brutes", Encounters.Spawn(set.Rules!, encounter, new DiceRoller(engine.Random, 14, "spell-reward-ascend-foes")))],
-                new DiceRoller(engine.Random, 14, "spell-reward-ascend-combat"),
+                [new CombatSide("Party", [combatant]), new CombatSide("Brutes", Encounters.Spawn(set.Rules!, encounter, new DiceRoller(new EngineRandom(engine.Random), 14, "spell-reward-ascend-foes")))],
+                new DiceRoller(new EngineRandom(engine.Random), 14, "spell-reward-ascend-combat"),
                 6,
                 encounter);
             Assert.Contains(result.Facts, fact => fact.Describe().StartsWith("Ilse uses Flare", StringComparison.Ordinal));

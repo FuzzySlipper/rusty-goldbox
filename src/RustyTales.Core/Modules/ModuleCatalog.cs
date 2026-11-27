@@ -1,5 +1,3 @@
-using Rusty.Engine;
-
 namespace RustyTales.Core.Modules;
 
 /// <summary>The modules a load can pick requirements from, by ID.</summary>
@@ -55,8 +53,8 @@ internal sealed class ModuleCatalog
     public static List<ModuleSource> Sources(
         IReadOnlyList<string> searchDirectories,
         string root,
-        IContentService? content,
-        List<ProductContentBundle> opened,
+        IModuleContainerOpener? containers,
+        List<IDisposable> opened,
         List<string> unreadable,
         List<ModuleDiagnostic> diagnostics)
     {
@@ -72,20 +70,20 @@ internal sealed class ModuleCatalog
                 }
             }
 
-            // Without the content service containers can't be read; like other
+            // Without a container opener .rpak files can't be read; like other
             // modules nobody may require, they are not this load's problem.
-            IEnumerable<string> containers = content is null ? [] : InstalledModules.In(searchDirectory, diagnostics).Where(path => path != root);
-            foreach (string container in containers)
+            IEnumerable<string> containerPaths = containers is null ? [] : InstalledModules.In(searchDirectory, diagnostics).Where(path => path != root);
+            foreach (string containerPath in containerPaths)
             {
                 try
                 {
-                    ProductContentBundle bundle = ProductContentBundle.OpenContainer(content!, container);
-                    opened.Add(bundle);
-                    sources.Add(new BundleModuleSource(bundle));
+                    OpenedModuleContainer container = containers!.Open(containerPath);
+                    opened.Add(container);
+                    sources.Add(container.Source);
                 }
-                catch (EngineCallException exception)
+                catch (Exception exception) when (exception is IOException or InvalidOperationException)
                 {
-                    unreadable.Add($"{container} ({exception.Message})");
+                    unreadable.Add($"{containerPath} ({exception.Message})");
                 }
             }
         }

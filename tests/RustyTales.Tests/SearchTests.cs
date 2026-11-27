@@ -8,6 +8,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class SearchTests
@@ -34,9 +36,9 @@ public sealed class SearchTests
         CampaignRunner runner = new(set.Rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        List<PlayFact> blocked = host.Call(engine => runner.Execute("forward", engine.Random));
+        List<PlayFact> blocked = host.Call(engine => runner.Execute("forward", new EngineRandom(engine.Random)));
         Assert.Contains(blocked, fact => fact is RefusedFact refused && refused.Reason.Contains("wall", StringComparison.Ordinal));
-        List<PlayFact> facts = host.Call(engine => runner.Execute("search", engine.Random));
+        List<PlayFact> facts = host.Call(engine => runner.Execute("search", new EngineRandom(engine.Random)));
         SearchFact result = Assert.Single(facts.OfType<SearchFact>());
         Assert.True(result.Found);
         AreaMap playerMap = runner.PlayerMap(hall);
@@ -76,7 +78,7 @@ public sealed class SearchTests
         CampaignRunner runner = new(set.Rules, state);
 
         using EngineTestHost host = EngineTestHost.Create();
-        RuleFailure failure = Assert.Throws<RuleFailure>(() => host.Call(engine => runner.Execute("search", engine.Random)));
+        RuleFailure failure = Assert.Throws<RuleFailure>(() => host.Call(engine => runner.Execute("search", new EngineRandom(engine.Random))));
         Assert.Equal("event.evaluate", failure.Diagnostic.Rule);
         Assert.Equal("tale", failure.Diagnostic.Module);
         Assert.Equal(Path.Combine(modules.Root, "tale/search.json"), failure.Diagnostic.File);

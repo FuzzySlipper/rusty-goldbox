@@ -6,6 +6,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 /// <summary>A manual fighter plays a whole fight in rulesets of different shapes, through the same commands the Game and CLI send.</summary>
@@ -80,7 +82,7 @@ public sealed class ManualRulesetCombatTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            DiceRoller dice = new(engine.Random, 3, $"manual-{module}");
+            DiceRoller dice = new(new EngineRandom(engine.Random), 3, $"manual-{module}");
             Combatant hero = Combatant.FromCharacter(rules, character);
             CombatRunner runner = CombatRunner.Create(rules, combat,
             [

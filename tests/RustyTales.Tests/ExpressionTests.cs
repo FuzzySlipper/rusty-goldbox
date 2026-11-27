@@ -4,6 +4,8 @@ using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
 using RustyTales.Core.Rules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class ExpressionTests
@@ -144,8 +146,9 @@ public sealed class ExpressionTests
         using EngineTestHost host = EngineTestHost.Create();
         return host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(seed, "tests"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(seed, "tests");
+            DiceRoller dice = new(streamRandom, stream);
             decimal total = new Evaluator(rules, dice).Evaluate(expression, null, null).Number;
             return (total, dice.Rolls.ToList());
         });

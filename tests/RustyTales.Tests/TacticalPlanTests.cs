@@ -7,6 +7,8 @@ using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 using static RustyTales.Tests.TempModules;
 
+using RustyTales.Game;
+
 namespace RustyTales.Tests;
 
 public sealed class TacticalPlanTests
@@ -475,8 +477,9 @@ public sealed class TacticalPlanTests
         using EngineTestHost host = EngineTestHost.Create();
         host.Call(engine =>
         {
-            using Rng stream = engine.Random.CreateScoped(new ScopedRngCreateRequest(9343, "tactical-ranged-resolver"));
-            DiceRoller dice = new(engine.Random, stream);
+            ITalesRandom streamRandom = new EngineRandom(engine.Random);
+            using ITalesRandomStream stream = streamRandom.CreateScoped(9343, "tactical-ranged-resolver");
+            DiceRoller dice = new(streamRandom, stream);
             Evaluator evaluator = new(rules, dice);
             Combatant actor = Combatant.FromMonster(rules, monster, "Screened shooter", evaluator);
             actor.Uses.RemoveAll(use => use.Action != close);
@@ -659,7 +662,7 @@ public sealed class TacticalPlanTests
         {
             const ulong seed = 9343;
             const string scope = "authored-price-fallback";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Creature actorCreature = CreatureWithHitPoints("actor", 10);
             actorCreature.Track("mana").Current = 0;
@@ -780,7 +783,7 @@ public sealed class TacticalPlanTests
         {
             const ulong seed = 9343;
             const string scope = "partial-spell-cost-moves";
-            DiceRoller dice = new(engine.Random, seed, scope);
+            DiceRoller dice = new(new EngineRandom(engine.Random), seed, scope);
             Evaluator evaluator = new(rules, dice);
             Creature actorCreature = CreatureWithHitPoints("actor", 10);
             actorCreature.Track("mana").Current = 0;
