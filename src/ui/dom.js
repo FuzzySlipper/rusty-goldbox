@@ -29,13 +29,252 @@ export function button(label, onClick, attributes = {}) {
   return node;
 }
 
-/** Fills a select with { id, name } choices, keeping the current choice when it is still offered. */
+/** Fills a select (native or custom selectBox) with { id, name, disabled? } choices, keeping the current choice when it is still offered. */
 export function fill(select, choices) {
   const current = select.value;
-  select.replaceChildren(...choices.map((choice) => element('option', { value: choice.id }, choice.name)));
-  if (choices.some((choice) => choice.id === current)) {
+  select.replaceChildren(...choices.map((choice) => {
+    const option = element('option', { value: choice.id }, choice.name);
+    if (choice.disabled) {
+      option.disabled = true;
+    }
+    return option;
+  }));
+  if (choices.some((choice) => choice.id === current && !choice.disabled)) {
     select.value = current;
   }
+}
+
+const openSelectClosers = new Set();
+let selectGlobalBound = false;
+
+function ensureSelectGlobalHandlers() {
+  if (selectGlobalBound) {
+    return;
+  }
+
+  selectGlobalBound = true;
+  document.addEventListener('pointerdown', (event) => {
+    for (const close of [...openSelectClosers]) {
+      close(event.target);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && openSelectClosers.size > 0) {
+      for (const close of [...openSelectClosers]) {
+        close(null);
+      }
+    }
+  });
+}
+
+/**
+ * Custom theme-matched DOM dropdown that avoids CEF/Chromium native `<select>`
+ * popup offset and unstyled white OS menu bugs under UI scaling. Exposes the
+ * same `.value`, `.disabled`, `.replaceChildren(...)`, `.focus()`, and `change`
+ * event contract as `<select>` so panels can drop it in cleanly.
+ */
+export function selectBox(attributes = {}, ...initialOptions) {
+  ensureSelectGlobalHandlers();
+  const { class: extraClass = '', 'data-focus-key': focusKey, 'aria-label': ariaLabel, ...rest } = attributes;
+  const root = element('div', { class: `gb-select${extraClass ? ` ${extraClass}` : ''}`, ...rest });
+  const triggerAttrs = {
+    type: 'button',
+    class: 'gb-select-trigger',
+    'aria-haspopup': 'listbox',
+    'aria-expanded': 'false',
+    ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
+    ...(focusKey ? { 'data-focus-key': focusKey } : {}),
+  };
+  const labelSpan = element('span', { class: 'gb-select-label' }, '');
+  const caretSpan = element('span', { class: 'gb-select-caret', 'aria-hidden': 'true' }, '▾');
+  const trigger = element('button', triggerAttrs, labelSpan, caretSpan);
+  const menu = element('div', { class: 'gb-select-menu', role: 'listbox', hidden: 'hidden' });
+  root.append(trigger, menu);
+
+  let options = [];
+  let currentValue = '';
+  let isOpen = false;
+  let activeIndex = -1;
+
+  const syncLabel = () => {
+    const selected = options.find((opt) => opt.value === currentValue) ?? options.find((opt) => !opt.disabled) ?? options[0];
+    if (selected) {
+      currentValue = selected.value;
+      labelSpan.textContent = selected.label;
+      trigger.title = selected.label;
+    } else {
+      currentValue = '';
+      labelSpan.textContent = '';
+      trigger.title = '';
+    }
+  };
+
+  const renderMenu = () => {
+    menu.replaceChildren(...options.map((opt, index) => {
+      const selected = opt.value === currentValue;
+      const item = element('button', {
+        type: 'button',
+        role: 'option',
+        class: `gb-select-option${selected ? ' gb-selected' : ''}${index === activeIndex ? ' gb-active' : ''}${opt.disabled ? ' gb-disabled' : ''}`,
+        'aria-selected': String(selected),
+        ...(opt.disabled ? { disabled: 'disabled' } : {}),
+      }, opt.label);
+      item.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (opt.disabled) {
+          return;
+        }
+        const changed = currentValue !== opt.value;
+        currentValue = opt.value;
+        syncLabel();
+        closeMenu();
+        trigger.focus({ preventScroll: true });
+        if (changed) {
+          root.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+      return item;
+    }));
+  };
+
+  const closeMenu = () => {
+    if (!isOpen) {
+      return;
+    }
+    isOpen = false;
+    menu.hidden = true;
+    root.classList.remove('gb-select-open', 'gb-select-up');
+    trigger.setAttribute('aria-expanded', 'false');
+    openSelectClosers.delete(handleOutside);
+  };
+
+  const handleOutside = (target) => {
+    if (!target || !root.contains(target)) {
+      closeMenu();
+    }
+  };
+
+  const openMenu = () => {
+    if (trigger.disabled || options.length === 0) {
+      return;
+    }
+    for (const close of [...openSelectClosers]) {
+      close(null);
+    }
+    isOpen = true;
+    activeIndex = Math.max(0, options.findIndex((opt) => opt.value === currentValue));
+    renderMenu();
+    // Flip upward if the dropdown would overflow the bottom of the window.
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const estimatedHeight = Math.min(240, options.length * 32 + 12);
+    root.classList.toggle('gb-select-up', spaceBelow < estimatedHeight && rect.top > estimatedHeight);
+    root.classList.add('gb-select-open');
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    openSelectClosers.add(handleOutside);
+    const chosenNode = menu.children[activeIndex];
+    chosenNode?.scrollIntoView?.({ block: 'nearest' });
+  };
+
+  trigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  });
+
+  trigger.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!isOpen) {
+        openMenu();
+        return;
+      }
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      for (let tries = 0; tries < options.length; tries++) {
+        activeIndex = (activeIndex + step + options.length) % options.length;
+        if (!options[activeIndex].disabled) {
+          break;
+        }
+      }
+      renderMenu();
+      menu.children[activeIndex]?.scrollIntoView?.({ block: 'nearest' });
+    } else if ((event.key === 'Enter' || event.key === ' ') && isOpen) {
+      event.preventDefault();
+      const opt = options[activeIndex];
+      if (opt && !opt.disabled) {
+        const changed = currentValue !== opt.value;
+        currentValue = opt.value;
+        syncLabel();
+        closeMenu();
+        if (changed) {
+          root.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    } else if (event.key === 'Escape' && isOpen) {
+      event.preventDefault();
+      closeMenu();
+    }
+  });
+
+  Object.defineProperty(root, 'value', {
+    get() {
+      return currentValue;
+    },
+    set(next) {
+      const text = next === null || next === undefined ? '' : String(next);
+      if (options.some((opt) => opt.value === text)) {
+        currentValue = text;
+        syncLabel();
+        if (isOpen) {
+          renderMenu();
+        }
+      } else if (options.length === 0) {
+        currentValue = text;
+      }
+    },
+  });
+
+  Object.defineProperty(root, 'disabled', {
+    get() {
+      return trigger.disabled;
+    },
+    set(flag) {
+      trigger.disabled = Boolean(flag);
+      if (trigger.disabled) {
+        closeMenu();
+      }
+    },
+  });
+
+  root.replaceChildren = (...nodes) => {
+    options = nodes
+      .filter((node) => node && typeof node === 'object')
+      .map((node) => ({
+        value: node.value !== undefined ? String(node.value) : String(node.getAttribute?.('value') ?? ''),
+        label: String(node.textContent ?? node.label ?? node.name ?? ''),
+        disabled: Boolean(node.disabled),
+      }));
+    if (!options.some((opt) => opt.value === currentValue)) {
+      const firstValid = options.find((opt) => !opt.disabled) ?? options[0];
+      currentValue = firstValid ? firstValid.value : '';
+    }
+    syncLabel();
+    if (isOpen) {
+      renderMenu();
+    }
+  };
+
+  root.focus = (opts) => trigger.focus(opts);
+
+  if (initialOptions.length > 0) {
+    root.replaceChildren(...initialOptions);
+  }
+
+  return root;
 }
 
 export const currencyName = (id) => id ? id.split(':').at(-1) : 'currency';

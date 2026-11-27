@@ -91,6 +91,14 @@ internal static partial class SessionProjection
             projection["races"] = RaceChoices(rules);
             projection["classes"] = ClassChoices(rules);
             Creation(rules, projection);
+            projection["draftScores"] = session.DraftScores is IReadOnlyDictionary<string, decimal> draft
+                ? new JsonObject
+                {
+                    ["creationId"] = session.DraftCreationId,
+                    ["roll"] = session.DraftRollNumber,
+                    ["scores"] = new JsonObject(draft.Select(entry => KeyValuePair.Create(entry.Key, (JsonNode?)JsonValue.Create((double)entry.Value)))),
+                }
+                : null;
             projection["items"] = ItemChoices(rules);
             projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
                 .Where(asset => asset.Json.TryGetProperty("tags", out JsonElement tags) && tags.EnumerateArray().Any(tag => tag.GetString() == "portrait"))

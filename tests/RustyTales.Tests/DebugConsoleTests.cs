@@ -155,4 +155,45 @@ public sealed class DebugConsoleTests
             }
         });
     }
+
+    [Fact]
+    public void RollDraftScoresPopulatesPartyProjectionAndRerollsDeterministically()
+    {
+        using TempModules scratch = new();
+        List<string> containers = new[] { "classic", "placeholder-art", "sample-crypt" }
+            .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+            .ToList();
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            ModuleLibrary library = new(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList());
+            GameSession session = new(library);
+            session.Refresh();
+            CampaignChoice crypt = Assert.Single(session.Campaigns, c => c.Id == "sample-crypt");
+
+            session.Open(crypt.Bundle, seed: 42);
+            Assert.Equal(Screen.Party, session.Screen);
+            Assert.NotNull(session.DraftScores);
+            Assert.Equal(6, session.DraftScores!.Count);
+
+            Dictionary<string, decimal> firstRoll = new(session.DraftScores);
+            using (JsonDocument doc = JsonDocument.Parse(SessionProjection.Build(session).ToJsonString()))
+            {
+                JsonElement draft = doc.RootElement.GetProperty("draftScores");
+                Assert.Equal(1, draft.GetProperty("roll").GetInt32());
+                Assert.Equal((double)firstRoll["str"], draft.GetProperty("scores").GetProperty("str").GetDouble());
+            }
+
+            // Re-roll via GameCommands ("roll-scores")
+            using (JsonDocument cmd = JsonDocument.Parse("""{"action":"roll-scores"}"""))
+            {
+                GameCommands.Run(session, engine, cmd.RootElement);
+            }
+
+            Assert.Equal(2, session.DraftRollNumber);
+            Assert.NotNull(session.DraftScores);
+            Assert.False(firstRoll.All(kv => session.DraftScores![kv.Key] == kv.Value));
+        });
+    }
 }

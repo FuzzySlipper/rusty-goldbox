@@ -1,4 +1,4 @@
-import { element, button, row, fill, currencyName, formatBalances, trackText, picture } from '../dom.js';
+import { element, button, row, fill, selectBox, currencyName, formatBalances, trackText, picture } from '../dom.js';
 import { renderSpells, renderMemorised } from './members.js';
 import { invitation } from '../table.js';
 
@@ -25,7 +25,7 @@ export function createOverlay(send, ui) {
   };
   const musicVolume = slider('music', 'Music');
   const soundVolume = slider('sound', 'Sound');
-  const skinPick = element('select', { 'aria-label': 'Skin' });
+  const skinPick = selectBox({ 'aria-label': 'Skin' });
   skinPick.addEventListener('change', () => send({ action: 'skin', skin: skinPick.value || null }));
   const uiScale = element('input', { type: 'range', min: '0.5', max: '2.5', step: '0.05', value: '1', 'aria-label': 'Interface scale' });
   const uiScaleShown = element('output', { class: 'gb-slider-value' }, '1.00×');

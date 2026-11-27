@@ -1,4 +1,4 @@
-import { element, fragment, row, button, fill, picture, formatBalances, trackText } from '../dom.js';
+import { element, fragment, row, button, fill, selectBox, picture, formatBalances, trackText } from '../dom.js';
 import { renderSpells, renderMemorised } from '../panels/members.js';
 import { invitation } from '../table.js';
 
@@ -81,16 +81,17 @@ function pointBuyRange(costRows, attribute) {
 export function createParty(send, rerender) {
   // Inputs live outside the re-rendered body so typing survives updates.
   const name = element('input', { value: SUGGESTED_NAMES[0], size: '14', placeholder: 'Character name', 'aria-label': 'Character name', 'data-focus-key': 'party:new:name' });
-  const race = element('select', { 'aria-label': 'Race', 'data-focus-key': 'party:new:race' });
-  const characterClass = element('select', { 'aria-label': 'Class', 'data-focus-key': 'party:new:class' });
-  const creation = element('select', { 'aria-label': 'Character creation', 'data-focus-key': 'party:new:creation' });
-  const portrait = element('select', { 'aria-label': 'Portrait', 'data-focus-key': 'party:new:portrait' });
-  const lifepathCareer = element('select', { 'aria-label': 'Career', 'data-focus-key': 'party:new:career' });
+  const race = selectBox({ 'aria-label': 'Race', 'data-focus-key': 'party:new:race' });
+  const characterClass = selectBox({ 'aria-label': 'Class', 'data-focus-key': 'party:new:class' });
+  const creation = selectBox({ 'aria-label': 'Character creation', 'data-focus-key': 'party:new:creation' });
+  const portrait = selectBox({ 'aria-label': 'Portrait', 'data-focus-key': 'party:new:portrait' });
+  const lifepathCareer = selectBox({ 'aria-label': 'Career', 'data-focus-key': 'party:new:career' });
   const lifepathTerms = element('input', { type: 'number', min: '1', value: '1', size: '3', 'aria-label': 'Career terms', 'data-focus-key': 'party:new:terms' });
-  const lifepathTables = element('select', { 'aria-label': 'Skill table', 'data-focus-key': 'party:new:skill-table' });
-  const lifepathBenefits = element('select', { 'aria-label': 'Benefit kind', 'data-focus-key': 'party:new:benefit' });
+  const lifepathTables = selectBox({ 'aria-label': 'Skill table', 'data-focus-key': 'party:new:skill-table' });
+  const lifepathBenefits = selectBox({ 'aria-label': 'Benefit kind', 'data-focus-key': 'party:new:benefit' });
   const importJson = element('textarea', { rows: '7', placeholder: 'Paste character JSON exported from Rusty Tales or `tales character new`…', 'aria-label': 'Character JSON to import', 'data-focus-key': 'party:import:json' });
   let workbenchTab = 'forge';
+  let requestedDraftFor = null;
   // Feature and boost choices, kept by slot so a choice survives re-renders.
   const choiceSelects = new Map();
   // Skill amounts are a local draft until the player submits the Core action.
@@ -104,7 +105,7 @@ export function createParty(send, rerender) {
 
   const choiceSelect = (key, label) => {
     if (!choiceSelects.has(key)) {
-      const select = element('select', { 'aria-label': label, 'data-focus-key': `party:choice:${key}` });
+      const select = selectBox({ 'aria-label': label, 'data-focus-key': `party:choice:${key}` });
       select.addEventListener('change', () => rerender());
       choiceSelects.set(key, select);
     }
@@ -172,26 +173,6 @@ export function createParty(send, rerender) {
     const chosenRace = races.find((entry) => entry.id === race.value) ?? races[0];
     const allowedClasses = Array.isArray(chosenRace?.classes) ? new Set(chosenRace.classes) : null;
 
-    // Populate class dropdown with race compatibility awareness: disable disallowed classes and
-    // auto-select a valid class when switching races so the player avoids preventable refusals.
-    const previousClass = characterClass.value;
-    characterClass.replaceChildren(...classes.map((entry) => {
-      const disallowed = allowedClasses !== null && !allowedClasses.has(entry.id);
-      const label = disallowed ? `${entry.name} (not for ${chosenRace.name})` : entry.name;
-      const option = element('option', { value: entry.id }, label);
-      option.disabled = disallowed;
-      return option;
-    }));
-    if (classes.some((entry) => entry.id === previousClass && (!allowedClasses || allowedClasses.has(entry.id)))) {
-      characterClass.value = previousClass;
-    } else {
-      const firstValid = classes.find((entry) => !allowedClasses || allowedClasses.has(entry.id)) ?? classes[0];
-      if (firstValid) {
-        characterClass.value = firstValid.id;
-      }
-    }
-
-    const chosenClass = classes.find((entry) => entry.id === characterClass.value) ?? classes[0];
     const creationChoices = view.creations?.length ? view.creations : (view.creation ? [view.creation] : []);
     const currentCreation = creation.value;
     fill(creation, creationChoices);
@@ -203,6 +184,74 @@ export function createParty(send, rerender) {
     }
 
     const selectedCreation = creationChoices.find((choice) => choice.id === creation.value) ?? view.creation;
+    const isRollMethod = selectedCreation && (!selectedCreation.method || selectedCreation.method === 'roll');
+    const draftMatches = Boolean(
+      isRollMethod
+      && view.draftScores?.scores
+      && (!view.draftScores.creationId || view.draftScores.creationId === selectedCreation.id),
+    );
+    if (isRollMethod && !draftMatches && requestedDraftFor !== selectedCreation.id) {
+      requestedDraftFor = selectedCreation.id;
+      send({ action: 'roll-scores', creation: selectedCreation.id });
+    } else if (draftMatches) {
+      requestedDraftFor = null;
+    }
+
+    // Compute live adjusted scores for roll-in-order so the Class dropdown can show exact qualification right away.
+    const liveAdjustedInOrder = (() => {
+      if (!draftMatches || selectedCreation?.assignment === 'arrange') {
+        return null;
+      }
+      const raw = view.draftScores.scores;
+      const adj = chosenRace?.abilityAdjustments ?? {};
+      const out = {};
+      for (const [stat, value] of Object.entries(raw)) {
+        out[stat] = Number(value) + Number(adj[stat] ?? 0);
+      }
+      return out;
+    })();
+
+    const missingForClass = (cls, scoresMap) => {
+      if (!scoresMap || !cls?.requirements) {
+        return [];
+      }
+      const missing = [];
+      for (const [stat, minVal] of Object.entries(cls.requirements)) {
+        const have = scoresMap[stat];
+        if (have !== undefined && Number(have) < Number(minVal)) {
+          missing.push(`${stat.toUpperCase()} ${minVal}+`);
+        }
+      }
+      return missing;
+    };
+
+    // Populate class dropdown with race compatibility + live stat qualification awareness.
+    const previousClass = characterClass.value;
+    characterClass.replaceChildren(...classes.map((entry) => {
+      const disallowed = allowedClasses !== null && !allowedClasses.has(entry.id);
+      const missing = !disallowed ? missingForClass(entry, liveAdjustedInOrder) : [];
+      const label = disallowed
+        ? `${entry.name} (not for ${chosenRace.name})`
+        : missing.length > 0
+          ? `${entry.name} (needs ${missing.join(', ')})`
+          : liveAdjustedInOrder
+            ? `${entry.name} ✓`
+            : entry.name;
+      const option = element('option', { value: entry.id }, label);
+      option.disabled = disallowed;
+      return option;
+    }));
+    if (classes.some((entry) => entry.id === previousClass && (!allowedClasses || allowedClasses.has(entry.id)))) {
+      characterClass.value = previousClass;
+    } else {
+      const firstQualified = classes.find((entry) => (!allowedClasses || allowedClasses.has(entry.id)) && missingForClass(entry, liveAdjustedInOrder).length === 0);
+      const firstValid = firstQualified ?? classes.find((entry) => !allowedClasses || allowedClasses.has(entry.id)) ?? classes[0];
+      if (firstValid) {
+        characterClass.value = firstValid.id;
+      }
+    }
+
+    const chosenClass = classes.find((entry) => entry.id === characterClass.value) ?? classes[0];
     const activeLifepath = selectedCreation?.lifepath ?? view.lifepath ?? null;
     const formatPortraitName = (raw) => titleCase(String(raw ?? '').replace(/_?portrait$/i, '') || raw);
     fill(portrait, [{ id: '', name: '(no portrait)' }, ...portraits.map((entry) => ({ id: entry.id, name: formatPortraitName(entry.name) }))]);
@@ -495,7 +544,7 @@ export function createParty(send, rerender) {
         const rank = (kind) => kind === 'weapon' ? 0 : kind === 'armour' || kind === 'armor' || kind === 'shield' ? 1 : 2;
         return rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name);
       });
-    const item = element('select', {
+    const item = selectBox({
       'aria-label': `Item for ${member.name}`,
       'data-focus-key': `party:${index}:item`,
     });
@@ -741,6 +790,12 @@ export function createParty(send, rerender) {
           element('span', { class: 'gb-muted gb-cost-note' }, cost !== null ? `${cost} pt${cost === 1 ? '' : 's'}${stepDelta !== null ? ` (+${stepDelta})` : ''}` : 'out of range'));
       }));
 
+      const pbRaw = Object.fromEntries(attributeDetails.map((attr) => [attr.id, getScore(attr)]));
+      const pbPreview = buildStatPreview(attributeDetails, pbRaw, chosenRace, chosenClass, primeSet);
+      if (pbPreview.warning && !warning) {
+        warning = pbPreview.warning;
+      }
+
       const budgetTone = remaining < 0 ? 'gb-pill-bad' : remaining === 0 ? 'gb-pill-good' : 'gb-pill-accent';
       rows.append(element('div', { class: 'gb-subbox' },
         element('div', { class: 'gb-section-head' },
@@ -749,6 +804,7 @@ export function createParty(send, rerender) {
             element('span', { class: `gb-pill ${budgetTone}` }, anyUnknown ? `Budget ${budget}` : `${remaining} left (${spent}/${budget})`),
             button('Auto-fill', autoDistribute, { class: 'gb-btn-xs' }),
             button('Reset', resetScores, { class: 'gb-btn-xs' }))),
+        pbPreview.grid,
         statList));
       attributeValues = () => Object.fromEntries(fields.map((field) => [field.id, Number(field.input.value)]));
     } else if (creation.method === 'array' || creation.assignment === 'arrange') {
@@ -787,9 +843,21 @@ export function createParty(send, rerender) {
       };
 
       const selects = [];
+      const draftRaw = (creation.method === 'roll' || !creation.method)
+        && view.draftScores?.scores
+        && (!view.draftScores.creationId || view.draftScores.creationId === creation.id)
+        ? view.draftScores.scores
+        : null;
+      const arrangedPool = draftRaw
+        ? arrangeableDetails
+          .map((attr) => Number(draftRaw[attr.id]))
+          .filter((v) => !Number.isNaN(v))
+          .sort((a, b) => b - a)
+        : null;
+
       const priorityRows = element('div', { class: 'gb-stat-rows' }, ...arrangeableDetails.map((_, index) => {
         const selected = order[index];
-        const select = element('select', {
+        const select = selectBox({
           'aria-label': `${creation.method === 'array' ? `Score ${array[index] ?? index + 1}` : `Rolled score ${index + 1}`} priority`,
           'data-focus-key': `party:new:priority:${index}`,
         });
@@ -822,28 +890,84 @@ export function createParty(send, rerender) {
 
         const badgeText = creation.method === 'array'
           ? String(array[index] ?? index + 1)
-          : `#${index + 1} ${index === 0 ? 'Highest' : index === arrangeableDetails.length - 1 ? 'Lowest' : 'Roll'}`;
+          : arrangedPool?.[index] !== undefined
+            ? String(arrangedPool[index])
+            : `#${index + 1} ${index === 0 ? 'Highest' : index === arrangeableDetails.length - 1 ? 'Lowest' : 'Roll'}`;
         return element('div', { class: 'gb-stat-row gb-priority-row' },
           element('span', { class: 'gb-pill gb-pill-accent gb-priority-badge' }, badgeText),
           select,
           element('div', { class: 'gb-stepper' }, up, down));
       }));
 
+      // Live final score card preview for Standard Array or Arranged Roll pool.
+      const mappedRaw = {};
+      if (creation.method === 'array' && array.length > 0) {
+        order.forEach((id, idx) => { mappedRaw[id] = Number(array[idx] ?? 10); });
+      } else if (arrangedPool) {
+        order.forEach((id, idx) => { mappedRaw[id] = arrangedPool[idx]; });
+        for (const fixed of fixedDetails) {
+          if (draftRaw && draftRaw[fixed.id] !== undefined) {
+            mappedRaw[fixed.id] = Number(draftRaw[fixed.id]);
+          }
+        }
+      }
+      const statPreview = Object.keys(mappedRaw).length > 0
+        ? buildStatPreview(attributeDetails, mappedRaw, chosenRace, chosenClass, primeSet)
+        : null;
+      if (statPreview?.warning && !warning) {
+        warning = statPreview.warning;
+      }
+
       rows.append(element('div', { class: 'gb-subbox' },
         element('div', { class: 'gb-section-head' },
-          element('span', { class: 'gb-field-label' }, creation.method === 'array' ? 'Standard array assignment' : 'Arranged roll priority'),
-          ...(primeSet.size > 0 ? [button('Prioritize for class', orderForClass, { class: 'gb-btn-xs' })] : [])),
+          element('span', { class: 'gb-field-label' }, creation.method === 'array' ? 'Standard array assignment' : 'Rolled pool · assign scores'),
+          element('div', { class: 'gb-badge-row' },
+            ...(arrangedPool ? [button('🎲 Re-roll pool', () => send({ action: 'roll-scores', creation: creation.id }), { class: 'gb-btn-xs', 'data-focus-key': 'party:new:reroll' })] : []),
+            ...(primeSet.size > 0 ? [button('Prioritize for class', orderForClass, { class: 'gb-btn-xs' })] : []))),
         element('div', { class: 'gb-muted' }, creation.method === 'array'
           ? 'Picking an attribute swaps automatically so every score stays unique.'
-          : `Highest rolls go to the top slots${creation.attributeRoll ? ` (${creation.attributeRoll})` : ''}.`),
-        ...(fixedDetails.length > 0 ? [element('div', { class: 'gb-muted' }, `Fixed authored rolls: ${fixedDetails.map((attribute) => attribute.name).join(', ')}.`)] : []),
+          : arrangedPool
+            ? `Rolled ${creation.attributeRoll || 'scores'} — arrange them across attributes below.`
+            : `Highest rolls go to the top slots${creation.attributeRoll ? ` (${creation.attributeRoll})` : ''}.`),
+        ...(fixedDetails.length > 0 ? [element('div', { class: 'gb-muted' }, `Fixed authored rolls: ${fixedDetails.map((attribute) => `${attribute.name}${draftRaw?.[attribute.id] !== undefined ? ` (${draftRaw[attribute.id]})` : ''}`).join(', ')}.`)] : []),
+        ...(statPreview ? [statPreview.grid] : []),
         priorityRows));
-      priorityValues = selects.length > 0 ? () => selects.map((select) => select.value) : () => null;
+      if (arrangedPool && Object.keys(mappedRaw).length === attributeDetails.length) {
+        attributeValues = () => ({ ...mappedRaw });
+      } else {
+        priorityValues = selects.length > 0 ? () => selects.map((select) => select.value) : () => null;
+      }
     } else if (creation.method === 'roll' || !creation.method) {
-      const rollNote = creation.attributeRoll
-        ? `Rolls ${creation.attributeRoll} in order across ${attributeDetails.map((attr) => attr.id.toUpperCase()).join(', ')}.`
-        : `Rolls attributes across ${attributeDetails.map((attr) => attr.id.toUpperCase()).join(', ')}.`;
-      rows.append(element('div', { class: 'gb-hint-bar' }, rollNote));
+      const draftRaw = view.draftScores?.scores
+        && (!view.draftScores.creationId || view.draftScores.creationId === creation.id)
+        ? view.draftScores.scores
+        : null;
+      if (draftRaw) {
+        const preview = buildStatPreview(attributeDetails, draftRaw, chosenRace, chosenClass, primeSet);
+        if (preview.warning && !warning) {
+          warning = preview.warning;
+        }
+        rows.append(element('div', { class: 'gb-subbox' },
+          element('div', { class: 'gb-section-head' },
+            element('span', { class: 'gb-field-label' }, `Rolled stats${creation.attributeRoll ? ` (${creation.attributeRoll})` : ''}`),
+            element('div', { class: 'gb-badge-row' },
+              element('span', { class: `gb-pill ${preview.ok ? 'gb-pill-good' : 'gb-pill-bad'}` },
+                preview.ok ? `✓ Qualifies for ${chosenClass?.name ?? 'class'}` : `✗ Does not qualify for ${chosenClass?.name ?? 'class'}`),
+              button('🎲 Re-roll stats', () => send({ action: 'roll-scores', creation: creation.id }), {
+                class: 'gb-btn-xs gb-btn-primary',
+                'data-focus-key': 'party:new:reroll',
+              }))),
+          preview.grid));
+        attributeValues = () => Object.fromEntries(attributeDetails.map((attr) => [attr.id, Number(draftRaw[attr.id])]));
+      } else {
+        const rollNote = creation.attributeRoll
+          ? `Rolls ${creation.attributeRoll} in order across ${attributeDetails.map((attr) => attr.id.toUpperCase()).join(', ')}.`
+          : `Rolls attributes across ${attributeDetails.map((attr) => attr.id.toUpperCase()).join(', ')}.`;
+        rows.append(element('div', { class: 'gb-hint-bar' },
+          rollNote,
+          ' ',
+          button('🎲 Roll stats now', () => send({ action: 'roll-scores', creation: creation.id }), { class: 'gb-btn-xs' })));
+      }
     }
 
     if (activeLifepath) {
@@ -1102,6 +1226,58 @@ export function createParty(send, rerender) {
   };
 
   return render;
+}
+
+function buildStatPreview(attributeDetails, rawScores, chosenRace, chosenClass, primeSet) {
+  const adjustments = chosenRace?.abilityAdjustments ?? {};
+  const limits = chosenRace?.abilityLimits ?? {};
+  const reqs = chosenClass?.requirements ?? {};
+  const reasons = [];
+  const cards = [];
+
+  for (const attr of attributeDetails) {
+    const raw = Number(rawScores[attr.id]);
+    const adj = Number(adjustments[attr.id] ?? 0);
+    const finalVal = Number.isNaN(raw) ? 0 : raw + adj;
+    const minReq = reqs[attr.id] !== undefined ? Number(reqs[attr.id]) : null;
+    const lim = limits[attr.id];
+    const minLim = lim?.min !== undefined ? Number(lim.min) : null;
+    const maxLim = lim?.max !== undefined ? Number(lim.max) : null;
+
+    let failText = null;
+    if (minReq !== null && finalVal < minReq) {
+      failText = `need ${minReq}+`;
+      reasons.push(`${attr.id.toUpperCase()} ${finalVal} (needs ${minReq}+ for ${chosenClass?.name ?? 'class'})`);
+    } else if (minLim !== null && finalVal < minLim) {
+      failText = `min ${minLim}`;
+      reasons.push(`${attr.id.toUpperCase()} ${finalVal} (below ${chosenRace?.name ?? 'race'} min ${minLim})`);
+    } else if (maxLim !== null && finalVal > maxLim) {
+      failText = `max ${maxLim}`;
+      reasons.push(`${attr.id.toUpperCase()} ${finalVal} (above ${chosenRace?.name ?? 'race'} max ${maxLim})`);
+    }
+
+    const cls = failText
+      ? 'gb-stat-card gb-stat-fail'
+      : primeSet.has(attr.id)
+        ? 'gb-stat-card gb-stat-prime'
+        : minReq !== null && minReq > 3
+          ? 'gb-stat-card gb-stat-ok'
+          : 'gb-stat-card';
+
+    const subText = failText
+      ?? (adj !== 0 ? `${raw}${formatSigned(adj)}` : minReq !== null && minReq > 3 ? `✓ ${minReq}+` : primeSet.has(attr.id) ? 'Prime' : '\u00A0');
+
+    cards.push(element('div', { class: cls, title: `${attr.name}: ${finalVal}${adj !== 0 ? ` (${raw} ${formatSigned(adj)} racial)` : ''}` },
+      element('small', {}, attr.id.toUpperCase()),
+      element('strong', {}, String(finalVal)),
+      element('span', { class: 'gb-stat-sub' }, subText)));
+  }
+
+  return {
+    ok: reasons.length === 0,
+    warning: reasons.length > 0 ? `Stats do not meet requirements: ${reasons.join('; ')}. Re-roll stats or pick another class/race.` : null,
+    grid: element('div', { class: 'gb-stat-card-grid', 'aria-label': 'Ability scores' }, ...cards),
+  };
 }
 
 function describeCreationMethod(creation, lifepath) {

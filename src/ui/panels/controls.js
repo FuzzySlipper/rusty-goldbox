@@ -1,4 +1,4 @@
-import { element, button } from '../dom.js';
+import { element, button, selectBox } from '../dom.js';
 import { leading } from '../table.js';
 
 /** The movement pad and the commands that fit what the party is doing. Keys do the same through the product's key mappings. */
@@ -303,7 +303,7 @@ export function createControls(send, ui) {
     // The leader may pass the lead to anyone here.
     const others = (view.table?.seats ?? []).filter((seat) => seat.connected && seat.member !== view.you);
     const passLead = view.table && leading(view) && others.length
-      ? [element('select', { 'aria-label': 'Pass the lead', 'data-focus-key': 'controls:pass-lead' },
+      ? [selectBox({ 'aria-label': 'Pass the lead', 'data-focus-key': 'controls:pass-lead' },
         element('option', { value: '' }, 'Pass lead…'),
         ...others.map((seat) => element('option', { value: String(seat.member) }, seat.name)))]
       : [];

@@ -39,6 +39,9 @@ internal sealed class GameSession(ModuleLibrary library)
     private const string CharacterScope = "tales.character";
 
     private int _rolls;
+    private int _draftRolls;
+    private string? _draftCreationId;
+    private Dictionary<string, decimal>? _draftScores;
     private int _shownCombatFacts;
     // Presentation cursor identity: a chained live fight starts a fresh fact
     // list even though the campaign command returns both fights together.
@@ -432,6 +435,9 @@ internal sealed class GameSession(ModuleLibrary library)
         Campaign = set.Rules!.OfType(DefinitionTypes.Campaign).Single(definition => definition.Module == set.Root!.Id);
         Seed = seed;
         _rolls = 0;
+        _draftRolls = 0;
+        _draftCreationId = null;
+        _draftScores = null;
         Party.Clear();
         if (CampaignRunner.StartingParty(set.Rules!, Campaign) is List<Character> fixedParty)
         {
@@ -444,6 +450,53 @@ internal sealed class GameSession(ModuleLibrary library)
         _shownCombatFacts = 0;
         _shownCombatKey = null;
         Screen = Screen.Party;
+        RollDraftScores(creation: null, silent: true);
+    }
+
+    /// <summary>Raw rolled draft ability scores for the current roll-based creation method, or null.</summary>
+    public IReadOnlyDictionary<string, decimal>? DraftScores => _draftScores;
+
+    /// <summary>The character-creation definition ID that produced <see cref="DraftScores"/>.</summary>
+    public string? DraftCreationId => _draftCreationId;
+
+    /// <summary>The sequential roll number for <see cref="DraftScores"/>.</summary>
+    public int DraftRollNumber => _draftRolls;
+
+    /// <summary>Rolls a fresh set of draft ability scores for a roll-based creation method without committing a character.</summary>
+    public void RollDraftScores(string? creation = null, bool silent = false)
+    {
+        if (!silent)
+        {
+            Notes.Clear();
+        }
+
+        if (Screen != Screen.Party || Set?.Rules is not RuleSet rules)
+        {
+            return;
+        }
+
+        List<ModuleDiagnostic> problems = [];
+        int draftRoll = ++_draftRolls;
+        using ITalesRandomStream stream = DeterministicRandom.Shared.CreateScoped(Seed, $"{CharacterScope}.draft.{draftRoll}");
+        DiceRoller dice = new(DeterministicRandom.Shared, stream);
+        Dictionary<string, decimal>? rolled = CharacterRules.RollDraftScores(rules, creation, dice, problems);
+        if (rolled is null)
+        {
+            _draftScores = null;
+            _draftCreationId = null;
+            if (!silent && problems.Count > 0)
+            {
+                Notes.AddRange(problems.Select(problem => problem.Message));
+            }
+
+            return;
+        }
+
+        Definition? chosenCreation = string.IsNullOrWhiteSpace(creation)
+            ? CharacterRules.DefaultCreation(rules)
+            : rules.Find(DefinitionTypes.CharacterCreation, creation, out _);
+        _draftCreationId = chosenCreation?.QualifiedId;
+        _draftScores = rolled;
     }
 
     /// <summary>Rolls a character with the ruleset's character creation.</summary>
@@ -491,6 +544,7 @@ internal sealed class GameSession(ModuleLibrary library)
         UpsertStable(engine, character, announce: false);
         string kind = string.Join(" ", new[] { character.Race?.Name, character.Class?.Name }.Where(part => part is not null));
         Notes.Add($"Rolled {character.Name}{(kind.Length > 0 ? $", a {kind}" : "")} (seed {Seed}, roll {roll}).");
+        RollDraftScores(creation, silent: true);
     }
 
     /// <summary>Imports a character from the player's stable into the open campaign's party using best-effort mapping.</summary>

@@ -2274,6 +2274,40 @@ public static partial class CharacterRules
             .ToDictionary(group => group.Key, group => group.Max(entry => entry.Value), StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Rolls raw draft ability scores for a roll-based character-creation definition
+    /// without committing a character, so UIs can show rolled stats and class
+    /// qualification before the player confirms creation.
+    /// </summary>
+    public static Dictionary<string, decimal>? RollDraftScores(RuleSet rules, string? creationId, DiceRoller dice, List<ModuleDiagnostic> problems)
+    {
+        Definition? creation = FindCreation(rules, creationId, problems);
+        if (creation is null)
+        {
+            return null;
+        }
+
+        string method = creation.Json.TryGetProperty("method", out JsonElement declared) ? declared.GetString()! : "roll";
+        if (method != "roll")
+        {
+            return null;
+        }
+
+        List<Definition> attributes = creation.Json.GetProperty("attributes").EnumerateArray()
+            .Select(entry => rules.Stats[entry.GetString()!].Definition)
+            .ToList();
+        Evaluator evaluator = new(rules, dice);
+        try
+        {
+            return RollAttributes(rules, creation, attributes, null, evaluator, problems);
+        }
+        catch (RuleFailure failure)
+        {
+            problems.Add(failure.Diagnostic);
+            return null;
+        }
+    }
+
     private static Dictionary<string, decimal>? RollAttributes(
         RuleSet rules,
         Definition creation,

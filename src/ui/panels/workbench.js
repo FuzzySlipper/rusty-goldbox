@@ -1,4 +1,4 @@
-import { element, button } from '../dom.js';
+import { element, button, selectBox } from '../dom.js';
 
 /**
  * Optional in-game Workbench debug surface: hosts the CLI Workbench SPA in an
@@ -28,7 +28,7 @@ export function createWorkbench(send) {
   const liveLabel = element('span', { class: 'gb-wb-live' }, 'Not in play');
   const statusChip = element('span', { class: 'gb-wb-status' }, 'Disconnected');
 
-  const pinTargetSelect = element('select', { class: 'gb-wb-select', 'aria-label': 'Pin target' });
+  const pinTargetSelect = selectBox({ class: 'gb-wb-select', 'aria-label': 'Pin target' });
   const pinNoteInput = element('input', {
     type: 'text',
     class: 'gb-wb-note',
@@ -127,7 +127,6 @@ export function createWorkbench(send) {
   });
 
   const syncPinTargets = () => {
-    pinTargetSelect.replaceChildren();
     const options = [];
     if (lastLive?.area && lastLive.x !== null && lastLive.x !== undefined) {
       options.push({
@@ -150,9 +149,7 @@ export function createWorkbench(send) {
     if (options.length === 0) {
       options.push({ value: 'none', label: 'No active gameplay target' });
     }
-    for (const opt of options) {
-      pinTargetSelect.append(element('option', { value: opt.value }, opt.label));
-    }
+    pinTargetSelect.replaceChildren(...options.map((opt) => element('option', { value: opt.value }, opt.label)));
     if (options.some((o) => o.value === pinMode)) {
       pinTargetSelect.value = pinMode;
     } else {

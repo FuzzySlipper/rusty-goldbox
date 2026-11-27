@@ -105,7 +105,7 @@ internal static class GameCommands
 
     /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
     private static readonly HashSet<string> LocalActions =
-        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat", "stable-save", "stable-export-party", "stable-remove", "workbench-url"];
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat", "stable-save", "stable-export-party", "stable-remove", "workbench-url", "roll-scores"];
 
     /// <summary>Runs one <c>tales.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
@@ -274,6 +274,9 @@ internal static class GameCommands
                     {
                         session.Begin(engine);
                     }
+                    break;
+                case "roll-scores":
+                    session.RollDraftScores(Optional(payload, "creation"));
                     break;
                 case "roll":
                     string? portrait = payload.TryGetProperty("portrait", out _) ? Text(payload, "portrait") : null;
