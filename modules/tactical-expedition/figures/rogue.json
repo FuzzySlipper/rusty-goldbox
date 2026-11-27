@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "rogue",
+  "class": "three-action:rogue",
+  "sprite": "placeholder-art:thief",
+  "icon": "placeholder-art:thief_portrait"
+}

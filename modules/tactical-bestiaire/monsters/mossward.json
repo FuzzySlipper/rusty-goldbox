@@ -2,37 +2,64 @@
   "type": "monster",
   "id": "mossward",
   "name": "Mossward",
-  "class": "classic:cleric",
-  "level": 2,
+  "level": 1,
   "behavior": "tactical-bestiaire:warder",
   "tracks": {
-    "classic:hit_points": "2d8",
-    "classic:spells_1": "2"
+    "three-action:hit_points": "20",
+    "three-action:dying": "0",
+    "three-action:wounded": "0",
+    "three-action:font": "2",
+    "three-action:spells_1": "2",
+    "three-action:spells_2": "0",
+    "three-action:spells_3": "0"
   },
   "spells": [
     {
-      "spell": "classic:cure_light_wounds"
+      "spell": "three-action:heal_wounds"
     }
   ],
   "stats": {
-    "ac": "5",
+    "is_character": "false",
+    "ac": "16",
+    "fortitude": "6",
+    "reflex": "5",
+    "will_save": "8",
+    "perception": "7",
+    "speed": "25",
+    "actions": "3",
+    "save_dc": "16",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "cleric_level": "1",
+    "sneak_dice": "0",
+    "key_mod": "3",
+    "font_rank": "1",
+    "cantrip_rank": "1",
     "str": "12",
     "dex": "10",
-    "wis": "15",
-    "movement": "90",
-    "size": "'medium'"
+    "con": "14",
+    "int": "10",
+    "wis": "16",
+    "cha": "12"
   },
   "actions": [
     {
       "action": "tactical-bestiaire:approach_ally"
     },
     {
-      "action": "classic:melee_attack",
+      "action": "three-action:creature_strike",
       "name": "Staff",
-      "damage": "1d6"
+      "to_hit": "6",
+      "damage": "1d6 + 2",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0"
     },
     {
-      "action": "classic:close"
+      "action": "three-action:stride"
+    },
+    {
+      "action": "three-action:stand"
     }
   ],
   "xp": 40

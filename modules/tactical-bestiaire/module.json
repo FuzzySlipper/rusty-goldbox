@@ -6,7 +6,7 @@
   "title": "Tactical Bestiaire",
   "requires": [
     {
-      "id": "classic",
+      "id": "three-action",
       "version": "^0.1.0"
     },
     {
@@ -14,5 +14,5 @@
       "version": "^0.1.0"
     }
   ],
-  "provenance": "Original Rusty Tales extension content: creatures, tactical profiles and figure mappings written for the tactical combat authoring example. It uses Classic's licensed action and rules definitions and Placeholder art by logical reference; see PROVENANCE.md."
+  "provenance": "Original Rusty Tales extension content: creatures, tactical profiles and figure mappings written for the tactical combat authoring example. It uses Three-Action Fantasy's open-licensed action and rules definitions and Placeholder art by logical reference; see PROVENANCE.md."
 }

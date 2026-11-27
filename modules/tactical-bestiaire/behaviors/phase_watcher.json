@@ -11,10 +11,14 @@
       "steps": [
         {
           "action": {
-            "action": "classic:missile_attack",
+            "action": "three-action:creature_ranged",
             "name": "Shard ray",
-            "damage": "1d8",
-            "increment": "6"
+            "to_hit": "9",
+            "damage": "1d8 + 3",
+            "deadly": "0",
+            "map": "5",
+            "slashing": "0",
+            "range": "10"
           },
           "target": "enemy"
         }
@@ -32,15 +36,19 @@
             "distance": "1"
           },
           "action": {
-            "action": "classic:close"
+            "action": "three-action:stride"
           },
           "target": "enemy"
         },
         {
           "action": {
-            "action": "classic:melee_attack",
+            "action": "three-action:creature_strike",
             "name": "Rift claw",
-            "damage": "1d10"
+            "to_hit": "10",
+            "damage": "1d10 + 4",
+            "deadly": "1d8",
+            "map": "5",
+            "slashing": "1"
           },
           "target": "enemy"
         }
@@ -53,9 +61,13 @@
       "steps": [
         {
           "action": {
-            "action": "classic:melee_attack",
+            "action": "three-action:creature_strike",
             "name": "Rift claw",
-            "damage": "1d10"
+            "to_hit": "10",
+            "damage": "1d10 + 4",
+            "deadly": "1d8",
+            "map": "5",
+            "slashing": "1"
           },
           "target": "enemy"
         }

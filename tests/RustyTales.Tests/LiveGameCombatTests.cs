@@ -3,8 +3,11 @@ using System.Text.Json.Nodes;
 using Rusty.Engine;
 using Rusty.Engine.Testing;
 using RustyTales.Core.Campaigns;
+using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
+using RustyTales.Core.Modules;
+using RustyTales.Core.Rules;
 using RustyTales.Game;
 
 namespace RustyTales.Tests;
@@ -129,7 +132,34 @@ public sealed class LiveGameCombatTests
         using TempModules scratch = new();
         string campaign = Path.Combine(Rules.RepositoryRoot, "modules", "tactical-expedition");
         string moduleLibrary = Path.Combine(Rules.RepositoryRoot, "modules");
-        CampaignTests.WriteParty(scratch, Rules.ClassicPath);
+        ModuleSet taSet = ModuleLoader.Load(Path.Combine(moduleLibrary, "three-action"), [moduleLibrary]);
+        Assert.Empty(taSet.Diagnostics);
+        RuleSet taRules = taSet.Rules!;
+        Definition longsword = taRules.Find(DefinitionTypes.Item, "three-action:longsword", out _)!;
+        Definition shortbow = taRules.Find(DefinitionTypes.Item, "three-action:shortbow", out _)!;
+        List<ModuleDiagnostic> charProblems = [];
+        using (ITalesRandomStream adaStream = DeterministicRandom.Shared.CreateScoped(31, "ada"))
+        {
+            Character ada = CharacterRules.Create(taRules, Character.StampsOf(taSet), new CreationRequest(
+                "Ada", "three-action:fighter", "three-action:human", Creation: "three-action:standard",
+                Features: ["three-action:versatile_human", "three-action:warrior", "three-action:vicious_swing"],
+                Boosts: ["str", "con", "str", "dex", "str", "str", "dex", "con", "wis"]),
+                new DiceRoller(DeterministicRandom.Shared, adaStream), charProblems)!;
+            Assert.Empty(charProblems);
+            ada.Equipment.Add(longsword);
+            File.WriteAllText(Path.Combine(scratch.Root, "ada.json"), CharacterFile.ToJson(ada));
+        }
+        using (ITalesRandomStream bromStream = DeterministicRandom.Shared.CreateScoped(31, "brom"))
+        {
+            Character brom = CharacterRules.Create(taRules, Character.StampsOf(taSet), new CreationRequest(
+                "Brom", "three-action:rogue", "three-action:human", Creation: "three-action:standard",
+                Features: ["three-action:versatile_human", "three-action:criminal", "three-action:thief", "three-action:nimble_dodge"],
+                Boosts: ["dex", "con", "dex", "wis", "dex", "con", "wis", "str"]),
+                new DiceRoller(DeterministicRandom.Shared, bromStream), charProblems)!;
+            Assert.Empty(charProblems);
+            brom.Equipment.Add(shortbow);
+            File.WriteAllText(Path.Combine(scratch.Root, "brom.json"), CharacterFile.ToJson(brom));
+        }
         string beforePath = Path.Combine(scratch.Root, "bridge-before.json");
         string setupScript = Path.Combine(scratch.Root, "bridge-setup.script");
         File.WriteAllText(setupScript, "choose 2\nforward\n");
@@ -141,7 +171,7 @@ public sealed class LiveGameCombatTests
         Assert.Equal(0, setupCode);
         Assert.True(File.Exists(beforePath), setupOutput);
 
-        string[] moduleIds = ["classic", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
+        string[] moduleIds = ["three-action", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
         using EngineTestHost host = EngineTestHost.Create(new EngineTestHostOptions
         {
             PersistenceRoot = Path.Combine(scratch.Root, "persistence"),
@@ -239,7 +269,7 @@ public sealed class LiveGameCombatTests
         });
         host.Call(engine =>
         {
-            string[] moduleIds = ["classic", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
+            string[] moduleIds = ["three-action", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
             List<string> containers = moduleIds
                 .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
                 .ToList();
@@ -254,15 +284,18 @@ public sealed class LiveGameCombatTests
                 seed = "31",
             }));
 
-            for (int attempt = 0; session.Party.Count < 12 && attempt < 100; attempt++)
+            for (int attempt = 0; session.Party.Count < 12 && attempt < 20; attempt++)
             {
                 int member = session.Party.Count + 1;
                 Run(session, engine, JsonSerializer.Serialize(new
                 {
                     action = "roll",
                     name = $"Member {member}",
-                    race = "classic:human",
-                    @class = "classic:fighter",
+                    creation = "three-action:standard",
+                    race = "three-action:human",
+                    @class = "three-action:fighter",
+                    features = new[] { "three-action:versatile_human", "three-action:warrior", "three-action:vicious_swing" },
+                    boosts = new[] { "str", "con", "str", "dex", "str", "str", "dex", "con", "wis" },
                 }));
             }
 

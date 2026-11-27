@@ -10,7 +10,7 @@
   "always": [
     {
       "op": "move",
-      "distance": "floor(self.movement / 10)",
+      "distance": "floor(self.speed / 5)",
       "within": "1",
       "provokes": false
     }

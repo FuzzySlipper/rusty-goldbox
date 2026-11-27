@@ -10,7 +10,14 @@
   "field": {
     "width": 12,
     "height": 8,
-    "metric": "chebyshev"
+    "metric": "chebyshev",
+    "terrain": {
+      "#": {
+        "name": "Pillar",
+        "passable": false,
+        "blocks_sight": true
+      }
+    }
   },
   "budget": [
     {

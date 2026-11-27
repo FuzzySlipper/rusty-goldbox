@@ -2,32 +2,61 @@
   "type": "monster",
   "id": "glasswing",
   "name": "Glasswing",
-  "class": "classic:fighter",
-  "level": 2,
+  "level": 1,
   "behavior": "tactical-bestiaire:skirmisher",
   "tracks": {
-    "classic:hit_points": "2d6 + 2"
+    "three-action:hit_points": "26",
+    "three-action:dying": "0",
+    "three-action:wounded": "0",
+    "three-action:font": "0",
+    "three-action:spells_1": "0",
+    "three-action:spells_2": "0",
+    "three-action:spells_3": "0"
   },
   "stats": {
-    "ac": "7",
-    "dex": "16",
-    "str": "8",
-    "movement": "120",
-    "size": "'small'"
+    "is_character": "false",
+    "ac": "16",
+    "fortitude": "4",
+    "reflex": "8",
+    "will_save": "5",
+    "perception": "11",
+    "speed": "30",
+    "actions": "3",
+    "save_dc": "14",
+    "fighter_level": "0",
+    "rogue_level": "0",
+    "cleric_level": "0",
+    "sneak_dice": "0",
+    "key_mod": "0",
+    "font_rank": "0",
+    "cantrip_rank": "0",
+    "str": "10",
+    "dex": "18",
+    "con": "10",
+    "int": "12",
+    "wis": "14",
+    "cha": "10"
   },
   "actions": [
     {
-      "action": "classic:missile_attack",
+      "action": "three-action:creature_ranged",
       "name": "Needle volley",
-      "damage": "1d6",
-      "increment": "6"
+      "to_hit": "8",
+      "damage": "1d6 + 2",
+      "deadly": "0",
+      "map": "5",
+      "slashing": "0",
+      "range": "10"
     },
     {
       "action": "tactical-bestiaire:withdraw"
     },
     {
-      "action": "classic:close"
+      "action": "three-action:stride"
+    },
+    {
+      "action": "three-action:stand"
     }
   ],
-  "xp": 35
+  "xp": 40
 }

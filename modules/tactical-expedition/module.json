@@ -6,7 +6,7 @@
   "title": "The Tactical Gallery",
   "requires": [
     {
-      "id": "classic",
+      "id": "three-action",
       "version": "^0.1.0"
     },
     {
@@ -18,5 +18,5 @@
       "version": "^0.1.0"
     }
   ],
-  "provenance": "Original Rusty Tales campaign content written to exercise authored tactical behaviors, companion controller changes and independent module containers. See PROVENANCE.md."
+  "provenance": "Original Rusty Tales campaign content written to exercise three-action tactical combat, authored tactical behaviors, companion controller changes and independent module containers. See PROVENANCE.md."
 }

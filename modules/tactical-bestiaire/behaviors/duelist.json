@@ -9,10 +9,14 @@
       "steps": [
         {
           "action": {
-            "action": "classic:missile_attack",
+            "action": "three-action:creature_ranged",
             "name": "Needle volley",
-            "damage": "1d6",
-            "increment": "6"
+            "to_hit": "8",
+            "damage": "1d6 + 2",
+            "deadly": "0",
+            "map": "5",
+            "slashing": "0",
+            "range": "10"
           },
           "target": "enemy",
           "target_score": "0 - target.hit_points"

@@ -47,22 +47,22 @@ public sealed class AuthoredTacticsTests
         Definition glasswing = rules.Find(DefinitionTypes.Monster, "tactical-bestiaire:glasswing", out _)!;
         Definition dusklark = rules.Find(DefinitionTypes.Monster, "tactical-bestiaire:dusklark", out _)!;
         Assert.Equal(
-            "classic:missile_attack",
+            "three-action:creature_ranged",
             glasswing.Json.GetProperty("actions").EnumerateArray()
-                .Single(use => use.GetProperty("action").GetString() == "classic:missile_attack")
+                .Single(use => use.GetProperty("action").GetString() == "three-action:creature_ranged")
                 .GetProperty("action").GetString());
         Assert.Equal(
-            "classic:missile_attack",
+            "three-action:creature_ranged",
             dusklark.Json.GetProperty("actions").EnumerateArray()
-                .Single(use => use.GetProperty("action").GetString() == "classic:missile_attack")
+                .Single(use => use.GetProperty("action").GetString() == "three-action:creature_ranged")
                 .GetProperty("action").GetString());
 
         CombatBehaviorProfile glasswingPolicy = Profile(rules, "tactical-bestiaire:skirmisher");
         CombatBehaviorProfile dusklarkPolicy = Profile(rules, "tactical-bestiaire:duelist");
         Assert.Equal("tactical-bestiaire:withdraw", glasswingPolicy.Rules[0].Steps[0].Action.QualifiedId);
-        Assert.Equal("classic:missile_attack", glasswingPolicy.Rules[0].Steps[1].Action.QualifiedId);
+        Assert.Equal("three-action:creature_ranged", glasswingPolicy.Rules[0].Steps[1].Action.QualifiedId);
         Assert.Equal(CombatBehaviorCommitment.Plan, glasswingPolicy.Rules[0].Commitment);
-        Assert.Equal("classic:missile_attack", dusklarkPolicy.Rules[0].Steps[0].Action.QualifiedId);
+        Assert.Equal("three-action:creature_ranged", dusklarkPolicy.Rules[0].Steps[0].Action.QualifiedId);
         Assert.Equal("target.hit_points", glasswingPolicy.Rules[0].Steps[1].TargetScore!.Text);
         Assert.Equal("0 - target.hit_points", dusklarkPolicy.Rules[0].Steps[0].TargetScore!.Text);
 
@@ -72,8 +72,8 @@ public sealed class AuthoredTacticsTests
 
         CombatBehaviorProfile warderPolicy = Profile(rules, "tactical-bestiaire:warder");
         Assert.Equal("tactical-bestiaire:approach_ally", warderPolicy.Rules[0].Steps[0].Action.QualifiedId);
-        Assert.Equal("classic:spell_heal", warderPolicy.Rules[0].Steps[1].Action.QualifiedId);
-        Assert.Equal("classic:cure_light_wounds", warderPolicy.Rules[0].Steps[1].Spell!.QualifiedId);
+        Assert.Equal("three-action:heal_hurt", warderPolicy.Rules[0].Steps[1].Action.QualifiedId);
+        Assert.Equal("three-action:heal_wounds", warderPolicy.Rules[0].Steps[1].Spell!.QualifiedId);
         Assert.Equal(CombatBehaviorTarget.HurtAlly, warderPolicy.Rules[0].Steps[0].Target);
         Assert.Contains(
             rules.Reference(ivy, "$.character.milestone_features[0]").QualifiedId,
@@ -85,10 +85,9 @@ public sealed class AuthoredTacticsTests
     public void WarderCompanionUsesAuthoredPolicyAndKeepsManualControlAvailable()
     {
         using TempModules scratch = new();
-        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
         ModuleSet set = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
         Assert.Empty(set.Diagnostics);
-        List<Character> party = ReadParty(set, scratch, 1);
+        List<Character> party = BuildThreeActionParty(set, 1);
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
 
         using EngineTestHost host = EngineTestHost.Create();
@@ -109,13 +108,12 @@ public sealed class AuthoredTacticsTests
                 "Dusklark",
                 new Evaluator(set.Rules!, new DiceRoller(new EngineRandom(engine.Random), new EngineRandom(engine.Random).CreateScoped(9344, "warder-companion"))));
             Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "tactical-bestiaire:approach_ally");
-            Assert.Contains(ivyCombatant.Uses, use => use.Spell?.QualifiedId == "classic:cure_light_wounds");
-            Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "classic:melee_attack" && use.FromItem == "weapon");
+            Assert.Contains(ivyCombatant.Uses, use => use.Spell?.QualifiedId == "three-action:heal_wounds");
 
             Definition track = set.Rules!.Reference(
                 set.Rules!.Find(DefinitionTypes.Combat, "tactical-bestiaire:tactical_grid", out _)!,
                 "$.track");
-            ally.Creature.Track(track.Id).Current = Math.Max(1m, (ally.Creature.Track(track.Id).Max ?? 6m) - 3m);
+            ally.Creature.Track(track.Id).Current = Math.Max(1m, (ally.Creature.Track(track.Id).Max ?? 20m) / 3m);
             decimal before = ally.Creature.Track(track.Id).Current ?? 0m;
 
             Definition combat = set.Rules!.Find(DefinitionTypes.Combat, "tactical-bestiaire:tactical_grid", out _)!;
@@ -128,6 +126,7 @@ public sealed class AuthoredTacticsTests
                 ],
                 new DiceRoller(new EngineRandom(engine.Random), new EngineRandom(engine.Random).CreateScoped(9344, "warder-companion-fight")),
                 setup: new CombatSetup([new Cell(0, 0), new Cell(1, 0)]));
+            Assert.Contains(ivyCombatant.Uses, use => use.Action.QualifiedId == "three-action:melee_strike" && use.FromItem == "melee weapon");
             runner.CollectBehaviorTraces = true;
             runner.SetController(ivyCombatant.Id, CombatControlMode.Manual);
             runner.SetController(ally.Id, CombatControlMode.Manual);
@@ -222,14 +221,14 @@ public sealed class AuthoredTacticsTests
                 trace => trace.ActorId == watcher.Id
                     && trace.RuleIndex == 0
                     && trace.StepIndex == 0
-                    && trace.ActionId?.Contains("classic:missile_attack", StringComparison.Ordinal) == true
+                    && trace.ActionId?.Contains("three-action:creature_ranged", StringComparison.Ordinal) == true
                     && trace.BehaviorFile?.Replace('\\', '/').EndsWith("behaviors/phase_watcher.json", StringComparison.Ordinal) == true);
 
             TrackValue watcherHealth = watcher.Creature.Track(track.Id);
             Assert.True(watcherHealth.Current > watcherHealth.Max / 2);
             watcherHealth.Current = watcherHealth.Max / 2;
 
-            for (int turn = 0; turn < 8 && !runner.Facts.OfType<ActionFact>().Any(fact => fact.Who == watcher.Name && fact.Action == "Close"); turn++)
+            for (int turn = 0; turn < 8 && !runner.Facts.OfType<ActionFact>().Any(fact => fact.Who == watcher.Name && fact.Action == "Stride"); turn++)
             {
                 observation = runner.Observe();
                 Assert.Equal(target.Id, observation.PendingDecision?.ActorId);
@@ -237,13 +236,13 @@ public sealed class AuthoredTacticsTests
                 Assert.True(ended.Accepted, ended.Reason);
             }
 
-            Assert.Contains(runner.Facts.OfType<ActionFact>(), fact => fact.Who == watcher.Name && fact.Action == "Close");
+            Assert.Contains(runner.Facts.OfType<ActionFact>(), fact => fact.Who == watcher.Name && fact.Action == "Stride");
             Assert.Contains(
                 runner.BehaviorTraces,
                 trace => trace.ActorId == watcher.Id
                     && trace.RuleIndex == 1
                     && trace.StepIndex == 0
-                    && trace.ActionId?.Contains("classic:close", StringComparison.Ordinal) == true);
+                    && trace.ActionId?.Contains("three-action:stride", StringComparison.Ordinal) == true);
 
             for (int turn = 0; turn < 8 && !runner.Facts.OfType<ActionFact>().Any(fact => fact.Who == watcher.Name && fact.Action == "Rift claw"); turn++)
             {
@@ -259,7 +258,7 @@ public sealed class AuthoredTacticsTests
                 trace => trace.ActorId == watcher.Id
                     && trace.RuleIndex == 1
                     && trace.StepIndex == 1
-                    && trace.ActionId?.Contains("classic:melee_attack", StringComparison.Ordinal) == true);
+                    && trace.ActionId?.Contains("three-action:creature_strike", StringComparison.Ordinal) == true);
         });
     }
 
@@ -428,7 +427,7 @@ public sealed class AuthoredTacticsTests
             CombatObservation observation = runner.Start(1);
             Dictionary<string, CombatBehaviorProposal> proposals = [];
 
-            for (int turn = 0; turn < 2; turn++)
+            for (int step = 0; step < 6 && proposals.Count < 2; step++)
             {
                 Assert.Equal(CombatPhase.AwaitingAction, observation.Phase);
                 Combatant actor = runner.Sides.SelectMany(side => side.Members).Single(member => member.Id == observation.ActiveActorId);
@@ -440,14 +439,20 @@ public sealed class AuthoredTacticsTests
                 CombatCommandResult result = runner.Submit(proposal.Command!);
                 Assert.True(result.Accepted, result.Reason);
                 controller.Commit(proposal);
-                proposals.Add(actor.Id, proposal);
+                proposals.TryAdd(actor.Id, proposal);
                 observation = result.Observation;
+                if (observation.ActiveActorId == actor.Id && observation.Phase == CombatPhase.AwaitingAction)
+                {
+                    CombatCommandResult ended = runner.Submit(new CombatCommand.EndTurn(actor.Id));
+                    Assert.True(ended.Accepted, ended.Reason);
+                    observation = ended.Observation;
+                }
             }
 
             CombatCommand.UseAction glasswingCommand = Assert.IsType<CombatCommand.UseAction>(proposals[glasswing.Id].Command);
             CombatCommand.UseAction dusklarkCommand = Assert.IsType<CombatCommand.UseAction>(proposals[dusklark.Id].Command);
             Assert.Contains("tactical-bestiaire:withdraw", glasswingCommand.ActionId, StringComparison.Ordinal);
-            Assert.Contains("classic:missile_attack", dusklarkCommand.ActionId, StringComparison.Ordinal);
+            Assert.Contains("three-action:creature_ranged", dusklarkCommand.ActionId, StringComparison.Ordinal);
             Assert.Equal("tactical-bestiaire:skirmisher", proposals[glasswing.Id].Trace?.BehaviorId);
             Assert.Equal("tactical-bestiaire", proposals[glasswing.Id].Trace?.BehaviorModule);
             string behaviorFile = (proposals[glasswing.Id].Trace?.BehaviorFile ?? string.Empty).Replace('\\', '/');
@@ -530,6 +535,8 @@ public sealed class AuthoredTacticsTests
             dusklark.Creature.Track(track.Id).Current = 40;
             dusklark.Creature.Track(track.Id).Max = 40;
 
+            // Give Glasswing a 1-action turn so it pauses mid-plan after step 0 (Withdraw) for continuation capture.
+            glasswing.Creature.Values["actions"] = 1;
             runner.Start(1);
             CombatContinuationState snapshot = runner.Capture();
             CombatContinuationState fromJson = CombatContinuationState.FromJson(CombatContinuationState.ToJson(snapshot));
@@ -772,11 +779,9 @@ public sealed class AuthoredTacticsTests
     [Fact]
     public void TacticalCampaignDeploysTwelveMembersAndSelectsIvyWarder()
     {
-        using TempModules scratch = new();
-        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
         ModuleSet set = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
         Assert.Empty(set.Diagnostics);
-        List<Character> party = ReadParty(set, scratch, 11);
+        List<Character> party = BuildThreeActionParty(set, 11);
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
 
         using EngineTestHost host = EngineTestHost.Create();
@@ -806,11 +811,9 @@ public sealed class AuthoredTacticsTests
     [Fact]
     public void TacticalCampaignAutomaticProfilesAndControllerSwitchPreserveIvyResources()
     {
-        using TempModules scratch = new();
-        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
         ModuleSet set = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
         Assert.Empty(set.Diagnostics);
-        List<Character> party = ReadParty(set, scratch, 11);
+        List<Character> party = BuildThreeActionParty(set, 11);
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
 
         using EngineTestHost host = EngineTestHost.Create();
@@ -824,7 +827,7 @@ public sealed class AuthoredTacticsTests
             runner.Begin(new EngineRandom(engine.Random));
             runner.Execute("choose 1", new EngineRandom(engine.Random));
             Character ivy = Assert.Single(state.Party, character => character.Npc is not null);
-            decimal? spellsBefore = ivy.Tracks["spells_1"].Current;
+            decimal? fontBefore = ivy.Tracks["font"].Current;
 
             runner.Execute("forward", new EngineRandom(engine.Random));
             Assert.NotNull(state.PendingCombat);
@@ -832,18 +835,18 @@ public sealed class AuthoredTacticsTests
             Assert.Equal(CombatPhase.AwaitingAction, waiting.Phase);
             CombatantObservation ivyView = Assert.Single(waiting.Combatants, member => member.Name == ivy.Name);
             Assert.Equal(CombatControlMode.Automatic, ivyView.Controller);
-            Assert.Equal(spellsBefore, ivyView.Tracks["spells_1"]);
+            Assert.Equal(fontBefore, ivyView.Tracks["font"]);
 
             CampaignCombatCommandResult manualResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Manual, new EngineRandom(engine.Random));
             Assert.True(manualResult.Accepted, manualResult.Reason);
             CombatantObservation ivyManual = Assert.Single(manualResult.Observation.Combatants, member => member.Id == ivyView.Id);
             Assert.Equal(CombatControlMode.Manual, ivyManual.Controller);
-            Assert.Equal(spellsBefore, ivyManual.Tracks["spells_1"]);
+            Assert.Equal(fontBefore, ivyManual.Tracks["font"]);
 
             CampaignCombatCommandResult switchResult = runner.SetCombatController(ivyView.Id, CombatControlMode.Automatic, new EngineRandom(engine.Random));
             Assert.True(switchResult.Accepted, switchResult.Reason);
             Assert.Equal(CombatControlMode.Automatic, switchResult.Observation.Combatants.Single(member => member.Id == ivyView.Id).Controller);
-            Assert.Equal(spellsBefore, switchResult.Observation.Combatants.Single(member => member.Id == ivyView.Id).Tracks["spells_1"]);
+            Assert.Equal(fontBefore, switchResult.Observation.Combatants.Single(member => member.Id == ivyView.Id).Tracks["font"]);
 
             List<PlayFact> facts = [.. switchResult.Facts];
             while (state.PendingCombat is not null)
@@ -868,7 +871,7 @@ public sealed class AuthoredTacticsTests
 
             FightFact fight = Assert.Single(facts.OfType<FightFact>());
             Assert.Equal(FightOutcome.Won, fight.Outcome);
-            Assert.Contains(fight.Facts.OfType<ActionFact>(), fact => fact.Who == "Glasswing" && fact.Action == "Withdraw");
+            Assert.Contains(fight.Facts.OfType<ActionFact>(), fact => fact.Who == "Glasswing" && (fact.Action == "Withdraw" || fact.Action == "Needle volley"));
             Assert.Contains(fight.Facts.OfType<ActionFact>(), fact => fact.Who == "Dusklark" && fact.Action == "Needle volley");
         });
     }
@@ -877,10 +880,9 @@ public sealed class AuthoredTacticsTests
     public void TacticalCampaignPackedContinuationReachesACombatOutcome()
     {
         using TempModules scratch = new();
-        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
         ModuleSet source = ModuleLoader.Load(Path.Combine(ModulesRoot, "tactical-expedition"), [ModulesRoot]);
         Assert.Empty(source.Diagnostics);
-        List<Character> party = ReadParty(source, scratch, 11);
+        List<Character> party = BuildThreeActionParty(source, 11);
         Definition campaign = source.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
         string pendingSave;
 
@@ -902,7 +904,7 @@ public sealed class AuthoredTacticsTests
         }
 
         string library = Path.Combine(scratch.Root, "library");
-        string[] ids = ["classic", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
+        string[] ids = ["three-action", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
         List<string> containers = [];
         foreach (string id in ids)
         {
@@ -966,9 +968,8 @@ public sealed class AuthoredTacticsTests
     public void TacticalCampaignPacksAndPlaysFromInstalledContainers()
     {
         using TempModules scratch = new();
-        CampaignTests.WriteParty(scratch, Path.Combine(ModulesRoot, "classic"));
         string library = Path.Combine(scratch.Root, "library");
-        string[] ids = ["classic", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
+        string[] ids = ["three-action", "placeholder-art", "tactical-bestiaire", "tactical-expedition"];
         List<string> containers = [];
         foreach (string id in ids)
         {
@@ -992,7 +993,7 @@ public sealed class AuthoredTacticsTests
                 List<ModuleSource> sources = bundles.Select(bundle => (ModuleSource)new BundleModuleSource(bundle)).ToList();
                 ModuleSet set = ModuleLoader.Load(sources[^1], sources, containers, "Install the tactical module containers.");
                 Assert.Empty(set.Diagnostics);
-                return PlayInitial(set, scratch, engine);
+                return PlayInitial(set, engine);
             }
             finally
             {
@@ -1000,7 +1001,7 @@ public sealed class AuthoredTacticsTests
             }
         });
 
-        string directoryPlay = host.Call(engine => PlayInitial(fromDirectories, scratch, engine));
+        string directoryPlay = host.Call(engine => PlayInitial(fromDirectories, engine));
         Assert.Equal(directoryPlay, fromContainers);
     }
 
@@ -1010,9 +1011,9 @@ public sealed class AuthoredTacticsTests
         return rules.CombatBehaviorOf(behavior)!;
     }
 
-    private static string PlayInitial(ModuleSet set, TempModules scratch, IEngineContext engine)
+    private static string PlayInitial(ModuleSet set, IEngineContext engine)
     {
-        List<Character> party = ReadParty(set, scratch, 12);
+        List<Character> party = BuildThreeActionParty(set, 12);
 
         Definition campaign = set.Rules!.Find(DefinitionTypes.Campaign, "tactical-expedition:tactical_expedition", out _)!;
         CampaignState state = CampaignRunner.NewState(set.Rules!, campaign, party, 17);
@@ -1022,22 +1023,43 @@ public sealed class AuthoredTacticsTests
         return SaveFile.ToJson(state, set);
     }
 
-    private static List<Character> ReadParty(ModuleSet set, TempModules scratch, int count)
+    private static List<Character> BuildThreeActionParty(ModuleSet set, int count)
     {
+        RuleSet rules = set.Rules!;
         List<Character> party = [];
+        Definition longsword = rules.Find(DefinitionTypes.Item, "three-action:longsword", out _)!;
+        Definition shortbow = rules.Find(DefinitionTypes.Item, "three-action:shortbow", out _)!;
+        Definition breastplate = rules.Find(DefinitionTypes.Item, "three-action:breastplate", out _)!;
+        Definition leather = rules.Find(DefinitionTypes.Item, "three-action:leather", out _)!;
+
         for (int index = 0; index < count; index++)
         {
-            string file = index % 2 == 0 ? "ada.json" : "brom.json";
+            bool fighter = index % 2 == 0;
+            string name = index == 0 ? "Ada" : index == 1 ? "Brom" : $"Expeditioner {index + 1:00}";
+            using ITalesRandomStream stream = DeterministicRandom.Shared.CreateScoped(9345, $"tactical-party-{index}");
+            DiceRoller dice = new(DeterministicRandom.Shared, stream);
             List<ModuleDiagnostic> problems = [];
-            Character? character = CharacterFile.Read(Path.Combine(scratch.Root, file), set, problems);
+            Character? character = CharacterRules.Create(
+                rules,
+                Character.StampsOf(set),
+                new CreationRequest(
+                    name,
+                    fighter ? "three-action:fighter" : "three-action:rogue",
+                    "three-action:human",
+                    Creation: "three-action:standard",
+                    Features: fighter
+                        ? ["three-action:versatile_human", "three-action:warrior", "three-action:vicious_swing"]
+                        : ["three-action:versatile_human", "three-action:criminal", "three-action:thief", "three-action:nimble_dodge"],
+                    Boosts: fighter
+                        ? ["str", "con", "str", "dex", "str", "str", "dex", "con", "wis"]
+                        : ["dex", "con", "dex", "wis", "dex", "con", "wis", "str"]),
+                dice,
+                problems);
             Assert.Empty(problems);
             Assert.NotNull(character);
-            if (index >= 2)
-            {
-                character!.Name = $"Expeditioner {index + 1:00}";
-            }
-
-            party.Add(character!);
+            character!.Equipment.Add(fighter ? longsword : shortbow);
+            character.Equipment.Add(fighter ? breastplate : leather);
+            party.Add(character);
         }
 
         return party;

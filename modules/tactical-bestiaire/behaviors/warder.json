@@ -21,10 +21,9 @@
         },
         {
           "action": {
-            "action": "classic:spell_heal",
-            "amount": "1d8"
+            "action": "three-action:heal_hurt"
           },
-          "spell": "classic:cure_light_wounds",
+          "spell": "three-action:heal_wounds",
           "target": "hurt_ally",
           "target_score": "target.max_hit_points - target.hit_points"
         }
@@ -36,10 +35,9 @@
       "steps": [
         {
           "action": {
-            "action": "classic:spell_heal",
-            "amount": "1d8"
+            "action": "three-action:heal_hurt"
           },
-          "spell": "classic:cure_light_wounds",
+          "spell": "three-action:heal_wounds",
           "target": "hurt_ally",
           "target_score": "target.max_hit_points - target.hit_points"
         }
@@ -51,22 +49,26 @@
       "steps": [
         {
           "action": {
-            "action": "classic:melee_attack",
-            "from_item": "weapon"
+            "action": "three-action:melee_strike",
+            "from_item": "melee weapon"
           },
           "target": "enemy"
         }
       ],
-      "fallback": "end-turn"
+      "fallback": "next"
     },
     {
       "priority": "9",
       "steps": [
         {
           "action": {
-            "action": "classic:melee_attack",
+            "action": "three-action:creature_strike",
             "name": "Staff",
-            "damage": "1d6"
+            "to_hit": "6",
+            "damage": "1d6 + 2",
+            "deadly": "0",
+            "map": "5",
+            "slashing": "0"
           },
           "target": "enemy"
         }

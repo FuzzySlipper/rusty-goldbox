@@ -11,7 +11,7 @@
     {
       "op": "move",
       "toward": "away",
-      "distance": "floor(self.movement / 10)",
+      "distance": "floor(self.speed / 5)",
       "beyond": "4",
       "provokes": false
     }

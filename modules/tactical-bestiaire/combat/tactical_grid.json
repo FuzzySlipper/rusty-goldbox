@@ -2,15 +2,15 @@
   "type": "combat",
   "id": "tactical_grid",
   "name": "Tactical gallery",
-  "initiative": "1d6",
+  "initiative": "1d20 + self.perception",
   "initiative_by": "creature",
   "initiative_order": "highest-first",
-  "initiative_each": "round",
-  "round_seconds": 60,
+  "initiative_each": "combat",
+  "round_seconds": 6,
   "round_limit": 12,
   "field": {
-    "width": 10,
-    "height": 6,
+    "width": 12,
+    "height": 8,
     "mode": "grid",
     "metric": "chebyshev",
     "terrain": {
@@ -24,10 +24,47 @@
   "budget": [
     {
       "id": "action",
+      "per_turn": "self.actions"
+    },
+    {
+      "id": "reaction",
       "per_turn": 1
     }
   ],
-  "track": "classic:hit_points",
+  "track": "three-action:hit_points",
   "defeated": "self.hit_points <= 0",
-  "downed_conditions": true
+  "downed_conditions": true,
+  "actions": [
+    {
+      "action": "three-action:melee_strike",
+      "from_item": "melee weapon"
+    },
+    {
+      "action": "three-action:finesse_strike",
+      "from_item": "finesse weapon"
+    },
+    {
+      "action": "three-action:ranged_strike",
+      "from_item": "ranged weapon"
+    },
+    {
+      "action": "three-action:finesse_strike",
+      "name": "Fist",
+      "damage": "1d4",
+      "die": "1d4",
+      "deadly": "0",
+      "map": "4",
+      "martial": "0",
+      "slashing": "0"
+    },
+    {
+      "action": "three-action:raise_shield"
+    },
+    {
+      "action": "three-action:stride"
+    },
+    {
+      "action": "three-action:stand"
+    }
+  ]
 }

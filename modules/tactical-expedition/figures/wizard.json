@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "wizard",
+  "class": "three-action:wizard",
+  "sprite": "placeholder-art:magic_user",
+  "icon": "placeholder-art:magic_user_portrait"
+}

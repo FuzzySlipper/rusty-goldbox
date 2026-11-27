@@ -1,0 +1,7 @@
+{
+  "type": "figure",
+  "id": "fighter",
+  "class": "three-action:fighter",
+  "sprite": "placeholder-art:fighter",
+  "icon": "placeholder-art:fighter_portrait"
+}

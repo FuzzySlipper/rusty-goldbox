@@ -190,13 +190,17 @@ public sealed class CharacterImportTests
         {
             string rules = EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", "classic"), scratch);
             string art = EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", "placeholder-art"), scratch);
-            string ext = EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", "tactical-bestiaire"), scratch);
             string crypt = Path.Combine(scratch.Root, "sample-crypt.rpak");
-            string gallery = Path.Combine(scratch.Root, "tactical-expedition.rpak");
+            string vaultDir = scratch.Module("veteran-vault", "campaign", requires:
+                $"{TempModules.Require("classic", "^0.1.0")}, {TempModules.Require("placeholder-art", "^0.1.0")}");
+            scratch.Write("veteran-vault/areas/hall.json", """{ "type": "area", "id": "hall", "name": "Hall", "map": ["+--+", "|  |", "+--+"], "entries": { "gate": { "at": [0, 0], "facing": "north" } } }""");
+            scratch.Write("veteran-vault/campaign.json", """{ "type": "campaign", "id": "veteran_vault", "name": "The Veteran Vault", "start": { "area": "hall", "entry": "gate" }, "party": { "min": 1, "max": 6 }, "import": { "allow_higher_level": true } }""");
+            string vault = Path.Combine(scratch.Root, "veteran-vault.rpak");
             Assert.Equal(0, CampaignTests.Run(scratch, "module", "pack", Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt"), "--modules", Path.Combine(Rules.RepositoryRoot, "modules"), "--output", crypt).Code);
-            Assert.Equal(0, CampaignTests.Run(scratch, "module", "pack", Path.Combine(Rules.RepositoryRoot, "modules", "tactical-expedition"), "--modules", Path.Combine(Rules.RepositoryRoot, "modules"), "--output", gallery).Code);
+            (int vaultCode, string vaultOut) = CampaignTests.Run(scratch, "module", "pack", vaultDir, "--modules", Path.Combine(Rules.RepositoryRoot, "modules"), "--output", vault);
+            Assert.True(vaultCode == 0, vaultOut);
 
-            string[] bundles = [rules, art, ext, crypt, gallery];
+            string[] bundles = [rules, art, crypt, vault];
             ModuleLibrary Library() => new(_ => bundles.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList());
 
             // Session 1: open Sample Crypt, roll a hero (auto-saved to stable), equip a weapon, save back to stable.
@@ -213,7 +217,7 @@ public sealed class CharacterImportTests
             Run(session1, engine, """{ "action": "stable-save", "member": 0 }""");
             Assert.Single(session1.Stable);
 
-            // Session 2 (fresh restart loading from Engine persistence!): open Tactical Gallery and import Dara from stable!
+            // Session 2 (fresh restart loading from Engine persistence!): open Veteran Vault and import Dara from stable!
             GameSession session2 = new(Library());
             session2.Refresh();
             CharacterStable.Load(engine, session2);
@@ -221,8 +225,8 @@ public sealed class CharacterImportTests
             Assert.Equal("Dara", persisted.Name);
             Assert.Equal("classic", persisted.RulesetId);
 
-            string galleryBundle = session2.Campaigns.Single(c => c.Id == "tactical-expedition").Bundle;
-            Run(session2, engine, JsonSerializer.Serialize(new { action = "open", campaign = galleryBundle, seed = "11" }));
+            string vaultBundle = session2.Campaigns.Single(c => c.Id == "veteran-vault").Bundle;
+            Run(session2, engine, JsonSerializer.Serialize(new { action = "open", campaign = vaultBundle, seed = "11" }));
             JsonObject partyProj = SessionProjection.Build(session2);
             Assert.True(partyProj["importPolicy"]!["allowHigherLevel"]!.GetValue<bool>());
             Assert.Single(partyProj["stable"]!.AsArray());
@@ -238,7 +242,7 @@ public sealed class CharacterImportTests
             Assert.Equal(Screen.Play, session2.Screen);
             Run(session2, engine, """{ "action": "stable-export-party" }""");
             Assert.Single(session2.Stable);
-            Assert.Equal("The Tactical Gallery", session2.Stable[0].OriginCampaign);
+            Assert.Equal("The Veteran Vault", session2.Stable[0].OriginCampaign);
         });
     }
 
