@@ -392,6 +392,71 @@ img.gb-picture { object-fit: contain; }
 .gb-combat-label { color: var(--gb-muted); font-size: .74em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-top: .2em; }
 .gb-commands .gb-selected { border-color: var(--gb-accent); color: var(--gb-accent); }
 .gb-commands .gb-down { opacity: .45; text-decoration: line-through; }
+.gb-commands .gb-action-unavailable { opacity: .62; font-style: italic; }
+.gb-commands .gb-move-action-btn { border-color: color-mix(in srgb, #3dc4ab 55%, var(--gb-border)); }
+
+/* Interactive combat viewport overlay (tactical pathfinding grid, unit reticles, floating combat text) */
+.gb-view-surface { overflow: hidden; }
+.gb-combat-overlay { position: absolute; inset: 0; z-index: 4; pointer-events: none; user-select: none; }
+.gb-combat-overlay[hidden] { display: none; }
+.gb-combat-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: auto; }
+.gb-combat-banner {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+  padding: 4px 12px; border-radius: 999px; font-size: .78em; font-weight: 700; letter-spacing: .03em;
+  background: rgba(12, 16, 24, 0.86); border: 1px solid rgba(228, 169, 76, 0.7); color: #f2d398;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .55); white-space: nowrap; max-width: 94%; overflow: hidden; text-overflow: ellipsis;
+}
+.gb-combat-banner[data-mode="move"] { border-color: rgba(61, 196, 171, 0.82); color: #8af0db; }
+.gb-combat-banner[data-mode="warn"] { border-color: rgba(235, 93, 93, 0.75); color: #ffaba8; }
+.gb-grid-cell { fill: transparent; stroke: rgba(255, 255, 255, 0.06); stroke-width: 1; transition: fill .08s ease; cursor: default; }
+.gb-grid-cell.gb-grid-actor { fill: rgba(228, 169, 76, 0.14); stroke: rgba(228, 169, 76, 0.65); stroke-width: 1.8; }
+.gb-grid-cell.gb-grid-reach { fill: rgba(61, 196, 171, 0.15); stroke: rgba(61, 196, 171, 0.55); stroke-width: 1.2; cursor: pointer; }
+.gb-grid-cell.gb-grid-hover { fill: rgba(61, 196, 171, 0.34); stroke: #5ef2d6; stroke-width: 2; cursor: pointer; }
+.gb-grid-cell.gb-grid-dest { fill: rgba(228, 169, 76, 0.34); stroke: #f5c35e; stroke-width: 2.4; cursor: pointer; }
+.gb-grid-cell.gb-grid-blocked { fill: rgba(235, 93, 93, 0.12); stroke: rgba(235, 93, 93, 0.32); stroke-width: 1; cursor: not-allowed; }
+.gb-grid-cell.gb-grid-dim { fill: rgba(0, 0, 0, 0.18); stroke: rgba(255, 255, 255, 0.05); cursor: not-allowed; }
+.gb-move-path { fill: none; stroke: rgba(94, 242, 214, 0.82); stroke-width: 3; stroke-dasharray: 6 5; stroke-linecap: round; stroke-linejoin: round; }
+.gb-move-path-locked { stroke: #f5c35e; stroke-width: 3.6; stroke-dasharray: none; filter: drop-shadow(0 0 6px rgba(245, 195, 94, 0.75)); }
+.gb-move-dot { fill: #5ef2d6; stroke: #0d1419; stroke-width: 1.2; }
+.gb-move-end { fill: #f5c35e; stroke: #0d1419; stroke-width: 1.8; }
+.gb-move-pill-bg { fill: rgba(12, 16, 24, 0.9); stroke: #f5c35e; stroke-width: 1.2; }
+.gb-move-pill-text { fill: #f7e1a8; font-size: 11px; font-weight: 700; font-family: var(--gb-mono-font); }
+.gb-unit-hit { cursor: pointer; }
+.gb-unit-hit.gb-unit-legal:hover .gb-unit-box { fill: rgba(255, 255, 255, 0.07); stroke: rgba(245, 195, 94, 0.85); stroke-width: 2; }
+.gb-ring-active { fill: rgba(228, 169, 76, 0.14); stroke: #e4a94c; stroke-width: 2.2; }
+.gb-ring-enemy { fill: rgba(235, 93, 93, 0.16); stroke: #ff6b6b; stroke-width: 2.4; stroke-dasharray: 5 3; }
+.gb-ring-ally { fill: rgba(61, 196, 171, 0.16); stroke: #4ae3c5; stroke-width: 2.4; stroke-dasharray: 5 3; }
+.gb-ring-selected { fill: rgba(245, 195, 94, 0.28); stroke: #ffd86b; stroke-width: 3; }
+
+/* Floating combat text (viewport + party portraits) */
+.gb-float-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 8; }
+.gb-card { position: relative; }
+.gb-portrait-float-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 9; }
+@keyframes gbFloatRise {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.86); }
+  14% { opacity: 1; transform: translate(-50%, -6px) scale(1.06); }
+  75% { opacity: 1; transform: translate(-50%, -28px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -44px) scale(0.95); }
+}
+.gb-float-text {
+  position: absolute; transform: translate(-50%, 0); pointer-events: none; white-space: nowrap;
+  font-family: system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 15px; letter-spacing: .02em;
+  padding: 2px 7px; border-radius: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, .95), 0 0 2px rgba(0, 0, 0, .95);
+  animation: gbFloatRise 1.35s cubic-bezier(.22, .85, .36, 1) forwards;
+}
+.gb-float-damage { color: #ff5c5c; font-size: 18px; }
+.gb-float-crit { color: #ffd64a; font-size: 21px; text-shadow: 0 0 10px rgba(255, 136, 0, .85), 0 2px 5px #000; }
+.gb-float-heal { color: #4ff09a; font-size: 18px; }
+.gb-float-miss { color: #b8c4d9; font-size: 14px; font-weight: 700; }
+.gb-float-condition { color: #c99bff; font-size: 13.5px; }
+.gb-float-defeated { color: #ff7a45; font-size: 17px; }
+.gb-float-flee { color: #8ad6ff; font-size: 14px; }
+.gb-float-error {
+  color: #ffb8b8; font-size: 12.5px; font-weight: 700;
+  background: rgba(34, 10, 12, 0.9); border: 1px solid rgba(235, 93, 93, 0.78);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .65);
+}
 .gb-frame[data-arrangement="tall"] .gb-commands { flex-direction: row; flex-wrap: wrap; }
 .gb-frame[data-arrangement="tall"] .gb-combat-summary { width: 100%; }
 

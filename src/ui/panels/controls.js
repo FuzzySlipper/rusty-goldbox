@@ -11,12 +11,21 @@ export function createControls(send, ui) {
   const commands = element('div', { class: 'gb-commands' });
   const node = element('nav', { class: 'gb-panel gb-controls', 'aria-label': 'Controls', 'data-rusty-ui-interactive': '' }, pad, commands);
   let selectedAction = null;
+  let selectedUnavailable = null;
   // Keep target IDs in click order.  Portion actions use that order to map
   // each authored portion to a target, and may intentionally repeat an ID.
   let selectedTargets = [];
   let selectedMoveKey = null;
+  let previewMove = null;
   let selectedDecision = null;
   let lastView = null;
+  const selectionListeners = new Set();
+
+  const notifySelection = () => {
+    for (const fn of selectionListeners) {
+      fn();
+    }
+  };
 
   const text = (value, fallback = '') => value === undefined || value === null ? fallback : String(value);
   const cellText = (cell) => cell ? `(${cell.x},${cell.y})` : '';
@@ -45,17 +54,31 @@ export function createControls(send, ui) {
     const actor = members.find((member) => member.id === actorId) ?? null;
     const turnActor = members.find((member) => member.id === (fight.turnActorId ?? fight.activeActorId)) ?? null;
     const actions = decision?.actions ?? [];
+    const unavailableActions = decision?.unavailableActions ?? [];
 
     // A projection update may replace every button. Keep the presentation
     // selection only while it still belongs to this actor and decision.
-    if (selectedDecision !== decision?.id || selectedAction && !actions.some((action) => action.id === selectedAction)) {
+    const actionStillValid = selectedAction && actions.some((choice) => choice.id === selectedAction);
+    const unavailableStillValid = selectedUnavailable && unavailableActions.some((choice) => choice.id === selectedUnavailable);
+    if (selectedDecision !== decision?.id || (!actionStillValid && !unavailableStillValid)) {
       selectedDecision = decision?.id ?? null;
-      selectedAction = actions[0]?.id ?? null;
+      // Prefer first non-move action if available; otherwise pick the Move action so the tactical grid lights up right away!
+      const preferred = actions.find((choice) => !choice.isMove) ?? actions[0] ?? null;
+      selectedAction = preferred?.id ?? null;
+      selectedUnavailable = null;
       selectedTargets = [];
       selectedMoveKey = null;
+      previewMove = null;
     }
     const action = actions.find((choice) => choice.id === selectedAction) ?? null;
-    const targets = action?.targets ?? [];
+    const unavailable = unavailableActions.find((choice) => choice.id === selectedUnavailable) ?? null;
+    const isTacticalMove = Boolean(action?.isMove && fight.presentation === 'tactical' && fight.field?.hasGrid);
+    if (!isTacticalMove) {
+      previewMove = null;
+    } else if (previewMove && !(action.freeMoves ?? []).some((mv) => mv.destination.x === previewMove.destination.x && mv.destination.y === previewMove.destination.y)) {
+      previewMove = null;
+    }
+    const targets = isTacticalMove ? [] : (action?.targets ?? []);
     const targetMode = action?.targetMode ?? 'one';
     const targetPhase = Number.isInteger(decision?.maximumTargets);
     // A normal action is one-target by default. Whole-side and authored
@@ -94,20 +117,67 @@ export function createControls(send, ui) {
         action: 'combat-control', actor: actor.id, mode: actor.controller === 'manual' ? 'auto' : 'manual',
       }), { 'data-focus-key': `combat:control:${actor.id}` })
       : null;
-    const actionButtons = actions.map((choice) => button(
-      `${choice.name}${Object.keys(choice.cost ?? {}).length ? ` · ${budgetText(choice.cost)}` : ''}${choice.spellCosts?.length ? ` · ${choice.spellCosts.map((cost) => `${cost.name} ${cost.cost}`).join(', ')}` : ''}`,
+
+    // Sort Move actions cleanly first in tactical mode so "Move" feels like a first-class contemporary action.
+    const orderedActions = fight.presentation === 'tactical'
+      ? [...actions.filter((c) => c.isMove), ...actions.filter((c) => !c.isMove)]
+      : actions;
+    const actionButtons = orderedActions.map((choice) => button(
+      `${choice.isMove ? '🦶 ' : ''}${choice.name}${Object.keys(choice.cost ?? {}).length ? ` · ${budgetText(choice.cost)}` : ''}${choice.spellCosts?.length ? ` · ${choice.spellCosts.map((cost) => `${cost.name} ${cost.cost}`).join(', ')}` : ''}`,
       () => {
         selectedAction = choice.id;
+        selectedUnavailable = null;
         selectedTargets = [];
         selectedMoveKey = null;
+        previewMove = null;
         render(view);
+        notifySelection();
       },
       {
-        'aria-pressed': String(choice.id === selectedAction),
-        class: choice.id === selectedAction ? 'gb-selected' : '',
+        'aria-pressed': String(choice.id === selectedAction && !selectedUnavailable),
+        class: `${choice.isMove ? 'gb-move-action-btn ' : ''}${choice.id === selectedAction && !selectedUnavailable ? 'gb-selected' : ''}`.trim(),
         'data-focus-key': `combat:action:${choice.id}`,
         title: choice.actionId ?? choice.id,
       }));
+    const unavailableButtons = unavailableActions.map((choice) => button(
+      `${choice.name}${choice.range !== null && choice.range !== undefined ? ` (rng ${choice.range})` : ''} · ${choice.reason}`,
+      () => {
+        selectedAction = null;
+        selectedUnavailable = choice.id;
+        selectedTargets = [];
+        selectedMoveKey = null;
+        previewMove = null;
+        render(view);
+        notifySelection();
+      },
+      {
+        'aria-pressed': String(choice.id === selectedUnavailable),
+        class: `gb-action-unavailable${choice.id === selectedUnavailable ? ' gb-selected' : ''}`,
+        'data-focus-key': `combat:unavail:${choice.id}`,
+        title: choice.reason,
+      }));
+
+    // Tactical grid move guidance + optional button confirmation alongside clicking the square twice
+    const tacticalMoveControls = isTacticalMove
+      ? [
+        element('span', { class: 'gb-combat-label' }, `Tactical Move (${(action.freeMoves ?? []).length} reachable squares)`),
+        element('span', { class: 'gb-muted' }, previewMove
+          ? `Path to (${previewMove.destination.x}, ${previewMove.destination.y}) · ${previewMove.cost} step${previewMove.cost === 1 ? '' : 's'}. Click that square again or Confirm.`
+          : 'Click any highlighted square on the battlefield to preview path; click again to move.'),
+        ...(previewMove ? [
+          button(`Confirm move to (${previewMove.destination.x}, ${previewMove.destination.y})`, () => {
+            submitAction(actorId, action, [], previewMove.path);
+            previewMove = null;
+            notifySelection();
+          }, { class: 'gb-selected', 'data-focus-key': 'combat:move:confirm' }),
+          button('Cancel path', () => {
+            previewMove = null;
+            render(view);
+            notifySelection();
+          }, { 'data-focus-key': 'combat:move:cancel' }),
+        ] : []),
+      ]
+      : [];
 
     const targetButtons = action && targets.length > 0
       ? [element('span', { class: 'gb-combat-label' },
@@ -158,6 +228,7 @@ export function createControls(send, ui) {
     const allTargetsReady = !requiresAllTargets || selectedTargets.length === targets.length;
     const portionsReady = !fixedPortions || selectedTargets.length === maximumTargets;
     const useReady = action
+      && !isTacticalMove
       && (commitsTargetCount || targets.length === 0 || (selectedTargets.length > 0 && allTargetsReady && portionsReady));
     const submittedTargets = commitsTargetCount ? [] : [...selectedTargets];
     const moveTargetIds = (move) => Array.isArray(move.targetIds) ? move.targetIds : [];
@@ -208,10 +279,13 @@ export function createControls(send, ui) {
 
     const body = [summary,
       ...(control ? [control] : []),
-      ...(actionButtons.length ? [element('span', { class: 'gb-combat-label' }, 'Actions'), ...actionButtons] : []),
+      ...(actionButtons.length || unavailableButtons.length
+        ? [element('span', { class: 'gb-combat-label' }, 'Actions'), ...actionButtons, ...unavailableButtons]
+        : []),
+      ...tacticalMoveControls,
       ...targetButtons,
       ...use,
-      ...(moves.length ? [element('span', { class: 'gb-combat-label' }, 'Movement'), ...moves] : []),
+      ...(moves.length && !isTacticalMove ? [element('span', { class: 'gb-combat-label' }, 'Movement'), ...moves] : []),
       ...(options.length ? [element('span', { class: 'gb-combat-label' }, 'Choices'), ...options, ...decline] : []),
       ...end,
       skip];
@@ -320,5 +394,32 @@ export function createControls(send, ui) {
       ...(busy ? [button('Leave', play('leave'))] : []));
   };
 
-  return { node, render, pickTarget };
+  const getSelection = () => {
+    const decision = lastView?.fight?.decision ?? null;
+    const action = (decision?.actions ?? []).find((choice) => choice.id === selectedAction) ?? null;
+    const unavailableAction = (decision?.unavailableActions ?? []).find((choice) => choice.id === selectedUnavailable) ?? null;
+    return { action, unavailableAction, selectedTargets: [...selectedTargets], previewMove };
+  };
+
+  const setPreviewMove = (move) => {
+    previewMove = move ?? null;
+    if (lastView) render(lastView);
+    notifySelection();
+  };
+
+  const confirmMove = (move) => {
+    const decision = lastView?.fight?.decision;
+    const action = (decision?.actions ?? []).find((choice) => choice.id === selectedAction);
+    if (!decision || !action || !move?.path?.length) return;
+    previewMove = null;
+    submitAction(decision.actorId ?? lastView.fight?.activeActorId, action, [], move.path);
+    notifySelection();
+  };
+
+  const onSelectionChange = (fn) => {
+    selectionListeners.add(fn);
+    return () => selectionListeners.delete(fn);
+  };
+
+  return { node, render, pickTarget, getSelection, setPreviewMove, confirmMove, onSelectionChange };
 }

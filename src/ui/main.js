@@ -17,6 +17,7 @@ import { createLog } from './panels/log.js';
 import { createPortraits } from './panels/portraits.js';
 import { createMap } from './panels/map.js';
 import { createControls } from './panels/controls.js';
+import { createCombatOverlay } from './panels/combatOverlay.js';
 import { createOverlay } from './panels/overlays.js';
 import { createWorkbench } from './panels/workbench.js';
 import { createTitle } from './screens/title.js';
@@ -80,7 +81,10 @@ export function mountProductUi(root, context) {
   const map = createMap((targetId) => controls.pickTarget(targetId));
   const overlay = createOverlay(send, ui);
   // The view panel is left clear: the Engine draws the world inside it.
+  // In combat, combatOverlay projects an interactive tactical grid, unit hitboxes, and floating text over it.
   const viewSurface = element('div', { class: 'gb-view-surface' });
+  const combatOverlay = createCombatOverlay(viewSurface, controls);
+  const unsubSelection = controls.onSelectionChange(() => combatOverlay.refresh());
   const view = element('section', { class: 'gb-panel gb-view', 'aria-label': 'View' }, viewSurface);
   const side = element('div', { class: 'gb-side' }, portraits.node, map.node, controls.node);
   const playPanels = [status.node, view, log.node, side, overlay.node];
@@ -170,6 +174,7 @@ export function mountProductUi(root, context) {
       portraits.render(projection);
       map.render(projection);
       controls.render(projection);
+      combatOverlay.render(projection);
       overlay.render(projection, open);
       return;
     }
@@ -219,6 +224,8 @@ export function mountProductUi(root, context) {
       removeAnchor?.();
       log.dispose();
       map.dispose();
+      unsubSelection();
+      combatOverlay.dispose();
       workbench.dispose();
       panel.remove();
       skinStyle.remove();
