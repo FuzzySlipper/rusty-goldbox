@@ -391,4 +391,13 @@ public sealed class Character
     {
         return set.LoadOrder.Select(loaded => new ModuleStamp(loaded.Manifest.Id, loaded.Manifest.Version)).ToList();
     }
+
+    /// <summary>The baseline ruleset module of <paramref name="set"/>, or null when the set has no ruleset.</summary>
+    public static ModuleStamp? RulesetStampOf(ModuleSet set)
+    {
+        return set.LoadOrder
+            .FirstOrDefault(loaded => loaded.Manifest.Kind == ModuleKind.Ruleset) is LoadedModule ruleset
+            ? new ModuleStamp(ruleset.Manifest.Id, ruleset.Manifest.Version)
+            : null;
+    }
 }

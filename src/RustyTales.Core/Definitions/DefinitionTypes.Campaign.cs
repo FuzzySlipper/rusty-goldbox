@@ -151,6 +151,11 @@ public static partial class DefinitionTypes
             new("skin", new ReferenceKind("skin"), false, "How the Game's panels look while this campaign plays, unless the player picks another skin."),
             new("starting_party", new ListKind(new ReferenceKind("npc")), false, "Pre-authored NPC characters who start the campaign as the party. When present, single-player play in the Game skips party creation and `tales play` needs no `--party` files."),
             new("combat_presentation", new EnumKind(["tactical", "first_person", "side_view"]), false, "Default combat framing for this campaign (\"tactical\", \"first_person\" or \"side_view\"), overriding the combat definition's presentation when set."),
+            new("import", new ObjectKind(
+            [
+                new("allow_higher_level", new BooleanKind(), false, "If true, characters imported from the stable or external files may keep levels above 1 (up to max_level when set). Without it or when false, imported characters are scaled down to level 1."),
+                new("max_level", new IntegerKind(), false, "Optional maximum character level allowed on import when allow_higher_level is true; higher-level characters are scaled down to this level."),
+            ]), false, "Policy for importing characters into this campaign from the player's ruleset stable or character files."),
         ],
         """
         { "type": "campaign", "id": "crypt", "name": "The Crypt", "start": { "area": "hall", "entry": "start" }, "party": { "min": 1, "max": 6 } }

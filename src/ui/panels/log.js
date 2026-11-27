@@ -131,8 +131,9 @@ export function createLog(send) {
     const notes = view.notes ?? [];
     const menu = combat ? [] : (view.menu ?? []);
     const outcome = combat && view.fight?.done ? view.fight.outcome : null;
+    const ended = !combat && Boolean(view.ended);
     const votes = view.table?.votes ?? null;
-    const key = JSON.stringify([lines, notes, menu, outcome, votes, view.table?.leader]);
+    const key = JSON.stringify([lines, notes, menu, outcome, ended, votes, view.table?.leader]);
     if (key === shown) {
       return;
     }
@@ -140,6 +141,9 @@ export function createLog(send) {
     shown = key;
     const decide = view.table && leading(view) && menu.length && Object.keys(votes ?? {}).length
       ? [button('Decide now', () => send({ action: 'decide' }), { class: 'gb-choice', 'data-focus-key': 'log:decide' })]
+      : [];
+    const exportEnded = ended
+      ? [button('Export party to character stable', () => send({ action: 'stable-export-party' }), { class: 'gb-choice', 'data-focus-key': 'log:export-stable' })]
       : [];
     page.replaceChildren(
       ...lines.map((line, index) => element('p', { class: index < lines.length - 4 ? 'gb-old' : '' }, line)),
@@ -155,7 +159,8 @@ export function createLog(send) {
         choice.addEventListener('click', () => send({ action: 'play', command: `choose ${option.number}` }));
         return choice;
       }),
-      ...decide);
+      ...decide,
+      ...exportEnded);
     page.scrollTop = page.scrollHeight;
     following = true;
   };

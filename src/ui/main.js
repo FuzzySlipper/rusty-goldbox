@@ -82,12 +82,16 @@ export function mountProductUi(root, context) {
   const side = element('div', { class: 'gb-side' }, portraits.node, map.node, controls.node);
   const playPanels = [status.node, view, log.node, side, overlay.node];
 
-  // Title and party screens: one sheet, its notes, and the menu's sound and look settings (made once, never moved).
+  // Title and party screens: one sheet, its notes, and a collapsible settings drawer (made once, never moved).
   // Notes (a campaign's load errors can run to dozens) scroll inside their own box, so the sheet below stays put.
   const sheetNotes = element('ul', { id: 'rusty-tales-notes', class: 'gb-notes', role: 'status' });
   let shownNotes = '';
-  const sheetBody = element('div');
-  const sheet = element('section', { class: 'gb-panel gb-sheet', 'data-rusty-ui-interactive': '' }, sheetNotes, sheetBody, overlay.settings);
+  const sheetBody = element('div', { class: 'gb-sheet-body' });
+  const settingsDrawerBody = element('div', { class: 'gb-drawer-body' }, overlay.settings);
+  const settingsDrawer = element('details', { class: 'gb-drawer gb-settings-drawer' },
+    element('summary', {}, 'Display, skin & audio settings'),
+    settingsDrawerBody);
+  const sheet = element('section', { class: 'gb-panel gb-sheet', 'data-rusty-ui-interactive': '' }, sheetNotes, sheetBody, settingsDrawer);
   const renderTitle = createTitle(send);
   const renderParty = createParty(send, rerender);
 
@@ -152,7 +156,7 @@ export function mountProductUi(root, context) {
       overlay.node.dataset.showing = '';
       frame.replaceChildren(...(playing ? playPanels : [sheet]));
       if (!playing) {
-        sheet.append(overlay.settings);
+        settingsDrawerBody.append(overlay.settings);
       }
     }
 

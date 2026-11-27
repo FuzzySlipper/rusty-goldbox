@@ -105,7 +105,7 @@ internal static class GameCommands
 
     /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
     private static readonly HashSet<string> LocalActions =
-        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat"];
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat", "stable-save", "stable-export-party", "stable-remove"];
 
     /// <summary>Runs one <c>tales.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
@@ -225,7 +225,7 @@ internal static class GameCommands
 
         int partyBefore = session.Party.Count;
         Dispatch(session, engine, payload, action);
-        if (action == "roll" && session.Party.Count > partyBefore)
+        if ((action is "roll" or "stable-import" or "stable-import-json") && session.Party.Count > partyBefore)
         {
             table.Claim(member, session.Party.Count - 1);
         }
@@ -294,6 +294,21 @@ internal static class GameCommands
                     break;
                 case "drop":
                     session.Drop(Integer(payload, "member"));
+                    break;
+                case "stable-import":
+                    session.ImportFromStable(Text(payload, "id"));
+                    break;
+                case "stable-import-json":
+                    session.ImportCharacterJson(engine, Text(payload, "json"));
+                    break;
+                case "stable-save":
+                    session.SaveMemberToStable(engine, Integer(payload, "member"));
+                    break;
+                case "stable-export-party":
+                    session.ExportPartyToStable(engine);
+                    break;
+                case "stable-remove":
+                    session.RemoveFromStable(engine, Text(payload, "id"));
                     break;
                 case "skills":
                     session.SpendSkillPoints(engine, Integer(payload, "member"), Skills(payload));

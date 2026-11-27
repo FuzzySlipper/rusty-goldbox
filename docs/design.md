@@ -853,3 +853,25 @@ excluding NPCs outside the party. A `use <member> <item-id>` command consumes
 one carried item with a declared `use` object and applies its operations to
 that active member; the Game's grouped inventory marks such items `usable` so
 the member overlay sends `use` instead of `equip`.
+
+## Ruleset-bound character stable and campaign import
+
+Player characters belong to their **baseline ruleset** rather than a single
+campaign module, so a hero rolled or levelled in one adventure can be exported
+to the player's persistent **character stable** (stored in Engine persistence
+under `tales-stable`, apart from campaign save slots) and imported into any
+other campaign built on the same ruleset.
+
+- A campaign definition may declare an optional `import` policy:
+  `allow_higher_level` (boolean; default `false`, scaling imported heroes cleanly
+  down to level 1 with XP reset and level-1 tracks/spells) and optional
+  `max_level` (integer cap when higher-level import is allowed).
+- `CharacterImport` (and `tales character import <file> --module <path>`)
+  follows a **fail-open, logged mapping** model: only structural JSON errors or
+  a mismatched baseline ruleset refuse import. Missing campaign items,
+  disallowed items under tweaked rules, tweaked attribute limits, excess
+  levels/spells/features, campaign-transient conditions/perception, and art
+  packs without a matching portrait ID are mapped to the closest legal state in
+  the target module set, with every adjustment recorded in the import log.
+- Strict `CharacterFile.Read` remains unchanged for campaign saves and exact
+  module-set checks once a character has entered a campaign.

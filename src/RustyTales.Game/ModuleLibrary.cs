@@ -6,7 +6,15 @@ namespace RustyTales.Game;
 
 /// <summary>A campaign module the product can start, found in a content bundle.</summary>
 /// <param name="Extensions">Extensions the player may add: installed ones built on the campaign's ruleset that it doesn't already require.</param>
-internal sealed record CampaignChoice(string Bundle, string Id, string Title, ModuleVersion Version, string Identity, IReadOnlyList<ExtensionChoice> Extensions);
+internal sealed record CampaignChoice(
+    string Bundle,
+    string Id,
+    string Title,
+    ModuleVersion Version,
+    string Identity,
+    IReadOnlyList<ExtensionChoice> Extensions,
+    string? Ruleset = null,
+    string? Provenance = null);
 
 /// <summary>A skin the player may pick, from an installed assets module.</summary>
 internal sealed record SkinChoice(string Bundle, string Id, string Name);
@@ -50,7 +58,10 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
                 .Where(entry => entry.Item2 is not null)
                 .Select(entry => (entry.source, entry.Item2!))
                 .ToList();
-            HashSet<string> rulesets = manifests.Where(entry => entry.Manifest.Kind == ModuleKind.Ruleset).Select(entry => entry.Manifest.Id).ToHashSet();
+            Dictionary<string, string> rulesets = manifests
+                .Where(entry => entry.Manifest.Kind == ModuleKind.Ruleset)
+                .GroupBy(entry => entry.Manifest.Id)
+                .ToDictionary(group => group.Key, group => group.First().Manifest.Title);
             foreach ((ModuleSource source, ModuleManifest manifest) in manifests)
             {
                 // A campaign the product ships and also has installed, with the
@@ -58,7 +69,8 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
                 if (manifest.Kind == ModuleKind.Campaign
                     && !campaigns.Any(campaign => campaign.Id == manifest.Id && campaign.Version == manifest.Version && campaign.Identity == source.Identity))
                 {
-                    List<string> ruleset = manifest.Requires.Select(requirement => requirement.Id).Where(rulesets.Contains).ToList();
+                    List<string> ruleset = manifest.Requires.Select(requirement => requirement.Id).Where(rulesets.ContainsKey).ToList();
+                    string? rulesetTitle = ruleset.Count > 0 ? rulesets[ruleset[0]] : null;
                     List<ExtensionChoice> extensions = manifests
                         .Select(entry => entry.Manifest)
                         .Where(extension => extension.Kind == ModuleKind.Extension
@@ -68,7 +80,7 @@ internal sealed class ModuleLibrary(Func<List<string>, List<ProductContentBundle
                         .Select(versions => versions.MaxBy(extension => extension.Version)!)
                         .Select(extension => new ExtensionChoice(extension.Id, extension.Title, extension.Version))
                         .ToList();
-                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version, source.Identity, extensions));
+                    campaigns.Add(new CampaignChoice(source.Location, manifest.Id, manifest.Title, manifest.Version, source.Identity, extensions, rulesetTitle, manifest.Provenance));
                 }
             }
         });

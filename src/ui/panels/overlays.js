@@ -16,17 +16,21 @@ export function createOverlay(send, ui) {
   const slot = element('input', { value: 'slot-1', size: '10', 'aria-label': 'Save slot' });
   const slider = (bus, label) => {
     const input = element('input', { type: 'range', min: '0', max: '1', step: '0.05', 'aria-label': `${label} volume` });
+    const shown = element('output', { class: 'gb-slider-value' }, '100%');
+    input.addEventListener('input', () => {
+      shown.textContent = `${Math.round(Number(input.value) * 100)}%`;
+    });
     input.addEventListener('change', () => send({ action: 'volume', bus, volume: Number(input.value) }));
-    return input;
+    return { input, shown };
   };
   const musicVolume = slider('music', 'Music');
   const soundVolume = slider('sound', 'Sound');
   const skinPick = element('select', { 'aria-label': 'Skin' });
   skinPick.addEventListener('change', () => send({ action: 'skin', skin: skinPick.value || null }));
   const uiScale = element('input', { type: 'range', min: '0.5', max: '2.5', step: '0.05', value: '1', 'aria-label': 'Interface scale' });
-  const uiScaleShown = element('output', { class: 'gb-muted' }, '1.00');
+  const uiScaleShown = element('output', { class: 'gb-slider-value' }, '1.00×');
   uiScale.addEventListener('input', () => {
-    uiScaleShown.textContent = Number(uiScale.value).toFixed(2);
+    uiScaleShown.textContent = `${Number(uiScale.value).toFixed(2)}×`;
     ui.scale(Number(uiScale.value));
   });
   uiScale.addEventListener('change', () => send({ action: 'ui-scale', scale: Number(uiScale.value) }));
@@ -34,20 +38,23 @@ export function createOverlay(send, ui) {
   // Layout sliders, one per part the projection says may be set, made once the parts arrive.
   // Dragging previews the proportions; letting go sends the whole layout, which the Game checks and keeps.
   const layoutSliders = new Map();
-  const layoutRows = element('div', { class: 'gb-columns' });
+  const layoutRows = element('div', { class: 'gb-slider-grid' });
   const layoutValues = () => Object.fromEntries([...layoutSliders].map(([id, { input }]) => [id, Number(input.value)]));
   const layoutReset = button('Reset to the skin\'s', () => send({ action: 'layout-config', layout: null }));
   const buildLayoutSliders = (parts) => {
     for (const part of parts) {
       const input = element('input', { type: 'range', min: String(part.min), max: String(part.max), step: String((part.max - part.min) / 100), 'aria-label': part.name });
-      const shown = element('output', { class: 'gb-muted' });
+      const shown = element('output', { class: 'gb-slider-value' });
       input.addEventListener('input', () => {
         shown.textContent = Number(input.value).toFixed(2);
         ui.preview({ ...lastLayout, ...layoutValues() });
       });
       input.addEventListener('change', () => send({ action: 'layout-config', layout: layoutValues() }));
       layoutSliders.set(part.id, { input, shown });
-      layoutRows.append(element('label', {}, part.name, input, shown));
+      layoutRows.append(element('label', { class: 'gb-slider-field' },
+        element('span', { class: 'gb-slider-label' }, part.name),
+        input,
+        shown));
     }
   };
   let lastLayout = {};
@@ -60,7 +67,7 @@ export function createOverlay(send, ui) {
 
     if (typeof view.uiScale === 'number' && document.activeElement !== uiScale) {
       uiScale.value = String(view.uiScale);
-      uiScaleShown.textContent = view.uiScale.toFixed(2);
+      uiScaleShown.textContent = `${view.uiScale.toFixed(2)}×`;
     }
 
     lastLayout = view.layout ?? lastLayout;
@@ -77,18 +84,22 @@ export function createOverlay(send, ui) {
       skinPick.value = view.skinPicked ?? '';
     }
 
-    for (const [input, value] of [[musicVolume, view.volumes?.music], [soundVolume, view.volumes?.sound]]) {
+    for (const [{ input, shown }, value] of [[musicVolume, view.volumes?.music], [soundVolume, view.volumes?.sound]]) {
       if (value !== undefined && document.activeElement !== input) {
         input.value = String(value);
+        shown.textContent = `${Math.round(Number(value) * 100)}%`;
       }
     }
   };
 
   // Built once: moving a control between containers would drop a drag or a focus in progress.
-  const settings = element('div', {},
+  const settings = element('div', { class: 'gb-settings' },
     element('h3', {}, 'Sound and look'),
-    row(element('label', {}, 'Music', musicVolume), element('label', {}, 'Sound', soundVolume), element('label', {}, 'Skin', skinPick)),
-    row(element('label', {}, 'Interface scale', uiScale, uiScaleShown)),
+    element('div', { class: 'gb-slider-grid' },
+      element('label', { class: 'gb-slider-field' }, element('span', { class: 'gb-slider-label' }, 'Music'), musicVolume.input, musicVolume.shown),
+      element('label', { class: 'gb-slider-field' }, element('span', { class: 'gb-slider-label' }, 'Sound'), soundVolume.input, soundVolume.shown),
+      element('label', { class: 'gb-slider-field' }, element('span', { class: 'gb-slider-label' }, 'Interface scale'), uiScale, uiScaleShown),
+      element('label', { class: 'gb-slider-field gb-slider-select' }, element('span', { class: 'gb-slider-label' }, 'Skin'), skinPick)),
     element('h3', {}, 'Layout'),
     layoutRows,
     row(layoutReset));
@@ -109,6 +120,8 @@ export function createOverlay(send, ui) {
   const saving = element('div', {},
     element('h3', {}, 'Save'),
     row(slot, button('Save', () => send({ action: 'save', slot: slot.value }))),
+    element('h3', {}, 'Character stable'),
+    row(button('Export party to stable', () => send({ action: 'stable-export-party' }))),
     element('h3', {}, 'Leave'),
     row(button('Quit to title', () => send({ action: 'quit' }))));
 
@@ -152,6 +165,7 @@ export function createOverlay(send, ui) {
         ...viewButton,
         // A level that needs choices is taken by typing them: level <n> --feature <id> (the refusal lists what's open).
         ...(who.levelReady ? [button('Level up', play(`level ${index + 1}`), { 'data-focus-key': `member:${index}:level` })] : []),
+        button('Export to stable', () => send({ action: 'stable-save', member: index }), { 'data-focus-key': `member:${index}:stable` }),
         ...former),
       element('div', { class: 'gb-columns' },
         element('div', {},

@@ -44,6 +44,7 @@ internal static partial class SessionProjection
                 ["max"] = part.Maximum,
             }).ToArray()),
             ["modules"] = Modules(session.Installer),
+            ["stable"] = StableProjection(session, imageUrl),
             // Hosted play: seats, who plays what and the leader, and which member this player is.
             ["table"] = session.Table?.ToJson(),
             ["you"] = session.Table is null ? null : session.LocalMember,
@@ -54,6 +55,8 @@ internal static partial class SessionProjection
                 ["id"] = campaign.Id,
                 ["title"] = campaign.Title,
                 ["version"] = campaign.Version.ToString(),
+                ["ruleset"] = campaign.Ruleset,
+                ["provenance"] = campaign.Provenance,
                 ["extensions"] = new JsonArray(campaign.Extensions.Select(extension => (JsonNode)new JsonObject
                 {
                     ["id"] = extension.Id,
@@ -73,11 +76,21 @@ internal static partial class SessionProjection
         {
             RuleSet rules = session.Set!.Rules!;
             JsonElement size = session.Campaign!.Json.GetProperty("party");
+            CharacterImportPolicy importPolicy = CharacterImportPolicy.FromCampaign(session.Campaign);
+            LoadedModule? rulesetModule = session.Set.LoadOrder.FirstOrDefault(loaded => loaded.Manifest.Kind == ModuleKind.Ruleset);
+            projection["campaignName"] = session.Campaign.Name;
+            projection["rulesetId"] = rulesetModule?.Manifest.Id;
+            projection["rulesetTitle"] = rulesetModule?.Manifest.Title;
+            projection["importPolicy"] = new JsonObject
+            {
+                ["allowHigherLevel"] = importPolicy.AllowHigherLevel,
+                ["maxLevel"] = importPolicy.MaxLevel,
+            };
             projection["partySize"] = new JsonObject { ["min"] = size.GetProperty("min").GetInt32(), ["max"] = size.GetProperty("max").GetInt32() };
-            projection["races"] = Choices(rules, DefinitionTypes.Race);
-            projection["classes"] = Choices(rules, DefinitionTypes.Class);
+            projection["races"] = RaceChoices(rules);
+            projection["classes"] = ClassChoices(rules);
             Creation(rules, projection);
-            projection["items"] = Choices(rules, DefinitionTypes.Item);
+            projection["items"] = ItemChoices(rules);
             projection["portraits"] = new JsonArray(rules.OfType(DefinitionTypes.Asset)
                 .Where(asset => asset.Json.TryGetProperty("tags", out JsonElement tags) && tags.EnumerateArray().Any(tag => tag.GetString() == "portrait"))
                 .Select(asset => (JsonNode)new JsonObject { ["id"] = asset.QualifiedId, ["name"] = asset.Id, ["picture"] = Picture(rules, asset, imageUrl) }).ToArray());
@@ -438,6 +451,43 @@ internal static partial class SessionProjection
     [System.Text.RegularExpressions.GeneratedRegex(@"^(.+)-(\d+\.\d+\.\d+)\.rpak$")]
     private static partial System.Text.RegularExpressions.Regex InstalledName();
 
+    private static JsonArray StableProjection(GameSession session, Func<Definition, string?> imageUrl)
+    {
+        ModuleStamp? activeRuleset = session.Set is ModuleSet set ? Character.RulesetStampOf(set) : null;
+        IEnumerable<StableEntry> entries = session.Screen == Screen.Party && activeRuleset is not null
+            ? session.Stable.Where(entry => CharacterRoster.IsCompatibleWith(entry, activeRuleset))
+            : session.Stable;
+        RuleSet? rules = session.Set?.Rules;
+        return new JsonArray(entries.Select(entry =>
+        {
+            JsonObject? portraitPicture = null;
+            if (rules is not null && !string.IsNullOrWhiteSpace(entry.PortraitId))
+            {
+                Definition? asset = rules.Find(DefinitionTypes.Asset, entry.PortraitId, out _)
+                    ?? rules.OfType(DefinitionTypes.Asset).FirstOrDefault(candidate => candidate.Id == entry.PortraitId.Split(':')[^1]);
+                if (asset is not null && CharacterRules.PortraitProblem(asset) is null)
+                {
+                    portraitPicture = Picture(rules, asset, imageUrl);
+                }
+            }
+
+            return (JsonNode)new JsonObject
+            {
+                ["id"] = entry.Id,
+                ["rulesetId"] = entry.RulesetId,
+                ["rulesetVersion"] = entry.RulesetVersion.ToString(),
+                ["rulesetTitle"] = entry.RulesetTitle,
+                ["name"] = entry.Name,
+                ["race"] = entry.Race,
+                ["classText"] = entry.ClassText,
+                ["level"] = entry.Level,
+                ["originCampaign"] = entry.OriginCampaign,
+                ["portraitPicture"] = portraitPicture,
+                ["json"] = entry.Data.ToJsonString(),
+            };
+        }).ToArray());
+    }
+
     private static JsonArray Strings(IEnumerable<string> lines) => new(lines.Select(line => (JsonNode)line).ToArray());
 
     private static JsonArray Offers(IReadOnlyList<ShopOffer> offers)
@@ -467,13 +517,84 @@ internal static partial class SessionProjection
         return result;
     }
 
-    private static JsonArray Choices(RuleSet rules, DefinitionType type)
+    private static JsonArray RaceChoices(RuleSet rules)
     {
-        return new JsonArray(rules.OfType(type).Select(definition => (JsonNode)new JsonObject
+        return new JsonArray(rules.OfType(DefinitionTypes.Race).Select(race =>
         {
-            ["id"] = definition.QualifiedId,
-            ["name"] = definition.Name,
-            ["boosts"] = Boosts(definition),
+            JsonObject entry = new()
+            {
+                ["id"] = race.QualifiedId,
+                ["name"] = race.Name,
+                ["boosts"] = Boosts(race),
+            };
+            if (race.Json.TryGetProperty("classes", out JsonElement allowed))
+            {
+                List<JsonNode> resolved = [];
+                int index = 0;
+                foreach (JsonElement _ in allowed.EnumerateArray())
+                {
+                    resolved.Add(rules.Reference(race, $"$.classes[{index}]").QualifiedId);
+                    index++;
+                }
+
+                entry["classes"] = new JsonArray(resolved.ToArray());
+            }
+
+            if (race.Json.TryGetProperty("ability_adjustments", out JsonElement adjustments))
+            {
+                entry["abilityAdjustments"] = JsonNode.Parse(adjustments.GetRawText());
+            }
+
+            if (race.Json.TryGetProperty("ability_limits", out JsonElement limits))
+            {
+                entry["abilityLimits"] = JsonNode.Parse(limits.GetRawText());
+            }
+
+            return (JsonNode)entry;
+        }).ToArray());
+    }
+
+    private static JsonArray ClassChoices(RuleSet rules)
+    {
+        return new JsonArray(rules.OfType(DefinitionTypes.Class).Select(characterClass =>
+        {
+            JsonObject entry = new()
+            {
+                ["id"] = characterClass.QualifiedId,
+                ["name"] = characterClass.Name,
+                ["boosts"] = Boosts(characterClass),
+                ["grants"] = Grants(CharacterRules.FirstLevelChoices(rules, characterClass)),
+            };
+            if (characterClass.Json.TryGetProperty("requirements", out JsonElement requirements))
+            {
+                entry["requirements"] = JsonNode.Parse(requirements.GetRawText());
+            }
+
+            if (characterClass.Json.TryGetProperty("prime_requisites", out JsonElement primes))
+            {
+                entry["primeRequisites"] = JsonNode.Parse(primes.GetRawText());
+            }
+
+            return (JsonNode)entry;
+        }).ToArray());
+    }
+
+    private static JsonArray ItemChoices(RuleSet rules)
+    {
+        return new JsonArray(rules.OfType(DefinitionTypes.Item).Select(item =>
+        {
+            JsonObject entry = new()
+            {
+                ["id"] = item.QualifiedId,
+                ["name"] = item.Name,
+                ["boosts"] = Boosts(item),
+            };
+            if (item.Json.TryGetProperty("kind", out JsonElement kind) && kind.GetString() is string kindName)
+            {
+                entry["kind"] = kindName;
+            }
+
+            return (JsonNode)entry;
         }).ToArray());
     }
 
@@ -491,37 +612,56 @@ internal static partial class SessionProjection
 
         projection["creation"] = CreationChoice(rules, creation);
         projection["creations"] = new JsonArray(rules.OfType(DefinitionTypes.CharacterCreation).Select(definition => (JsonNode)CreationChoice(rules, definition)).ToArray());
-        if (creation.Json.TryGetProperty("lifepath", out _)
-            && rules.Reference(creation, "$.lifepath") is Definition lifepath)
+        if (LifepathSummary(rules, creation) is JsonObject lifepath)
         {
-            projection["lifepath"] = new JsonObject
-            {
-                ["id"] = lifepath.QualifiedId,
-                ["name"] = lifepath.Name,
-                ["startAge"] = lifepath.Json.GetProperty("start_age").GetInt32(),
-                ["maxTerms"] = lifepath.Json.GetProperty("max_terms").GetInt32(),
-                ["careers"] = new JsonArray(CharacterRules.LifepathCareers(lifepath).Select(career => (JsonNode)new JsonObject
-                {
-                    ["id"] = career.Id,
-                    ["name"] = career.Name,
-                    ["skillTables"] = new JsonArray(career.SkillTables.Select(table => (JsonNode)table).ToArray()),
-                    ["benefitKinds"] = new JsonArray(career.BenefitKinds.Select(kind => (JsonNode)kind).ToArray()),
-                }).ToArray()),
-            };
-        }
-        foreach (JsonNode? entry in projection["classes"]!.AsArray())
-        {
-            Definition characterClass = rules.Find(DefinitionTypes.Class, entry!["id"]!.GetValue<string>(), out _)!;
-            entry["grants"] = Grants(CharacterRules.FirstLevelChoices(rules, characterClass));
+            projection["lifepath"] = lifepath;
         }
 
-        projection["features"] = new JsonArray(rules.OfType(DefinitionTypes.Feature).Select(feature => (JsonNode)new JsonObject
+        projection["features"] = new JsonArray(rules.OfType(DefinitionTypes.Feature).Select(feature =>
         {
-            ["id"] = feature.QualifiedId,
-            ["name"] = feature.Name,
-            ["kind"] = feature.Json.GetProperty("kind").GetString(),
-            ["boosts"] = Boosts(feature),
+            JsonObject entry = new()
+            {
+                ["id"] = feature.QualifiedId,
+                ["name"] = feature.Name,
+                ["kind"] = feature.Json.GetProperty("kind").GetString(),
+                ["boosts"] = Boosts(feature),
+            };
+            if (feature.Json.TryGetProperty("description", out JsonElement description) && description.GetString() is string text)
+            {
+                entry["description"] = text;
+            }
+
+            if (feature.Json.TryGetProperty("requirements", out JsonElement requirements) && requirements.GetString() is string rule)
+            {
+                entry["requirements"] = rule;
+            }
+
+            return (JsonNode)entry;
         }).ToArray());
+    }
+
+    private static JsonObject? LifepathSummary(RuleSet rules, Definition creation)
+    {
+        if (!creation.Json.TryGetProperty("lifepath", out _)
+            || rules.Reference(creation, "$.lifepath") is not Definition lifepath)
+        {
+            return null;
+        }
+
+        return new JsonObject
+        {
+            ["id"] = lifepath.QualifiedId,
+            ["name"] = lifepath.Name,
+            ["startAge"] = lifepath.Json.GetProperty("start_age").GetInt32(),
+            ["maxTerms"] = lifepath.Json.GetProperty("max_terms").GetInt32(),
+            ["careers"] = new JsonArray(CharacterRules.LifepathCareers(lifepath).Select(career => (JsonNode)new JsonObject
+            {
+                ["id"] = career.Id,
+                ["name"] = career.Name,
+                ["skillTables"] = new JsonArray(career.SkillTables.Select(table => (JsonNode)table).ToArray()),
+                ["benefitKinds"] = new JsonArray(career.BenefitKinds.Select(kind => (JsonNode)kind).ToArray()),
+            }).ToArray()),
+        };
     }
 
     private static JsonArray Grants(List<Grant> grants)
@@ -588,9 +728,29 @@ internal static partial class SessionProjection
             choice["base"] = baseScore.GetDecimal();
         }
 
+        if (creation.Json.TryGetProperty("boost", out JsonElement boostAmount))
+        {
+            choice["boost"] = boostAmount.GetDecimal();
+        }
+
         if (creation.Json.TryGetProperty("budget", out JsonElement budget))
         {
             choice["budget"] = budget.GetDecimal();
+        }
+
+        if (creation.Json.TryGetProperty("attribute_roll", out JsonElement attributeRoll) && attributeRoll.GetString() is string rollFormula)
+        {
+            choice["attributeRoll"] = rollFormula;
+        }
+
+        if (ownRolls.ValueKind == JsonValueKind.Object)
+        {
+            choice["attributeRolls"] = JsonNode.Parse(ownRolls.GetRawText());
+        }
+
+        if (LifepathSummary(rules, creation) is JsonObject creationLifepath)
+        {
+            choice["lifepath"] = creationLifepath;
         }
 
         if (creation.Json.TryGetProperty("costs", out _)
@@ -767,6 +927,12 @@ internal static partial class SessionProjection
             }).ToArray()),
             ["features"] = Strings(character.Features.Select(feature => feature.Name)),
             ["equipment"] = new JsonArray(character.Equipment.Select(item => (JsonNode)new JsonObject { ["id"] = item.QualifiedId, ["name"] = item.Name }).ToArray()),
+            ["equippableItems"] = runner is null
+                ? new JsonArray(rules.OfType(DefinitionTypes.Item)
+                    .Where(item => CharacterRules.EquipmentProblem(rules, character, item) is null)
+                    .Select(item => (JsonNode)item.QualifiedId)
+                    .ToArray())
+                : null,
             ["spells"] = new JsonArray(character.Spells.Select(spell => (JsonNode)new JsonObject { ["id"] = spell.QualifiedId, ["name"] = spell.Name }).ToArray()),
             ["memorisable"] = Spells(character.Spells.Where(spell => CharacterRules.NeedsPreparing(rules, character, spell))),
             ["memorised"] = Spells(CharacterRules.MemorisedPlan(rules, character)),

@@ -49,6 +49,7 @@ public sealed class RustyTalesProduct : IEngineProduct, IDebugCommandModuleSourc
     {
         _session.Refresh();
         PlayerSettings.Load(_engine, _session);
+        CharacterStable.Load(_engine, _session);
         Publish();
     }
 

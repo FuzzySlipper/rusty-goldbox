@@ -610,7 +610,7 @@ public static partial class CharacterRules
     }
 
     /// <summary>What a level boost adds to a score, from the advancement's first level boost table.</summary>
-    private static decimal? BoostAmount(RuleSet rules, decimal score)
+    internal static decimal? BoostAmount(RuleSet rules, decimal score)
     {
         if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants) || grants.GetArrayLength() == 0)
         {
@@ -622,7 +622,7 @@ public static partial class CharacterRules
     }
 
     /// <summary>How many boosts the advancement grants at the character's latest level.</summary>
-    private static int BoostsGranted(RuleSet rules, Character character, Evaluator evaluator)
+    internal static int BoostsGranted(RuleSet rules, Character character, Evaluator evaluator)
     {
         if (rules.Advancement is not Definition advancement || !advancement.Json.TryGetProperty("level_boosts", out JsonElement grants))
         {
@@ -1699,7 +1699,7 @@ public static partial class CharacterRules
     }
 
     /// <summary>The choices every new character makes, from the character-creation definition.</summary>
-    private static List<Grant> CreationGrants(Definition creation, bool includeCareer = true)
+    internal static List<Grant> CreationGrants(Definition creation, bool includeCareer = true)
     {
         return Grants(creation.Json, "features", $"creation ({creation.QualifiedId})")
             .Where(grant => includeCareer || !grant.Kinds.Contains("career"))
@@ -1926,7 +1926,7 @@ public static partial class CharacterRules
     /// The choices the character's latest level grants: the advancement's
     /// grants whose "when" holds now, then the class level's.
     /// </summary>
-    private static List<Grant> LevelGrants(RuleSet rules, Character character, Evaluator evaluator)
+    internal static List<Grant> LevelGrants(RuleSet rules, Character character, Evaluator evaluator)
     {
         List<Grant> grants = [];
         if (rules.Advancement is Definition advancement && advancement.Json.TryGetProperty("grants", out JsonElement advancementGrants))
@@ -2076,7 +2076,7 @@ public static partial class CharacterRules
     }
 
     /// <summary>Why the character can't choose <paramref name="feature"/> now: it has it and it isn't repeatable, or it misses the requirements.</summary>
-    private static ModuleDiagnostic? Problem(RuleSet rules, Character character, Definition feature, Evaluator evaluator)
+    internal static ModuleDiagnostic? Problem(RuleSet rules, Character character, Definition feature, Evaluator evaluator)
     {
         bool repeatable = feature.Json.TryGetProperty("repeatable", out JsonElement repeat) && repeat.GetBoolean();
         if (!repeatable && character.Features.Contains(feature))
@@ -2130,7 +2130,7 @@ public static partial class CharacterRules
     }
 
     /// <summary>Gives every track the character lacks its starting value (normally its maximum).</summary>
-    private static void StartTracks(RuleSet rules, Character character, Evaluator evaluator)
+    internal static void StartTracks(RuleSet rules, Character character, Evaluator evaluator)
     {
         Creature creature = character.ToCreature();
         foreach (Definition track in rules.Tracks.Values)

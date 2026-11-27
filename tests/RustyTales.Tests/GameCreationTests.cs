@@ -172,6 +172,72 @@ public sealed class GameCreationTests
         });
     }
 
+    [Fact]
+    public void TitleAndPartyProjectionsExposeRulesetHintsForCreationUi()
+    {
+        using TempModules classicScratch = new();
+        using TempModules threeActionScratch = new();
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            GameSession classic = OpenSession(classicScratch, engine,
+                Path.Combine(Rules.RepositoryRoot, "modules", "classic"),
+                Path.Combine(Rules.RepositoryRoot, "modules", "sample-crypt"));
+            JsonObject classicProjection = SessionProjection.Build(classic);
+
+            JsonObject campaign = classicProjection["campaigns"]![0]!.AsObject();
+            Assert.False(string.IsNullOrWhiteSpace(campaign["ruleset"]?.GetValue<string>()));
+            Assert.False(string.IsNullOrWhiteSpace(campaign["provenance"]?.GetValue<string>()));
+            Assert.Equal("The Sample Crypt", classicProjection["campaignName"]!.GetValue<string>());
+
+            JsonObject dwarf = classicProjection["races"]!.AsArray()
+                .Select(node => node!.AsObject())
+                .Single(race => race["id"]!.GetValue<string>() == "classic:dwarf");
+            Assert.Equal(1, dwarf["abilityAdjustments"]!["con"]!.GetValue<int>());
+            Assert.Contains("classic:fighter", dwarf["classes"]!.AsArray().Select(node => node!.GetValue<string>()));
+            Assert.DoesNotContain("classic:magic_user", dwarf["classes"]!.AsArray().Select(node => node!.GetValue<string>()));
+
+            JsonObject fighter = classicProjection["classes"]!.AsArray()
+                .Select(node => node!.AsObject())
+                .Single(cls => cls["id"]!.GetValue<string>() == "classic:fighter");
+            Assert.Equal(9, fighter["requirements"]!["str"]!.GetValue<int>());
+            Assert.Contains("str", fighter["primeRequisites"]!.AsArray().Select(node => node!.GetValue<string>()));
+            Assert.Equal("3d6", classicProjection["creation"]!["attributeRoll"]!.GetValue<string>());
+
+            GameSession threeAction = OpenSession(threeActionScratch, engine,
+                Path.Combine(Rules.RepositoryRoot, "modules", "three-action"),
+                ThreeActionCampaign(threeActionScratch));
+            JsonObject threeActionProjection = SessionProjection.Build(threeAction);
+            Assert.Equal(2, threeActionProjection["creation"]!["boost"]!.GetValue<decimal>());
+        });
+    }
+
+    private static string ThreeActionCampaign(TempModules scratch)
+    {
+        string campaign = scratch.Module("three-action-creation-trial", "campaign",
+            requires: $"{TempModules.Require("three-action", "^0.1.0")}, {TempModules.Require("placeholder-art", "^0.1.0")}",
+            directory: "three-action-creation-trial");
+        scratch.Write("three-action-creation-trial/campaign.json", """
+            {
+              "type": "campaign",
+              "id": "trial",
+              "name": "Three-action creation trial",
+              "start": { "area": "hall", "entry": "door" },
+              "party": { "min": 1, "max": 4 }
+            }
+            """);
+        scratch.Write("three-action-creation-trial/areas/hall.json", """
+            {
+              "type": "area",
+              "id": "hall",
+              "name": "Hall",
+              "map": ["+--+", "|  |", "+--+"],
+              "entries": { "door": { "at": [0, 0], "facing": "east" } }
+            }
+            """);
+        return campaign;
+    }
+
     private static JsonObject Creation(JsonObject projection, string id)
     {
         return projection["creations"]!.AsArray()

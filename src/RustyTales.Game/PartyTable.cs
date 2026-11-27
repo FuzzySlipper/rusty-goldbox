@@ -215,7 +215,7 @@ internal sealed class PartyTable
                 return leader || host ? null : "Only the leader can pass the lead.";
             case "decide":
                 return leader ? null : "Only the leader can settle the vote early.";
-            case "roll":
+            case "roll" or "stable-import" or "stable-import-json":
                 return session.Screen == Screen.Party ? null : "Characters are made before the adventure begins.";
             case "drop" or "equip" or "skills" or "spells" or "memorise":
                 return Owns(member, Index(action, "member")) || host ? null : "That character isn't yours.";

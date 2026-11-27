@@ -67,6 +67,13 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>The party being made, before play starts.</summary>
     public List<Character> Party { get; } = [];
 
+    /// <summary>The player's ruleset-bound character stable, shared across campaigns.</summary>
+    public List<StableEntry> Stable { get; } = [];
+
+    private readonly Dictionary<Character, string> _stableLinks = new(ReferenceEqualityComparer.Instance);
+
+    public string? StableIdOf(Character character) => _stableLinks.TryGetValue(character, out string? id) ? id : null;
+
     /// <summary>True when the open campaign declares a pre-authored <c>starting_party</c>.</summary>
     public bool HasFixedStartingParty => Campaign is Definition campaign && campaign.Json.TryGetProperty("starting_party", out _);
 
@@ -476,8 +483,254 @@ internal sealed class GameSession(ModuleLibrary library)
 
         character.Portrait = chosen;
         Party.Add(character);
+        UpsertStable(engine, character, announce: false);
         string kind = string.Join(" ", new[] { character.Race?.Name, character.Class?.Name }.Where(part => part is not null));
         Notes.Add($"Rolled {character.Name}{(kind.Length > 0 ? $", a {kind}" : "")} (seed {Seed}, roll {roll}).");
+    }
+
+    /// <summary>Imports a character from the player's stable into the open campaign's party using best-effort mapping.</summary>
+    public void ImportFromStable(string stableId)
+    {
+        Notes.Clear();
+        if (Screen != Screen.Party || Set is null || Campaign is null)
+        {
+            Notes.Add("Open a campaign before importing a character from your stable.");
+            return;
+        }
+
+        int maxParty = Campaign.Json.GetProperty("party").GetProperty("max").GetInt32();
+        if (Party.Count >= maxParty)
+        {
+            Notes.Add($"{Campaign.Name} allows at most {maxParty} party members.");
+            return;
+        }
+
+        if (Stable.FirstOrDefault(entry => entry.Id == stableId) is not StableEntry entry)
+        {
+            Notes.Add($"Character '{stableId}' was not found in the character stable.");
+            return;
+        }
+
+        using JsonDocument doc = JsonDocument.Parse(entry.Data.ToJsonString());
+        CharacterImportResult result = CharacterImport.Import(doc.RootElement, entry.Name, Set, Campaign, knownRuleset: entry.RulesetStamp);
+        if (!result.Succeeded)
+        {
+            Notes.AddRange(result.Problems.Select(problem => problem.Message));
+            return;
+        }
+
+        Character imported = result.Character!;
+        Party.Add(imported);
+        _stableLinks[imported] = entry.Id;
+        string kind = string.Join(" ", new[] { imported.Race?.Name, imported.Class is not null ? $"{imported.Class.Name} {imported.Level}" : $"Level {imported.Level}" }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        Notes.Add($"Imported {imported.Name} ({kind}) from the character stable.");
+        foreach (string line in result.Log)
+        {
+            Notes.Add($"Import log: {line}");
+        }
+    }
+
+    /// <summary>Imports a character from raw JSON text into the active party (on Party screen) or directly into the stable (on Title screen).</summary>
+    public void ImportCharacterJson(IEngineContext engine, string rawJson)
+    {
+        Notes.Clear();
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            Notes.Add("Paste character JSON to import.");
+            return;
+        }
+
+        JsonDocument doc;
+        try
+        {
+            doc = JsonDocument.Parse(rawJson);
+        }
+        catch (JsonException exception)
+        {
+            Notes.Add($"Character JSON is invalid: {exception.Message}");
+            return;
+        }
+
+        using (doc)
+        {
+            if (Screen == Screen.Party && Set is not null && Campaign is not null)
+            {
+                int maxParty = Campaign.Json.GetProperty("party").GetProperty("max").GetInt32();
+                if (Party.Count >= maxParty)
+                {
+                    Notes.Add($"{Campaign.Name} allows at most {maxParty} party members.");
+                    return;
+                }
+
+                CharacterImportResult result = CharacterImport.Import(doc.RootElement, "imported-character.json", Set, Campaign);
+                if (!result.Succeeded)
+                {
+                    Notes.AddRange(result.Problems.Select(problem => problem.Message));
+                    return;
+                }
+
+                Character imported = result.Character!;
+                Party.Add(imported);
+                UpsertStable(engine, imported, announce: false);
+                Notes.Add($"Imported {imported.Name} (Level {imported.Level}) from JSON and added to your stable.");
+                foreach (string line in result.Log)
+                {
+                    Notes.Add($"Import log: {line}");
+                }
+
+                return;
+            }
+
+            // Title screen: store raw ruleset-bound character JSON into the stable if it names a ruleset stamp.
+            JsonElement root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("name", out JsonElement nameEl) || nameEl.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(nameEl.GetString())
+                || !root.TryGetProperty("modules", out JsonElement modsEl) || modsEl.ValueKind != JsonValueKind.Array || modsEl.GetArrayLength() == 0)
+            {
+                Notes.Add("Character JSON must be an object with \"name\" and \"modules\".");
+                return;
+            }
+
+            JsonElement firstMod = modsEl[0];
+            if (firstMod.ValueKind != JsonValueKind.Object
+                || !firstMod.TryGetProperty("id", out JsonElement modIdEl) || modIdEl.ValueKind != JsonValueKind.String
+                || !firstMod.TryGetProperty("version", out JsonElement modVerEl) || modVerEl.ValueKind != JsonValueKind.String
+                || !ModuleVersion.TryParse(modVerEl.GetString()!, out ModuleVersion modVersion))
+            {
+                Notes.Add("Character JSON \"modules[0]\" must name the baseline ruleset id and version.");
+                return;
+            }
+
+            int level = root.TryGetProperty("levels", out JsonElement levelsEl) && levelsEl.ValueKind == JsonValueKind.Array
+                ? Math.Max(1, levelsEl.GetArrayLength())
+                : 1;
+            string name = nameEl.GetString()!;
+            string rulesetId = modIdEl.GetString()!;
+            string? raceName = root.TryGetProperty("race", out JsonElement rEl) && rEl.ValueKind == JsonValueKind.String ? rEl.GetString()!.Split(':')[^1] : null;
+            string? className = root.TryGetProperty("levels", out JsonElement lEl) && lEl.ValueKind == JsonValueKind.Array && lEl.GetArrayLength() > 0 && lEl[0].TryGetProperty("class", out JsonElement cEl) && cEl.ValueKind == JsonValueKind.String
+                ? $"{cEl.GetString()!.Split(':')[^1]} {level}"
+                : $"Level {level}";
+            string id = $"{new string(name.ToLowerInvariant().Select(ch => char.IsLetterOrDigit(ch) ? ch : '-').ToArray()).Trim('-')}-{Stable.Count + 1}";
+            while (Stable.Any(existing => existing.Id == id))
+            {
+                id += "x";
+            }
+
+            StableEntry entry = new(
+                id,
+                rulesetId,
+                modVersion,
+                rulesetId,
+                name,
+                raceName,
+                className,
+                level,
+                root.TryGetProperty("portrait", out JsonElement pEl) && pEl.ValueKind == JsonValueKind.String ? pEl.GetString() : null,
+                "Imported JSON",
+                DateTimeOffset.UtcNow,
+                System.Text.Json.Nodes.JsonNode.Parse(root.GetRawText())!.AsObject());
+            Stable.Insert(0, entry);
+            CharacterStable.Save(engine, this);
+            Notes.Add($"Added {entry.Name} ({entry.RulesetId} {entry.RulesetVersion}) to the character stable.");
+        }
+    }
+
+    /// <summary>Exports one party member (during party creation or play) back to the player's persistent stable.</summary>
+    public void SaveMemberToStable(IEngineContext engine, int member)
+    {
+        Notes.Clear();
+        List<Character>? active = ActivePartyList();
+        if (Set is null || active is null || member < 0 || member >= active.Count)
+        {
+            Notes.Add("Choose an active party member to save to the character stable.");
+            return;
+        }
+
+        UpsertStable(engine, active[member], announce: true);
+    }
+
+    /// <summary>Exports every member of the active party back to the player's persistent character stable.</summary>
+    public void ExportPartyToStable(IEngineContext engine)
+    {
+        Notes.Clear();
+        List<Character>? active = ActivePartyList();
+        if (Set is null || active is null || active.Count == 0)
+        {
+            Notes.Add("There are no active party members to export.");
+            return;
+        }
+
+        int saved = 0;
+        foreach (Character member in active)
+        {
+            if (UpsertStableEntryOnly(member) is not null)
+            {
+                saved++;
+            }
+        }
+
+        CharacterStable.Save(engine, this);
+        Notes.Add($"Exported {saved} character{(saved == 1 ? "" : "s")} to the character stable.");
+    }
+
+    /// <summary>Removes one entry from the player's character stable.</summary>
+    public void RemoveFromStable(IEngineContext engine, string stableId)
+    {
+        Notes.Clear();
+        int removed = Stable.RemoveAll(entry => entry.Id == stableId);
+        if (removed == 0)
+        {
+            Notes.Add($"Character '{stableId}' was not found in the stable.");
+            return;
+        }
+
+        CharacterStable.Save(engine, this);
+        Notes.Add("Removed character from the stable.");
+    }
+
+    private List<Character>? ActivePartyList() => Screen switch
+    {
+        Screen.Party => Party,
+        Screen.Play or Screen.Combat => Runner?.State.Party,
+        _ => null,
+    };
+
+    private void UpsertStable(IEngineContext engine, Character character, bool announce)
+    {
+        StableEntry? entry = UpsertStableEntryOnly(character);
+        if (entry is null)
+        {
+            return;
+        }
+
+        CharacterStable.Save(engine, this);
+        if (announce)
+        {
+            Notes.Add($"Saved {entry.Name} ({entry.ClassText}) to the character stable.");
+        }
+    }
+
+    private StableEntry? UpsertStableEntryOnly(Character character)
+    {
+        if (Set is null || Character.RulesetStampOf(Set) is null)
+        {
+            return null;
+        }
+
+        string? existingId = StableIdOf(character);
+        StableEntry entry = CharacterRoster.CreateEntry(Set, character, existingId, Campaign?.Name, Stable);
+        int existingIndex = Stable.FindIndex(item => item.Id == entry.Id);
+        if (existingIndex >= 0)
+        {
+            Stable[existingIndex] = entry;
+        }
+        else
+        {
+            Stable.Insert(0, entry);
+        }
+
+        _stableLinks[character] = entry.Id;
+        return entry;
     }
 
     public void Drop(int member)

@@ -11,5 +11,8 @@
     "max": 12
   },
   "intro": "intro",
-  "skin": "placeholder-art:stone"
+  "skin": "placeholder-art:stone",
+  "import": {
+    "allow_higher_level": true
+  }
 }

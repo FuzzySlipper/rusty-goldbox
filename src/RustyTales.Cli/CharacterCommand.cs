@@ -21,6 +21,7 @@ internal static class CharacterCommand
         + "       tales character improve <file> --module <path> [--seed <n>]\n"
         + "       tales character former <file> --module <path> on|off\n"
         + "       tales character npc <file> --module <path> --id <id> --out <npc.json>\n"
+        + "       tales character import <file> --module <path> [--allow-higher-level] [--max-level <n>] [--out <file>]\n"
         + "       tales character show <file> --module <path>\n"
         + "Each also takes [--modules <dir>]... and [--extension <id>,...] (extension modules added to the set).";
 
@@ -42,8 +43,9 @@ internal static class CharacterCommand
             "show" => Show(args.Skip(1), output, workingDirectory),
             "spells" => Spells(args.Skip(1), output, workingDirectory),
             "npc" => Npc(args.Skip(1), output, workingDirectory),
+            "import" => Import(args.Skip(1), output, workingDirectory),
             "former" => Former(args.Skip(1), output, workingDirectory),
-            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, skills, level, milestone, mark, improve, spells, former, npc and show.\n{Usage}"),
+            _ => output.UsageError($"Unknown command 'character {args[0]}'. Character commands are new, skills, level, milestone, mark, improve, spells, former, npc, import and show.\n{Usage}"),
         };
     }
 
@@ -536,6 +538,84 @@ internal static class CharacterCommand
         }
 
         output.CharacterSheet(set.Rules!, character!, null, null, [], []);
+        return TalesCli.Ok;
+    }
+
+    private static int Import(IEnumerable<string> args, Output output, string workingDirectory)
+    {
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension", "--max-level", "--out"], ["--allow-higher-level"]);
+        if (error is null && (parsed.Positionals.Count != 1 || parsed.Single("--module") is null))
+        {
+            error = Usage;
+        }
+
+        int? maxLevel = null;
+        if (error is null && parsed.Single("--max-level") is string maxText)
+        {
+            if (!int.TryParse(maxText, NumberStyles.None, CultureInfo.InvariantCulture, out int parsedMax) || parsedMax < 1)
+            {
+                error = $"--max-level must be a positive whole number, but was '{maxText}'.";
+            }
+            else
+            {
+                maxLevel = parsedMax;
+            }
+        }
+
+        if (error is not null)
+        {
+            return output.UsageError(error);
+        }
+
+        ModuleSet set = Load(parsed, workingDirectory);
+        if (set.Rules is null || !set.IsValid)
+        {
+            return output.ModuleErrors(set);
+        }
+
+        Definition? campaign = set.Rules.OfType(DefinitionTypes.Campaign).FirstOrDefault(definition => definition.Module == set.Root?.Id);
+        CharacterImportPolicy policy = parsed.Has("--allow-higher-level") || maxLevel is not null
+            ? new CharacterImportPolicy(parsed.Has("--allow-higher-level") || maxLevel is not null, maxLevel)
+            : CharacterImportPolicy.FromCampaign(campaign);
+
+        string sourcePath = Path.GetFullPath(parsed.Positionals[0], workingDirectory);
+        CharacterImportResult result = CharacterImport.ImportFile(sourcePath, set, campaign, policy);
+        if (!result.Succeeded)
+        {
+            return output.Problems(result.Problems.ToList());
+        }
+
+        string? outPath = parsed.Single("--out") is string outFile ? Path.GetFullPath(outFile, workingDirectory) : null;
+        if (outPath is not null && Save(outPath, result.Character!, output) is int failed)
+        {
+            return failed;
+        }
+
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                ok = true,
+                name = result.Character!.Name,
+                level = result.Character.Level,
+                class_text = result.Character.ClassText,
+                path = outPath,
+                import_log = result.Log,
+            });
+        }
+        else
+        {
+            output.CharacterSheet(set.Rules, result.Character!, outPath, null, [], []);
+            if (result.Log.Count > 0)
+            {
+                output.Line("Import log:");
+                foreach (string entry in result.Log)
+                {
+                    output.Line($"  - {entry}");
+                }
+            }
+        }
+
         return TalesCli.Ok;
     }
 
