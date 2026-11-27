@@ -23,6 +23,12 @@
     eventKind: "all",
     sceneGroup: "all",
     areaSearch: "",
+    assetCategory: "all",
+    assetReviewFilter: "all",
+    assetSearch: "",
+    assetUnusedOnly: false,
+    selectedGalleryKey: null, // "asset:<id>" or "skin:<id>"
+    spriteAnimPlayers: [],
   };
 
   const PIN_META = {
@@ -219,6 +225,7 @@
     if (tab === "overview") renderOverview();
     if (tab === "maps") renderMaps();
     if (tab === "events") renderEvents();
+    if (tab === "assets") renderAssetsGallery();
     if (tab === "reviews") renderReviews();
     if (tab === "issues") renderIssues();
   }
@@ -248,6 +255,7 @@
     renderOverview();
     renderMaps();
     renderEvents();
+    renderAssetsGallery();
     renderReviews();
     renderIssues();
   }
@@ -265,6 +273,7 @@
 
     document.getElementById("tab-maps-count").textContent = String(g.counts.areas);
     document.getElementById("tab-events-count").textContent = String(g.counts.events);
+    document.getElementById("tab-assets-count").textContent = String((g.counts.assets || 0) + (g.counts.skins || 0));
 
     const revBadge = document.getElementById("tab-reviews-count");
     const rc = state.reviewCounts;
@@ -1107,7 +1116,395 @@
     }
   }
 
-  // ==================== TAB 4: REVIEW QUEUE ====================
+  // ==================== TAB 4: ART & ASSETS GALLERY ====================
+  const imageCache = new Map();
+  let animLoopId = null;
+
+  function loadImageCached(url) {
+    if (!url) return Promise.reject(new Error("no url"));
+    if (imageCache.has(url)) return imageCache.get(url);
+    const p = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("image load failed"));
+      img.src = url;
+    });
+    imageCache.set(url, p);
+    return p;
+  }
+
+  function ensureAnimLoop() {
+    if (animLoopId !== null) return;
+    const tick = (now) => {
+      if (state.spriteAnimPlayers.length === 0) {
+        animLoopId = null;
+        return;
+      }
+      for (const player of state.spriteAnimPlayers) {
+        if (!player.playing || !player.img || !player.frames.length) continue;
+        const interval = 1000 / Math.max(0.5, player.fps || 4);
+        if (now - player.lastTick >= interval) {
+          player.lastTick = now;
+          player.frameIdx = (player.frameIdx + 1) % player.frames.length;
+          player.draw();
+        }
+      }
+      animLoopId = requestAnimationFrame(tick);
+    };
+    animLoopId = requestAnimationFrame(tick);
+  }
+
+  function createSpriteCanvasPlayer(asset, canvas, animName, onFrameUpdate = null, mirror = false) {
+    const fw = asset.frameSize?.[0] || asset.width || 32;
+    const fh = asset.frameSize?.[1] || asset.height || 32;
+    canvas.width = fw;
+    canvas.height = fh;
+    const ctx = canvas.getContext("2d");
+    const animMap = asset.animations || {};
+    const animKeys = Object.keys(animMap);
+    const activeAnim = (animName && animMap[animName]) || animMap.idle || animMap[animKeys[0]] || null;
+
+    const player = {
+      img: null,
+      playing: true,
+      mirror,
+      fps: activeAnim?.fps || 4,
+      frames: activeAnim?.frames?.length ? activeAnim.frames : [0],
+      frameIdx: 0,
+      lastTick: performance.now(),
+      setAnimation(name) {
+        const next = animMap[name];
+        if (!next) return;
+        this.frames = next.frames?.length ? next.frames : [0];
+        this.fps = next.fps || 4;
+        this.frameIdx = 0;
+        this.draw();
+      },
+      draw() {
+        if (!this.img) return;
+        const cols = Math.max(1, Math.floor(this.img.naturalWidth / fw));
+        const total = asset.frameCount || (cols * Math.max(1, Math.floor(this.img.naturalHeight / fh)));
+        const f = this.frames[this.frameIdx % this.frames.length] % Math.max(1, total);
+        const sx = (f % cols) * fw;
+        const sy = Math.floor(f / cols) * fh;
+        ctx.clearRect(0, 0, fw, fh);
+        ctx.imageSmoothingEnabled = asset.sampling === "linear";
+        ctx.save();
+        if (this.mirror) {
+          ctx.translate(fw, 0);
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(this.img, sx, sy, fw, fh, 0, 0, fw, fh);
+        ctx.restore();
+        if (onFrameUpdate) onFrameUpdate(this.frameIdx + 1, this.frames.length, f);
+      },
+    };
+
+    const url = assetUrl(asset.id);
+    loadImageCached(url).then((img) => {
+      player.img = img;
+      if (!activeAnim) {
+        const cols = Math.max(1, Math.floor(img.naturalWidth / fw));
+        const rows = Math.max(1, Math.floor(img.naturalHeight / fh));
+        const count = asset.frameCount || (cols * rows);
+        player.frames = Array.from({ length: Math.max(1, count) }, (_, idx) => idx);
+      }
+      player.draw();
+    }).catch(() => {});
+
+    state.spriteAnimPlayers.push(player);
+    ensureAnimLoop();
+    return player;
+  }
+
+  function renderRegionCanvas(asset, regionName, rect, canvas, tileCount = 1) {
+    const [rx, ry, rw, rh] = rect;
+    canvas.width = rw * tileCount;
+    canvas.height = rh * tileCount;
+    const ctx = canvas.getContext("2d");
+    const url = assetUrl(asset.id);
+    loadImageCached(url).then((img) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = asset.sampling === "linear";
+      for (let ty = 0; ty < tileCount; ty++) {
+        for (let tx = 0; tx < tileCount; tx++) {
+          ctx.drawImage(img, rx, ry, rw, rh, tx * rw, ty * rh, rw, rh);
+        }
+      }
+    }).catch(() => {});
+  }
+
+  function buildSkinPreviewElement(skin, compact = true) {
+    const c = skin.colors || {};
+    const box = el("div", { class: "skin-preview-box" });
+    box.style.backgroundColor = c.background || "#181b24";
+    box.style.color = c.text || "#ece6d9";
+    box.style.borderColor = c.border || "#556070";
+    box.style.borderWidth = skin.frameSlice ? `${Math.min(10, skin.frameSlice)}px` : "2px";
+
+    if (skin.panelAsset) {
+      const pUrl = assetUrl(skin.panelAsset);
+      if (pUrl) {
+        box.style.backgroundImage = `linear-gradient(${c.background || "rgba(18,20,28,0.65)"}, ${c.background || "rgba(18,20,28,0.65)"}), url("${pUrl}")`;
+        box.style.backgroundRepeat = "repeat";
+      }
+    }
+    if (skin.frameAsset && skin.frameSlice) {
+      const fUrl = assetUrl(skin.frameAsset);
+      if (fUrl) {
+        box.style.borderImageSource = `url("${fUrl}")`;
+        box.style.borderImageSlice = String(skin.frameSlice);
+        box.style.borderImageRepeat = "repeat";
+      }
+    }
+
+    const titleRow = el("div", { class: "skin-preview-title" });
+    titleRow.style.color = c.accent || "#e4a94c";
+    if (skin.titleAsset) {
+      const tUrl = assetUrl(skin.titleAsset);
+      const tAsset = findAsset(skin.titleAsset);
+      const img = el("img", { src: tUrl, alt: skin.name, class: tAsset?.sampling === "linear" ? "sampling-linear" : "sampling-nearest" });
+      titleRow.appendChild(img);
+    } else {
+      titleRow.textContent = skin.name;
+    }
+    box.appendChild(titleRow);
+
+    const body = el("div", { class: "skin-preview-body" });
+    body.textContent = compact
+      ? "The party stands before the stone archway."
+      : "The torchlight flickers along the damp corridor. Roll initiative!";
+    const muted = el("div", { style: `font-size:10px;margin-top:2px;color:${c.muted || "#9aa4b6"}` },
+      "HP 18/18 · AC 4 · Gold 120");
+    body.appendChild(muted);
+    box.appendChild(body);
+
+    const btnRow = el("div", { class: "skin-preview-btn-row" });
+    for (const label of ["Forward", "Search"]) {
+      const b = el("span", { class: "skin-mock-btn" }, label);
+      b.style.color = c.button_text || c.text || "#ffffff";
+      b.style.backgroundColor = c.button && !c.button.endsWith("00") ? c.button : (c.inset || "rgba(255,255,255,0.08)");
+      b.style.borderColor = c.border || "#556070";
+      b.style.borderWidth = skin.buttonSlice ? `${Math.min(6, skin.buttonSlice)}px` : "1px";
+      if (skin.buttonAsset && skin.buttonSlice) {
+        const bUrl = assetUrl(skin.buttonAsset);
+        if (bUrl) {
+          b.style.borderImageSource = `url("${bUrl}")`;
+          b.style.borderImageSlice = `${skin.buttonSlice} fill`;
+          b.style.borderImageRepeat = "stretch";
+        }
+      }
+      btnRow.appendChild(b);
+    }
+    box.appendChild(btnRow);
+    return box;
+  }
+
+  function renderAssetsGallery() {
+    const g = state.graph;
+    if (!g) return;
+    // Clear active animation players before rebuilding gallery cards
+    state.spriteAnimPlayers = [];
+
+    const assets = g.assets || [];
+    const skins = g.skins || [];
+    const allItems = [
+      ...assets.map((a) => ({ kind: "asset", category: a.category || "picture", id: a.id, title: a.localId, subtitle: a.file, targetKind: "asset", target: a.id, data: a })),
+      ...skins.map((s) => ({ kind: "skin", category: "skin", id: s.id, title: s.name, subtitle: `${s.id} · ${s.file}`, targetKind: "definition", target: `skin:${s.id}`, data: s })),
+    ];
+
+    // Update category pill labels with counts
+    const catCounts = { all: allItems.length, wall_set: 0, sprite: 0, portrait: 0, picture: 0, audio: 0, skin: skins.length };
+    for (const a of assets) {
+      const cat = a.category || "picture";
+      catCounts[cat] = (catCounts[cat] || 0) + 1;
+    }
+    const catNames = { all: "All", wall_set: "Wall Sets", sprite: "Sprites", portrait: "Portraits", picture: "Pictures & UI", audio: "Audio", skin: "UI Skins" };
+    document.querySelectorAll("#asset-category-pills .pill-btn").forEach((btn) => {
+      const c = btn.dataset.assetCat;
+      btn.textContent = `${catNames[c] || c} (${catCounts[c] || 0})`;
+      btn.classList.toggle("active", state.assetCategory === c);
+    });
+
+    // Compute approval progress across all art + skins
+    let approvedCount = 0;
+    let flaggedCount = 0;
+    let staleCount = 0;
+    for (const item of allItems) {
+      const pin = findPin(item.targetKind, item.target);
+      if (!pin) continue;
+      if (pin.stale) staleCount++;
+      else if (pin.status === "approved") approvedCount++;
+      else if (pin.status === "needs-fix" || pin.status === "question") flaggedCount++;
+    }
+    const pct = allItems.length > 0 ? Math.round((approvedCount / allItems.length) * 100) : 0;
+    document.getElementById("gallery-summary").textContent =
+      `${allItems.length} art & skin records · ${approvedCount} approved (${pct}%) · ${flaggedCount} flagged · ${staleCount} stale · ${allItems.length - approvedCount - flaggedCount - staleCount} unreviewed`;
+    document.getElementById("gallery-progress-fill").style.width = `${pct}%`;
+
+    const query = state.assetSearch.trim().toLowerCase();
+    const visible = allItems.filter((item) => {
+      if (state.assetCategory !== "all" && item.category !== state.assetCategory) return false;
+      if (state.assetUnusedOnly && item.kind === "asset" && (item.data.usedBy?.length || 0) > 0) return false;
+      const pin = findPin(item.targetKind, item.target);
+      if (state.assetReviewFilter === "unreviewed" && pin) return false;
+      if (state.assetReviewFilter === "open" && (!pin || (pin.status !== "needs-fix" && pin.status !== "question"))) return false;
+      if (state.assetReviewFilter === "approved" && (!pin || pin.status !== "approved" || pin.stale)) return false;
+      if (state.assetReviewFilter === "stale" && (!pin || !pin.stale)) return false;
+      if (query) {
+        const hay = `${item.id} ${item.title} ${item.subtitle} ${(item.data.tags || []).join(" ")} ${(item.data.usedBy || []).join(" ")}`.toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      return true;
+    });
+
+    const grid = document.getElementById("asset-gallery");
+    grid.innerHTML = "";
+    if (visible.length === 0) {
+      grid.appendChild(el("div", { class: "empty-hint", style: "padding:24px" }, "No assets or skins match the current filters."));
+      return;
+    }
+
+    for (const item of visible) {
+      const pin = findPin(item.targetKind, item.target);
+      const pinClass = pin ? (pin.stale ? "pin-stale" : `pin-${pin.status}`) : "";
+      const key = `${item.kind}:${item.id}`;
+      const card = el("article", { class: `asset-card ${pinClass}${state.selectedGalleryKey === key ? " selected" : ""}` });
+
+      const stage = el("div", { class: "asset-card-stage" });
+      if (item.kind === "skin") {
+        stage.appendChild(buildSkinPreviewElement(item.data, true));
+      } else {
+        const a = item.data;
+        if (a.category === "wall_set" && a.regions) {
+          const wgrid = el("div", { class: "wallset-grid" });
+          const order = ["wall", "door", "floor", "ceiling", ...Object.keys(a.regions).filter((k) => !["wall", "door", "floor", "ceiling"].includes(k))];
+          for (const rName of order.slice(0, 4)) {
+            if (!a.regions[rName]) continue;
+            const tile = el("div", { class: "wallset-tile" });
+            const canvas = el("canvas", { class: a.sampling === "linear" ? "sampling-linear" : "sampling-nearest" });
+            renderRegionCanvas(a, rName, a.regions[rName], canvas, 1);
+            tile.appendChild(canvas);
+            tile.appendChild(el("span", {}, rName));
+            wgrid.appendChild(tile);
+          }
+          stage.appendChild(wgrid);
+        } else if (a.category === "sprite") {
+          const canvas = el("canvas", { class: a.sampling === "linear" ? "sampling-linear" : "sampling-nearest" });
+          const fw = a.frameSize?.[0] || 64;
+          const fh = a.frameSize?.[1] || 64;
+          const scale = Math.min(180 / fw, 108 / fh);
+          canvas.style.width = `${Math.round(fw * scale)}px`;
+          canvas.style.height = `${Math.round(fh * scale)}px`;
+          const frameLbl = el("span", { class: "asset-chip" }, "f 1/1");
+          const animNames = Object.keys(a.animations || {});
+          const player = createSpriteCanvasPlayer(a, canvas, animNames[0], (idx, total) => {
+            frameLbl.textContent = `f ${idx}/${total}`;
+          });
+          stage.appendChild(canvas);
+          const ctrl = el("div", { class: "sprite-controls" });
+          const pills = el("div", { class: "sprite-anim-pills" });
+          if (animNames.length > 0) {
+            animNames.forEach((name, i) => {
+              const pBtn = el("button", { class: `mini-pill${i === 0 ? " active" : ""}`, type: "button" }, name);
+              pBtn.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                pills.querySelectorAll(".mini-pill").forEach((b) => b.classList.toggle("active", b === pBtn));
+                player.setAnimation(name);
+              });
+              pills.appendChild(pBtn);
+            });
+          } else {
+            pills.appendChild(el("span", { class: "asset-chip" }, `${a.frameSize?.[0] || "?"}×${a.frameSize?.[1] || "?"}`));
+          }
+          ctrl.appendChild(pills);
+          const rightCtrl = el("div", { style: "display:flex;gap:4px;align-items:center" });
+          const pauseBtn = el("button", { class: "mini-pill", type: "button", title: "Play/Pause" }, "❚❚");
+          pauseBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            player.playing = !player.playing;
+            pauseBtn.textContent = player.playing ? "❚❚" : "▶";
+          });
+          rightCtrl.appendChild(frameLbl);
+          rightCtrl.appendChild(pauseBtn);
+          ctrl.appendChild(rightCtrl);
+          stage.appendChild(ctrl);
+        } else if (a.category === "audio") {
+          const audWrap = el("div", { class: "audio-stage" });
+          audWrap.appendChild(el("div", { style: "font-size:28px" }, "🔊"));
+          const audio = el("audio", { controls: "controls", src: assetUrl(a.id) });
+          audio.addEventListener("click", (ev) => ev.stopPropagation());
+          audWrap.appendChild(audio);
+          stage.appendChild(audWrap);
+        } else {
+          const img = el("img", {
+            src: assetUrl(a.id),
+            alt: a.id,
+            class: a.sampling === "linear" ? "sampling-linear" : "sampling-nearest",
+          });
+          stage.appendChild(img);
+        }
+      }
+
+      // Top overlay chips
+      const topBadges = el("div", { class: "asset-stage-badges" });
+      if (item.kind === "skin") {
+        topBadges.appendChild(el("span", { class: "asset-chip" }, item.data.isCampaignSkin ? "★ campaign skin" : "skin"));
+      } else {
+        const a = item.data;
+        const dims = a.width && a.height ? `${a.width}×${a.height}` : a.media;
+        topBadges.appendChild(el("span", { class: "asset-chip" }, `${a.category} · ${dims}`));
+        if (a.media !== "audio") {
+          topBadges.appendChild(el("span", { class: "asset-chip" }, a.sampling));
+        }
+      }
+      stage.appendChild(topBadges);
+      card.appendChild(stage);
+
+      const body = el("div", { class: "asset-card-body" });
+      const titleRow = el("div", { class: "asset-card-title" });
+      titleRow.appendChild(el("span", {}, item.title));
+      if (pin) {
+        const ps = pinStyle(pin);
+        titleRow.appendChild(el("span", { class: `pill ${ps.pill}` }, `${ps.glyph} ${pin.stale ? "Stale" : ps.label}`));
+      }
+      body.appendChild(titleRow);
+      body.appendChild(el("div", { class: "asset-card-meta" }, item.subtitle));
+      if (item.kind === "asset") {
+        const used = item.data.usedBy?.length || 0;
+        body.appendChild(el("div", { class: "asset-card-meta", style: used === 0 ? "color:var(--amber)" : "" },
+          used === 0 ? "⚠ unused in module set" : `used by ${used} definition${used === 1 ? "" : "s"}`));
+      }
+      card.appendChild(body);
+
+      const foot = el("div", { class: "asset-card-foot" });
+      foot.appendChild(el("span", { style: "font-size:10.5px;color:var(--text-muted);font-family:var(--font-mono)" }, shortId(item.data.module || "")));
+      const qGroup = el("div", { class: "quick-pin-group" });
+      for (const [st, glyph, title] of [["approved", "✓", "Approve"], ["needs-fix", "✗", "Flag Needs Fix"], ["question", "?", "Ask Question"]]) {
+        const active = pin && !pin.stale && pin.status === st;
+        const b = el("button", { class: `qpin-btn${active ? ` active-${st}` : ""}`, type: "button", title }, glyph);
+        b.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          savePin(item.targetKind, item.target, st, pin?.note || "");
+        });
+        qGroup.appendChild(b);
+      }
+      foot.appendChild(qGroup);
+      card.appendChild(foot);
+
+      card.addEventListener("click", () => {
+        state.selectedGalleryKey = key;
+        document.querySelectorAll(".asset-card").forEach((c) => c.classList.remove("selected"));
+        card.classList.add("selected");
+        if (item.kind === "skin") inspectSkin(item.data);
+        else inspectAsset(item.id);
+      });
+
+      grid.appendChild(card);
+    }
+  }
+
+  // ==================== TAB 5: REVIEW QUEUE ====================
   function renderReviews() {
     const g = state.graph;
     if (!g) return;
@@ -1227,7 +1624,19 @@
       }
     }
     if (pin.targetKind === "asset") {
+      state.selectedGalleryKey = `asset:${pin.target}`;
+      switchTab("assets");
       inspectAsset(pin.target);
+      return;
+    }
+    if (pin.targetKind === "definition" && pin.target.startsWith("skin:")) {
+      const skinId = pin.target.slice("skin:".length);
+      const skin = (g.skins || []).find((s) => s.id === skinId);
+      if (skin) {
+        state.selectedGalleryKey = `skin:${skin.id}`;
+        switchTab("assets");
+        inspectSkin(skin);
+      }
     }
   }
 
@@ -1425,20 +1834,142 @@
     state.lastInspector = () => inspectAsset(qualifiedAssetId);
     const asset = findAsset(qualifiedAssetId);
     const sections = [makeReviewPinCard("asset", qualifiedAssetId)];
-    const preview = makeAssetPreviewSection("Preview", qualifiedAssetId);
+
+    if (asset?.category === "wall_set" && asset.regions) {
+      const tileSec = el("div", { class: "insp-section" });
+      tileSec.appendChild(el("h4", {}, "Wall Set Regions — 2×2 Tiling Check"));
+      const grid = el("div", { class: "tiling-check-grid" });
+      for (const [rName, rect] of Object.entries(asset.regions)) {
+        const box = el("div", { class: "tiling-tile" });
+        const canvas = el("canvas", { class: asset.sampling === "linear" ? "sampling-linear" : "sampling-nearest" });
+        renderRegionCanvas(asset, rName, rect, canvas, 2);
+        box.appendChild(canvas);
+        box.appendChild(el("span", { style: "font-size:10px;color:var(--text-dim);font-family:var(--font-mono)" },
+          `${rName} (${rect[2]}×${rect[3]})`));
+        grid.appendChild(box);
+      }
+      tileSec.appendChild(grid);
+      sections.push(tileSec);
+    } else if (asset?.category === "sprite") {
+      const sprSec = el("div", { class: "insp-section" });
+      sprSec.appendChild(el("h4", {}, "Animated Sprite Preview"));
+      const canvas = el("canvas", { class: asset.sampling === "linear" ? "sampling-linear" : "sampling-nearest" });
+      const fw = asset.frameSize?.[0] || 64;
+      const fh = asset.frameSize?.[1] || 64;
+      const scale = Math.min(260 / fw, 150 / fh);
+      canvas.style.width = `${Math.round(fw * scale)}px`;
+      canvas.style.height = `${Math.round(fh * scale)}px`;
+      canvas.style.display = "block";
+      canvas.style.margin = "0 auto 8px auto";
+      canvas.style.background = "#0a0c12";
+      canvas.style.border = "1px solid var(--border)";
+      canvas.style.borderRadius = "6px";
+      const animNames = Object.keys(asset.animations || {});
+      const player = createSpriteCanvasPlayer(asset, canvas, animNames[0], null, false);
+      sprSec.appendChild(canvas);
+      const controls = el("div", { class: "insp-actions" });
+      for (const name of animNames) {
+        const b = el("button", { class: "btn btn-sm", type: "button" }, name);
+        b.addEventListener("click", () => player.setAnimation(name));
+        controls.appendChild(b);
+      }
+      const flipBtn = el("button", { class: "btn btn-sm", type: "button" }, "⇄ Flip Facing");
+      flipBtn.addEventListener("click", () => {
+        player.mirror = !player.mirror;
+        player.draw();
+      });
+      controls.appendChild(flipBtn);
+      sprSec.appendChild(controls);
+      sections.push(sprSec);
+    }
+
+    const preview = makeAssetPreviewSection("Source Sheet / Media", qualifiedAssetId);
     if (preview) sections.push(preview);
+
     if (asset) {
       sections.push(makeKvSection("Asset Metadata", [
         ["ID", asset.id],
+        ["Category", asset.category],
         ["File", asset.file],
-        ["Media", asset.media],
-        ["Sampling", asset.sampling],
+        ["Definition", asset.definitionFile],
+        ["Dimensions", asset.width && asset.height ? `${asset.width} × ${asset.height} px` : null],
+        ["Media / Sampling", `${asset.media} · ${asset.sampling}`],
+        ["Frame Size", asset.frameSize ? `${asset.frameSize[0]} × ${asset.frameSize[1]} (${asset.frameCount || "auto"} frames)` : null],
+        ["Faces / Height", asset.faces ? `${asset.faces}${asset.heightCells ? ` · ${asset.heightCells} cells` : ""}` : null],
         ["Tags", asset.tags?.join(", ") || "none"],
-        ["Used By", asset.usedBy?.join(", ") || "unused"],
       ]));
+
+      if (asset.usedBy?.length) {
+        const useSec = el("div", { class: "insp-section" });
+        useSec.appendChild(el("h4", {}, `Used By (${asset.usedBy.length})`));
+        const row = el("div", { class: "insp-actions" });
+        for (const ref of asset.usedBy) {
+          const btn = el("button", { class: "btn btn-sm", type: "button" }, ref);
+          btn.addEventListener("click", () => {
+            const [type, ...rest] = ref.split(":");
+            const qid = rest.join(":");
+            if (type === "area") {
+              const area = state.graph.areas.find((a) => a.id === qid);
+              if (area) { state.selectedAreaId = area.id; switchTab("maps"); inspectArea(area); }
+            } else if (type === "event") {
+              const evt = state.graph.events.find((e) => e.id === qid);
+              if (evt) { state.selectedEventId = evt.id; switchTab("events"); inspectEvent(evt); }
+            } else if (type === "skin") {
+              const skin = (state.graph.skins || []).find((s) => s.id === qid);
+              if (skin) inspectSkin(skin);
+            }
+          });
+          row.appendChild(btn);
+        }
+        useSec.appendChild(row);
+        sections.push(useSec);
+      }
     }
     sections.push(makeJsonSection(qualifiedAssetId, "asset"));
     setInspector("ASSET", qualifiedAssetId, sections);
+  }
+
+  function inspectSkin(skin) {
+    state.lastInspector = () => {
+      const fresh = (state.graph?.skins || []).find((s) => s.id === skin.id);
+      if (fresh) inspectSkin(fresh);
+    };
+    const sections = [makeReviewPinCard("definition", `skin:${skin.id}`)];
+
+    const liveSec = el("div", { class: "insp-section" });
+    liveSec.appendChild(el("h4", {}, "Live UI Skin Preview"));
+    const wrap = el("div", { style: "height:152px" });
+    wrap.appendChild(buildSkinPreviewElement(skin, false));
+    liveSec.appendChild(wrap);
+    sections.push(liveSec);
+
+    const swatchSec = el("div", { class: "insp-section" });
+    swatchSec.appendChild(el("h4", {}, "Theme Palette"));
+    const sGrid = el("div", { class: "swatch-grid" });
+    for (const [name, hex] of Object.entries(skin.colors || {})) {
+      const row = el("div", { class: "color-swatch-row" });
+      const dot = el("span", { class: "color-dot" });
+      dot.style.background = hex;
+      row.appendChild(dot);
+      row.appendChild(el("span", {}, `${name}: ${hex}`));
+      sGrid.appendChild(row);
+    }
+    swatchSec.appendChild(sGrid);
+    sections.push(swatchSec);
+
+    sections.push(makeKvSection("Skin Metadata", [
+      ["ID", skin.id],
+      ["Name", skin.name],
+      ["Campaign Skin", skin.isCampaignSkin ? "Yes (default)" : "Optional"],
+      ["Panel Tile", skin.panelAsset || "none"],
+      ["Frame / Slice", skin.frameAsset ? `${skin.frameAsset} (${skin.frameSlice}px)` : "none"],
+      ["Button / Slice", skin.buttonAsset ? `${skin.buttonAsset} (${skin.buttonSlice}px)` : "none"],
+      ["Title Art", skin.titleAsset || "none"],
+      ["File", skin.file],
+    ]));
+
+    sections.push(makeJsonSection(skin.id, "skin"));
+    setInspector("UI SKIN", skin.name, sections);
   }
 
   function makeJsonSection(qualifiedId, defType) {
@@ -1743,6 +2274,25 @@
         setTimeout(() => { btn.textContent = "Copy Agent CLI"; }, 1200);
       }).catch(() => {});
     }
+  });
+
+  document.querySelectorAll("#asset-category-pills .pill-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.assetCategory = btn.dataset.assetCat;
+      renderAssetsGallery();
+    });
+  });
+  document.getElementById("asset-search").addEventListener("input", (e) => {
+    state.assetSearch = e.target.value;
+    renderAssetsGallery();
+  });
+  document.getElementById("asset-review-filter").addEventListener("change", (e) => {
+    state.assetReviewFilter = e.target.value;
+    renderAssetsGallery();
+  });
+  document.getElementById("chk-unused-assets").addEventListener("change", (e) => {
+    state.assetUnusedOnly = e.target.checked;
+    renderAssetsGallery();
   });
 
   loadGraph(false);

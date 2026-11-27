@@ -26,6 +26,7 @@
         <button class="tab active" data-tab="overview" role="tab">Flow Overview</button>
         <button class="tab" data-tab="maps" role="tab">2D Area Maps <span id="tab-maps-count" class="badge">0</span></button>
         <button class="tab" data-tab="events" role="tab">Events &amp; Scenes <span id="tab-events-count" class="badge">0</span></button>
+        <button class="tab" data-tab="assets" role="tab">Art &amp; Assets <span id="tab-assets-count" class="badge">0</span></button>
         <button class="tab" data-tab="reviews" role="tab">Review Queue <span id="tab-reviews-count" class="badge badge-ok">0</span></button>
         <button class="tab" data-tab="issues" role="tab">Diagnostics <span id="tab-issues-count" class="badge badge-ok">0</span></button>
       </nav>
@@ -157,7 +158,40 @@
           </div>
         </section>
 
-        <!-- TAB 4: REVIEW QUEUE -->
+        <!-- TAB 4: ART & ASSETS GALLERY -->
+        <section id="view-assets" class="view">
+          <div class="toolbar">
+            <div class="toolbar-group" id="asset-category-pills">
+              <button class="pill-btn active" data-asset-cat="all">All</button>
+              <button class="pill-btn" data-asset-cat="wall_set">Wall Sets</button>
+              <button class="pill-btn" data-asset-cat="sprite">Sprites</button>
+              <button class="pill-btn" data-asset-cat="portrait">Portraits</button>
+              <button class="pill-btn" data-asset-cat="picture">Pictures &amp; UI</button>
+              <button class="pill-btn" data-asset-cat="audio">Audio</button>
+              <button class="pill-btn" data-asset-cat="skin">UI Skins</button>
+            </div>
+            <div class="toolbar-group">
+              <input id="asset-search" class="search-input" style="width:180px" type="search" placeholder="Search assets…" />
+              <select id="asset-review-filter" class="select-input" style="width:140px">
+                <option value="all">All status</option>
+                <option value="unreviewed">Unreviewed</option>
+                <option value="open">Flagged (open)</option>
+                <option value="approved">Approved</option>
+                <option value="stale">Stale</option>
+              </select>
+              <label class="toggle"><input type="checkbox" id="chk-unused-assets" /> Unused only</label>
+            </div>
+          </div>
+          <div class="gallery-progress-bar">
+            <span id="gallery-summary" class="toolbar-hint"></span>
+            <div class="progress-track"><div id="gallery-progress-fill" class="progress-fill"></div></div>
+          </div>
+          <div class="gallery-scroll">
+            <div id="asset-gallery" class="asset-gallery"></div>
+          </div>
+        </section>
+
+        <!-- TAB 5: REVIEW QUEUE -->
         <section id="view-reviews" class="view">
           <div class="toolbar">
             <div class="toolbar-group">

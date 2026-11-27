@@ -248,4 +248,46 @@ public sealed class WorkbenchGraphTests
         Assert.Equal("sample-crypt", doc.RootElement.GetProperty("module").GetString());
         Assert.StartsWith("http://127.0.0.1:", doc.RootElement.GetProperty("url").GetString(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void GraphAssetAndSkinMetadataCoversWallSetsAnimatedSpritesAudioAndSkins()
+    {
+        ModuleSet set = ModuleLoader.Load(CampaignTests.SampleCrypt, [Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.True(set.IsValid);
+        ModuleGraph graph = ModuleGraphBuilder.Build(set);
+
+        // Wall set carries named regions (wall, door, floor, ceiling) and pixel dimensions.
+        GraphAsset wallSet = Assert.Single(graph.Assets, a => a.Id == "placeholder-art:stone_wall");
+        Assert.Equal("wall_set", wallSet.Category);
+        Assert.NotNull(wallSet.Regions);
+        Assert.True(wallSet.Regions!.ContainsKey("wall"));
+        Assert.True(wallSet.Regions.ContainsKey("door"));
+        Assert.True(wallSet.Width > 0 && wallSet.Height > 0);
+
+        // Animated sprite carries frame size, animations, faces, and height.
+        GraphAsset skeleton = Assert.Single(graph.Assets, a => a.Id == "placeholder-art:skeleton");
+        Assert.Equal("sprite", skeleton.Category);
+        Assert.NotNull(skeleton.FrameSize);
+        Assert.NotNull(skeleton.Animations);
+        Assert.True(skeleton.Animations!.Count > 0);
+        Assert.NotNull(skeleton.Faces);
+
+        // Portraits and audio are classified cleanly.
+        Assert.Contains(graph.Assets, a => a.Category == "portrait");
+        Assert.Contains(graph.Assets, a => a.Category == "audio");
+
+        // Skins include the campaign default skin plus optional skins with colors & 9-slice art.
+        Assert.True(graph.Skins.Count >= 2);
+        GraphSkin stone = Assert.Single(graph.Skins, s => s.Id == "placeholder-art:stone");
+        Assert.True(stone.IsCampaignSkin);
+        Assert.True(stone.Colors.ContainsKey("accent"));
+        Assert.Equal("placeholder-art:stone_frame", stone.FrameAsset);
+        Assert.Equal(8, stone.FrameSlice);
+
+        // Reviewing a skin via ReviewResolver resolves provenance and revision cleanly.
+        ReviewResolver.TargetMeta skinMeta = ReviewResolver.DescribeTarget(ReviewTargetKinds.Definition, $"skin:{stone.Id}", set, graph);
+        Assert.True(skinMeta.Exists);
+        Assert.NotNull(skinMeta.Revision);
+        Assert.Contains("stone.json", skinMeta.File, StringComparison.Ordinal);
+    }
 }

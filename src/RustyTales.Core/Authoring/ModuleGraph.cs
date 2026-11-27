@@ -25,6 +25,7 @@ public sealed record ModuleGraph(
     IReadOnlyList<GraphEvent> Events,
     IReadOnlyList<GraphEventEdge> EventEdges,
     IReadOnlyList<GraphAsset> Assets,
+    IReadOnlyList<GraphSkin> Skins,
     IReadOnlyList<GraphIssue> Issues);
 
 public sealed record GraphModuleInfo(
@@ -69,6 +70,7 @@ public sealed record GraphCounts(
     int Npcs,
     int Variables,
     int Assets,
+    int Skins,
     int Figures,
     int Issues);
 
@@ -175,17 +177,47 @@ public sealed record GraphEventEdge(
     string Label,
     string? Guard);
 
+public sealed record GraphAssetAnimation(
+    IReadOnlyList<int> Frames,
+    double Fps,
+    bool Loop);
+
 public sealed record GraphAsset(
     string Id,
     string LocalId,
     string Module,
     string File,
+    string DefinitionFile,
     string Media,
+    string Category,
     string Sampling,
+    int? Width,
+    int? Height,
     IReadOnlyList<string> Tags,
+    IReadOnlyDictionary<string, int[]>? Regions,
     int[]? FrameSize,
     int? FrameCount,
+    IReadOnlyDictionary<string, GraphAssetAnimation>? Animations,
+    string? Faces,
+    int[]? Anchor,
+    double? HeightCells,
     IReadOnlyList<string> UsedBy);
+
+public sealed record GraphSkin(
+    string Id,
+    string LocalId,
+    string Name,
+    string Module,
+    string File,
+    bool IsCampaignSkin,
+    IReadOnlyDictionary<string, string> Colors,
+    string? PanelAsset,
+    string? FrameAsset,
+    int? FrameSlice,
+    string? ButtonAsset,
+    int? ButtonSlice,
+    string? TitleAsset,
+    IReadOnlyDictionary<string, double>? Layout);
 
 public sealed record GraphIssue(
     string Severity,
@@ -255,7 +287,8 @@ public static class ModuleGraphBuilder
                 deps,
                 set.Extensions,
                 null,
-                new GraphCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, issues.Count),
+                new GraphCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, issues.Count),
+                [],
                 [],
                 [],
                 [],
@@ -947,21 +980,14 @@ public static class ModuleGraphBuilder
 
         List<GraphAsset> graphAssets = rules.OfType(DefinitionTypes.Asset)
             .OrderBy(def => def.QualifiedId, StringComparer.Ordinal)
-            .Select(asset => new GraphAsset(
-                asset.QualifiedId,
-                asset.Id,
-                asset.Module,
-                asset.Json.GetProperty("file").GetString()!,
-                asset.Json.GetProperty("media").GetString()!,
-                TryString(asset.Json, "sampling") ?? "nearest",
-                asset.Json.TryGetProperty("tags", out JsonElement tags)
-                    ? tags.EnumerateArray().Select(t => t.GetString()!).ToList()
-                    : [],
-                asset.Json.TryGetProperty("frame_size", out JsonElement fs)
-                    ? [fs[0].GetInt32(), fs[1].GetInt32()]
-                    : null,
-                asset.Json.TryGetProperty("frame_count", out JsonElement fc) ? fc.GetInt32() : null,
-                assetUsage[asset.QualifiedId].OrderBy(u => u, StringComparer.Ordinal).ToList()))
+            .Select(asset => BuildGraphAsset(rules, asset, assetUsage[asset.QualifiedId]))
+            .ToList();
+
+        string? campaignSkinId = campaignInfo?.Skin;
+        List<GraphSkin> graphSkins = rules.OfType(DefinitionTypes.Skin)
+            .OrderBy(def => def.QualifiedId != campaignSkinId)
+            .ThenBy(def => def.QualifiedId, StringComparer.Ordinal)
+            .Select(skin => BuildGraphSkin(rules, skin, campaignSkinId))
             .ToList();
 
         GraphCounts counts = new(
@@ -976,6 +1002,7 @@ public static class ModuleGraphBuilder
             rules.OfType(DefinitionTypes.Npc).Count(),
             rules.OfType(DefinitionTypes.Variable).Count(),
             graphAssets.Count,
+            graphSkins.Count,
             rules.OfType(DefinitionTypes.Figure).Count(),
             issues.Count);
 
@@ -990,7 +1017,174 @@ public static class ModuleGraphBuilder
             graphEvents,
             allEventEdges,
             graphAssets,
+            graphSkins,
             issues);
+    }
+
+    private static GraphAsset BuildGraphAsset(RuleSet rules, Definition asset, HashSet<string> usedBy)
+    {
+        string media = asset.Json.GetProperty("media").GetString()!;
+        string sampling = TryString(asset.Json, "sampling") ?? "nearest";
+        List<string> tags = asset.Json.TryGetProperty("tags", out JsonElement tagsEl)
+            ? tagsEl.EnumerateArray().Select(t => t.GetString()!).ToList()
+            : [];
+
+        Dictionary<string, int[]>? regions = null;
+        if (asset.Json.TryGetProperty("regions", out JsonElement regionsEl) && regionsEl.ValueKind == JsonValueKind.Object)
+        {
+            regions = new Dictionary<string, int[]>(StringComparer.Ordinal);
+            foreach (JsonProperty prop in regionsEl.EnumerateObject())
+            {
+                regions[prop.Name] = prop.Value.EnumerateArray().Select(v => v.GetInt32()).ToArray();
+            }
+        }
+
+        int[]? frameSize = asset.Json.TryGetProperty("frame_size", out JsonElement fs)
+            ? [fs[0].GetInt32(), fs[1].GetInt32()]
+            : null;
+        int? frameCount = asset.Json.TryGetProperty("frame_count", out JsonElement fc) ? fc.GetInt32() : null;
+
+        Dictionary<string, GraphAssetAnimation>? animations = null;
+        if (asset.Json.TryGetProperty("animations", out JsonElement animsEl) && animsEl.ValueKind == JsonValueKind.Object)
+        {
+            animations = new Dictionary<string, GraphAssetAnimation>(StringComparer.Ordinal);
+            foreach (JsonProperty prop in animsEl.EnumerateObject())
+            {
+                int[] frames = prop.Value.GetProperty("frames").EnumerateArray().Select(v => v.GetInt32()).ToArray();
+                double fps = prop.Value.GetProperty("fps").GetDouble();
+                bool loop = !prop.Value.TryGetProperty("loop", out JsonElement loopEl) || loopEl.GetBoolean();
+                animations[prop.Name] = new GraphAssetAnimation(frames, fps, loop);
+            }
+        }
+
+        string? faces = TryString(asset.Json, "faces");
+        int[]? anchor = asset.Json.TryGetProperty("anchor", out JsonElement anc)
+            ? [anc[0].GetInt32(), anc[1].GetInt32()]
+            : null;
+        double? heightCells = asset.Json.TryGetProperty("height", out JsonElement hEl) && hEl.ValueKind == JsonValueKind.Number
+            ? hEl.GetDouble()
+            : null;
+
+        int? width = null;
+        int? height = null;
+        if (rules.ImageSizes.TryGetValue(asset, out (int W, int H) dims))
+        {
+            width = dims.W;
+            height = dims.H;
+        }
+
+        string category = ClassifyAsset(media, tags, regions, faces, heightCells, usedBy);
+        return new GraphAsset(
+            asset.QualifiedId,
+            asset.Id,
+            asset.Module,
+            asset.Json.GetProperty("file").GetString()!,
+            asset.File,
+            media,
+            category,
+            sampling,
+            width,
+            height,
+            tags,
+            regions,
+            frameSize,
+            frameCount,
+            animations,
+            faces,
+            anchor,
+            heightCells,
+            usedBy.OrderBy(u => u, StringComparer.Ordinal).ToList());
+    }
+
+    private static string ClassifyAsset(
+        string media,
+        IReadOnlyList<string> tags,
+        IReadOnlyDictionary<string, int[]>? regions,
+        string? faces,
+        double? heightCells,
+        HashSet<string> usedBy)
+    {
+        if (media == "audio")
+        {
+            return "audio";
+        }
+
+        if (regions is not null && regions.ContainsKey("wall") && regions.ContainsKey("door"))
+        {
+            return "wall_set";
+        }
+
+        if (tags.Contains("portrait", StringComparer.OrdinalIgnoreCase))
+        {
+            return "portrait";
+        }
+
+        if (media == "sheet" && (faces is not null || heightCells is not null || usedBy.Any(u => u.StartsWith("figure:", StringComparison.Ordinal))))
+        {
+            return "sprite";
+        }
+
+        if (media == "sheet")
+        {
+            return "sprite";
+        }
+
+        return "picture";
+    }
+
+    private static GraphSkin BuildGraphSkin(RuleSet rules, Definition skin, string? campaignSkinId)
+    {
+        Dictionary<string, string> colors = new(StringComparer.Ordinal);
+        if (skin.Json.TryGetProperty("colors", out JsonElement colorsEl) && colorsEl.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty prop in colorsEl.EnumerateObject())
+            {
+                if (prop.Value.ValueKind == JsonValueKind.String)
+                {
+                    colors[prop.Name] = prop.Value.GetString()!;
+                }
+            }
+        }
+
+        string? panelAsset = TryRef(rules, skin, "$.panel")?.QualifiedId;
+        string? frameAsset = TryRef(rules, skin, "$.frame.picture")?.QualifiedId;
+        int? frameSlice = skin.Json.TryGetProperty("frame", out JsonElement frameEl) && frameEl.TryGetProperty("slice", out JsonElement fSlice)
+            ? fSlice.GetInt32()
+            : null;
+        string? buttonAsset = TryRef(rules, skin, "$.button.picture")?.QualifiedId;
+        int? buttonSlice = skin.Json.TryGetProperty("button", out JsonElement btnEl) && btnEl.TryGetProperty("slice", out JsonElement bSlice)
+            ? bSlice.GetInt32()
+            : null;
+        string? titleAsset = TryRef(rules, skin, "$.title")?.QualifiedId;
+
+        Dictionary<string, double>? layout = null;
+        if (skin.Json.TryGetProperty("layout", out JsonElement layoutEl) && layoutEl.ValueKind == JsonValueKind.Object)
+        {
+            layout = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach (JsonProperty prop in layoutEl.EnumerateObject())
+            {
+                if (prop.Value.ValueKind == JsonValueKind.Number)
+                {
+                    layout[prop.Name] = prop.Value.GetDouble();
+                }
+            }
+        }
+
+        return new GraphSkin(
+            skin.QualifiedId,
+            skin.Id,
+            skin.Name,
+            skin.Module,
+            skin.File,
+            skin.QualifiedId == campaignSkinId,
+            colors,
+            panelAsset,
+            frameAsset,
+            frameSlice,
+            buttonAsset,
+            buttonSlice,
+            titleAsset,
+            layout);
     }
 
     private static AreaAnalysis ParseArea(
