@@ -29,7 +29,66 @@
     assetUnusedOnly: false,
     selectedGalleryKey: null, // "asset:<id>" or "skin:<id>"
     spriteAnimPlayers: [],
+    embedMode: new URLSearchParams(window.location.search).get("embed") === "1",
+    liveState: null, // { screen, module, campaign, area, areaName, x, y, facing, activeEvent, activeActor }
   };
+
+  if (state.embedMode) {
+    document.body.classList.add("embed-mode");
+  }
+
+  function postToGame(payload) {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(payload, "*");
+    }
+  }
+
+  function applyLiveState(live) {
+    if (!live || typeof live !== "object") return;
+    const prevArea = state.liveState?.area;
+    state.liveState = live;
+    if (live.area && live.area !== prevArea && state.graph?.areas?.some((a) => a.id === live.area)) {
+      state.selectedAreaId = live.area;
+    }
+    renderLiveBadge();
+    if (state.graph) {
+      if (state.activeTab === "overview") renderOverview();
+      if (state.activeTab === "maps") renderMaps();
+      if (state.activeTab === "events") renderEvents();
+    }
+  }
+
+  function renderLiveBadge() {
+    const actions = document.querySelector(".topbar-actions");
+    if (!actions) return;
+    let badge = document.getElementById("live-game-pill");
+    const live = state.liveState;
+    if (!live || !live.area) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      badge = el("span", { id: "live-game-pill", class: "live-pill", title: "Live connected Rusty Tales game state" });
+      actions.prepend(badge);
+    }
+    const pos = live.x !== null && live.x !== undefined ? ` [${live.x},${live.y}]` : "";
+    const extra = live.activeActor ? ` · ${live.activeActor}` : live.activeEvent ? ` · ${shortId(live.activeEvent)}` : "";
+    badge.innerHTML = "";
+    badge.appendChild(el("i", { class: "live-dot" }));
+    badge.appendChild(el("span", {}, `LIVE ${shortId(live.area)}${pos}${extra}`));
+  }
+
+  window.addEventListener("message", (ev) => {
+    if (!ev.data || typeof ev.data !== "object") return;
+    if (ev.data.type === "tales.liveState") {
+      applyLiveState(ev.data);
+    } else if (ev.data.type === "tales.refreshReviews") {
+      loadReviews().then(() => {
+        if (state.graph) renderAll();
+        if (state.lastInspector) state.lastInspector();
+      });
+    }
+  });
 
   const PIN_META = {
     "needs-fix": { glyph: "✗", color: "#eb5d5d", pill: "pill-err", label: "Needs Fix" },
@@ -199,6 +258,15 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       state.graph = await res.json();
       await loadReviews();
+      if (!state.embedMode) {
+        try {
+          const liveRes = await fetch("/api/live-state");
+          if (liveRes.ok) {
+            const live = await liveRes.json();
+            if (live && live.connected && live.area) applyLiveState(live);
+          }
+        } catch {}
+      }
       if (!state.selectedAreaId && state.graph.areas.length > 0) {
         state.selectedAreaId = state.graph.areas[0].id;
       } else if (state.selectedAreaId && !state.graph.areas.some((a) => a.id === state.selectedAreaId)) {
@@ -544,7 +612,8 @@
         fill: borderColor,
       }));
 
-      const badge = !area.reachable ? "✕ UNREACHABLE" : area.isStartArea ? "★ START" : area.hasEndEvent ? "⚑ ENDING" : isDeadEnd ? "⚠ DEAD END" : "";
+      const isLiveHere = state.liveState?.area === area.id;
+      const badge = isLiveHere ? "● LIVE HERE" : !area.reachable ? "✕ UNREACHABLE" : area.isStartArea ? "★ START" : area.hasEndEvent ? "⚑ ENDING" : isDeadEnd ? "⚠ DEAD END" : "";
       grp.appendChild(svgEl("text", { x: 14, y: 28, fill: "#ece6d9", "font-size": 13.5, "font-weight": 700 }, area.name));
       grp.appendChild(svgEl("text", { x: 14, y: 45, fill: "#9aa4b6", "font-size": 11, "font-family": "var(--font-mono)" }, `${area.localId} · ${area.width}×${area.height}`));
 
@@ -552,7 +621,7 @@
         grp.appendChild(svgEl("text", {
           x: CARD_W - 12,
           y: 26,
-          fill: borderColor,
+          fill: isLiveHere ? "#3dc4ab" : borderColor,
           "font-size": 10,
           "font-weight": 700,
           "text-anchor": "end",
@@ -700,7 +769,7 @@
         else if (cell.reachability === "unreachable") fill = "url(#hatch-unreach)";
       }
 
-      const cellG = svgEl("g", { class: `svg-cell${isSelected ? " selected" : ""}` });
+      const cellG = svgEl("g", { class: `svg-cell${isSelected ? " selected" : ""}`, "data-x": cell.x, "data-y": cell.y });
       cellG.appendChild(svgEl("rect", {
         class: "cell-rect",
         x: cx + 1,
@@ -790,6 +859,37 @@
           "font-weight": 800,
           "text-anchor": "middle",
         }, ps.glyph));
+      }
+
+      if (state.liveState?.area === area.id && state.liveState.x === cell.x && state.liveState.y === cell.y) {
+        cellG.appendChild(svgEl("rect", {
+          class: "live-marker-ring",
+          x: cx + 3,
+          y: cy + 3,
+          width: CELL - 6,
+          height: CELL - 6,
+          rx: 4,
+          fill: "rgba(61, 196, 171, 0.14)",
+          stroke: "#3dc4ab",
+          "stroke-width": 2.4,
+        }));
+        const liveArrow = FACING_ARROW[state.liveState.facing] || "●";
+        cellG.appendChild(svgEl("circle", {
+          cx: cx + 13,
+          cy: cy + CELL - 13,
+          r: 9,
+          fill: "#0f1c1d",
+          stroke: "#3dc4ab",
+          "stroke-width": 1.8,
+        }));
+        cellG.appendChild(svgEl("text", {
+          x: cx + 13,
+          y: cy + CELL - 9.5,
+          fill: "#3dc4ab",
+          "font-size": 10,
+          "font-weight": 800,
+          "text-anchor": "middle",
+        }, liveArrow));
       }
 
       const tipLines = [`[${cell.x}, ${cell.y}] (${cell.reachability})`];
@@ -1105,6 +1205,19 @@
         const ps = pinStyle(evtPin);
         grp.appendChild(svgEl("circle", { cx: NODE_W - 14, cy: 14, r: 8, fill: "#11151d", stroke: ps.color, "stroke-width": 1.6 }));
         grp.appendChild(svgEl("text", { x: NODE_W - 14, y: 17.5, fill: ps.color, "font-size": 9.5, "font-weight": 800, "text-anchor": "middle" }, ps.glyph));
+      }
+      if (state.liveState?.activeEvent === evt.id) {
+        grp.appendChild(svgEl("rect", {
+          class: "live-marker-ring",
+          x: -2,
+          y: -2,
+          width: NODE_W + 4,
+          height: NODE_H + 4,
+          rx: 9,
+          fill: "none",
+          stroke: "#3dc4ab",
+          "stroke-width": 2.4,
+        }));
       }
 
       grp.addEventListener("click", () => {
@@ -2007,6 +2120,12 @@
       switchTab("maps");
     });
     actRow.appendChild(openMapBtn);
+    if (state.embedMode && area.entries.length > 0) {
+      const e0 = area.entries[0];
+      const jumpBtn = el("button", { class: "btn btn-sm", type: "button" }, "⚡ Jump Game Here");
+      jumpBtn.addEventListener("click", () => postToGame({ type: "tales.debugGoto", area: area.id, x: e0.x, y: e0.y, facing: e0.facing }));
+      actRow.appendChild(jumpBtn);
+    }
     actionsSec.appendChild(actRow);
     sections.push(actionsSec);
 
@@ -2035,6 +2154,22 @@
       if (freshArea && freshCell) inspectCell(freshArea, freshCell, freshArea.entries.filter((e) => e.x === freshCell.x && e.y === freshCell.y));
     };
     const sections = [makeReviewPinCard("cell", `${area.id}@[${cell.x},${cell.y}]`)];
+    if (state.embedMode) {
+      const jumpSec = el("div", { class: "insp-section" });
+      jumpSec.appendChild(el("h4", {}, "Live Game Bridge"));
+      const row = el("div", { class: "insp-actions" });
+      const jumpBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, `⚡ Teleport Party to [${cell.x}, ${cell.y}]`);
+      jumpBtn.addEventListener("click", () => postToGame({
+        type: "tales.debugGoto",
+        area: area.id,
+        x: cell.x,
+        y: cell.y,
+        facing: cell.facing || state.liveState?.facing || "north",
+      }));
+      row.appendChild(jumpBtn);
+      jumpSec.appendChild(row);
+      sections.push(jumpSec);
+    }
     sections.push(makeKvSection("Cell Metadata", [
       ["Area", `${area.name} (${area.localId})`],
       ["Coords", `[${cell.x}, ${cell.y}]`],
@@ -2117,6 +2252,16 @@
       if (fresh) inspectEvent(fresh);
     };
     const sections = [makeReviewPinCard("event", evt.id)];
+    if (state.embedMode) {
+      const trigSec = el("div", { class: "insp-section" });
+      trigSec.appendChild(el("h4", {}, "Live Game Bridge"));
+      const row = el("div", { class: "insp-actions" });
+      const trigBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, "⚡ Trigger Event in Game");
+      trigBtn.addEventListener("click", () => postToGame({ type: "tales.debugEvent", event: evt.id }));
+      row.appendChild(trigBtn);
+      trigSec.appendChild(row);
+      sections.push(trigSec);
+    }
     const outgoing = state.graph.eventEdges.filter((e) => e.from === evt.id);
 
     sections.push(makeKvSection("Event Details", [

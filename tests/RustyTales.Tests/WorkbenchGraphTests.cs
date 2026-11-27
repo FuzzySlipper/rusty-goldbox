@@ -290,4 +290,39 @@ public sealed class WorkbenchGraphTests
         Assert.NotNull(skinMeta.Revision);
         Assert.Contains("stone.json", skinMeta.File, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task WorkbenchLiveStateEndpointStoresAndReturnsLiveGameContext()
+    {
+        using TempModules scratch = new();
+        string reviewsPath = Path.Combine(scratch.Root, "reviews.json");
+        using WorkbenchServer server = new(
+            CampaignTests.SampleCrypt,
+            [Path.Combine(Rules.RepositoryRoot, "modules")],
+            [],
+            "127.0.0.1",
+            port: 0,
+            reviewsPath: reviewsPath);
+        server.Start();
+        using HttpClient http = new() { BaseAddress = new Uri(server.Url) };
+
+        using JsonDocument before = JsonDocument.Parse(await http.GetStringAsync("/api/live-state"));
+        Assert.True(before.RootElement.GetProperty("ok").GetBoolean());
+        Assert.False(before.RootElement.GetProperty("connected").GetBoolean());
+
+        using StringContent body = new(
+            """{"screen":"play","module":"sample-crypt","area":"sample-crypt:entrance","x":3,"y":1,"facing":"east","activeEvent":"sample-crypt:barred_door"}""",
+            System.Text.Encoding.UTF8,
+            "application/json");
+        using HttpResponseMessage post = await http.PostAsync("/api/live-state", body);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using JsonDocument after = JsonDocument.Parse(await http.GetStringAsync("/api/live-state"));
+        JsonElement live = after.RootElement;
+        Assert.Equal("sample-crypt:entrance", live.GetProperty("area").GetString());
+        Assert.Equal(3, live.GetProperty("x").GetInt32());
+        Assert.Equal(1, live.GetProperty("y").GetInt32());
+        Assert.Equal("east", live.GetProperty("facing").GetString());
+        Assert.Equal("sample-crypt:barred_door", live.GetProperty("activeEvent").GetString());
+    }
 }

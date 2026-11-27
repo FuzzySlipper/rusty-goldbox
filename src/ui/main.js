@@ -18,6 +18,7 @@ import { createPortraits } from './panels/portraits.js';
 import { createMap } from './panels/map.js';
 import { createControls } from './panels/controls.js';
 import { createOverlay } from './panels/overlays.js';
+import { createWorkbench } from './panels/workbench.js';
 import { createTitle } from './screens/title.js';
 import { createParty } from './screens/party.js';
 
@@ -37,6 +38,7 @@ export function mountProductUi(root, context) {
       render(lastView);
     }
   };
+  const workbench = createWorkbench(send);
   const ui = {
     open: (what) => {
       open = what;
@@ -50,6 +52,7 @@ export function mountProductUi(root, context) {
       open = null;
       rerender();
     },
+    workbench: () => workbench.toggle(),
     // Shows proportions while the player drags a layout slider; the projection's layout returns on the next update.
     preview: (layout) => showLayout(layout),
     // Sets the interface scale while the player drags its slider; letting go saves it.
@@ -96,7 +99,7 @@ export function mountProductUi(root, context) {
   const renderParty = createParty(send, rerender);
 
   const frame = element('div', { class: 'gb-frame' });
-  const panel = element('div', { 'aria-label': 'Rusty Tales', 'data-tales-panel': '' }, frame);
+  const panel = element('div', { 'aria-label': 'Rusty Tales', 'data-tales-panel': '' }, frame, workbench.node);
   root.append(skinStyle, panel);
 
   // The player's interface scale is the Engine's UI scale, which the stylesheet multiplies every size by.
@@ -140,6 +143,7 @@ export function mountProductUi(root, context) {
   let shownScreen = null;
   const render = (projection) => {
     lastView = projection;
+    workbench.render(projection);
     applySkin(projection.skin);
     showLayout(projection.layout);
     applyUiScale(projection.uiScale);
@@ -215,6 +219,7 @@ export function mountProductUi(root, context) {
       removeAnchor?.();
       log.dispose();
       map.dispose();
+      workbench.dispose();
       panel.remove();
       skinStyle.remove();
     },

@@ -105,7 +105,7 @@ internal static class GameCommands
 
     /// <summary>Actions that only change this player's own settings or library, which a guest still does itself.</summary>
     private static readonly HashSet<string> LocalActions =
-        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat", "stable-save", "stable-export-party", "stable-remove"];
+        ["volume", "skin", "layout-config", "ui-scale", "module-preview", "module-install", "module-updates", "module-remove", "module-cancel", "host", "join", "leave", "chat", "stable-save", "stable-export-party", "stable-remove", "workbench-url"];
 
     /// <summary>Runs one <c>tales.command.v1</c> payload: <c>{ "action": ..., fields }</c>.</summary>
     public static void Run(GameSession session, IEngineContext engine, JsonElement payload)
@@ -355,6 +355,69 @@ internal static class GameCommands
                     session.Quit();
                     session.Refresh();
                     break;
+                case "workbench-url":
+                {
+                    string nextUrl = Text(payload, "url").Trim().TrimEnd('/');
+                    if (Uri.TryCreate(nextUrl, UriKind.Absolute, out Uri? parsed) && parsed.Scheme is "http" or "https")
+                    {
+                        session.WorkbenchUrl = nextUrl;
+                    }
+                    else
+                    {
+                        Refuse(session, $"'{nextUrl}' is not an http:// or https:// Workbench URL.");
+                    }
+
+                    break;
+                }
+                case "debug-goto":
+                {
+                    if (session.Set?.Rules is not RuleSet rules || session.Runner is null)
+                    {
+                        Refuse(session, "Start a campaign before jumping to an area.");
+                        break;
+                    }
+
+                    string areaRef = Text(payload, "area");
+                    if (rules.Find(Core.Definitions.DefinitionTypes.Area, areaRef, out string? problem) is not Core.Definitions.Definition areaDef)
+                    {
+                        Refuse(session, problem!);
+                        break;
+                    }
+
+                    int x = Integer(payload, "x");
+                    int y = Integer(payload, "y");
+                    Facing facing = session.Runner.State.Facing;
+                    if (payload.TryGetProperty("facing", out JsonElement facingEl)
+                        && facingEl.ValueKind == JsonValueKind.String
+                        && facingEl.GetString() is string fText
+                        && fText.Length > 0
+                        && !Facings.TryParse(fText.ToLowerInvariant(), out facing))
+                    {
+                        Refuse(session, $"'{fText}' is not a valid facing (north, east, south, west).");
+                        break;
+                    }
+
+                    session.Teleport(areaDef, x, y, facing);
+                    break;
+                }
+                case "debug-event":
+                {
+                    if (session.Set?.Rules is not RuleSet rules || session.Runner is null)
+                    {
+                        Refuse(session, "Start a campaign before triggering an event.");
+                        break;
+                    }
+
+                    string evtRef = Text(payload, "event");
+                    if (rules.Find(Core.Definitions.DefinitionTypes.Event, evtRef, out string? problem) is not Core.Definitions.Definition evtDef)
+                    {
+                        Refuse(session, problem!);
+                        break;
+                    }
+
+                    session.TriggerEvent(engine, evtDef);
+                    break;
+                }
                 case "volume":
                     session.SetVolume(Text(payload, "bus"), Volume(payload));
                     SaveSettings(session, engine);

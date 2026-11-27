@@ -45,6 +45,7 @@ internal static partial class SessionProjection
             }).ToArray()),
             ["modules"] = Modules(session.Installer),
             ["stable"] = StableProjection(session, imageUrl),
+            ["workbench"] = Workbench(session),
             // Hosted play: seats, who plays what and the leader, and which member this player is.
             ["table"] = session.Table?.ToJson(),
             ["you"] = session.Table is null ? null : session.LocalMember,
@@ -1020,6 +1021,32 @@ internal static partial class SessionProjection
             _ => "<<",
         };
         return map.Render(new Dictionary<(int X, int Y), string> { [(state.X, state.Y)] = arrow }, playerView: true);
+    }
+
+    private static JsonObject Workbench(GameSession session)
+    {
+        CampaignState? state = session.Runner?.State;
+        string? activeEvent = state?.PendingCombat?.Event.QualifiedId
+            ?? state?.PendingMenu?.QualifiedId
+            ?? state?.PendingShop?.QualifiedId
+            ?? state?.PendingTemple?.QualifiedId
+            ?? state?.PendingTraining?.QualifiedId
+            ?? state?.ViewEvent?.QualifiedId;
+
+        return new JsonObject
+        {
+            ["url"] = session.WorkbenchUrl,
+            ["screen"] = session.Screen.ToString().ToLowerInvariant(),
+            ["module"] = session.Set?.Root?.Id,
+            ["campaign"] = session.Campaign?.QualifiedId,
+            ["area"] = state?.Area.QualifiedId,
+            ["areaName"] = state?.Area.Name,
+            ["x"] = state?.X,
+            ["y"] = state?.Y,
+            ["facing"] = state is null ? null : Facings.Name(state.Facing),
+            ["activeEvent"] = activeEvent,
+            ["activeActor"] = session.Combat?.ActiveActorId,
+        };
     }
 
     private static string Number(decimal? value) => value?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "-";

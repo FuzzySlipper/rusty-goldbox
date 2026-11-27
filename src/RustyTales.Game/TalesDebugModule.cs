@@ -42,6 +42,7 @@ public sealed class TalesDebugModule : IDebugCommandModule
             "tales.tp <x> <y> [facing]              Teleport within the current area",
             "tales.event <event>                    Trigger an authored event chain immediately",
             "tales.combat-view <mode>               Switch combat view: tactical, first_person, side_view or auto",
+            "tales.workbench [url]                  Show or set the local CLI Workbench URL for the in-game debug surface",
             "tales.heal                             Restore every party member's tracks and clear conditions",
             "tales.quit                             Return to the title screen",
         ]));
@@ -297,6 +298,25 @@ public sealed class TalesDebugModule : IDebugCommandModule
         _session.CombatPresentationOverride = normalized;
         _publish();
         return DebugCommandResult.Success($"Combat presentation set to {normalized}.");
+    }
+
+    [DebugCommand("tales.workbench", Description = "Show or update the local CLI Workbench URL for the in-game debug surface.")]
+    public DebugCommandResult Workbench(string url = "")
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return DebugCommandResult.Success(_session.WorkbenchUrl);
+        }
+
+        string trimmed = url.Trim().TrimEnd('/');
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? parsed) || parsed.Scheme is not ("http" or "https"))
+        {
+            return DebugCommandResult.Failure(DebugCommandStatus.InvalidArguments, $"'{url}' is not a valid http:// or https:// URL.");
+        }
+
+        _session.WorkbenchUrl = trimmed;
+        _publish();
+        return DebugCommandResult.Success($"Workbench URL set to {trimmed}.");
     }
 
     [DebugCommand("tales.heal", Description = "Restore all party tracks to maximum and clear conditions.")]

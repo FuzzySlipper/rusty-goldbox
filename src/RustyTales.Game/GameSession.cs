@@ -80,6 +80,11 @@ internal sealed class GameSession(ModuleLibrary library)
     /// <summary>Optional dev-console override for combat framing ("tactical", "first_person" or "side_view").</summary>
     public string? CombatPresentationOverride { get; set; }
 
+    /// <summary>Local CLI Workbench URL used by the optional in-game debug surface.</summary>
+    public string WorkbenchUrl { get; set; } = Environment.GetEnvironmentVariable("TALES_WORKBENCH_URL") is { Length: > 0 } envUrl
+        ? envUrl.TrimEnd('/')
+        : "http://127.0.0.1:4173";
+
     /// <summary>Resolved combat presentation mode: dev override, else campaign override, else combat definition, else tactical.</summary>
     public string CombatPresentation(Definition? combat)
     {

@@ -1004,4 +1004,41 @@ pre.json-block {
   flex-shrink: 0;
 }
 
+/* Embedded in-game live debug surface styling */
+body.embed-mode .topbar { padding: 6px 10px; }
+body.embed-mode .brand-subtitle,
+body.embed-mode .reload-status { display: none; }
+body.embed-mode .brand-mark { width: 26px; height: 26px; font-size: 11px; }
+body.embed-mode .inspector { width: 310px; }
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(61, 196, 171, 0.16);
+  color: var(--teal);
+  border: 1px solid rgba(61, 196, 171, 0.5);
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-marker-ring {
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+
 

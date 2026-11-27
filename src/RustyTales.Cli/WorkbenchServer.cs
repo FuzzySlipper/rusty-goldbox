@@ -30,6 +30,7 @@ internal sealed class WorkbenchServer : IDisposable
 
     private ModuleSet _set;
     private ModuleGraph _graph;
+    private string? _liveStateJson;
 
     public WorkbenchServer(
         string modulePath,
@@ -243,6 +244,12 @@ internal sealed class WorkbenchServer : IDisposable
                 return;
             }
 
+            if (path == "/api/live-state")
+            {
+                HandleLiveState(request, response);
+                return;
+            }
+
             if (path == "/api/graph")
             {
                 bool reload = string.Equals(request.QueryString["reload"], "1", StringComparison.Ordinal)
@@ -446,6 +453,58 @@ internal sealed class WorkbenchServer : IDisposable
         }
 
         WriteJson(response, 405, new { ok = false, error = $"Unsupported review request {method} {path}." });
+    }
+
+    private void HandleLiveState(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        string method = request.HttpMethod.ToUpperInvariant();
+        if (method == "GET")
+        {
+            string? snapshot;
+            lock (_stateLock)
+            {
+                snapshot = _liveStateJson;
+            }
+
+            if (snapshot is null)
+            {
+                WriteJson(response, 200, new { ok = true, connected = false });
+                return;
+            }
+
+            WriteRawJson(response, 200, snapshot);
+            return;
+        }
+
+        if (method == "POST")
+        {
+            using StreamReader reader = new(request.InputStream, request.ContentEncoding);
+            string body = reader.ReadToEnd();
+            try
+            {
+                using JsonDocument parsed = JsonDocument.Parse(body);
+                if (parsed.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    WriteJson(response, 400, new { ok = false, error = "Live state payload must be a JSON object." });
+                    return;
+                }
+            }
+            catch (JsonException exception)
+            {
+                WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                return;
+            }
+
+            lock (_stateLock)
+            {
+                _liveStateJson = body;
+            }
+
+            WriteJson(response, 200, new { ok = true });
+            return;
+        }
+
+        WriteJson(response, 405, new { ok = false, error = $"Unsupported method {method} for /api/live-state." });
     }
 
     private void HandleDefinition(HttpListenerRequest request, HttpListenerResponse response)

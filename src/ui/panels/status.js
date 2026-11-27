@@ -5,9 +5,10 @@ export function createStatus(ui) {
   const compass = element('span', { class: 'gb-compass', 'aria-hidden': 'true' });
   const where = element('output', { class: 'gb-where', id: 'rusty-tales-status', 'aria-live': 'polite' });
   const meta = element('span', { class: 'gb-muted' });
+  const wb = button('⚙ Workbench', () => ui.workbench?.(), { title: 'Open in-game Workbench debug surface (F9)' });
   const menu = button('≡ Menu', () => ui.toggle({ kind: 'menu' }), { title: 'Save, quit, skin and volume' });
   const node = element('header', { class: 'gb-panel gb-status', 'data-rusty-ui-interactive': '' },
-    compass, where, meta, element('span', { class: 'gb-spacer' }), menu);
+    compass, where, meta, element('span', { class: 'gb-spacer' }), wb, menu);
 
   const render = (view) => {
     where.textContent = view.status ?? '';

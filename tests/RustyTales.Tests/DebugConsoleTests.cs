@@ -75,4 +75,84 @@ public sealed class DebugConsoleTests
             Assert.Equal(Screen.Title, session.Screen);
         });
     }
+
+    [Fact]
+    public void WorkbenchBridgeCommandsAndProjectionExposeLiveStateAndJumps()
+    {
+        using TempModules scratch = new();
+        List<string> containers = new[] { "classic", "placeholder-art", "sample-crypt" }
+            .Select(id => EngineContentTests.Pack(Path.Combine(Rules.RepositoryRoot, "modules", id), scratch))
+            .ToList();
+
+        using EngineTestHost host = EngineTestHost.Create();
+        host.Call(engine =>
+        {
+            ModuleLibrary library = new(_ => containers.Select(path => ProductContentBundle.OpenContainer(engine.Content, path)).ToList());
+            GameSession session = new(library);
+            TalesDebugModule debug = new(session, engine, () => { });
+
+            // Default workbench URL and update via debug console & command payload.
+            Assert.Contains("http://127.0.0.1:", debug.Workbench().Message, StringComparison.Ordinal);
+            Assert.True(debug.Workbench("http://127.0.0.1:4199/").Succeeded);
+            Assert.Equal("http://127.0.0.1:4199", session.WorkbenchUrl);
+
+            using (JsonDocument urlCmd = JsonDocument.Parse("""{"action":"workbench-url","url":"http://127.0.0.1:4188/"}"""))
+            {
+                GameCommands.Run(session, engine, urlCmd.RootElement);
+            }
+            Assert.Equal("http://127.0.0.1:4188", session.WorkbenchUrl);
+
+            using (JsonDocument badUrlCmd = JsonDocument.Parse("""{"action":"workbench-url","url":"ftp://bad"}"""))
+            {
+                GameCommands.Run(session, engine, badUrlCmd.RootElement);
+            }
+            Assert.Equal("http://127.0.0.1:4188", session.WorkbenchUrl);
+            Assert.Contains(session.Notes, n => n.Contains("http://", StringComparison.Ordinal));
+
+            // Start Sample Crypt and check SessionProjection["workbench"].
+            Assert.True(debug.Start("sample-crypt", "3").Succeeded);
+            using (JsonDocument doc = JsonDocument.Parse(SessionProjection.Build(session).ToJsonString()))
+            {
+                JsonElement wb = doc.RootElement.GetProperty("workbench");
+                Assert.Equal("http://127.0.0.1:4188", wb.GetProperty("url").GetString());
+                Assert.Equal("play", wb.GetProperty("screen").GetString());
+                Assert.Equal("sample-crypt", wb.GetProperty("module").GetString());
+                Assert.Equal("sample-crypt:entrance", wb.GetProperty("area").GetString());
+                Assert.Equal(0, wb.GetProperty("x").GetInt32());
+                Assert.Equal(2, wb.GetProperty("y").GetInt32());
+                Assert.Equal("north", wb.GetProperty("facing").GetString());
+            }
+
+            // Jump live from Workbench via debug-goto command.
+            using (JsonDocument gotoCmd = JsonDocument.Parse("""{"action":"debug-goto","area":"sample-crypt:entrance","x":3,"y":1,"facing":"east"}"""))
+            {
+                GameCommands.Run(session, engine, gotoCmd.RootElement);
+            }
+            Assert.Equal(3, session.Runner!.State.X);
+            Assert.Equal(1, session.Runner.State.Y);
+            Assert.Equal(Facing.East, session.Runner.State.Facing);
+
+            using (JsonDocument doc = JsonDocument.Parse(SessionProjection.Build(session).ToJsonString()))
+            {
+                JsonElement wb = doc.RootElement.GetProperty("workbench");
+                Assert.Equal(3, wb.GetProperty("x").GetInt32());
+                Assert.Equal(1, wb.GetProperty("y").GetInt32());
+                Assert.Equal("east", wb.GetProperty("facing").GetString());
+            }
+
+            // Trigger an event live from Workbench via debug-event command.
+            using (JsonDocument evtCmd = JsonDocument.Parse("""{"action":"debug-event","event":"sample-crypt:guards"}"""))
+            {
+                GameCommands.Run(session, engine, evtCmd.RootElement);
+            }
+            Assert.Equal(Screen.Combat, session.Screen);
+
+            using (JsonDocument doc = JsonDocument.Parse(SessionProjection.Build(session).ToJsonString()))
+            {
+                JsonElement wb = doc.RootElement.GetProperty("workbench");
+                Assert.Equal("combat", wb.GetProperty("screen").GetString());
+                Assert.False(string.IsNullOrWhiteSpace(wb.GetProperty("activeActor").GetString()));
+            }
+        });
+    }
 }

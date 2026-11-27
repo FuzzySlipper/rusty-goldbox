@@ -343,6 +343,35 @@ img.gb-picture { object-fit: contain; }
 .gb-overlay td.gb-act { text-align: right; width: 1%; white-space: nowrap; }
 .gb-overlay .gb-close { box-shadow: none; border: 0; background: none; color: var(--gb-muted); padding: 0 .3em; font-size: 1.6em; line-height: .8; }
 .gb-overlay label { display: inline-flex; gap: .3em; align-items: center; margin-inline-end: .8em; }
+
+/* In-game Workbench Debug Surface overlay */
+.gb-workbench-backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(7, 9, 13, 0.78); display: flex; align-items: center; justify-content: center; padding: 14px; font-family: system-ui, -apple-system, sans-serif; }
+.gb-workbench-backdrop[hidden] { display: none; }
+.gb-wb-shell { width: min(96vw, 1380px); height: min(92vh, 860px); background: #0f1217; color: #ece6d9; border: 1px solid #3c465c; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75); }
+.gb-wb-header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #171b23; border-bottom: 1px solid #2c3444; flex-wrap: wrap; }
+.gb-wb-title { font-size: 13px; color: #e4a94c; letter-spacing: 0.02em; }
+.gb-wb-live { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #3dc4ab; background: rgba(61, 196, 171, 0.14); border: 1px solid rgba(61, 196, 171, 0.4); border-radius: 999px; padding: 2px 9px; }
+.gb-wb-status { font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #222836; color: #9aa4b6; }
+.gb-wb-status[data-state="online"] { background: rgba(61, 196, 171, 0.16); color: #3dc4ab; }
+.gb-wb-status[data-state="offline"] { background: rgba(235, 93, 93, 0.16); color: #eb5d5d; }
+.gb-wb-input, .gb-wb-select, .gb-wb-note { background: #0d1016; color: #ece6d9; border: 1px solid #343d50; border-radius: 5px; padding: 4px 8px; font-size: 12px; }
+.gb-wb-input { width: 195px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+.gb-wb-pinbar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: #141820; border-bottom: 1px solid #2c3444; flex-wrap: wrap; }
+.gb-wb-pinlabel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9aa4b6; }
+.gb-wb-select { max-width: 240px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+.gb-wb-note { flex: 1; min-width: 180px; }
+.gb-wb-feedback { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #e4a94c; }
+[data-tales-panel] .gb-workbench-backdrop .gb-wb-shell button { border: 1px solid #3f4b63; border-image: none; box-shadow: none; background: #1f2530; color: #ece6d9; padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer; image-rendering: auto; }
+[data-tales-panel] .gb-workbench-backdrop .gb-wb-shell button:hover { background: #2a3242; }
+[data-tales-panel] .gb-workbench-backdrop .gb-wb-shell .gb-wb-btn-fix { border-color: #eb5d5d; color: #eb5d5d; background: rgba(235, 93, 93, 0.14); }
+[data-tales-panel] .gb-workbench-backdrop .gb-wb-shell .gb-wb-btn-q { border-color: #64a5f6; color: #64a5f6; background: rgba(100, 165, 246, 0.14); }
+[data-tales-panel] .gb-workbench-backdrop .gb-wb-shell .gb-wb-btn-ok { border-color: #3dc4ab; color: #3dc4ab; background: rgba(61, 196, 171, 0.14); }
+.gb-wb-body { flex: 1; min-height: 0; position: relative; display: flex; }
+.gb-wb-iframe { width: 100%; height: 100%; border: 0; background: #0f1217; }
+.gb-wb-offline { margin: auto; max-width: 480px; padding: 24px; background: #171b23; border: 1px solid #2c3444; border-radius: 10px; text-align: center; }
+.gb-wb-offline h3 { margin: 0 0 8px 0; color: #e4a94c; }
+.gb-wb-offline p { margin: 0 0 10px 0; color: #9aa4b6; font-size: 12.5px; }
+.gb-wb-code { margin: 0 0 14px 0; padding: 8px 12px; background: #0c0f14; border: 1px solid #2c3444; border-radius: 6px; color: #ece6d9; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 `;
 
 /** A skin's stylesheet: its colours as theme variables, its panel tile under them, its frame and button faces cut into nine. */
