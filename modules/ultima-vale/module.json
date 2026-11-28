@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "ultima-vale",
+  "kind": "campaign",
+  "version": "0.1.0",
+  "title": "Ultima Vale — Mixed 2D Town & 3D Barrow Showcase",
+  "requires": [
+    { "id": "classic", "version": "^0.1.0" },
+    { "id": "placeholder-art", "version": "^0.1.0" }
+  ],
+  "provenance": "Original first-party showcase campaign demonstrating Ultima-style 2D auto-tiled overhead village exploration transitioning into a 3D first-person dungeon and an auto-tiled tactical combat encounter."
+}

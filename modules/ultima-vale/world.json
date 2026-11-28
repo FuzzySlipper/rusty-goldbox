@@ -1,0 +1,205 @@
+[
+  {
+    "type": "variable",
+    "id": "goblin_cleared",
+    "value_type": "boolean",
+    "initial": "false",
+    "description": "True once the roadside raiders on Oakvale bridge have been driven off."
+  },
+  {
+    "type": "area",
+    "id": "oakvale",
+    "name": "Oakvale Village",
+    "view": "overhead",
+    "tilemap": {
+      "tileset": "oakvale_tiles",
+      "zoom": 10,
+      "layers": [
+        [
+          "ggggggg~~ggggg",
+          "gwwwggg~~gwwwg",
+          "gwwwggg~~gwwXg",
+          "gwdwggg~~ggggg",
+          "ggpgggg~~gggpg",
+          "ggppppppBppppg",
+          "ggpgggg~~ggggg",
+          "ggpggg~~~ggggg",
+          "gwwwgg~~~ggggg",
+          "gggggg~~~ggggg"
+        ],
+        [
+          "T   T f  f   T",
+          "    f        T",
+          "    L         ",
+          "     S        ",
+          "     W    L   ",
+          "              ",
+          " f   f      f ",
+          "T          T T",
+          "     T     T T",
+          "T   TT    TTTT"
+        ]
+      ]
+    },
+    "cells": [
+      { "at": [2, 3], "event": "inn_scene" },
+      { "at": [5, 3], "event": "signpost_text" },
+      { "at": [8, 5], "event": "bridge_ambush", "once": true },
+      { "at": [12, 2], "event": "enter_barrow" }
+    ],
+    "entries": {
+      "square": { "at": [4, 5], "facing": "east" },
+      "from_barrow": { "at": [12, 3], "facing": "south" }
+    }
+  },
+  {
+    "type": "area",
+    "id": "barrow",
+    "name": "Old Barrow (3D Dungeon)",
+    "view": "first_person",
+    "wall_set": "placeholder-art:stone_wall",
+    "map": [
+      "+--+--+--+",
+      "|        |",
+      "+--+  +--+",
+      "|        |",
+      "+--+--+--+"
+    ],
+    "cells": [
+      { "at": [0, 0], "event": "leave_barrow" },
+      { "at": [2, 1], "prop": { "sprite": "placeholder-art:bones" }, "event": "barrow_relic", "once": true }
+    ],
+    "entries": {
+      "stairs": { "at": [1, 0], "facing": "south" }
+    }
+  },
+  {
+    "type": "encounter",
+    "id": "meadow_ambush",
+    "name": "Bridge Raiders",
+    "monsters": [
+      { "monster": "classic:acolyte", "count": "1" },
+      { "monster": "classic:skeleton", "count": "2" }
+    ],
+    "tilemap": {
+      "tileset": "oakvale_tiles",
+      "layers": [
+        [
+          "gggg~~gggg",
+          "gggg~~gggg",
+          "ppppBBpppp",
+          "ppppBBpppp",
+          "gggg~~gggg",
+          "gggg~~gggg"
+        ],
+        [
+          "T  f  f  T",
+          "  f    L f",
+          "          ",
+          "          ",
+          " f L    T ",
+          "TT      TT"
+        ]
+      ]
+    }
+  },
+  {
+    "type": "event",
+    "id": "intro",
+    "kind": "text",
+    "text": "Morning mist rises over Oakvale Brook. Explore the 2D village square, cross the timber bridge east, and descend into the 3D barrow."
+  },
+  {
+    "type": "event",
+    "id": "signpost_text",
+    "kind": "text",
+    "text": "The weathered signpost reads: 'WEST — Hearthside Inn. EAST — Timber Bridge & Old Barrow.'"
+  },
+  {
+    "type": "scene",
+    "id": "inn_scene",
+    "speaker": "Innkeeper Mara",
+    "start": "greet",
+    "nodes": {
+      "greet": {
+        "say": "Welcome to Hearthside Inn! Raiders have been lurking by the eastern bridge since dawn.",
+        "choices": [
+          { "label": "Rest by the hearth", "event": "inn_rest" },
+          { "label": "Step back outside", "say": "Safe travels across the brook!" }
+        ]
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "inn_rest",
+    "kind": "rest",
+    "tracks": ["classic:hit_points"],
+    "text": "A warm meal and a quiet night restore the party's strength."
+  },
+  {
+    "type": "event",
+    "id": "bridge_ambush",
+    "kind": "combat",
+    "encounter": "meadow_ambush",
+    "on_win": "bridge_won"
+  },
+  {
+    "type": "event",
+    "id": "bridge_won",
+    "kind": "set",
+    "variable": "goblin_cleared",
+    "value": "true",
+    "next": "bridge_won_text"
+  },
+  {
+    "type": "event",
+    "id": "bridge_won_text",
+    "kind": "text",
+    "text": "The raiders scatter into the pines, leaving the eastern road to the Old Barrow open."
+  },
+  {
+    "type": "event",
+    "id": "enter_barrow",
+    "kind": "teleport",
+    "area": "barrow",
+    "entry": "stairs",
+    "next": "enter_barrow_text"
+  },
+  {
+    "type": "event",
+    "id": "enter_barrow_text",
+    "kind": "text",
+    "text": "You descend the mossy stone steps into the torchlit 3D corridors of the Old Barrow."
+  },
+  {
+    "type": "event",
+    "id": "leave_barrow",
+    "kind": "teleport",
+    "area": "oakvale",
+    "entry": "from_barrow",
+    "next": "leave_barrow_text"
+  },
+  {
+    "type": "event",
+    "id": "leave_barrow_text",
+    "kind": "text",
+    "text": "Daylight greets you as you climb back up into Oakvale Village."
+  },
+  {
+    "type": "event",
+    "id": "barrow_relic",
+    "kind": "end",
+    "text": "Inside the stone coffer lies the Sun-Seal of Oakvale! The village is saved."
+  },
+  {
+    "type": "campaign",
+    "id": "vale",
+    "name": "Ultima Vale",
+    "start": { "area": "oakvale", "entry": "square" },
+    "intro": "intro",
+    "skin": "placeholder-art:stone",
+    "combat_presentation": "tactical",
+    "party": { "min": 1, "max": 4 }
+  }
+]

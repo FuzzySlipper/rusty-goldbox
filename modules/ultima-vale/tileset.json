@@ -1,0 +1,95 @@
+[
+  {
+    "type": "asset",
+    "id": "oakvale_sheet",
+    "media": "sheet",
+    "file": "tiles/oakvale_tiles.png",
+    "frame_size": [16, 16]
+  },
+  {
+    "type": "tileset",
+    "id": "oakvale_tiles",
+    "name": "Oakvale Village & Meadow Tiles",
+    "sheet": "oakvale_sheet",
+    "tiles": {
+      "g": { "name": "Meadow Grass", "variants": [0, 0, 1, 2, 3], "color": "#457a3c" },
+      "s": { "name": "Flagstone", "tile": 4, "color": "#7d7973" },
+      "d": { "name": "Oak Door", "tile": 5, "door": true, "color": "#8c5a30" },
+      "B": { "name": "Timber Bridge", "tile": 6, "color": "#946638" },
+      "X": { "name": "Barrow Stairs", "tile": 7, "color": "#585652" },
+      "w": {
+        "name": "Cottage Wall",
+        "passable": false,
+        "autotile": {
+          "mode": "wall_top",
+          "frames": { "front": 8, "top": 9, "cap": 10 },
+          "connects_to": ["d"],
+          "out_of_bounds": "empty"
+        },
+        "color": "#965032"
+      },
+      "T": { "name": "Pine Tree", "tile": 11, "passable": false, "color": "#265c2e" },
+      "S": { "name": "Town Sign", "tile": 12, "color": "#b28854" },
+      "L": { "name": "Lantern", "tile": 13, "color": "#f5d466" },
+      "f": { "name": "Wildflowers", "tile": 14, "color": "#e8c454" },
+      "W": { "name": "Village Well", "tile": 15, "passable": false, "color": "#7a8694" },
+      "p": {
+        "name": "Cobble Road",
+        "autotile": {
+          "mode": "4bit",
+          "base": 16,
+          "connects_to": ["d", "B", "X"],
+          "out_of_bounds": "empty"
+        },
+        "color": "#b89b6a"
+      },
+      "~": {
+        "name": "Brook Water",
+        "passable": false,
+        "autotile": {
+          "mode": "4bit",
+          "base": 32,
+          "connects_to": ["B"],
+          "out_of_bounds": "same"
+        },
+        "color": "#2864a0"
+      }
+    }
+  },
+  {
+    "type": "figure",
+    "id": "fighter_fig",
+    "class": "classic:fighter",
+    "sprite": "placeholder-art:fighter"
+  },
+  {
+    "type": "figure",
+    "id": "cleric_fig",
+    "class": "classic:cleric",
+    "sprite": "placeholder-art:cleric"
+  },
+  {
+    "type": "figure",
+    "id": "magic_user_fig",
+    "class": "classic:magic_user",
+    "sprite": "placeholder-art:magic_user"
+  },
+  {
+    "type": "figure",
+    "id": "thief_fig",
+    "class": "classic:thief",
+    "sprite": "placeholder-art:thief"
+  },
+  {
+    "type": "figure",
+    "id": "skeleton_fig",
+    "monster": "classic:skeleton",
+    "sprite": "placeholder-art:skeleton"
+  },
+  {
+    "type": "figure",
+    "id": "acolyte_fig",
+    "monster": "classic:acolyte",
+    "sprite": "placeholder-art:magic_user"
+  }
+]

@@ -418,4 +418,26 @@ public sealed class TilemapTests
         Assert.False(set.IsValid);
         Assert.Contains(set.Diagnostics, d => d.Rule == "area.entry" && d.Message.Contains("impassable", StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void FirstPartyUltimaValeShowcaseValidatesAndTransitionsBetween2DVillageAnd3DBarrow()
+    {
+        string modulePath = Path.Combine(Rules.RepositoryRoot, "modules", "ultima-vale");
+        ModuleSet set = ModuleLoader.Load(modulePath, [Path.Combine(Rules.RepositoryRoot, "modules")]);
+        Assert.True(set.IsValid, string.Join('\n', set.Diagnostics.Select(d => $"{d.Rule} {d.JsonPath}: {d.Message}")));
+
+        RuleSet rules = set.Rules!;
+        ModuleGraph graph = ModuleGraphBuilder.Build(set);
+        Assert.DoesNotContain(graph.Issues, i => i.Severity == "error");
+        Assert.Contains(graph.Tilesets!, t => t.LocalId == "oakvale_tiles");
+        GraphArea village = Assert.Single(graph.Areas, a => a.LocalId == "oakvale");
+        Assert.Equal("overhead", village.View);
+        Assert.NotNull(village.Tilemap);
+        Assert.Equal(2, village.Tilemap!.Layers.Count);
+        GraphArea barrow = Assert.Single(graph.Areas, a => a.LocalId == "barrow");
+        Assert.Equal("first_person", barrow.View);
+        Assert.True(barrow.Reachable);
+        GraphEncounter ambush = Assert.Single(graph.Encounters!, e => e.LocalId == "meadow_ambush");
+        Assert.NotNull(ambush.Tilemap);
+    }
 }
