@@ -1,5 +1,6 @@
 using System.Numerics;
 using RustyTales.Core.Campaigns;
+using RustyTales.Core.Definitions;
 
 namespace RustyTales.Game.Presentation;
 
@@ -162,6 +163,47 @@ internal static class AreaMesh
             for (int x = 0; x < width; x++)
             {
                 (floor is null ? plain : textured).Flat(x, z, 0, Vector3.UnitY, floor ?? default);
+            }
+        }
+
+        return Builder.Join(textured, plain);
+    }
+
+    /// <summary>
+    /// Builds a single batched multi-layer 2D tilemap mesh from a compiled
+    /// <see cref="ResolvedTilemap"/>: ground layer 0 sits at y = 0 and each
+    /// transparent overlay layer sits slightly above it (y = layer * 0.01f).
+    /// </summary>
+    public static AreaGeometry Tilemap(ResolvedTilemap tilemap, Definition sheetAsset, (int Width, int Height) sheetSize)
+    {
+        Builder textured = new();
+        Builder plain = new();
+        TilesetDefinition ts = tilemap.Tileset;
+        for (int layerIndex = 0; layerIndex < tilemap.Layers.Count; layerIndex++)
+        {
+            ResolvedTileLayer layer = tilemap.Layers[layerIndex];
+            float y = layerIndex * 0.01f;
+            for (int z = 0; z < tilemap.Height; z++)
+            {
+                for (int x = 0; x < tilemap.Width; x++)
+                {
+                    int frame = layer.At(x, z).Frame;
+                    if (frame < 0)
+                    {
+                        continue;
+                    }
+
+                    int col = frame % ts.Columns;
+                    int row = frame / ts.Columns;
+                    UvRect uv = TextureSampling.Region(
+                        sheetAsset,
+                        col * ts.FrameWidth,
+                        row * ts.FrameHeight,
+                        ts.FrameWidth,
+                        ts.FrameHeight,
+                        sheetSize);
+                    textured.Flat(x, z, y, Vector3.UnitY, uv);
+                }
             }
         }
 

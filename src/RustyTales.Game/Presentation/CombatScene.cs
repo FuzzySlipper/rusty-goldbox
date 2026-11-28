@@ -289,12 +289,13 @@ internal sealed class CombatScene : IDisposable
         (Material Material, UvRect Frame)? floor,
         (Material Material, UvRect Frame, bool Tile)? backdrop,
         (Material Material, UvRect Wall, UvRect? Cap)? roomWalls,
-        List<AppearanceFact> facts)
+        List<AppearanceFact> facts,
+        (ResolvedTilemap Tilemap, Material Material, Definition Sheet, (int Width, int Height) Size)? tiledFloor = null)
     {
         string sceneKey = $"{fightKey}@{presentation}";
         if (sceneKey != _fightKey)
         {
-            Build(sceneKey, presentation, observation, kindFor, spriteFor, terrainFor, field, floor, backdrop, roomWalls);
+            Build(sceneKey, presentation, observation, kindFor, spriteFor, terrainFor, field, floor, backdrop, roomWalls, tiledFloor);
         }
 
         facts.Add(new AppearanceFact(FloorObject, false, 0, _floorPlacement, _floor!, true, RenderLayer.Scene));
@@ -397,7 +398,8 @@ internal sealed class CombatScene : IDisposable
         CombatField? field,
         (Material Material, UvRect Frame)? floor,
         (Material Material, UvRect Frame, bool Tile)? backdrop,
-        (Material Material, UvRect Wall, UvRect? Cap)? roomWalls)
+        (Material Material, UvRect Wall, UvRect? Cap)? roomWalls,
+        (ResolvedTilemap Tilemap, Material Material, Definition Sheet, (int Width, int Height) Size)? tiledFloor = null)
     {
         Retire();
         _fightKey = sceneKey;
@@ -416,17 +418,23 @@ internal sealed class CombatScene : IDisposable
         _depth = depth;
 
         bool stageMode = presentation is "first_person" or "side_view";
+        bool useTiledFloor = !stageMode && tiledFloor is not null;
         int floorMargin = stageMode ? 4 : 0;
         int floorDepthExtra = stageMode ? 4 : 0;
         _floorPlacement = new Transform(new Vector3(-floorMargin, 0, 0), Quaternion.Identity, Vector3.One);
-        AreaGeometry geometry = AreaMesh.Floor(_width + (floorMargin * 2), _depth + floorDepthExtra, floor?.Frame);
+        AreaGeometry geometry = useTiledFloor
+            ? AreaMesh.Tilemap(tiledFloor!.Value.Tilemap, tiledFloor.Value.Sheet, tiledFloor.Value.Size)
+            : AreaMesh.Floor(_width + (floorMargin * 2), _depth + floorDepthExtra, floor?.Frame);
+        Material floorMat = useTiledFloor
+            ? tiledFloor!.Value.Material
+            : floor is not null ? floor.Value.Material : _plain;
         _floorMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
             geometry.Positions,
             geometry.Normals,
             geometry.Uvs,
             geometry.Indices,
             geometry.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
-            geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floor!.Value.Material : _plain)).ToArray()));
+            geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floorMat : _plain)).ToArray()));
         _floor = _graphics.CreateMeshAppearance(_floorMesh);
 
         if (stageMode)
@@ -446,7 +454,7 @@ internal sealed class CombatScene : IDisposable
                 wallGeo.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? backdrop!.Value.Material : _plain)).ToArray()));
             _backdrop = _graphics.CreateMeshAppearance(_backdropMesh);
         }
-        else if (roomWalls is not null)
+        else if (!useTiledFloor && roomWalls is not null)
         {
             // Frame the orthographic tactical battlefield with perimeter dungeon stone walls (Gold Box / SKALD style).
             _backdropPlacement = new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One);

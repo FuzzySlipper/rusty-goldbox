@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using Rusty.Engine;
 using RustyTales.Core.Campaigns;
+using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Modules;
@@ -24,12 +25,14 @@ internal sealed class SceneView : IDisposable
 
     private const ulong AreaObject = 1;
     private const ulong BackdropObject = 2;
+    private const ulong PartyLeaderObject = 3;
     private const ulong PropObjects = 10_000;
     private const ulong HemisphereLightId = 1;
     private const ulong TorchLightId = 2;
     private const double EyeHeight = 0.5;
     private const double FieldOfView = 70;
-    // Smooth first-person step and turn transitions over 5 ticks (~165ms at 30 Hz).
+    private const double OverheadPitch = 72;
+    // Smooth step and turn transitions over 5 ticks (~165ms at 30 Hz).
     private const int CameraTweenSteps = 5;
 
     /// <summary>The UI anchor the camera follows: the DOM's view panel.</summary>
@@ -48,6 +51,8 @@ internal sealed class SceneView : IDisposable
     private bool _showingCombat;
     private ulong? _viewRevision;
     private bool _showingArea;
+    private bool _showingOverhead;
+    private ResolvedTilemap? _overheadTilemap;
     private string? _areaKey;
     private string? _cameraAreaId;
     private Vector3 _cameraFrom;
@@ -58,6 +63,11 @@ internal sealed class SceneView : IDisposable
     private bool _hasCameraPose;
     private MeshResource? _mesh;
     private Appearance? _area;
+    private Appearance? _partyLeader;
+    private SpritePlayback? _partyLeaderPlayback;
+    private SpriteArt? _partyLeaderArt;
+    private string? _partyLeaderKey;
+    private bool _partyLeaderFacingRight = true;
     private Definition? _shownPicture;
     private SpritePlayback? _picturePlayback;
     private readonly PlaybackFrames _frames;
@@ -106,6 +116,8 @@ internal sealed class SceneView : IDisposable
         List<AppearanceFact> facts = [];
         _showingCombat = false;
         _showingArea = false;
+        _showingOverhead = false;
+        _overheadTilemap = null;
         if (session.Runner is CampaignRunner runner && session.Set?.Rules is RuleSet rules)
         {
             CampaignState state = runner.State;
@@ -114,6 +126,13 @@ internal sealed class SceneView : IDisposable
                 _showingCombat = true;
                 CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
                 string presentation = session.CombatPresentation(pending.Combat);
+                (ResolvedTilemap Tilemap, Material Material, Definition Sheet, (int Width, int Height) Size)? tiledFloor = null;
+                if (rules.EncounterTilemaps.TryGetValue(pending.Encounter, out ResolvedTilemap? encTm)
+                    && ArtFor(session.Set, encTm.Tileset.Sheet) is Art encArt)
+                {
+                    tiledFloor = (encTm, encArt.GetAlphaMaskMaterial(_engine.Graphics), encTm.Tileset.Sheet, rules.ImageSizes[encTm.Tileset.Sheet]);
+                }
+
                 _combat.Show(
                     pending.Continuation.RandomScope!,
                     presentation,
@@ -125,15 +144,34 @@ internal sealed class SceneView : IDisposable
                     Floor(rules, session.Set, state.Area),
                     CombatBackdrop(rules, session.Set, state, pending.Event),
                     RoomWalls(rules, session.Set, state.Area),
-                    facts);
+                    facts,
+                    tiledFloor);
                 FitCombatCamera(force: true);
             }
             else if (session.Screen == Screen.Play)
             {
                 _showingArea = true;
+                ResolvedTilemap? overheadTm = null;
+                bool isOverhead = AutoTiler.ViewOf(state.Area) == "overhead"
+                    && rules.AreaTilemaps.TryGetValue(state.Area, out overheadTm);
+                _showingOverhead = isOverhead;
+                _overheadTilemap = isOverhead ? overheadTm : null;
+
                 ShowArea(rules, session.Set, runner, state.Area, facts);
                 ShowProps(runner, state.Area, facts);
-                SetFirstPersonCamera(state.Area.QualifiedId, new Vector3(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f), (int)state.Facing * 90);
+                if (isOverhead)
+                {
+                    UpdateTorch(false, Vector3.Zero);
+                    SetOverheadCamera(state.Area.QualifiedId, new Vector3(state.X + 0.5f, 0f, state.Y + 0.5f), state.Facing);
+                    ShowPartyLeader(rules, session.Set, state, facts);
+                    FitOverheadCamera(force: true);
+                }
+                else
+                {
+                    RetirePartyLeader();
+                    SetFirstPersonCamera(state.Area.QualifiedId, new Vector3(state.X + 0.5f, (float)EyeHeight, state.Y + 0.5f), (int)state.Facing * 90);
+                }
+
                 // An event's picture covers the view until the party moves; otherwise the cell's backdrop shows.
                 Definition? shown = state.Picture ?? Backdrop(rules, state);
                 if (shown is not null && PictureOf(rules, session.Set, shown) is PictureArt picture)
@@ -157,6 +195,7 @@ internal sealed class SceneView : IDisposable
         if (!_showingArea)
         {
             StopPicture();
+            RetirePartyLeader();
             UpdateTorch(false, Vector3.Zero);
             _hasCameraPose = false;
             _cameraAreaId = null;
@@ -185,7 +224,20 @@ internal sealed class SceneView : IDisposable
 
         if (_showingArea)
         {
-            StepFirstPersonCamera();
+            if (_showingOverhead)
+            {
+                changed |= StepOverheadCamera();
+                changed |= FitOverheadCamera();
+                if (_partyLeaderPlayback is SpritePlayback leaderPlayback)
+                {
+                    changed |= _frames.Advance(leaderPlayback);
+                }
+            }
+            else
+            {
+                StepFirstPersonCamera();
+            }
+
             if (_picturePlayback is SpritePlayback picture)
             {
                 changed |= _frames.Advance(picture);
@@ -249,6 +301,168 @@ internal sealed class SceneView : IDisposable
         Vector3 eye = CurrentCameraEye();
         _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, Camera(new CameraPose(eye, 0, CurrentCameraYaw()))));
         UpdateTorch(true, eye);
+    }
+
+    private void SetOverheadCamera(string areaId, Vector3 targetGround, Facing facing)
+    {
+        if (facing == Facing.East)
+        {
+            _partyLeaderFacingRight = true;
+        }
+        else if (facing == Facing.West)
+        {
+            _partyLeaderFacingRight = false;
+        }
+
+        if (!_hasCameraPose || _cameraAreaId != areaId || Vector3.Distance(CurrentCameraEye(), targetGround) > 1.6f)
+        {
+            _cameraAreaId = areaId;
+            _cameraFrom = targetGround;
+            _cameraTo = targetGround;
+            _yawFrom = 0;
+            _yawTo = 0;
+            _cameraTweenStep = CameraTweenSteps;
+            _hasCameraPose = true;
+            return;
+        }
+
+        Vector3 current = CurrentCameraEye();
+        if (Vector3.DistanceSquared(current, targetGround) < 1e-6f)
+        {
+            return;
+        }
+
+        _cameraFrom = current;
+        _cameraTo = targetGround;
+        _cameraTweenStep = 0;
+    }
+
+    private bool StepOverheadCamera()
+    {
+        if (!_hasCameraPose || _cameraTweenStep >= CameraTweenSteps)
+        {
+            return false;
+        }
+
+        _cameraTweenStep++;
+        FitOverheadCamera(force: true);
+        if (_partyLeader is not null)
+        {
+            Vector3 spot = CurrentCameraEye();
+            Transform placement = PartyLeaderTransform(spot);
+            for (int i = 0; i < _published.Length; i++)
+            {
+                if (_published[i].ObjectId == PartyLeaderObject)
+                {
+                    _published[i] = _published[i] with { Transform = placement };
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool FitOverheadCamera(bool force = false)
+    {
+        if (_overheadTilemap is not ResolvedTilemap tilemap)
+        {
+            return false;
+        }
+
+        CameraViewportAnchorReadout anchor = _engine.CameraView.ReadViewportAnchor(new(ViewAnchor));
+        CameraSurfaceReadout surface = _engine.CameraView.ReadSurface();
+        if (!force && _viewRevision == anchor.Revision)
+        {
+            return false;
+        }
+
+        _viewRevision = anchor.Revision;
+        double width = (anchor.Reported ? anchor.Width : 1) * surface.CssWidth;
+        double height = (anchor.Reported ? anchor.Height : 1) * surface.CssHeight;
+        double aspect = Math.Max(0.4, width > 0 && height > 0 ? width / height : 16.0 / 9.0);
+
+        double pitchRad = OverheadPitch * Math.PI / 180.0;
+        double sinP = Math.Sin(pitchRad);
+        double cosP = Math.Cos(pitchRad);
+
+        double visibleTilesY = tilemap.Zoom ?? Math.Clamp(tilemap.Height + 0.6, 6.5, 13.0);
+        double orthoH = visibleTilesY * sinP;
+        double orthoW = orthoH * aspect;
+        double visibleTilesX = orthoW;
+
+        Vector3 focus = CurrentCameraEye();
+        float cx = tilemap.Width <= visibleTilesX
+            ? tilemap.Width / 2f
+            : Math.Clamp(focus.X, (float)(visibleTilesX / 2.0), (float)(tilemap.Width - (visibleTilesX / 2.0)));
+        float cz = tilemap.Height <= visibleTilesY
+            ? tilemap.Height / 2f
+            : Math.Clamp(focus.Z, (float)(visibleTilesY / 2.0), (float)(tilemap.Height - (visibleTilesY / 2.0)));
+
+        Vector3 forward = new(0f, (float)-sinP, (float)-cosP);
+        Vector3 target = new(cx, 0f, cz);
+        CameraPose pose = new(target - (forward * 18f), -OverheadPitch, 0);
+        _engine.CameraView.UpdateCamera(new CameraUpdateRequest(_camera, OrthographicCamera(pose, orthoH)));
+        return false;
+    }
+
+    private void ShowPartyLeader(RuleSet rules, ModuleSet set, CampaignState state, List<AppearanceFact> facts)
+    {
+        Definition? leaderClass = state.Party.FirstOrDefault()?.Levels.FirstOrDefault()?.Class;
+
+        SpriteArt? art = leaderClass is not null ? SpriteFor(rules, set, leaderClass) : null;
+        string key = art is not null ? $"sprite:{leaderClass!.QualifiedId}" : "fallback:party_leader";
+        if (_partyLeaderKey != key)
+        {
+            RetirePartyLeader();
+            _partyLeaderKey = key;
+            _partyLeaderArt = art;
+            if (art is not null)
+            {
+                _partyLeader = art.CreateFigure(BillboardMode.Spherical);
+                _partyLeaderPlayback = art.Play(_partyLeader, "idle");
+            }
+            else
+            {
+                _partyLeader = _engine.Graphics.CreatePrimitive(new PrimitiveAppearanceRequest(
+                    PrimitiveGeometry.Cube,
+                    false,
+                    new Color(0.28f, 0.55f, 0.92f, 1f)));
+            }
+        }
+
+        if (_partyLeader is not null)
+        {
+            facts.Add(new AppearanceFact(PartyLeaderObject, false, 0, PartyLeaderTransform(CurrentCameraEye()), _partyLeader, true, RenderLayer.Scene));
+        }
+    }
+
+    private Transform PartyLeaderTransform(Vector3 spot)
+    {
+        if (_partyLeaderArt is SpriteArt art)
+        {
+            return new Transform(new Vector3(spot.X, 0.04f, spot.Z), Quaternion.Identity, art.Scale(_partyLeaderFacingRight));
+        }
+
+        return new Transform(new Vector3(spot.X, 0.36f, spot.Z), Quaternion.Identity, new Vector3(0.42f, 0.72f, 0.42f));
+    }
+
+    private void RetirePartyLeader()
+    {
+        if (_partyLeaderPlayback is not null)
+        {
+            _retired.Add(_partyLeaderPlayback);
+            _partyLeaderPlayback = null;
+        }
+
+        if (_partyLeader is not null)
+        {
+            _retired.Add(_partyLeader);
+            _partyLeader = null;
+        }
+
+        _partyLeaderArt = null;
+        _partyLeaderKey = null;
     }
 
     private void UpdateTorch(bool enabled, Vector3 eye)
@@ -340,12 +554,14 @@ internal sealed class SceneView : IDisposable
         _engine.Graphics.PublishSnapshot(Array.Empty<AppearanceFact>());
         _combat.Dispose();
         StopPicture();
+        RetirePartyLeader();
         RetireArea();
         ReleaseRetired();
         foreach (Art art in _art.Values)
         {
             art.Figures?.Dispose();
             art.Picture?.Dispose();
+            art.AlphaMaskMaterial?.Dispose();
             art.Material.Dispose();
             art.Texture.Dispose();
         }
@@ -393,9 +609,10 @@ internal sealed class SceneView : IDisposable
             }
 
             JsonElement at = cell.GetProperty("at");
-            Appearance figure = art.CreateFigure();
+            bool overhead = AutoTiler.ViewOf(area) == "overhead";
+            Appearance figure = overhead ? art.CreateFigure(BillboardMode.Spherical) : art.CreateFigure();
             string? hidden = prop.TryGetProperty("hidden", out _) ? $"{path}.prop.hidden" : null;
-            Transform placement = new(new Vector3(at[0].GetInt32() + 0.5f, 0, at[1].GetInt32() + 0.5f), Quaternion.Identity, art.Scale(art.FacesRight));
+            Transform placement = new(new Vector3(at[0].GetInt32() + 0.5f, overhead ? 0.04f : 0f, at[1].GetInt32() + 0.5f), Quaternion.Identity, art.Scale(art.FacesRight));
             _props.Add(new Prop(figure, art.Play(figure, "idle"), placement, hidden));
         }
     }
@@ -446,6 +663,23 @@ internal sealed class SceneView : IDisposable
 
     private void Build(RuleSet rules, ModuleSet set, AreaMap map, Definition area, Definition? wallSet)
     {
+        if (AutoTiler.ViewOf(area) == "overhead" && rules.AreaTilemaps.TryGetValue(area, out ResolvedTilemap? tilemap))
+        {
+            Definition sheet = tilemap.Tileset.Sheet;
+            Art? tileArt = ArtFor(set, sheet);
+            AreaGeometry tileGeo = AreaMesh.Tilemap(tilemap, sheet, rules.ImageSizes[sheet]);
+            Material tileMat = tileArt is not null ? tileArt.GetAlphaMaskMaterial(_engine.Graphics) : _plain;
+            _mesh = _engine.Graphics.CreateMeshResource(new MeshResourceCreateRequest(
+                tileGeo.Positions,
+                tileGeo.Normals,
+                tileGeo.Uvs,
+                tileGeo.Indices,
+                tileGeo.Groups.Select(group => new MeshGroup(group.Slot, group.Start, group.Count)).ToArray(),
+                tileGeo.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? tileMat : _plain)).ToArray()));
+            _area = _engine.Graphics.CreateMeshAppearance(_mesh);
+            return;
+        }
+
         Art? art = wallSet is null ? null : ArtFor(set, wallSet);
         Dictionary<string, UvRect> frames = art is null ? PlainFrames() : Frames(wallSet!, rules.ImageSizes[wallSet!]);
         AreaGeometry geometry = AreaMesh.Build(map, frames);
@@ -703,6 +937,23 @@ internal sealed class SceneView : IDisposable
         public RenderResource Texture { get; } = texture;
 
         public Material Material { get; } = material;
+
+        public Material? AlphaMaskMaterial { get; private set; }
+
+        public Material GetAlphaMaskMaterial(IGraphicsService graphics)
+        {
+            AlphaMaskMaterial ??= graphics.CreateMaterial(new MaterialRequest(
+                new Color(1, 1, 1, 1),
+                Texture,
+                0.95f,
+                new Color(1, 1, 1, 1),
+                Vector3.Zero,
+                0,
+                false,
+                MaterialAlphaMode.Mask,
+                0.5f));
+            return AlphaMaskMaterial;
+        }
 
         public PictureArt? Picture { get; set; }
 

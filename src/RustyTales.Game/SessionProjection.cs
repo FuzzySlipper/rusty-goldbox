@@ -119,6 +119,7 @@ internal static partial class SessionProjection
             {
                 ["area"] = state.Area.QualifiedId,
                 ["name"] = state.Area.Name,
+                ["view"] = AutoTiler.ViewOf(state.Area),
                 ["x"] = state.X,
                 ["y"] = state.Y,
                 ["facing"] = Facings.Name(state.Facing),

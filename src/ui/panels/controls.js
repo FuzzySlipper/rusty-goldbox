@@ -4,10 +4,20 @@ import { leading } from '../table.js';
 /** The movement pad and the commands that fit what the party is doing. Keys do the same through the product's key mappings. */
 export function createControls(send, ui) {
   const play = (command) => () => send({ action: 'play', command });
-  const pad = element('div', { class: 'gb-pad', role: 'group', 'aria-label': 'Movement' },
-    ...[['↶', 'left', 'Turn left'], ['↑', 'forward', 'Forward'], ['↷', 'right', 'Turn right'],
-      ['⟲', 'around', 'Turn around'], ['↓', 'back', 'Back'], ['◎', 'look', 'Look']]
-      .map(([glyph, command, label]) => button(glyph, play(command), { title: label, 'aria-label': label })));
+  const padFirstPerson = [['↶', 'left', 'Turn left'], ['↑', 'forward', 'Forward'], ['↷', 'right', 'Turn right'],
+    ['⟲', 'around', 'Turn around'], ['↓', 'back', 'Back'], ['◎', 'look', 'Look']];
+  const padOverhead = [['←', 'west', 'Move west'], ['↑', 'north', 'Move north'], ['→', 'east', 'Move east'],
+    ['◎', 'look', 'Look'], ['↓', 'south', 'Move south'], ['↻', 'around', 'Turn around']];
+  let padMode = null;
+  const pad = element('div', { class: 'gb-pad', role: 'group', 'aria-label': 'Movement' });
+  const syncPad = (isOverhead) => {
+    const mode = isOverhead ? 'overhead' : 'first_person';
+    if (mode === padMode) return;
+    padMode = mode;
+    const spec = isOverhead ? padOverhead : padFirstPerson;
+    pad.replaceChildren(...spec.map(([glyph, command, label]) => button(glyph, play(command), { title: label, 'aria-label': label })));
+  };
+  syncPad(false);
   const commands = element('div', { class: 'gb-commands' });
   const node = element('nav', { class: 'gb-panel gb-controls', 'aria-label': 'Controls', 'data-rusty-ui-interactive': '' }, pad, commands);
   let selectedAction = null;
@@ -362,6 +372,7 @@ export function createControls(send, ui) {
     // At a hosted table only the leader moves the party; anyone may look.
     const follower = !leading(view);
     // Hide the movement pad during combat so actions and targets get the full panel width.
+    syncPad(view.position?.view === 'overhead');
     pad.hidden = combat;
     for (const control of pad.children) {
       const looking = control.getAttribute('aria-label') === 'Look';

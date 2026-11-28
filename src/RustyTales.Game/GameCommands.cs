@@ -67,6 +67,18 @@ internal static class GameCommands
         {
             if (IsPress(input) && session.Screen == Screen.Play)
             {
+                if (session.Runner is CampaignRunner runner && AutoTiler.ViewOf(runner.State.Area) == "overhead")
+                {
+                    command = intent switch
+                    {
+                        "party.forward" => "north",
+                        "party.back" => "south",
+                        "party.left" => "west",
+                        "party.right" => "east",
+                        _ => command,
+                    };
+                }
+
                 session.Execute(engine, command);
                 return true;
             }
