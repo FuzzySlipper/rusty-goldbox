@@ -556,17 +556,25 @@ Combat is built so that no die convention is assumed:
 
 ### Campaign content
 
-- **Areas.** Gold Box maps are cell grids with walls *on cell edges*: each cell
-  side has a wall, door or opening type, and a cell is never just "solid".
-  Areas can be dungeon levels or overland maps. A cell can carry zone tags, a
-  backdrop and an event trigger with a facing or once-only flag. Areas have
-  named entry points. A secret-door edge is drawn as a wall until the party's
-  `search [direction]` command succeeds at the area's `search` check (or the
-  ruleset check named `search`); the discovered edge is kept in the save and
-  then appears as a door in the party map and first-person view. A `doors`
-  declaration can lock a `DD` edge behind a key item, a pick or force check,
-  or an event chain; `open`, `pick` and `force` commands and forward movement
-  use those authored mechanisms, and opened edges are saved as open.
+- **Areas, 2D tilemaps and canonical grids.** Gold Box first-person areas are
+  cell grids with walls *on cell edges* (`AreaMap`): each cell side has a wall,
+  door or opening type. Campaigns may also mix in Ultima-style 2D overhead areas
+  (`"view": "overhead"`) backed by reusable `tileset` definitions and
+  multi-layer `tilemap` grids (`ResolvedTilemap`) with declarative auto-tiling
+  (`4bit` cardinal, `wall_top` 3/4 roof/facade, `blob47` Wang corners, and
+  coordinate-seeded `variants`). Overhead tile-first areas omit `map` and
+  synthesize an `AreaMap` from tile `passable`/`door` flags so movement, doors,
+  saves, minimap and reachability share one owner. `AreaMap`, `ResolvedTilemap`
+  and `CombatField` all implement the read-only `IGridTopology` contract and
+  share pure-.NET `GridSearch` pathfinding, line-of-sight and flood-fill. A cell
+  can carry zone tags, a backdrop, a prop and an event trigger with a facing or
+  once-only flag. Areas have named entry points. A secret-door edge is drawn as
+  a wall until the party's `search [direction]` command succeeds at the area's
+  `search` check (or the ruleset check named `search`); the discovered edge is
+  kept in the save and then appears as a door in the party map and first-person
+  view. A `doors` declaration can lock a `DD` edge behind a key item, a pick or
+  force check, or an event chain; `open`, `pick` and `force` commands and
+  movement use those authored mechanisms, and opened edges are saved as open.
 - **Events.** These are UA-style event chains, written as data. Event types
   include text, question/menu, combat, treasure, experience, give/take item,
   `spell_reward`, shop, temple, training, rest, NPC join/leave, set/test variable, teleport, a
@@ -651,9 +659,15 @@ definition whose `kind` picks its fields (`tales schema events`).
   surprised side; its outcome branches include `on_flee`, and `flee_on_draw`
   can route an otherwise undecided round-limit fight there. A combat definition's
   optional `presentation` (or a campaign's `combat_presentation` override) picks
-  how the Game frames fights: `tactical` (angled floor grid, the default),
-  `first_person` (Wizardry/Dragon Quest enemy lineup over a backdrop) or
-  `side_view` (JRPG formation rows over a backdrop).
+  how the Game frames fights: `tactical` (orthographic top-down 3D floor grid,
+  the default), `first_person` (Wizardry/Dragon Quest enemy lineup over a
+  backdrop) or `side_view` (JRPG formation rows over a backdrop). Encounters may
+  supply an authored `terrain` grid, a multi-layer `tilemap` (driving both the
+  rendered floor and tactical passability, movement cost and line of sight), or
+  opt into Ultima IV–style `"layout": "from_area"` (also settable via
+  `combat.layout` or `campaign.combat_layout`) to project surrounding 3D dungeon
+  corridors/doorways or a 2D overhead tilemap slice onto the combat field
+  (`AreaCombatProjector`, persisted via `PendingCombatState.AreaOrigin`).
 - **Fixed starting parties.** A campaign may declare `starting_party` as a list
   of distinct NPC definition references satisfying `party.min`..`party.max`.
   When present, single-player Game sessions skip party creation and `tales play`
@@ -676,9 +690,10 @@ combat or another pending menu, shop, temple or training interaction owns
 commands. `use` also refuses an ended adventure or an item without a `use`
 definition.
 
-Every random draw goes through Engine `Random` with an explicit seed, so a
-seed and a command script fully reproduce a run. A transcript records seeds,
-commands, rolls and outcomes.
+Every random draw goes through Core's `ITalesRandom` (`DeterministicRandom.Shared`)
+with an explicit seed, so the CLI, desktop Game and any future web host produce
+identical seeded rolls and saves. A transcript records seeds, commands, rolls
+and outcomes.
 
 **Saves** record the resolved module set (ID, version and content identity for
 each, the identity being the Engine's bundle identity: a hash of the module's
@@ -724,6 +739,10 @@ play syntax.
 | `tales sim combat --encounter … --party … --seed N [--runs K]` | Run a headless combat, or K of them, and report outcomes and distributions. |
 | `tales play --campaign … --seed N [--script file] [--fail-on-refusal]` | Play from a command script or stdin and emit a transcript. Use `use <member> <item-id>` for a carried consumable; `--fail-on-refusal` turns a scripted refusal into a diagnostic and exit code 1. |
 | `tales module pack <path> [--output <file> \| --install]` | Validate a module and export it as an independent content container (through the Engine's `rusty pack-content`). |
+| `tales module graph <path>` | Build the campaign navigation graph, 2D area topology, event/scene flow, tilesets, asset usage and reachability diagnostics. |
+| `tales workbench <path> [--port <n>] [--puppets <dir>]` | Serve the local Studio Workbench SPA (Flow Overview, 2D Maps, Events & Scenes, Art & Assets, embedded Puppet Studio, Review Queue, Diagnostics, and browser-streamed Playtest). |
+| `tales review list\|show\|set\|resolve\|clear <path>` | Read and update Workbench review pins (and discovered `puppet-studio` spatial review flags) with file/JSON-path provenance. |
+| `tales puppet status\|flags\|build\|bake\|heal\|export-sheet` | Bridge standalone `puppet-studio` workspaces: inspect audits/flags, run builds/bakes, and export tight-union uniform multi-clip `media: "sheet"` assets. |
 
 Golden transcripts from `tales play` and `tales sim` are the main
 regression checks for module and rules behavior.
@@ -743,19 +762,25 @@ regression checks for module and rules behavior.
 - **Presentation.** The Engine renderer draws everything from asset-module
   art, and the art is always flat images so a campaign can bring its own
   easily:
-  - Navigation is real 3D: each area becomes one generated mesh textured
-    from its wall set (the textures are effectively sprites on geometry),
-    with a perspective camera at the party. An event's picture, else the
-    cell's backdrop, shows over the view window, animated when it is a sheet.
+  - Navigation supports both 3D first-person areas (one generated wall-set mesh
+    with a perspective camera at the party) and Ultima-style 2D overhead areas
+    (batched multi-layer `AreaMesh.Tilemap` with alpha-cutout overlays, an
+    orthographic top-down follow-camera and a visible party leader sprite). An
+    event's picture, else the cell's backdrop, shows over the view window,
+    animated when it is a sheet.
   - Everything else is a billboard sprite: props such as chests and pillars,
     and monsters, standing in the 3D view, and every combatant in combat. A
     cell's `prop` names a sprite and, optionally, a campaign condition that
-    hides it (an opened chest, a defeated guard).
-    Combat uses side-view sprites under a perspective camera looking down at
-    the field, the way Gold Box showed side-view figures in a pseudo-iso view.
+    hides it (an opened chest, a defeated guard). Tactical combat uses
+    side-view sprites under an orthographic top-down camera (with either
+    perimeter/projected dungeon stone walls or a tiled battlefield floor), while
+    `first_person` and `side_view` modes frame enemy/party ranks over stage
+    backdrops.
   - Sprites are drawn facing one way and flipped horizontally for the other.
-    There are no directional sprite sets and no meshes or mesh animation. A
-    sprite may be an animated strip of frames.
+    A sprite sheet carries named animations (`idle`, `attack`, `hit`, etc.)
+    and may be authored directly or exported from standalone `puppet-studio`
+    rigs; native runtime `.clm` puppet rendering is tracked upstream in
+    `rusty-engine` `#11213`.
   - Event sounds and music play through Engine audio on its Sfx and Music
     buses, with player volumes for each.
   - The DOM draws text, menus and panels around the view. A **skin** (an

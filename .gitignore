@@ -11,6 +11,7 @@ target/
 src/ui/generated/
 playwright-report/
 test-results/
+TestResults/
 __pycache__/
 *.pyc
 

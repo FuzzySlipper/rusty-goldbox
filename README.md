@@ -1,30 +1,43 @@
 # Rusty Tales
 
-An **offline, data-driven RPG toolkit and runtime** built on
+An **offline, data-driven RPG toolkit, authoring workbench, and runtime** built on
 [Rusty Engine](https://github.com/FuzzySlipper/rusty-engine) — inspired by
-Unlimited Adventures / Dungeon Craft, Wizardry, and classic 16-bit JRPGs.
+Unlimited Adventures / Dungeon Craft, Ultima, Wizardry, and classic 16-bit JRPGs.
 
 Players run **campaign modules** built on **ruleset modules** and dressed by
 **asset modules**, each authored, validated, and distributed independently as
 Engine content containers (`.rpak`). Authors (human or AI agents) build
-adventures as readable JSON + expressions, verify them headlessly with the
-`tales` CLI, and play or host them in the desktop/browser runtime.
+adventures as readable JSON + expressions, inspect and playtest them in the
+local **Tales Workbench**, verify them headlessly with the `tales` CLI, and play
+or host them in the desktop/browser runtime.
 
-- **Three combat presentations out of the box:** angled 3D `tactical` grid
-  (Gold Box style), eye-level `first_person` lineup (Wizardry / Dragon Quest
-  style), and `side_view` formations (JRPG style), plus fixed `starting_party`
-  or custom character creation.
-- **Modular genre starter kits:** scaffold a complete, validated, playable
+- **Mixed 2D & 3D exploration:** mix classic 3D first-person edge-wall dungeons
+  with Ultima-style 2D overhead auto-tiled towns and overworlds (`tileset` +
+  multi-layer `tilemap` supporting `4bit`, `wall_top`, `blob47`, and
+  coordinate-seeded `variants`) inside the same campaign.
+- **Three combat presentations & canonical spatial grids:** orthographic 3D
+  `tactical` grid (Gold Box / SKALD style with click-to-preview pathfinding,
+  click-to-target reticles, and floating combat text), eye-level `first_person`
+  lineup (Wizardry / Dragon Quest style), and `side_view` formations (JRPG
+  style). All map types (`AreaMap`, `ResolvedTilemap`, `CombatField`) share
+  `IGridTopology` + `GridSearch`, supporting both tilemap-driven tactical
+  obstacles/sight/costs and Ultima IV–style `"layout": "from_area"` projection
+  from 3D dungeon corridors/doorways or 2D overhead slices.
+- **Tales Workbench (`tales workbench`):** local Studio SPA for inspecting
+  navigation flow, 2D auto-tiled maps, event/scene graphs, Art & Assets
+  (tileset 3×3 auto-tile seam tester, animated sprites, wall sets, audio, UI
+  skins), agent-readable review pins (`tales review`), an embedded **Puppets**
+  tab (`puppet-studio`), and a browser-streamed **Playtest** tab with deep-jump
+  and quick-pinning.
+- **Modular genre starter kits & first-party showcases:** scaffold a validated
   workspace in one command (`tactical-dungeon`, `first-person-crawler`,
-  `classic-jrpg`).
-- **Low-friction authoring:** multi-definition JSON array files, `extends`
-  inheritance, `patch` overrides, compact `scene` dialogue graphs with static
-  reachability/softlock checking, and scoped schema discovery
-  (`tales schema --module`).
-- **Data-driven rules:** rulesets live in JSON + a statically type-checked
-  expression language (shipping with open-licensed `classic`, `fifth-srd`,
-  `three-action`, `fate-condensed`, `scifi-2d6`, and `universal-d100` rulesets,
-  plus original genre kits).
+  `classic-jrpg`), or explore bundled showcases (`sample-crypt`,
+  `tactical-expedition`, `wizardry-delve`, `crystal-keep`, `ultima-vale`).
+- **Low-friction authoring & pure-.NET Core:** multi-definition JSON arrays,
+  `extends` inheritance, `patch` overrides, compact `scene` dialogue graphs,
+  scoped schema discovery (`tales schema --module`), standalone `puppet-studio`
+  baked sheet export (`tales puppet`), and pure-.NET deterministic RNG/rules
+  with zero Engine dependency in `RustyTales.Core`.
 
 See [docs/design.md](docs/design.md) for the module format and runtime contract,
 and [docs/architecture.md](docs/architecture.md) for current code owners.
@@ -53,10 +66,18 @@ Open the URL printed by `rusty dev`. `Directory.Build.props` sets
 no `--project` flag. Module edits reload as content bundles without a restart.
 
 ### Playing & controls
-- **Exploration:** arrows or WASD move and turn, `X` turns around, `L` looks,
-  digits choose menu options, `/` focuses the collapsible command bar.
+- **Exploration:** arrows or WASD move and turn in 3D first-person areas, or
+  step cardinally (north/east/south/west) in 2D overhead tilemap areas; `X`
+  turns around, `L` looks, digits choose menu options, `/` focuses the
+  collapsible command bar, `F9` toggles the in-game Workbench bridge.
 - **Combat:** supports `tactical`, `first_person`, and `side_view` modes, with
-  per-character manual or automatic control and mid-battle save/resume.
+  click-to-preview / click-to-confirm tactical movement, click-to-target
+  reticles with click-site error feedback, floating combat text over sprites and
+  portraits, per-character manual or automatic control, and mid-battle
+  save/resume.
+- **Character Forge & Stable:** displays rolled scores alongside class/race
+  requirements and persists ruleset-bound characters across campaigns with
+  fail-open import.
 - **Multiplayer:** host from the title screen's **Play together** panel and
   share the invite; the host runs Core, players vote on menus and control their
   own characters in combat.
@@ -66,11 +87,27 @@ no `--project` flag. Module edits reload as content bundles without a restart.
 
 ---
 
-## Quick start (authoring a campaign)
+## Quick start (authoring & Workbench Studio)
 
 The `tales` CLI is self-describing and every command supports `--json`.
 
-### 1. Scaffold from a genre starter kit
+### 1. Open Tales Workbench (visual Studio + streamed Playtest)
+
+```bash
+# Inspect any campaign or asset module in the local Studio UI (default http://127.0.0.1:4173/)
+dotnet run --project src/RustyTales.Cli -- workbench modules/ultima-vale
+
+# Optional: pass a puppet-studio character workspace for the embedded Puppets tab
+dotnet run --project src/RustyTales.Cli -- workbench modules/ultima-vale --puppets ../puppet-studio/examples/poselock-trio
+```
+
+Workbench includes **Flow Overview**, **2D Area Maps** (auto-tiled canvas +
+reachability), **Events & Scenes**, **Art & Assets** (including the Tileset
+3×3 auto-tile seam tester), **Puppets** (embedded `puppet-studio serve` +
+one-click sheet export), **Review Queue**, **Diagnostics**, and a live
+browser-streamed **Playtest** tab (`rusty dev --output stream --live-debug`).
+
+### 2. Scaffold from a genre starter kit
 
 ```bash
 # List available genre kits (tactical-dungeon, first-person-crawler, classic-jrpg)
@@ -83,11 +120,18 @@ dotnet run --project src/RustyTales.Cli -- workspace new my-tale --kit classic-j
 dotnet run --project src/RustyTales.Cli -- schema --module my-tale/modules/my-tale
 ```
 
-### 2. Validate, playtest headlessly, and iterate
+### 3. Validate, review, puppet-export, and playtest headlessly
 
 ```bash
 # Validate and stage all authored modules in the workspace
 dotnet run --project src/RustyTales.Cli -- workspace build my-tale
+
+# Read human review pins & puppet spatial flags for agent workflows
+dotnet run --project src/RustyTales.Cli -- review list modules/ultima-vale --json
+
+# Export a rigged puppet-studio character as a tight-union multi-clip sprite sheet
+dotnet run --project src/RustyTales.Cli -- puppet export-sheet ../puppet-studio/examples/poselock-trio/hero_sword \
+  --module modules/ultima-vale --clips idle,attack,recoil:hit --height 160 --json
 
 # Run a seeded headless playtest (fails on any refused command)
 dotnet run --project src/RustyTales.Cli -- play \
@@ -107,7 +151,7 @@ Play live against your working checkout without installing:
 TALES_WORKSPACES=$PWD/my-tale rusty dev
 ```
 
-### 3. Pack, install, and distribute modules
+### 4. Pack, install, and distribute modules
 
 ```bash
 # Export independent .rpak containers for every module in the workspace
@@ -136,10 +180,12 @@ Discover exact schemas and examples directly from the CLI:
 ```bash
 dotnet run --project src/RustyTales.Cli -- --help
 dotnet run --project src/RustyTales.Cli -- schema                  # overview of all definition types & topics
+dotnet run --project src/RustyTales.Cli -- schema tileset          # 2D tile palettes, auto-tiling & combat tile traits
 dotnet run --project src/RustyTales.Cli -- schema scene            # compact multi-step NPC dialogue & hub graphs
 dotnet run --project src/RustyTales.Cli -- schema patch            # override fields on a required module's definitions
 dotnet run --project src/RustyTales.Cli -- schema events --json    # event kinds (shop, rest, temple, combat, check, ...)
 dotnet run --project src/RustyTales.Cli -- schema media --json     # image, sheet, sampling, audio & slot rules
+dotnet run --project src/RustyTales.Cli -- schema puppets --json   # puppet-studio workspace contract & export workflow
 dotnet run --project src/RustyTales.Cli -- schema live-combat      # suspended manual combat script commands
 dotnet run --project src/RustyTales.Cli -- authoring list --json   # embedded campaign-authoring workflow & templates
 ```
@@ -150,12 +196,19 @@ dotnet run --project src/RustyTales.Cli -- authoring list --json   # embedded ca
   inherit and override fields from another visible definition of the same type
   (setting an optional field to `null` removes it); `extension` and `campaign`
   modules may override required modules' definitions with `"type": "patch"`.
+- **2D Tilemaps & Ultima IV contextual combat:** `area` definitions support
+  `"view": "overhead"` with multi-layer auto-tiled `tilemap`s (`4bit`,
+  `wall_top`, `blob47`, `variants`), `encounter`s support both authored
+  `tilemap` battlefields (driving passability, movement cost, and line of sight)
+  and `"layout": "from_area"` to project surrounding 3D dungeon doorways or 2D
+  overhead slices directly onto the tactical grid.
 - **Compact scenes & dialogues:** `"type": "scene"` writes branching NPC
   conversations, stateful topics, skill checks, item grants, and service
   handoffs as one readable graph that lowers deterministically into validated
   events with reachability, menu-softlock, and loop checking.
-- **Saves & slots:** saves use Engine `SaveSlots` (`.runtime/persistence` under
-  `rusty dev`; reachable from the CLI via `tales play --store .runtime/persistence`).
+- **Saves & slots:** saves use Core's `IStateStore` (`SaveSlots` and
+  `CharacterStableStore`, backed by Engine persistence in `.runtime/persistence`
+  under `rusty dev` and reachable from the CLI via `tales play --store`).
 - **Additional docs:** [docs/authoring-workspaces.md](docs/authoring-workspaces.md),
   [docs/combat-authoring.md](docs/combat-authoring.md), and
   [docs/ui.md](docs/ui.md).
@@ -166,7 +219,7 @@ dotnet run --project src/RustyTales.Cli -- authoring list --json   # embedded ca
 
 ```bash
 dotnet test tests/RustyTales.Tests
-dotnet run --project src/RustyTales.Cli -- module validate modules/sample-crypt
+dotnet run --project src/RustyTales.Cli -- module validate modules/ultima-vale
 rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 ```
 
@@ -190,13 +243,13 @@ rusty build --project src/RustyTales.Game/RustyTales.Game.csproj
 
 | Path | Responsibility |
 | --- | --- |
-| `src/RustyTales.Core/` | Module format and loading, `patch`/`extends` composition, `scene` lowering, expressions, rule evaluation, characters, combat, campaigns, saves, and genre starter kits |
-| `src/RustyTales.Cli/` | The `tales` authoring, validation, simulation, playtest, and distribution CLI |
-| `src/RustyTales.Game/` | Engine product: module bundles, live-debug commands, input intents, save slots, 3D exploration & multi-style combat scenes (`Presentation/`), and session projection |
-| `src/ui/` | DOM companion panels (`main.js`, `panels/`, `screens/`, `layout.js`, `look.js`) |
-| `modules/` | First-party rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`), `placeholder-art`, `tactical-bestiaire`, `sample-crypt`, and `tactical-expedition` |
+| `src/RustyTales.Core/` | Pure-.NET module format and loading, `patch`/`extends` composition, `scene` lowering, `Grids/` (`IGridTopology`, `GridSearch`, `AreaCombatProjector`), 2D `Tilemap`/`AutoTiler`, expressions, rule evaluation, deterministic RNG (`DeterministicRandom`), characters/stable, combat, campaigns, saves, authoring graph/review store, and genre starter kits |
+| `src/RustyTales.Cli/` | The `tales` authoring, validation, Workbench Studio (`Workbench/`), `puppet-studio` bridge (`PuppetCommand`, `PuppetStudioSession`), review pin, simulation, playtest, and distribution CLI |
+| `src/RustyTales.Game/` | Engine product: thin Engine adapters, module bundles, live-debug commands, input intents, save slots, 3D & 2D overhead exploration, multi-style combat scenes (`Presentation/`), and session projection |
+| `src/ui/` | DOM companion panels (`main.js`, `panels/`, `screens/`, `layout.js`, `look.js`, `combatOverlay.js`, `workbench.js`) |
+| `modules/` | First-party rulesets (`classic`, `fifth-srd`, `three-action`, `fate-condensed`, `scifi-2d6`, `universal-d100`, `wizardry-rules`, `jrpg-rules`), art packs (`placeholder-art`, `tactical-bestiaire`, `wizardry-art`, `jrpg-art`), and playable showcases (`sample-crypt`, `tactical-expedition`, `wizardry-delve`, `crystal-keep`, `ultima-vale`) |
 | `tales.json` | Workspace module search directories |
-| `tests/RustyTales.Tests/` | Core, CLI, kit, scene, and golden transcript tests (`Golden/`, `Fixtures/`) |
+| `tests/RustyTales.Tests/` | Core, grid/tilemap, puppet, Workbench, CLI, kit, scene, and golden transcript tests (`Golden/`, `Fixtures/`) |
 | `Directory.Build.props` | Pinned Rusty Engine SDK/runtime version |
 | `docs/` | [design.md](docs/design.md), [architecture.md](docs/architecture.md), [ui.md](docs/ui.md), [authoring-workspaces.md](docs/authoring-workspaces.md), [combat-authoring.md](docs/combat-authoring.md), [agent-review/](docs/agent-review/README.md) |
 

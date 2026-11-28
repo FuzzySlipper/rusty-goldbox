@@ -58,12 +58,26 @@ updates. Six is a page size; the campaign's rules decide party size. Game
 state stays in the projection.
 
 During a live fight the controls identify the active combatant and its
-remaining budgets. They render Core's legal action and target choices,
-authored movement paths, End turn, per-member manual/automatic control and any
-pending optional decision. Target preference belongs to automatic policy;
-manual choices use the legal targets in the projection. The menu can save
-while a turn or optional decision waits. A finished fight stays on screen with
-its outcome until Continue.
+remaining budgets. They render Core's legal action and target choices (plus
+unavailable actions with reasons), authored movement paths, End turn, per-member
+manual/automatic control and any pending optional decision. Target preference
+belongs to automatic policy; manual choices use the legal targets in the
+projection. `panels/combatOverlay.js` projects an interactive SVG layer over
+`.gb-view-surface` matching `CombatScene`'s camera math: in `tactical` mode a
+Move action highlights reachable squares and shows a click-to-preview /
+click-to-confirm path with terrain tooltips and click-site error messages on
+blocked or out-of-range squares; targeting actions show unit reticles across
+all three combat modes (`tactical`, `first_person`, `side_view`) with floating
+error text on invalid clicks; and combat events spawn floating colored combat
+text over enemy sprites (all modes) and over party portraits (plus party sprites
+in `tactical` and `side_view`). The menu can save while a turn or optional
+decision waits. A finished fight stays on screen with its outcome until Continue.
+
+In exploration, `panels/controls.js` adapts the movement pad to
+`position.view`: turn/step controls for `first_person` dungeons and cardinal
+north/east/south/west stepping for `overhead` 2D tilemap areas. `panels/workbench.js`
+adds an optional `⚙ Workbench` (`F9`) debug drawer when a local `tales workbench`
+server is connected, syncing live state and quick-pinning back to Workbench.
 
 Play together on the title screen hosts or joins a game over the Engine
 session service. The host gives a name (also the Engine identity, so the same
