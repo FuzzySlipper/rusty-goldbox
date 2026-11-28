@@ -94,6 +94,7 @@
                   <span id="active-area-meta" class="toolbar-hint"></span>
                 </div>
                 <div class="toolbar-group">
+                  <label class="toggle" id="lbl-toggle-tilemap" hidden><input type="checkbox" id="chk-tilemap" checked /> Tilemap Art</label>
                   <label class="toggle"><input type="checkbox" id="chk-player-view" /> Player View (hide secrets)</label>
                   <label class="toggle"><input type="checkbox" id="chk-reachability" checked /> Reachability</label>
                   <label class="toggle"><input type="checkbox" id="chk-coords" checked /> Coords</label>
@@ -114,7 +115,10 @@
                 <span class="legend-chip">★ Start · ⚔ Combat · 💬 Menu/Scene · 🌀 Teleport · 🛒 Shop · ⚑ End · ◆ Prop</span>
               </div>
               <div class="canvas-shell map-shell" id="map-canvas-shell">
-                <svg id="map-svg" class="map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+                <div class="map-composite" id="map-composite">
+                  <canvas id="map-tile-canvas" class="map-tile-canvas" hidden></canvas>
+                  <svg id="map-svg" class="map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
               </div>
             </div>
           </div>
@@ -164,6 +168,7 @@
           <div class="toolbar">
             <div class="toolbar-group" id="asset-category-pills">
               <button class="pill-btn active" data-asset-cat="all">All</button>
+              <button class="pill-btn" data-asset-cat="tileset">Tilesets</button>
               <button class="pill-btn" data-asset-cat="wall_set">Wall Sets</button>
               <button class="pill-btn" data-asset-cat="sprite">Sprites</button>
               <button class="pill-btn" data-asset-cat="portrait">Portraits</button>

@@ -14,9 +14,11 @@
     selectedEventId: null,
     lastInspector: null, // () => void to refresh inspector after pin edits
     mapZoom: 1,
+    showTilemap: true,
     playerView: false,
     showReachability: true,
     showCoords: true,
+    sheetImages: new Map(),
     issueSeverity: "all",
     eventSearch: "",
     eventScope: "all",
@@ -195,6 +197,125 @@
 
   function findAsset(qualifiedId) {
     return state.graph?.assets?.find((a) => a.id === qualifiedId) || null;
+  }
+
+  function findTileset(qualifiedId) {
+    return (state.graph?.tilesets || []).find((t) => t.id === qualifiedId) || null;
+  }
+
+  function findEncounter(qualifiedId) {
+    return (state.graph?.encounters || []).find((e) => e.id === qualifiedId) || null;
+  }
+
+  const BLOB47_MASKS = [
+    0, 1, 4, 5, 7, 16, 17, 20, 21, 23, 28, 29, 31, 64, 65, 68,
+    69, 71, 80, 81, 84, 85, 87, 92, 93, 95, 112, 113, 116, 117, 119, 124,
+    125, 127, 193, 197, 199, 209, 213, 215, 221, 223, 241, 245, 247, 253, 255,
+  ];
+  const BLOB47_INDEX = new Map(BLOB47_MASKS.map((m, i) => [m, i]));
+
+  function loadSheetImage(assetId, onLoad) {
+    if (!assetId) return null;
+    const cached = state.sheetImages.get(assetId);
+    if (cached) {
+      if (cached.complete && cached.naturalWidth > 0) return cached;
+      if (onLoad) cached.addEventListener("load", onLoad, { once: true });
+      return null;
+    }
+    const url = assetUrl(assetId);
+    if (!url) return null;
+    const img = new Image();
+    state.sheetImages.set(assetId, img);
+    if (onLoad) img.addEventListener("load", onLoad, { once: true });
+    img.src = url;
+    return null;
+  }
+
+  function drawSheetFrame(ctx, img, ts, frameIndex, dx, dy, dw, dh) {
+    if (frameIndex === null || frameIndex === undefined || frameIndex < 0) return;
+    if (!img || !img.complete || img.naturalWidth <= 0) return;
+    const cols = Math.max(1, ts.columns || 1);
+    const sx = (frameIndex % cols) * ts.frameWidth;
+    const sy = Math.floor(frameIndex / cols) * ts.frameHeight;
+    ctx.drawImage(img, sx, sy, ts.frameWidth, ts.frameHeight, dx, dy, dw, dh);
+  }
+
+  function drawTilemapToCanvas(canvas, tilemap, ts, cellPx) {
+    if (!canvas || !tilemap || !ts) return;
+    const w = tilemap.width * cellPx;
+    const h = tilemap.height * cellPx;
+    canvas.width = w;
+    canvas.height = h;
+    const sheetAsset = findAsset(ts.sheetAsset);
+    const linear = sheetAsset?.sampling === "linear";
+    canvas.classList.toggle("sampling-linear", linear);
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = linear;
+    ctx.clearRect(0, 0, w, h);
+
+    const glyphByChar = new Map((ts.tiles || []).map((t) => [t.glyph, t]));
+    const img = loadSheetImage(ts.sheetAsset, () => drawTilemapToCanvas(canvas, tilemap, ts, cellPx));
+
+    for (let li = 0; li < (tilemap.layers || []).length; li++) {
+      const layer = tilemap.layers[li];
+      for (let y = 0; y < tilemap.height; y++) {
+        for (let x = 0; x < tilemap.width; x++) {
+          const frame = layer.frames?.[y]?.[x];
+          if (frame === undefined || frame < 0) continue;
+          if (img) {
+            drawSheetFrame(ctx, img, ts, frame, x * cellPx, y * cellPx, cellPx, cellPx);
+          } else if (li === 0) {
+            const ch = layer.rows?.[y]?.[x];
+            const gDef = glyphByChar.get(ch);
+            ctx.fillStyle = gDef?.color || "#222b3a";
+            ctx.fillRect(x * cellPx, y * cellPx, cellPx, cellPx);
+          }
+        }
+      }
+    }
+  }
+
+  function resolveAutotileSample(tileDef, ts, nb) {
+    const mode = tileDef.autotileMode;
+    const maxF = Math.max(0, (ts.frameCount || 1) - 1);
+    const clamp = (f) => Math.max(0, Math.min(maxF, f));
+    const frames = tileDef.autotileFrames || {};
+    if (mode === "4bit") {
+      const mask = (nb.n ? 1 : 0) | (nb.e ? 2 : 0) | (nb.s ? 4 : 0) | (nb.w ? 8 : 0);
+      const f = frames[String(mask)] ?? (tileDef.autotileBase !== null && tileDef.autotileBase !== undefined ? tileDef.autotileBase + mask : (tileDef.tile ?? 0));
+      return { frame: clamp(f), mask, label: `4bit mask=${mask} (${[nb.n && "N", nb.e && "E", nb.s && "S", nb.w && "W"].filter(Boolean).join("") || "none"})` };
+    }
+    if (mode === "wall_top") {
+      const mask = (nb.n ? 1 : 0) | (nb.s ? 2 : 0);
+      let slot = "top";
+      let f;
+      if (!nb.s) {
+        slot = "front";
+        f = frames.front ?? (tileDef.autotileBase ?? tileDef.tile ?? 0);
+      } else if (!nb.n && frames.cap !== undefined) {
+        slot = "cap";
+        f = frames.cap;
+      } else {
+        slot = "top";
+        f = frames.top ?? (tileDef.autotileBase !== null && tileDef.autotileBase !== undefined ? tileDef.autotileBase + 1 : (tileDef.tile ?? 0));
+      }
+      return { frame: clamp(f), mask, label: `wall_top (${slot})` };
+    }
+    if (mode === "blob47") {
+      const mask = (nb.n ? 1 : 0)
+        | (nb.n && nb.e && nb.ne ? 2 : 0)
+        | (nb.e ? 4 : 0)
+        | (nb.s && nb.e && nb.se ? 8 : 0)
+        | (nb.s ? 16 : 0)
+        | (nb.s && nb.w && nb.sw ? 32 : 0)
+        | (nb.w ? 64 : 0)
+        | (nb.n && nb.w && nb.nw ? 128 : 0);
+      const bIdx = BLOB47_INDEX.get(mask) ?? 0;
+      const f = frames[String(mask)] ?? frames[`b${bIdx}`] ?? (tileDef.autotileBase !== null && tileDef.autotileBase !== undefined ? tileDef.autotileBase + bIdx : (tileDef.tile ?? 0));
+      return { frame: clamp(f), mask, label: `blob47 mask=${mask} (idx ${bIdx})` };
+    }
+    const f = tileDef.variants?.length ? tileDef.variants[0] : (tileDef.tile ?? 0);
+    return { frame: clamp(f), mask: 0, label: tileDef.variants?.length ? `variants (${tileDef.variants.length})` : "static" };
   }
 
   async function loadReviews() {
@@ -623,7 +744,8 @@
       const isLiveHere = state.liveState?.area === area.id;
       const badge = isLiveHere ? "● LIVE HERE" : !area.reachable ? "✕ UNREACHABLE" : area.isStartArea ? "★ START" : area.hasEndEvent ? "⚑ ENDING" : isDeadEnd ? "⚠ DEAD END" : "";
       grp.appendChild(svgEl("text", { x: 14, y: 28, fill: "#ece6d9", "font-size": 13.5, "font-weight": 700 }, area.name));
-      grp.appendChild(svgEl("text", { x: 14, y: 45, fill: "#9aa4b6", "font-size": 11, "font-family": "var(--font-mono)" }, `${area.localId} · ${area.width}×${area.height}`));
+      grp.appendChild(svgEl("text", { x: 14, y: 45, fill: "#9aa4b6", "font-size": 11, "font-family": "var(--font-mono)" },
+        `${area.localId} · ${area.width}×${area.height}${area.view === "overhead" ? " · 2D" : " · 3D"}`));
 
       if (badge) {
         grp.appendChild(svgEl("text", {
@@ -686,6 +808,9 @@
       const top = el("div", { class: "item-row-top" });
       const title = `${area.isStartArea ? "★ " : ""}${area.name}`;
       top.appendChild(el("span", { class: "item-row-name" }, title));
+      if (area.view === "overhead") {
+        top.appendChild(el("span", { class: "badge badge-ok" }, "2D"));
+      }
       const areaIssues = g.issues.filter((i) => i.areaId === area.id).length;
       if (!area.reachable) {
         top.appendChild(el("span", { class: "badge badge-err" }, "unreach"));
@@ -706,16 +831,25 @@
 
     const area = g.areas.find((a) => a.id === state.selectedAreaId);
     const svg = document.getElementById("map-svg");
+    const tileCanvas = document.getElementById("map-tile-canvas");
+    const lblTilemap = document.getElementById("lbl-toggle-tilemap");
     svg.innerHTML = "";
     if (!area) {
+      if (tileCanvas) tileCanvas.hidden = true;
+      if (lblTilemap) lblTilemap.hidden = true;
       document.getElementById("active-area-title").textContent = "No area selected";
       document.getElementById("active-area-meta").textContent = "";
       return;
     }
 
+    const areaTilemap = area.tilemap || null;
+    const areaTileset = areaTilemap ? findTileset(areaTilemap.tilesetId) : null;
+    const renderTileArt = Boolean(areaTilemap && areaTileset && state.showTilemap);
+    if (lblTilemap) lblTilemap.hidden = !areaTilemap;
+
     document.getElementById("active-area-title").textContent = `${area.name} (${area.id})`;
     document.getElementById("active-area-meta").textContent =
-      `${area.width} × ${area.height} · ${area.entries.length} entries · ${area.doors.length} declared doors${area.wallSet ? ` · wall_set ${shortId(area.wallSet)}` : ""}`;
+      `${area.width} × ${area.height} · ${area.view === "overhead" ? "2D overhead" : "3D first-person"} · ${area.entries.length} entries · ${area.doors.length} declared doors${areaTilemap ? ` · tileset ${shortId(areaTilemap.tilesetId)}` : area.wallSet ? ` · wall_set ${shortId(area.wallSet)}` : ""}`;
 
     const CELL = Math.round(64 * state.mapZoom);
     const PAD = 38;
@@ -724,6 +858,19 @@
     svg.setAttribute("width", String(W));
     svg.setAttribute("height", String(H));
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+    if (tileCanvas) {
+      if (renderTileArt) {
+        tileCanvas.hidden = false;
+        tileCanvas.style.left = `${PAD}px`;
+        tileCanvas.style.top = `${PAD}px`;
+        tileCanvas.style.width = `${area.width * CELL}px`;
+        tileCanvas.style.height = `${area.height * CELL}px`;
+        drawTilemapToCanvas(tileCanvas, areaTilemap, areaTileset, CELL);
+      } else {
+        tileCanvas.hidden = true;
+      }
+    }
 
     // Hatch pattern for unreachable cells
     const defs = svgEl("defs");
@@ -770,11 +917,17 @@
       const cy = PAD + cell.y * CELL;
       const isSelected = state.selectedCell && state.selectedCell.areaId === area.id && state.selectedCell.x === cell.x && state.selectedCell.y === cell.y;
 
-      let fill = "#1b2230";
+      let fill = renderTileArt ? "transparent" : "#1b2230";
       if (state.showReachability) {
-        if (cell.reachability === "locked") fill = "#332819";
-        else if (cell.reachability === "secret") fill = "#271d3a";
-        else if (cell.reachability === "unreachable") fill = "url(#hatch-unreach)";
+        if (renderTileArt) {
+          if (cell.reachability === "locked") fill = "rgba(240, 164, 59, 0.22)";
+          else if (cell.reachability === "secret") fill = "rgba(177, 132, 245, 0.25)";
+          else if (cell.reachability === "unreachable") fill = "rgba(235, 93, 93, 0.14)";
+        } else {
+          if (cell.reachability === "locked") fill = "#332819";
+          else if (cell.reachability === "secret") fill = "#271d3a";
+          else if (cell.reachability === "unreachable") fill = "url(#hatch-unreach)";
+        }
       }
 
       const cellG = svgEl("g", { class: `svg-cell${isSelected ? " selected" : ""}`, "data-x": cell.x, "data-y": cell.y });
@@ -786,7 +939,7 @@
         height: CELL - 2,
         rx: 3,
         fill,
-        stroke: isSelected ? "#e4a94c" : "#242c3b",
+        stroke: isSelected ? "#e4a94c" : (renderTileArt ? "rgba(255, 255, 255, 0.10)" : "#242c3b"),
         "stroke-width": isSelected ? 2.4 : 1,
       }));
 
@@ -928,11 +1081,12 @@
       doorByEdge.set(canonicalKey(door.x, door.y, door.facing), door);
     }
 
-    // 2. Horizontal edges
+    // 2. Horizontal edges (lighter when rendering crisp tilemap art)
     for (let y = 0; y <= area.height; y++) {
       for (let x = 0; x < area.width; x++) {
         let edge = area.horizontalEdges[y][x];
         if (edge === "open") continue;
+        if (renderTileArt && edge === "wall") continue;
         if (state.playerView && edge === "secret") edge = "wall";
         const door = doorByEdge.get(`${x},${y},north`) || null;
         drawMapEdge(svg, area, PAD + x * CELL, PAD + y * CELL, PAD + (x + 1) * CELL, PAD + y * CELL, edge, door);
@@ -944,6 +1098,7 @@
       for (let x = 0; x <= area.width; x++) {
         let edge = area.verticalEdges[y][x];
         if (edge === "open") continue;
+        if (renderTileArt && edge === "wall") continue;
         if (state.playerView && edge === "secret") edge = "wall";
         const door = doorByEdge.get(`${x},${y},west`) || null;
         drawMapEdge(svg, area, PAD + x * CELL, PAD + y * CELL, PAD + x * CELL, PAD + (y + 1) * CELL, edge, door);
@@ -1429,18 +1584,21 @@
 
     const assets = g.assets || [];
     const skins = g.skins || [];
+    const tilesets = g.tilesets || [];
     const allItems = [
-      ...assets.map((a) => ({ kind: "asset", category: a.category || "picture", id: a.id, title: a.localId, subtitle: a.file, targetKind: "asset", target: a.id, data: a })),
+      ...tilesets.map((t) => ({ kind: "tileset", category: "tileset", id: t.id, title: t.name, subtitle: `${t.id} · ${t.frameWidth}×${t.frameHeight} · ${(t.tiles || []).length} glyphs`, targetKind: "definition", target: `tileset:${t.id}`, data: t })),
+      ...assets.filter((a) => a.category !== "tileset").map((a) => ({ kind: "asset", category: a.category || "picture", id: a.id, title: a.localId, subtitle: a.file, targetKind: "asset", target: a.id, data: a })),
       ...skins.map((s) => ({ kind: "skin", category: "skin", id: s.id, title: s.name, subtitle: `${s.id} · ${s.file}`, targetKind: "definition", target: `skin:${s.id}`, data: s })),
     ];
 
     // Update category pill labels with counts
-    const catCounts = { all: allItems.length, wall_set: 0, sprite: 0, portrait: 0, picture: 0, audio: 0, skin: skins.length };
+    const catCounts = { all: allItems.length, tileset: tilesets.length, wall_set: 0, sprite: 0, portrait: 0, picture: 0, audio: 0, skin: skins.length };
     for (const a of assets) {
+      if (a.category === "tileset") continue;
       const cat = a.category || "picture";
       catCounts[cat] = (catCounts[cat] || 0) + 1;
     }
-    const catNames = { all: "All", wall_set: "Wall Sets", sprite: "Sprites", portrait: "Portraits", picture: "Pictures & UI", audio: "Audio", skin: "UI Skins" };
+    const catNames = { all: "All", tileset: "Tilesets", wall_set: "Wall Sets", sprite: "Sprites", portrait: "Portraits", picture: "Pictures & UI", audio: "Audio", skin: "UI Skins" };
     document.querySelectorAll("#asset-category-pills .pill-btn").forEach((btn) => {
       const c = btn.dataset.assetCat;
       btn.textContent = `${catNames[c] || c} (${catCounts[c] || 0})`;
@@ -1495,6 +1653,31 @@
       const stage = el("div", { class: "asset-card-stage" });
       if (item.kind === "skin") {
         stage.appendChild(buildSkinPreviewElement(item.data, true));
+      } else if (item.kind === "tileset") {
+        const ts = item.data;
+        const strip = el("div", { class: "tileset-card-strip" });
+        const drawSamples = (img) => {
+          strip.innerHTML = "";
+          for (const t of (ts.tiles || []).slice(0, 8)) {
+            const cell = el("div", { class: "tileset-card-cell" });
+            const c = el("canvas", { width: "36", height: "36" });
+            const ctx = c.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+            const sample = resolveAutotileSample(t, ts, { n: true, ne: true, e: true, se: true, s: false, sw: false, w: true, nw: true });
+            if (img) {
+              drawSheetFrame(ctx, img, ts, sample.frame, 0, 0, 36, 36);
+            } else {
+              ctx.fillStyle = t.color || "#2c3547";
+              ctx.fillRect(0, 0, 36, 36);
+            }
+            cell.appendChild(c);
+            cell.appendChild(el("span", {}, `${t.glyph} ${t.name.slice(0, 6)}`));
+            strip.appendChild(cell);
+          }
+        };
+        const img = loadSheetImage(ts.sheetAsset, () => drawSamples(state.sheetImages.get(ts.sheetAsset)));
+        drawSamples(img);
+        stage.appendChild(strip);
       } else {
         const a = item.data;
         if (a.category === "wall_set" && a.regions) {
@@ -1571,6 +1754,9 @@
       const topBadges = el("div", { class: "asset-stage-badges" });
       if (item.kind === "skin") {
         topBadges.appendChild(el("span", { class: "asset-chip" }, item.data.isCampaignSkin ? "★ campaign skin" : "skin"));
+      } else if (item.kind === "tileset") {
+        topBadges.appendChild(el("span", { class: "asset-chip" }, `tileset · ${item.data.frameWidth}×${item.data.frameHeight}`));
+        topBadges.appendChild(el("span", { class: "asset-chip" }, `${item.data.frameCount} frames`));
       } else {
         const a = item.data;
         const dims = a.width && a.height ? `${a.width}×${a.height}` : a.media;
@@ -1618,6 +1804,7 @@
         document.querySelectorAll(".asset-card").forEach((c) => c.classList.remove("selected"));
         card.classList.add("selected");
         if (item.kind === "skin") inspectSkin(item.data);
+        else if (item.kind === "tileset") inspectTileset(item.data);
         else inspectAsset(item.id);
       });
 
@@ -2093,6 +2280,183 @@
     setInspector("UI SKIN", skin.name, sections);
   }
 
+  function inspectTileset(ts) {
+    state.lastInspector = () => {
+      const fresh = findTileset(ts.id);
+      if (fresh) inspectTileset(fresh);
+    };
+    const sections = [makeReviewPinCard("definition", `tileset:${ts.id}`)];
+
+    // 1. Full sheet atlas with numbered frame overlay
+    const atlasSec = el("div", { class: "insp-section" });
+    atlasSec.appendChild(el("h4", {}, `Tile Atlas (${ts.columns}×${ts.rows} · ${ts.frameCount} frames)`));
+    const atlasCanvas = el("canvas", { class: "tileset-atlas-canvas" });
+    const drawAtlas = (img) => {
+      const cell = Math.max(24, Math.min(44, Math.floor(300 / Math.max(1, ts.columns))));
+      atlasCanvas.width = ts.columns * cell;
+      atlasCanvas.height = ts.rows * cell;
+      const ctx = atlasCanvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, atlasCanvas.width, atlasCanvas.height);
+      for (let i = 0; i < ts.frameCount; i++) {
+        const col = i % ts.columns;
+        const row = Math.floor(i / ts.columns);
+        const dx = col * cell;
+        const dy = row * cell;
+        if (img) drawSheetFrame(ctx, img, ts, i, dx, dy, cell, cell);
+        ctx.strokeStyle = "rgba(255,255,255,0.18)";
+        ctx.strokeRect(dx + 0.5, dy + 0.5, cell - 1, cell - 1);
+        ctx.fillStyle = "rgba(9,11,15,0.68)";
+        ctx.fillRect(dx + 1, dy + 1, 16, 11);
+        ctx.fillStyle = "#e4a94c";
+        ctx.font = "bold 9px ui-monospace, monospace";
+        ctx.fillText(String(i), dx + 3, dy + 9);
+      }
+    };
+    const sheetImg = loadSheetImage(ts.sheetAsset, () => drawAtlas(state.sheetImages.get(ts.sheetAsset)));
+    drawAtlas(sheetImg);
+    atlasSec.appendChild(atlasCanvas);
+    sections.push(atlasSec);
+
+    // 2. Interactive 3x3 neighbor auto-tile seam tester
+    const autoGlyphs = (ts.tiles || []).filter((t) => t.autotileMode);
+    if (autoGlyphs.length > 0) {
+      const testSec = el("div", { class: "insp-section autotile-tester" });
+      testSec.appendChild(el("h4", {}, "Interactive Auto-Tile Seam Tester"));
+      const sel = el("select", { class: "select-input" });
+      for (const g of autoGlyphs) {
+        sel.appendChild(el("option", { value: g.glyph }, `'${g.glyph}' ${g.name} (${g.autotileMode})`));
+      }
+      testSec.appendChild(sel);
+
+      const nb = { nw: true, n: true, ne: true, w: true, e: true, sw: false, s: false, se: false };
+      const row = el("div", { class: "autotile-tester-row" });
+      const grid = el("div", { class: "autotile-grid" });
+      const preview = el("canvas", { class: "autotile-preview-canvas", width: "96", height: "96" });
+      const readout = el("div", { class: "autotile-readout" });
+
+      const redrawTest = () => {
+        const active = autoGlyphs.find((g) => g.glyph === sel.value) || autoGlyphs[0];
+        const sample = resolveAutotileSample(active, ts, nb);
+        readout.textContent = `${sample.label} → frame #${sample.frame}`;
+        const ctx = preview.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, 96, 96);
+        const img = loadSheetImage(ts.sheetAsset, redrawTest);
+        const dirs = [
+          ["nw", 0, 0], ["n", 1, 0], ["ne", 2, 0],
+          ["w", 0, 1], ["center", 1, 1], ["e", 2, 1],
+          ["sw", 0, 2], ["s", 1, 2], ["se", 2, 2],
+        ];
+        for (const [key, gx, gy] of dirs) {
+          if (key !== "center" && !nb[key]) {
+            ctx.fillStyle = "#161b24";
+            ctx.fillRect(gx * 32, gy * 32, 32, 32);
+            continue;
+          }
+          const cellFrame = key === "center"
+            ? sample.frame
+            : resolveAutotileSample(active, ts, {
+              n: key !== "nw" && key !== "n" && key !== "ne",
+              s: key !== "sw" && key !== "s" && key !== "se",
+              w: key !== "nw" && key !== "w" && key !== "sw",
+              e: key !== "ne" && key !== "e" && key !== "se",
+              nw: false, ne: false, sw: false, se: false,
+            }).frame;
+          if (img) drawSheetFrame(ctx, img, ts, cellFrame, gx * 32, gy * 32, 32, 32);
+          else { ctx.fillStyle = active.color || "#3b4a62"; ctx.fillRect(gx * 32, gy * 32, 32, 32); }
+        }
+        ctx.strokeStyle = "rgba(228, 169, 76, 0.85)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(32, 32, 32, 32);
+      };
+
+      for (const key of ["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]) {
+        const b = el("button", {
+          type: "button",
+          class: `autotile-nb-btn${key === "center" ? " center" : nb[key] ? " on" : ""}`,
+        }, key === "center" ? "●" : key.toUpperCase());
+        if (key !== "center") {
+          b.addEventListener("click", () => {
+            nb[key] = !nb[key];
+            b.classList.toggle("on", nb[key]);
+            redrawTest();
+          });
+        }
+        grid.appendChild(b);
+      }
+      sel.addEventListener("change", redrawTest);
+      row.appendChild(grid);
+      row.appendChild(preview);
+      testSec.appendChild(row);
+      testSec.appendChild(readout);
+      redrawTest();
+      sections.push(testSec);
+    }
+
+    // 3. Glyph Palette Table
+    const palSec = el("div", { class: "insp-section" });
+    palSec.appendChild(el("h4", {}, `Tile Glyphs (${(ts.tiles || []).length})`));
+    const palList = el("div", { class: "tile-glyph-list" });
+    for (const t of ts.tiles || []) {
+      const row = el("div", { class: "tile-glyph-row" });
+      row.appendChild(el("span", { class: "tile-glyph-char" }, t.glyph));
+      const thumb = el("canvas", { width: "28", height: "28" });
+      const drawThumb = (img) => {
+        const ctx = thumb.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
+        const sample = resolveAutotileSample(t, ts, { n: true, e: true, s: false, w: true, ne: true, nw: true, se: false, sw: false });
+        if (img) drawSheetFrame(ctx, img, ts, sample.frame, 0, 0, 28, 28);
+        else { ctx.fillStyle = t.color || "#2c3547"; ctx.fillRect(0, 0, 28, 28); }
+      };
+      drawThumb(loadSheetImage(ts.sheetAsset, () => drawThumb(state.sheetImages.get(ts.sheetAsset))));
+      row.appendChild(thumb);
+      const meta = el("div", { class: "tile-glyph-meta" });
+      meta.appendChild(el("strong", {}, t.name));
+      const ruleText = t.autotileMode
+        ? `${t.autotileMode}${t.autotileBase !== null && t.autotileBase !== undefined ? ` base=${t.autotileBase}` : ""}${t.connectsTo?.length ? ` connects=${t.connectsTo.join("")}` : ""}`
+        : t.variants?.length
+          ? `variants [${t.variants.join(",")}]`
+          : `frame #${t.tile ?? 0}`;
+      const flags = [!t.passable ? "solid" : "passable", t.door ? "door" : null].filter(Boolean).join(" · ");
+      meta.appendChild(el("span", { class: "tile-glyph-sub" }, `${ruleText} · ${flags}`));
+      row.appendChild(meta);
+      palList.appendChild(row);
+    }
+    palSec.appendChild(palList);
+    sections.push(palSec);
+
+    if (ts.usedBy?.length) {
+      const useSec = el("div", { class: "insp-section" });
+      useSec.appendChild(el("h4", {}, `Used By (${ts.usedBy.length})`));
+      const uRow = el("div", { class: "insp-actions" });
+      for (const ref of ts.usedBy) {
+        const btn = el("button", { class: "btn btn-sm", type: "button" }, ref);
+        btn.addEventListener("click", () => {
+          const [type, ...rest] = ref.split(":");
+          const qid = rest.join(":");
+          if (type === "area") {
+            const area = state.graph.areas.find((a) => a.id === qid);
+            if (area) { state.selectedAreaId = area.id; switchTab("maps"); inspectArea(area); }
+          }
+        });
+        uRow.appendChild(btn);
+      }
+      useSec.appendChild(uRow);
+      sections.push(useSec);
+    }
+
+    sections.push(makeKvSection("Tileset Metadata", [
+      ["ID", ts.id],
+      ["Sheet Asset", ts.sheetAsset],
+      ["Frame Size", `${ts.frameWidth} × ${ts.frameHeight} px`],
+      ["Sheet Size", `${ts.imageWidth} × ${ts.imageHeight} px (${ts.columns}×${ts.rows})`],
+      ["File", ts.file],
+    ]));
+    sections.push(makeJsonSection(ts.id, "tileset"));
+    setInspector("TILESET", ts.name, sections);
+  }
+
   function makeJsonSection(qualifiedId, defType) {
     const sec = el("div", { class: "insp-section" });
     sec.appendChild(el("h4", {}, "Definition JSON"));
@@ -2145,12 +2509,28 @@
 
     sections.push(makeKvSection("Area Details", [
       ["ID", area.id],
+      ["View Mode", area.view === "overhead" ? "2D Overhead Tilemap" : "3D First-Person"],
       ["Dimensions", `${area.width} × ${area.height}`],
       ["Reachable", area.reachable ? "Yes" : "No (unreachable from start)"],
       ["Entries", area.entries.map((e) => `${e.name} [${e.x},${e.y}]`).join(", ")],
+      ["Tileset", area.tilemap?.tilesetId || "none"],
       ["Wall Set", area.wallSet || "none"],
       ["File", area.file],
     ]));
+
+    if (area.tilemap) {
+      const ts = findTileset(area.tilemap.tilesetId);
+      if (ts) {
+        const tsSec = el("div", { class: "insp-section" });
+        tsSec.appendChild(el("h4", {}, "Tilemap"));
+        const row = el("div", { class: "insp-actions" });
+        const openTs = el("button", { class: "btn btn-sm", type: "button" }, `Inspect Tileset: ${ts.name} →`);
+        openTs.addEventListener("click", () => inspectTileset(ts));
+        row.appendChild(openTs);
+        tsSec.appendChild(row);
+        sections.push(tsSec);
+      }
+    }
 
     if (area.wallSet) {
       const preview = makeAssetPreviewSection("Wall Set", area.wallSet);
@@ -2196,6 +2576,43 @@
       ["Prop", cell.propSprite ? `${cell.propSprite}${cell.propHidden ? ` (hidden: ${cell.propHidden})` : ""}` : null],
       ["Backdrop", cell.backdrop],
     ]));
+
+    if (area.tilemap) {
+      const ts = findTileset(area.tilemap.tilesetId);
+      if (ts) {
+        const tmSec = el("div", { class: "insp-section" });
+        tmSec.appendChild(el("h4", {}, `Tilemap Layers (${area.tilemap.layers.length})`));
+        const glyphByChar = new Map((ts.tiles || []).map((t) => [t.glyph, t]));
+        const list = el("div", { class: "tile-glyph-list" });
+        area.tilemap.layers.forEach((layer, li) => {
+          const ch = layer.rows?.[cell.y]?.[cell.x] ?? " ";
+          const frame = layer.frames?.[cell.y]?.[cell.x] ?? -1;
+          const mask = layer.bitmasks?.[cell.y]?.[cell.x] ?? 0;
+          const gDef = glyphByChar.get(ch);
+          const row = el("div", { class: "tile-glyph-row" });
+          row.appendChild(el("span", { class: "tile-glyph-char" }, ch === " " ? "·" : ch));
+          const thumb = el("canvas", { width: "28", height: "28" });
+          const drawThumb = (img) => {
+            const ctx = thumb.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, 28, 28);
+            if (frame >= 0 && img) drawSheetFrame(ctx, img, ts, frame, 0, 0, 28, 28);
+            else if (gDef?.color) { ctx.fillStyle = gDef.color; ctx.fillRect(0, 0, 28, 28); }
+          };
+          drawThumb(loadSheetImage(ts.sheetAsset, () => drawThumb(state.sheetImages.get(ts.sheetAsset))));
+          row.appendChild(thumb);
+          const meta = el("div", { class: "tile-glyph-meta" });
+          meta.appendChild(el("strong", {}, `L${li}: ${gDef ? gDef.name : "(empty)"}`));
+          meta.appendChild(el("span", { class: "tile-glyph-sub" }, frame >= 0
+            ? `frame #${frame}${gDef?.autotileMode ? ` · ${gDef.autotileMode} mask=${mask}` : ""}${gDef && !gDef.passable ? " · solid" : ""}`
+            : "transparent"));
+          row.appendChild(meta);
+          list.appendChild(row);
+        });
+        tmSec.appendChild(list);
+        sections.push(tmSec);
+      }
+    }
 
     if (cell.eventId) {
       const evt = state.graph.events.find((e) => e.id === cell.eventId);
@@ -2345,6 +2762,22 @@
       sections.push(linkSec);
     }
 
+    if (evt.encounter) {
+      const enc = findEncounter(evt.encounter);
+      if (enc?.tilemap) {
+        const ts = findTileset(enc.tilemap.tilesetId);
+        if (ts) {
+          const encSec = el("div", { class: "insp-section" });
+          encSec.appendChild(el("h4", {}, `Combat Battlefield Tilemap (${enc.tilemap.width}×${enc.tilemap.height})`));
+          const canvas = el("canvas", { class: "encounter-tilemap-canvas" });
+          const cellPx = Math.max(16, Math.floor(300 / Math.max(1, enc.tilemap.width)));
+          drawTilemapToCanvas(canvas, enc.tilemap, ts, cellPx);
+          encSec.appendChild(canvas);
+          sections.push(encSec);
+        }
+      }
+    }
+
     if (evt.picture) {
       const p = makeAssetPreviewSection("Picture", evt.picture);
       if (p) sections.push(p);
@@ -2374,6 +2807,10 @@
     renderMaps();
   });
 
+  document.getElementById("chk-tilemap")?.addEventListener("change", (e) => {
+    state.showTilemap = e.target.checked;
+    renderMaps();
+  });
   document.getElementById("chk-player-view").addEventListener("change", (e) => {
     state.playerView = e.target.checked;
     renderMaps();

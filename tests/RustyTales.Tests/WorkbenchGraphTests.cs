@@ -341,13 +341,17 @@ public sealed class WorkbenchGraphTests
         server.Start();
         using HttpClient http = new() { BaseAddress = new Uri(server.Url) };
 
-        // 1. Embedded SPA includes the Playtest tab & API wiring
+        // 1. Embedded SPA includes the Playtest tab, Tilemap canvas & Tileset inspector wiring
         string html = await http.GetStringAsync("/");
         Assert.Contains("data-tab=\"playtest\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"playtest-iframe\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"map-tile-canvas\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-asset-cat=\"tileset\"", html, StringComparison.Ordinal);
         string js = await http.GetStringAsync("/workbench.js");
         Assert.Contains("/api/playtest/status", js, StringComparison.Ordinal);
         Assert.Contains("/api/playtest/start", js, StringComparison.Ordinal);
+        Assert.Contains("inspectTileset", js, StringComparison.Ordinal);
+        Assert.Contains("drawTilemapToCanvas", js, StringComparison.Ordinal);
 
         // 2. Status reports campaign availability cleanly before launching
         using JsonDocument status = JsonDocument.Parse(await http.GetStringAsync("/api/playtest/status"));
