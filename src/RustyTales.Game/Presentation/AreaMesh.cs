@@ -1,5 +1,6 @@
 using System.Numerics;
 using RustyTales.Core.Campaigns;
+using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 
 namespace RustyTales.Game.Presentation;
@@ -216,7 +217,7 @@ internal static class AreaMesh
     /// west and east rim walls with dark stone top caps so the room reads like
     /// a Gold Box / SKALD chamber without hiding front-row figures.
     /// </summary>
-    public static AreaGeometry TacticalRoomWalls(int width, int depth, UvRect? wall, UvRect? cap)
+    public static AreaGeometry TacticalRoomWalls(int width, int depth, UvRect? wall, UvRect? cap, IReadOnlyList<Cell>? interiorWalls = null)
     {
         Builder textured = new();
         Builder plain = new();
@@ -251,6 +252,37 @@ internal static class AreaMesh
             wallTarget.SideQuad(width, z, z + 1, 0f, sideHeight, -Vector3.UnitX, wallUv.U0, vSideTop, wallUv.U1, wallUv.V1);
             capTarget.FlatRect(-rim, 0f, z, z + 1, sideHeight, Vector3.UnitY, capUv);
             capTarget.FlatRect(width, width + rim, z, z + 1, sideHeight, Vector3.UnitY, capUv);
+        }
+
+        // Interior dungeon stone walls (projected corridors/doorways or sight-blocking stone walls without a custom sprite).
+        if (interiorWalls is { Count: > 0 })
+        {
+            const float blockHeight = 0.72f;
+            float vBlockTop = wallUv.V0 + ((wallUv.V1 - wallUv.V0) * (1f - blockHeight));
+            HashSet<Cell> wallSet = [.. interiorWalls];
+            foreach (Cell cell in interiorWalls)
+            {
+                capTarget.FlatRect(cell.X, cell.X + 1, cell.Y, cell.Y + 1, blockHeight, Vector3.UnitY, capUv);
+                if (!wallSet.Contains(new Cell(cell.X, cell.Y + 1)))
+                {
+                    wallTarget.VerticalQuad(cell.X, cell.X + 1, 0f, blockHeight, cell.Y + 1, Vector3.UnitZ, wallUv.U0, vBlockTop, wallUv.U1, wallUv.V1);
+                }
+
+                if (!wallSet.Contains(new Cell(cell.X, cell.Y - 1)))
+                {
+                    wallTarget.VerticalQuad(cell.X, cell.X + 1, 0f, blockHeight, cell.Y, -Vector3.UnitZ, wallUv.U0, vBlockTop, wallUv.U1, wallUv.V1);
+                }
+
+                if (!wallSet.Contains(new Cell(cell.X - 1, cell.Y)))
+                {
+                    wallTarget.SideQuad(cell.X, cell.Y, cell.Y + 1, 0f, blockHeight, -Vector3.UnitX, wallUv.U0, vBlockTop, wallUv.U1, wallUv.V1);
+                }
+
+                if (!wallSet.Contains(new Cell(cell.X + 1, cell.Y)))
+                {
+                    wallTarget.SideQuad(cell.X + 1, cell.Y, cell.Y + 1, 0f, blockHeight, Vector3.UnitX, wallUv.U0, vBlockTop, wallUv.U1, wallUv.V1);
+                }
+            }
         }
 
         return Builder.Join(textured, plain);

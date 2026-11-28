@@ -1,4 +1,5 @@
 using RustyTales.Core.Definitions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Rules;
 
 namespace RustyTales.Core.Combat;
@@ -87,10 +88,11 @@ public sealed partial class CombatRunner
         DiceRoller dice,
         CombatContinuationState continuation,
         Definition? encounter = null,
-        CombatSetup? setup = null)
+        CombatSetup? setup = null,
+        ProjectedBattlefield? projected = null)
     {
         ArgumentNullException.ThrowIfNull(continuation);
-        CombatRunner runner = new(rules, combat, sides, dice, encounter, setup, initialize: false);
+        CombatRunner runner = new(rules, combat, sides, dice, encounter, setup, initialize: false, projected);
         runner.RestoreContinuation(continuation);
         return runner;
     }

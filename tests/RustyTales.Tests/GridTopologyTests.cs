@@ -204,4 +204,96 @@ public sealed class GridTopologyTests
         Assert.Contains(new GridCell(3, 2), reachable[new GridCell(4, 2)].Path);
         Assert.False(reachable.ContainsKey(new GridCell(2, 1)));
     }
+
+    [Fact]
+    public void AreaCombatProjectorTranslatesDungeonDoorwayIntoCentralChokepoint()
+    {
+        // A 3x1 stone dungeon corridor with a doorway between (0,0) and (1,0) and an open hall to (2,0).
+        List<(int, int, string)> problems = [];
+        AreaMap? map = AreaMap.Parse(
+        [
+            "+--+--+--+",
+            "|  D     |",
+            "+--+--+--+",
+        ],
+        problems);
+        Assert.NotNull(map);
+
+        Definition dummyArea = new(DefinitionTypes.Area, "hall", "test", "world.json", JsonDocument.Parse("""{"type":"area","id":"hall","name":"Hall","map":[],"entries":{"start":{"at":[0,0],"facing":"east"}}}""").RootElement.Clone(), [], [], "$");
+        Definition combat = new(
+            DefinitionTypes.Combat,
+            "standard",
+            "test",
+            "combat.json",
+            JsonDocument.Parse("""{"type":"combat","id":"standard","name":"Standard","field":{"width":10,"height":6,"metric":"chebyshev"}}""").RootElement.Clone(),
+            [],
+            [],
+            "$");
+
+        ProjectedBattlefield projected = AreaCombatProjector.ProjectDungeonArena(map!, originX: 0, originY: 0, Facing.East, width: 10, height: 6);
+        Assert.Null(projected.Tilemap);
+
+        CombatField? field = CombatField.Of(combat, encounter: null, tilemap: null, baseTerrain: projected.Terrain);
+        Assert.NotNull(field);
+
+        // Top and bottom corridor walls along y=0 and y=5.
+        Assert.False(field!.Passable(new Cell(1, 0)));
+        Assert.False(field.Passable(new Cell(7, 5)));
+
+        // Central doorway wall along x=5 with a single-tile chokepoint at (5,2)!
+        Assert.False(field.Passable(new Cell(5, 0)));
+        Assert.False(field.Passable(new Cell(5, 1)));
+        Assert.True(field.Passable(new Cell(5, 2)));
+        Assert.False(field.Passable(new Cell(5, 3)));
+        Assert.False(field.Passable(new Cell(5, 4)));
+        Assert.False(field.Passable(new Cell(5, 5)));
+
+        // Every path from left chamber (2,3) to right chamber (7,3) MUST funnel through (5,2)!
+        Dictionary<GridCell, (int Cost, IReadOnlyList<GridCell> Path)> paths = GridSearch.ReachableWithin(field, new GridCell(2, 3), budget: 12);
+        Assert.True(paths.ContainsKey(new GridCell(7, 3)));
+        Assert.Contains(new GridCell(5, 2), paths[new GridCell(7, 3)].Path);
+
+        // Standing directly in the doorway blocks line of sight through the flanking wall cells.
+        Assert.False(field.CanSee(new Cell(2, 1), new Cell(7, 1)));
+        Assert.True(field.CanSee(new Cell(2, 2), new Cell(7, 2)));
+    }
+
+    [Fact]
+    public void AreaCombatProjectorSlicesOverhead2DTilemapIntoBothVisualAndTacticalGrid()
+    {
+        Definition dummySheet = new(DefinitionTypes.Asset, "sheet", "test", "test.json", JsonDocument.Parse("""{"type":"asset","id":"sheet","media":"sheet","file":"t.png","frame_size":[16,16]}""").RootElement.Clone(), [], [], "$");
+        Definition dummyTileset = new(DefinitionTypes.Tileset, "ts", "test", "test.json", JsonDocument.Parse("""{"type":"tileset","id":"ts","name":"Test","sheet":"sheet","tiles":{}}""").RootElement.Clone(), [], [], "$");
+        Dictionary<char, TileGlyph> tiles = new()
+        {
+            ['g'] = new TileGlyph('g', "Grass", 0, [], null, Passable: true, Door: false, Color: null, MoveCost: 1, BlocksSight: false),
+            ['~'] = new TileGlyph('~', "River", 1, [], null, Passable: false, Door: false, Color: null, MoveCost: 1, BlocksSight: false),
+            ['B'] = new TileGlyph('B', "Bridge", 2, [], null, Passable: true, Door: false, Color: null, MoveCost: 1, BlocksSight: false),
+        };
+        TilesetDefinition tileset = new(dummyTileset, dummySheet, 48, 16, 16, 16, 3, 1, 3, tiles);
+
+        ResolvedTilemap town = AutoTiler.Resolve(
+            tileset,
+            [
+                [
+                    "gggg~ggggg",
+                    "gggg~ggggg",
+                    "gggg~ggggg",
+                    "ggggBggggg",
+                    "gggg~ggggg",
+                    "gggg~ggggg",
+                    "gggg~ggggg",
+                    "gggg~ggggg",
+                ],
+            ],
+            zoom: null);
+
+        ProjectedBattlefield projected = AreaCombatProjector.ProjectTilemapSlice(town, originX: 4, originY: 3, width: 6, height: 4);
+        Assert.NotNull(projected.Tilemap);
+        Assert.Equal(6, projected.Tilemap!.Width);
+        Assert.Equal(4, projected.Tilemap.Height);
+
+        // Bridge cell at town (4,3) lands inside the 6x4 slice (startX=1, startY=1 -> local (3,2)) and stays passable while river stays blocked.
+        Assert.True(projected.Tilemap.IsPassable(3, 2));
+        Assert.False(projected.Tilemap.IsPassable(3, 1));
+    }
 }

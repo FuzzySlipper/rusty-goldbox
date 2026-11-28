@@ -124,13 +124,15 @@ internal sealed class SceneView : IDisposable
             if (session.Screen == Screen.Combat && session.Combat is CombatObservation live && session.CombatMetadata is PendingCombatState pending)
             {
                 _showingCombat = true;
-                CombatField? field = CombatField.Of(rules, pending.Combat, pending.Encounter);
+                RustyTales.Core.Grids.ProjectedBattlefield? projected = runner.ProjectedBattlefieldFor(pending);
+                CombatField? field = CombatField.Of(rules, pending.Combat, pending.Encounter, projected?.Terrain, projected?.Tilemap);
                 string presentation = session.CombatPresentation(pending.Combat);
                 (ResolvedTilemap Tilemap, Material Material, Definition Sheet, (int Width, int Height) Size)? tiledFloor = null;
-                if (rules.EncounterTilemaps.TryGetValue(pending.Encounter, out ResolvedTilemap? encTm)
-                    && ArtFor(session.Set, encTm.Tileset.Sheet) is Art encArt)
+                ResolvedTilemap? visualTilemap = projected?.Tilemap
+                    ?? (rules.EncounterTilemaps.TryGetValue(pending.Encounter, out ResolvedTilemap? encTm) ? encTm : null);
+                if (visualTilemap is not null && ArtFor(session.Set, visualTilemap.Tileset.Sheet) is Art encArt)
                 {
-                    tiledFloor = (encTm, encArt.GetAlphaMaskMaterial(_engine.Graphics), encTm.Tileset.Sheet, rules.ImageSizes[encTm.Tileset.Sheet]);
+                    tiledFloor = (visualTilemap, encArt.GetAlphaMaskMaterial(_engine.Graphics), visualTilemap.Tileset.Sheet, rules.ImageSizes[visualTilemap.Tileset.Sheet]);
                 }
 
                 _combat.Show(

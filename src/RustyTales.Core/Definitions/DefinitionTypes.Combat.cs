@@ -175,6 +175,7 @@ public static partial class DefinitionTypes
             new("actions", new ListKind(Shared.Use), false, "Actions every creature in these fights can take, after its own, such as attacking with any skill where a system lets anyone try anything; uses as in classes and monsters."),
             new("downed_conditions", new BooleanKind(), false, "If true, a creature out of the fight still runs its conditions' start- and end-of-turn operations and counts their durations down each round, though it takes no actions (bleeding out, a save to stabilise). It does so at its place in the turn order; with initiative each round a defeated creature isn't rolled for, so it does so at the round's end, as does one out of the fight from the start. Without it, a defeated creature's conditions wait."),
             new("presentation", new EnumKind(["tactical", "first_person", "side_view"]), false, "How the Game frames fights using this combat definition: \"tactical\" (angled 3D floor grid, the default), \"first_person\" (Wizardry / Dragon Quest style: foes arrayed facing the camera over a backdrop), or \"side_view\" (JRPG style: party on the right and foes on the left in fixed formation rows)."),
+            new("layout", new EnumKind(["open", "from_area"]), false, "Default battlefield layout source when encounters don't specify one: \"open\" (the default open combat field) or \"from_area\" (Ultima IV-style projection from the surrounding campaign area's walls, doorways, or 2D tilemap)."),
         ],
         """
         {
@@ -237,7 +238,8 @@ public static partial class DefinitionTypes
                 new("count", Shared.PlainNumber, true, "How many, for example \"2\" or \"1d4 + 1\"."),
             ])), true, "The monsters and how many of each."),
             new("terrain", new ListKind(new TextKind()), false, "On a combat field, the ground it is fought on: one row of text per row of cells, \".\" for open ground and the field's terrain keys elsewhere, for example [\"..#..\", \".....\", \"..~..\"]. Its size must match every field it can be fought on. Without it, open ground."),
-            new("tilemap", TilemapFieldKind, false, "Optional multi-layer 2D auto-tiled tilemap for rendering the tactical battlefield floor; its dimensions must match every combat field the encounter can use."),
+            new("tilemap", TilemapFieldKind, false, "Optional multi-layer 2D auto-tiled tilemap for rendering the tactical battlefield floor and driving terrain passability, movement cost, and line of sight; its dimensions must match every combat field the encounter can use."),
+            new("layout", new EnumKind(["open", "from_area"]), false, "Optional battlefield layout source: \"open\" (default) or \"from_area\" (project corridors, doorways, or an overhead 2D tilemap slice from the campaign area where the fight starts)."),
         ],
         """
         { "type": "encounter", "id": "crypt_guard", "name": "Crypt guard", "monsters": [ { "monster": "skeleton", "count": "1d4 + 1" } ] }

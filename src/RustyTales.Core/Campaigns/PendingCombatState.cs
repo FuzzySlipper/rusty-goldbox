@@ -1,5 +1,6 @@
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
+using RustyTales.Core.Grids;
 
 namespace RustyTales.Core.Campaigns;
 
@@ -17,6 +18,9 @@ public sealed class PendingCombatState
     public required Definition Combat { get; init; }
 
     public required CombatContinuationState Continuation { get; set; }
+
+    /// <summary>Captured area position/facing when the fight uses <c>"layout": "from_area"</c>.</summary>
+    public CombatAreaOrigin? AreaOrigin { get; init; }
 
     /// <summary>How each continuation ID is reconstructed without encounter rerolls.</summary>
     public List<PendingCombatantSource> Participants { get; } = [];

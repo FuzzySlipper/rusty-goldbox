@@ -65,7 +65,7 @@ public sealed partial class CombatRunner
         public decimal Amount { get; set; } = amount;
     }
 
-    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter, CombatSetup? setup, bool initialize)
+    private CombatRunner(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter, CombatSetup? setup, bool initialize, ProjectedBattlefield? projected = null)
     {
         _rules = rules;
         _combat = combat;
@@ -75,7 +75,7 @@ public sealed partial class CombatRunner
         _previewEvaluator = new Evaluator(rules, null);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
-        _field = CombatField.Of(rules, combat, encounter);
+        _field = CombatField.Of(rules, combat, encounter, projected?.Terrain, projected?.Tilemap);
         if (initialize)
         {
             InitializeMembers();
@@ -192,9 +192,10 @@ public sealed partial class CombatRunner
         int maxRounds,
         Definition? encounter = null,
         CombatSetup? setup = null,
-        bool collectBehaviorTraces = false)
+        bool collectBehaviorTraces = false,
+        ProjectedBattlefield? projected = null)
     {
-        CombatRunner runner = new(rules, combat, sides, dice, encounter, setup, initialize: true)
+        CombatRunner runner = new(rules, combat, sides, dice, encounter, setup, initialize: true, projected)
         {
             CollectBehaviorTraces = collectBehaviorTraces,
         };
@@ -202,9 +203,9 @@ public sealed partial class CombatRunner
     }
 
     /// <summary>Creates a live owner. Call <see cref="Start(int)"/> to begin rolling and advancing it.</summary>
-    public static CombatRunner Create(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter = null, CombatSetup? setup = null)
+    public static CombatRunner Create(RuleSet rules, Definition combat, IReadOnlyList<CombatSide> sides, DiceRoller dice, Definition? encounter = null, CombatSetup? setup = null, ProjectedBattlefield? projected = null)
     {
-        return new CombatRunner(rules, combat, sides, dice, encounter, setup, initialize: true);
+        return new CombatRunner(rules, combat, sides, dice, encounter, setup, initialize: true, projected);
     }
 
     private IEnumerable<Combatant> Everyone => _sides.SelectMany(side => side.Members);

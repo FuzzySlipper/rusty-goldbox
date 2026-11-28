@@ -200,6 +200,7 @@ public static partial class DefinitionTypes
             new("skin", new ReferenceKind("skin"), false, "How the Game's panels look while this campaign plays, unless the player picks another skin."),
             new("starting_party", new ListKind(new ReferenceKind("npc")), false, "Pre-authored NPC characters who start the campaign as the party. When present, single-player play in the Game skips party creation and `tales play` needs no `--party` files."),
             new("combat_presentation", new EnumKind(["tactical", "first_person", "side_view"]), false, "Default combat framing for this campaign (\"tactical\", \"first_person\" or \"side_view\"), overriding the combat definition's presentation when set."),
+            new("combat_layout", new EnumKind(["open", "from_area"]), false, "Default battlefield layout source for encounters without explicit terrain/tilemap: \"open\" (default) or \"from_area\" (project local dungeon corridors/doorways or overhead tilemap slices onto the tactical field)."),
             new("import", new ObjectKind(
             [
                 new("allow_higher_level", new BooleanKind(), false, "If true, characters imported from the stable or external files may keep levels above 1 (up to max_level when set). Without it or when false, imported characters are scaled down to level 1."),

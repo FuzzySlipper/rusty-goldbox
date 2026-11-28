@@ -3,6 +3,7 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
@@ -290,8 +291,51 @@ public sealed partial class CampaignRunner
             ?? throw new InvalidOperationException("A campaign combat continuation has no random scope.");
         _combatDice = new DiceRoller(random, _state.Seed, scope, pending.Continuation.NextRandomKey);
         (List<CombatSide> sides, _) = RestoreSides(pending);
-        _combat = CombatRunner.Restore(_rules, pending.Combat, sides, _combatDice, pending.Continuation, pending.Encounter, Setup(pending.Event));
+        ProjectedBattlefield? projected = ProjectedBattlefieldFor(pending);
+        _combat = CombatRunner.Restore(_rules, pending.Combat, sides, _combatDice, pending.Continuation, pending.Encounter, Setup(pending.Event), projected);
         _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
+    }
+
+    /// <summary>
+    /// Computes the deterministic area-projected battlefield for <paramref name="pending"/> when
+    /// the fight opted into <c>"layout": "from_area"</c>, or null for standard encounter layouts.
+    /// </summary>
+    public ProjectedBattlefield? ProjectedBattlefieldFor(PendingCombatState pending)
+    {
+        if (pending.AreaOrigin is not CombatAreaOrigin origin)
+        {
+            return null;
+        }
+
+        if (!pending.Combat.Json.TryGetProperty("field", out JsonElement fieldEl))
+        {
+            return null;
+        }
+
+        Definition? area = _rules.Find(DefinitionTypes.Area, origin.AreaId, out _);
+        if (area is null)
+        {
+            return null;
+        }
+
+        int width = fieldEl.GetProperty("width").GetInt32();
+        int height = fieldEl.GetProperty("height").GetInt32();
+        return AreaCombatProjector.Project(_rules, area, StructuralMap(area), origin.X, origin.Y, origin.Facing, width, height);
+    }
+
+    /// <summary>Returns an area's structural map: discovered secrets become doorways while opened doors remain doorways.</summary>
+    private AreaMap StructuralMap(Definition area)
+    {
+        AreaMap map = Map(area);
+        return map.WithEdges((x, y, facing, edge) =>
+        {
+            if (edge == Edge.Secret && _state.FoundSecrets.Contains(_state.EdgeKey(area, new AreaEdge(x, y, facing))))
+            {
+                return Edge.Door;
+            }
+
+            return edge;
+        });
     }
 
     private (List<CombatSide> Sides, List<Combatant> Members) RestoreSides(PendingCombatState pending)
@@ -1052,8 +1096,22 @@ public sealed partial class CampaignRunner
             new CombatSide(encounter.Name, Encounters.Spawn(_rules, encounter, combatDice)),
         ]);
         CombatSetup? setup = Setup(evt);
+        CombatAreaOrigin? areaOrigin = AreaCombatProjector.UsesAreaLayout(_state.Campaign, combat, encounter)
+            ? new CombatAreaOrigin(_state.Area.QualifiedId, _state.X, _state.Y, _state.Facing)
+            : null;
+        ProjectedBattlefield? projected = areaOrigin is CombatAreaOrigin origin && combat.Json.TryGetProperty("field", out JsonElement fieldEl)
+            ? AreaCombatProjector.Project(
+                _rules,
+                _state.Area,
+                StructuralMap(_state.Area),
+                origin.X,
+                origin.Y,
+                origin.Facing,
+                fieldEl.GetProperty("width").GetInt32(),
+                fieldEl.GetProperty("height").GetInt32())
+            : null;
         _combatDice = combatDice;
-        _combat = CombatRunner.Create(_rules, combat, sides, combatDice, encounter, setup);
+        _combat = CombatRunner.Create(_rules, combat, sides, combatDice, encounter, setup, projected);
         _combat.CollectBehaviorTraces = CollectCombatBehaviorTraces;
         ApplyDefaultControllers(_combat);
         PendingCombatState pending = new()
@@ -1062,6 +1120,7 @@ public sealed partial class CampaignRunner
             Encounter = encounter,
             Combat = combat,
             Continuation = _combat.Capture(),
+            AreaOrigin = areaOrigin,
         };
         pending.Participants.AddRange(Sources(_combat.Sides));
         pending.Members.AddRange(Members(combat, _combat.Sides).Select(ToPendingMember));

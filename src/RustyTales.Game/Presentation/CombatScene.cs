@@ -437,6 +437,7 @@ internal sealed class CombatScene : IDisposable
             geometry.Groups.Select(group => new MeshMaterialBinding(group.Slot, group.Slot == AreaMesh.TexturedSlot ? floorMat : _plain)).ToArray()));
         _floor = _graphics.CreateMeshAppearance(_floorMesh);
 
+        HashSet<Cell> wallMeshCells = [];
         if (stageMode)
         {
             // Fill the viewport edge-to-edge behind the fighters without dark side bars on widescreen layouts.
@@ -456,9 +457,23 @@ internal sealed class CombatScene : IDisposable
         }
         else if (!useTiledFloor && roomWalls is not null)
         {
-            // Frame the orthographic tactical battlefield with perimeter dungeon stone walls (Gold Box / SKALD style).
+            // Frame the orthographic tactical battlefield with perimeter dungeon stone walls plus any
+            // interior stone wall blocks (such as Ultima IV projected dungeon corridors/doorways).
+            List<Cell> interiorWalls = [];
+            if (field is not null)
+            {
+                foreach ((Cell cell, Terrain terrain) in field.Terrain)
+                {
+                    if (!terrain.Passable && terrain.BlocksSight && !terrain.FromTilemap && terrainFor(terrain.Key) is null)
+                    {
+                        interiorWalls.Add(cell);
+                        wallMeshCells.Add(cell);
+                    }
+                }
+            }
+
             _backdropPlacement = new Transform(Vector3.Zero, Quaternion.Identity, Vector3.One);
-            AreaGeometry roomGeo = AreaMesh.TacticalRoomWalls(_width, _depth, roomWalls.Value.Wall, roomWalls.Value.Cap ?? roomWalls.Value.Wall);
+            AreaGeometry roomGeo = AreaMesh.TacticalRoomWalls(_width, _depth, roomWalls.Value.Wall, roomWalls.Value.Cap ?? roomWalls.Value.Wall, interiorWalls);
             _backdropMesh = _graphics.CreateMeshResource(new MeshResourceCreateRequest(
                 roomGeo.Positions,
                 roomGeo.Normals,
@@ -479,7 +494,7 @@ internal sealed class CombatScene : IDisposable
         }
         else
         {
-            BuildTacticalFigures(observation, kindFor, spriteFor, terrainFor, field);
+            BuildTacticalFigures(observation, kindFor, spriteFor, terrainFor, field, wallMeshCells);
         }
 
         foreach (Figure figure in _figures.Values)
@@ -551,7 +566,8 @@ internal sealed class CombatScene : IDisposable
         Func<string, Definition?> kindFor,
         Func<Definition, SpriteArt?> spriteFor,
         Func<char, SpriteArt?> terrainFor,
-        CombatField? field)
+        CombatField? field,
+        HashSet<Cell> wallMeshCells)
     {
         foreach (IGrouping<int, CombatantObservation> side in observation.Combatants.GroupBy(member => member.Side))
         {
@@ -580,7 +596,7 @@ internal sealed class CombatScene : IDisposable
 
         foreach ((Cell cell, Terrain terrain) in field?.Terrain ?? new Dictionary<Cell, Terrain>())
         {
-            if (terrain.FromTilemap)
+            if (terrain.FromTilemap || wallMeshCells.Contains(cell))
             {
                 continue;
             }

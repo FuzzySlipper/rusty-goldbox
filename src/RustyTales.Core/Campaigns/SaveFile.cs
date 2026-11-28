@@ -5,6 +5,7 @@ using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
@@ -171,6 +172,15 @@ public static class SaveFile
         writer.WriteString("encounter", pending.Encounter.QualifiedId);
         writer.WriteString("combat", pending.Combat.QualifiedId);
         writer.WriteBoolean("finalized", pending.Finalized);
+        if (pending.AreaOrigin is CombatAreaOrigin origin)
+        {
+            writer.WriteStartObject("area_origin");
+            writer.WriteString("area", origin.AreaId);
+            writer.WriteNumber("x", origin.X);
+            writer.WriteNumber("y", origin.Y);
+            writer.WriteString("facing", Facings.Name(origin.Facing));
+            writer.WriteEndObject();
+        }
         writer.WritePropertyName("continuation");
         JsonSerializer.Serialize(writer, pending.Continuation);
         writer.WriteStartArray("participants");
@@ -806,12 +816,40 @@ public static class SaveFile
                 }
             }
 
+            CombatAreaOrigin? areaOrigin = null;
+            if (data.TryGetProperty("area_origin", out JsonElement originData) && originData.ValueKind != JsonValueKind.Null)
+            {
+                if (originData.ValueKind != JsonValueKind.Object)
+                {
+                    Error("$.pending_combat.area_origin", "area_origin must be an object or null.");
+                }
+                else
+                {
+                    Definition? originArea = ResolveProperty(originData, "area", "$.pending_combat.area_origin.area", DefinitionTypes.Area);
+                    int ox = originData.TryGetProperty("x", out JsonElement oxEl) && oxEl.TryGetInt32(out int oxVal) ? oxVal : -1;
+                    int oy = originData.TryGetProperty("y", out JsonElement oyEl) && oyEl.TryGetInt32(out int oyVal) ? oyVal : -1;
+                    bool hasFacing = originData.TryGetProperty("facing", out JsonElement fEl)
+                        && fEl.ValueKind == JsonValueKind.String
+                        && Facings.TryParse(fEl.GetString()!, out Facing parsedFacing);
+                    if (originArea is not null && ox >= 0 && oy >= 0 && hasFacing)
+                    {
+                        Facings.TryParse(originData.GetProperty("facing").GetString()!, out Facing originFacing);
+                        areaOrigin = new CombatAreaOrigin(originArea.QualifiedId, ox, oy, originFacing);
+                    }
+                    else
+                    {
+                        Error("$.pending_combat.area_origin", "area_origin needs valid area, nonnegative x/y, and facing.");
+                    }
+                }
+            }
+
             PendingCombatState pending = new()
             {
                 Event = evt,
                 Encounter = encounter,
                 Combat = combat,
                 Continuation = continuation,
+                AreaOrigin = areaOrigin,
                 Finalized = finalized,
             };
 
