@@ -17,11 +17,7 @@ public sealed partial class RuleSetBuilder
 
         foreach (Definition definition in _rules.Definitions)
         {
-            if (definition.Type == DefinitionTypes.Event)
-            {
-                CheckEvent(definition);
-            }
-            else if (definition.Type == DefinitionTypes.Item)
+            if (definition.Type == DefinitionTypes.Item)
             {
                 CheckItem(definition);
             }
@@ -89,6 +85,11 @@ public sealed partial class RuleSetBuilder
         }
 
         CheckTilesetsAndTilemaps();
+
+        foreach (Definition evt in _rules.OfType(DefinitionTypes.Event))
+        {
+            CheckEvent(evt);
+        }
 
         foreach (ModuleManifest module in _manifests.Values)
         {
@@ -434,7 +435,15 @@ public sealed partial class RuleSetBuilder
 
             bool passable = !obj.TryGetProperty("passable", out JsonElement passEl) || passEl.GetBoolean();
             bool door = obj.TryGetProperty("door", out JsonElement doorEl) && doorEl.GetBoolean();
-            glyphs[ch] = new Campaigns.TileGlyph(ch, name, tile, variants, autotile, passable, door, color);
+            int cost = obj.TryGetProperty("cost", out JsonElement costEl) ? costEl.GetInt32() : 1;
+            if (cost < 1)
+            {
+                Error(tileset, "tileset.cost", $"{at}.cost", "A tile's movement cost must be at least 1.");
+                cost = 1;
+            }
+
+            bool blocksSight = obj.TryGetProperty("blocks_sight", out JsonElement sightEl) && sightEl.GetBoolean();
+            glyphs[ch] = new Campaigns.TileGlyph(ch, name, tile, variants, autotile, passable, door, color, cost, blocksSight);
         }
 
         _rules.Tilesets[tileset] = new Campaigns.TilesetDefinition(
@@ -1234,7 +1243,7 @@ public sealed partial class RuleSetBuilder
             {
                 Error(definition, "event.combat-placement", path, $"Starting cell [{x}, {y}] is outside the combat field's {width} by {height} cells.");
             }
-            else if (encounter is not null && !CombatField.Of(combat, encounter)!.Passable(new Cell(x, y)))
+            else if (encounter is not null && !CombatField.Of(_rules, combat, encounter)!.Passable(new Cell(x, y)))
             {
                 Error(definition, "event.combat-placement", path, $"Starting cell [{x}, {y}] is impassable in encounter '{encounter.Name}'. Choose an open or passable terrain cell.");
             }

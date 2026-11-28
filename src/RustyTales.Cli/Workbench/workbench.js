@@ -2418,7 +2418,12 @@
         : t.variants?.length
           ? `variants [${t.variants.join(",")}]`
           : `frame #${t.tile ?? 0}`;
-      const flags = [!t.passable ? "solid" : "passable", t.door ? "door" : null].filter(Boolean).join(" · ");
+      const flags = [
+        !t.passable ? "solid" : "passable",
+        t.door ? "door" : null,
+        t.moveCost > 1 ? `cost ${t.moveCost}` : null,
+        t.blocksSight ? "blocks sight" : null,
+      ].filter(Boolean).join(" · ");
       meta.appendChild(el("span", { class: "tile-glyph-sub" }, `${ruleText} · ${flags}`));
       row.appendChild(meta);
       palList.appendChild(row);

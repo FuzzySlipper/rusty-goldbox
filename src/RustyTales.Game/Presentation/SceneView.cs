@@ -124,7 +124,7 @@ internal sealed class SceneView : IDisposable
             if (session.Screen == Screen.Combat && session.Combat is CombatObservation live && session.CombatMetadata is PendingCombatState pending)
             {
                 _showingCombat = true;
-                CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
+                CombatField? field = CombatField.Of(rules, pending.Combat, pending.Encounter);
                 string presentation = session.CombatPresentation(pending.Combat);
                 (ResolvedTilemap Tilemap, Material Material, Definition Sheet, (int Width, int Height) Size)? tiledFloor = null;
                 if (rules.EncounterTilemaps.TryGetValue(pending.Encounter, out ResolvedTilemap? encTm)

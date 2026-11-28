@@ -273,7 +273,7 @@ internal static partial class SessionProjection
         }
 
         string presentation = session.CombatPresentation(pending.Combat);
-        CombatField? field = CombatField.Of(pending.Combat, pending.Encounter);
+        CombatField? field = CombatField.Of(rules, pending.Combat, pending.Encounter);
         (int fieldWidth, int fieldDepth) = RustyTales.Game.Presentation.CombatScene.FieldSizeFor(presentation, observation, field);
         Dictionary<string, System.Numerics.Vector3> worldSpots = RustyTales.Game.Presentation.CombatScene.WorldSpotsFor(presentation, observation, field);
         string fieldMetric = pending.Combat.Json.TryGetProperty("field", out JsonElement fieldJson)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using RustyTales.Core.Campaigns;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Grids;
 using RustyTales.Core.Modules;
@@ -15,7 +16,7 @@ public readonly record struct Cell(int X, int Y)
 }
 
 /// <summary>A kind of ground the combat field declares: whether creatures can enter it, what entering costs and whether it blocks sight.</summary>
-public sealed record Terrain(char Key, string Name, bool Passable, int Cost, bool BlocksSight);
+public sealed record Terrain(char Key, string Name, bool Passable, int Cost, bool BlocksSight, bool FromTilemap = false);
 
 /// <summary>
 /// A combat definition's field: a grid of cells or shared zone cells, and how
@@ -63,21 +64,85 @@ public sealed class CombatField : IGridTopology
     public IReadOnlyDictionary<Cell, Terrain> Terrain => _terrain;
 
     /// <summary>
-    /// The combat definition's field, or null when its fights have no
-    /// positions, with the encounter's terrain laid over it. Loading checked
-    /// that the encounter's rows fit the field and use its terrain.
+    /// The combat definition's field with the encounter's compiled tilemap (if any) and explicit
+    /// terrain laid over it, or null when the combat has no positional field.
     /// </summary>
-    public static CombatField? Of(Definition combat, Definition? encounter = null)
+    public static CombatField? Of(
+        RuleSet rules,
+        Definition combat,
+        Definition? encounter = null,
+        IReadOnlyDictionary<Cell, Terrain>? baseTerrain = null,
+        ResolvedTilemap? tilemapOverride = null)
+    {
+        ResolvedTilemap? tilemap = tilemapOverride;
+        if (tilemap is null && encounter is not null && rules.EncounterTilemaps.TryGetValue(encounter, out ResolvedTilemap? encTm))
+        {
+            tilemap = encTm;
+        }
+
+        return Of(combat, encounter, tilemap, baseTerrain);
+    }
+
+    /// <summary>
+    /// The combat definition's field, or null when its fights have no
+    /// positions, with any projected base terrain, tilemap terrain, and encounter
+    /// terrain laid over it (later layers override earlier ones per cell).
+    /// </summary>
+    public static CombatField? Of(
+        Definition combat,
+        Definition? encounter = null,
+        ResolvedTilemap? tilemap = null,
+        IReadOnlyDictionary<Cell, Terrain>? baseTerrain = null)
     {
         if (!combat.Json.TryGetProperty("field", out JsonElement field))
         {
             return null;
         }
 
+        int width = field.GetProperty("width").GetInt32();
+        int height = field.GetProperty("height").GetInt32();
         bool zones = field.TryGetProperty("mode", out JsonElement mode) && mode.GetString() == "zones";
         bool diagonal = !field.TryGetProperty("metric", out JsonElement metric) || metric.GetString() == "chebyshev";
         Dictionary<char, Terrain> kinds = Kinds(field);
         Dictionary<Cell, Terrain> terrain = [];
+
+        if (baseTerrain is not null)
+        {
+            foreach ((Cell cell, Terrain value) in baseTerrain)
+            {
+                if (cell.X >= 0 && cell.Y >= 0 && cell.X < width && cell.Y < height)
+                {
+                    terrain[cell] = value;
+                }
+            }
+        }
+
+        if (tilemap is not null && tilemap.Width == width && tilemap.Height == height)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    CellTraits traits = tilemap.TraitsAt(new GridCell(x, y));
+                    if (!traits.Passable || traits.MoveCost > 1 || traits.BlocksSight)
+                    {
+                        char key = TopGlyphAt(tilemap, x, y);
+                        terrain[new Cell(x, y)] = new Terrain(
+                            key,
+                            traits.Label ?? "Obstacle",
+                            traits.Passable,
+                            traits.MoveCost,
+                            traits.BlocksSight,
+                            FromTilemap: true);
+                    }
+                    else
+                    {
+                        terrain.Remove(new Cell(x, y));
+                    }
+                }
+            }
+        }
+
         if (encounter is not null && encounter.Json.TryGetProperty("terrain", out JsonElement rows))
         {
             int y = 0;
@@ -96,7 +161,27 @@ public sealed class CombatField : IGridTopology
             }
         }
 
-        return new CombatField(combat, encounter, field.GetProperty("width").GetInt32(), field.GetProperty("height").GetInt32(), zones, diagonal, terrain);
+        return new CombatField(combat, encounter, width, height, zones, diagonal, terrain);
+    }
+
+    private static char TopGlyphAt(ResolvedTilemap tilemap, int x, int y)
+    {
+        char best = '#';
+        for (int i = tilemap.Layers.Count - 1; i >= 0; i--)
+        {
+            ResolvedTile tile = tilemap.Layers[i].At(x, y);
+            if (tile.Frame >= 0)
+            {
+                if (!tile.Passable || tile.BlocksSight || tile.MoveCost > 1)
+                {
+                    return tile.Glyph;
+                }
+
+                best = tile.Glyph;
+            }
+        }
+
+        return best;
     }
 
     /// <summary>The terrain kinds a combat definition's field declares, by key.</summary>

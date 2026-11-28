@@ -109,7 +109,9 @@ public sealed record GraphTileGlyph(
     string OutOfBounds,
     bool Passable,
     bool Door,
-    string? Color);
+    string? Color,
+    int MoveCost = 1,
+    bool BlocksSight = false);
 
 public sealed record GraphTileset(
     string Id,
@@ -1390,7 +1392,9 @@ public static class ModuleGraphBuilder
                 t.Autotile?.OutOfBoundsSame == false ? "empty" : "same",
                 t.Passable,
                 t.Door,
-                t.Color))
+                t.Color,
+                t.MoveCost,
+                t.BlocksSight))
             .ToList();
 
         return new GraphTileset(

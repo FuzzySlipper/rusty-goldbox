@@ -75,7 +75,7 @@ public sealed partial class CombatRunner
         _previewEvaluator = new Evaluator(rules, null);
         _track = rules.Reference(combat, "$.track");
         _sides = sides.ToList();
-        _field = CombatField.Of(combat, encounter);
+        _field = CombatField.Of(rules, combat, encounter);
         if (initialize)
         {
             InitializeMembers();

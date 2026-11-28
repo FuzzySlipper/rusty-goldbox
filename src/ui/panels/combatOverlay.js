@@ -477,6 +477,13 @@ export function createCombatOverlay(surface, controls, onPortraitFloat = null, o
             'data-grid-x': x,
             'data-grid-y': y,
           });
+          if (terrain) {
+            const notes = [];
+            if (!terrain.passable) notes.push('impassable');
+            else if (terrain.cost > 1) notes.push(`rough ground (cost ${terrain.cost})`);
+            if (terrain.blocksSight) notes.push('blocks sight');
+            poly.append(svgEl('title', {}, notes.length ? `${terrain.name} — ${notes.join(', ')}` : terrain.name));
+          }
 
           if (isMoveMode) {
             poly.addEventListener('mouseenter', () => {

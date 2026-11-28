@@ -580,6 +580,11 @@ internal sealed class CombatScene : IDisposable
 
         foreach ((Cell cell, Terrain terrain) in field?.Terrain ?? new Dictionary<Cell, Terrain>())
         {
+            if (terrain.FromTilemap)
+            {
+                continue;
+            }
+
             Vector3 at = new(cell.X + 0.5f, 0, cell.Y + 0.5f);
             SpriteArt? art = terrainFor(terrain.Key);
             _terrain.Add(art is not null
