@@ -61,12 +61,13 @@
     "map": [
       "+--+--+--+",
       "|        |",
-      "+--+  +--+",
+      "+--+DD+--+",
       "|        |",
       "+--+--+--+"
     ],
     "cells": [
       { "at": [0, 0], "event": "leave_barrow" },
+      { "at": [1, 1], "event": "barrow_ambush", "once": true },
       { "at": [2, 1], "prop": { "sprite": "placeholder-art:bones" }, "event": "barrow_relic", "once": true }
     ],
     "entries": {
@@ -185,6 +186,28 @@
     "id": "leave_barrow_text",
     "kind": "text",
     "text": "Daylight greets you as you climb back up into Oakvale Village."
+  },
+  {
+    "type": "encounter",
+    "id": "barrow_guard",
+    "name": "Barrow Sentinels",
+    "layout": "from_area",
+    "monsters": [
+      { "monster": "classic:skeleton", "count": "3" }
+    ]
+  },
+  {
+    "type": "event",
+    "id": "barrow_ambush",
+    "kind": "combat",
+    "encounter": "barrow_guard",
+    "on_win": "barrow_ambush_won"
+  },
+  {
+    "type": "event",
+    "id": "barrow_ambush_won",
+    "kind": "text",
+    "text": "The sentinels collapse in the stone archway, clearing the inner crypt."
   },
   {
     "type": "event",

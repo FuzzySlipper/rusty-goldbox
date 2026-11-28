@@ -20,6 +20,7 @@
       "w": {
         "name": "Cottage Wall",
         "passable": false,
+        "blocks_sight": true,
         "autotile": {
           "mode": "wall_top",
           "frames": { "front": 8, "top": 9, "cap": 10 },
@@ -28,7 +29,7 @@
         },
         "color": "#965032"
       },
-      "T": { "name": "Pine Tree", "tile": 11, "passable": false, "color": "#265c2e" },
+      "T": { "name": "Pine Tree", "tile": 11, "passable": false, "blocks_sight": true, "color": "#265c2e" },
       "S": { "name": "Town Sign", "tile": 12, "color": "#b28854" },
       "L": { "name": "Lantern", "tile": 13, "color": "#f5d466" },
       "f": { "name": "Wildflowers", "tile": 14, "color": "#e8c454" },

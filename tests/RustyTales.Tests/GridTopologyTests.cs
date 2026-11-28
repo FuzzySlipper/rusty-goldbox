@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RustyTales.Core.Campaigns;
+using RustyTales.Core.Characters;
 using RustyTales.Core.Combat;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Grids;
@@ -295,5 +296,91 @@ public sealed class GridTopologyTests
         // Bridge cell at town (4,3) lands inside the 6x4 slice (startX=1, startY=1 -> local (3,2)) and stays passable while river stays blocked.
         Assert.True(projected.Tilemap.IsPassable(3, 2));
         Assert.False(projected.Tilemap.IsPassable(3, 1));
+    }
+
+    [Fact]
+    public void UltimaValeBridgeAmbushAndBarrowDoorwayProjectionWorkEndToEndAndAcrossSaves()
+    {
+        string modulesRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "modules"));
+        string valeDir = Path.Combine(modulesRoot, "ultima-vale");
+        ModuleSet set = ModuleLoader.Load(valeDir, [modulesRoot]);
+        Assert.True(set.IsValid, string.Join("\n", set.Diagnostics.Select(d => d.Message)));
+        RuleSet rules = set.Rules!;
+
+        Character MakeHero(string name)
+        {
+            List<ModuleDiagnostic> creationProblems = [];
+            Character? created = CharacterRules.Create(
+                rules,
+                Character.StampsOf(set),
+                new CreationRequest(name, "classic:fighter", "classic:human"),
+                new DiceRoller(DeterministicRandom.Shared, DeterministicRandom.Shared.CreateScoped(11, "test.hero")),
+                creationProblems);
+            Assert.NotNull(created);
+            return created!;
+        }
+
+        Definition campaign = rules.OfType(DefinitionTypes.Campaign).Single();
+
+        // 1. Trigger bridge_ambush in Oakvale Village (auto-tiled encounter tilemap).
+        CampaignState state1 = CampaignRunner.NewState(rules, campaign, [MakeHero("Aldric"), MakeHero("Bram"), MakeHero("Cora"), MakeHero("Dain")], seed: 1);
+        CampaignRunner runner = new(rules, state1) { DefaultCombatControl = CombatControlMode.Manual };
+
+        Definition bridgeEvent = rules.Find(DefinitionTypes.Event, "ultima-vale:bridge_ambush", out _)!;
+        runner.RunEvent(bridgeEvent, DeterministicRandom.Shared);
+        CombatObservation? bridgeObs = runner.ObserveCombat(DeterministicRandom.Shared);
+        Assert.NotNull(bridgeObs);
+        Assert.Equal(CombatPhase.AwaitingAction, bridgeObs!.Phase);
+        Assert.NotNull(bridgeObs.PendingDecision);
+
+        // Move choices must NEVER include impassable Brook Water (~ at x=4..5, y=0..1 & y=4..5) or Pine Trees!
+        CombatActionChoice moveAction = bridgeObs.PendingDecision!.Actions.First(a => a.IsMoveAction);
+        Assert.NotNull(moveAction.FreeMoves);
+        Assert.NotEmpty(moveAction.FreeMoves!);
+        Assert.DoesNotContain(moveAction.FreeMoves!, mv => mv.Destination is { X: 4 or 5, Y: 0 or 1 or 4 or 5 });
+        Assert.DoesNotContain(moveAction.FreeMoves!, mv => mv.Destination is { X: 0, Y: 0 or 5 });
+
+        // 2. Now start a fresh run, descend into the 3D Barrow, and step south through the doorway into [1, 1] -> barrow_ambush!
+        CampaignState state2 = CampaignRunner.NewState(rules, campaign, [MakeHero("Aldric"), MakeHero("Bram"), MakeHero("Cora"), MakeHero("Dain")], seed: 1);
+        CampaignRunner barrowRunner = new(rules, state2) { DefaultCombatControl = CombatControlMode.Manual };
+
+        Definition enterBarrow = rules.Find(DefinitionTypes.Event, "ultima-vale:enter_barrow", out _)!;
+        barrowRunner.RunEvent(enterBarrow, DeterministicRandom.Shared);
+        Assert.Equal("ultima-vale:barrow", barrowRunner.State.Area.QualifiedId);
+        Assert.Equal((1, 0), (barrowRunner.State.X, barrowRunner.State.Y));
+        Assert.Equal(Facing.South, barrowRunner.State.Facing);
+
+        barrowRunner.Execute("forward", DeterministicRandom.Shared);
+        Assert.Equal((1, 1), (barrowRunner.State.X, barrowRunner.State.Y));
+        Assert.NotNull(barrowRunner.State.PendingCombat);
+        Assert.NotNull(barrowRunner.State.PendingCombat!.AreaOrigin);
+        Assert.Equal("ultima-vale:barrow", barrowRunner.State.PendingCombat.AreaOrigin!.Value.AreaId);
+
+        ProjectedBattlefield? projected = barrowRunner.ProjectedBattlefieldFor(barrowRunner.State.PendingCombat);
+        Assert.NotNull(projected);
+        Assert.True(projected!.Terrain.ContainsKey(new Cell(5, 1)));
+        Assert.False(projected.Terrain.ContainsKey(new Cell(5, 2))); // 1-tile doorway chokepoint!
+        Assert.True(projected.Terrain.ContainsKey(new Cell(5, 3)));
+
+        // Save mid-combat and reload: AreaOrigin and projected doorway chokepoint must survive bit-for-bit!
+        string saveJson = SaveFile.ToJson(barrowRunner.State, set);
+        List<ModuleDiagnostic> loadProblems = [];
+        CampaignState? loaded = SaveFile.Read(System.Text.Encoding.UTF8.GetBytes(saveJson), "memory.save.json", set, loadProblems);
+        Assert.NotNull(loaded);
+        Assert.Empty(loadProblems);
+        Assert.Equal(barrowRunner.State.PendingCombat.AreaOrigin, loaded!.PendingCombat?.AreaOrigin);
+
+        CampaignRunner resumed = new(rules, loaded) { DefaultCombatControl = CombatControlMode.Manual };
+        ProjectedBattlefield? resumedProjected = resumed.ProjectedBattlefieldFor(loaded.PendingCombat!);
+        Assert.NotNull(resumedProjected);
+        Assert.Equal(projected.Terrain.Count, resumedProjected!.Terrain.Count);
+
+        CombatObservation? barrowObs = resumed.ObserveCombat(DeterministicRandom.Shared);
+        Assert.NotNull(barrowObs);
+        Assert.Equal(CombatPhase.AwaitingAction, barrowObs!.Phase);
+        CombatActionChoice barrowMove = barrowObs.PendingDecision!.Actions.First(a => a.IsMoveAction);
+        Assert.NotNull(barrowMove.FreeMoves);
+        // Wall cells at x=5 (y != 2) must not be reachable destinations!
+        Assert.DoesNotContain(barrowMove.FreeMoves!, mv => mv.Destination is { X: 5, Y: 0 or 1 or 3 or 4 or 5 });
     }
 }
