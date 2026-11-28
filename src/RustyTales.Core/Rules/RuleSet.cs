@@ -58,6 +58,15 @@ public sealed class RuleSet
     /// <summary>Each asset's image size in pixels, read when its PNG was checked.</summary>
     public Dictionary<Definition, (int Width, int Height)> ImageSizes { get; } = [];
 
+    /// <summary>Compiled reusable 2D tileset definitions.</summary>
+    public Dictionary<Definition, Campaigns.TilesetDefinition> Tilesets { get; } = [];
+
+    /// <summary>Compiled multi-layer auto-tiled tilemaps for areas that declare <c>tilemap</c>.</summary>
+    public Dictionary<Definition, Campaigns.ResolvedTilemap> AreaTilemaps { get; } = [];
+
+    /// <summary>Compiled multi-layer auto-tiled tilemaps for combat encounters that declare <c>tilemap</c>.</summary>
+    public Dictionary<Definition, Campaigns.ResolvedTilemap> EncounterTilemaps { get; } = [];
+
     /// <summary>The set's advancement definition, if it has one; without one each class has its own experience.</summary>
     public Definition? Advancement { get; internal set; }
 

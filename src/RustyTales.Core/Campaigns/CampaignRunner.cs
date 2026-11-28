@@ -21,7 +21,7 @@ namespace RustyTales.Core.Campaigns;
 public sealed partial class CampaignRunner
 {
     /// <summary>The commands play understands, for help text and errors.</summary>
-    public const string CommandList = "forward, back, left, right, around, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, equip <member> <item-id>, unequip <member> <item-id>, use <member> <item-id>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
+    public const string CommandList = "forward, back, left, right, around, north, east, south, west, search [direction], open [direction], pick [direction], force [direction], choose <n>, buy <n>, sell <n>, equip <member> <item-id>, unequip <member> <item-id>, use <member> <item-id>, serve <service> <member>, train <member> [level choices], leave, look, view <member>, status, level <member> [--class <id>] [--feature <id>,...] [--boosts <id>,...], milestone <member> [--raise <id>,...] [--swap <from=to>,...] [--feature <id>,...], improve <member>, former <member> on|off";
 
     private const int MaxChainLength = 10_000;
 
@@ -386,6 +386,11 @@ public sealed partial class CampaignRunner
         {
             case "forward" or "back" when words.Length == 1:
                 Move(verb == "forward" ? _state.Facing : Facings.Turn(_state.Facing, 2), dice, facts);
+                break;
+            case "north" or "east" or "south" or "west" when words.Length == 1:
+                Facings.TryParse(verb, out Facing cardinal);
+                _state.Facing = cardinal;
+                Move(cardinal, dice, facts);
                 break;
             case "left" or "right" or "around" when words.Length == 1:
                 _state.Facing = Facings.Turn(_state.Facing, verb == "left" ? -1 : verb == "right" ? 1 : 2);
@@ -1468,7 +1473,7 @@ public sealed partial class CampaignRunner
     {
         if (!_maps.TryGetValue(area, out AreaMap? map))
         {
-            map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+            map = AutoTiler.MapOf(_rules, area);
             _maps[area] = map;
         }
 

@@ -74,12 +74,59 @@ public static partial class DefinitionTypes
         }
         """);
 
-    public static DefinitionType Area { get; } = new(
-        "area",
-        "A map: a grid of cells with walls, doors and openings on cell edges, plus cell features and named entry points.",
+    internal static readonly ObjectKind TilemapFieldKind = new(
+    [
+        new("tileset", new ReferenceKind("tileset"), true, "The tileset definition that maps glyph characters to tile frames and auto-tiling rules."),
+        new("layers", new ListKind(new ListKind(new TextKind())), true, "One or more 2D character grids (layers[0] is ground; later layers are transparent overlays where spaces ' ' are empty). Every layer must have the same rectangular dimensions."),
+        new("zoom", new NumberKind(), false, "Optional vertical tile span shown by the overhead camera (for example 11 for a local scrolling town view; omit to auto-fit the area)."),
+    ]);
+
+    public static DefinitionType Tileset { get; } = new(
+        "tileset",
+        "A reusable 2D tile palette over a sheet asset: maps single-character glyphs to tile frames, deterministic variants, passability/door flags, and declarative auto-tiling rules (4bit cardinal, wall_top 3/4 front/roof, or blob47 corner-aware Wang tiling).",
         [
             new("name", new TextKind(), true, "Display name."),
-            new("map", new ListKind(new TextKind()), true, "The grid as " + Campaigns.AreaMap.FormatDescription),
+            new("sheet", new ReferenceKind("asset", "tileset"), true, "The sheet asset whose equal-sized frames hold the tile art (a tileset slot)."),
+            new("tiles", new MapKind(new TextKind(), new ObjectKind(
+            [
+                new("name", new TextKind(), true, "Display name of this tile kind, for example \"Grass\", \"Cobble Road\" or \"Stone Wall\"."),
+                new("tile", new IntegerKind(), false, "Single frame index in the sheet (0-based), or fallback frame when autotile/variants are omitted."),
+                new("variants", new ListKind(new IntegerKind()), false, "Pool of frame indices chosen deterministically by cell coordinates (repeat indices to weight common variants)."),
+                new("autotile", new ObjectKind(
+                [
+                    new("mode", new EnumKind(["4bit", "wall_top", "blob47"]), true, "Auto-tiling rule: \"4bit\" (16 cardinal N=1/E=2/S=4/W=8 bitmasks), \"wall_top\" (3/4 front face when south is open vs roof/top face when south connects), or \"blob47\" (47-tile corner-aware Wang blob)."),
+                    new("base", new IntegerKind(), false, "Starting frame index for sequential layouts (base+0..15 for 4bit, base+0 front / base+1 top for wall_top, base+0..46 for blob47)."),
+                    new("frames", new MapKind(new TextKind(), new IntegerKind()), false, "Explicit frame lookup overrides: \"0\"..\"15\" for 4bit, \"front\"/\"top\"/\"cap\" for wall_top, or 8-bit mask / canonical index \"0\"..\"46\" for blob47."),
+                    new("connects_to", new ListKind(new TextKind()), false, "Additional single-character glyphs treated as matching neighbors (for example a bridge connecting to road, or a door connecting to wall)."),
+                    new("out_of_bounds", new EnumKind(["same", "empty"]), false, "How map edges count for neighbor checks: \"same\" (the default, keeps border walls/water solid) or \"empty\" (paths end cleanly at borders)."),
+                ]), false, "Declarative neighbor-aware auto-tiling rule."),
+                new("passable", new BooleanKind(), false, "Whether the party may enter cells with this tile in tile-first overhead areas; defaults to true."),
+                new("door", new BooleanKind(), false, "If true on a passable tile, transitions across it behave as doors in tile-first overhead areas."),
+                new("color", new TextKind(), false, "Optional #rgb or #rrggbb fallback swatch color for schematic views."),
+            ])), true, "Tile definitions keyed by a single non-space character glyph."),
+        ],
+        """
+        {
+          "type": "tileset",
+          "id": "village",
+          "name": "Village Tiles",
+          "sheet": "village-art:tiles",
+          "tiles": {
+            "g": { "name": "Grass", "variants": [0, 0, 1, 2], "color": "#457a3c" },
+            "p": { "name": "Path", "autotile": { "mode": "4bit", "base": 16, "out_of_bounds": "empty" }, "color": "#b89b6a" },
+            "w": { "name": "Wall", "passable": false, "autotile": { "mode": "wall_top", "base": 32 }, "color": "#6b665e" }
+          }
+        }
+        """);
+
+    public static DefinitionType Area { get; } = new(
+        "area",
+        "A map: either a first-person edge-wall grid (\"map\") or an Ultima-style 2D overhead tilemap (\"view\": \"overhead\" with \"tilemap\", and optional \"map\"), plus cell features and named entry points.",
+        [
+            new("name", new TextKind(), true, "Display name."),
+            new("view", new EnumKind(["first_person", "overhead"]), false, "How this area is explored: \"first_person\" (3D dungeon corridor view, the default) or \"overhead\" (2D top-down tilemap view with cardinal movement)."),
+            new("map", new ListKind(new TextKind()), false, "The edge-wall grid as " + Campaigns.AreaMap.FormatDescription + " Required for first_person areas; optional for overhead areas that define tilemap."),
+            new("tilemap", TilemapFieldKind, false, "Multi-layer 2D auto-tiled tilemap. Required for overhead areas without map; optional on areas with map."),
             new("wall_set", new ReferenceKind("asset", "wall_set"), false, "The image the first-person view draws the area with (a wall_set slot: wall and door regions)."),
             new("cells", new ListKind(new ObjectKind(
             [

@@ -237,6 +237,7 @@ public static partial class DefinitionTypes
                 new("count", Shared.PlainNumber, true, "How many, for example \"2\" or \"1d4 + 1\"."),
             ])), true, "The monsters and how many of each."),
             new("terrain", new ListKind(new TextKind()), false, "On a combat field, the ground it is fought on: one row of text per row of cells, \".\" for open ground and the field's terrain keys elsewhere, for example [\"..#..\", \".....\", \"..~..\"]. Its size must match every field it can be fought on. Without it, open ground."),
+            new("tilemap", TilemapFieldKind, false, "Optional multi-layer 2D auto-tiled tilemap for rendering the tactical battlefield floor; its dimensions must match every combat field the encounter can use."),
         ],
         """
         { "type": "encounter", "id": "crypt_guard", "name": "Crypt guard", "monsters": [ { "monster": "skeleton", "count": "1d4 + 1" } ] }

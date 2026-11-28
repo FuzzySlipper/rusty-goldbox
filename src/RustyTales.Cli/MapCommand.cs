@@ -42,7 +42,7 @@ internal static class MapCommand
             return output.UsageError(problem!);
         }
 
-        AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+        AreaMap map = AutoTiler.MapOf(set.Rules, area);
         Dictionary<(int X, int Y), string> markers = [];
         List<string> legend = [];
         if (area.Json.TryGetProperty("cells", out JsonElement cells))

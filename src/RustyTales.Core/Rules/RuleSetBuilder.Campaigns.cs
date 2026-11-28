@@ -88,6 +88,8 @@ public sealed partial class RuleSetBuilder
             CheckSkin(skin);
         }
 
+        CheckTilesetsAndTilemaps();
+
         foreach (ModuleManifest module in _manifests.Values)
         {
             List<Definition> campaigns = _rules.OfType(DefinitionTypes.Campaign).Where(definition => definition.Module == module.Id).ToList();
@@ -162,6 +164,392 @@ public sealed partial class RuleSetBuilder
     private static bool IsColor(string text)
     {
         return text.Length is 4 or 7 or 9 && text[0] == '#' && text[1..].All(Uri.IsHexDigit);
+    }
+
+    /// <summary>Validates reusable 2D tilesets and compiles area/encounter tilemaps against their sheets and dimensions.</summary>
+    private void CheckTilesetsAndTilemaps()
+    {
+        foreach (Definition tileset in _rules.OfType(DefinitionTypes.Tileset))
+        {
+            CheckTileset(tileset);
+        }
+
+        foreach (Definition area in _rules.OfType(DefinitionTypes.Area))
+        {
+            if (!area.Json.TryGetProperty("tilemap", out JsonElement tilemapEl))
+            {
+                continue;
+            }
+
+            int? expectedW = null;
+            int? expectedH = null;
+            if (area.Json.TryGetProperty("map", out JsonElement mapEl))
+            {
+                Campaigns.AreaMap? parsed = Campaigns.AreaMap.Parse(mapEl.EnumerateArray().Select(r => r.GetString()!).ToList(), []);
+                if (parsed is not null)
+                {
+                    expectedW = parsed.Width;
+                    expectedH = parsed.Height;
+                }
+            }
+
+            if (CheckTilemap(area, tilemapEl, "$.tilemap", expectedW, expectedH) is Campaigns.ResolvedTilemap resolved)
+            {
+                _rules.AreaTilemaps[area] = resolved;
+                if (!area.Json.TryGetProperty("map", out _))
+                {
+                    foreach (JsonProperty entry in area.Json.GetProperty("entries").EnumerateObject())
+                    {
+                        JsonElement at = entry.Value.GetProperty("at");
+                        int ex = at[0].GetInt32();
+                        int ey = at[1].GetInt32();
+                        if (!resolved.IsPassable(ex, ey))
+                        {
+                            Error(area, "area.entry", $"$.entries.{entry.Name}.at",
+                                $"Entry '{entry.Name}' at [{ex}, {ey}] lands on an impassable tile. Place entries on passable tiles.");
+                        }
+                    }
+
+                    if (area.Json.TryGetProperty("doors", out JsonElement doors))
+                    {
+                        Campaigns.AreaMap synthesized = resolved.SynthesizeAreaMap();
+                        int doorIdx = 0;
+                        foreach (JsonElement door in doors.EnumerateArray())
+                        {
+                            int dx = door.GetProperty("at")[0].GetInt32();
+                            int dy = door.GetProperty("at")[1].GetInt32();
+                            Campaigns.Facing facing = Enum.Parse<Campaigns.Facing>(door.GetProperty("facing").GetString()!, ignoreCase: true);
+                            Campaigns.AreaEdge edge = new Campaigns.AreaEdge(dx, dy, facing).Canonical;
+                            if (!synthesized.ContainsEdge(edge.X, edge.Y, edge.Facing) || synthesized.EdgeOf(edge.X, edge.Y, edge.Facing) != Campaigns.Edge.Door)
+                            {
+                                Error(area, "area.door", $"$.doors[{doorIdx}].at",
+                                    $"Door at [{dx}, {dy}] {Campaigns.Facings.Name(facing)} must border a tile with \"door\": true in the tilemap.");
+                            }
+
+                            doorIdx++;
+                        }
+                    }
+                }
+            }
+        }
+
+        List<Definition> fieldedCombats = _rules.OfType(DefinitionTypes.Combat)
+            .Where(combat => combat.Json.TryGetProperty("field", out _))
+            .ToList();
+        foreach (Definition encounter in _rules.OfType(DefinitionTypes.Encounter))
+        {
+            if (!encounter.Json.TryGetProperty("tilemap", out JsonElement tilemapEl))
+            {
+                continue;
+            }
+
+            if (fieldedCombats.Count == 0)
+            {
+                Error(encounter, "encounter.tilemap", "$.tilemap", "An encounter tilemap needs a combat definition with a \"field\".");
+                continue;
+            }
+
+            int? expectedW = null;
+            int? expectedH = null;
+            if (fieldedCombats.Count == 1)
+            {
+                JsonElement field = fieldedCombats[0].Json.GetProperty("field");
+                expectedW = field.GetProperty("width").GetInt32();
+                expectedH = field.GetProperty("height").GetInt32();
+            }
+
+            if (CheckTilemap(encounter, tilemapEl, "$.tilemap", expectedW, expectedH) is Campaigns.ResolvedTilemap resolved)
+            {
+                foreach (Definition combat in fieldedCombats)
+                {
+                    JsonElement field = combat.Json.GetProperty("field");
+                    int cw = field.GetProperty("width").GetInt32();
+                    int ch = field.GetProperty("height").GetInt32();
+                    if (resolved.Width != cw || resolved.Height != ch)
+                    {
+                        Error(encounter, "encounter.tilemap", "$.tilemap.layers",
+                            $"Combat '{combat.Id}' has a {cw} by {ch} field, but this encounter tilemap is {resolved.Width} by {resolved.Height}.");
+                    }
+                }
+
+                _rules.EncounterTilemaps[encounter] = resolved;
+            }
+        }
+    }
+
+    private void CheckTileset(Definition tileset)
+    {
+        ModuleKind kind = _manifests[tileset.Module].Kind;
+        if (kind is not (ModuleKind.Assets or ModuleKind.Extension or ModuleKind.Campaign))
+        {
+            Error(tileset, "tileset.module", "$", $"Tilesets live in assets, extension or campaign modules; '{tileset.Module}' is a {ModuleKinds.Name(kind)}.");
+        }
+
+        if (!_rules.References.TryGetValue((tileset, "$.sheet"), out Definition? sheet)
+            || !_rules.ImageSizes.TryGetValue(sheet, out (int Width, int Height) imageSize)
+            || !sheet.Json.TryGetProperty("frame_size", out JsonElement frameSize))
+        {
+            return;
+        }
+
+        int fw = frameSize[0].GetInt32();
+        int fh = frameSize[1].GetInt32();
+        if (fw < 1 || fh < 1 || imageSize.Width % fw != 0 || imageSize.Height % fh != 0)
+        {
+            return;
+        }
+
+        int cols = imageSize.Width / fw;
+        int rows = imageSize.Height / fh;
+        int frameCount = sheet.Json.TryGetProperty("frame_count", out JsonElement countEl)
+            ? countEl.GetInt32()
+            : cols * rows;
+        if (frameCount < 1)
+        {
+            return;
+        }
+
+        JsonElement tilesEl = tileset.Json.GetProperty("tiles");
+        if (!tilesEl.EnumerateObject().Any())
+        {
+            Error(tileset, "tileset.tiles", "$.tiles", "A tileset must declare at least one tile glyph.");
+            return;
+        }
+
+        Dictionary<char, Campaigns.TileGlyph> glyphs = [];
+        foreach (JsonProperty entry in tilesEl.EnumerateObject())
+        {
+            string at = $"$.tiles.{entry.Name}";
+            if (entry.Name.Length != 1 || entry.Name[0] == ' ')
+            {
+                Error(tileset, "tileset.glyph", at, $"Tile glyph '{entry.Name}' must be a single non-space character (space ' ' is reserved for empty overlay cells).");
+                continue;
+            }
+
+            char ch = entry.Name[0];
+            JsonElement obj = entry.Value;
+            string name = obj.GetProperty("name").GetString()!;
+            int? tile = obj.TryGetProperty("tile", out JsonElement tileEl) ? tileEl.GetInt32() : null;
+            if (tile is int t && (t < 0 || t >= frameCount))
+            {
+                Error(tileset, "tileset.frame", $"{at}.tile", $"Frame {t} is outside sheet '{sheet.QualifiedId}' (0..{frameCount - 1}).");
+            }
+
+            List<int> variants = [];
+            if (obj.TryGetProperty("variants", out JsonElement varEl))
+            {
+                int vi = 0;
+                foreach (JsonElement item in varEl.EnumerateArray())
+                {
+                    int v = item.GetInt32();
+                    if (v < 0 || v >= frameCount)
+                    {
+                        Error(tileset, "tileset.frame", $"{at}.variants[{vi}]", $"Variant frame {v} is outside sheet '{sheet.QualifiedId}' (0..{frameCount - 1}).");
+                    }
+
+                    variants.Add(v);
+                    vi++;
+                }
+
+                if (variants.Count == 0)
+                {
+                    Error(tileset, "tileset.variants", $"{at}.variants", "variants must contain at least one frame index, or omit it.");
+                }
+            }
+
+            Campaigns.TileAutotileRule? autotile = null;
+            if (obj.TryGetProperty("autotile", out JsonElement autoEl))
+            {
+                string mode = autoEl.GetProperty("mode").GetString()!;
+                int? baseFrame = autoEl.TryGetProperty("base", out JsonElement baseEl) ? baseEl.GetInt32() : null;
+                Dictionary<string, int> explicitFrames = new(StringComparer.Ordinal);
+                if (autoEl.TryGetProperty("frames", out JsonElement framesEl))
+                {
+                    foreach (JsonProperty fp in framesEl.EnumerateObject())
+                    {
+                        int f = fp.Value.GetInt32();
+                        if (f < 0 || f >= frameCount)
+                        {
+                            Error(tileset, "tileset.frame", $"{at}.autotile.frames.{fp.Name}", $"Frame {f} is outside sheet '{sheet.QualifiedId}' (0..{frameCount - 1}).");
+                        }
+
+                        explicitFrames[fp.Name] = f;
+                    }
+                }
+
+                if (baseFrame is int bf)
+                {
+                    int needed = mode switch
+                    {
+                        "4bit" => 16,
+                        "wall_top" => 2,
+                        "blob47" => 47,
+                        _ => 1,
+                    };
+                    if (bf < 0 || bf + needed > frameCount)
+                    {
+                        Error(tileset, "tileset.frame", $"{at}.autotile.base",
+                            $"Autotile mode '{mode}' from base {bf} needs frames {bf}..{bf + needed - 1}, outside sheet '{sheet.QualifiedId}' (0..{frameCount - 1}).");
+                    }
+                }
+                else if (explicitFrames.Count == 0)
+                {
+                    Error(tileset, "tileset.autotile", $"{at}.autotile", "Autotile needs \"base\" and/or \"frames\" specifying sheet frame indices.");
+                }
+
+                HashSet<char> connectsTo = [];
+                if (autoEl.TryGetProperty("connects_to", out JsonElement connEl))
+                {
+                    int ci = 0;
+                    foreach (JsonElement item in connEl.EnumerateArray())
+                    {
+                        string text = item.GetString()!;
+                        if (text.Length != 1 || text[0] == ' ')
+                        {
+                            Error(tileset, "tileset.autotile", $"{at}.autotile.connects_to[{ci}]", $"connects_to entries must be single non-space glyphs, got '{text}'.");
+                        }
+                        else
+                        {
+                            connectsTo.Add(text[0]);
+                        }
+
+                        ci++;
+                    }
+                }
+
+                bool oobSame = !autoEl.TryGetProperty("out_of_bounds", out JsonElement oobEl) || oobEl.GetString() != "empty";
+                autotile = new Campaigns.TileAutotileRule(mode, baseFrame, explicitFrames, connectsTo, oobSame);
+            }
+
+            if (tile is null && variants.Count == 0 && autotile is null)
+            {
+                Error(tileset, "tileset.frame", at, $"Tile '{ch}' needs at least one of \"tile\", \"variants\", or \"autotile\".");
+            }
+
+            string? color = obj.TryGetProperty("color", out JsonElement colorEl) ? colorEl.GetString() : null;
+            if (color is not null && !IsColor(color))
+            {
+                Error(tileset, "tileset.color", $"{at}.color", $"'{color}' is not a colour; write #rgb, #rrggbb or #rrggbbaa.");
+            }
+
+            bool passable = !obj.TryGetProperty("passable", out JsonElement passEl) || passEl.GetBoolean();
+            bool door = obj.TryGetProperty("door", out JsonElement doorEl) && doorEl.GetBoolean();
+            glyphs[ch] = new Campaigns.TileGlyph(ch, name, tile, variants, autotile, passable, door, color);
+        }
+
+        _rules.Tilesets[tileset] = new Campaigns.TilesetDefinition(
+            tileset,
+            sheet,
+            imageSize.Width,
+            imageSize.Height,
+            fw,
+            fh,
+            cols,
+            rows,
+            frameCount,
+            glyphs);
+    }
+
+    private Campaigns.ResolvedTilemap? CheckTilemap(Definition owner, JsonElement tilemapEl, string path, int? expectedWidth, int? expectedHeight)
+    {
+        if (!_rules.References.TryGetValue((owner, $"{path}.tileset"), out Definition? tilesetDef)
+            || !_rules.Tilesets.TryGetValue(tilesetDef, out Campaigns.TilesetDefinition? tileset))
+        {
+            return null;
+        }
+
+        JsonElement layersEl = tilemapEl.GetProperty("layers");
+        if (layersEl.GetArrayLength() == 0)
+        {
+            Error(owner, "tilemap.layers", $"{path}.layers", "A tilemap needs at least one layer.");
+            return null;
+        }
+
+        List<IReadOnlyList<string>> layers = [];
+        int height = -1;
+        int width = -1;
+        bool valid = true;
+
+        for (int li = 0; li < layersEl.GetArrayLength(); li++)
+        {
+            List<string> rows = layersEl[li].EnumerateArray().Select(r => r.GetString()!).ToList();
+            if (rows.Count == 0 || rows[0].Length == 0)
+            {
+                Error(owner, "tilemap.layers", $"{path}.layers[{li}]", "Tilemap layers must be non-empty.");
+                valid = false;
+                continue;
+            }
+
+            if (height < 0)
+            {
+                height = rows.Count;
+                width = rows[0].Length;
+            }
+            else if (rows.Count != height)
+            {
+                Error(owner, "tilemap.layers", $"{path}.layers[{li}]", $"Layer {li} has {rows.Count} rows, expected {height}.");
+                valid = false;
+                continue;
+            }
+
+            for (int y = 0; y < rows.Count; y++)
+            {
+                string row = rows[y];
+                if (row.Length != width)
+                {
+                    Error(owner, "tilemap.layers", $"{path}.layers[{li}][{y}]", $"Row {y} has length {row.Length}, expected {width}.");
+                    valid = false;
+                    continue;
+                }
+
+                for (int x = 0; x < row.Length; x++)
+                {
+                    char glyph = row[x];
+                    if (glyph == ' ')
+                    {
+                        if (li == 0)
+                        {
+                            Error(owner, "tilemap.glyph", $"{path}.layers[0][{y}]", $"Base layer cannot use empty space ' ' at [{x}, {y}]. Use a ground glyph from tileset '{tilesetDef.QualifiedId}'.");
+                            valid = false;
+                        }
+
+                        continue;
+                    }
+
+                    if (!tileset.Tiles.ContainsKey(glyph))
+                    {
+                        Error(owner, "tilemap.glyph", $"{path}.layers[{li}][{y}]",
+                            $"Unknown tile glyph '{glyph}' at [{x}, {y}]. Tileset '{tilesetDef.QualifiedId}' declares: {string.Join(", ", tileset.Tiles.Keys.Order().Select(k => $"'{k}'"))}.");
+                        valid = false;
+                    }
+                }
+            }
+
+            layers.Add(rows);
+        }
+
+        if (valid && expectedWidth is int ew && expectedHeight is int eh && (width != ew || height != eh))
+        {
+            Error(owner, "tilemap.size", $"{path}.layers", $"Tilemap is {width} by {height}, but must match the {ew} by {eh} map/field.");
+            valid = false;
+        }
+
+        double? zoom = null;
+        if (tilemapEl.TryGetProperty("zoom", out JsonElement zoomEl))
+        {
+            double z = zoomEl.GetDouble();
+            if (z < 2 || z > 100)
+            {
+                Error(owner, "tilemap.zoom", $"{path}.zoom", "zoom must be between 2 and 100 tiles.");
+                valid = false;
+            }
+            else
+            {
+                zoom = z;
+            }
+        }
+
+        return valid ? Campaigns.AutoTiler.Resolve(tileset, layers, zoom) : null;
     }
 
     /// <summary>An audio asset's file is one the Engine decodes, and it has no picture fields.</summary>

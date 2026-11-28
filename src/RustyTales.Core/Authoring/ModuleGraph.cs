@@ -26,7 +26,9 @@ public sealed record ModuleGraph(
     IReadOnlyList<GraphEventEdge> EventEdges,
     IReadOnlyList<GraphAsset> Assets,
     IReadOnlyList<GraphSkin> Skins,
-    IReadOnlyList<GraphIssue> Issues);
+    IReadOnlyList<GraphIssue> Issues,
+    IReadOnlyList<GraphTileset>? Tilesets = null,
+    IReadOnlyList<GraphEncounter>? Encounters = null);
 
 public sealed record GraphModuleInfo(
     string Id,
@@ -91,7 +93,61 @@ public sealed record GraphArea(
     IReadOnlyList<IReadOnlyList<string>> VerticalEdges,
     IReadOnlyList<GraphEntry> Entries,
     IReadOnlyList<GraphDoor> Doors,
-    IReadOnlyList<GraphCell> Cells);
+    IReadOnlyList<GraphCell> Cells,
+    string View = "first_person",
+    GraphTilemap? Tilemap = null);
+
+public sealed record GraphTileGlyph(
+    string Glyph,
+    string Name,
+    int? Tile,
+    IReadOnlyList<int> Variants,
+    string? AutotileMode,
+    int? AutotileBase,
+    IReadOnlyDictionary<string, int>? AutotileFrames,
+    IReadOnlyList<string> ConnectsTo,
+    string OutOfBounds,
+    bool Passable,
+    bool Door,
+    string? Color);
+
+public sealed record GraphTileset(
+    string Id,
+    string LocalId,
+    string Name,
+    string Module,
+    string File,
+    string SheetAsset,
+    int ImageWidth,
+    int ImageHeight,
+    int FrameWidth,
+    int FrameHeight,
+    int Columns,
+    int Rows,
+    int FrameCount,
+    IReadOnlyList<GraphTileGlyph> Tiles,
+    IReadOnlyList<string> UsedBy);
+
+public sealed record GraphTileLayer(
+    IReadOnlyList<string> Rows,
+    IReadOnlyList<int[]> Frames,
+    IReadOnlyList<int[]> Bitmasks);
+
+public sealed record GraphTilemap(
+    string TilesetId,
+    string SheetAsset,
+    int Width,
+    int Height,
+    double? Zoom,
+    IReadOnlyList<GraphTileLayer> Layers);
+
+public sealed record GraphEncounter(
+    string Id,
+    string LocalId,
+    string Name,
+    string Module,
+    string File,
+    GraphTilemap? Tilemap);
 
 public sealed record GraphEntry(
     string Name,
@@ -294,7 +350,9 @@ public static class ModuleGraphBuilder
                 [],
                 [],
                 [],
-                issues);
+                issues,
+                [],
+                []);
         }
 
         Definition? campaignDef = root is null
@@ -910,7 +968,9 @@ public static class ModuleGraphBuilder
                 ExtractVerticalEdges(area.Map),
                 entries,
                 doors,
-                cells));
+                cells,
+                area.View,
+                area.Tilemap));
         }
 
         // Build GraphEvent list and flag unreachable events.
@@ -990,6 +1050,38 @@ public static class ModuleGraphBuilder
             .Select(skin => BuildGraphSkin(rules, skin, campaignSkinId))
             .ToList();
 
+        Dictionary<string, HashSet<string>> tilesetUsage = rules.OfType(DefinitionTypes.Tileset)
+            .ToDictionary(def => def.QualifiedId, _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
+        foreach (Definition def in rules.Definitions)
+        {
+            foreach (ReferenceSite site in def.References)
+            {
+                if (site.Kind is ReferenceKind { DefinitionType: "tileset" }
+                    && TryRef(rules, def, site.JsonPath) is Definition ts
+                    && tilesetUsage.TryGetValue(ts.QualifiedId, out HashSet<string>? users))
+                {
+                    users.Add($"{def.Type.Name}:{def.QualifiedId}");
+                }
+            }
+        }
+
+        List<GraphTileset> graphTilesets = rules.OfType(DefinitionTypes.Tileset)
+            .Where(def => rules.Tilesets.ContainsKey(def))
+            .OrderBy(def => def.QualifiedId, StringComparer.Ordinal)
+            .Select(def => BuildGraphTileset(rules.Tilesets[def], tilesetUsage[def.QualifiedId]))
+            .ToList();
+
+        List<GraphEncounter> graphEncounters = rules.OfType(DefinitionTypes.Encounter)
+            .OrderBy(def => def.QualifiedId, StringComparer.Ordinal)
+            .Select(enc => new GraphEncounter(
+                enc.QualifiedId,
+                enc.Id,
+                enc.Name,
+                enc.Module,
+                enc.File,
+                rules.EncounterTilemaps.TryGetValue(enc, out ResolvedTilemap? encTm) ? BuildGraphTilemap(encTm) : null))
+            .ToList();
+
         GraphCounts counts = new(
             graphAreas.Count,
             graphEvents.Count,
@@ -1018,7 +1110,9 @@ public static class ModuleGraphBuilder
             allEventEdges,
             graphAssets,
             graphSkins,
-            issues);
+            issues,
+            graphTilesets,
+            graphEncounters);
     }
 
     private static GraphAsset BuildGraphAsset(RuleSet rules, Definition asset, HashSet<string> usedBy)
@@ -1119,6 +1213,11 @@ public static class ModuleGraphBuilder
             return "portrait";
         }
 
+        if (media == "sheet" && usedBy.Any(u => u.StartsWith("tileset:", StringComparison.Ordinal)))
+        {
+            return "tileset";
+        }
+
         if (media == "sheet" && (faces is not null || heightCells is not null || usedBy.Any(u => u.StartsWith("figure:", StringComparison.Ordinal))))
         {
             return "sprite";
@@ -1195,8 +1294,11 @@ public static class ModuleGraphBuilder
         Dictionary<string, Definition> eventsById,
         Dictionary<string, List<GraphEventTrigger>> triggersByEvent)
     {
-        List<string> rows = areaDef.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList();
-        AreaMap map = AreaMap.Parse(rows, [])!;
+        AreaMap map = AutoTiler.MapOf(rules, areaDef);
+        string view = AutoTiler.ViewOf(areaDef);
+        GraphTilemap? tilemap = rules.AreaTilemaps.TryGetValue(areaDef, out ResolvedTilemap? resolvedTm)
+            ? BuildGraphTilemap(resolvedTm)
+            : null;
         string? wallSet = TryRef(rules, areaDef, "$.wall_set")?.QualifiedId;
 
         List<EntryInfo> entries = [];
@@ -1269,7 +1371,78 @@ public static class ModuleGraphBuilder
             }
         }
 
-        return new AreaAnalysis(areaDef.QualifiedId, areaDef.Id, areaDef.Name, areaDef.Module, areaDef.File, wallSet, areaDef.QualifiedId == startAreaId, map, entries, doors, lockedEdgeKeys, cells);
+        return new AreaAnalysis(areaDef.QualifiedId, areaDef.Id, areaDef.Name, areaDef.Module, areaDef.File, wallSet, areaDef.QualifiedId == startAreaId, map, view, tilemap, entries, doors, lockedEdgeKeys, cells);
+    }
+
+    private static GraphTileset BuildGraphTileset(TilesetDefinition ts, HashSet<string> usedBy)
+    {
+        List<GraphTileGlyph> tiles = ts.Tiles.Values
+            .OrderBy(t => t.Glyph)
+            .Select(t => new GraphTileGlyph(
+                t.Glyph.ToString(),
+                t.Name,
+                t.Tile,
+                t.Variants,
+                t.Autotile?.Mode,
+                t.Autotile?.BaseFrame,
+                t.Autotile is { Frames.Count: > 0 } ? t.Autotile.Frames : null,
+                t.Autotile is not null ? t.Autotile.ConnectsTo.Order().Select(c => c.ToString()).ToList() : [],
+                t.Autotile?.OutOfBoundsSame == false ? "empty" : "same",
+                t.Passable,
+                t.Door,
+                t.Color))
+            .ToList();
+
+        return new GraphTileset(
+            ts.Definition.QualifiedId,
+            ts.Definition.Id,
+            ts.Definition.Name,
+            ts.Definition.Module,
+            ts.Definition.File,
+            ts.Sheet.QualifiedId,
+            ts.ImageWidth,
+            ts.ImageHeight,
+            ts.FrameWidth,
+            ts.FrameHeight,
+            ts.Columns,
+            ts.Rows,
+            ts.FrameCount,
+            tiles,
+            usedBy.OrderBy(u => u, StringComparer.Ordinal).ToList());
+    }
+
+    private static GraphTilemap BuildGraphTilemap(ResolvedTilemap tm)
+    {
+        List<GraphTileLayer> layers = [];
+        foreach (ResolvedTileLayer layer in tm.Layers)
+        {
+            List<int[]> frames = new(tm.Height);
+            List<int[]> bitmasks = new(tm.Height);
+            for (int y = 0; y < tm.Height; y++)
+            {
+                int[] fRow = new int[tm.Width];
+                int[] bRow = new int[tm.Width];
+                for (int x = 0; x < tm.Width; x++)
+                {
+                    ResolvedTile cell = layer.At(x, y);
+                    fRow[x] = cell.Frame;
+                    bRow[x] = cell.Bitmask;
+                }
+
+                frames.Add(fRow);
+                bitmasks.Add(bRow);
+            }
+
+            layers.Add(new GraphTileLayer(layer.RawRows, frames, bitmasks));
+        }
+
+        return new GraphTilemap(
+            tm.Tileset.Definition.QualifiedId,
+            tm.Tileset.Sheet.QualifiedId,
+            tm.Width,
+            tm.Height,
+            tm.Zoom,
+            layers);
     }
 
     private static HashSet<(int X, int Y)> WalkArea(AreaAnalysis area, IReadOnlyList<(int X, int Y)> seeds, bool allowLockedDoors, bool allowSecretDoors)
@@ -1529,6 +1702,8 @@ public static class ModuleGraphBuilder
         string? WallSet,
         bool IsStartArea,
         AreaMap Map,
+        string View,
+        GraphTilemap? Tilemap,
         List<EntryInfo> Entries,
         List<DoorInfo> Doors,
         HashSet<string> LockedEdgeKeys,

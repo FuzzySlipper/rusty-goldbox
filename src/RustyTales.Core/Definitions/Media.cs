@@ -38,6 +38,8 @@ public static class Media
             "a sheet with faces and height, so it can stand on the floor and be flipped to face either way"),
         new("wall_set", "The textures the first-person view builds an area from.",
             "an image with wall and door regions (and optionally floor and ceiling)"),
+        new("tileset", "A grid of equal-sized tiles used by a tileset definition to draw 2D overhead areas and tiled combat arenas.",
+            "a sheet with frame_size"),
         new("border", "A border or button face cut into nine by a skin's slice.", "an image, drawn whole (no frames, no animation)"),
         new("sound", "A sound played once: an event's sound effect.", "audio"),
         new("music", "Music that loops until something else changes it: an event's music.", "audio"),
@@ -86,6 +88,10 @@ public static class Media
                 return missing.Length == 0
                     ? null
                     : $"{asset.QualifiedId} is used as a figure, so it needs {string.Join(" and ", missing.Select(field => $"\"{field}\""))}: which way the art faces and how tall it stands in cells.";
+            case "tileset":
+                return media == "sheet"
+                    ? null
+                    : $"{asset.QualifiedId} is an {media}, but a tileset needs a sheet with frame_size.";
             case "wall_set":
                 if (media != "image")
                 {

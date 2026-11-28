@@ -572,16 +572,46 @@ public static class DefinitionReader
 
         private void CheckArea(JsonElement root)
         {
-            List<string> rows = root.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList();
-            List<(int Row, int Column, string Message)> problems = [];
-            Campaigns.AreaMap? map = Campaigns.AreaMap.Parse(rows, problems);
-            foreach ((int row, int column, string message) in problems)
-            {
-                Error("area.map", $"$.map[{row}]", $"Column {column}: {message} The map format: {Campaigns.AreaMap.FormatDescription}");
-            }
+            string view = root.TryGetProperty("view", out JsonElement viewEl) && viewEl.ValueKind == JsonValueKind.String
+                ? viewEl.GetString()!
+                : "first_person";
+            bool hasMap = root.TryGetProperty("map", out JsonElement mapEl);
+            bool hasTilemap = root.TryGetProperty("tilemap", out JsonElement tilemapEl);
 
-            if (map is null)
+            Campaigns.AreaMap? map = null;
+            int width = 0;
+            int height = 0;
+
+            if (hasMap)
             {
+                List<string> rows = mapEl.EnumerateArray().Select(row => row.GetString()!).ToList();
+                List<(int Row, int Column, string Message)> problems = [];
+                map = Campaigns.AreaMap.Parse(rows, problems);
+                foreach ((int row, int column, string message) in problems)
+                {
+                    Error("area.map", $"$.map[{row}]", $"Column {column}: {message} The map format: {Campaigns.AreaMap.FormatDescription}");
+                }
+
+                if (map is null)
+                {
+                    return;
+                }
+
+                width = map.Width;
+                height = map.Height;
+            }
+            else if (view == "overhead" && hasTilemap)
+            {
+                if (!TryReadTilemapSize(tilemapEl, "$.tilemap", out width, out height))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Error("area.map", "$", view == "overhead"
+                    ? "An overhead area needs \"tilemap\" (or \"map\")."
+                    : "A first_person area needs \"map\" (or set \"view\": \"overhead\" with \"tilemap\").");
                 return;
             }
 
@@ -606,17 +636,28 @@ public static class DefinitionReader
                     int y = door.GetProperty("at")[1].GetInt32();
                     Campaigns.Facing facing = Enum.Parse<Campaigns.Facing>(door.GetProperty("facing").GetString()!, ignoreCase: true);
                     Campaigns.AreaEdge edge = new Campaigns.AreaEdge(x, y, facing).Canonical;
-                    if (!map.ContainsEdge(edge.X, edge.Y, edge.Facing))
+                    if (map is not null)
                     {
-                        Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is outside the map, which is {map.Width} wide and {map.Height} high.");
+                        if (!map.ContainsEdge(edge.X, edge.Y, edge.Facing))
+                        {
+                            Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is outside the map, which is {map.Width} wide and {map.Height} high.");
+                        }
+                        else if (map.EdgeOf(edge.X, edge.Y, edge.Facing) != Campaigns.Edge.Door)
+                        {
+                            Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is {map.EdgeOf(edge.X, edge.Y, edge.Facing)}, not a DD door edge.");
+                        }
+                        else if (!edges.Add(edge.Key))
+                        {
+                            Error("area.door", $"$.doors[{index}].at", $"The DD edge {edge.Key} is declared more than once.");
+                        }
                     }
-                    else if (map.EdgeOf(edge.X, edge.Y, edge.Facing) != Campaigns.Edge.Door)
+                    else if (x < 0 || y < 0 || x >= width || y >= height)
                     {
-                        Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] {Campaigns.Facings.Name(facing)} is {map.EdgeOf(edge.X, edge.Y, edge.Facing)}, not a DD door edge.");
+                        Error("area.door", $"$.doors[{index}].at", $"[{x}, {y}] is outside the tilemap, which is {width} wide and {height} high.");
                     }
                     else if (!edges.Add(edge.Key))
                     {
-                        Error("area.door", $"$.doors[{index}].at", $"The DD edge {edge.Key} is declared more than once.");
+                        Error("area.door", $"$.doors[{index}].at", $"The door edge {edge.Key} is declared more than once.");
                     }
 
                     bool locked = !door.TryGetProperty("locked", out JsonElement lockedValue) || lockedValue.GetBoolean();
@@ -640,7 +681,7 @@ public static class DefinitionReader
                 foreach (JsonElement cell in cells.EnumerateArray())
                 {
                     (int x, int y) = (cell.GetProperty("at")[0].GetInt32(), cell.GetProperty("at")[1].GetInt32());
-                    CheckInside(map, x, y, $"$.cells[{index}].at");
+                    CheckInside(width, height, x, y, $"$.cells[{index}].at");
                     if (!seen.Add((x, y)))
                     {
                         Error("area.cell", $"$.cells[{index}].at", $"Cell [{x}, {y}] is listed more than once; put all its features in one entry.");
@@ -659,15 +700,66 @@ public static class DefinitionReader
                 }
 
                 JsonElement at = entry.Value.GetProperty("at");
-                CheckInside(map, at[0].GetInt32(), at[1].GetInt32(), $"$.entries.{entry.Name}.at");
+                CheckInside(width, height, at[0].GetInt32(), at[1].GetInt32(), $"$.entries.{entry.Name}.at");
             }
         }
 
-        private void CheckInside(Campaigns.AreaMap map, int x, int y, string path)
+        private bool TryReadTilemapSize(JsonElement tilemap, string path, out int width, out int height)
         {
-            if (!map.Contains(x, y))
+            width = 0;
+            height = 0;
+            JsonElement layers = tilemap.GetProperty("layers");
+            if (layers.GetArrayLength() == 0)
             {
-                Error("area.cell", path, $"[{x}, {y}] is outside the map, which is {map.Width} wide and {map.Height} high (x 0 to {map.Width - 1}, y 0 to {map.Height - 1}).");
+                Error("tilemap.layers", $"{path}.layers", "A tilemap needs at least one layer of rows.");
+                return false;
+            }
+
+            JsonElement firstLayer = layers[0];
+            height = firstLayer.GetArrayLength();
+            if (height == 0)
+            {
+                Error("tilemap.layers", $"{path}.layers[0]", "A tilemap layer needs at least one row.");
+                return false;
+            }
+
+            width = firstLayer[0].GetString()!.Length;
+            if (width == 0)
+            {
+                Error("tilemap.layers", $"{path}.layers[0][0]", "A tilemap row cannot be empty.");
+                return false;
+            }
+
+            bool ok = true;
+            for (int layerIndex = 0; layerIndex < layers.GetArrayLength(); layerIndex++)
+            {
+                JsonElement layer = layers[layerIndex];
+                if (layer.GetArrayLength() != height)
+                {
+                    Error("tilemap.layers", $"{path}.layers[{layerIndex}]", $"Layer {layerIndex} has {layer.GetArrayLength()} rows, but layer 0 has {height}.");
+                    ok = false;
+                    continue;
+                }
+
+                for (int rowIndex = 0; rowIndex < height; rowIndex++)
+                {
+                    string rowText = layer[rowIndex].GetString()!;
+                    if (rowText.Length != width)
+                    {
+                        Error("tilemap.layers", $"{path}.layers[{layerIndex}][{rowIndex}]", $"Row {rowIndex} is {rowText.Length} characters wide, but row 0 is {width}.");
+                        ok = false;
+                    }
+                }
+            }
+
+            return ok;
+        }
+
+        private void CheckInside(int width, int height, int x, int y, string path)
+        {
+            if (x < 0 || y < 0 || x >= width || y >= height)
+            {
+                Error("area.cell", path, $"[{x}, {y}] is outside the map, which is {width} wide and {height} high (x 0 to {width - 1}, y 0 to {height - 1}).");
             }
         }
 

@@ -150,6 +150,55 @@ public sealed class AreaMap
         return copy;
     }
 
+    /// <summary>
+    /// Builds an edge-wall map from per-cell passability and door predicates, used by
+    /// tile-first 2D overhead areas so movement, doors, minimap, saves, and reachability
+    /// reuse one shared topology owner.
+    /// </summary>
+    public static AreaMap FromPassability(int width, int height, Func<int, int, bool> isPassable, Func<int, int, bool> isDoor)
+    {
+        AreaMap map = new(Math.Max(1, width), Math.Max(1, height));
+        for (int x = 0; x < map.Width; x++)
+        {
+            map._horizontal[x, 0] = Edge.Wall;
+            map._horizontal[x, map.Height] = Edge.Wall;
+        }
+
+        for (int y = 0; y < map.Height; y++)
+        {
+            map._vertical[0, y] = Edge.Wall;
+            map._vertical[map.Width, y] = Edge.Wall;
+        }
+
+        for (int y = 0; y < map.Height; y++)
+        {
+            for (int x = 0; x < map.Width; x++)
+            {
+                bool passA = isPassable(x, y);
+                bool doorA = passA && isDoor(x, y);
+                if (x + 1 < map.Width)
+                {
+                    bool passB = isPassable(x + 1, y);
+                    bool doorB = passB && isDoor(x + 1, y);
+                    map._vertical[x + 1, y] = (!passA || !passB)
+                        ? Edge.Wall
+                        : (doorA || doorB) ? Edge.Door : Edge.Open;
+                }
+
+                if (y + 1 < map.Height)
+                {
+                    bool passB = isPassable(x, y + 1);
+                    bool doorB = passB && isDoor(x, y + 1);
+                    map._horizontal[x, y + 1] = (!passA || !passB)
+                        ? Edge.Wall
+                        : (doorA || doorB) ? Edge.Door : Edge.Open;
+                }
+            }
+        }
+
+        return map;
+    }
+
     /// <summary>Parses map rows; problems are (row, column, message) with 1-based columns.</summary>
     public static AreaMap? Parse(IReadOnlyList<string> rows, List<(int Row, int Column, string Message)> problems)
     {

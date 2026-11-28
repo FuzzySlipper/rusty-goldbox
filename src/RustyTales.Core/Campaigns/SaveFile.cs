@@ -348,7 +348,7 @@ public static class SaveFile
                 return null;
             }
 
-            AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+            AreaMap map = AutoTiler.MapOf(_rules, area);
             if (!map.Contains(x.Value, y.Value))
             {
                 Error(x < 0 || x >= map.Width ? "$.x" : "$.y", $"[{x}, {y}] is outside {area.QualifiedId}, which is {map.Width} wide and {map.Height} high.");
@@ -2078,7 +2078,7 @@ public static class SaveFile
                     continue;
                 }
 
-                AreaMap map = AreaMap.Parse(area.Json.GetProperty("map").EnumerateArray().Select(row => row.GetString()!).ToList(), [])!;
+                AreaMap map = AutoTiler.MapOf(_rules, area);
                 AreaEdge edge = parsed.Canonical;
                 if (!map.ContainsEdge(edge.X, edge.Y, edge.Facing))
                 {
