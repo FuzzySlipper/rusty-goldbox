@@ -29,6 +29,7 @@
         <button class="tab" data-tab="assets" role="tab">Art &amp; Assets <span id="tab-assets-count" class="badge">0</span></button>
         <button class="tab" data-tab="reviews" role="tab">Review Queue <span id="tab-reviews-count" class="badge badge-ok">0</span></button>
         <button class="tab" data-tab="issues" role="tab">Diagnostics <span id="tab-issues-count" class="badge badge-ok">0</span></button>
+        <button class="tab tab-playtest" data-tab="playtest" role="tab">▶ Playtest <span id="tab-playtest-badge" class="badge">off</span></button>
       </nav>
 
       <div class="topbar-actions">
@@ -261,6 +262,75 @@
               </thead>
               <tbody id="issues-tbody"></tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- TAB 7: STREAMED BROWSER PLAYTEST -->
+        <section id="view-playtest" class="view">
+          <div class="toolbar playtest-toolbar">
+            <div class="toolbar-group">
+              <strong>Browser Playtest</strong>
+              <span id="playtest-status-pill" class="pill pill-muted">stopped</span>
+              <span id="playtest-url-label" class="toolbar-hint"></span>
+            </div>
+            <div class="toolbar-group" id="playtest-live-controls" hidden>
+              <button id="btn-pt-quickstart" class="btn btn-sm" title="Auto-roll party and enter this campaign">▶ Start Campaign</button>
+              <button id="btn-pt-heal" class="btn btn-sm" title="Restore all party tracks and clear conditions">✚ Heal</button>
+              <select id="playtest-combat-view" class="select-input playtest-select" title="Override combat presentation mode">
+                <option value="auto">Combat: Auto</option>
+                <option value="tactical">Combat: Tactical</option>
+                <option value="first_person">Combat: First-Person</option>
+                <option value="side_view">Combat: Side-View</option>
+              </select>
+              <button id="btn-pt-reload-frame" class="btn btn-sm" title="Reload streamed browser frame">↻ Reload</button>
+              <a id="btn-pt-popout" class="btn btn-sm" href="#" target="_blank" rel="noopener">Pop out ↗</a>
+              <button id="btn-pt-stop" class="btn btn-sm btn-danger" title="Stop streamed playtest session">■ Stop</button>
+            </div>
+          </div>
+
+          <div id="playtest-pinbar" class="playtest-pinbar" hidden>
+            <span class="review-cli-label">Quick Pin:</span>
+            <select id="playtest-pin-target" class="select-input playtest-pin-select"></select>
+            <input id="playtest-pin-note" class="search-input playtest-pin-note" type="text" placeholder="Spot an issue while playtesting? Write a note for your agent…" />
+            <button id="btn-pt-pin-fix" class="btn btn-sm btn-pin-fix" type="button">✗ Needs Fix</button>
+            <button id="btn-pt-pin-q" class="btn btn-sm btn-pin-q" type="button">? Question</button>
+            <button id="btn-pt-pin-ok" class="btn btn-sm btn-pin-ok" type="button">✓ Approved</button>
+            <span id="playtest-pin-feedback" class="toolbar-hint"></span>
+          </div>
+
+          <div class="playtest-stage">
+            <div id="playtest-launch-card" class="playtest-launch-card">
+              <div class="playtest-launch-icon">▶</div>
+              <h2>Playtest in the Studio Browser</h2>
+              <p class="playtest-launch-copy">
+                Streams the live Rusty Engine 3D viewport with native browser DOM UI via
+                <code>rusty dev start --output stream --live-debug</code>. Module &amp; UI edits reload live,
+                and you can jump directly to any room, cell, or event from the Maps and Events tabs.
+              </p>
+              <div class="playtest-launch-actions">
+                <button id="btn-pt-launch-play" class="btn btn-primary" type="button">▶ Launch &amp; Play Campaign</button>
+                <button id="btn-pt-launch-title" class="btn" type="button">Launch at Title Screen</button>
+              </div>
+              <div class="playtest-launch-opts">
+                <label class="toggle">Seed: <input id="playtest-seed" class="playtest-seed-input" type="number" min="1" value="1" /></label>
+                <label class="toggle"><input id="chk-pt-lan" type="checkbox" /> Listen on LAN (<code>0.0.0.0</code>)</label>
+              </div>
+              <div id="playtest-launch-msg" class="playtest-launch-msg"></div>
+              <div id="playtest-discovered" class="playtest-discovered" hidden>
+                <h4>Running Dev Sessions</h4>
+                <ul id="playtest-discovered-list" class="compact-list"></ul>
+              </div>
+            </div>
+
+            <div id="playtest-frame-wrap" class="playtest-frame-wrap" hidden>
+              <iframe id="playtest-iframe" class="playtest-iframe" title="Rusty Tales Streamed Playtest" allow="autoplay; fullscreen"></iframe>
+              <form id="playtest-cmd-form" class="playtest-cmdbar">
+                <span class="playtest-cmd-prompt">debug&gt;</span>
+                <input id="playtest-cmd-input" class="playtest-cmd-input" type="text" placeholder="tales.goto hall 1 1 north  |  tales.event <id>  |  tales.help" />
+                <button class="btn btn-sm" type="submit">Run</button>
+                <span id="playtest-cmd-out" class="playtest-cmd-out"></span>
+              </form>
+            </div>
           </div>
         </section>
       </main>

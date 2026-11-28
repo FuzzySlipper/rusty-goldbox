@@ -325,4 +325,52 @@ public sealed class WorkbenchGraphTests
         Assert.Equal("east", live.GetProperty("facing").GetString());
         Assert.Equal("sample-crypt:barred_door", live.GetProperty("activeEvent").GetString());
     }
+
+    [Fact]
+    public async Task WorkbenchPlaytestEndpointsExposeStatusSpaTabAndValidateInactiveCommands()
+    {
+        using TempModules scratch = new();
+        string reviewsPath = Path.Combine(scratch.Root, "reviews.json");
+        using WorkbenchServer server = new(
+            CampaignTests.SampleCrypt,
+            [Path.Combine(Rules.RepositoryRoot, "modules")],
+            [],
+            "127.0.0.1",
+            port: 0,
+            reviewsPath: reviewsPath);
+        server.Start();
+        using HttpClient http = new() { BaseAddress = new Uri(server.Url) };
+
+        // 1. Embedded SPA includes the Playtest tab & API wiring
+        string html = await http.GetStringAsync("/");
+        Assert.Contains("data-tab=\"playtest\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"playtest-iframe\"", html, StringComparison.Ordinal);
+        string js = await http.GetStringAsync("/workbench.js");
+        Assert.Contains("/api/playtest/status", js, StringComparison.Ordinal);
+        Assert.Contains("/api/playtest/start", js, StringComparison.Ordinal);
+
+        // 2. Status reports campaign availability cleanly before launching
+        using JsonDocument status = JsonDocument.Parse(await http.GetStringAsync("/api/playtest/status"));
+        JsonElement st = status.RootElement;
+        Assert.True(st.GetProperty("ok").GetBoolean());
+        Assert.True(st.GetProperty("available").GetBoolean());
+        Assert.False(st.GetProperty("running").GetBoolean());
+        Assert.True(st.GetProperty("isCampaign").GetBoolean());
+        Assert.Equal("sample-crypt", st.GetProperty("moduleId").GetString());
+
+        // 3. Running a live-debug command before starting returns 400 with a clear hint
+        using StringContent cmdBody = new("""{"command":"tales.state"}""", System.Text.Encoding.UTF8, "application/json");
+        using HttpResponseMessage cmdResp = await http.PostAsync("/api/playtest/command", cmdBody);
+        Assert.Equal(HttpStatusCode.BadRequest, cmdResp.StatusCode);
+        using JsonDocument cmdJson = JsonDocument.Parse(await cmdResp.Content.ReadAsStringAsync());
+        Assert.False(cmdJson.RootElement.GetProperty("ok").GetBoolean());
+        Assert.Contains("No active playtest session", cmdJson.RootElement.GetProperty("error").GetString(), StringComparison.Ordinal);
+
+        // 4. Stopping when inactive is idempotent and succeeds
+        using HttpResponseMessage stopResp = await http.PostAsync("/api/playtest/stop", content: null);
+        Assert.Equal(HttpStatusCode.OK, stopResp.StatusCode);
+        using JsonDocument stopJson = JsonDocument.Parse(await stopResp.Content.ReadAsStringAsync());
+        Assert.True(stopJson.RootElement.GetProperty("ok").GetBoolean());
+        Assert.False(stopJson.RootElement.GetProperty("stopped").GetBoolean());
+    }
 }

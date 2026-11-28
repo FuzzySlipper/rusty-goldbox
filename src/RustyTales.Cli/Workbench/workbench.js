@@ -31,6 +31,12 @@
     spriteAnimPlayers: [],
     embedMode: new URLSearchParams(window.location.search).get("embed") === "1",
     liveState: null, // { screen, module, campaign, area, areaName, x, y, facing, activeEvent, activeActor }
+    playtest: {
+      status: null,
+      busy: false,
+      iframeUrl: null,
+      pollTimer: null,
+    },
   };
 
   if (state.embedMode) {
@@ -284,6 +290,7 @@
 
   function switchTab(tab) {
     state.activeTab = tab;
+    document.body.classList.toggle("playtest-wide", tab === "playtest");
     document.querySelectorAll(".tab").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === tab);
     });
@@ -296,6 +303,7 @@
     if (tab === "assets") renderAssetsGallery();
     if (tab === "reviews") renderReviews();
     if (tab === "issues") renderIssues();
+    if (tab === "playtest") refreshPlaytestStatus(true);
   }
 
   function populateFilters() {
@@ -2120,10 +2128,16 @@
       switchTab("maps");
     });
     actRow.appendChild(openMapBtn);
-    if (state.embedMode && area.entries.length > 0) {
+    if ((state.embedMode || state.graph?.module?.kind === "campaign") && area.entries.length > 0) {
       const e0 = area.entries[0];
-      const jumpBtn = el("button", { class: "btn btn-sm", type: "button" }, "⚡ Jump Game Here");
-      jumpBtn.addEventListener("click", () => postToGame({ type: "tales.debugGoto", area: area.id, x: e0.x, y: e0.y, facing: e0.facing }));
+      const jumpBtn = el("button", { class: "btn btn-sm", type: "button" }, state.embedMode ? "⚡ Jump Game Here" : "▶ Playtest Here");
+      jumpBtn.addEventListener("click", () => {
+        if (state.embedMode) {
+          postToGame({ type: "tales.debugGoto", area: area.id, x: e0.x, y: e0.y, facing: e0.facing });
+        } else {
+          jumpInPlaytest({ area: area.id, x: e0.x, y: e0.y, facing: e0.facing });
+        }
+      });
       actRow.appendChild(jumpBtn);
     }
     actionsSec.appendChild(actRow);
@@ -2154,18 +2168,19 @@
       if (freshArea && freshCell) inspectCell(freshArea, freshCell, freshArea.entries.filter((e) => e.x === freshCell.x && e.y === freshCell.y));
     };
     const sections = [makeReviewPinCard("cell", `${area.id}@[${cell.x},${cell.y}]`)];
-    if (state.embedMode) {
+    if (state.embedMode || state.graph?.module?.kind === "campaign") {
       const jumpSec = el("div", { class: "insp-section" });
-      jumpSec.appendChild(el("h4", {}, "Live Game Bridge"));
+      jumpSec.appendChild(el("h4", {}, state.embedMode ? "Live Game Bridge" : "Streamed Playtest"));
       const row = el("div", { class: "insp-actions" });
-      const jumpBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, `⚡ Teleport Party to [${cell.x}, ${cell.y}]`);
-      jumpBtn.addEventListener("click", () => postToGame({
-        type: "tales.debugGoto",
-        area: area.id,
-        x: cell.x,
-        y: cell.y,
-        facing: cell.facing || state.liveState?.facing || "north",
-      }));
+      const jumpBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, state.embedMode ? `⚡ Teleport Party to [${cell.x}, ${cell.y}]` : `▶ Test Cell [${cell.x}, ${cell.y}] in Playtest`);
+      jumpBtn.addEventListener("click", () => {
+        const targetFacing = cell.facing || state.liveState?.facing || "north";
+        if (state.embedMode) {
+          postToGame({ type: "tales.debugGoto", area: area.id, x: cell.x, y: cell.y, facing: targetFacing });
+        } else {
+          jumpInPlaytest({ area: area.id, x: cell.x, y: cell.y, facing: targetFacing });
+        }
+      });
       row.appendChild(jumpBtn);
       jumpSec.appendChild(row);
       sections.push(jumpSec);
@@ -2252,12 +2267,18 @@
       if (fresh) inspectEvent(fresh);
     };
     const sections = [makeReviewPinCard("event", evt.id)];
-    if (state.embedMode) {
+    if (state.embedMode || state.graph?.module?.kind === "campaign") {
       const trigSec = el("div", { class: "insp-section" });
-      trigSec.appendChild(el("h4", {}, "Live Game Bridge"));
+      trigSec.appendChild(el("h4", {}, state.embedMode ? "Live Game Bridge" : "Streamed Playtest"));
       const row = el("div", { class: "insp-actions" });
-      const trigBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, "⚡ Trigger Event in Game");
-      trigBtn.addEventListener("click", () => postToGame({ type: "tales.debugEvent", event: evt.id }));
+      const trigBtn = el("button", { class: "btn btn-primary btn-sm", type: "button" }, state.embedMode ? "⚡ Trigger Event in Game" : "▶ Test Event in Playtest");
+      trigBtn.addEventListener("click", () => {
+        if (state.embedMode) {
+          postToGame({ type: "tales.debugEvent", event: evt.id });
+        } else {
+          jumpInPlaytest({ event: evt.id });
+        }
+      });
       row.appendChild(trigBtn);
       trigSec.appendChild(row);
       sections.push(trigSec);
@@ -2440,5 +2461,316 @@
     renderAssetsGallery();
   });
 
-  loadGraph(false);
+  // ==================== STREAMED BROWSER PLAYTEST ====================
+  function setPlaytestMsg(text, isError = false) {
+    const msg = document.getElementById("playtest-launch-msg");
+    if (!msg) return;
+    msg.textContent = text || "";
+    msg.classList.toggle("err", Boolean(isError));
+  }
+
+  function applyPlaytestDebugState(debugState) {
+    if (!debugState || typeof debugState !== "object") return;
+    const pos = debugState.position;
+    applyLiveState({
+      connected: true,
+      screen: debugState.screen,
+      module: state.graph?.module?.id,
+      campaign: debugState.campaign,
+      area: pos?.area || null,
+      x: pos?.x ?? null,
+      y: pos?.y ?? null,
+      facing: pos?.facing || null,
+      activeEvent: debugState.pendingMenu || debugState.pendingCombat || debugState.pendingShop || null,
+      activeActor: debugState.combat?.activeActor || null,
+    });
+    populatePlaytestPinTargets();
+  }
+
+  function populatePlaytestPinTargets() {
+    const sel = document.getElementById("playtest-pin-target");
+    if (!sel) return;
+    const prev = sel.value;
+    const options = [];
+    const live = state.liveState;
+    if (live?.area && live.x !== null && live.x !== undefined) {
+      options.push({ key: `cell|${live.area}@[${live.x},${live.y}]`, label: `Cell: ${shortId(live.area)} [${live.x},${live.y}]` });
+    }
+    if (live?.activeEvent) {
+      options.push({ key: `event|${live.activeEvent}`, label: `Event: ${shortId(live.activeEvent)}` });
+    }
+    if (live?.area) {
+      options.push({ key: `area|${live.area}`, label: `Area: ${shortId(live.area)}` });
+    }
+    if (state.graph?.module?.id) {
+      options.push({ key: `module|${state.graph.module.id}`, label: `Module: ${state.graph.module.id}` });
+    }
+    sel.innerHTML = "";
+    for (const opt of options) {
+      sel.appendChild(el("option", { value: opt.key }, opt.label));
+    }
+    if (prev && !prev.startsWith("module|") && options.some((o) => o.key === prev)) {
+      sel.value = prev;
+    } else if (options.length > 0) {
+      sel.value = options[0].key;
+    }
+  }
+
+  function renderPlaytest() {
+    if (state.embedMode) return;
+    const st = state.playtest.status;
+    const running = Boolean(st?.running && st?.session?.url);
+    const badge = document.getElementById("tab-playtest-badge");
+    if (badge) {
+      badge.textContent = running ? "live" : "off";
+      badge.className = running ? "badge badge-live" : "badge";
+    }
+
+    const pill = document.getElementById("playtest-status-pill");
+    const urlLabel = document.getElementById("playtest-url-label");
+    const liveControls = document.getElementById("playtest-live-controls");
+    const pinbar = document.getElementById("playtest-pinbar");
+    const launchCard = document.getElementById("playtest-launch-card");
+    const frameWrap = document.getElementById("playtest-frame-wrap");
+    const iframe = document.getElementById("playtest-iframe");
+    const popout = document.getElementById("btn-pt-popout");
+    const btnPlay = document.getElementById("btn-pt-launch-play");
+    const btnQuickstart = document.getElementById("btn-pt-quickstart");
+
+    const isCampaign = state.graph?.module?.kind === "campaign";
+    if (btnPlay) btnPlay.hidden = !isCampaign;
+    if (btnQuickstart) btnQuickstart.hidden = !isCampaign;
+
+    if (running) {
+      const url = st.session.url;
+      if (pill) { pill.textContent = st.managedByWorkbench ? "streaming" : "attached"; pill.className = "pill pill-ok"; }
+      if (urlLabel) urlLabel.textContent = `${url}${st.session.instance ? ` (${st.session.instance})` : ""}`;
+      if (liveControls) liveControls.hidden = false;
+      if (pinbar) pinbar.hidden = false;
+      if (launchCard) launchCard.hidden = true;
+      if (frameWrap) frameWrap.hidden = false;
+      if (popout) popout.href = url;
+      if (iframe && state.playtest.iframeUrl !== url) {
+        state.playtest.iframeUrl = url;
+        iframe.src = url;
+      }
+      populatePlaytestPinTargets();
+      startPlaytestPoll();
+    } else {
+      if (pill) { pill.textContent = state.playtest.busy ? "starting…" : "stopped"; pill.className = state.playtest.busy ? "pill pill-warn" : "pill pill-muted"; }
+      if (urlLabel) urlLabel.textContent = st?.available === false ? "Game project not found" : "";
+      if (liveControls) liveControls.hidden = true;
+      if (pinbar) pinbar.hidden = true;
+      if (launchCard) launchCard.hidden = false;
+      if (frameWrap) frameWrap.hidden = true;
+      if (iframe && state.playtest.iframeUrl) {
+        state.playtest.iframeUrl = null;
+        iframe.src = "about:blank";
+      }
+      stopPlaytestPoll();
+
+      const discWrap = document.getElementById("playtest-discovered");
+      const discList = document.getElementById("playtest-discovered-list");
+      const sessions = st?.sessions || [];
+      if (discWrap && discList) {
+        discList.innerHTML = "";
+        discWrap.hidden = sessions.length === 0;
+        for (const s of sessions) {
+          const row = el("li", { class: "playtest-session-row" });
+          row.appendChild(el("span", {}, `${s.url}${s.label ? ` · ${s.label}` : ""}${s.instance ? ` [${s.instance}]` : ""}`));
+          const attachBtn = el("button", { class: "btn btn-sm btn-primary", type: "button" }, "Attach");
+          attachBtn.disabled = state.playtest.busy;
+          attachBtn.addEventListener("click", () => startPlaytest({ attachUrl: s.url }));
+          row.appendChild(attachBtn);
+          discList.appendChild(row);
+        }
+      }
+    }
+
+    for (const id of ["btn-pt-launch-play", "btn-pt-launch-title", "btn-pt-stop"]) {
+      const b = document.getElementById(id);
+      if (b) b.disabled = state.playtest.busy;
+    }
+  }
+
+  function startPlaytestPoll() {
+    if (state.playtest.pollTimer || state.embedMode) return;
+    state.playtest.pollTimer = setInterval(() => {
+      if (!state.playtest.busy && state.playtest.status?.running) {
+        refreshPlaytestStatus(true);
+      }
+    }, 3500);
+  }
+
+  function stopPlaytestPoll() {
+    if (state.playtest.pollTimer) {
+      clearInterval(state.playtest.pollTimer);
+      state.playtest.pollTimer = null;
+    }
+  }
+
+  async function refreshPlaytestStatus(probe = false) {
+    if (state.embedMode) return null;
+    try {
+      const res = await fetch(`/api/playtest/status${probe ? "?probe=1" : ""}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      state.playtest.status = data;
+      if (data.state) applyPlaytestDebugState(data.state);
+      renderPlaytest();
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  async function startPlaytest({ autoStartCampaign = false, attachUrl = null } = {}) {
+    if (state.playtest.busy) return null;
+    state.playtest.busy = true;
+    setPlaytestMsg(attachUrl ? `Attaching to ${attachUrl}…` : "Building & starting streamed Rusty Engine session…");
+    renderPlaytest();
+    try {
+      const seedEl = document.getElementById("playtest-seed");
+      const lanEl = document.getElementById("chk-pt-lan");
+      const body = attachUrl
+        ? { attachUrl }
+        : {
+          autoStartCampaign: Boolean(autoStartCampaign),
+          seed: Number(seedEl?.value || 1) || 1,
+          ...(lanEl?.checked ? { bindHost: "0.0.0.0" } : {}),
+        };
+      const res = await fetch("/api/playtest/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setPlaytestMsg(data.error || `Start failed (HTTP ${res.status})`, true);
+        return null;
+      }
+      setPlaytestMsg(data.startedMessage || `Connected to ${data.session?.url}`);
+      const cmdOut = document.getElementById("playtest-cmd-out");
+      if (cmdOut && data.startedMessage) cmdOut.textContent = data.startedMessage;
+      await refreshPlaytestStatus(false);
+      if (data.state) applyPlaytestDebugState(data.state);
+      return data;
+    } catch (err) {
+      setPlaytestMsg(`Start failed: ${err.message}`, true);
+      return null;
+    } finally {
+      state.playtest.busy = false;
+      renderPlaytest();
+    }
+  }
+
+  async function stopPlaytest() {
+    if (state.playtest.busy) return;
+    state.playtest.busy = true;
+    renderPlaytest();
+    try {
+      const res = await fetch("/api/playtest/stop", { method: "POST" });
+      const data = await res.json();
+      setPlaytestMsg(data.message || "Stopped.", !data.ok);
+      state.liveState = null;
+      renderLiveBadge();
+      await refreshPlaytestStatus(false);
+    } catch (err) {
+      setPlaytestMsg(`Stop failed: ${err.message}`, true);
+    } finally {
+      state.playtest.busy = false;
+      renderPlaytest();
+    }
+  }
+
+  async function runPlaytestCommand(command) {
+    const cmdOut = document.getElementById("playtest-cmd-out");
+    if (cmdOut) cmdOut.textContent = `Running: ${command}…`;
+    try {
+      const res = await fetch("/api/playtest/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        if (cmdOut) cmdOut.textContent = `Error: ${data.error || `HTTP ${res.status}`}`;
+        return null;
+      }
+      if (cmdOut) cmdOut.textContent = data.output || "OK";
+      if (data.state) applyPlaytestDebugState(data.state);
+      return data;
+    } catch (err) {
+      if (cmdOut) cmdOut.textContent = `Error: ${err.message}`;
+      return null;
+    }
+  }
+
+  async function jumpInPlaytest({ area = null, x = null, y = null, facing = "north", event = null } = {}) {
+    switchTab("playtest");
+    const status = await refreshPlaytestStatus(true);
+    if (!status?.running) {
+      const started = await startPlaytest({ autoStartCampaign: true });
+      if (!started?.ok) return;
+    } else if (status.state?.screen !== "play" && state.graph?.module?.id) {
+      await runPlaytestCommand(`tales.start ${state.graph.module.id} 1`);
+    }
+
+    if (event) {
+      await runPlaytestCommand(`tales.event ${event}`);
+    } else if (area && x !== null && y !== null) {
+      await runPlaytestCommand(`tales.goto ${area} ${x} ${y} ${facing || "north"}`);
+    }
+  }
+
+  async function submitPlaytestQuickPin(pinStatus) {
+    const sel = document.getElementById("playtest-pin-target");
+    const noteEl = document.getElementById("playtest-pin-note");
+    const fb = document.getElementById("playtest-pin-feedback");
+    if (!sel?.value) return;
+    const [targetKind, ...rest] = sel.value.split("|");
+    const target = rest.join("|");
+    try {
+      await savePin(targetKind, target, pinStatus, noteEl?.value?.trim() || "");
+      if (noteEl) noteEl.value = "";
+      if (fb) {
+        fb.textContent = `Pinned ${pinStatus} on ${shortId(target)}`;
+        setTimeout(() => { if (fb.textContent.startsWith("Pinned")) fb.textContent = ""; }, 2600);
+      }
+    } catch (err) {
+      if (fb) fb.textContent = `Pin failed: ${err.message}`;
+    }
+  }
+
+  document.getElementById("btn-pt-launch-play")?.addEventListener("click", () => startPlaytest({ autoStartCampaign: true }));
+  document.getElementById("btn-pt-launch-title")?.addEventListener("click", () => startPlaytest({ autoStartCampaign: false }));
+  document.getElementById("btn-pt-stop")?.addEventListener("click", () => stopPlaytest());
+  document.getElementById("btn-pt-quickstart")?.addEventListener("click", () => {
+    const modId = state.graph?.module?.id;
+    const seed = Number(document.getElementById("playtest-seed")?.value || 1) || 1;
+    if (modId) runPlaytestCommand(`tales.start ${modId} ${seed}`);
+  });
+  document.getElementById("btn-pt-heal")?.addEventListener("click", () => runPlaytestCommand("tales.heal"));
+  document.getElementById("playtest-combat-view")?.addEventListener("change", (e) => runPlaytestCommand(`tales.combat-view ${e.target.value}`));
+  document.getElementById("btn-pt-reload-frame")?.addEventListener("click", () => {
+    const iframe = document.getElementById("playtest-iframe");
+    if (iframe && state.playtest.iframeUrl) {
+      iframe.src = state.playtest.iframeUrl;
+    }
+  });
+  document.getElementById("playtest-cmd-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("playtest-cmd-input");
+    const cmd = input?.value?.trim();
+    if (!cmd) return;
+    runPlaytestCommand(cmd);
+    input.value = "";
+  });
+  document.getElementById("btn-pt-pin-fix")?.addEventListener("click", () => submitPlaytestQuickPin("needs-fix"));
+  document.getElementById("btn-pt-pin-q")?.addEventListener("click", () => submitPlaytestQuickPin("question"));
+  document.getElementById("btn-pt-pin-ok")?.addEventListener("click", () => submitPlaytestQuickPin("approved"));
+
+  loadGraph(false).then(() => {
+    if (!state.embedMode) refreshPlaytestStatus(false);
+  });
 })();

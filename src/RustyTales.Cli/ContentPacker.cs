@@ -9,7 +9,7 @@ internal static class ContentPacker
     /// <summary>Runs <c>rusty pack-content</c>; returns why it failed, or null.</summary>
     public static string? Pack(string directory, string target)
     {
-        string rusty = PairRusty() ?? "rusty";
+        string rusty = FindRusty();
         ProcessStartInfo start = new(rusty, ["pack-content", directory, "--output", target, "--compress"])
         {
             RedirectStandardOutput = true,
@@ -36,6 +36,25 @@ internal static class ContentPacker
         {
             return $"Can't run {rusty}: {exception.Message}. Install the Engine's `rusty` (see README) and run `rusty install`.";
         }
+    }
+
+    /// <summary>Returns the pinned pair's <c>rusty</c> executable when installed, else <c>"rusty"</c> from PATH.</summary>
+    internal static string FindRusty() => PairRusty() ?? "rusty";
+
+    /// <summary>Returns the pinned pair's <c>rusty-live-debug</c> executable when installed, else <c>"rusty-live-debug"</c> from PATH.</summary>
+    internal static string FindLiveDebug()
+    {
+        string? pair = PairRusty();
+        if (pair is not null && Path.GetDirectoryName(pair) is string dir)
+        {
+            string candidate = Path.Combine(dir, OperatingSystem.IsWindows() ? "rusty-live-debug.exe" : "rusty-live-debug");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return "rusty-live-debug";
     }
 
     /// <summary>The pinned pair's own <c>rusty</c>, recorded at build time, when it is installed here.</summary>

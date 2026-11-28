@@ -26,6 +26,7 @@ internal sealed class WorkbenchServer : IDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly object _stateLock = new();
     private readonly ReviewStore _reviews;
+    private readonly PlaytestSession _playtest;
     private Task? _loop;
 
     private ModuleSet _set;
@@ -38,7 +39,8 @@ internal sealed class WorkbenchServer : IDisposable
         IReadOnlyList<string> extensions,
         string host = "127.0.0.1",
         int port = 4173,
-        string? reviewsPath = null)
+        string? reviewsPath = null,
+        string? gameProject = null)
     {
         _modulePath = Path.GetFullPath(modulePath);
         _searchDirectories = searchDirectories.ToList();
@@ -54,6 +56,7 @@ internal sealed class WorkbenchServer : IDisposable
 
         (_listener, Port) = BindListener(prefixHost, port);
         Url = $"http://{displayHost}:{Port}/";
+        _playtest = new PlaytestSession(_modulePath, _graph.Module.Id, _graph.Module.Kind, Url, Port, gameProject);
     }
 
     private static (HttpListener Listener, int Port) BindListener(string prefixHost, int requestedPort)
@@ -152,6 +155,7 @@ internal sealed class WorkbenchServer : IDisposable
         {
         }
 
+        _playtest.Dispose();
         _cts.Dispose();
     }
 
@@ -247,6 +251,12 @@ internal sealed class WorkbenchServer : IDisposable
             if (path == "/api/live-state")
             {
                 HandleLiveState(request, response);
+                return;
+            }
+
+            if (path.StartsWith("/api/playtest/", StringComparison.Ordinal))
+            {
+                HandlePlaytest(request, response, path);
                 return;
             }
 
@@ -505,6 +515,172 @@ internal sealed class WorkbenchServer : IDisposable
         }
 
         WriteJson(response, 405, new { ok = false, error = $"Unsupported method {method} for /api/live-state." });
+    }
+
+    private void HandlePlaytest(HttpListenerRequest request, HttpListenerResponse response, string path)
+    {
+        string method = request.HttpMethod.ToUpperInvariant();
+        if (path == "/api/playtest/status" && method == "GET")
+        {
+            bool probe = string.Equals(request.QueryString["probe"], "1", StringComparison.Ordinal)
+                || string.Equals(request.QueryString["probe"], "true", StringComparison.OrdinalIgnoreCase);
+            object status = _playtest.GetStatus(probe, out string? liveJson);
+            if (liveJson is not null)
+            {
+                lock (_stateLock)
+                {
+                    _liveStateJson = liveJson;
+                }
+            }
+
+            WriteJson(response, 200, status);
+            return;
+        }
+
+        if (path == "/api/playtest/start" && method == "POST")
+        {
+            string? bindHost = null;
+            int? port = null;
+            string? instance = null;
+            bool autoStart = string.Equals(CurrentGraph.Module.Kind, "campaign", StringComparison.OrdinalIgnoreCase);
+            ulong seed = 1;
+            string? attachUrl = null;
+
+            using (StreamReader reader = new(request.InputStream, request.ContentEncoding))
+            {
+                string body = reader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    JsonDocument doc;
+                    try
+                    {
+                        doc = JsonDocument.Parse(body);
+                    }
+                    catch (JsonException exception)
+                    {
+                        WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                        return;
+                    }
+
+                    using (doc)
+                    {
+                        JsonElement root = doc.RootElement;
+                        if (root.ValueKind == JsonValueKind.Object)
+                        {
+                            if (root.TryGetProperty("bindHost", out JsonElement bh) && bh.ValueKind == JsonValueKind.String)
+                            {
+                                bindHost = bh.GetString();
+                            }
+
+                            if (root.TryGetProperty("port", out JsonElement p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out int parsedPort))
+                            {
+                                port = parsedPort;
+                            }
+
+                            if (root.TryGetProperty("instance", out JsonElement inst) && inst.ValueKind == JsonValueKind.String)
+                            {
+                                instance = inst.GetString();
+                            }
+
+                            if (root.TryGetProperty("autoStartCampaign", out JsonElement auto) && auto.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                            {
+                                autoStart = auto.GetBoolean();
+                            }
+
+                            if (root.TryGetProperty("seed", out JsonElement sEl))
+                            {
+                                if (sEl.ValueKind == JsonValueKind.Number && sEl.TryGetUInt64(out ulong numericSeed))
+                                {
+                                    seed = numericSeed;
+                                }
+                                else if (sEl.ValueKind == JsonValueKind.String && ulong.TryParse(sEl.GetString(), out ulong parsedSeed))
+                                {
+                                    seed = parsedSeed;
+                                }
+                            }
+
+                            if (root.TryGetProperty("attachUrl", out JsonElement att) && att.ValueKind == JsonValueKind.String)
+                            {
+                                attachUrl = att.GetString();
+                            }
+                        }
+                    }
+                }
+            }
+
+            (bool ok, object payload, string? liveJson) = _playtest.Start(
+                new PlaytestSession.StartOptions(bindHost, port, instance, autoStart, seed, attachUrl));
+            if (liveJson is not null)
+            {
+                lock (_stateLock)
+                {
+                    _liveStateJson = liveJson;
+                }
+            }
+
+            WriteJson(response, ok ? 200 : 500, payload);
+            return;
+        }
+
+        if (path == "/api/playtest/stop" && method == "POST")
+        {
+            object stopped = _playtest.Stop();
+            lock (_stateLock)
+            {
+                _liveStateJson = null;
+            }
+
+            WriteJson(response, 200, stopped);
+            return;
+        }
+
+        if (path == "/api/playtest/command" && method == "POST")
+        {
+            using StreamReader reader = new(request.InputStream, request.ContentEncoding);
+            string body = reader.ReadToEnd();
+            string? commandLine = null;
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(body);
+                if (doc.RootElement.ValueKind == JsonValueKind.Object
+                    && doc.RootElement.TryGetProperty("command", out JsonElement cmdEl)
+                    && cmdEl.ValueKind == JsonValueKind.String)
+                {
+                    commandLine = cmdEl.GetString();
+                }
+            }
+            catch (JsonException exception)
+            {
+                WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(commandLine))
+            {
+                WriteJson(response, 400, new { ok = false, error = "JSON body with string 'command' is required." });
+                return;
+            }
+
+            PlaytestSession.CommandResult result = _playtest.ExecuteCommand(commandLine);
+            if (result.LiveStateJson is not null)
+            {
+                lock (_stateLock)
+                {
+                    _liveStateJson = result.LiveStateJson;
+                }
+            }
+
+            WriteJson(response, result.Ok ? 200 : 400, new
+            {
+                ok = result.Ok,
+                output = result.Output,
+                error = result.Error,
+                state = result.State,
+            });
+            return;
+        }
+
+        WriteJson(response, 404, new { ok = false, error = $"Unknown playtest endpoint {method} {path}." });
     }
 
     private void HandleDefinition(HttpListenerRequest request, HttpListenerResponse response)
