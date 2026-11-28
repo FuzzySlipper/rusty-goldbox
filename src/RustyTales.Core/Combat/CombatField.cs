@@ -1,12 +1,18 @@
 using System.Text.Json;
 using RustyTales.Core.Definitions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
 namespace RustyTales.Core.Combat;
 
 /// <summary>A cell on a combat field: X across from the first side's edge, Y down.</summary>
-public readonly record struct Cell(int X, int Y);
+public readonly record struct Cell(int X, int Y)
+{
+    public static implicit operator GridCell(Cell cell) => new(cell.X, cell.Y);
+
+    public static implicit operator Cell(GridCell cell) => new(cell.X, cell.Y);
+}
 
 /// <summary>A kind of ground the combat field declares: whether creatures can enter it, what entering costs and whether it blocks sight.</summary>
 public sealed record Terrain(char Key, string Name, bool Passable, int Cost, bool BlocksSight);
@@ -19,7 +25,7 @@ public sealed record Terrain(char Key, string Name, bool Passable, int Cost, boo
 /// after rank inward; further sides fill in after them. An encounter may lay
 /// the field's terrain over it; every other cell is open ground.
 /// </summary>
-public sealed class CombatField
+public sealed class CombatField : IGridTopology
 {
     /// <summary>The character an encounter's terrain rows use for open ground.</summary>
     public const char Open = '.';
@@ -116,14 +122,13 @@ public sealed class CombatField
         return kinds;
     }
 
-    public int Distance(Cell a, Cell b)
-    {
-        int across = Math.Abs(a.X - b.X);
-        int down = Math.Abs(a.Y - b.Y);
-        return Diagonal ? Math.Max(across, down) : across + down;
-    }
+    public bool AllowsDiagonal => Diagonal;
+
+    public int Distance(Cell a, Cell b) => GridSearch.Distance(a, b, Diagonal);
 
     public bool Contains(Cell cell) => cell.X >= 0 && cell.Y >= 0 && cell.X < Width && cell.Y < Height;
+
+    public bool Contains(GridCell cell) => Contains((Cell)cell);
 
     /// <summary>Whether a creature can stand in the cell.</summary>
     public bool Passable(Cell cell) => !_terrain.TryGetValue(cell, out Terrain? terrain) || terrain.Passable;
@@ -131,14 +136,39 @@ public sealed class CombatField
     /// <summary>The movement it takes to enter the cell: 1 on open ground.</summary>
     public int Cost(Cell cell) => _terrain.TryGetValue(cell, out Terrain? terrain) ? terrain.Cost : 1;
 
-    /// <summary>The cells one step from <paramref name="cell"/>, straight steps first.</summary>
-    public IEnumerable<Cell> Neighbours(Cell cell)
+    public CellTraits TraitsAt(GridCell cell)
     {
-        (int, int)[] steps = Diagonal
-            ? [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
-            : [(1, 0), (-1, 0), (0, 1), (0, -1)];
-        return steps.Select(step => new Cell(cell.X + step.Item1, cell.Y + step.Item2)).Where(Contains);
+        if (!Contains(cell))
+        {
+            return new CellTraits(Passable: false, MoveCost: 1, BlocksSight: true, IsDoor: false, Label: null);
+        }
+
+        return _terrain.TryGetValue(cell, out Terrain? terrain)
+            ? new CellTraits(terrain.Passable, terrain.Cost, terrain.BlocksSight, IsDoor: false, Label: terrain.Name)
+            : new CellTraits(Passable: true, MoveCost: 1, BlocksSight: false, IsDoor: false, Label: null);
     }
+
+    public bool CanStep(GridCell from, GridCell to)
+    {
+        if (!Contains(from) || !Contains(to) || !Passable(to))
+        {
+            return false;
+        }
+
+        int dx = Math.Abs(to.X - from.X);
+        int dy = Math.Abs(to.Y - from.Y);
+        if (dx == 0 && dy == 0)
+        {
+            return false;
+        }
+
+        return Diagonal ? dx <= 1 && dy <= 1 : dx + dy == 1;
+    }
+
+    public bool BlocksSightBetween(GridCell from, GridCell to) => false;
+
+    /// <summary>The cells one step from <paramref name="cell"/>, straight steps first.</summary>
+    public IEnumerable<Cell> Neighbours(Cell cell) => GridSearch.Neighbours(this, cell).Select(next => (Cell)next);
 
     /// <summary>
     /// Whether nothing between two cells blocks sight: no cell on the straight
@@ -153,34 +183,7 @@ public sealed class CombatField
             return true;
         }
 
-        int dx = to.X - from.X;
-        int dy = to.Y - from.Y;
-        int steps = Math.Max(Math.Abs(dx), Math.Abs(dy)) * 2;
-        for (int step = 1; step < steps; step++)
-        {
-            // Points along the line at half-cell spacing, in doubled coordinates so they stay whole.
-            int numeratorX = from.X * steps * 2 + dx * step * 2 + steps;
-            int numeratorY = from.Y * steps * 2 + dy * step * 2 + steps;
-            int denominator = steps * 2;
-            List<int> xs = Covering(numeratorX, denominator);
-            List<int> ys = Covering(numeratorY, denominator);
-            List<Cell> cells = xs.SelectMany(x => ys.Select(y => new Cell(x, y))).Where(cell => cell != from && cell != to).ToList();
-            if (cells.Count > 0 && cells.All(BlocksSight))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private bool BlocksSight(Cell cell) => _terrain.TryGetValue(cell, out Terrain? terrain) && terrain.BlocksSight;
-
-    /// <summary>The cell indexes a coordinate numerator / denominator lies in: one, or two when it is on the edge between them.</summary>
-    private static List<int> Covering(int numerator, int denominator)
-    {
-        int index = (int)Math.Floor((double)numerator / denominator);
-        return numerator % denominator == 0 ? [index - 1, index] : [index];
+        return GridSearch.CanSee(this, from, to);
     }
 
     /// <summary>

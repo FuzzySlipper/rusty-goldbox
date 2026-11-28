@@ -1,6 +1,7 @@
 using System.Text.Json;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Rules;
 
 namespace RustyTales.Core.Combat;
@@ -1365,33 +1366,12 @@ public sealed partial class CombatRunner
 
     private Dictionary<Cell, (int Cost, IReadOnlyList<Cell> Path)> Reachable(Combatant actor, Cell start, int budget, HashSet<Cell> blocked)
     {
-        Dictionary<Cell, (int Cost, IReadOnlyList<Cell> Path)> paths = new() { [start] = (0, []) };
-        PriorityQueue<Cell, int> frontier = new();
-        frontier.Enqueue(start, 0);
-        while (frontier.TryDequeue(out Cell cell, out int cost))
+        HashSet<GridCell> blockedGrid = blocked.Select(cell => (GridCell)cell).ToHashSet();
+        Dictionary<GridCell, (int Cost, IReadOnlyList<GridCell> Path)> found = GridSearch.ReachableWithin(_field!, start, budget, blockedGrid);
+        Dictionary<Cell, (int Cost, IReadOnlyList<Cell> Path)> paths = new(found.Count);
+        foreach ((GridCell dest, (int cost, IReadOnlyList<GridCell> steps)) in found)
         {
-            if (paths[cell].Cost != cost)
-            {
-                continue;
-            }
-
-            foreach (Cell next in _field!.Neighbours(cell))
-            {
-                if (!_field.Passable(next) || blocked.Contains(next))
-                {
-                    continue;
-                }
-
-                int total = cost + _field.Cost(next);
-                if (total > budget || paths.TryGetValue(next, out (int Cost, IReadOnlyList<Cell> Path) known) && known.Cost <= total)
-                {
-                    continue;
-                }
-
-                List<Cell> path = [.. paths[cell].Path, next];
-                paths[next] = (total, path);
-                frontier.Enqueue(next, total);
-            }
+            paths[dest] = (cost, steps.Select(step => (Cell)step).ToList());
         }
 
         return paths;

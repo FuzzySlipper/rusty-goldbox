@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using RustyTales.Core.Grids;
 
 namespace RustyTales.Core.Campaigns;
 
@@ -87,7 +88,7 @@ public static class Facings
 /// edges of one (<c>|</c>, space, <c>D</c>, <c>S</c>). Cell interiors are two
 /// characters the map ignores. x runs west to east, y north to south, from 0.
 /// </summary>
-public sealed class AreaMap
+public sealed class AreaMap : IGridTopology
 {
     public const string FormatDescription =
         "rows of text: corners '+', horizontal edges of two characters ('--' wall, '  ' open, 'DD' door, 'SS' secret door), " +
@@ -109,7 +110,69 @@ public sealed class AreaMap
 
     public int Height { get; }
 
+    public bool AllowsDiagonal => false;
+
     public bool Contains(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
+
+    public bool Contains(GridCell cell) => Contains(cell.X, cell.Y);
+
+    public CellTraits TraitsAt(GridCell cell) => new(
+        Passable: Contains(cell),
+        MoveCost: 1,
+        BlocksSight: false,
+        IsDoor: false);
+
+    public bool CanStep(GridCell from, GridCell to)
+    {
+        if (!Contains(from) || !Contains(to) || !TryStepFacing(from, to, out Facing facing))
+        {
+            return false;
+        }
+
+        return EdgeOf(from.X, from.Y, facing) is Edge.Open or Edge.Door;
+    }
+
+    public bool BlocksSightBetween(GridCell from, GridCell to)
+    {
+        if (!Contains(from) || !Contains(to) || !TryStepFacing(from, to, out Facing facing))
+        {
+            return true;
+        }
+
+        return EdgeOf(from.X, from.Y, facing) != Edge.Open;
+    }
+
+    private static bool TryStepFacing(GridCell from, GridCell to, out Facing facing)
+    {
+        int dx = to.X - from.X;
+        int dy = to.Y - from.Y;
+        if (dx == 0 && dy == -1)
+        {
+            facing = Facing.North;
+            return true;
+        }
+
+        if (dx == 1 && dy == 0)
+        {
+            facing = Facing.East;
+            return true;
+        }
+
+        if (dx == 0 && dy == 1)
+        {
+            facing = Facing.South;
+            return true;
+        }
+
+        if (dx == -1 && dy == 0)
+        {
+            facing = Facing.West;
+            return true;
+        }
+
+        facing = default;
+        return false;
+    }
 
     /// <summary>Whether a cell-side coordinate addresses an edge in this map, including the outer boundary.</summary>
     public bool ContainsEdge(int x, int y, Facing facing) => facing switch

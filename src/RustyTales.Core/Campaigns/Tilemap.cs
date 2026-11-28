@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RustyTales.Core.Definitions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Rules;
 
 namespace RustyTales.Core.Campaigns;
@@ -21,7 +22,9 @@ public sealed record TileGlyph(
     TileAutotileRule? Autotile,
     bool Passable,
     bool Door,
-    string? Color);
+    string? Color,
+    int MoveCost = 1,
+    bool BlocksSight = false);
 
 /// <summary>A validated, compiled tileset definition bound to its sheet asset geometry.</summary>
 public sealed class TilesetDefinition
@@ -78,7 +81,9 @@ public readonly record struct ResolvedTile(
     int Bitmask,
     string? AutotileMode,
     bool Passable,
-    bool Door);
+    bool Door,
+    int MoveCost = 1,
+    bool BlocksSight = false);
 
 /// <summary>One resolved 2D layer of a compiled <see cref="ResolvedTilemap"/>.</summary>
 public sealed class ResolvedTileLayer
@@ -106,7 +111,7 @@ public sealed class ResolvedTileLayer
 /// A compiled, auto-tiled multi-layer 2D tilemap shared by Core validation,
 /// <see cref="AreaMap"/> synthesis, Studio Workbench rendering, and Game meshes.
 /// </summary>
-public sealed class ResolvedTilemap
+public sealed class ResolvedTilemap : IGridTopology
 {
     public ResolvedTilemap(
         TilesetDefinition tileset,
@@ -128,9 +133,85 @@ public sealed class ResolvedTilemap
 
     public int Height { get; }
 
+    public bool AllowsDiagonal => false;
+
     public double? Zoom { get; }
 
     public IReadOnlyList<ResolvedTileLayer> Layers { get; }
+
+    public bool Contains(GridCell cell) => cell.X >= 0 && cell.Y >= 0 && cell.X < Width && cell.Y < Height;
+
+    public CellTraits TraitsAt(GridCell cell)
+    {
+        if (!Contains(cell))
+        {
+            return new CellTraits(Passable: false, MoveCost: 1, BlocksSight: true, IsDoor: false, Label: null);
+        }
+
+        bool passable = true;
+        int moveCost = 1;
+        bool blocksSight = false;
+        bool door = false;
+        string? label = null;
+        string? specialLabel = null;
+
+        for (int i = 0; i < Layers.Count; i++)
+        {
+            ResolvedTile tile = Layers[i].At(cell.X, cell.Y);
+            if (tile.Frame < 0)
+            {
+                continue;
+            }
+
+            string? glyphName = Tileset.Tiles.TryGetValue(tile.Glyph, out TileGlyph? def) ? def.Name : null;
+            if (glyphName is not null)
+            {
+                label = glyphName;
+            }
+
+            if (!tile.Passable)
+            {
+                passable = false;
+                specialLabel = glyphName ?? specialLabel;
+            }
+
+            if (tile.MoveCost > moveCost)
+            {
+                moveCost = tile.MoveCost;
+                if (passable)
+                {
+                    specialLabel = glyphName ?? specialLabel;
+                }
+            }
+
+            if (tile.BlocksSight)
+            {
+                blocksSight = true;
+                specialLabel ??= glyphName;
+            }
+
+            if (tile.Door)
+            {
+                door = true;
+            }
+        }
+
+        return new CellTraits(passable, moveCost, blocksSight, passable && door, specialLabel ?? label);
+    }
+
+    public bool CanStep(GridCell from, GridCell to)
+    {
+        if (!Contains(from) || !Contains(to))
+        {
+            return false;
+        }
+
+        int dx = Math.Abs(to.X - from.X);
+        int dy = Math.Abs(to.Y - from.Y);
+        return dx + dy == 1 && TraitsAt(to).Passable;
+    }
+
+    public bool BlocksSightBetween(GridCell from, GridCell to) => false;
 
     public bool IsPassable(int x, int y)
     {
@@ -238,7 +319,7 @@ public static class AutoTiler
                     }
 
                     (int frame, int bitmask) = ResolveCell(def, rows, width, height, x, y, layerIndex, tileset.FrameCount);
-                    cells[x, y] = new ResolvedTile(glyph, frame, bitmask, def.Autotile?.Mode, def.Passable, def.Door);
+                    cells[x, y] = new ResolvedTile(glyph, frame, bitmask, def.Autotile?.Mode, def.Passable, def.Door, def.MoveCost, def.BlocksSight);
                 }
             }
 

@@ -3,6 +3,7 @@ using System.Globalization;
 using RustyTales.Core.Characters;
 using RustyTales.Core.Definitions;
 using RustyTales.Core.Expressions;
+using RustyTales.Core.Grids;
 using RustyTales.Core.Modules;
 using RustyTales.Core.Rules;
 
@@ -1482,8 +1483,7 @@ public sealed partial class CombatRunner
     /// </summary>
     private Dictionary<Cell, int> CostsToReach(Cell goal, decimal within, HashSet<Cell> blocked)
     {
-        Dictionary<Cell, int> costs = [];
-        PriorityQueue<Cell, int> frontier = new();
+        List<GridCell> goals = [];
         for (int x = 0; x < _field!.Width; x++)
         {
             for (int y = 0; y < _field.Height; y++)
@@ -1493,32 +1493,14 @@ public sealed partial class CombatRunner
                 // actor must enter the target's cell, which is valid for zones.
                 if (_field.Distance(cell, goal) <= within && (within <= 0 || cell != goal) && _field.Passable(cell) && !blocked.Contains(cell) && _field.CanSee(cell, goal))
                 {
-                    costs[cell] = 0;
-                    frontier.Enqueue(cell, 0);
+                    goals.Add(cell);
                 }
             }
         }
 
-        while (frontier.TryDequeue(out Cell cell, out int cost))
-        {
-            if (cost > costs[cell])
-            {
-                continue;
-            }
-
-            // Stepping from a neighbour into this cell costs this cell's terrain.
-            foreach (Cell neighbour in _field.Neighbours(cell).Where(neighbour => _field.Passable(neighbour) && !blocked.Contains(neighbour)))
-            {
-                int through = cost + _field.Cost(cell);
-                if (!costs.TryGetValue(neighbour, out int known) || through < known)
-                {
-                    costs[neighbour] = through;
-                    frontier.Enqueue(neighbour, through);
-                }
-            }
-        }
-
-        return costs;
+        HashSet<GridCell> blockedGrid = blocked.Select(cell => (GridCell)cell).ToHashSet();
+        Dictionary<GridCell, int> costs = GridSearch.CostsToGoals(_field, goals, blockedGrid);
+        return costs.ToDictionary(entry => (Cell)entry.Key, entry => entry.Value);
     }
 
     /// <summary>The neighbouring cell on the cheapest way to the goal, the first in neighbour order on a tie, or null if none gets closer.</summary>
