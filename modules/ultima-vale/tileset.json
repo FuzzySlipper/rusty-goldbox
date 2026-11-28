@@ -61,7 +61,7 @@
     "type": "figure",
     "id": "fighter_fig",
     "class": "classic:fighter",
-    "sprite": "placeholder-art:fighter"
+    "sprite": "hero_sword"
   },
   {
     "type": "figure",
@@ -73,7 +73,7 @@
     "type": "figure",
     "id": "magic_user_fig",
     "class": "classic:magic_user",
-    "sprite": "placeholder-art:magic_user"
+    "sprite": "mage_staff"
   },
   {
     "type": "figure",
@@ -91,6 +91,6 @@
     "type": "figure",
     "id": "acolyte_fig",
     "monster": "classic:acolyte",
-    "sprite": "placeholder-art:magic_user"
+    "sprite": "goblin_axe"
   }
 ]

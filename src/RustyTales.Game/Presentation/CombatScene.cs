@@ -311,11 +311,30 @@ internal sealed class CombatScene : IDisposable
         }
 
         HashSet<string> actingSubjects = [];
-        CombatFact? latestAction = observation.Facts
-            .LastOrDefault(fact => fact.Kind is "action" or "portion" or "reaction" or "move");
-        if (latestAction is not null)
+        HashSet<string> hitSubjects = [];
+        int latestActionIndex = -1;
+        for (int idx = observation.Facts.Count - 1; idx >= 0; idx--)
         {
-            actingSubjects = latestAction.SubjectIds.ToHashSet(StringComparer.Ordinal);
+            if (observation.Facts[idx].Kind is "action" or "portion" or "reaction" or "move")
+            {
+                latestActionIndex = idx;
+                actingSubjects = observation.Facts[idx].SubjectIds.ToHashSet(StringComparer.Ordinal);
+                break;
+            }
+        }
+
+        if (latestActionIndex >= 0)
+        {
+            for (int idx = latestActionIndex; idx < observation.Facts.Count; idx++)
+            {
+                if (observation.Facts[idx].Kind == "damage")
+                {
+                    foreach (string damagedId in observation.Facts[idx].SubjectIds)
+                    {
+                        hitSubjects.Add(damagedId);
+                    }
+                }
+            }
         }
 
         if (observation.Facts.Count != _acted)
@@ -323,7 +342,14 @@ internal sealed class CombatScene : IDisposable
             _acted = observation.Facts.Count;
             foreach ((string key, Figure figure) in _figures)
             {
-                figure.Play(actingSubjects.Contains(key) ? "attack" : "idle");
+                if (hitSubjects.Contains(key) && figure.HasAnimation("hit"))
+                {
+                    figure.Play("hit");
+                }
+                else
+                {
+                    figure.Play(actingSubjects.Contains(key) ? "attack" : "idle");
+                }
             }
         }
 
@@ -681,6 +707,8 @@ internal sealed class CombatScene : IDisposable
             Appearance block = graphics.CreatePrimitive(new PrimitiveAppearanceRequest(PrimitiveGeometry.Cube, false, colour));
             return new Figure(null, block, new Transform(at + new Vector3(0, size.Y / 2, 0), Quaternion.Identity, size));
         }
+
+        public bool HasAnimation(string animation) => art?.Animations.Contains(animation) == true;
 
         /// <summary>Switches to <paramref name="animation"/> when the sprite has it.</summary>
         public void Play(string animation)
