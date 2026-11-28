@@ -1042,7 +1042,10 @@ body.embed-mode .inspector { width: 310px; }
 }
 
 /* Streamed Browser Playtest tab */
-body.embed-mode .tab-playtest { display: none; }
+body.embed-mode .tab-playtest,
+body.embed-mode .tab-puppets { display: none; }
+.puppets-ws-row { width: 100%; max-width: 560px; margin: 4px 0 8px; }
+.puppets-ws-input { width: 420px; max-width: 72vw; margin-left: 8px; }
 body.playtest-wide .inspector { display: none; }
 .badge-live { background: rgba(61, 196, 171, 0.22); color: var(--teal); border: 1px solid rgba(61, 196, 171, 0.5); }
 .btn-danger { border-color: rgba(235, 93, 93, 0.65); color: #ff9c9c; background: rgba(235, 93, 93, 0.14); }

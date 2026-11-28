@@ -27,6 +27,7 @@ internal sealed class WorkbenchServer : IDisposable
     private readonly object _stateLock = new();
     private readonly ReviewStore _reviews;
     private readonly PlaytestSession _playtest;
+    private readonly PuppetStudioSession _puppets;
     private Task? _loop;
 
     private ModuleSet _set;
@@ -40,7 +41,8 @@ internal sealed class WorkbenchServer : IDisposable
         string host = "127.0.0.1",
         int port = 4173,
         string? reviewsPath = null,
-        string? gameProject = null)
+        string? gameProject = null,
+        string? puppetsDir = null)
     {
         _modulePath = Path.GetFullPath(modulePath);
         _searchDirectories = searchDirectories.ToList();
@@ -57,6 +59,7 @@ internal sealed class WorkbenchServer : IDisposable
         (_listener, Port) = BindListener(prefixHost, port);
         Url = $"http://{displayHost}:{Port}/";
         _playtest = new PlaytestSession(_modulePath, _graph.Module.Id, _graph.Module.Kind, Url, Port, gameProject);
+        _puppets = new PuppetStudioSession(_modulePath, puppetsDir);
     }
 
     private static (HttpListener Listener, int Port) BindListener(string prefixHost, int requestedPort)
@@ -156,6 +159,7 @@ internal sealed class WorkbenchServer : IDisposable
         }
 
         _playtest.Dispose();
+        _puppets.Dispose();
         _cts.Dispose();
     }
 
@@ -257,6 +261,12 @@ internal sealed class WorkbenchServer : IDisposable
             if (path.StartsWith("/api/playtest/", StringComparison.Ordinal))
             {
                 HandlePlaytest(request, response, path);
+                return;
+            }
+
+            if (path.StartsWith("/api/puppets/", StringComparison.Ordinal))
+            {
+                HandlePuppets(request, response, path);
                 return;
             }
 
@@ -515,6 +525,157 @@ internal sealed class WorkbenchServer : IDisposable
         }
 
         WriteJson(response, 405, new { ok = false, error = $"Unsupported method {method} for /api/live-state." });
+    }
+
+    private void HandlePuppets(HttpListenerRequest request, HttpListenerResponse response, string path)
+    {
+        string method = request.HttpMethod.ToUpperInvariant();
+        if (path == "/api/puppets/status" && method == "GET")
+        {
+            WriteJson(response, 200, _puppets.GetStatus());
+            return;
+        }
+
+        if (path == "/api/puppets/start" && method == "POST")
+        {
+            string? workspace = null;
+            using (StreamReader reader = new(request.InputStream, request.ContentEncoding))
+            {
+                string body = reader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    try
+                    {
+                        using JsonDocument parsed = JsonDocument.Parse(body);
+                        if (parsed.RootElement.ValueKind == JsonValueKind.Object
+                            && parsed.RootElement.TryGetProperty("workspace", out JsonElement wsEl)
+                            && wsEl.ValueKind == JsonValueKind.String
+                            && !string.IsNullOrWhiteSpace(wsEl.GetString()))
+                        {
+                            workspace = wsEl.GetString();
+                        }
+                    }
+                    catch (JsonException exception)
+                    {
+                        WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                        return;
+                    }
+                }
+            }
+
+            (bool ok, string? error, object status) = _puppets.Start(workspace);
+            if (!ok)
+            {
+                WriteJson(response, 400, new { ok = false, error, status });
+                return;
+            }
+
+            WriteJson(response, 200, status);
+            return;
+        }
+
+        if (path == "/api/puppets/stop" && method == "POST")
+        {
+            object status = _puppets.Stop();
+            WriteJson(response, 200, status);
+            return;
+        }
+
+        if (path == "/api/puppets/export" && method == "POST")
+        {
+            string? characterId = null;
+            string? workspace = null;
+            string? clips = null;
+            int? height = 160;
+            double worldHeight = 1.0;
+            string faces = "right";
+            string sampling = "linear";
+            bool rebake = false;
+
+            using (StreamReader reader = new(request.InputStream, request.ContentEncoding))
+            {
+                string body = reader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    try
+                    {
+                        using JsonDocument parsed = JsonDocument.Parse(body);
+                        JsonElement root = parsed.RootElement;
+                        if (root.TryGetProperty("characterId", out JsonElement idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            characterId = idEl.GetString();
+                        }
+
+                        if (root.TryGetProperty("workspace", out JsonElement wsEl) && wsEl.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(wsEl.GetString()))
+                        {
+                            workspace = wsEl.GetString();
+                        }
+
+                        if (root.TryGetProperty("clips", out JsonElement clipsEl) && clipsEl.ValueKind == JsonValueKind.String)
+                        {
+                            clips = clipsEl.GetString();
+                        }
+
+                        if (root.TryGetProperty("height", out JsonElement hEl) && hEl.TryGetInt32(out int hVal))
+                        {
+                            height = hVal <= 0 ? null : hVal;
+                        }
+
+                        if (root.TryGetProperty("worldHeight", out JsonElement whEl) && whEl.TryGetDouble(out double whVal) && whVal > 0)
+                        {
+                            worldHeight = whVal;
+                        }
+
+                        if (root.TryGetProperty("faces", out JsonElement fEl) && fEl.ValueKind == JsonValueKind.String && fEl.GetString() is "left" or "right")
+                        {
+                            faces = fEl.GetString()!;
+                        }
+
+                        if (root.TryGetProperty("sampling", out JsonElement sEl) && sEl.ValueKind == JsonValueKind.String && sEl.GetString() is "linear" or "nearest")
+                        {
+                            sampling = sEl.GetString()!;
+                        }
+
+                        if (root.TryGetProperty("rebake", out JsonElement rbEl) && rbEl.ValueKind == JsonValueKind.True)
+                        {
+                            rebake = true;
+                        }
+                    }
+                    catch (JsonException exception)
+                    {
+                        WriteJson(response, 400, new { ok = false, error = $"Invalid JSON: {exception.Message}" });
+                        return;
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                WriteJson(response, 400, new { ok = false, error = "characterId is required." });
+                return;
+            }
+
+            try
+            {
+                PuppetBridge.ExportSheetResult exported = _puppets.ExportCharacter(characterId, workspace, clips, height, worldHeight, faces, sampling, rebake);
+                ModuleGraph reloaded = Reload();
+                WriteJson(response, 200, new
+                {
+                    ok = true,
+                    exported,
+                    moduleValid = reloaded.Module.IsValid,
+                    issues = reloaded.Counts.Issues,
+                });
+            }
+            catch (Exception ex)
+            {
+                WriteJson(response, 400, new { ok = false, error = ex.Message });
+            }
+
+            return;
+        }
+
+        WriteJson(response, 404, new { ok = false, error = $"Unknown puppets endpoint '{path}'." });
     }
 
     private void HandlePlaytest(HttpListenerRequest request, HttpListenerResponse response, string path)

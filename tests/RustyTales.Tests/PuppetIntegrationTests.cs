@@ -44,7 +44,7 @@ public sealed class PuppetIntegrationTests
     }
 
     [Fact]
-    public void PuppetExportSheetPacksTightUnionGridWithProjectedAnchorAndValidatesAsModule()
+    public async Task PuppetExportSheetPacksTightUnionGridWithProjectedAnchorAndValidatesAsModule()
     {
         using TempModules temp = new();
         string charDir = Path.Combine(temp.Root, "puppets", "hero_test");
@@ -180,6 +180,17 @@ public sealed class PuppetIntegrationTests
         Assert.Equal(TalesCli.Ok, TalesCli.Run(["schema", "puppets", "--json"], schemaSw, temp.Root));
         using JsonDocument schemaDoc = JsonDocument.Parse(schemaSw.ToString());
         Assert.Equal("puppets", schemaDoc.RootElement.GetProperty("topic").GetString());
+
+        // WorkbenchServer exposes /api/puppets/status cleanly with discovered characters.
+        using WorkbenchServer server = new(moduleDir, [temp.Root], [], "127.0.0.1", 0, puppetsDir: Path.Combine(temp.Root, "puppets"));
+        server.Start();
+        using HttpClient http = new();
+        string statusJson = await http.GetStringAsync($"{server.Url}api/puppets/status");
+        using JsonDocument statusDoc = JsonDocument.Parse(statusJson);
+        Assert.True(statusDoc.RootElement.GetProperty("ok").GetBoolean());
+        Assert.Equal(1, statusDoc.RootElement.GetProperty("characters").GetArrayLength());
+        Assert.Equal("hero_test", statusDoc.RootElement.GetProperty("characters")[0].GetProperty("id").GetString());
+        Assert.Equal(1, statusDoc.RootElement.GetProperty("openFlagCount").GetInt32());
     }
 
     private static void FillRect(PngRgba img, int x0, int y0, int w, int h, byte r, byte g, byte b, byte a)

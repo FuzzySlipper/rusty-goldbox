@@ -39,6 +39,11 @@
       iframeUrl: null,
       pollTimer: null,
     },
+    puppets: {
+      status: null,
+      busy: false,
+      iframeUrl: null,
+    },
   };
 
   if (state.embedMode) {
@@ -411,7 +416,7 @@
 
   function switchTab(tab) {
     state.activeTab = tab;
-    document.body.classList.toggle("playtest-wide", tab === "playtest");
+    document.body.classList.toggle("playtest-wide", tab === "playtest" || tab === "puppets");
     document.querySelectorAll(".tab").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === tab);
     });
@@ -425,6 +430,7 @@
     if (tab === "reviews") renderReviews();
     if (tab === "issues") renderIssues();
     if (tab === "playtest") refreshPlaytestStatus(true);
+    if (tab === "puppets") refreshPuppetsStatus();
   }
 
   function populateFilters() {
@@ -3212,7 +3218,216 @@
   document.getElementById("btn-pt-pin-q")?.addEventListener("click", () => submitPlaytestQuickPin("question"));
   document.getElementById("btn-pt-pin-ok")?.addEventListener("click", () => submitPlaytestQuickPin("approved"));
 
+  // ---------------------------------------------------------------------------
+  // PUPPET STUDIO EMBED (Track 1)
+  // ---------------------------------------------------------------------------
+  function setPuppetsMsg(text, isError = false) {
+    const elMsg = document.getElementById("puppets-launch-msg");
+    if (elMsg) {
+      elMsg.textContent = text || "";
+      elMsg.classList.toggle("is-error", Boolean(isError));
+    }
+    const bar = document.getElementById("puppets-feedback-bar");
+    const fb = document.getElementById("puppets-feedback-text");
+    if (bar && fb) {
+      if (text && state.puppets.status?.running) {
+        bar.hidden = false;
+        fb.textContent = text;
+        fb.style.color = isError ? "var(--err)" : "var(--ok)";
+      } else if (!text) {
+        bar.hidden = true;
+      }
+    }
+  }
+
+  function renderPuppets() {
+    const st = state.puppets.status;
+    const badge = document.getElementById("tab-puppets-badge");
+    const pill = document.getElementById("puppets-status-pill");
+    const wsLabel = document.getElementById("puppets-workspace-label");
+    const liveControls = document.getElementById("puppets-live-controls");
+    const launchCard = document.getElementById("puppets-launch-card");
+    const frameWrap = document.getElementById("puppets-frame-wrap");
+    const iframe = document.getElementById("puppets-iframe");
+    const popout = document.getElementById("btn-pup-popout");
+    const wsInput = document.getElementById("puppets-ws-input");
+    const exportSelect = document.getElementById("puppets-export-char");
+    const charsBox = document.getElementById("puppets-chars-box");
+    const charsList = document.getElementById("puppets-chars-list");
+
+    const running = Boolean(st?.running && st?.url);
+    const available = st?.available !== false;
+    const chars = st?.characters || [];
+
+    if (badge) {
+      badge.textContent = running ? "live" : chars.length > 0 ? String(chars.length) : "off";
+      badge.className = `badge ${running ? "badge-ok" : ""}`;
+    }
+    if (pill) {
+      pill.textContent = running ? "running" : state.puppets.busy ? "starting…" : available ? "stopped" : "not installed";
+      pill.className = `pill ${running ? "pill-ok" : available ? "pill-muted" : "pill-err"}`;
+    }
+    if (wsLabel) {
+      wsLabel.textContent = st?.workspace || "";
+    }
+    if (wsInput && !wsInput.value && st?.workspace) {
+      wsInput.value = st.workspace;
+    }
+
+    if (exportSelect) {
+      const prev = exportSelect.value;
+      exportSelect.innerHTML = "";
+      for (const c of chars) {
+        exportSelect.appendChild(el("option", { value: c.id }, `${c.id} (${c.archetype})`));
+      }
+      if (chars.some((c) => c.id === prev)) exportSelect.value = prev;
+    }
+
+    if (liveControls) liveControls.hidden = !running;
+    if (launchCard) launchCard.hidden = running;
+    if (frameWrap) frameWrap.hidden = !running;
+
+    if (running) {
+      if (popout) popout.href = st.url;
+      if (iframe && state.puppets.iframeUrl !== st.url) {
+        state.puppets.iframeUrl = st.url;
+        iframe.src = st.url;
+      }
+    } else {
+      state.puppets.iframeUrl = null;
+      if (iframe && iframe.getAttribute("src")) iframe.removeAttribute("src");
+    }
+
+    if (charsBox && charsList) {
+      charsBox.hidden = chars.length === 0;
+      charsList.innerHTML = "";
+      for (const c of chars) {
+        const li = el("li", { class: "playtest-session-row" });
+        const summary = `${c.id} — ${c.name} · audit:${c.auditStatus} · flags:${c.openFlags}/${c.totalFlags}`;
+        li.appendChild(el("span", {}, summary));
+        if (st?.moduleDir) {
+          const expBtn = el("button", { class: "btn btn-sm", type: "button" }, "Export Sheet");
+          expBtn.disabled = state.puppets.busy;
+          expBtn.addEventListener("click", () => exportPuppet(c.id));
+          li.appendChild(expBtn);
+        }
+        charsList.appendChild(li);
+      }
+    }
+
+    if (!available) {
+      setPuppetsMsg("puppet-studio executable not found. Install puppet-studio on PATH or set PUPPET_STUDIO_BIN.", true);
+    }
+
+    for (const id of ["btn-pup-launch", "btn-pup-stop", "btn-pup-export"]) {
+      const b = document.getElementById(id);
+      if (b) b.disabled = state.puppets.busy || (!available && id === "btn-pup-launch");
+    }
+  }
+
+  async function refreshPuppetsStatus() {
+    if (state.embedMode) return null;
+    try {
+      const res = await fetch("/api/puppets/status");
+      if (!res.ok) return null;
+      state.puppets.status = await res.json();
+      renderPuppets();
+      return state.puppets.status;
+    } catch {
+      return null;
+    }
+  }
+
+  async function startPuppets() {
+    if (state.puppets.busy) return;
+    state.puppets.busy = true;
+    setPuppetsMsg("Starting puppet-studio serve…");
+    renderPuppets();
+    try {
+      const wsInput = document.getElementById("puppets-ws-input");
+      const workspace = wsInput?.value?.trim() || undefined;
+      const res = await fetch("/api/puppets/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(workspace ? { workspace } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setPuppetsMsg(data.error || `Start failed (HTTP ${res.status})`, true);
+        if (data.status) state.puppets.status = data.status;
+        return;
+      }
+      state.puppets.status = data;
+      setPuppetsMsg("");
+    } catch (err) {
+      setPuppetsMsg(`Start failed: ${err.message}`, true);
+    } finally {
+      state.puppets.busy = false;
+      renderPuppets();
+    }
+  }
+
+  async function stopPuppets() {
+    if (state.puppets.busy) return;
+    state.puppets.busy = true;
+    renderPuppets();
+    try {
+      const res = await fetch("/api/puppets/stop", { method: "POST" });
+      if (res.ok) state.puppets.status = await res.json();
+      setPuppetsMsg("Puppet Studio stopped.");
+    } catch (err) {
+      setPuppetsMsg(`Stop failed: ${err.message}`, true);
+    } finally {
+      state.puppets.busy = false;
+      renderPuppets();
+    }
+  }
+
+  async function exportPuppet(characterId) {
+    if (!characterId || state.puppets.busy) return;
+    state.puppets.busy = true;
+    setPuppetsMsg(`Exporting ${characterId} into module…`);
+    renderPuppets();
+    try {
+      const wsInput = document.getElementById("puppets-ws-input");
+      const workspace = state.puppets.status?.workspace || wsInput?.value?.trim() || undefined;
+      const res = await fetch("/api/puppets/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId, workspace }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setPuppetsMsg(data.error || `Export failed (HTTP ${res.status})`, true);
+        return;
+      }
+      const ex = data.exported;
+      setPuppetsMsg(`Exported '${ex.assetId}' (${ex.frameCount}f @ ${ex.frameWidth}×${ex.frameHeight}px) → ${ex.relativePngPath}`);
+      await loadGraph(true);
+    } catch (err) {
+      setPuppetsMsg(`Export failed: ${err.message}`, true);
+    } finally {
+      state.puppets.busy = false;
+      renderPuppets();
+    }
+  }
+
+  document.getElementById("btn-pup-launch")?.addEventListener("click", () => startPuppets());
+  document.getElementById("btn-pup-refresh")?.addEventListener("click", () => refreshPuppetsStatus());
+  document.getElementById("btn-pup-stop")?.addEventListener("click", () => stopPuppets());
+  document.getElementById("btn-pup-export")?.addEventListener("click", () => {
+    const sel = document.getElementById("puppets-export-char");
+    if (sel?.value) exportPuppet(sel.value);
+  });
+  document.getElementById("btn-pup-reload")?.addEventListener("click", () => {
+    const iframe = document.getElementById("puppets-iframe");
+    if (iframe && state.puppets.iframeUrl) iframe.src = state.puppets.iframeUrl;
+  });
+
   loadGraph(false).then(() => {
-    if (!state.embedMode) refreshPlaytestStatus(false);
+    if (!state.embedMode) {
+      refreshPlaytestStatus(false);
+      refreshPuppetsStatus();
+    }
   });
 })();

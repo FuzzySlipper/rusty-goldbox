@@ -27,6 +27,7 @@
         <button class="tab" data-tab="maps" role="tab">2D Area Maps <span id="tab-maps-count" class="badge">0</span></button>
         <button class="tab" data-tab="events" role="tab">Events &amp; Scenes <span id="tab-events-count" class="badge">0</span></button>
         <button class="tab" data-tab="assets" role="tab">Art &amp; Assets <span id="tab-assets-count" class="badge">0</span></button>
+        <button class="tab tab-puppets" data-tab="puppets" role="tab">Puppets <span id="tab-puppets-badge" class="badge">off</span></button>
         <button class="tab" data-tab="reviews" role="tab">Review Queue <span id="tab-reviews-count" class="badge badge-ok">0</span></button>
         <button class="tab" data-tab="issues" role="tab">Diagnostics <span id="tab-issues-count" class="badge badge-ok">0</span></button>
         <button class="tab tab-playtest" data-tab="playtest" role="tab">▶ Playtest <span id="tab-playtest-badge" class="badge">off</span></button>
@@ -335,6 +336,58 @@
                 <button class="btn btn-sm" type="submit">Run</button>
                 <span id="playtest-cmd-out" class="playtest-cmd-out"></span>
               </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: PUPPET STUDIO (EMBEDDED) -->
+        <section id="view-puppets" class="view">
+          <div class="toolbar playtest-toolbar">
+            <div class="toolbar-group">
+              <strong>Puppet Studio</strong>
+              <span id="puppets-status-pill" class="pill pill-muted">stopped</span>
+              <span id="puppets-workspace-label" class="toolbar-hint"></span>
+            </div>
+            <div class="toolbar-group" id="puppets-live-controls" hidden>
+              <select id="puppets-export-char" class="select-input playtest-select" title="Character to export into this module"></select>
+              <button id="btn-pup-export" class="btn btn-sm btn-primary" type="button" title="Bake clips and export tight-union uniform sheet into this module">Export Sheet → Module</button>
+              <button id="btn-pup-reload" class="btn btn-sm" type="button" title="Reload Puppet Studio frame">↻ Reload</button>
+              <a id="btn-pup-popout" class="btn btn-sm" href="#" target="_blank" rel="noopener">Pop out ↗</a>
+              <button id="btn-pup-stop" class="btn btn-sm btn-danger" type="button" title="Stop Puppet Studio server">■ Stop</button>
+            </div>
+          </div>
+
+          <div id="puppets-feedback-bar" class="playtest-pinbar" hidden>
+            <span id="puppets-feedback-text" class="toolbar-hint"></span>
+          </div>
+
+          <div class="playtest-stage">
+            <div id="puppets-launch-card" class="playtest-launch-card">
+              <div class="playtest-launch-icon">🎭</div>
+              <h2>Puppet Studio (Baked Sheets &amp; .clm Rigs)</h2>
+              <p class="playtest-launch-copy">
+                Launches the standalone <code>puppet-studio serve</code> Triage Wall, Part-Mask Brush, Pivot/Grip Nudge,
+                and Spatial Flag-for-Agent UI directly inside Workbench. Export baked multi-clip sprite sheets into this
+                module in one click, or inspect human flags via <code>tales puppet flags --json</code>.
+              </p>
+              <div class="puppets-ws-row">
+                <label class="toggle">Workspace:
+                  <input id="puppets-ws-input" class="search-input puppets-ws-input" type="text" placeholder="Path to puppet character workspace directory…" />
+                </label>
+              </div>
+              <div class="playtest-launch-actions">
+                <button id="btn-pup-launch" class="btn btn-primary" type="button">▶ Launch Puppet Studio</button>
+                <button id="btn-pup-refresh" class="btn" type="button">↻ Rescan</button>
+              </div>
+              <div id="puppets-launch-msg" class="playtest-launch-msg"></div>
+              <div id="puppets-chars-box" class="playtest-discovered" hidden>
+                <h4>Discovered Characters</h4>
+                <ul id="puppets-chars-list" class="compact-list"></ul>
+              </div>
+            </div>
+
+            <div id="puppets-frame-wrap" class="playtest-frame-wrap" hidden>
+              <iframe id="puppets-iframe" class="playtest-iframe" title="Puppet Studio Embedded UI"></iframe>
             </div>
           </div>
         </section>
