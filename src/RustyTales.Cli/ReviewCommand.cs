@@ -43,10 +43,10 @@ internal static class ReviewCommand
 
     private static int List(IEnumerable<string> args, Output output, string workingDirectory)
     {
-        (Arguments parsed, string? error) = Arguments.Parse(args, ["--status", "--kind", "--reviews", "--modules", "--extension"], []);
+        (Arguments parsed, string? error) = Arguments.Parse(args, ["--status", "--kind", "--reviews", "--puppets", "--modules", "--extension"], []);
         if (error is null && parsed.Positionals.Count != 1)
         {
-            error = "Usage: tales review list <module-path> [--status open|needs-fix|question|approved|stale|resolved|all] [--kind <kind>] [--reviews <file>] [--json]";
+            error = "Usage: tales review list <module-path> [--status open|needs-fix|question|approved|stale|resolved|all] [--kind <kind>] [--reviews <file>] [--puppets <dir>] [--json]";
         }
 
         string? status = parsed.Single("--status");
@@ -71,6 +71,16 @@ internal static class ReviewCommand
         List<ResolvedReviewPin> filtered = FilterPins(all, status, kind);
         ReviewCounts counts = ReviewResolver.Summarize(all);
 
+        string? explicitPuppets = parsed.Single("--puppets") is string p ? Path.GetFullPath(p, workingDirectory) : null;
+        string moduleFull = Path.GetFullPath(parsed.Positionals[0], workingDirectory);
+        List<string> puppetWorkspaces = PuppetBridge.DiscoverWorkspaces(moduleFull, explicitPuppets);
+        bool openPuppetOnly = status is null or "open" or "needs-fix" or "question";
+        List<PuppetBridge.PuppetFlag> puppetFlags = [];
+        foreach (string ws in puppetWorkspaces)
+        {
+            puppetFlags.AddRange(PuppetBridge.ReadFlags(ws, openOnly: openPuppetOnly));
+        }
+
         if (output.Json)
         {
             output.Line(JsonSerializer.Serialize(new
@@ -80,13 +90,15 @@ internal static class ReviewCommand
                 storePath = store.FilePath,
                 counts,
                 pins = filtered,
+                puppetWorkspaces,
+                puppetFlags,
             }, ReviewStore.JsonOptions));
             return TalesCli.Ok;
         }
 
         output.Line($"Review queue for {graph.Module.Title} ({graph.Module.Id}) — {counts.Open} open ({counts.NeedsFix} needs-fix, {counts.Question} question), {counts.Approved} approved, {counts.Stale} stale, {counts.Resolved} resolved");
         output.Line($"Store: {store.FilePath}");
-        if (filtered.Count == 0)
+        if (filtered.Count == 0 && puppetFlags.Count == 0)
         {
             output.Line("No matching review pins.");
             return TalesCli.Ok;
@@ -110,6 +122,19 @@ internal static class ReviewCommand
             if (!string.IsNullOrWhiteSpace(pin.Resolution))
             {
                 output.Line($"      resolution: {pin.Resolution}");
+            }
+        }
+
+        if (puppetFlags.Count > 0)
+        {
+            output.Line($"Puppet review flags ({puppetFlags.Count}):");
+            foreach (PuppetBridge.PuppetFlag pf in puppetFlags)
+            {
+                output.Line($"  [{(pf.Resolved ? "resolved" : "open")}] {pf.CharacterId} {pf.Id} ({pf.Animation}@{pf.Frame} {pf.Tag}) — {pf.Note}");
+                if (!string.IsNullOrWhiteSpace(pf.CropPath))
+                {
+                    output.Line($"      crop: {pf.CropPath}");
+                }
             }
         }
 

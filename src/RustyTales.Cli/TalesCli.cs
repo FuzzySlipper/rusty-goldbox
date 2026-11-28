@@ -28,9 +28,13 @@ internal static class TalesCli
           tales workbench <path> [--port <n>] [--host <addr>] [--reviews <file>] [--modules <dir>]... [--extension <id>]...
               Serves the local diagnostic & review Workbench web UI directly from Core
               (default http://127.0.0.1:4173/). Use --once to print startup info and exit.
-          tales review list|show|set|resolve|clear <module-path> [...] [--reviews <file>] [--json]
+          tales review list|show|set|resolve|clear <module-path> [...] [--reviews <file>] [--puppets <dir>] [--json]
               Reads and updates Workbench review pins (needs-fix, approved, question, resolved)
-              with exact module, file, JSON path and stale-approval detection for agent workflows.
+              with exact module, file, JSON path, stale-approval detection, and discovered puppet
+              review-flags.json items for agent workflows.
+          tales puppet status|flags|build|bake|heal|export-sheet [...] [--json]
+              Bridges standalone puppet-studio workspaces: inspects audits/review-flags, runs
+              build/bake/heal, and exports baked clips as tight-union uniform Rusty Tales sheets.
           tales module pack <module-dir> [--output <file>.rpak | --install] [--modules <dir>]...
               Validates the module, then packs it into an Engine content container
               (<id>-<version>.rpak here, or in the Game's module library with --install:
@@ -54,7 +58,7 @@ internal static class TalesCli
               version that satisfies its requirements, and a save keeps the versions it was made with.
           tales module remove <id>@<version>
               Removes one installed version from the module library and its record.
-          tales schema [<type> | kits | workspace | module | expressions | operations | events | media | live-combat]
+          tales schema [<type> | kits | workspace | module | expressions | operations | events | media | puppets | live-combat]
           tales schema --module <path> [--modules <dir>]... [--extension <id>]...
               The format reference: definition types with fields and examples, genre starter kits,
               or with --module a scoped summary of the active ruleset/campaign's stats, actions,
@@ -219,6 +223,8 @@ internal static class TalesCli
                 return WorkbenchCommand.Run(args.Skip(1), printer, workingDirectory);
             case "review":
                 return ReviewCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
+            case "puppet":
+                return PuppetCommand.Run(args.Skip(1).ToList(), printer, workingDirectory);
             case "module" when args.Count >= 2:
                 break;
             default:

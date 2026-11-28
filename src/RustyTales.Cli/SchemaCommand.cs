@@ -39,7 +39,7 @@ internal static class SchemaCommand
         (Arguments parsed, string? error) = Arguments.Parse(args, ["--module", "--modules", "--extension"], []);
         if (error is null && parsed.Positionals.Count > 1)
         {
-            error = "Usage: tales schema [type | kits | workspace | module | expressions | operations | events | media | live-combat] | tales schema --module <path> [--modules <dir>]... [--extension <id>]...";
+            error = "Usage: tales schema [type | kits | workspace | module | expressions | operations | events | media | puppets | live-combat] | tales schema --module <path> [--modules <dir>]... [--extension <id>]...";
         }
 
         string? moduleArg = parsed.Single("--module");
@@ -104,6 +104,11 @@ internal static class SchemaCommand
             return MediaTopic(output);
         }
 
+        if (topic == "puppets")
+        {
+            return PuppetsTopic(output);
+        }
+
         if (topic == "live-combat")
         {
             return LiveCombat(output);
@@ -113,10 +118,54 @@ internal static class SchemaCommand
         if (type is null)
         {
             string types = string.Join(", ", DefinitionTypes.All.Select(definition => definition.Name));
-            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, kits, workspace, module, expressions, operations, events, media, live-combat.");
+            return output.UsageError($"'{topic}' is not a schema topic. Topics: {types}, kits, workspace, module, expressions, operations, events, media, puppets, live-combat.");
         }
 
         return Type(output, type);
+    }
+
+    private static int PuppetsTopic(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJson(new
+            {
+                topic = "puppets",
+                summary = "Standalone puppet-studio integration: keeps rigging/segmentation sources outside shipped modules (e.g. puppets/), embeds puppet-studio serve in Tales Workbench, bridges review-flags.json into tales review/puppet, and exports tight-union uniform sprite sheets into Rusty Tales media: \"sheet\" assets.",
+                discovery = new
+                {
+                    executable = new[] { "$PUPPET_STUDIO_BIN", "puppet-studio on PATH", "../puppet-studio/bin/puppet-studio" },
+                    workspaces = new[] { "--puppets <dir>", "$TALES_PUPPETS_DIR", "tales.json authoring.puppets", "puppets/", "art-src/puppets/" },
+                },
+                commands = new[]
+                {
+                    "tales puppet status [<workspace-or-char>] [--puppets <dir>] [--json]",
+                    "tales puppet flags [<workspace-or-char>] [--open-only] [--puppets <dir>] [--json]",
+                    "tales puppet build <char-dir> [--bake] [--animation <clip>] [--json]",
+                    "tales puppet bake <char-dir> [--animation <clip>] [--scale <n>] [--pot] [--json]",
+                    "tales puppet heal <char-dir> [--no-bake] [--json]",
+                    "tales puppet export-sheet <char-dir> --module <module-dir> [--id <asset-id>] [--clips idle,attack,recoil:hit] [--height 160] [--world-height 1.0] [--faces right] [--sampling linear] [--defs puppets.json] [--rebake] [--json]",
+                },
+                defaultClips = new[]
+                {
+                    new { source = "idle", animation = "idle", loop = true },
+                    new { source = "attack", animation = "attack", loop = false },
+                    new { source = "recoil", animation = "hit", loop = false },
+                },
+                runtimeClmRoadmap = "Native runtime .clm rendering via catchlight-core + catchlight-wgpu is tracked upstream in rusty-engine #11213.",
+            });
+            return TalesCli.Ok;
+        }
+
+        output.Line("Puppets (puppet-studio integration):");
+        output.Line("  Keep puppet authoring folders (source.png, part_labels.png, character.json, build/, baked/) outside shipped modules (e.g. puppets/).");
+        output.Line("  Export baked clips into standard Rusty Tales media: \"sheet\" assets with:");
+        output.Line("    tales puppet export-sheet <char-dir> --module <module-dir> [--clips idle,attack,recoil:hit] [--height 160] [--json]");
+        output.Line("  Inspect human-flagged spatial pins via:");
+        output.Line("    tales puppet flags [<workspace>] --open-only --json");
+        output.Line("    tales review list <module-dir> [--puppets <dir>] --json");
+        output.Line("  Native runtime .clm rendering is tracked upstream in rusty-engine #11213.");
+        return TalesCli.Ok;
     }
 
     private static int Overview(Output output)
@@ -126,7 +175,7 @@ internal static class SchemaCommand
             output.WriteJson(new
             {
                 types = DefinitionTypes.All.Select(type => new { name = type.Name, description = type.Description }),
-                topics = new[] { "kits", "workspace", "module", "expressions", "operations", "events", "media", "live-combat" },
+                topics = new[] { "kits", "workspace", "module", "expressions", "operations", "events", "media", "puppets", "live-combat" },
                 scopedDiscovery = "tales schema --module <path> [--modules <dir>]... [--json]",
             });
             return TalesCli.Ok;
